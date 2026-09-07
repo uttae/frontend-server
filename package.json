@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "vitest run",
     "assets:landing-domain": "node scripts/update-landing-screenshot-domain.mjs"
   },
@@ -41,6 +43,7 @@
     "@types/sockjs-client": "^1.5.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "prettier": "^3.9.6",
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5",

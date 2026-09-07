@@ -1,0 +1,24 @@
+# 빌드 · 캐시 산출물
+.next/
+out/
+build/
+coverage/
+
+# 의존성 · 잠금 파일
+node_modules/
+package-lock.json
+
+# 자동 생성 파일
+next-env.d.ts
+*.tsbuildinfo
+
+# git worktree 사본 (eslint.config.mjs 무시 목록과 일치)
+.worktrees/
+
+# 정적 자산 (invite-preview.html 등은 손대지 않음)
+public/
+
+# Agent 로컬 컨텍스트 (.gitignore 참고)
+SERVICE_CONTEXT.md
+.serena/
+.superpowers/
