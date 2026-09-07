@@ -43,8 +43,8 @@ export function TripDateShrinkConfirmModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pb-2 pt-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-            <CalendarRange size={22} className="text-brand-red" />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
+            <CalendarRange size={22} className="text-status-negative" />
           </div>
           <h2
             id="trip-date-shrink-dialog-title"

@@ -9,7 +9,7 @@ export const settingsActionButtonVariantClass = {
   secondary:
     "rounded-full border border-gray-border bg-transparent py-2.5 text-[17px] font-semibold text-dark-gray transition hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-40",
   primary:
-    "rounded-full border border-transparent bg-brand-red py-2.5 text-[17px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
+    "rounded-full border border-transparent bg-primary py-2.5 text-[17px] font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
 } as const;
 
 export type SettingsActionButtonVariant = keyof typeof settingsActionButtonVariantClass;

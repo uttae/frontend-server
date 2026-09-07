@@ -35,7 +35,7 @@ export function CookieConsentBanner({
           사용합니다. 쿠키 사용에 동의하시겠습니까?{" "}
           <Link
             href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
-            className="font-medium text-brand-red underline-offset-2 hover:underline"
+            className="font-medium text-primary underline-offset-2 hover:underline"
           >
             개인정보 처리방침
           </Link>

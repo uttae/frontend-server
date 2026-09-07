@@ -30,7 +30,7 @@ export function RoomCard({ room, onDelete, onLeave }: Props) {
       <Link
         href={planPath}
         onClick={handleNavigate}
-        className="relative block rounded-2xl border-2 border-gray-border bg-white p-4 transition hover:border-brand-red/40 hover:shadow-sm"
+        className="relative block rounded-2xl border-2 border-gray-border bg-white p-4 transition hover:border-primary/40 hover:shadow-sm"
       >
         <div className="flex items-start gap-3">
           <div

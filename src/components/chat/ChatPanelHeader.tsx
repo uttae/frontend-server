@@ -22,7 +22,7 @@ export function ChatPanelHeader({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-between border-b border-gray-300 bg-brand-red px-3 py-2 text-white",
+        "flex shrink-0 items-center justify-between border-b border-gray-300 bg-primary px-3 py-2 text-white",
         isMinimized ? "cursor-pointer" : "",
       )}
       onClick={isMinimized ? onMaximize : undefined}

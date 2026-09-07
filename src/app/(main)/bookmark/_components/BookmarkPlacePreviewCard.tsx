@@ -81,7 +81,7 @@ export function BookmarkPlacePreviewCard({
     >
       <div className={cn("min-w-0 flex-1", contentClassName)}>
         <div className="flex items-baseline gap-1.5">
-          <h3 className="truncate text-[17px] font-semibold leading-5 tracking-tight text-brand-green mobile:text-[15px]">
+          <h3 className="truncate text-[17px] font-semibold leading-5 tracking-tight text-primary mobile:text-[15px]">
             {name}
           </h3>
           {primaryTypeDisplayName ? (

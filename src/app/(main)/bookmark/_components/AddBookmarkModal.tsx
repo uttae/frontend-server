@@ -96,7 +96,7 @@ export function AddBookmarkModal({
           {mode === "edit" ? "북마크 편집" : "새 북마크 추가"}
         </h2>
         {formError ? (
-          <p className="mt-3 text-[17px] text-brand-red" role="alert">
+          <p className="mt-3 text-[17px] text-primary" role="alert">
             {formError}
           </p>
         ) : null}
@@ -126,7 +126,7 @@ export function AddBookmarkModal({
               maxLength={TITLE_MAX_LENGTH}
               placeholder={untitledNameHint ?? UNTITLED_BOOKMARK_CATEGORY_LABEL}
               aria-describedby="bookmark-title-counter"
-              className="w-full rounded-xl border border-gray-border px-3 py-2.5 text-[17px] outline-none ring-brand-red/30 focus:border-brand-red focus:ring-2"
+              className="w-full rounded-xl border border-gray-border px-3 py-2.5 text-[17px] outline-none ring-primary/30 focus:border-primary focus:ring-2"
             />
           </div>
 
@@ -141,7 +141,7 @@ export function AddBookmarkModal({
                   type="button"
                   title={hex}
                   onClick={() => setColor(hex)}
-                  className="size-9 cursor-pointer rounded-full border-2 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-red/50"
+                  className="size-9 cursor-pointer rounded-full border-2 transition-shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                   style={{
                     backgroundColor: hex,
                     borderColor: color === hex ? "#171717" : "transparent",
@@ -181,7 +181,7 @@ export function AddBookmarkModal({
             <button
               type="submit"
               disabled={busy}
-              className="flex-1 cursor-pointer rounded-xl bg-brand-red py-2.5 text-[17px] font-semibold text-white shadow-md transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 cursor-pointer rounded-xl bg-primary py-2.5 text-[17px] font-semibold text-white shadow-md transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {mode === "edit" ? "저장" : "추가"}
             </button>

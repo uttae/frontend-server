@@ -64,7 +64,7 @@ export function AnalyticsConsentSettingsView({
         자세한 내용은{" "}
         <Link
           href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
-          className="font-medium text-brand-red underline-offset-2 hover:underline"
+          className="font-medium text-primary underline-offset-2 hover:underline"
         >
           개인정보 처리방침
         </Link>

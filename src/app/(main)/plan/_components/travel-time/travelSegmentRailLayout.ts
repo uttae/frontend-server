@@ -13,7 +13,7 @@ export function planSegmentAddButtonClassName(active: boolean) {
   return cn(
     "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full shadow-sm transition-[background-color,opacity,box-shadow]",
     active
-      ? "bg-white text-brand-red ring-2 ring-brand-red ring-offset-1 hover:bg-gray-50"
-      : "bg-brand-red text-white hover:opacity-95",
+      ? "bg-white text-primary ring-2 ring-primary ring-offset-1 hover:bg-gray-50"
+      : "bg-primary text-white hover:opacity-95",
   );
 }

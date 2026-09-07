@@ -1,6 +1,8 @@
-@config "../../tailwind.config.js";
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 @import "tw-animate-css";
+@config "../../tailwind.config.js";
+/* 제품 서체 Pretendard — Figma Typography/Foundation 기준 */
 
 /**
  * 모바일 전용 유틸리티 배리언트 —
@@ -82,4 +84,144 @@
 
 .chat-message-list-scroll--minimized::-webkit-scrollbar-thumb {
   min-height: 2rem;
+}
+
+/* ============================================================
+ * 디자인 토큰 — Figma "🐰디자인-디자인 시스템"(node 161:9) 기반
+ * 정본: docs/design/tokens/tokens.css (손으로 관리 중)
+ *
+ * primitive(--gray-*, --blue-* …)는 semantic이 참조하는 원천 값이다.
+ * 컴포넌트에서 직접 쓰지 말고 semantic(--color-*)만 사용할 것.
+ * tailwind.config.js 에는 semantic만 등록되어 있다.
+ * ============================================================ */
+:root {
+  /* ---------- 1. PRIMITIVE ---------- */
+  /* Gray */
+  --gray-50: #fdfdfd;
+  --gray-100: #f6f6f8;
+  --gray-200: #eaebef;
+  --gray-300: #d9dbe2;
+  --gray-400: #c4c7d2;
+  --gray-500: #aaafbf;
+  --gray-600: #8b92a8;
+  --gray-700: #69718c;
+  --gray-800: #3b3f4e;
+  --gray-900: #1f2229;
+  --gray-950: #16181d;
+
+  /* Blue */
+  --blue-50: #edf9ff;
+  --blue-100: #d6f2ff;
+  --blue-200: #b5e8ff;
+  --blue-300: #83dcff;
+  --blue-400: #48c8ff;
+  --blue-500: #1eacff;
+  --blue-600: #0099ff;
+  --blue-700: #0183ff;
+  --blue-800: #0972f3;
+  --blue-900: #005bd9;
+  --blue-950: #004293;
+
+  /* Lime */
+  --lime-50: #f6ffe2;
+  --lime-100: #efffc5;
+  --lime-200: #e7ffa8;
+  --lime-300: #ddff7e;
+  --lime-400: #d3ff5b;
+  --lime-500: #beff0c;
+  --lime-600: #95ff00;
+  --lime-700: #5cf100;
+  --lime-800: #00d123;
+  --lime-900: #00ab2e;
+  --lime-950: #006e1d;
+
+  /* Green */
+  --green-50: #eefff5;
+  --green-100: #ceffe4;
+  --green-200: #93ffc2;
+  --green-300: #3ff89d;
+  --green-400: #00e971;
+  --green-500: #00d845;
+  --green-600: #00c321;
+  --green-700: #00991b;
+  --green-800: #007016;
+  --green-900: #00460f;
+  --green-950: #00250a;
+
+  /* Red */
+  --red-50: #fffafa;
+  --red-100: #ffebec;
+  --red-200: #ffd4d4;
+  --red-300: #ffb1b3;
+  --red-400: #ff8488;
+  --red-500: #ff545b;
+  --red-600: #ff2035;
+  --red-700: #e11519;
+  --red-800: #c10000;
+  --red-900: #7e0000;
+  --red-950: #410000;
+
+  /* Orange */
+  --orange-50: #fffcf8;
+  --orange-100: #fff4e4;
+  --orange-200: #ffe5c2;
+  --orange-300: #ffd293;
+  --orange-400: #ffbc5d;
+  --orange-500: #ffa400;
+  --orange-600: #ff8b00;
+  --orange-700: #e27200;
+  --orange-800: #a75400;
+  --orange-900: #6d3700;
+  --orange-950: #3a1d00;
+
+  /* ---------- 2. SEMANTIC (primitive 참조) ---------- */
+  /* Primary */
+  --color-primary-subtle: var(--blue-100);
+  --color-primary-default: var(--blue-700);
+  --color-primary-strong: var(--blue-900);
+
+  /* Secondary */
+  --color-secondary-subtle: var(--lime-200);
+  --color-secondary-default: var(--lime-500);
+  --color-secondary-strong: var(--lime-800);
+
+  /* Text */
+  --color-text-subtle: var(--gray-700);
+  --color-text-default: var(--gray-950);
+  --color-text-disabled: var(--gray-400);
+  --color-text-inverse: var(--gray-50);
+
+  /* Icon */
+  --color-icon-subtle: var(--gray-600);
+  --color-icon-default: var(--gray-800);
+  --color-icon-disabled: var(--gray-400);
+  --color-icon-inverse: var(--gray-100);
+
+  /* Fill */
+  --color-fill-subtle: var(--gray-50);
+  --color-fill-default: var(--gray-100);
+  --color-fill-strong: var(--gray-200);
+
+  /* Border */
+  --color-border-subtle: var(--gray-200);
+  --color-border-default: var(--gray-300);
+  --color-border-hover: var(--gray-700);
+
+  /* Background */
+  --color-background-default: var(--gray-50);
+  --color-background-strong: var(--gray-200);
+
+  /* Status */
+  --color-status-positive: var(--green-600);
+  --color-status-cautionary: var(--orange-600);
+  --color-status-negative: var(--red-600);
+
+  /* ---------- 3. TYPOGRAPHY ---------- */
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
+    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
 }

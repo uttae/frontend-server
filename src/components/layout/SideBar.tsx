@@ -54,7 +54,7 @@ function SideBar() {
       <button
         onClick={openChat}
         className={`relative flex w-20 cursor-pointer items-center justify-center rounded-br-2xl py-2 transition hover:opacity-80 ${
-          isChatActive ? "bg-brand-red/80" : "bg-brand-red"
+          isChatActive ? "bg-primary/80" : "bg-primary"
         }`}
         aria-label="sidebar-chat"
         data-tutorial-target="chat"

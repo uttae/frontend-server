@@ -60,8 +60,8 @@ export function AgreementConsentSection({ onStateChange }: Props) {
 
   if (isError) {
     return (
-      <div className="w-full rounded-xl border border-brand-red/35 bg-brand-red/[0.06] px-4 py-3 text-left">
-        <p className="text-[17px] font-medium text-brand-red">
+      <div className="w-full rounded-xl border border-primary/35 bg-primary/[0.06] px-4 py-3 text-left">
+        <p className="text-[17px] font-medium text-primary">
           약관을 불러오지 못했습니다
         </p>
         <p className="mt-1 text-[17px] text-muted-brown">
@@ -72,7 +72,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
         <button
           type="button"
           onClick={() => void refetch()}
-          className="mt-2 text-[17px] font-medium text-brand-red underline-offset-2 hover:underline"
+          className="mt-2 text-[17px] font-medium text-primary underline-offset-2 hover:underline"
         >
           다시 시도
         </button>
@@ -96,7 +96,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
       <label className="flex cursor-pointer items-start gap-3">
         <input
           type="checkbox"
-          className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded accent-brand-red"
+          className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded accent-primary"
           checked={allAccepted}
           onChange={(event) => toggleAll(event.target.checked)}
         />
@@ -116,11 +116,11 @@ export function AgreementConsentSection({ onStateChange }: Props) {
               <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 shrink-0 rounded accent-brand-red"
+                  className="h-4 w-4 shrink-0 rounded accent-primary"
                   checked={acceptedIds.has(id)}
                   onChange={(event) => toggleItem(id, event.target.checked)}
                 />
-                <span className="inline-flex h-[18px] shrink-0 items-center rounded px-1 text-xs font-semibold leading-none text-brand-red">
+                <span className="inline-flex h-[18px] shrink-0 items-center rounded px-1 text-xs font-semibold leading-none text-primary">
                   필수
                 </span>
                 <span className="truncate text-[17px] text-neutral-800">

@@ -318,7 +318,7 @@ export function PlanPlaceCard({
         {(() => {
           const media = photoLoading ? (
             <Loader2
-              className="absolute inset-0 m-auto h-5 w-5 animate-spin text-brand-green"
+              className="absolute inset-0 m-auto h-5 w-5 animate-spin text-primary-strong"
               aria-hidden
             />
           ) : resolvedPhotoUrl ? (
@@ -418,9 +418,9 @@ export function PlanPlaceCard({
           {timeRange ? (
             <span
               className={cn(
-                "mt-auto inline-flex w-fit items-center rounded-md bg-brand-green/10 px-2 py-0.5",
+                "mt-auto inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
                 PLAN_PLACE_CARD_TW.titleCompact,
-                "text-[14px] tabular-nums text-brand-green",
+                "text-[14px] tabular-nums text-primary-strong",
               )}
             >
               {timeRange}

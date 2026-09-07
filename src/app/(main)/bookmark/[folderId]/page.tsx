@@ -56,7 +56,7 @@ export default function BookmarkFolderDetailPage() {
       <div className="flex h-full min-h-0 flex-col border-b border-gray-border">
         <SetSectionMaxWidth value="s1" />
         <div className="space-y-3 py-10 text-center">
-          <p className="text-[17px] text-brand-red">
+          <p className="text-[17px] text-primary">
             {error instanceof Error
               ? error.message
               : "북마크 폴더를 불러오지 못했습니다."}

@@ -26,7 +26,7 @@ export function SiteFooter({ className }: { className?: string }) {
 
   return (
     <footer
-      className={cn("relative z-10 bg-brand-red text-white", className)}
+      className={cn("relative z-10 bg-primary text-white", className)}
     >
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
         <div className="flex flex-col items-center">

@@ -127,7 +127,7 @@ export function AddToScheduleModal({
 
           {rid && schedulesError ? (
             <div className="space-y-2 text-center">
-              <p className="text-[17px] text-brand-red">
+              <p className="text-[17px] text-primary">
                 {schedulesErr instanceof Error
                   ? schedulesErr.message
                   : "일정을 불러오지 못했습니다."}

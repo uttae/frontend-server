@@ -89,13 +89,16 @@ export function HomeHeader() {
     <>
       <header className="sticky top-0 z-40 border-b border-gray-border bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-2">
-          <BrandLogo alt="로고" />
+          <BrandLogo 
+          variant="combination"
+          size="S"
+          alt="로고" />
 
           <div ref={profileRef} className="relative">
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
-              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-brand-red transition hover:opacity-90"
+              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary transition hover:opacity-90"
               aria-label="프로필"
               aria-expanded={open}
             >
@@ -137,7 +140,7 @@ export function HomeHeader() {
                     setOpen(false);
                     setShowWithdrawConfirm(true);
                   }}
-                  className="w-full border-t border-gray-border px-4 py-2.5 text-left text-[17px] text-brand-red transition hover:bg-brand-red/5"
+                  className="w-full border-t border-gray-border px-4 py-2.5 text-left text-[17px] text-primary transition hover:bg-primary/5"
                 >
                   회원 탈퇴
                 </button>

@@ -73,7 +73,7 @@ export function MobileMainTabs() {
             className={cn(
               "relative flex flex-1 items-center justify-center py-3 text-[14px] font-medium transition-colors",
               active
-                ? "text-brand-red"
+                ? "text-primary"
                 : "text-dark-gray hover:text-gray-900",
             )}
           >
@@ -81,7 +81,7 @@ export function MobileMainTabs() {
             {active ? (
               <span
                 aria-hidden
-                className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-brand-red"
+                className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-primary"
               />
             ) : null}
           </Link>

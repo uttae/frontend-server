@@ -157,9 +157,9 @@ export function PlanDaySection({
       {...crossDaySectionDropProps}
       className={cn(
         "rounded-2xl border border-gray-border bg-white",
-        isDragging && "border-brand-red/80 ring-4 ring-inset ring-brand-red/45",
+        isDragging && "border-primary/80 ring-4 ring-inset ring-primary/45",
         isCrossDayItemDropTarget &&
-          "border-brand-red ring-3 ring-inset ring-brand-red/50",
+          "border-primary ring-3 ring-inset ring-primary/50",
       )}
       aria-label={subtitle ? `${title} ${subtitle}` : title}
     >
@@ -239,7 +239,7 @@ export function PlanDaySection({
               className={cn(
                 "shrink-0 cursor-pointer self-center rounded-lg p-2 transition-colors mobile:hidden",
                 routeVisible
-                  ? "text-brand-red hover:bg-red-50"
+                  ? "text-primary hover:bg-primary/10"
                   : "text-dark-gray hover:bg-bubble-gray/60",
               )}
             >
@@ -294,7 +294,7 @@ export function PlanDaySection({
                       role="menuitem"
                       disabled={isDeleteScheduleDisabled}
                       className={cn(
-                        "flex items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-brand-red hover:bg-red-50",
+                        "flex items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-status-negative hover:bg-bubble-gray",
                         isDeleteScheduleDisabled
                           ? "cursor-not-allowed opacity-40"
                           : "cursor-pointer",

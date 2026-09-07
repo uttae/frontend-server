@@ -20,7 +20,7 @@ export function RoomTripSettingsSection() {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-brand-red" />
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
         </div>
       ) : !roomSource || !roomId ? (
         <p className="py-10 text-center text-[17px] text-dark-gray">

@@ -43,8 +43,8 @@ export function WithdrawAccountConfirmModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-6 pb-2 pt-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-            <UserX size={22} className="text-brand-red" aria-hidden />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
+            <UserX size={22} className="text-status-negative" aria-hidden />
           </div>
           <h2 id="withdraw-account-title" className="text-[19px] font-bold">
             정말 탈퇴하시겠어요?

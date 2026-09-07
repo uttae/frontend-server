@@ -11,7 +11,7 @@ import {
 export type PlanItineraryStopMapPinProps = {
   /** 표시 순번 (1부터). 호출부에서 `orderIdx + 1` 전달 권장 */
   orderLabel: number;
-  /** 폴리라인 일차색과 동일한 hex. 없으면 brand-red와 동등 */
+  /** 폴리라인 일차색과 동일한 hex. 없으면 primary와 동등 */
   pinColor?: string;
   className?: string;
 };
@@ -31,7 +31,7 @@ export function PlanItineraryStopMapPin({
     <span
       className={cn(
         "relative inline-block drop-shadow-md",
-        trimmed.length === 0 && "text-brand-red",
+        trimmed.length === 0 && "text-primary",
         className,
       )}
     >

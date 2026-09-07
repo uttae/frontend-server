@@ -91,7 +91,7 @@ export function SearchResultCard({
       <div className="min-w-0 flex-1">
         {/* 이름 + 유형 */}
         <div className="flex items-baseline gap-1.5">
-          <h3 className="truncate text-[17px] font-semibold leading-5 tracking-tight text-brand-green">
+          <h3 className="truncate text-[17px] font-semibold leading-5 tracking-tight text-primary-strong">
             {name}
           </h3>
           {category && (
@@ -115,7 +115,7 @@ export function SearchResultCard({
           {isOpen !== undefined && (
             <span
               className={`text-[13px] font-medium leading-relaxed ${
-                isOpen ? "text-brand-green" : "text-[#FF6467]"
+                isOpen ? "text-primary" : "text-status-negative"
               }`}
             >
               · {isOpen ? "영업 중" : "영업 종료"}

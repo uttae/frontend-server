@@ -53,7 +53,7 @@ function JoinRequestCard({
             className="h-9 w-9 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-red/10 text-[17px] font-semibold text-brand-red">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[17px] font-semibold text-primary">
             {request.nickname.charAt(0)}
           </div>
         )}
@@ -72,7 +72,7 @@ function JoinRequestCard({
         <button
           onClick={() => approve({ roomId, requestId: request.requestId })}
           disabled={isPending}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-brand-green/40 bg-brand-green/10 text-brand-green transition-colors hover:bg-brand-green/20 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="승인"
         >
           <CheckIcon size={14} strokeWidth={2.5} />
@@ -80,7 +80,7 @@ function JoinRequestCard({
         <button
           onClick={() => reject({ roomId, requestId: request.requestId })}
           disabled={isPending}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-brand-red/30 bg-brand-red/10 text-brand-red transition-colors hover:bg-brand-red/20 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-status-negative/30 bg-status-negative/10 text-status-negative transition-colors hover:bg-status-negative/20 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label="거절"
         >
           <XIcon size={14} strokeWidth={2.5} />
@@ -101,7 +101,7 @@ export function JoinRequestsSection({ roomId }: Props) {
           입장 요청
         </p>
         <div className="flex items-center justify-center rounded-xl border border-gray-border bg-white py-6">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-border border-t-brand-red" />
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
         </div>
       </section>
     );
@@ -117,12 +117,12 @@ export function JoinRequestsSection({ roomId }: Props) {
         <p className="text-[14px] font-semibold uppercase tracking-wide text-dark-gray">
           입장 요청
         </p>
-        <span className="rounded-full bg-brand-red px-1.5 py-0.5 text-xs font-bold leading-none text-white">
+        <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs font-bold leading-none text-white">
           {requests.length}
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-brand-red/20 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-primary/20 bg-white shadow-sm">
         {requests.map((req, i) => (
           <div
             key={req.requestId}

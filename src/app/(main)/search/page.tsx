@@ -285,7 +285,7 @@ export default function SearchPage() {
       </div>
       {shareModeActive ? (
         <motion.div
-          className="relative shrink-0 overflow-hidden border-b border-brand-red/40"
+          className="relative shrink-0 overflow-hidden border-b border-primary/40"
           initial={reduceMotion ? false : { opacity: 0, y: -6 }}
           animate={
             reduceMotion
@@ -331,7 +331,7 @@ export default function SearchPage() {
           {!reduceMotion ? (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-[11px] overflow-hidden bg-gradient-to-b from-brand-red/[0.38] via-brand-red/[0.12] to-transparent"
+              className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-[11px] overflow-hidden bg-gradient-to-b from-primary/[0.38] via-primary/[0.12] to-transparent"
             >
               <motion.div
                 className="absolute left-0 top-px h-[3px] w-[44%]"
@@ -352,9 +352,9 @@ export default function SearchPage() {
               />
             </div>
           ) : null}
-          <div className="relative z-[3] flex min-h-13 shrink-0 items-center gap-2 px-4 py-3 text-base font-semibold leading-snug tracking-tight text-brand-red drop-shadow-[0_0_10px_rgba(241,45,51,0.22)]">
+          <div className="relative z-[3] flex min-h-13 shrink-0 items-center gap-2 px-4 py-3 text-base font-semibold leading-snug tracking-tight text-primary drop-shadow-[0_0_10px_rgba(241,45,51,0.22)]">
             <motion.span
-              className="inline-flex shrink-0 text-brand-red"
+              className="inline-flex shrink-0 text-primary"
               aria-hidden
               animate={
                 reduceMotion
@@ -381,7 +381,7 @@ export default function SearchPage() {
             <button
               type="button"
               onClick={() => router.replace("/search")}
-              className="ml-auto shrink-0 cursor-pointer rounded-md border border-brand-red/45 bg-white/92 px-2.5 py-1.5 text-[13px] font-medium text-dark-gray shadow-sm hover:bg-white"
+              className="ml-auto shrink-0 cursor-pointer rounded-md border border-primary/45 bg-white/92 px-2.5 py-1.5 text-[13px] font-medium text-dark-gray shadow-sm hover:bg-white"
             >
               취소
             </button>
@@ -393,7 +393,7 @@ export default function SearchPage() {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {showSearchLoading && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-dark-gray">
-            <Loader2 className="h-6 w-6 animate-spin text-brand-green" />
+            <Loader2 className="h-6 w-6 animate-spin text-primary-strong" />
             <span className="text-[17px]">장소를 검색하는 중...</span>
           </div>
         )}
@@ -455,7 +455,7 @@ export default function SearchPage() {
             ) : null}
             {isFetching && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white/50">
-                <Loader2 className="h-6 w-6 animate-spin text-brand-green" />
+                <Loader2 className="h-6 w-6 animate-spin text-primary-strong" />
               </div>
             )}
           </div>

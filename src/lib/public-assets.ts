@@ -2,8 +2,15 @@
 
 export const brandAssets = {
   logo: "/brand/textlogo.svg",
-  favicon: "/brand/iconLogo.svg",
-  shareImage: "/brand/iconLogo.png",
+  shareImage: "/brand/App_Icon.png",
+} as const;
+
+export const faviconAssets = {
+  icon16: "/favicon/favicon-16x16.png",
+  icon32: "/favicon/favicon-32x32.png",
+  ico: "/favicon/favicon.ico",
+  appleTouchIcon: "/favicon/apple-touch-icon.png",
+  manifest: "/favicon/site.webmanifest",
 } as const;
 
 export const sidebarIcons = {

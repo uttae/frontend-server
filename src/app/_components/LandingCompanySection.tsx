@@ -9,7 +9,7 @@ export function LandingCompanySection() {
   return (
     <section
       id="company"
-      className={`scroll-mt-24 border-t border-gray-border/50 bg-brand-red/[0.035] ${LANDING_SECTION_PY}`}
+      className={`scroll-mt-24 border-t border-gray-border/50 bg-primary/[0.035] ${LANDING_SECTION_PY}`}
       aria-labelledby="company-heading"
     >
       <div className={LANDING_CONTAINER_CLASS}>

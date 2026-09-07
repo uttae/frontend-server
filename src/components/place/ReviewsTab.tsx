@@ -20,7 +20,7 @@ function ReviewsLink({ reviewsUri }: { reviewsUri?: string | null }) {
       href={reviewsUri}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-[13px] font-medium text-brand-green underline-offset-2 hover:underline"
+      className="inline-flex items-center gap-1 text-[13px] font-medium text-primary underline-offset-2 hover:underline"
     >
       리뷰 전체보기
       <ExternalLink className="h-3 w-3" aria-hidden="true" />

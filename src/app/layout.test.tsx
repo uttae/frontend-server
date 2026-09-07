@@ -2,10 +2,6 @@ import type { ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("next/font/google", () => ({
-  Inter: () => ({ variable: "font-test" }),
-}));
-
 vi.mock("@/providers/root-providers", () => ({
   AppRootProviders: ({ children }: { children: ReactNode }) => children,
 }));

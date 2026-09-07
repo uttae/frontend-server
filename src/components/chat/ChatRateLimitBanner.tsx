@@ -24,11 +24,11 @@ export function ChatRateLimitBanner({
       animate={{ height: "auto", opacity: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.2 }}
-      className="overflow-hidden border-t border-brand-red/25 bg-brand-red/[0.06]"
+      className="overflow-hidden border-t border-primary/25 bg-primary/[0.06]"
     >
       <div
         className={cn(
-          "flex items-center gap-2 px-3 py-2 text-brand-red",
+          "flex items-center gap-2 px-3 py-2 text-primary",
           isMinimized ? "text-xs" : "text-[14px]",
         )}
       >

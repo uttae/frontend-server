@@ -18,10 +18,10 @@ export function SearchHereFloatingButton({
       <button
         type="button"
         onClick={onPress}
-        className="pointer-events-auto inline-flex cursor-pointer items-center gap-1 rounded-full border-3 border-brand-red bg-white px-3 py-2 text-[14px] font-semibold text-dark-gray shadow-md transition hover:bg-gray-50"
+        className="pointer-events-auto inline-flex cursor-pointer items-center gap-1 rounded-full border-3 border-primary bg-white px-3 py-2 text-[14px] font-semibold text-dark-gray shadow-md transition hover:bg-gray-50"
       >
         <RefreshCw
-          className="h-4 w-4 shrink-0 text-brand-red"
+          className="h-4 w-4 shrink-0 text-primary"
           strokeWidth={2.2}
           aria-hidden
         />

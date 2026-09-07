@@ -172,7 +172,7 @@ export function PlanItemTimeEditor({
         className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white shadow-xl"
       >
         <div className="flex items-center gap-2 px-6 pb-3 pt-6">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/10 text-brand-green">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
             <Clock className="h-5 w-5" aria-hidden />
           </span>
           <h2
@@ -187,7 +187,7 @@ export function PlanItemTimeEditor({
               aria-label="시간 초기화"
               onClick={handleReset}
               disabled={isPending}
-              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition hover:bg-brand-red/10 hover:text-brand-red disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Trash2 className="h-4 w-4" aria-hidden />
             </button>
@@ -250,7 +250,7 @@ export function PlanItemTimeEditor({
               <span
                 className={cn(
                   "tabular-nums",
-                  durationOverLimit ? "text-brand-red" : "text-dark-gray/85",
+                  durationOverLimit ? "text-primary" : "text-dark-gray/85",
                 )}
               >
                 체류 시간 {Math.floor(durationPreview / 60)}시간{" "}
@@ -275,7 +275,7 @@ export function PlanItemTimeEditor({
               type="button"
               onClick={() => void handleSave()}
               disabled={!canSave}
-              className="h-10 shrink-0 cursor-pointer rounded-lg bg-brand-green px-4 text-sm font-medium text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isPending ? "저장 중…" : "저장"}
             </button>

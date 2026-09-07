@@ -49,7 +49,7 @@ function Avatar({
     );
   }
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-red/10 text-[17px] font-semibold text-brand-red">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[17px] font-semibold text-primary">
       {initial}
     </div>
   );
@@ -105,7 +105,7 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
           <span
             className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold leading-none ${
               member.role === "HOST"
-                ? "bg-brand-red/10 text-brand-red"
+                ? "bg-primary/10 text-primary"
                 : "bg-gray-100 text-dark-gray"
             }`}
           >
@@ -181,7 +181,7 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
                   onKick(member.id);
                   setOpen(false);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[14px] font-medium text-brand-red transition-colors hover:bg-brand-red/5"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[14px] font-medium text-primary transition-colors hover:bg-primary/5"
               >
                 <svg
                   width="12"

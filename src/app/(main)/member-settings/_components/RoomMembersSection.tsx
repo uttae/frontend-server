@@ -133,8 +133,8 @@ export function RoomMembersSection() {
                 pageToolbarButtonCompactTextClass,
                 pageToolbarButtonCompactPaddingClass,
                 showInvitePanel
-                  ? "bg-white text-brand-red ring-2 ring-brand-red ring-offset-1 hover:bg-gray-50"
-                  : "bg-brand-red text-white",
+                  ? "bg-white text-primary ring-2 ring-primary ring-offset-1 hover:bg-gray-50"
+                  : "bg-primary text-white",
               )}
             >
               <Plus
@@ -167,7 +167,7 @@ export function RoomMembersSection() {
       {/* 로딩 */}
       {isMembersLoading && (
         <div className="flex items-center justify-center py-8">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-border border-t-brand-red" />
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
         </div>
       )}
 
@@ -222,7 +222,7 @@ export function RoomMembersSection() {
                 {transferTargetId === member.userId && (
                   <div
                     className={cn(
-                      "border-b border-gray-border bg-brand-red/5 py-3",
+                      "border-b border-gray-border bg-primary/5 py-3",
                       MAIN_CARD_INNER_PADDING_X_CLASS,
                     )}
                   >
@@ -249,7 +249,7 @@ export function RoomMembersSection() {
                           );
                         }}
                         disabled={isTransferring}
-                        className="flex-1 cursor-pointer rounded-lg bg-brand-red py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 cursor-pointer rounded-lg bg-primary py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {isTransferring ? "처리 중…" : "위임"}
                       </button>
@@ -261,7 +261,7 @@ export function RoomMembersSection() {
                 {kickTargetId === member.userId && (
                   <div
                     className={cn(
-                      "border-b border-gray-border bg-brand-red/5 py-3",
+                      "border-b border-gray-border bg-primary/5 py-3",
                       MAIN_CARD_INNER_PADDING_X_CLASS,
                     )}
                   >
@@ -285,7 +285,7 @@ export function RoomMembersSection() {
                           );
                         }}
                         disabled={isKicking}
-                        className="flex-1 cursor-pointer rounded-lg bg-brand-red py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 cursor-pointer rounded-lg bg-primary py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {isKicking ? "처리 중…" : "추방"}
                       </button>
@@ -350,14 +350,14 @@ export function RoomMembersSection() {
             )}
           </SettingsActionButtonRow>
         ) : (
-          <div className="rounded-xl border border-brand-red/30 bg-brand-red/5 p-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
             <p className="mb-3 text-[17px] font-medium text-gray-800">
               정말 방에서 나가시겠어요?
             </p>
             <p className="mb-4 text-[14px] leading-5 text-dark-gray">
               방을 나가면 현재 여행 플랜에 접근할 수 없게 됩니다.
               {isHost && hostCannotLeaveAlone && (
-                <span className="mt-1 block font-medium text-brand-red">
+                <span className="mt-1 block font-medium text-primary">
                   다른 멤버가 없으면 나갈 수 없습니다. 여행 삭제를 이용해 주세요.
                 </span>
               )}

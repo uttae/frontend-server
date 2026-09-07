@@ -186,7 +186,7 @@ export function BookmarkPlaceRow({
           }}
           disabled={busy}
           className={`cursor-pointer rounded-lg p-1 text-dark-gray transition-colors hover:bg-bubble-gray hover:text-neutral-900 active:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 ${
-            menuOpen ? "bg-brand-red/10 text-brand-red" : ""
+            menuOpen ? "bg-primary/10 text-primary" : ""
           }`}
           aria-label="장소 메뉴"
           aria-expanded={menuOpen}
@@ -224,7 +224,7 @@ export function BookmarkPlaceRow({
                   <button
                     type="button"
                     role="menuitem"
-                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-[17px] font-medium text-brand-red transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-[17px] font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={busy}
                     onClick={handleDelete}
                   >

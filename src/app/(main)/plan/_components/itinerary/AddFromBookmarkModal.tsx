@@ -227,7 +227,7 @@ export function AddFromBookmarkModal({
           </p>
         ) : categoriesError ? (
           <div className="space-y-2 px-5 py-6 text-center">
-            <p className="text-[17px] text-brand-red">
+            <p className="text-[17px] text-primary">
               {categoriesErr instanceof Error
                 ? categoriesErr.message
                 : "북마크를 불러오지 못했습니다."}
@@ -262,7 +262,7 @@ export function AddFromBookmarkModal({
                       className={cn(
                         "flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-left text-[14px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                         selected
-                          ? "border-brand-green bg-brand-green/10 text-gray-900"
+                          ? "border-primary bg-primary/10 text-gray-900"
                           : "border-gray-border bg-white text-dark-gray hover:bg-gray-50",
                       )}
                     >
@@ -284,7 +284,7 @@ export function AddFromBookmarkModal({
                 </p>
               ) : bookmarksError ? (
                 <div className="space-y-2 px-5 py-6 text-center">
-                  <p className="text-[17px] text-brand-red">
+                  <p className="text-[17px] text-primary">
                     {bookmarksErr instanceof Error
                       ? bookmarksErr.message
                       : "장소 목록을 불러오지 못했습니다."}

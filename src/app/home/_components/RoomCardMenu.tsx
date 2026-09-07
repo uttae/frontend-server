@@ -32,9 +32,9 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
         }}
         className={cn(
           "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-2 bg-white/90 transition [&_svg]:transition",
-          "hover:border-brand-red hover:bg-brand-red [&_svg]:text-dark-gray hover:[&_svg]:text-white",
+          "hover:border-primary hover:bg-primary [&_svg]:text-dark-gray hover:[&_svg]:text-white",
           open
-            ? "border-brand-red bg-brand-red [&_svg]:text-white"
+            ? "border-primary bg-primary [&_svg]:text-white"
             : "border-gray-border",
         )}
         aria-label="더보기"
@@ -53,7 +53,7 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
                 setOpen(false);
                 onDelete(room);
               }}
-              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[17px] text-brand-red transition hover:bg-bubble-gray"
+              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[17px] text-primary transition hover:bg-bubble-gray"
             >
               <Trash2 size={13} />
               삭제하기

@@ -178,7 +178,7 @@ export function BookmarkFoldersView() {
       onClick={openCreate}
       disabled={isCreating || isUpdating}
       className={cn(
-        "flex w-fit shrink-0 cursor-pointer items-center rounded-full bg-brand-red text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 mobile:hidden",
+        "flex w-fit shrink-0 cursor-pointer items-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 mobile:hidden",
         pageToolbarButtonCompactGapClass,
         pageToolbarButtonCompactTextClass,
         pageToolbarButtonCompactPaddingClass,
@@ -212,7 +212,7 @@ export function BookmarkFoldersView() {
       <div className="space-y-2.5">
         <MainPageHeader title="북마크" />
         <div className="space-y-3 py-10 text-center">
-          <p className="text-[17px] text-brand-red">
+          <p className="text-[17px] text-primary">
             {error instanceof Error
               ? error.message
               : "목록을 불러오지 못했습니다."}
@@ -255,7 +255,7 @@ export function BookmarkFoldersView() {
                 >
                   <Link
                     href={bookmarkFolderPath(folder.id)}
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg outline-none ring-brand-red focus-visible:ring-2"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg outline-none ring-primary focus-visible:ring-2"
                   >
                     <FolderRibbonIcon color={folder.color} />
                     <div className="min-w-0 flex-1">
@@ -303,7 +303,7 @@ export function BookmarkFoldersView() {
                         <button
                           type="button"
                           role="menuitem"
-                          className="block w-full cursor-pointer px-4 py-2 text-left text-[17px] text-brand-red hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="block w-full cursor-pointer px-4 py-2 text-left text-[17px] text-status-negative hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           disabled={
                             isRowDeleting(folder.id) || isRowUpdating(folder.id)
                           }

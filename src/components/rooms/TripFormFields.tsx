@@ -123,12 +123,12 @@ export function TripFormFields({
           />
         </div>
         {!readOnly && startBeforeMin && (
-          <p className="mt-2 text-[14px] text-brand-red">
+          <p className="mt-2 text-[14px] text-primary">
             {TRIP_START_BEFORE_MIN_MESSAGE}
           </p>
         )}
         {!readOnly && !startBeforeMin && dateRangeInvalid && (
-          <p className="mt-2 text-[14px] text-brand-red">
+          <p className="mt-2 text-[14px] text-primary">
             {TRIP_DATE_RANGE_INVALID_MESSAGE}
           </p>
         )}
@@ -136,7 +136,7 @@ export function TripFormFields({
           !startBeforeMin &&
           !dateRangeInvalid &&
           scheduleDayLimitExceeded && (
-          <p className="mt-2 text-[14px] text-brand-red">
+          <p className="mt-2 text-[14px] text-primary">
             {TRIP_SCHEDULE_DAY_LIMIT_MESSAGE}
           </p>
         )}

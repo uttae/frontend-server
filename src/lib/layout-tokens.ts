@@ -32,7 +32,7 @@ export const PLAN_PLACE_CARD_TW = {
   article:
     "relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3.5 rounded-xl border border-gray-border bg-white p-3.5 shadow-sm mobile:gap-x-2.5 mobile:p-2.5",
   thumbnail:
-    "relative h-[6rem] w-[6rem] shrink-0 overflow-hidden rounded-lg bg-brand-green/30 mobile:h-[4.5rem] mobile:w-[4.5rem]",
+    "relative h-[6rem] w-[6rem] shrink-0 overflow-hidden rounded-lg bg-fill-strong mobile:h-[4.5rem] mobile:w-[4.5rem]",
   contentColumn:
     "flex min-h-[6rem] min-w-0 flex-col justify-start gap-2 mobile:min-h-[4.5rem]",
   titleRow: "flex min-w-0 items-start gap-2.5",
@@ -67,11 +67,11 @@ export const PLAN_PLACE_CARD_TW = {
     "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-2",
   timeField: "flex min-w-0 w-full flex-col gap-1",
   timeInputCompact:
-    "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-sm shadow-none transition focus:border-brand-green focus:outline-none focus:ring-1 focus:ring-brand-green/30",
+    "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-sm shadow-none transition focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary/30",
   timeSaveButtonCompact:
     "h-8 shrink-0 rounded-md px-3 text-xs font-medium",
   memoTextarea:
-    "min-h-[6rem] w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-900 shadow-none transition placeholder:text-dark-gray/50 focus:border-brand-green focus:outline-none focus:ring-1 focus:ring-brand-green/30",
+    "min-h-[6rem] w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-900 shadow-none transition placeholder:text-dark-gray/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30",
 } as const;
 
 /** 플랜 구간(경로) 카드 가로 고정폭(px). 좌측 패널 max(s2) 기준 본문 영역 근사 */

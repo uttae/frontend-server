@@ -467,8 +467,8 @@ export default function Map() {
                   selectedPlace.fromBookmark
                     ? selectedPlace.bookmarkCategoryColor?.trim()
                       ? ""
-                      : "text-brand-green"
-                    : "text-brand-red"
+                      : "text-secondary"
+                    : "text-primary"
                 }`}
                 style={
                   selectedPlace.fromBookmark &&
@@ -513,7 +513,7 @@ export default function Map() {
               title="북마크 장소 표시"
               className={`pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-md ring-2 ring-black/5 transition ${
                 showBookmarkPins
-                  ? "bg-brand-red text-white"
+                  ? "bg-primary text-white"
                   : "bg-white text-dark-gray hover:bg-gray-50"
               }`}
             >

@@ -39,7 +39,7 @@ export function HomeTab({
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-[13px] font-medium text-brand-green underline-offset-2 hover:underline"
+                  className="mt-1 inline-flex items-center gap-1 text-[13px] font-medium text-primary-strong underline-offset-2 hover:underline"
                 >
                   Google Maps에서 보기
                   <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -55,7 +55,7 @@ export function HomeTab({
               {isOpen != null && (
                 <span
                   className={`text-[13px] font-medium ${
-                    isOpen ? "text-brand-green" : "text-[#FF6467]"
+                    isOpen ? "text-primary-strong" : "text-[#FF6467]"
                   }`}
                 >
                   {isOpen ? "영업 중" : "영업 종료"}

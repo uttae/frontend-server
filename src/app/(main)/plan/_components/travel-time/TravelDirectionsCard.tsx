@@ -109,7 +109,7 @@ export function TravelDirectionsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Google Maps에서 길찾기"
-            className="inline-flex h-10 shrink-0 items-center gap-1 px-2 text-[12px] font-medium text-brand-green underline-offset-2 hover:underline"
+            className="inline-flex h-10 shrink-0 items-center gap-1 px-2 text-[12px] font-medium text-primary-strong underline-offset-2 hover:underline"
           >
             Google 길찾기
             <ExternalLink className="h-3 w-3" aria-hidden />
@@ -120,7 +120,7 @@ export function TravelDirectionsCard({
           <span
             role="status"
             title={renderWarning}
-            className="flex h-10 min-w-0 flex-1 items-center overflow-hidden px-2 text-[13px] font-medium text-brand-red"
+            className="flex h-10 min-w-0 flex-1 items-center overflow-hidden px-2 text-[13px] font-medium text-primary"
           >
             <span className="truncate">{renderWarning}</span>
           </span>
@@ -161,7 +161,7 @@ export function TravelDirectionsCard({
                 selected &&
                   (readOnly ?
                     "bg-gray-50 ring-1 ring-gray-border/40"
-                  : "bg-brand-red/10 ring-1 ring-brand-red/25"),
+                  : "bg-primary/10 ring-1 ring-primary/25"),
               );
 
               if (readOnly) {
@@ -201,7 +201,7 @@ export function TravelDirectionsCard({
                       {scheduleTravelModeLabel(value)}
                     </span>
                     {selected ? (
-                      <span className="ml-auto shrink-0 text-xs font-semibold uppercase text-brand-red">
+                      <span className="ml-auto shrink-0 text-xs font-semibold uppercase text-primary">
                         선택됨
                       </span>
                     ) : (

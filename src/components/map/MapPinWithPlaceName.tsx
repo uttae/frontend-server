@@ -11,7 +11,7 @@ import {
 export function MapPinWithPlaceName({ name }: { name: string }) {
   return (
     <div className="flex cursor-pointer flex-col items-center">
-      <span className="block drop-shadow-md text-brand-red">
+      <span className="block drop-shadow-md text-primary">
         <MapPinIcon
           size={MAP_PIN_DISPLAY_SIZE_PX}
           {...mapPinBodyBorderProps}

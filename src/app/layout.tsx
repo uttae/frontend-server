@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AppRootProviders } from "@/providers/root-providers";
-import { brandAssets } from "@/lib/public-assets";
+import { faviconAssets } from "@/lib/public-assets";
 import { PUBLIC_SITE } from "@/lib/public-site";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-app-inter",
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_SITE.origin),
@@ -16,15 +10,14 @@ export const metadata: Metadata = {
   description: "실시간 협업 여행 플래너",
   icons: {
     icon: [
-      {
-        url: brandAssets.favicon,
-        type: "image/svg+xml",
-        sizes: "1254x1254",
-      },
+      { url: faviconAssets.icon32, sizes: "32x32", type: "image/png" },
+      { url: faviconAssets.icon16, sizes: "16x16", type: "image/png" },
+      { url: faviconAssets.ico },
     ],
-    apple: brandAssets.favicon,
-    shortcut: brandAssets.favicon,
+    apple: faviconAssets.appleTouchIcon,
+    shortcut: faviconAssets.ico,
   },
+  manifest: faviconAssets.manifest,
 };
 
 export default function RootLayout({
@@ -33,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko" className={`${inter.variable} h-full`}>
+    <html lang="ko" className="h-full">
       <head>
         <script
           {...{

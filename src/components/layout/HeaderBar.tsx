@@ -44,7 +44,7 @@ const HeaderBar = () => {
     "";
 
   return (
-    <header className="border-b-2 border-brand-red">
+    <header className="border-b-2 border-primary">
       <div className="flex items-center">
         <div className="relative flex w-13 shrink-0 flex-col items-center justify-center py-1.5">
           <Link
@@ -83,7 +83,7 @@ const HeaderBar = () => {
               </span>
             )}
           </div>
-          <BrandLogo alt="logo" />
+          <BrandLogo variant="combination" size="S" alt="로고" />
         </div>
       </div>
     </header>

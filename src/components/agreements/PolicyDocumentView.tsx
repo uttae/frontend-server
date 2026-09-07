@@ -24,8 +24,8 @@ export function PolicyDocumentView({ agreementType }: Props) {
 
   if (isError) {
     return (
-      <div className="mx-auto w-full max-w-3xl rounded-3xl border border-brand-red/35 bg-brand-red/[0.06] px-6 py-8 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)]">
-        <p className="text-[17px] font-medium text-brand-red">
+      <div className="mx-auto w-full max-w-3xl rounded-3xl border border-primary/35 bg-primary/[0.06] px-6 py-8 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)]">
+        <p className="text-[17px] font-medium text-primary">
           문서를 불러오지 못했습니다
         </p>
         <p className="mt-2 text-[17px] text-muted-brown">
@@ -36,7 +36,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
         <button
           type="button"
           onClick={() => void refetch()}
-          className="mt-4 text-[17px] font-medium text-brand-red underline-offset-2 hover:underline"
+          className="mt-4 text-[17px] font-medium text-primary underline-offset-2 hover:underline"
         >
           다시 시도
         </button>

@@ -10,10 +10,7 @@ import { checkClientAuthenticated, setPendingInviteCode } from "@/lib/auth";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { useJoinRoom } from "@/hooks/useRooms";
 import { getRoomDetail } from "@/lib/api/rooms";
-import {
-  buildJoinPlanAnalyticsParams,
-  planPathForRoom,
-} from "@/lib/join-room-workflow";
+import { buildJoinPlanAnalyticsParams, planPathForRoom } from "@/lib/join-room-workflow";
 import { roomDetailQueryKey } from "@/lib/query-keys";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -21,9 +18,7 @@ export default function JoinPage() {
   const params = useParams();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const inviteCode = Array.isArray(params.inviteCode)
-    ? params.inviteCode[0]
-    : params.inviteCode;
+  const inviteCode = Array.isArray(params.inviteCode) ? params.inviteCode[0] : params.inviteCode;
 
   const [error, setError] = useState<string | null>(null);
   const lastTrackedInviteCodeRef = useRef<string | null>(null);
@@ -66,19 +61,17 @@ export default function JoinPage() {
             }
             trackAnalyticsEvent(
               AnalyticsEvents.joinPlan,
-              buildJoinPlanAnalyticsParams(data.role, memberCount),
+              buildJoinPlanAnalyticsParams(data.role, memberCount)
             );
             router.replace(planPathForRoom(data.id));
             return;
           }
           router.replace(
-            `/waiting?roomId=${encodeURIComponent(data.id)}&roomTitle=${encodeURIComponent(data.roomTitle)}`,
+            `/waiting?roomId=${encodeURIComponent(data.id)}&roomTitle=${encodeURIComponent(data.roomTitle)}`
           );
         },
         onError: (err) => {
-          setError(
-            err instanceof Error ? err.message : "입장 요청에 실패했습니다.",
-          );
+          setError(err instanceof Error ? err.message : "입장 요청에 실패했습니다.");
         },
       });
     })();
@@ -91,9 +84,9 @@ export default function JoinPage() {
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4">
-        <BrandLogo alt="" />
+        <BrandLogo variant="combination" size="M" alt="우때 로고" />
         <div className="w-full max-w-sm rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-          <p className="mb-1 font-semibold text-brand-red">입장 요청 실패</p>
+          <p className="mb-1 font-semibold text-primary">입장 요청 실패</p>
           <p className="text-[17px] text-dark-gray">{error}</p>
         </div>
         <button
@@ -108,8 +101,8 @@ export default function JoinPage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4">
-      <BrandLogo alt="" />
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-brand-red" />
+      <BrandLogo variant="combination" size="M" alt="우때 로고" />
+      <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
       <p className="text-[17px] text-dark-gray">입장 요청 중…</p>
     </div>
   );

@@ -32,7 +32,7 @@ export function PlanTravelSegment({
         <TravelRouteRail
           layout={isActive ? "fillHeight" : "row"}
           className={isActive ? "self-stretch" : undefined}
-          arrowClassName="text-brand-red"
+          arrowClassName="text-primary"
           showAddOnHover={!addDisabled && !isActive}
           isAddVisible={isActive}
           onAddClick={onActivate}
