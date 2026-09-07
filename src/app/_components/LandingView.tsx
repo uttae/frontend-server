@@ -2,8 +2,8 @@ import { LandingCollaborationSection } from "@/app/_components/LandingCollaborat
 import { LandingCompanySection } from "@/app/_components/LandingCompanySection";
 import { LandingFeatureStory } from "@/app/_components/LandingFeatureStory";
 import { LandingFinalCta } from "@/app/_components/LandingFinalCta";
+import { HeroSection } from "@/app/_components/HeroSection";
 import { LandingHeader } from "@/app/_components/LandingHeader";
-import { LandingHero } from "@/app/_components/LandingHero";
 import { LandingHowItWorks } from "@/app/_components/LandingHowItWorks";
 import { LandingMotion } from "@/app/_components/LandingMotion";
 import { LandingTeamSection } from "@/app/_components/LandingTeamSection";
@@ -16,7 +16,7 @@ export function LandingView() {
     <div className="relative flex min-h-screen flex-col bg-white font-sans">
       <LandingHeader />
       <main className="relative z-10 flex flex-1 flex-col antialiased">
-        <LandingHero />
+        <HeroSection />
         <LandingValueStrip />
         <div id="features" className="scroll-mt-24">
           {LANDING_FEATURE_STORIES.map((story, index) => (

@@ -22,11 +22,11 @@ describe("LandingView", () => {
   it("renders the approved story and team in server HTML", () => {
     const html = renderToStaticMarkup(<LandingView />);
 
-    expect(html).toContain("흩어진 여행 계획을");
+    expect(html).toContain("올인원 해외여행");
     expect(html).toContain('id="features"');
     expect(html).toContain('id="how-it-works"');
-    expect(html).toContain("기능 살펴보기");
-    expect(html).toContain("우때 실제 서비스 화면");
+    expect(html).toContain("가입 없이 시작하기");
+    expect(html).toContain("우때 여행 일정·지도 화면");
     expect(html).not.toContain('href="/product"');
     expect(html).toContain('id="company"');
     expect(html).toContain('id="team"');

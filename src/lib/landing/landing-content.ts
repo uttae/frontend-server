@@ -54,7 +54,7 @@ export type LandingTeamMember = {
 };
 
 export const LANDING_CONTAINER_CLASS =
-  "mx-auto w-full max-w-[1180px] px-5 landing-sm:px-6";
+  "mx-auto w-full max-w-[1440px] px-30";
 export const LANDING_SECTION_PY = "py-20 landing-lg:py-28";
 
 export const LANDING_VALUES: readonly LandingValue[] = [
