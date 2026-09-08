@@ -20,10 +20,10 @@ export function SolutionSection() {
         </h2>
       </div>
 
-      <div className="relative mt-auto w-full">
+      <div className="relative w-full">
         {/* z-0: 타원 그림자 (노트북 뒤) — 또렷한 타원 (blur 없음) */}
-        <div className="absolute bottom-[90px] left-1/2 z-0 h-[142px] w-[1180px] -translate-x-1/2 rounded-[50%] bg-[var(--blue-200)]/70" />
-        <div className="absolute bottom-[130px] left-1/2 z-0 h-[81px] w-[997px] -translate-x-1/2 rounded-[50%] bg-[var(--blue-300)]/70" />
+        <div className="absolute bottom-[-80px] left-1/2 z-0 h-[142px] w-[1180px] -translate-x-1/2 rounded-[50%] bg-[var(--blue-200)]/70" />
+        <div className="absolute bottom-[-40px] left-1/2 z-0 h-[81px] w-[997px] -translate-x-1/2 rounded-[50%] bg-[var(--blue-300)]/70" />
 
         {/* z-10: 노트북 목업 */}
         <Image
