@@ -12,6 +12,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { LANDING_FEATURE_STORIES } from "@/lib/landing/landing-content";
 import { ProblemSection } from "./ProblemSection";
 import { SolutionSection } from "./SolutionSection";
+import { StepsSection } from "./StepsSection";
 
 export function LandingView() {
   return (
@@ -21,6 +22,7 @@ export function LandingView() {
         <HeroSection />
         <ProblemSection />
         <SolutionSection />
+        <StepsSection />
         <LandingValueStrip />
         <div id="features" className="scroll-mt-24">
           {LANDING_FEATURE_STORIES.map((story, index) => (
