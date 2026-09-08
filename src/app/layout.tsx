@@ -39,11 +39,11 @@ export default function RootLayout({
           }}
           dangerouslySetInnerHTML={{
             __html: `(function () {
-  var script = document.createElement("script");
-  script.async = 1;
-  script.src = 'https://emrldtp.com/NTU0ODU1.js?t=554855';
-  document.head.appendChild(script);
-})();`,
+                      var script = document.createElement("script");
+                      script.async = 1;
+                      script.src = 'https://emrldtp.com/NTU0ODU1.js?t=554855';
+                      document.head.appendChild(script);
+                    })();`,
           }}
         />
       </head>

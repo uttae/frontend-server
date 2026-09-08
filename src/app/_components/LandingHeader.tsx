@@ -7,7 +7,6 @@ import { LANDING_CONTAINER_CLASS } from "@/lib/landing/landing-content";
 const navItems = [
   { href: "/#features", label: "기능" },
   { href: "/#how-it-works", label: "사용 방법" },
-  { href: "/#team", label: "팀" },
 ] as const;
 
 export function LandingHeader() {
