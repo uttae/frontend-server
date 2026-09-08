@@ -1,21 +1,13 @@
-import { LandingCollaborationSection } from "@/app/_components/LandingCollaborationSection";
-import { LandingCompanySection } from "@/app/_components/LandingCompanySection";
-import { LandingFeatureStory } from "@/app/_components/LandingFeatureStory";
-import { LandingFinalCta } from "@/app/_components/LandingFinalCta";
+import { CardsSection } from "@/app/_components/CardsSection";
+import { CtaSection } from "@/app/_components/CtaSection";
+import { FooterSection } from "@/app/_components/FooterSection";
 import { HeroSection } from "@/app/_components/HeroSection";
+import { KeyPointSection } from "@/app/_components/KeyPointSection";
 import { LandingHeader } from "@/app/_components/LandingHeader";
-import { LandingHowItWorks } from "@/app/_components/LandingHowItWorks";
 import { LandingMotion } from "@/app/_components/LandingMotion";
-import { LandingTeamSection } from "@/app/_components/LandingTeamSection";
-import { LandingValueStrip } from "@/app/_components/LandingValueStrip";
-import { LANDING_FEATURE_STORIES } from "@/lib/landing/landing-content";
-import { CardsSection } from "./CardsSection";
-import { CtaSection } from "./CtaSection";
-import { FooterSection } from "./FooterSection";
-import { KeyPointSection } from "./KeyPointSection";
-import { ProblemSection } from "./ProblemSection";
-import { SolutionSection } from "./SolutionSection";
-import { StepsSection } from "./StepsSection";
+import { ProblemSection } from "@/app/_components/ProblemSection";
+import { SolutionSection } from "@/app/_components/SolutionSection";
+import { StepsSection } from "@/app/_components/StepsSection";
 
 export function LandingView() {
   return (
@@ -23,36 +15,23 @@ export function LandingView() {
       <LandingHeader />
       <main className="relative z-10 flex flex-1 flex-col antialiased">
         <HeroSection />
-        <ProblemSection />
+        <LandingMotion>
+          <ProblemSection />
+        </LandingMotion>
         <SolutionSection />
-        <StepsSection />
-        <KeyPointSection />
-        <CardsSection />
-        <CtaSection />
+        <LandingMotion>
+          <StepsSection />
+        </LandingMotion>
+        <LandingMotion>
+          <KeyPointSection />
+        </LandingMotion>
+        <LandingMotion>
+          <CardsSection />
+        </LandingMotion>
+        <LandingMotion>
+          <CtaSection />
+        </LandingMotion>
         <FooterSection />
-        <LandingValueStrip />
-        <div id="features" className="scroll-mt-24">
-          {LANDING_FEATURE_STORIES.map((story, index) => (
-            <LandingMotion key={story.id}>
-              <LandingFeatureStory story={story} tone={index % 2 === 0 ? "white" : "tint"} />
-            </LandingMotion>
-          ))}
-        </div>
-        <LandingMotion>
-          <LandingCollaborationSection />
-        </LandingMotion>
-        <LandingMotion>
-          <LandingHowItWorks />
-        </LandingMotion>
-        <LandingMotion>
-          <LandingCompanySection />
-        </LandingMotion>
-        <LandingMotion>
-          <LandingTeamSection />
-        </LandingMotion>
-        <LandingMotion>
-          <LandingFinalCta />
-        </LandingMotion>
       </main>
     </div>
   );

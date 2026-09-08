@@ -19,7 +19,7 @@ import { landingAssetDir } from "@/lib/public-assets";
  */
 export function StepsSection() {
   return (
-    <section className="relative flex flex-col overflow-hidden py-30 h-[3066px] bg-fill-subtle">
+    <section id="features" className="relative flex flex-col overflow-hidden py-30 h-[3066px] bg-fill-subtle">
       {/* z-0: 배경 경로 (점선 + 원 노드) */}
       <Image
         src={`${landingAssetDir}/track.svg`}

@@ -9,8 +9,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest run",
-    "assets:landing-domain": "node scripts/update-landing-screenshot-domain.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@amplitude/unified": "^1.1.28",

@@ -14,7 +14,7 @@ type LandingMotionProps = {
 // motion-reduce:transition-none은 방어층: matchMedia 가드는 마운트 시 1회만 평가되므로
 // 이후 OS 설정이 reduce로 바뀐 경우에도 전환 애니메이션을 차단한다.
 const TRANSITION_CLASSES =
-  "transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none";
+  "transition-[opacity,transform] duration-800 ease-out motion-reduce:transition-none";
 
 export function LandingMotion({ children, className }: LandingMotionProps) {
   const ref = useRef<HTMLDivElement>(null);
