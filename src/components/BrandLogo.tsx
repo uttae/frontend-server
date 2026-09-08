@@ -1,5 +1,5 @@
 type BrandLogoProps = {
-  variant: "symbol" | "wordmark" | "combination";
+  variant: "symbol" | "wordmark" | "combination" | "glyph";
   size: "S" | "M" | "L";
   alt?: string;
 };
@@ -24,9 +24,26 @@ export function BrandLogo({
       L: { src: "/brand/Wordmark_L.svg", width: 186, height: 90 },
     },
     combination: {
-      S: { src: "/brand/Combination_Mark_S_DefaultBlue.svg", width: 76, height: 23 },
-      M: { src: "/brand/Combination_Mark_M_DefaultBlue.svg", width: 147, height: 45 },
-      L: { src: "/brand/Combination_Mark_L_DefaultBlue.svg", width: 290, height: 90 },
+      S: {
+        src: "/brand/Combination_Mark_S_DefaultBlue.svg",
+        width: 76,
+        height: 23,
+      },
+      M: {
+        src: "/brand/Combination_Mark_M_DefaultBlue.svg",
+        width: 147,
+        height: 45,
+      },
+      L: {
+        src: "/brand/Combination_Mark_L_DefaultBlue.svg",
+        width: 290,
+        height: 90,
+      },
+    },
+    glyph: {
+      S: { src: "/brand/Glyph_S.svg", width: 23, height: 23 },
+      M: { src: "/brand/Glyph_M.svg", width: 45, height: 45 },
+      L: { src: "/brand/Glyph_L.svg", width: 90, height: 90 },
     },
   };
 
