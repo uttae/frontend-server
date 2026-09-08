@@ -11,6 +11,7 @@ import { LandingValueStrip } from "@/app/_components/LandingValueStrip";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { LANDING_FEATURE_STORIES } from "@/lib/landing/landing-content";
 import { CardsSection } from "./CardsSection";
+import { CtaSection } from "./CtaSection";
 import { KeyPointSection } from "./KeyPointSection";
 import { ProblemSection } from "./ProblemSection";
 import { SolutionSection } from "./SolutionSection";
@@ -27,6 +28,7 @@ export function LandingView() {
         <StepsSection />
         <KeyPointSection />
         <CardsSection />
+        <CtaSection />
         <LandingValueStrip />
         <div id="features" className="scroll-mt-24">
           {LANDING_FEATURE_STORIES.map((story, index) => (
