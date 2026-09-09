@@ -1,19 +1,21 @@
 import { LandingActionLink } from "@/app/_components/LandingActionLink";
-import { LANDING_CONTAINER_CLASS, LANDING_SECTION_PY } from "@/lib/landing/landing-content";
-import { landingTypography } from "@/lib/landing/landing-typography";
+import { LandingArtwork } from "@/app/_components/LandingArtwork";
+import styles from "./landing.module.css";
 
 export function LandingFinalCta() {
-  return (
-    <section className={`border-t border-gray-border bg-white ${LANDING_SECTION_PY}`}>
-      <div className={`${LANDING_CONTAINER_CLASS} text-center`}>
-        <h2 className={landingTypography.ctaTitle}>지금, 함께 여행을 계획해보세요.</h2>
-        <p className={`${landingTypography.sectionBody} mx-auto mt-4 max-w-2xl`}>
-          로그인하고 여행 방을 만들면 친구를 초대해 바로 계획을 시작할 수 있어요.
-        </p>
-        <LandingActionLink href="/login" className="mt-7 px-7 py-3">
-          무료로 시작하기
+  return <section className={styles.finalCta}>
+    <div className={styles.finalInner}>
+      <LandingArtwork name="cta-background.svg" mobileName="mobile-cta-background.svg" width={1440} height={600} className={styles.ctaBackground} />
+      <div className={styles.finalCopy}>
+        <LandingArtwork name="cta-symbol.svg" mobileName="mobile-cta-symbol.svg" width={40} height={40} className={styles.ctaSymbol} />
+        <h2><span>우때, </span>우리 함께할 때</h2>
+        <p className={styles.desktopOnly}>혼자여도, 함께여도, 여행 준비가 더 편해지는 순간</p>
+        <p className={styles.mobileOnly}>혼자여도, 함께여도<br />여행 준비가 더 편해지는 순간</p>
+        <LandingActionLink href="/login" className={`${styles.action} ${styles.finalAction}`}>
+          가입 없이 시작하기
+          <LandingArtwork name="chevron-white.svg" mobileName="mobile-chevron-white.svg" width={28} height={28} />
         </LandingActionLink>
       </div>
-    </section>
-  );
+    </div>
+  </section>;
 }

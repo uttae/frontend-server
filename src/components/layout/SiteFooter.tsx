@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -21,7 +22,7 @@ function FooterDot() {
   );
 }
 
-export function SiteFooter({ className }: { className?: string }) {
+export function SiteFooter({ className, logo }: { className?: string; logo?: ReactNode }) {
   const year = new Date().getFullYear();
 
   return (
@@ -30,6 +31,7 @@ export function SiteFooter({ className }: { className?: string }) {
     >
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
         <div className="flex flex-col items-center">
+          {logo ? <Link href="/" aria-label="우때 홈">{logo}</Link> : null}
           <nav
             aria-label="정책 문서"
             className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-sm"
