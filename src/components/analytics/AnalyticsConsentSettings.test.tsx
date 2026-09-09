@@ -32,6 +32,8 @@ describe("AnalyticsConsentSettingsView", () => {
     const html = renderToStaticMarkup(
       <AnalyticsConsentSettingsView
         consent={consent}
+        draft={consent}
+        onSave={vi.fn()}
         message=""
         onGrant={vi.fn()}
         onDeny={vi.fn()}
@@ -51,6 +53,8 @@ describe("AnalyticsConsentSettingsView", () => {
     const html = renderToStaticMarkup(
       <AnalyticsConsentSettingsView
         consent="denied"
+        draft="denied"
+        onSave={vi.fn()}
         message={message}
         onGrant={vi.fn()}
         onDeny={vi.fn()}

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 
 import {
   SettingsActionButton,
@@ -21,6 +21,8 @@ import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 type AnalyticsConsentSettingsViewProps = {
   consent: AnalyticsConsentState;
   message: string;
+  draft: AnalyticsConsentState;
+  onSave: () => void;
   onDeny: () => void;
   onGrant: () => void;
 };
@@ -48,9 +50,11 @@ export function AnalyticsConsentSettingsView({
   message,
   onDeny,
   onGrant,
+  draft,
+  onSave,
 }: AnalyticsConsentSettingsViewProps) {
   return (
-    <section className="mx-auto w-full max-w-2xl rounded-3xl border border-gray-border bg-white p-6 shadow-sm sm:p-8">
+    <section>
       <p className="text-[15px] font-medium text-dark-gray">현재 상태</p>
       <p className="mt-1 text-[22px] font-semibold text-neutral-900">
         {consentLabels[consent]}
@@ -73,19 +77,35 @@ export function AnalyticsConsentSettingsView({
       <SettingsActionButtonRow className="mt-6">
         <SettingsActionButton
           variant="secondary"
-          aria-pressed={consent === "denied"}
+          className="aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-pressed={draft === "denied"}
           onClick={onDeny}
         >
           거부
         </SettingsActionButton>
         <SettingsActionButton
           variant="primary"
-          aria-pressed={consent === "granted"}
+          className="aria-pressed:ring-2 aria-pressed:ring-primary aria-pressed:ring-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          aria-pressed={draft === "granted"}
           onClick={onGrant}
         >
           허용
         </SettingsActionButton>
       </SettingsActionButtonRow>
+      <p className="mt-4 text-[15px] font-medium text-dark-gray">
+        저장할 선택: {consentLabels[draft]}
+      </p>
+      <p className="mt-2 text-sm text-dark-gray">
+        선택 저장을 누르면 변경 사항이 적용됩니다.
+      </p>
+      <SettingsActionButton
+        variant="primary"
+        className="mt-4 w-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        disabled={draft === "pending"}
+        onClick={onSave}
+      >
+        선택 저장
+      </SettingsActionButton>
       <p aria-live="polite" className="mt-4 min-h-6 text-[15px] text-dark-gray">
         {message}
       </p>
@@ -99,18 +119,28 @@ export function AnalyticsConsentSettings() {
     analyticsConsentStore.getSnapshot,
     analyticsConsentStore.getServerSnapshot,
   );
+  const [draft, setDraft] = useState(analyticsConsentStore.getSnapshot);
   const [message, setMessage] = useState("");
 
-  const showResult = useCallback((result: AnalyticsConsentUpdateResult) => {
+  function save() {
+    if (draft === "pending") return;
+    const result =
+      draft === "granted" ? grantAnalyticsConsent() : denyAnalyticsConsent();
     setMessage(getAnalyticsConsentResultMessage(result));
-  }, []);
+  }
+  function select(value: AnalyticsConsentState) {
+    setDraft(value);
+    setMessage("");
+  }
 
   return (
     <AnalyticsConsentSettingsView
       consent={consent}
       message={message}
-      onGrant={() => showResult(grantAnalyticsConsent())}
-      onDeny={() => showResult(denyAnalyticsConsent())}
+      draft={draft}
+      onGrant={() => select("granted")}
+      onDeny={() => select("denied")}
+      onSave={save}
     />
   );
 }

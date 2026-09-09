@@ -41,6 +41,7 @@
     "@types/sockjs-client": "^1.5.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "jsdom": "^30.0.1",
     "sharp": "^0.35.3",
     "tailwindcss": "^4",
     "typescript": "^5",

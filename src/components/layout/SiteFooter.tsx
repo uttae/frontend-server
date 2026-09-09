@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsButton } from "@/components/analytics/CookieSettingsProvider";
 
 import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -45,6 +46,12 @@ export function SiteFooter({ className }: { className?: string }) {
                 </Link>
               </span>
             ))}
+            <span className="inline-flex items-center gap-1.5">
+              <FooterDot />
+              <CookieSettingsButton className={`${linkClassName} cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}>
+                쿠키 설정
+              </CookieSettingsButton>
+            </span>
           </nav>
 
           <section

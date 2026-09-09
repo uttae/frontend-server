@@ -135,3 +135,11 @@ describe("public entry route indexing contract", () => {
     expect(response.headers.get("x-robots-tag")).toBeNull();
   });
 });
+
+it("keeps the explicit cookie settings landing entry accessible to authenticated users", async () => {
+  verifySessionWithOptionalRefresh.mockResolvedValue({ ok: true, setCookies: ["session=refreshed; Path=/; HttpOnly"] });
+  const response = await proxy(appRequest("/?cookie-settings=open"));
+  expect(response.headers.get("location")).toBeNull();
+  expect(response.headers.get("x-middleware-next")).toBe("1");
+  expect(response.headers.get("set-cookie")).toBe("session=refreshed; Path=/; HttpOnly");
+});
