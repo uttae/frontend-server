@@ -74,4 +74,28 @@ describe("LandingView", () => {
       }
     }
   });
+
+  it("sizes only the four travel PNGs for their responsive artwork widths", () => {
+    const html = renderToStaticMarkup(<LandingView />);
+    const expected = {
+      passport: "(min-width: 1440px) 241.36px, (min-width: 720px) 16.76132vw, (max-width: 392px) 104.55px, 122.99px",
+      map: "(min-width: 1440px) 260px, (min-width: 720px) 18.05556vw, (max-width: 392px) 122.93px, 144.62px",
+      calendar: "(min-width: 1440px) 229.44px, (min-width: 720px) 15.93362vw, (max-width: 392px) 105.52px, 124.14px",
+      globe: "(min-width: 1440px) 262.53px, (min-width: 720px) 18.23097vw, (max-width: 392px) 122.2px, 143.77px",
+    };
+    for (const [name, sizes] of Object.entries(expected)) {
+      const images = html.match(new RegExp(`<img[^>]+src="/landing/figma/${name}\\.png"[^>]*>`, "g"));
+      expect(images, name).toHaveLength(1);
+      expect(images![0], name).toContain(`sizes="${sizes}"`);
+      expect(images![0], name).toContain('width="1536" height="1536"');
+    }
+    // Every other consumer must retain the existing mobile/full intrinsic-width hint.
+    const otherImages = [...html.matchAll(/<img[^>]+>/g)]
+      .map(([tag]) => tag)
+      .filter((tag) => !/\/(passport|map|calendar|globe)\.png"/.test(tag));
+    expect(otherImages.length).toBeGreaterThan(20);
+    for (const tag of otherImages) {
+      expect(tag).toMatch(/sizes="\(max-width: 719px\) 100vw, [\d.]+px"/);
+    }
+  });
 });

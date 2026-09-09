@@ -128,10 +128,15 @@ function Devices() {
 }
 
 const steps = [
-  { title: "여행 시작하기", description: "새로운 여행을 만들어요", image: "passport" },
-  { title: "장소 둘러보기", description: "가고 싶은 장소를 모아요", image: "map" },
-  { title: "일정 완성하기", description: "장소를 일정으로 연결해요", image: "calendar" },
-  { title: "일정 확인하기", description: "여행 중 일정을 확인해요", image: "globe" },
+  // Image widths include the leaf/image percentages, mobile .85 scale and 1440px container cap.
+  { title: "여행 시작하기", description: "새로운 여행을 만들어요", image: "passport",
+    sizes: "(min-width: 1440px) 241.36px, (min-width: 720px) 16.76132vw, (max-width: 392px) 104.55px, 122.99px" },
+  { title: "장소 둘러보기", description: "가고 싶은 장소를 모아요", image: "map",
+    sizes: "(min-width: 1440px) 260px, (min-width: 720px) 18.05556vw, (max-width: 392px) 122.93px, 144.62px" },
+  { title: "일정 완성하기", description: "장소를 일정으로 연결해요", image: "calendar",
+    sizes: "(min-width: 1440px) 229.44px, (min-width: 720px) 15.93362vw, (max-width: 392px) 105.52px, 124.14px" },
+  { title: "일정 확인하기", description: "여행 중 일정을 확인해요", image: "globe",
+    sizes: "(min-width: 1440px) 262.53px, (min-width: 720px) 18.23097vw, (max-width: 392px) 122.2px, 143.77px" },
 ] as const;
 
 function TravelSteps() {
@@ -146,7 +151,7 @@ function TravelSteps() {
           </div>
           <div className={`${styles.cardArt} ${styles[step.image]}`}>
             <div className={styles.cardArtLeaf}>
-              <LandingArtwork name={`${step.image}.png`} width={1536} height={1536} />
+              <LandingArtwork name={`${step.image}.png`} width={1536} height={1536} sizes={step.sizes} />
             </div>
           </div>
         </li>)}

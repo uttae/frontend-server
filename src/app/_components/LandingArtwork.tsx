@@ -5,7 +5,7 @@ import styles from "./landing.module.css";
 
 /** Exact exports from approved Figma nodes 636:943 and 614:1123. */
 export function LandingArtwork({
-  name, mobileName, width, height, className, style, alt = "", priority = false,
+  name, mobileName, width, height, className, style, sizes, alt = "", priority = false,
 }: {
   name: string;
   mobileName?: string;
@@ -13,12 +13,13 @@ export function LandingArtwork({
   height: number;
   className?: string;
   style?: CSSProperties;
+  sizes?: string;
   alt?: string;
   priority?: boolean;
 }) {
   const image = <Image src={`/landing/figma/${name}`} width={Math.round(width)} height={Math.round(height)}
     alt={alt} className={className} style={style} priority={priority}
-    sizes={`(max-width: 719px) 100vw, ${width}px`} />;
+    sizes={sizes ?? `(max-width: 719px) 100vw, ${width}px`} />;
   return mobileName ? <picture>
     <source media="(max-width: 719px)" srcSet={`/landing/figma/${mobileName}`} />
     {image}
