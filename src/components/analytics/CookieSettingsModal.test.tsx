@@ -83,7 +83,8 @@ describe("cookie settings modal", () => {
     expect(host.hasAttribute("inert")).toBe(true);
     expect(button("저장").disabled).toBe(false);
     await toggleDraft();
-    expect(dialog.textContent).toContain("저장을 누르면 허용이 적용됩니다.");
+    expect(dialog.textContent).not.toContain("저장을 누르면");
+    expect(toggle().getAttribute("aria-checked")).toBe("true");
     expect(document.cookie).not.toContain("uttae_analytics_consent");
     const first = button("쿠키 설정 닫기");
     const last = button("저장");
@@ -198,8 +199,16 @@ describe("analytics allow switch", () => {
       document.getElementById(toggle!.getAttribute("aria-labelledby")!)
         ?.textContent,
     ).toBe("분석 쿠키");
-    expect(document.querySelector('[role="dialog"]')!.textContent).toContain(
-      "허용 안 함",
+    expect(toggle!.textContent?.trim()).toBe("");
+    const descriptionIds = toggle!.getAttribute("aria-describedby")!.split(" ");
+    for (const id of descriptionIds) {
+      expect(document.getElementById(id)).not.toBeNull();
+    }
+    expect(
+      descriptionIds.map((id) => document.getElementById(id)!.textContent).join(" "),
+    ).toContain("Google Analytics");
+    expect(document.querySelector('[role="dialog"]')!.textContent).not.toContain(
+      "저장을 누르면",
     );
     expect(analyticsConsentStore.getSnapshot()).toBe("pending");
     await act(async () => toggle!.click());

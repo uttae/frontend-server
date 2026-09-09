@@ -71,9 +71,11 @@ export function AnalyticsConsentSettingsView({
           role="switch"
           aria-checked={allowed}
           aria-labelledby={categoryId}
-          aria-describedby={`${descriptionId} ${hintId}`}
+          aria-describedby={
+            consent === "pending" ? `${descriptionId} ${hintId}` : descriptionId
+          }
           onClick={allowed ? onDeny : onGrant}
-          className="flex min-h-11 shrink-0 cursor-pointer flex-col items-center gap-1.5 sm:flex-row sm:gap-3 rounded-lg px-1 py-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+          className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-1 py-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
         >
           <span
             aria-hidden="true"
@@ -83,21 +85,16 @@ export function AnalyticsConsentSettingsView({
               className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${allowed ? "translate-x-5" : "translate-x-0"}`}
             />
           </span>
-          <span
-            aria-hidden="true"
-            className="text-xs font-medium text-dark-gray"
-          >
-            {allowed ? "허용" : "허용 안 함"}
-          </span>
         </button>
       </div>
-      <p id={hintId} className="mt-3 text-xs leading-relaxed text-dark-gray">
-        {consent === "pending" ? "아직 저장된 선택이 없습니다. " : ""}
-        저장을 누르면 {allowed ? "허용이" : "거부가"} 적용됩니다.
-      </p>
+      {consent === "pending" && (
+        <p id={hintId} className="mt-3 text-xs leading-relaxed text-dark-gray">
+          아직 저장된 선택이 없습니다.
+        </p>
+      )}
       <details className="mt-4 text-sm leading-relaxed text-dark-gray">
         <summary className="w-fit cursor-pointer rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-          쿠키 사용 안내
+          자세히 보기
         </summary>
         <p className="mt-2">
           허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다. 거부하거나

@@ -24,11 +24,7 @@ describe("getAnalyticsConsentResultMessage", () => {
 });
 
 describe("AnalyticsConsentSettingsView", () => {
-  it.each([
-    ["pending", "아직 저장된 선택이 없습니다."],
-    ["granted", "허용"],
-    ["denied", "허용 안 함"],
-  ] as const)("renders %s state accessibly", (consent, label) => {
+  it.each(["pending", "granted", "denied"] as const)("renders %s state accessibly", (consent) => {
     const html = renderToStaticMarkup(
       <AnalyticsConsentSettingsView
         consent={consent}
@@ -40,10 +36,12 @@ describe("AnalyticsConsentSettingsView", () => {
       />,
     );
 
-    expect(html).toContain(label);
+    expect(html).not.toContain("저장을 누르면");
+    expect(html).not.toContain("허용 안 함");
+    expect(html).not.toMatch(/>허용<|>거부</);
     expect(html).toContain('href="/privacy"');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain("허용");
+    expect(html.includes("아직 저장된 선택이 없습니다.")).toBe(consent === "pending");
     expect(html).toContain('role="switch"');
     expect(html).toContain(`aria-checked="${consent === "granted"}"`);
   });
@@ -63,7 +61,7 @@ describe("AnalyticsConsentSettingsView", () => {
     );
 
     expect(html).toContain(message);
-    expect(html).toContain("허용 안 함");
+    expect(html).toContain('aria-checked="false"');
   });
 });
 
@@ -79,7 +77,8 @@ it("preserves the policy destination and all consent notice meanings in a disclo
     />,
   );
   expect(html).toContain("<details");
-  expect(html).toContain("쿠키 사용 안내");
+  expect(html).not.toContain("쿠키 사용 안내");
+  expect(html.match(/자세히 보기/g)).toHaveLength(1);
   expect(html).toContain(
     "허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다.",
   );
