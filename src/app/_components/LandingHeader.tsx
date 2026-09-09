@@ -18,25 +18,23 @@ export function LandingHeader() {
           aria-label="우때 홈"
           className="flex items-center gap-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <BrandLogo
-            variant="combination"
-            size="S"
-            alt="우때 로고"
-          />
-          
+          <BrandLogo variant="combination" size="S" alt="우때 로고" />
         </Link>
         <nav aria-label="랜딩 페이지" className="ml-auto hidden items-center gap-7 landing-sm:flex">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-semibold text-dark-gray transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="text-label-m-regular text-dark-gray transition hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               {item.label}
             </Link>
           ))}
         </nav>
-        <LandingActionLink href="/login" className="px-5 py-2.5 text-sm">
+        <LandingActionLink
+          href="/login"
+          className="px-5 py-2.5 text-label-m-emphasis font-bold text-text-inverse"
+        >
           로그인
         </LandingActionLink>
       </div>

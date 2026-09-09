@@ -13,8 +13,8 @@ import { landingAssetDir } from "@/lib/public-assets";
  */
 export function CardsSection() {
   return (
-    <section id="how-it-works" className="flex flex-col items-center bg-primary-subtle py-30 h-[860px]">
-      <h2 className="text-display-m w-full text-start px-40">
+    <section  id="how-it-works" className=" flex flex-col items-center bg-primary-subtle py-30 h-[860px]">
+      <h2 className="text-display-m w-full text-start max-w-[1440px] px-35">
         <span className="text-primary">여행 계획은</span>
         <br />
         <span className="text-text">이렇게 완성하세요!</span>

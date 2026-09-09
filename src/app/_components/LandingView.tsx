@@ -11,7 +11,7 @@ import { StepsSection } from "@/app/_components/StepsSection";
 
 export function LandingView() {
   return (
-    <div className="relative flex min-h-screen flex-col bg-white font-sans">
+    <div className="relative flex min-h-screen min-w-[320px] flex-col bg-white font-sans">
       <LandingHeader />
       <main className="relative z-10 flex flex-1 flex-col antialiased">
         <HeroSection />
