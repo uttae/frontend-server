@@ -98,20 +98,37 @@ it("returns focus to the footer when saving consent removes the original banner 
   document.body.append(host);
   const root = createRoot(host);
   try {
-    await act(async () => root.render(
-      <AppChromeShell analytics={null}>
-        <SiteFooter />
-        <ConsentGatedAnalytics gaId="" debugMode={false}>{null}</ConsentGatedAnalytics>
-      </AppChromeShell>,
-    ));
+    await act(async () =>
+      root.render(
+        <AppChromeShell analytics={null}>
+          <SiteFooter />
+          <ConsentGatedAnalytics gaId="" debugMode={false}>
+            {null}
+          </ConsentGatedAnalytics>
+        </AppChromeShell>,
+      ),
+    );
     const banner = host.querySelector('[aria-label="쿠키 동의"]')!;
-    const trigger = [...banner.querySelectorAll("button")].find(node => node.textContent === "쿠키 설정")!;
+    const trigger = [...banner.querySelectorAll("button")].find(
+      (node) => node.textContent === "쿠키 설정",
+    )!;
     await act(async () => trigger.click());
-    const dialogButtons = () => [...document.querySelectorAll('[role="dialog"] button')];
-    await act(async () => (dialogButtons().find(node => node.textContent === "거부") as HTMLButtonElement).click());
-    await act(async () => (dialogButtons().find(node => node.textContent === "선택 저장") as HTMLButtonElement).click());
+    const dialogButtons = () => [
+      ...document.querySelectorAll('[role="dialog"] button'),
+    ];
+    await act(async () =>
+      (
+        dialogButtons().find(
+          (node) => node.textContent === "저장",
+        ) as HTMLButtonElement
+      ).click(),
+    );
     expect(host.querySelector('[aria-label="쿠키 동의"]')).toBeNull();
-    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!.click());
+    await act(async () =>
+      document
+        .querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!
+        .click(),
+    );
     expect(document.activeElement).toBe(host.querySelector("footer button"));
   } finally {
     await act(async () => root.unmount());
