@@ -70,6 +70,25 @@ afterEach(async () => {
 });
 
 describe("cookie settings modal", () => {
+  it("reserves matching scrollbar gutters with disclosure closed and expanded", async () => {
+    await click("쿠키 설정");
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+    const details = dialog.querySelector("details")!;
+    for (const expanded of [false, true]) {
+      if (expanded)
+        await act(async () => details.querySelector("summary")!.click());
+      expect(details.open).toBe(expanded);
+      // jsdom has no layout engine: guard the CSS contract; Hermes measures
+      // actual insets with classic scrollbars, including constrained heights.
+      expect(
+        dialog.classList.contains("[scrollbar-gutter:stable_both-edges]"),
+      ).toBe(true);
+      expect(dialog.classList.contains("overflow-y-auto")).toBe(true);
+      expect(dialog.classList.contains("max-w-[640px]")).toBe(true);
+      expect(dialog.classList.contains("max-h-[calc(100dvh-2rem)]")).toBe(true);
+    }
+  });
+
   it("opens in place, traps keyboard focus and dismisses with Escape without saving", async () => {
     await click("쿠키 설정");
     const dialog = document.querySelector('[role="dialog"]')!;

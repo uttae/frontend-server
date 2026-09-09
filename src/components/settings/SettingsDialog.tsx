@@ -93,7 +93,7 @@ export function SettingsDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[640px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl sm:px-8 sm:py-6"
+        className="max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[640px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"
       >
         <div className="mb-2 flex items-center justify-between gap-4">
           <h2 id={titleId} className="text-[22px] font-bold">
