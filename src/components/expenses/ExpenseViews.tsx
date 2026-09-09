@@ -65,6 +65,12 @@ export function ExpenseRolePicker({
   onChange: (ids: number[]) => void;
 }) {
   const options = roleOptions(members, original, selected);
+  const pendingMembers = members.filter(
+    (member) =>
+      member.status === "PENDING" &&
+      original.includes(member.userId) &&
+      selected.includes(member.userId),
+  );
   return (
     <fieldset className="min-w-0 space-y-2 rounded-xl border border-gray-border p-3">
       <legend className="px-1 font-semibold">
@@ -94,13 +100,44 @@ export function ExpenseRolePicker({
           />
         </label>
       ))}
+      {pendingMembers.map((member) => (
+        <div
+          key={member.userId}
+          className="flex min-w-0 items-center justify-between gap-2 text-sm"
+        >
+          <div className="min-w-0">
+            <ExpensePerson
+              userId={member.userId}
+              members={members}
+              memberStatus="success"
+            />
+            <p className="text-xs text-dark-gray">승인 대기</p>
+          </div>
+          <button
+            type="button"
+            aria-label={`${title} ${member.nickname} #${member.userId} 제외`}
+            className={`${expenseButtonClass} shrink-0`}
+            onClick={() =>
+              onChange(selected.filter((id) => id !== member.userId))
+            }
+          >
+            제외
+          </button>
+        </div>
+      ))}
+      {pendingMembers.length > 0 && (
+        <p className="text-xs text-dark-gray">
+          승인 대기 멤버가 남아 있으면 저장할 수 없어요. 제외하면 다시 추가할 수
+          없어요.
+        </p>
+      )}
       {options.some((o) => o.historical) && (
         <p className="text-xs text-dark-gray">
           기존 (알 수 없음) 멤버는 이 역할에서만 유지할 수 있으며, 해제하면 다시
           추가할 수 없어요.
         </p>
       )}
-      {!options.length && (
+      {!options.length && !pendingMembers.length && (
         <p className="text-sm text-dark-gray">선택 가능한 멤버가 없어요.</p>
       )}
     </fieldset>
