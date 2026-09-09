@@ -231,11 +231,11 @@ export function PlanPlaceCard({
   const hasMemo = memoText.length > 0;
   const staySummary = formatScheduleStaySummary(
     place.startTime ?? "",
-    place.durationMinutes,
+    place.endTime,
   );
   const timeRange = formatScheduleTimeRange(
     place.startTime ?? "",
-    place.durationMinutes,
+    place.endTime,
   );
   const hasTime = Boolean(staySummary);
 
@@ -448,7 +448,7 @@ export function PlanPlaceCard({
           scheduleId={scheduleTimeEdit.scheduleId}
           itemId={scheduleItemId}
           startTime={place.startTime ?? ""}
-          durationMinutes={place.durationMinutes ?? 0}
+          endTime={place.endTime}
           onClose={() => setTimeOpen(false)}
         />
       ) : null}
