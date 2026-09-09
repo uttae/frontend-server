@@ -101,7 +101,7 @@ export const LANDING_FEATURE_STORIES: readonly LandingFeatureStoryContent[] = [
     eyebrow: "PLAN",
     title: "날짜별 일정과 이동 동선을 완성",
     description:
-      "체류 시간과 메모를 정리하고, 드래그로 순서를 조정하며 이동 경로까지 확인합니다.",
+      "시작·종료 시각과 메모를 정리하고, 드래그로 순서를 조정하며 이동 경로까지 확인합니다.",
     points: ["날짜·시간·메모", "드래그 순서 조정", "이동수단과 지도 경로"],
     screenshotKey: "plan",
   },

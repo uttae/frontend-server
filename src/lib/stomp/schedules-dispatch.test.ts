@@ -1,6 +1,8 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { sessionUserQueryKey } from "@/lib/query-keys";
+
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 
 const mocks = vi.hoisted(() => ({
@@ -92,6 +94,21 @@ describe("dispatchRoomScheduleEvent", () => {
   afterEach(() => {
     vi.useRealTimers();
     queryClient.clear();
+  });
+
+  it.each([false, true])("refetches ID-only time updates, including own-user tabs (%s)", async (ownUser) => {
+    vi.useFakeTimers();
+    if (ownUser) queryClient.setQueryData(sessionUserQueryKey, { id: 99 });
+    const rows = [{ itemId: 20, startTime: "23:00", endTime: "01:00" }];
+    mocks.getScheduleItems.mockResolvedValue(rows);
+    const event = itemEvent("SCHEDULE_ITEM_UPDATED", []);
+    await dispatchRoomScheduleEvent(queryClient, event);
+    await dispatchRoomScheduleEvent(queryClient, event);
+    await vi.runAllTimersAsync();
+    expect(mocks.getScheduleItems).toHaveBeenCalledExactlyOnceWith("room-1", 10);
+    expect(mocks.mergeOrRefetchSchedulePlanPlacesFromItems).toHaveBeenCalledWith(queryClient, "room-1", 10, rows);
+    expect(mocks.invalidateScheduleItemRouteForSources).not.toHaveBeenCalled();
+    expect(mocks.invalidateScheduleItemRouteForWholeSchedule).not.toHaveBeenCalled();
   });
 
   it("uses affectedRouteItemIds instead of calculating routes for a created item", async () => {
