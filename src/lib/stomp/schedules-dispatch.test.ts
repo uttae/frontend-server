@@ -239,3 +239,14 @@ describe("dispatchRoomScheduleEvent", () => {
     );
   });
 });
+
+describe("expense synchronization on existing schedule events",()=>{
+ it.each(["ROOM_SCHEDULES_RESYNCED","SCHEDULE_ITEM_MOVED","SCHEDULE_ITEM_DELETED"] as const)("invalidates expense list and summary for %s even self events",async type=>{
+  const client = new QueryClient();
+  client.setQueryData(["session","user"],{id:99});
+  for(const suffix of ["list","summary"])client.setQueryData(["room-expenses","room-1",suffix],[]);
+  await dispatchRoomScheduleEvent(client,{...itemEvent(type,[]),scheduleIds:[10,11]});
+  for(const suffix of ["list","summary"])expect(client.getQueryState(["room-expenses","room-1",suffix])?.isInvalidated).toBe(true);
+  client.clear();
+ });
+});

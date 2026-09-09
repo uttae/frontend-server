@@ -1,3 +1,4 @@
+import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   useMutation,
   useQuery,
@@ -204,6 +205,7 @@ export function useDeleteRoomSchedule() {
       scheduleId: number;
     }) => deleteRoomSchedule(roomId, scheduleId),
     onSuccess: async (_data, { roomId, scheduleId }) => {
+      await invalidateExpenses(queryClient, roomId);
       const id = roomId.trim();
       if (!id.length) return;
 
@@ -261,6 +263,7 @@ export function useMoveRoomSchedule() {
     onSuccess: async (_data, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
+      await invalidateExpenses(queryClient, id);
       await hydrateRoomSchedulesFromServer(queryClient, id);
     },
   });
@@ -295,6 +298,7 @@ export function useMoveScheduleItemToSchedule() {
       _moved,
       { roomId, sourceScheduleId, targetScheduleId, itemId },
     ) => {
+      await invalidateExpenses(queryClient, roomId);
       await syncAfterCrossScheduleItemMove(
         queryClient,
         roomId,
@@ -438,6 +442,7 @@ export function useDeleteScheduleItem() {
       itemId: number;
     }) => deleteScheduleItem(vars.roomId, vars.scheduleId, vars.itemId),
     onSuccess: async (_, { roomId, scheduleId, itemId }) => {
+      await invalidateExpenses(queryClient, roomId);
       await applyScheduleItemDeletedOnClient(
         queryClient,
         roomId,
@@ -548,6 +553,7 @@ export function useUpdateRoom() {
         (data.endDate !== undefined && data.endDate !== prevEnd);
 
       if (datesChanged) {
+        await invalidateExpenses(queryClient, roomId);
         await hydrateRoomSchedulesFromServer(queryClient, roomId);
       }
     },
@@ -558,7 +564,8 @@ export function useDeleteRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (roomId: string) => deleteRoom(roomId),
-    onSuccess: () => {
+    onSuccess: (_, roomId) => {
+      queryClient.removeQueries({ queryKey: expenseKeys.room(roomId) });
       queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });
