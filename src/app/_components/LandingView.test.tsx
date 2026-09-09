@@ -36,7 +36,8 @@ describe("LandingView", () => {
     }
     expect(html).toContain('id="features"');
     expect(html).toContain('id="how-it-works"');
-    expect(html.match(/가입 없이 시작하기/g)).toHaveLength(2);
+    expect(html.match(/<a\b[^>]*href="\/login"[^>]*>여행 시작하기/g)).toHaveLength(2);
+    expect(html).not.toContain("가입 없이 시작하기");
     expect(html).not.toMatch(/흩어진 여행 계획을|REAL-TIME TRAVEL PLANNER|Co-founder/);
     expect(html).not.toContain('href="/product"');
     expect(html).not.toContain("opacity:0");
