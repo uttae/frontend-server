@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CircleHelp } from "lucide-react";
+
+import { sidebarIcons } from "@/lib/public-assets";
 
 import { sidebarNavButtonClassName } from "./sidebarNavButton";
 
@@ -12,14 +13,18 @@ export function SidebarContactButton() {
 
   return (
     <Link
-      href="/contact"
+      href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header"
       className={sidebarNavButtonClassName(isActive)}
-      aria-label="문의하기"
+      aria-label="버그 제보"
+      title="버그 제보"
     >
-      <CircleHelp
-        className="h-6 w-6 text-dark-gray"
-        strokeWidth={2}
-        aria-hidden
+      {/* eslint-disable-next-line @next/next/no-img-element -- exact local Figma SVG, no image optimization needed */}
+      <img
+        src={sidebarIcons.bug}
+        alt=""
+        width={24}
+        height={24}
+        className="h-6 w-6"
       />
     </Link>
   );

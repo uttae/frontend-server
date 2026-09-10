@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { Home } from "lucide-react";
 import { useMemo } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
@@ -52,7 +51,7 @@ const HeaderBar = () => {
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray"
             aria-label="홈으로 이동"
           >
-            <Home className="h-6 w-6" strokeWidth={2} aria-hidden />
+            <BrandLogo variant="symbol" size="S" alt="" />
           </Link>
           <div
             className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border"
@@ -83,7 +82,6 @@ const HeaderBar = () => {
               </span>
             )}
           </div>
-          <BrandLogo variant="combination" size="S" alt="로고" />
         </div>
       </div>
     </header>
