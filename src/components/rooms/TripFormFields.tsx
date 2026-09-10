@@ -61,7 +61,7 @@ export function TripFormFields({
     <div className="min-w-0 space-y-3">
       <div className={fieldClassName}>
         <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <p className="text-[17px] font-bold text-black">여행 제목</p>
+          <label htmlFor={`${idPrefix}-title`} className="text-[17px] font-bold text-black">여행 제목</label>
           {!readOnly && (
             <p className="shrink-0 text-[14px] tabular-nums text-light-gray">
               {title.length}/{ROOM_TRIP_TITLE_MAX_LENGTH}
@@ -72,6 +72,7 @@ export function TripFormFields({
           <p className="text-[17px] text-dark-gray">{title.trim() || "—"}</p>
         ) : (
           <input
+            id={`${idPrefix}-title`}
             type="text"
             value={title}
             maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
@@ -108,6 +109,7 @@ export function TripFormFields({
         <div className="flex min-w-0 items-center gap-3">
           <TripDateField
             id={`${idPrefix}-start`}
+            label="여행 시작일"
             value={startDate}
             min={startDateMin}
             onChange={onStartDateChange}
@@ -116,6 +118,7 @@ export function TripFormFields({
           <span className="shrink-0 select-none text-light-gray">|</span>
           <TripDateField
             id={`${idPrefix}-end`}
+            label="여행 종료일"
             value={endDate}
             min={endDateMin}
             onChange={onEndDateChange}

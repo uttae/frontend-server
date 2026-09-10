@@ -101,7 +101,7 @@ export function resolveLeftSectionTargetMaxWidthPx({
 
   if (isPlanPath(pathname)) {
     return chatState === "maximized"
-      ? parseLayoutLengthToPx(width.s1, rootFontPx)
+      ? contentTokenToLeftSectionMaxPx(width.s1, rootFontPx)
       : parseLayoutLengthToPx(width.s2, rootFontPx);
   }
 

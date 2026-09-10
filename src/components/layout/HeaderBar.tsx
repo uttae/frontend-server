@@ -49,7 +49,7 @@ const HeaderBar = () => {
   return (
     <header className="border-b-2 border-primary">
       <div className="flex items-center">
-        <div className="relative flex w-13 shrink-0 flex-col items-center justify-center py-1.5">
+        <div className="relative flex w-20 shrink-0 flex-col items-center justify-center py-1.5">
           <Link
             href="/home"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray"

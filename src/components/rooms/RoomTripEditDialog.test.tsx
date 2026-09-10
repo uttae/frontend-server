@@ -130,3 +130,14 @@ it("contains shrink confirmation focus and Escape dismisses only confirmation, p
   expect(document.activeElement).toBe(button("적용하기", dialog()!));
   expect(state.update).not.toHaveBeenCalled();
 });
+
+it("names the existing title, destination and date inputs", async () => {
+  await open();
+  const modal = dialog()!;
+  const inputs = [...modal.querySelectorAll("input")];
+  const names = inputs.map(input => input.getAttribute("aria-label") || [...(input.labels ?? [])].map(label => label.textContent).join(""));
+  expect(names).toContain("여행 제목");
+  expect(names).toContain("목적지 검색");
+  expect(names).toContain("여행 시작일");
+  expect(names).toContain("여행 종료일");
+});
