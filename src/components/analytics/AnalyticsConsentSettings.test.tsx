@@ -24,25 +24,26 @@ describe("getAnalyticsConsentResultMessage", () => {
 });
 
 describe("AnalyticsConsentSettingsView", () => {
-  it.each([
-    ["pending", "선택 전"],
-    ["granted", "분석 쿠키 허용"],
-    ["denied", "분석 쿠키 거부"],
-  ] as const)("renders %s state accessibly", (consent, label) => {
+  it.each(["pending", "granted", "denied"] as const)("renders %s state accessibly", (consent) => {
     const html = renderToStaticMarkup(
       <AnalyticsConsentSettingsView
         consent={consent}
+        draft={consent}
+        onSave={vi.fn()}
         message=""
         onGrant={vi.fn()}
         onDeny={vi.fn()}
       />,
     );
 
-    expect(html).toContain(label);
+    expect(html).not.toContain("저장을 누르면");
+    expect(html).not.toContain("허용 안 함");
+    expect(html).not.toMatch(/>허용<|>거부</);
     expect(html).toContain('href="/privacy"');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain("허용");
-    expect(html).toContain("거부");
+    expect(html.includes("아직 저장된 선택이 없습니다.")).toBe(consent === "pending");
+    expect(html).toContain('role="switch"');
+    expect(html).toContain(`aria-checked="${consent === "granted"}"`);
   });
 
   it("announces a persistence failure without hiding the selected state", () => {
@@ -51,6 +52,8 @@ describe("AnalyticsConsentSettingsView", () => {
     const html = renderToStaticMarkup(
       <AnalyticsConsentSettingsView
         consent="denied"
+        draft="denied"
+        onSave={vi.fn()}
         message={message}
         onGrant={vi.fn()}
         onDeny={vi.fn()}
@@ -58,6 +61,29 @@ describe("AnalyticsConsentSettingsView", () => {
     );
 
     expect(html).toContain(message);
-    expect(html).toContain("분석 쿠키 거부");
+    expect(html).toContain('aria-checked="false"');
   });
+});
+
+it("preserves the policy destination and all consent notice meanings in a disclosure", () => {
+  const html = renderToStaticMarkup(
+    <AnalyticsConsentSettingsView
+      consent="pending"
+      draft="pending"
+      message=""
+      onSave={vi.fn()}
+      onGrant={vi.fn()}
+      onDeny={vi.fn()}
+    />,
+  );
+  expect(html).toContain("<details");
+  expect(html).not.toContain("쿠키 사용 안내");
+  expect(html.match(/자세히 보기/g)).toHaveLength(1);
+  expect(html).toContain(
+    "허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다.",
+  );
+  expect(html).toContain(
+    "거부하거나 철회하면 Google Analytics 추적을 중단하고 브라우저의 분석 쿠키를 삭제합니다.",
+  );
+  expect(html).toContain('href="/privacy"');
 });

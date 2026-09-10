@@ -6,7 +6,6 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BrandLogo } from "@/components/BrandLogo";
-import { PrivacySettingsLink } from "@/components/analytics/PrivacySettingsLink";
 import { WithdrawAccountConfirmModal } from "@/components/settings/WithdrawAccountConfirmModal";
 import { WithdrawalDelegationRequiredModal } from "@/components/settings/WithdrawalDelegationRequiredModal";
 
@@ -121,12 +120,6 @@ export function HomeHeader() {
                     </p>
                   </div>
                 )}
-                <PrivacySettingsLink
-                  onClick={() => setOpen(false)}
-                  className="block w-full px-4 py-2.5 text-left text-[17px] text-dark-gray transition hover:bg-bubble-gray"
-                >
-                  개인정보 설정
-                </PrivacySettingsLink>
                 <button
                   type="button"
                   onClick={handleLogout}

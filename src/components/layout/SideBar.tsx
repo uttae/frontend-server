@@ -1,9 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { ShieldCheck } from "lucide-react";
 
-import { PrivacySettingsLink } from "@/components/analytics/PrivacySettingsLink";
 import { useChat } from "@/hooks/useChat";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
 import { sidebarIcons } from "@/lib/public-assets";
@@ -12,7 +10,6 @@ import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";
 import { SidebarContactButton } from "./SidebarContactButton";
 import { SidebarFeedbackFormButton } from "./SidebarFeedbackFormButton";
 import { SidebarNavItem } from "./SidebarNavItem";
-import { sidebarNavButtonClassName } from "./sidebarNavButton";
 
 const SIDEBAR_ITEMS = [
   { key: "search", href: "/search", icon: sidebarIcons.search },
@@ -82,16 +79,6 @@ function SideBar() {
       </div>
 
       <div className="mt-auto flex flex-col items-center gap-2 px-1 pb-4">
-        <PrivacySettingsLink
-          className={sidebarNavButtonClassName()}
-          aria-label="sidebar-privacy-settings"
-        >
-          <ShieldCheck
-            className="h-6 w-6 text-dark-gray"
-            strokeWidth={2}
-            aria-hidden
-          />
-        </PrivacySettingsLink>
         <SidebarFeedbackFormButton />
         <SidebarContactButton />
       </div>

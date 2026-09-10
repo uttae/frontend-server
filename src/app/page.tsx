@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { CookieSettingsLandingEntry } from "@/components/analytics/CookieSettingsProvider";
 
 import { LandingView } from "@/app/_components/LandingView";
 import { StructuredData } from "@/components/seo/StructuredData";
@@ -47,6 +49,7 @@ export default function RootPage() {
         data={SOFTWARE_APPLICATION_JSON_LD}
       />
       <LandingView />
+      <Suspense fallback={null}><CookieSettingsLandingEntry /></Suspense>
     </>
   );
 }
