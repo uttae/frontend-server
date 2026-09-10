@@ -188,7 +188,7 @@ export function BookmarkFoldersView() {
         className={pageToolbarButtonCompactIconClass}
         strokeWidth={pageToolbarButtonCompactIconStroke}
       />
-      새 북마크 추가
+      새 북마크 생성
     </button>
   );
 

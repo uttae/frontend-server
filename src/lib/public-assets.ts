@@ -20,6 +20,7 @@ export const sidebarIcons = {
   bookmark: "/icons/sidebar/bookmark.svg",
   memberSettings: "/icons/sidebar/user-cog.svg",
   roomSettings: "/icons/sidebar/settings.svg",
+  bug: "/icons/sidebar/bug.svg",
 } as const;
 
 export const chatAssets = {

@@ -1,7 +1,7 @@
 "use client";
 
-import { Clock, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Clock, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
@@ -12,7 +12,7 @@ import {
   validateScheduleTimeDraft,
 } from "@/lib/plan/scheduleTime";
 
-import { TimeWheelPicker, type TimeWheelValue } from "./TimeWheelPicker";
+import { TimeInput } from "./TimeInput";
 
 type PlanItemTimeEditorProps = {
   roomId: string;
@@ -25,19 +25,9 @@ type PlanItemTimeEditorProps = {
 
 const fieldLabelClass = PLAN_PLACE_CARD_TW.timeFieldLabel;
 
-const DEFAULT_START_WHEEL: TimeWheelValue = { hour: 9, minute: 0 };
-const DEFAULT_END_WHEEL: TimeWheelValue = { hour: 10, minute: 0 };
-
-function parseHmToWheel(hm: string, fallback: TimeWheelValue): TimeWheelValue {
-  const m = /^(\d{2}):(\d{2})$/.exec(hm.trim());
-  if (!m) return fallback;
-  const hour = Math.min(23, Math.max(0, parseInt(m[1]!, 10)));
-  const minute = Math.min(59, Math.max(0, parseInt(m[2]!, 10)));
-  return { hour, minute };
-}
-
-function formatWheelToHm({ hour, minute }: TimeWheelValue): string {
-  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+function canonicalDraft(value: string): string {
+  if (!/^\d{1,2}:\d{1,2}$/.test(value)) return value;
+  return value.split(":").map((part) => part.padStart(2, "0")).join(":");
 }
 
 export function PlanItemTimeEditor({
@@ -54,35 +44,33 @@ export function PlanItemTimeEditor({
   // 편집한 필드의 초안은 보존하고 나머지는 재조회된 서버 값을 따릅니다.
   const [draftStart, setStartHm] = useState<string>();
   const [draftEnd, setEndHm] = useState<string>();
-  const startHm = draftStart ?? serverStartHm;
-  const endHm = draftEnd ?? serverEndHm;
+  const startHm = canonicalDraft(draftStart ?? serverStartHm);
+  const endHm = canonicalDraft(draftEnd ?? serverEndHm);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isPending) onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isPending, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const savingRef = useRef(false);
 
-  const hasDraftValue = startHm.length > 0 || endHm.length > 0;
+  useEffect(() => {
+    const opener = document.activeElement;
+    dialogRef.current?.querySelector("input")?.focus();
+    return () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
+  }, []);
 
   const durationPreview =
     startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
 
-  function handleReset() {
-    setStartHm("");
-    setEndHm("");
-  }
-
   async function handleSave() {
+    if (isPending || savingRef.current || !dirty) return;
     const validation = validateScheduleTimeDraft(startHm, endHm);
     if (!validation.valid) {
       toast.error(validation.message);
       return;
     }
 
+    savingRef.current = true;
     try {
       await mutateAsync({
         roomId,
@@ -101,12 +89,14 @@ export function PlanItemTimeEditor({
       toast.error(
         error instanceof Error ? error.message : "시간을 저장하지 못했어요.",
       );
+    } finally {
+      savingRef.current = false;
     }
   }
 
   const dirty = serverStartHm !== startHm || serverEndHm !== endHm;
-  const canSave =
-    !isPending && dirty && validateScheduleTimeDraft(startHm, endHm).valid;
+  const validation = validateScheduleTimeDraft(startHm, endHm);
+  const canSave = !isPending && dirty && validation.valid;
 
   return (
     <div
@@ -117,102 +107,93 @@ export function PlanItemTimeEditor({
       }}
     >
       <div
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!isPending && !savingRef.current) onClose();
+          } else if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+            e.preventDefault();
+            void handleSave();
+          } else if (e.key === "Tab") {
+            const controls = [...e.currentTarget.querySelectorAll<HTMLElement>(
+              "button:not(:disabled), input:not(:disabled)",
+            )];
+            const first = controls[0];
+            const last = controls.at(-1);
+            if (!first) {
+              e.preventDefault();
+              e.currentTarget.focus();
+            } else if (e.shiftKey && (document.activeElement === first || document.activeElement === e.currentTarget)) {
+              e.preventDefault();
+              last?.focus();
+            } else if (!e.shiftKey && (document.activeElement === last || document.activeElement === e.currentTarget)) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }}
         aria-modal="true"
         aria-labelledby="plan-item-time-dialog-title"
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[90vh] w-full max-w-sm overflow-y-auto rounded-3xl bg-white shadow-xl"
+        className="max-h-[90dvh] w-full max-w-sm overflow-y-auto rounded-2xl bg-white shadow-xl"
       >
-        <div className="flex items-center gap-2 px-6 pb-3 pt-6">
+        <div className="flex items-center gap-2 px-5 pb-3 pt-4">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
             <Clock className="h-5 w-5" aria-hidden />
           </span>
           <h2
             id="plan-item-time-dialog-title"
-            className="flex-1 text-[19px] font-bold text-gray-900"
+            className="flex-1 text-[17px] font-bold text-gray-900"
           >
             시간 설정
           </h2>
-          {hasDraftValue ? (
-            <button
-              type="button"
-              aria-label="시간 초기화"
-              onClick={handleReset}
-              disabled={isPending}
-              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={onClose}
+            disabled={isPending}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
         </div>
 
-        <div className="flex flex-col gap-4 px-4 pb-6 sm:px-6">
-          <div className="flex items-start justify-center gap-3">
-            <div className="flex flex-col items-center gap-1.5">
-              <span className={fieldLabelClass}>시작</span>
-              <button
-                type="button"
-                aria-label="시작 시각 지우기"
-                onClick={handleReset}
-                disabled={isPending || !startHm}
-                className="text-xs text-dark-gray disabled:opacity-40"
-              >
-                {startHm ? "지우기" : "미설정"}
-              </button>
-              <TimeWheelPicker
-                value={parseHmToWheel(startHm, DEFAULT_START_WHEEL)}
-                disabled={isPending}
-                onChange={(next) => {
-                  const hm = formatWheelToHm(next);
-                  setStartHm(hm);
-                }}
-              />
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              <span className={fieldLabelClass} aria-hidden>
-                {" "}
+        <div className="flex flex-col gap-3 px-5 pb-4">
+          <p id="plan-item-time-help" className="text-center text-xs text-dark-gray">
+            24시간 기준 · 시와 분을 직접 입력하세요
+          </p>
+          {([
+            { label: "시작", value: draftStart ?? serverStartHm, setValue: setStartHm, disabled: isPending },
+            { label: "종료", value: draftEnd ?? serverEndHm, setValue: setEndHm, disabled: isPending || !normalizeStartTimeToHm(startHm) },
+          ] as const).map(({ label, value, setValue, disabled }) => (
+            <div key={label} className="flex items-center gap-3">
+              <span className={`${fieldLabelClass} w-10 shrink-0 text-center`}>
+                {label}
               </span>
-              <span className="text-xs" aria-hidden>{" "}</span>
-              <div
-                aria-hidden
-                className="flex items-center justify-center text-xl font-semibold text-gray-400"
-                style={{ height: 200 }}
-              >
-                ~
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-1.5">
-              <span className={fieldLabelClass}>종료</span>
-              <button
-                type="button"
-                aria-label="종료 시각 지우기"
-                onClick={() => setEndHm("")}
-                disabled={isPending || !endHm}
-                className="text-xs text-dark-gray disabled:opacity-40"
-              >
-                {endHm ? "지우기" : "미설정"}
-              </button>
-              <TimeWheelPicker
-                value={parseHmToWheel(
-                  endHm,
-                  startHm
-                    ? parseHmToWheel(startHm, DEFAULT_END_WHEEL)
-                    : DEFAULT_END_WHEEL,
-                )}
-                disabled={isPending || startHm.length === 0}
-                onChange={(next) => {
-                  const hm = formatWheelToHm(next);
-                  setEndHm(hm);
-                }}
+              <TimeInput
+                label={label}
+                value={value}
+                onChange={setValue}
+                disabled={disabled}
+                describedBy={`plan-item-time-help${validation.valid ? "" : " plan-item-time-error"}`}
               />
             </div>
-          </div>
+          ))}
+          {!validation.valid ? (
+            <p id="plan-item-time-error" role="alert" className="text-xs text-red-600">
+              {validation.message} 시는 00–23, 분은 00–59로 입력해 주세요.
+            </p>
+          ) : null}
 
           <div className="min-h-[16px] text-center text-xs">
             {startHm.length === 0 ? (
               <span className="text-dark-gray/70">
-                미설정 · 스크롤 또는 탭으로 시각 지정
+                미설정
               </span>
             ) : endHm.length === 0 ? (
               <span className="text-dark-gray/70">
@@ -226,7 +207,7 @@ export function PlanItemTimeEditor({
             ) : null}
           </div>
 
-          <div className="mt-1 flex items-center justify-end gap-2">
+          <div className="mt-1 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={onClose}
@@ -241,7 +222,7 @@ export function PlanItemTimeEditor({
               disabled={!canSave}
               className="h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {isPending ? "저장 중…" : "저장"}
+              {isPending ? "저장 중…" : "적용"}
             </button>
           </div>
         </div>

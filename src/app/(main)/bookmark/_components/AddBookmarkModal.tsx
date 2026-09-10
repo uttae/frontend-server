@@ -93,7 +93,7 @@ export function AddBookmarkModal({
           id="bookmark-modal-title"
           className="text-[22px] font-semibold text-neutral-900"
         >
-          {mode === "edit" ? "북마크 편집" : "새 북마크 추가"}
+          {mode === "edit" ? "북마크 편집" : "새 북마크 생성"}
         </h2>
         {formError ? (
           <p className="mt-3 text-[17px] text-primary" role="alert">
