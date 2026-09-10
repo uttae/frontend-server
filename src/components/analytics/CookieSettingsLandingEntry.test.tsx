@@ -25,7 +25,7 @@ it("opens from the compatibility query once and preserves unrelated URL state", 
         </CookieSettingsProvider>,
       ),
     );
-    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(document.querySelector('dialog[open]')).not.toBeNull();
     expect(
       window.location.pathname + window.location.search + window.location.hash,
     ).toBe("/?keep=1#team");
@@ -34,7 +34,7 @@ it("opens from the compatibility query once and preserves unrelated URL state", 
         .querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!
         .click(),
     );
-    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.querySelector('dialog[open]')).toBeNull();
     expect(document.activeElement).toBe(host.querySelector("button"));
   } finally {
     await act(async () => root.unmount());

@@ -78,7 +78,7 @@ const scheduleItem = (itemId: number, orderIndex: number): RoomScheduleItem => (
   scheduleId: 10,
   googlePlaceId: `place-${itemId}`,
   startTime: null,
-  durationMinutes: null,
+  endTime: null,
   orderIndex,
   travelMode: "DRIVING",
   createdAt: "2026-07-16T00:00:00Z",

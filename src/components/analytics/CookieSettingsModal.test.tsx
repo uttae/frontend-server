@@ -72,7 +72,7 @@ afterEach(async () => {
 describe("cookie settings modal", () => {
   it("reserves matching scrollbar gutters with disclosure closed and expanded", async () => {
     await click("쿠키 설정");
-    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+    const dialog = document.querySelector<HTMLElement>('dialog[open]')!;
     const details = dialog.querySelector("details")!;
     for (const expanded of [false, true]) {
       if (expanded)
@@ -91,7 +91,7 @@ describe("cookie settings modal", () => {
 
   it("opens in place, traps keyboard focus and dismisses with Escape without saving", async () => {
     await click("쿠키 설정");
-    const dialog = document.querySelector('[role="dialog"]')!;
+    const dialog = document.querySelector('dialog[open]')!;
     expect(dialog).not.toBeNull();
     expect(dialog.getAttribute("aria-modal")).toBe("true");
     expect(
@@ -134,7 +134,7 @@ describe("cookie settings modal", () => {
         new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
       ),
     );
-    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.querySelector('dialog[open]')).toBeNull();
     expect(document.activeElement).toBe(button("쿠키 설정"));
     expect(host.hasAttribute("inert")).toBe(false);
     expect(
@@ -155,9 +155,9 @@ describe("cookie settings modal", () => {
     expect(toggle().getAttribute("aria-checked")).toBe("false");
     await toggleDraft();
     await act(async () =>
-      (document.querySelector('[role="presentation"]') as HTMLElement).click(),
+      (document.querySelector('[aria-label="쿠키 설정 배경 닫기"]') as HTMLElement).click(),
     );
-    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(document.querySelector('dialog[open]')).toBeNull();
     expect(document.cookie).toContain("v1:denied");
   });
 
@@ -198,7 +198,7 @@ it("keeps the dialog open and reports a blocked cookie write accurately", async 
   await toggleDraft();
   vi.spyOn(document, "cookie", "set").mockImplementation(() => {});
   await click("저장");
-  expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+  expect(document.querySelector('dialog[open]')).not.toBeNull();
   expect(document.querySelector('[aria-live="polite"]')?.textContent).toContain(
     "브라우저에 저장하지 못했습니다",
   );
@@ -226,7 +226,7 @@ describe("analytics allow switch", () => {
     expect(
       descriptionIds.map((id) => document.getElementById(id)!.textContent).join(" "),
     ).toContain("Google Analytics");
-    expect(document.querySelector('[role="dialog"]')!.textContent).not.toContain(
+    expect(document.querySelector('dialog[open]')!.textContent).not.toContain(
       "저장을 누르면",
     );
     expect(analyticsConsentStore.getSnapshot()).toBe("pending");
@@ -270,7 +270,7 @@ it("retains the draft through disclosure and keyboard focus, without applying it
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     ),
   );
-  expect(document.querySelector('[role="dialog"]')).toBeNull();
+  expect(document.querySelector('dialog[open]')).toBeNull();
   expect(document.activeElement).toBe(button("쿠키 설정"));
   expect(analyticsConsentStore.getSnapshot()).toBe("granted");
   await click("쿠키 설정");
@@ -287,4 +287,21 @@ it("cancels untouched pending with X and restores body scroll", async () => {
   expect(document.body.style.overflow).toBe(overflow);
   await click("쿠키 설정");
   expect(toggle().getAttribute("aria-checked")).toBe("false");
+});
+
+it("restores focus to the app main when saving removes the only trigger", async () => {
+  const main = document.createElement("main");
+  host.append(main);
+  await click("쿠키 설정");
+  // Saving a pending consent removes the banner that owned this trigger.
+  const trigger = button("쿠키 설정");
+  trigger.remove();
+  try {
+    await click("쿠키 설정 닫기");
+    expect(document.activeElement).toBe(main);
+    expect(main.hasAttribute("tabindex")).toBe(false);
+  } finally {
+    host.prepend(trigger);
+    main.remove();
+  }
 });

@@ -120,7 +120,7 @@ function enqueueDebouncedInvalidateScheduleRoutes(
   );
 }
 
-/** 연속 일정 항목 동기화(GET items)를 한 번으로 묶음 — `SCHEDULE_ITEM_UPDATED`(원격) 전용 */
+/** 연속 일정 항목 동기화(GET items)를 한 번으로 묶음 — `SCHEDULE_ITEM_UPDATED` 전용 */
 const syncSchedulePlacesFromItemsDebouncers = new Map<
   string,
   ReturnType<typeof setTimeout>
@@ -198,7 +198,7 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
  * — `ROOM_SCHEDULES_RESYNCED`: `room-schedules` 전체 재조회 + 방 상세 동기화 (원격 탭; 액터는 mutation `onSuccess`)
  * — `schedule-items`: 일차별 장소 목록
  * — `schedule-item-route`: `itemId`·인접 구간의 `segmentSourceItemId`만 무효화(폴백 시 일정 전체)
- * — `SCHEDULE_ITEM_UPDATED`: 일정 목록만 동기화할 때 사용(원격 탭); 경로(`schedule-item-route`)는 무효화하지 않음
+ * — `SCHEDULE_ITEM_UPDATED`: 일정 목록만 동기화할 때 사용(본인 이벤트 포함); 경로(`schedule-item-route`)는 무효화하지 않음
  * — `SCHEDULE_ITEM_TRAVEL_MODE_UPDATED`: 공유 이동수단 변경 — 일정 목록만 동기화(경로 캐시는 수단별 키로 유지)
  * — 맵 polyline: 구간별 에폭(`bumpSegments`); 폴백 시 방 단위(`bumpForDirections`)
  */
@@ -357,16 +357,7 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      const me = readSessionUserId(queryClient);
-      const actorIsMe =
-        typeof me === "number" &&
-        Number.isFinite(me) &&
-        event.actorUserId === me;
-
-      if (actorIsMe) {
-        return;
-      }
-
+      // 같은 사용자의 다른 탭도 이 이벤트를 받으므로 HTTP 응답과 무관하게 목록을 동기화합니다.
       enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
       return;
     }

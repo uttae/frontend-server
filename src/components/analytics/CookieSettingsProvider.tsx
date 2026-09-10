@@ -16,7 +16,7 @@ import { SettingsDialog } from "@/components/settings/SettingsDialog";
 
 const OpenCookieSettingsContext = createContext<() => void>(() => {});
 
-export function CookieSettingsProvider({ children }: { children: ReactNode }) {
+export function CookieSettingsProvider({ children }: Readonly<{ children: ReactNode }>) {
   const [open, setOpen] = useState(false);
   const openSettings = useCallback(() => setOpen(true), []);
   const closeSettings = useCallback(() => setOpen(false), []);

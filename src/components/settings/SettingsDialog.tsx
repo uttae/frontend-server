@@ -4,6 +4,25 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
+function restoreDialogFocus(trigger: Element | null) {
+  if (trigger instanceof HTMLElement && trigger !== document.body && trigger.isConnected) {
+    trigger.focus();
+    return;
+  }
+  const fallback = document.querySelector<HTMLElement>("[data-cookie-settings-trigger]");
+  if (fallback) {
+    fallback.focus();
+    return;
+  }
+  const main = document.querySelector<HTMLElement>("main, [role=main]");
+  if (!main) return;
+  const previousTabIndex = main.getAttribute("tabindex");
+  main.setAttribute("tabindex", "-1");
+  main.focus({ preventScroll: true });
+  if (previousTabIndex === null) main.removeAttribute("tabindex");
+  else main.setAttribute("tabindex", previousTabIndex);
+}
+
 /** 기존 설정 모달의 표면·간격을 공유하는 키보드 접근 가능한 다이얼로그. */
 export function SettingsDialog({
   title,
@@ -16,7 +35,7 @@ export function SettingsDialog({
 }) {
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
-  const dialogRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const trigger = document.activeElement;
@@ -43,7 +62,7 @@ export function SettingsDialog({
       if (event.key !== "Tab") return;
       const items = focusable();
       const first = items[0];
-      const last = items[items.length - 1];
+      const last = items.at(-1);
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last?.focus();
@@ -66,34 +85,28 @@ export function SettingsDialog({
         if (value === null) node.removeAttribute("inert");
         else node.setAttribute("inert", value);
       });
-      if (
-        trigger instanceof HTMLElement &&
-        trigger !== document.body &&
-        trigger.isConnected
-      )
-        trigger.focus();
-      else
-        document
-          .querySelector<HTMLElement>("[data-cookie-settings-trigger]")
-          ?.focus();
+      restoreDialogFocus(trigger);
     };
   }, [onClose]);
 
   return createPortal(
     <div
       ref={overlayRef}
-      role="presentation"
-      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
     >
-      <div
+      <button
+        type="button"
+        tabIndex={-1}
+        aria-label={`${title} 배경 닫기`}
+        className="absolute inset-0 cursor-default"
+        onClick={onClose}
+      />
+      <dialog
+        open
         ref={dialogRef}
-        role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[640px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"
+        className="relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[640px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"
       >
         <div className="mb-2 flex items-center justify-between gap-4">
           <h2 id={titleId} className="text-[22px] font-bold">
@@ -109,7 +122,7 @@ export function SettingsDialog({
           </button>
         </div>
         {children}
-      </div>
+      </dialog>
     </div>,
     document.body,
   );

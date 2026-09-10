@@ -68,7 +68,10 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/") {
     if (request.nextUrl.searchParams.get(COOKIE_SETTINGS_QUERY_KEY) === "open") {
-      return withRefreshedCookies(NextResponse.next(), setCookies);
+      return withRefreshedCookies(
+        withNoindexNofollow(NextResponse.next()),
+        setCookies,
+      );
     }
     if (hasSession) {
       return withNoindexNofollow(

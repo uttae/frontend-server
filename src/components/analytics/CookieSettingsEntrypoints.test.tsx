@@ -42,7 +42,7 @@ it("opens the same dialog from footer and banner without navigation, even with a
     expect(triggers).toHaveLength(2);
     for (const trigger of triggers) {
       await act(async () => trigger.click());
-      expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1);
+      expect(document.querySelectorAll('dialog[open]')).toHaveLength(1);
       expect(window.location.pathname).toBe("/home");
       await act(async () =>
         document
@@ -114,7 +114,7 @@ it("returns focus to the footer when saving consent removes the original banner 
     )!;
     await act(async () => trigger.click());
     const dialogButtons = () => [
-      ...document.querySelectorAll('[role="dialog"] button'),
+      ...document.querySelectorAll('dialog[open] button'),
     ];
     await act(async () =>
       (
