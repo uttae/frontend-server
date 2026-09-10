@@ -5,7 +5,8 @@ import { CopyableSupportEmail } from "@/components/contact/CopyableSupportEmail"
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { MainSettingsPageLayout } from "@/components/layout/MainSettingsPageLayout";
 
-const CONTACT_FEEDBACK_FORM_URL = "https://forms.gle/LJMrWfYEgWCE3eCGA";
+const CONTACT_FEEDBACK_FORM_URL = "https://forms.gle/giYqRzrhCYF9Hz1M9";
+const CONTACT_BUG_REPORT_FORM_URL = "https://forms.gle/SD91WTmxrA3Hf17U9";
 
 export default function ContactPage() {
   return (
@@ -29,6 +30,15 @@ export default function ContactPage() {
           className="inline-flex w-fit items-center gap-1.5 text-[17px] font-medium text-primary transition hover:opacity-80"
         >
           피드백 설문 보내기
+          <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
+        </Link>
+        <Link
+          href={CONTACT_BUG_REPORT_FORM_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex w-fit items-center gap-1.5 text-[17px] font-medium text-primary transition hover:opacity-80"
+        >
+          버그 제보하기
           <ExternalLink className="h-3.5 w-3.5" strokeWidth={2} aria-hidden />
         </Link>
       </div>
