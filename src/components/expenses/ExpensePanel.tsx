@@ -2,12 +2,13 @@
 
 import { useRef, useState } from "react";
 import type { Expense } from "@/lib/api/rooms/expenses";
-import { ExpenseEntryButton, useExpenseContext } from "./ExpenseProvider";
+import { Plus, RefreshCw, ReceiptText, Users } from "lucide-react";
+import { useExpenseContext } from "./ExpenseProvider";
 import {
   ExpenseList,
   ExpenseSummaryView,
   expenseButtonClass,
-  expenseInputClass,
+  formatExpenseAmount,
 } from "./ExpenseViews";
 export function ExpensePanel() {
   const context = useExpenseContext();
@@ -63,36 +64,108 @@ export function ExpensePanel() {
   return (
     <section
       aria-label="지출 및 정산"
-      className="min-w-0 space-y-4 rounded-2xl border border-gray-border bg-white p-4 sm:p-5"
+      className="@container/expenses min-w-0 space-y-5 rounded-2xl border border-gray-border bg-white p-4 @min-[600px]/plan:p-6"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-bold">지출 및 정산</h2>
-        <button
-          type="button"
-          className={expenseButtonClass}
-          disabled={refreshing || context.busy}
-          onClick={() => void refresh()}
-        >
-          {refreshing ? "새로고침 중…" : "새로고침"}
-        </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">지출 및 정산</h2>
+          <p className="mt-1 text-sm text-dark-gray">
+            함께 쓴 여행 경비를 한눈에 확인해요.
+          </p>
+        </div>
+        {context.canManage && (
+          <button
+            type="button"
+            aria-label="지출 추가"
+            disabled={context.busy}
+            onClick={() =>
+              context.open(
+                activeFilter !== "ALL" && activeFilter !== "PREPARATION"
+                  ? { scheduleId: Number(activeFilter) }
+                  : {},
+              )
+            }
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+          >
+            <Plus size={17} aria-hidden="true" />
+            지출 추가
+          </button>
+        )}
       </div>
-      <div className="flex flex-wrap gap-2" aria-label="지출 보기">
-        <button
-          type="button"
-          aria-pressed={tab === "list"}
-          className={`${expenseButtonClass} ${tab === "list" ? "bg-primary/10 text-primary-strong" : ""}`}
-          onClick={() => setTab("list")}
-        >
-          지출 목록
-        </button>
-        <button
-          type="button"
-          aria-pressed={tab === "summary"}
-          className={`${expenseButtonClass} ${tab === "summary" ? "bg-primary/10 text-primary-strong" : ""}`}
-          onClick={() => setTab("summary")}
-        >
-          정산 요약
-        </button>
+      <div className="rounded-2xl bg-gray-50 p-4 @min-[480px]/expenses:p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-dark-gray">여행 전체 지출</p>
+            {context.summary.isPending && (
+              <p role="status" className="mt-2 text-sm text-dark-gray">
+                총액을 불러오는 중…
+              </p>
+            )}
+            {context.summary.isError && (
+              <p role="alert" className="mt-2 text-sm text-status-negative">
+                총액을 불러오지 못했어요. 새로고침해 주세요.
+              </p>
+            )}
+            {context.summary.isSuccess && (
+              <div className="mt-2 flex flex-wrap gap-x-7 gap-y-2">
+                {context.summary.data.currencies.length ? (
+                  context.summary.data.currencies.map((c) => (
+                    <p
+                      key={c.currency}
+                      className="min-w-0 break-all text-3xl font-bold tracking-tight tabular-nums"
+                    >
+                      {formatExpenseAmount(c.totalAmount)}{" "}
+                      <span className="text-sm font-medium tracking-normal text-dark-gray">
+                        {c.currency}
+                      </span>
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-lg font-semibold">
+                    첫 지출을 기록해 보세요
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            aria-label={refreshing ? "새로고침 중" : "새로고침"}
+            title="새로고침"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-dark-gray hover:bg-white disabled:opacity-50"
+            disabled={refreshing || context.busy}
+            onClick={() => void refresh()}
+          >
+            <RefreshCw
+              size={17}
+              aria-hidden="true"
+              className={refreshing ? "motion-safe:animate-spin" : ""}
+            />
+          </button>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="지출 보기">
+          <button
+            type="button"
+            aria-pressed={tab === "list"}
+            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "list" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
+            onClick={() => setTab("list")}
+          >
+            <ReceiptText size={16} aria-hidden="true" />
+            지출 목록
+          </button>
+          <button
+            type="button"
+            aria-pressed={tab === "summary"}
+            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "summary" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
+            onClick={() => setTab("summary")}
+          >
+            <Users size={16} aria-hidden="true" />
+            정산 요약
+          </button>
+        </div>
+        {context.summary.data && context.summary.data.currencies.length > 1 && (
+          <p className="mt-3 text-xs text-dark-gray">통화별로 따로 정산해요.</p>
+        )}
       </div>
       {context.memberStatus !== "success" && (
         <p role="status" className="text-sm text-dark-gray">
@@ -127,11 +200,17 @@ export function ExpensePanel() {
       )}
       {tab === "list" && (
         <>
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <label className="min-w-0 text-sm font-semibold">
-              준비·일차 필터
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h3 className="text-base font-bold">
+              지출 내역{" "}
+              <span className="ml-1 text-sm font-medium text-dark-gray">
+                {context.list.isSuccess ? `${filtered.length}건` : ""}
+              </span>
+            </h3>
+            <label className="min-w-0 text-sm text-dark-gray">
+              <span className="sr-only">준비·일차 필터</span>
               <select
-                className={expenseInputClass}
+                className="min-h-10 max-w-full rounded-lg border border-gray-border bg-white px-3 py-2 text-sm focus:outline-primary"
                 value={activeFilter}
                 onChange={(e) => setFilter(e.target.value)}
               >
@@ -144,7 +223,6 @@ export function ExpensePanel() {
                 ))}
               </select>
             </label>
-            <ExpenseEntryButton label="준비 지출 추가" />
           </div>
           {context.list.isSuccess && (
             <ExpenseList

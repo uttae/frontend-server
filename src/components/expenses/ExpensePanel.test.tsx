@@ -7,6 +7,61 @@ const mocks = vi.hoisted(() => ({
   open: vi.fn(),
   refresh: vi.fn(),
 }));
+
+it("opens an expense in the selected trip day", async () => {
+  await mount();
+  mocks.open.mockClear();
+  await act(async () =>
+    renderer.root
+      .findByType("select")
+      .props.onChange({ target: { value: "10" } }),
+  );
+  const add = renderer.root
+    .findAllByType("button")
+    .find((b) => b.props["aria-label"] === "지출 추가");
+  expect(add).toBeDefined();
+  await act(async () => add!.props.onClick());
+  expect(mocks.open).toHaveBeenCalledWith({ scheduleId: 10 });
+});
+
+it("keeps exact whole-trip currency totals visible while filtering", async () => {
+  await mount();
+  mocks.state = {
+    ...(mocks.state as object),
+    summary: {
+      isSuccess: true,
+      data: {
+        currencies: [
+          {
+            currency: "USD",
+            totalAmount: "999999999999999.99",
+            categories: [],
+            days: [],
+            individuals: [],
+            transfers: [],
+          },
+          {
+            currency: "KRW",
+            totalAmount: "12300",
+            categories: [],
+            days: [],
+            individuals: [],
+            transfers: [],
+          },
+        ],
+      },
+    },
+  };
+  await act(async () => renderer.update(<ExpensePanel />));
+  await act(async () =>
+    renderer.root
+      .findByType("select")
+      .props.onChange({ target: { value: "PREPARATION" } }),
+  );
+  const text = JSON.stringify(renderer.toJSON());
+  expect(text).toContain("999,999,999,999,999.99");
+  expect(text).toContain("12,300");
+});
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => mocks.state,
   ExpenseEntryButton: () => <button>준비 지출 추가</button>,

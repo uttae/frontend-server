@@ -336,7 +336,9 @@ it.each(categories)(
 async function mountWithOpener() {
   class FocusTarget {
     isConnected = true;
-    focus = vi.fn(() => { ownerDocument.activeElement = this; });
+    focus = vi.fn(() => {
+      ownerDocument.activeElement = this;
+    });
   }
   const opener = new FocusTarget();
   const closeButton = new FocusTarget();
@@ -347,7 +349,9 @@ async function mountWithOpener() {
     close: vi.fn(),
   };
   vi.stubGlobal("HTMLElement", FocusTarget);
-  await mount(base, {}, (element) => element.type === "dialog" ? nativeDialog : null);
+  await mount(base, {}, (element) =>
+    element.type === "dialog" ? nativeDialog : null,
+  );
   mocks.close.mockImplementation(() => renderer.unmount());
   expect(ownerDocument.activeElement).toBe(closeButton);
   return { opener, closeButton, ownerDocument, nativeDialog };
@@ -363,9 +367,14 @@ it.each(["Escape", "닫기", "취소", "save"])(
         renderer.root.findByType("dialog").props.onCancel({ preventDefault });
         expect(preventDefault).toHaveBeenCalledOnce();
       } else if (path === "save") {
-        await renderer.root.findByType("form").props.onSubmit({ preventDefault() {} });
+        await renderer.root
+          .findByType("form")
+          .props.onSubmit({ preventDefault() {} });
       } else {
-        renderer.root.findAllByType("button").find((b) => b.children.join("") === path)!.props.onClick();
+        renderer.root
+          .findAllByType("button")
+          .find((b) => (b.props["aria-label"] ?? b.children.join("")) === path)!
+          .props.onClick();
       }
     });
     expect(mocks.close).toHaveBeenCalledOnce();
@@ -385,14 +394,28 @@ it("does not focus an opener removed while the editor was open", async () => {
 it("keeps focus in the editor and locks dismissal during save, then restores it on success", async () => {
   const { opener, closeButton, ownerDocument } = await mountWithOpener();
   let finish!: () => void;
-  mocks.save.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
+  mocks.save.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   await act(async () => {
-    void renderer.root.findByType("form").props.onSubmit({ preventDefault() {} });
+    void renderer.root
+      .findByType("form")
+      .props.onSubmit({ preventDefault() {} });
   });
   for (const label of ["닫기", "취소"]) {
-    expect(renderer.root.findAllByType("button").find((b) => b.children.join("") === label)!.props.disabled).toBe(true);
+    expect(
+      renderer.root
+        .findAllByType("button")
+        .find((b) => (b.props["aria-label"] ?? b.children.join("")) === label)!
+        .props.disabled,
+    ).toBe(true);
   }
-  await act(async () => renderer.root.findByType("dialog").props.onCancel({ preventDefault() {} }));
+  await act(async () =>
+    renderer.root.findByType("dialog").props.onCancel({ preventDefault() {} }),
+  );
   expect(mocks.close).not.toHaveBeenCalled();
   expect(opener.focus).not.toHaveBeenCalled();
   expect(ownerDocument.activeElement).toBe(closeButton);
@@ -403,10 +426,14 @@ it("keeps focus in the editor and locks dismissal during save, then restores it 
 it("keeps the editor focused on save rejection and restores focus on later dismissal", async () => {
   const { opener, closeButton, ownerDocument } = await mountWithOpener();
   mocks.save.mockRejectedValueOnce(new Error("저장 실패"));
-  await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
+  await act(async () =>
+    renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+  );
   expect(mocks.close).not.toHaveBeenCalled();
   expect(opener.focus).not.toHaveBeenCalled();
   expect(ownerDocument.activeElement).toBe(closeButton);
-  await act(async () => renderer.root.findByType("dialog").props.onCancel({ preventDefault() {} }));
+  await act(async () =>
+    renderer.root.findByType("dialog").props.onCancel({ preventDefault() {} }),
+  );
   expect(opener.focus).toHaveBeenCalledOnce();
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   expenseCategories,
@@ -66,7 +67,8 @@ export function ExpenseEditor({
     element?.showModal();
     return () => {
       element?.close();
-      if (opener && opener instanceof HTMLElement && opener.isConnected) opener.focus();
+      if (opener && opener instanceof HTMLElement && opener.isConnected)
+        opener.focus();
     };
   }, []);
   const pending = saving || context.busy;
@@ -151,15 +153,15 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-3xl border-0 bg-white p-5 text-black shadow-xl backdrop:bg-black/40"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="space-y-4"
+        className="space-y-5 p-5 sm:p-6"
         aria-describedby={error ? errorId : undefined}
       >
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 border-b border-gray-border pb-4">
           <h2 id={titleId} className="text-xl font-bold">
             {original ? "지출 수정" : "지출 추가"}
           </h2>
@@ -167,15 +169,69 @@ export function ExpenseEditor({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className={expenseButtonClass}
+            aria-label="닫기"
+            className="flex size-10 items-center justify-center rounded-full bg-light-gray text-dark-gray hover:bg-gray-border disabled:opacity-50"
           >
-            닫기
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
         <p className="text-sm text-dark-gray">
-          결제자와 부담자를 각각 균등하게 나눠요.
+          얼마를 썼나요? 결제한 사람과 함께 나눌 사람을 선택해 주세요.
         </p>
         <fieldset disabled={pending} className="min-w-0 space-y-4">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3 rounded-2xl bg-light-gray/60 p-4">
+            <label className="block min-w-0 text-sm font-semibold">
+              통화 검색
+              <input
+                className={expenseInputClass}
+                list={currencyListId}
+                value={body.currency}
+                onChange={(e) =>
+                  change("currency", e.target.value.toUpperCase())
+                }
+                placeholder="통화 코드 검색"
+                autoComplete="off"
+              />
+              <datalist id={currencyListId}>
+                {context.currencies.data?.map((c) => (
+                  <option key={c.currency} value={c.currency}>
+                    소수 {c.fractionDigits}자리
+                  </option>
+                ))}
+              </datalist>
+            </label>
+            <label className="block min-w-0 text-sm font-semibold">
+              금액
+              <input
+                className={`${expenseInputClass} font-bold tabular-nums`}
+                inputMode="decimal"
+                value={body.totalAmount}
+                onChange={(e) => change("totalAmount", e.target.value)}
+                placeholder={
+                  currency
+                    ? currency.fractionDigits
+                      ? `0.${"0".repeat(currency.fractionDigits)}`
+                      : "0"
+                    : "금액"
+                }
+                autoComplete="off"
+              />
+            </label>
+          </div>
+          {currency && (
+            <p className="break-all text-xs text-dark-gray">
+              {currency.fractionDigits === 0
+                ? `${currency.currency} 금액은 정수로 입력해 주세요.`
+                : `${currency.currency} 금액은 소수 ${currency.fractionDigits}자리로 입력해 주세요.`}
+            </p>
+          )}
+          {!context.currencies.isSuccess && (
+            <p role="status" className="text-sm text-dark-gray">
+              {context.currencies.isError
+                ? "통화 목록 조회에 실패했어요."
+                : "통화 목록을 불러오는 중…"}
+            </p>
+          )}
           <label className="block text-sm font-semibold">
             지출 구분
             <select
@@ -263,58 +319,6 @@ export function ExpenseEditor({
               ))}
             </select>
           </label>
-          <div className="grid min-w-0 gap-3 sm:grid-cols-[1fr_2fr]">
-            <label className="block min-w-0 text-sm font-semibold">
-              통화 검색
-              <input
-                className={expenseInputClass}
-                list={currencyListId}
-                value={body.currency}
-                onChange={(e) =>
-                  change("currency", e.target.value.toUpperCase())
-                }
-                placeholder="통화 코드 검색"
-                autoComplete="off"
-              />
-              <datalist id={currencyListId}>
-                {context.currencies.data?.map((c) => (
-                  <option key={c.currency} value={c.currency}>
-                    소수 {c.fractionDigits}자리
-                  </option>
-                ))}
-              </datalist>
-            </label>
-            <label className="block min-w-0 text-sm font-semibold">
-              금액
-              <input
-                className={expenseInputClass}
-                inputMode="decimal"
-                value={body.totalAmount}
-                onChange={(e) => change("totalAmount", e.target.value)}
-                placeholder={
-                  currency
-                    ? currency.fractionDigits
-                      ? `0.${"0".repeat(currency.fractionDigits)}`
-                      : "0"
-                    : "금액"
-                }
-                autoComplete="off"
-              />
-            </label>
-          </div>
-          {currency && (
-            <p className="break-all text-xs text-dark-gray">
-              소수 {currency.fractionDigits}자리 · 최대 {currency.maximumAmount}{" "}
-              {currency.currency}. 입력 금액을 반올림하거나 환전하지 않아요.
-            </p>
-          )}
-          {!context.currencies.isSuccess && (
-            <p role="status" className="text-sm text-dark-gray">
-              {context.currencies.isError
-                ? "통화 목록 조회에 실패했어요."
-                : "통화 목록을 불러오는 중…"}
-            </p>
-          )}
           {context.memberStatus === "success" ? (
             <div className="grid min-w-0 gap-3 sm:grid-cols-2">
               <ExpenseRolePicker
@@ -363,7 +367,7 @@ export function ExpenseEditor({
             {error}
           </p>
         )}
-        <div className="flex flex-wrap justify-end gap-2">
+        <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:px-6">
           <button
             type="button"
             className={expenseButtonClass}
