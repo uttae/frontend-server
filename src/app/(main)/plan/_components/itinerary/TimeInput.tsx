@@ -18,9 +18,9 @@ export function TimeInput({
   const update = (index: number, next: string) => {
     const updated = [...parts];
     updated[index] = next;
-    // Selecting one part of an unset time starts at minute/hour zero.
+    // Entering one part of an unset time starts at minute/hour zero.
     if (!value) updated[1 - index] = "00";
-    onChange(updated.join(":"));
+    onChange(updated.every((part) => part === "") ? "" : updated.join(":"));
   };
 
   return (
@@ -46,19 +46,6 @@ export function TimeInput({
               />
               <span aria-hidden className="text-xs text-dark-gray">{unit}</span>
             </div>
-            <select
-              aria-label={`${label} ${unit} 선택`}
-              value=""
-              disabled={disabled}
-              onChange={(e) => update(index, e.target.value)}
-              className="mt-1 h-7 w-full rounded border border-gray-border bg-white px-1 text-xs text-dark-gray focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-40"
-            >
-              <option value="" disabled>{unit} 선택</option>
-              {Array.from({ length: count }, (_, n) => {
-                const option = String(n).padStart(2, "0");
-                return <option key={option} value={option}>{option}</option>;
-              })}
-            </select>
           </div>
         );
       })}

@@ -33,14 +33,6 @@ async function click(label: string) {
   await act(async () => button!.click());
 }
 const fields = ["시작 시", "시작 분", "종료 시", "종료 분"];
-async function select(column: number, value: string) {
-  const el = container.querySelector<HTMLSelectElement>(`select[aria-label="${fields[column]} 선택"]`);
-  expect(el, fields[column]).not.toBeNull();
-  await act(async () => {
-    el!.value = value;
-    el!.dispatchEvent(new Event("change", { bubbles: true }));
-  });
-}
 function input(column: number) {
   const el = container.querySelector<HTMLInputElement>(`input[aria-label="${fields[column]}"]`);
   expect(el, fields[column]).not.toBeNull();
@@ -87,7 +79,7 @@ describe("schedule time editor", () => {
   it("reenters with the exact saved overnight end and sends only an edited end", async () => {
     await render();
     expect(selected(2)).toBe("01");
-    await select(2, "02");
+    await type(2, "02");
     await click("적용");
     expect(body()).toEqual({ endTime: "02:00" });
     expect(props.onClose).toHaveBeenCalled();
@@ -96,8 +88,8 @@ describe("schedule time editor", () => {
     props.startTime = "00:00";
     props.endTime = null;
     await render();
-    await select(2, "23");
-    await select(3, "59");
+    await type(2, "23");
+    await type(3, "59");
     await click("적용");
     expect(body()).toEqual({ endTime: "23:59" });
   });
@@ -105,30 +97,34 @@ describe("schedule time editor", () => {
     props.startTime = "00:00";
     props.endTime = "00:00";
     await render();
-    await click("종료 시각 지우기");
+    await type(2, "");
+    await type(3, "");
     await click("적용");
     expect(body()).toEqual({ endTime: null });
   });
-  it("clears both fields when removing the start", async () => {
+  it.each(["23:00", ""])("closes without saving edits when start is %s", async (startTime) => {
+    props.startTime = startTime;
+    props.endTime = startTime ? "01:00" : null;
     await render();
-    await click("시작 시각 지우기");
-    await click("적용");
-    expect(body()).toEqual({ startTime: null, endTime: null });
+    await type(0, "09");
+    await click("닫기");
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    expect(props.onClose).toHaveBeenCalledOnce();
   });
   it("sets start only and distinguishes no end from equal end", async () => {
     props.startTime = "";
     props.endTime = null;
     await render();
-    await select(0, "00");
+    await type(0, "00");
     await click("적용");
     expect(body()).toEqual({ startTime: "00:00" });
-    await select(2, "00");
+    await type(2, "00");
     await click("적용");
     expect(body()).toEqual({ startTime: "00:00", endTime: "00:00" });
   });
   it("preserves the edited end during refetch and omits untouched latest start", async () => {
     await render();
-    await select(2, "02");
+    await type(2, "02");
     props = { ...props, startTime: "22:00", endTime: "03:00" };
     await render();
     expect(selected(2)).toBe("02");
@@ -138,7 +134,7 @@ describe("schedule time editor", () => {
   });
   it("blocks an end draft if remote refresh removes its required start", async () => {
     await render();
-    await select(2, "02");
+    await type(2, "02");
     props = { ...props, startTime: "", endTime: null };
     await render();
     await click("적용");
@@ -146,7 +142,7 @@ describe("schedule time editor", () => {
   });
   it("cancels without sending a PATCH", async () => {
     await render();
-    await select(2, "02");
+    await type(2, "02");
     await click("취소");
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
     expect(props.onClose).toHaveBeenCalled();

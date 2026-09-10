@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Trash2 } from "lucide-react";
+import { Clock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -59,15 +59,8 @@ export function PlanItemTimeEditor({
     };
   }, []);
 
-  const hasDraftValue = startHm.length > 0 || endHm.length > 0;
-
   const durationPreview =
     startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
-
-  function handleReset() {
-    setStartHm("");
-    setEndHm("");
-  }
 
   async function handleSave() {
     if (isPending || savingRef.current || !dirty) return;
@@ -127,7 +120,7 @@ export function PlanItemTimeEditor({
             void handleSave();
           } else if (e.key === "Tab") {
             const controls = [...e.currentTarget.querySelectorAll<HTMLElement>(
-              "button:not(:disabled), input:not(:disabled), select:not(:disabled)",
+              "button:not(:disabled), input:not(:disabled)",
             )];
             const first = controls[0];
             const last = controls.at(-1);
@@ -159,40 +152,29 @@ export function PlanItemTimeEditor({
           >
             시간 설정
           </h2>
-          {hasDraftValue ? (
-            <button
-              type="button"
-              aria-label="시간 초기화"
-              onClick={handleReset}
-              disabled={isPending}
-              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </button>
-          ) : null}
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={onClose}
+            disabled={isPending}
+            className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
         </div>
 
         <div className="flex flex-col gap-3 px-5 pb-4">
-          <p id="plan-item-time-help" className="text-xs text-dark-gray">
-            24시간 기준 · 직접 입력하거나 목록에서 선택하세요
+          <p id="plan-item-time-help" className="text-center text-xs text-dark-gray">
+            24시간 기준 · 시와 분을 직접 입력하세요
           </p>
           {([
-            { label: "시작", value: draftStart ?? serverStartHm, setValue: setStartHm, clear: handleReset, disabled: isPending },
-            { label: "종료", value: draftEnd ?? serverEndHm, setValue: setEndHm, clear: () => setEndHm(""), disabled: isPending || !normalizeStartTimeToHm(startHm) },
-          ] as const).map(({ label, value, setValue, clear, disabled }) => (
+            { label: "시작", value: draftStart ?? serverStartHm, setValue: setStartHm, disabled: isPending },
+            { label: "종료", value: draftEnd ?? serverEndHm, setValue: setEndHm, disabled: isPending || !normalizeStartTimeToHm(startHm) },
+          ] as const).map(({ label, value, setValue, disabled }) => (
             <div key={label} className="flex items-center gap-3">
-              <div className="flex w-10 shrink-0 flex-col gap-1">
-                <span className={fieldLabelClass}>{label}</span>
-                <button
-                  type="button"
-                  aria-label={`${label} 시각 지우기`}
-                  onClick={clear}
-                  disabled={isPending || !value}
-                  className="text-xs text-dark-gray disabled:opacity-40"
-                >
-                  {value ? "지우기" : "미설정"}
-                </button>
-              </div>
+              <span className={`${fieldLabelClass} w-10 shrink-0 text-center`}>
+                {label}
+              </span>
               <TimeInput
                 label={label}
                 value={value}
@@ -225,7 +207,7 @@ export function PlanItemTimeEditor({
             ) : null}
           </div>
 
-          <div className="mt-1 flex items-center justify-end gap-2">
+          <div className="mt-1 grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={onClose}
