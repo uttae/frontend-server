@@ -8,7 +8,7 @@ import {
 } from "./travelSegmentRailLayout";
 
 type TravelRouteRailProps = {
-  /** 화살표 색 — `text-brand-red` / `text-light-gray` 등 */
+  /** 화살표 색 — `text-primary` / `text-light-gray` 등 */
   arrowClassName: string;
   className?: string;
   /** summary 행과 높이 맞춤(기본) | 슬롯 활성 시 전체 높이 + 중앙 + */

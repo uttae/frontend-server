@@ -3,7 +3,7 @@ const body =
 
 export const landingTypography = {
   eyebrow:
-    "font-sans text-sm font-extrabold uppercase tracking-[0.14em] text-brand-red",
+    "font-sans text-sm font-extrabold uppercase tracking-[0.14em] text-primary",
   heroTitle:
     "font-sans text-[2.5rem] font-extrabold leading-[1.08] tracking-[-0.055em] text-black landing-sm:text-5xl landing-lg:text-6xl",
   heroBody: body,

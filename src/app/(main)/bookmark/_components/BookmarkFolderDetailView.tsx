@@ -135,7 +135,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
       <>
         <BookmarkFolderDetailHeader folder={folder} />
         <div className={`${SCROLLBAR} space-y-3 py-10`}>
-          <p className="text-center text-[17px] text-brand-red">
+          <p className="text-center text-[17px] text-primary">
             {bookmarksErr instanceof Error
               ? bookmarksErr.message
               : "목록을 불러오지 못했습니다."}
@@ -164,7 +164,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
           </p>
         ) : cardsError ? (
           <div className="space-y-3 py-10">
-            <p className="text-center text-[17px] text-brand-red">
+            <p className="text-center text-[17px] text-primary">
               {firstPlaceError instanceof Error
                 ? firstPlaceError.message
                 : "장소 정보를 불러오지 못했습니다."}

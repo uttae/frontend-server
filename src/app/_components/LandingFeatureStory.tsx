@@ -22,7 +22,7 @@ export function LandingFeatureStory({
   return (
     <section
       id={story.id}
-      className={`scroll-mt-24 border-t border-gray-border/50 ${LANDING_SECTION_PY} ${tone === "tint" ? "bg-brand-red/[0.035]" : "bg-white"}`}
+      className={`scroll-mt-24 border-t border-gray-border/50 ${LANDING_SECTION_PY} ${tone === "tint" ? "bg-primary/[0.035]" : "bg-white"}`}
     >
       <div className={LANDING_CONTAINER_CLASS}>
         <div className="mx-auto max-w-3xl text-center">

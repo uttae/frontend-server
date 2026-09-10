@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const SCHEDULE_ITEM_MEMO_MAX_LENGTH = 2000;
 
 const MEMO_LINK_CLASS_NAME =
-  "break-all text-brand-green underline underline-offset-2 hover:opacity-80";
+  "break-all text-primary-strong underline underline-offset-2 hover:opacity-80";
 
 type PlanItemMemoEditorProps = {
   roomId: string;
@@ -74,18 +74,11 @@ function MemoOverwriteConfirmDialog({
         onMouseDown={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-2xl border border-gray-border bg-white p-5 shadow-lg"
       >
-        <h2
-          id="memo-overwrite-dialog-title"
-          className="text-base font-semibold text-gray-900"
-        >
+        <h2 id="memo-overwrite-dialog-title" className="text-base font-semibold text-gray-900">
           다른 사람의 입력을 덮어씁니다!
         </h2>
-        <p
-          id="memo-overwrite-dialog-desc"
-          className="mt-2 text-sm leading-relaxed text-dark-gray"
-        >
-          다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인
-          메모로 바뀝니다.
+        <p id="memo-overwrite-dialog-desc" className="mt-2 text-sm leading-relaxed text-dark-gray">
+          다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다.
         </p>
         <div className="mt-5 flex justify-end gap-2">
           <button
@@ -100,7 +93,7 @@ function MemoOverwriteConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onConfirm}
-            className="cursor-pointer rounded-md bg-brand-green px-3 py-1.5 text-sm font-medium text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? "저장 중…" : "확인"}
           </button>
@@ -143,7 +136,7 @@ export function PlanItemMemoReadOnly({
             e.stopPropagation();
             onDelete();
           }}
-          className="shrink-0 cursor-pointer self-start rounded-md p-1 text-dark-gray transition hover:bg-brand-red/10 hover:text-brand-red disabled:cursor-not-allowed disabled:opacity-40"
+          className="shrink-0 cursor-pointer self-start rounded-md p-1 text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Trash2 className="h-4 w-4" aria-hidden />
         </button>
@@ -175,10 +168,7 @@ export function PlanItemMemoEditor({
       return;
     }
 
-    if (
-      normalizeMemoDraft(incomingMemo) !==
-      normalizeMemoDraft(editStartMemo)
-    ) {
+    if (normalizeMemoDraft(incomingMemo) !== normalizeMemoDraft(editStartMemo)) {
       setHasRemoteConflict(true);
     }
   }, [incomingMemo, draft, editStartMemo]);
@@ -202,9 +192,7 @@ export function PlanItemMemoEditor({
       setEditStartMemo(next);
       setHasRemoteConflict(false);
       setOverwriteDialogOpen(false);
-      toast.success(
-        next.length > 0 ? "메모를 저장했어요." : "메모를 삭제했어요.",
-      );
+      toast.success(next.length > 0 ? "메모를 저장했어요." : "메모를 삭제했어요.");
       onClose();
     } catch {
       toast.error("메모를 저장하지 못했어요.");
@@ -246,10 +234,7 @@ export function PlanItemMemoEditor({
             onMouseDown={stopCardActivation}
             onClick={stopCardActivation}
             onChange={(e) => setDraft(e.target.value)}
-            className={cn(
-              PLAN_PLACE_CARD_TW.memoTextarea,
-              "select-text cursor-text",
-            )}
+            className={cn(PLAN_PLACE_CARD_TW.memoTextarea, "select-text cursor-text")}
           />
           <div className={PLAN_PLACE_CARD_TW.editorFooterRow}>
             <span className="mr-auto text-[11px] tabular-nums text-dark-gray/60">
@@ -266,7 +251,7 @@ export function PlanItemMemoEditor({
               disabled={isPending}
               className={cn(
                 "cursor-pointer border border-gray-border bg-white text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40",
-                PLAN_PLACE_CARD_TW.timeSaveButtonCompact,
+                PLAN_PLACE_CARD_TW.timeSaveButtonCompact
               )}
             >
               취소
@@ -276,8 +261,8 @@ export function PlanItemMemoEditor({
               onClick={() => void handleSave()}
               disabled={isPending || !dirty}
               className={cn(
-                "cursor-pointer bg-brand-green text-white transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-40",
-                PLAN_PLACE_CARD_TW.timeSaveButtonCompact,
+                "cursor-pointer bg-primary text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40",
+                PLAN_PLACE_CARD_TW.timeSaveButtonCompact
               )}
             >
               {isPending ? "저장 중…" : "저장"}

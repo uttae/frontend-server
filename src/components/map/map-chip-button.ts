@@ -15,7 +15,7 @@ export function mapFilterChipInactiveClassName() {
 export function mapFilterChipActiveRingClassName() {
   return cn(
     mapChipButtonBaseClass,
-    "bg-white text-brand-red ring-2 ring-brand-red ring-offset-1 hover:bg-gray-50 active:opacity-90",
+    "bg-white text-primary ring-2 ring-primary ring-offset-1 hover:bg-gray-50 active:opacity-90",
   );
 }
 
@@ -23,7 +23,7 @@ export function mapFilterChipActiveRingClassName() {
 export function mapFilterChipActiveFilledClassName() {
   return cn(
     mapChipButtonBaseClass,
-    "bg-brand-red text-white hover:opacity-95 active:opacity-90",
+    "bg-primary text-white hover:opacity-95 active:opacity-90",
   );
 }
 
@@ -32,7 +32,7 @@ export function mapChipButtonClassName(active: boolean) {
   return cn(
     mapChipButtonBaseClass,
     active
-      ? "bg-white text-brand-red ring-2 ring-brand-red ring-offset-1 hover:bg-gray-50 active:opacity-90"
-      : "bg-brand-red text-white hover:opacity-95 active:opacity-90",
+      ? "bg-white text-primary ring-2 ring-primary ring-offset-1 hover:bg-gray-50 active:opacity-90"
+      : "bg-primary text-white hover:opacity-95 active:opacity-90",
   );
 }

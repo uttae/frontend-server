@@ -279,7 +279,7 @@ export function PlacesSearchInput({
                 <span className="flex min-w-0 flex-1 items-baseline gap-0 truncate">
                   <PlacePredictionInlineDescription
                     prediction={prediction}
-                    matchClassName="font-semibold text-brand-green"
+                    matchClassName="font-semibold text-primary-strong"
                     primaryTextClassName="text-base text-[#111827]"
                     secondaryTextClassName="ml-1.5 truncate text-[13px] text-[#9ca3af]"
                   />
@@ -316,7 +316,7 @@ export function PlacesSearchInput({
             onFocus={() => predictions.length > 0 && setIsOpen(true)}
             placeholder={placeholder}
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-border bg-white py-2 pl-9 pr-8 text-[17px] outline-none placeholder:text-[#99A1AF] focus:border-brand-green focus:ring-2 focus:ring-brand-green/30 focus:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg border border-gray-border bg-white py-2 pl-9 pr-8 text-[17px] outline-none placeholder:text-[#99A1AF] focus:border-primary focus:ring-2 focus:ring-primary/30 focus:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
           />
           {inputValue ? (
             <button
@@ -333,7 +333,7 @@ export function PlacesSearchInput({
           <button
             type="submit"
             disabled={!inputValue.trim() || disabled}
-            className="shrink-0 rounded-lg bg-brand-red px-4 py-2 text-[17px] font-medium text-white disabled:opacity-40"
+            className="shrink-0 rounded-lg bg-primary px-4 py-2 text-[17px] font-medium text-white disabled:opacity-40"
           >
             검색
           </button>

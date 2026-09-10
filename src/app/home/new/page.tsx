@@ -82,9 +82,9 @@ export default function NewTripPage() {
         <div className="mb-10 flex justify-center">
           <Link
             href="/home"
-            className="inline-flex rounded-md outline-none ring-offset-2 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-brand-red"
+            className="inline-flex rounded-md outline-none ring-offset-2 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <BrandLogo alt="로고" style={{ width: 116, height: 66 }} />
+            <BrandLogo alt="로고" variant="combination" size="M" />
           </Link>
         </div>
 
@@ -105,7 +105,7 @@ export default function NewTripPage() {
         />
 
         {error && (
-          <p className="mt-3 text-center text-[17px] text-brand-red">
+          <p className="mt-3 text-center text-[17px] text-primary">
             {error instanceof Error
               ? error.message
               : "방 생성에 실패했어요. 다시 시도해주세요."}
@@ -116,7 +116,7 @@ export default function NewTripPage() {
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="mt-8 w-full rounded-full bg-brand-red py-4 text-[19px] font-semibold text-white shadow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-8 w-full rounded-full bg-primary py-4 text-[19px] font-semibold text-white shadow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "생성 중…" : "계획을 시작하세요"}
         </button>

@@ -71,17 +71,17 @@ export function StompProvider({ children }: { children: ReactNode }) {
     queryClientRef.current = queryClient;
   }, [queryClient]);
 
+  const pathnameRef = useRef(pathname);
+  useLayoutEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
   const getResolvedRoomId = useCallback((): string | null => {
     return resolveRoomIdFromPathname(
       useSessionStore.getState().currentRoomId,
       pathnameRef.current,
     );
   }, []);
-
-  const pathnameRef = useRef(pathname);
-  useLayoutEffect(() => {
-    pathnameRef.current = pathname;
-  }, [pathname]);
 
   const clientRef = useRef<Client | null>(null);
   const roomTopicsUnsubRef = useRef<(() => void) | null>(null);

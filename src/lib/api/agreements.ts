@@ -1,6 +1,5 @@
 import type {
   AcceptAgreementsRequest,
-  AgreementItem,
   CurrentAgreementsResponse,
 } from "@/lib/agreements/types";
 import { apiFetch } from "@/lib/api/client";

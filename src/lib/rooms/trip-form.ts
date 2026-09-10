@@ -6,7 +6,7 @@ export const TRIP_DATE_INPUT_CLASS =
   "relative w-full cursor-pointer border-0 bg-transparent p-0 pl-7 text-[17px] outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:h-4 [&::-webkit-calendar-picker-indicator]:w-4 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:text-inherit";
 
 export const TRIP_FORM_FIELD_CLASS =
-  "rounded-2xl border-2 border-gray-border bg-white px-5 py-4 transition focus-within:border-brand-red";
+  "rounded-2xl border-2 border-gray-border bg-white px-5 py-4 transition focus-within:border-primary";
 
 export const TRIP_FORM_FIELD_READ_ONLY_CLASS =
   "rounded-2xl border-2 border-gray-border bg-bubble-gray/30 px-5 py-4";

@@ -9,7 +9,7 @@ export function LandingValueStrip() {
             key={title}
             className={`flex items-center gap-4 py-6 landing-sm:justify-center landing-sm:px-5 ${index > 0 ? "border-t border-gray-border landing-sm:border-t-0 landing-sm:border-l" : ""}`}
           >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-red/10 text-brand-red">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
               <Icon className="h-5 w-5" aria-hidden />
             </span>
             <div>

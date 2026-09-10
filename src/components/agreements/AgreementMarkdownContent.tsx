@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 type MarkdownVariant = "compact" | "document";
 
 const linkClassName =
-  "text-brand-green underline underline-offset-2 hover:opacity-90";
+  "text-primary-strong underline underline-offset-2 hover:opacity-90";
 
 function createAgreementMarkdownComponents(
   variant: MarkdownVariant,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { useCallback, useLayoutEffect, useRef, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { newestServerMessageByCreatedAt } from "@/lib/chat";
@@ -31,7 +31,9 @@ export function useChatMessageRead({
   const panelOpenRef = useRef(panelOpen);
   const markMessagesReadRef = useRef<(messageId?: string) => void>(() => {});
 
-  panelOpenRef.current = panelOpen;
+  useLayoutEffect(() => {
+    panelOpenRef.current = panelOpen;
+  }, [panelOpen]);
 
   const markMessagesRead = useCallback(
     (messageId?: string) => {
@@ -50,7 +52,9 @@ export function useChatMessageRead({
     [client, connected, roomId, queryClient, rawMessagesRef],
   );
 
-  markMessagesReadRef.current = markMessagesRead;
+  useLayoutEffect(() => {
+    markMessagesReadRef.current = markMessagesRead;
+  }, [markMessagesRead]);
 
   const resetReadDedup = useCallback(() => {
     lastPublishedReadIdRef.current = null;
@@ -69,10 +73,8 @@ export function useChatMessageRead({
     [roomId, queryClient],
   );
 
-  useEffect(() => {
-    if (!roomId) {
-      lastPublishedReadIdRef.current = null;
-    }
+  useLayoutEffect(() => {
+    lastPublishedReadIdRef.current = null;
   }, [roomId]);
 
   return {

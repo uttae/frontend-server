@@ -8,7 +8,7 @@ export function getChatLinkClassName(variant: ChatMarkdownVariant): string {
   if (variant === "mine") {
     return "text-white underline underline-offset-2 hover:opacity-90";
   }
-  return "text-brand-green underline underline-offset-2 hover:opacity-90";
+  return "text-primary-strong underline underline-offset-2 hover:opacity-90";
 }
 
 function strongClassName(variant: ChatMarkdownVariant): string {

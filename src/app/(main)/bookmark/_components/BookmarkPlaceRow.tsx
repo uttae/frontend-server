@@ -4,7 +4,6 @@ import { ChevronLeft, MoreHorizontal } from "lucide-react";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -106,9 +105,10 @@ export function BookmarkPlaceRow({
     });
   }, [menuOpen, menuPhase, otherCategories.length]);
 
-  useLayoutEffect(() => {
-    updateMenuPosition();
-  }, [updateMenuPosition, menuPhase]);
+  const attachMenuPanel = useCallback((node: HTMLDivElement | null) => {
+    menuPanelRef.current = node;
+    if (node) updateMenuPosition();
+  }, [updateMenuPosition]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -186,7 +186,7 @@ export function BookmarkPlaceRow({
           }}
           disabled={busy}
           className={`cursor-pointer rounded-lg p-1 text-dark-gray transition-colors hover:bg-bubble-gray hover:text-neutral-900 active:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 ${
-            menuOpen ? "bg-brand-red/10 text-brand-red" : ""
+            menuOpen ? "bg-primary/10 text-primary" : ""
           }`}
           aria-label="장소 메뉴"
           aria-expanded={menuOpen}
@@ -195,17 +195,17 @@ export function BookmarkPlaceRow({
         </button>
 
         {menuOpen &&
-          menuPosition &&
           typeof document !== "undefined" &&
           createPortal(
             <div
-              ref={menuPanelRef}
+              ref={attachMenuPanel}
               style={{
                 position: "fixed",
-                top: menuPosition.top,
-                left: menuPosition.left,
-                width: menuPosition.width,
+                top: menuPosition?.top ?? 0,
+                left: menuPosition?.left ?? 0,
+                width: menuPosition?.width ?? MENU_WIDTH_PX,
                 zIndex: 200,
+                visibility: menuPosition ? "visible" : "hidden",
               }}
               className="animate-in fade-in-0 zoom-in-95 max-h-[22rem] overflow-y-auto rounded-xl border border-gray-border/80 bg-white p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)] duration-150"
               role="menu"
@@ -224,7 +224,7 @@ export function BookmarkPlaceRow({
                   <button
                     type="button"
                     role="menuitem"
-                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-[17px] font-medium text-brand-red transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-[17px] font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={busy}
                     onClick={handleDelete}
                   >

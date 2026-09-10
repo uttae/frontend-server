@@ -1,105 +1,60 @@
 const MINUTES_PER_DAY = 24 * 60;
 
-/** 일정 항목 체류(분) 입력·저장 상한 */
-export const SCHEDULE_STAY_DURATION_MAX_MINUTES = 1000;
-
-export function clampStayDurationMinutes(value: unknown): number {
-  const n = typeof value === "number" && Number.isFinite(value) ? value : 0;
-  return Math.min(Math.max(0, n), SCHEDULE_STAY_DURATION_MAX_MINUTES);
-}
-
-export function formatStayDurationMinutes(value: unknown): string {
-  return String(clampStayDurationMinutes(value));
-}
-
-export function canEditScheduleStayDuration(startTime: string): boolean {
-  return normalizeStartTimeToHm(startTime).length > 0;
-}
-
-export function hasScheduleTimeDraftValue(
-  startTime: string,
-  durationMinutes: string,
-): boolean {
-  if (canEditScheduleStayDuration(startTime)) return true;
-  const duration = parseInt(durationMinutes, 10);
-  return Number.isFinite(duration) && duration > 0;
-}
-
 export type ScheduleTimeDraftValidation =
-  | { valid: true }
-  | { valid: false; message: string };
+  { valid: true } | { valid: false; message: string };
+
+/** 날짜·시간대 변환 없이 정규 HH:mm만 허용합니다. */
+export function normalizeStartTimeToHm(value: string): string {
+  return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : "";
+}
 
 export function validateScheduleTimeDraft(
   startTime: string,
-  durationMinutes: number,
+  endTime: string,
 ): ScheduleTimeDraftValidation {
   if (
-    !canEditScheduleStayDuration(startTime) &&
-    Number.isFinite(durationMinutes) &&
-    durationMinutes > 0
+    (startTime && !normalizeStartTimeToHm(startTime)) ||
+    (endTime && !normalizeStartTimeToHm(endTime))
   ) {
+    return { valid: false, message: "시간을 올바르게 선택해 주세요." };
+  }
+  if (!startTime && endTime) {
     return {
       valid: false,
-      message: "시작 시각 없이 체류 시간을 설정할 수 없어요.",
+      message: "시작 시각 없이 종료 시각만 설정할 수 없어요.",
     };
   }
   return { valid: true };
 }
 
-/** 접힌 체류 시간 토글에 표시할 한 줄 요약. `null`/`undefined` 는 미설정, `0` 은 명시적 0분 체류. */
+/** 미정 종료와 같은 시각(0분)을 구별하고 익일 종료를 표시합니다. */
 export function formatScheduleStaySummary(
   startTime: string,
-  durationMinutes: number | null | undefined,
+  endTime: string | null | undefined,
 ): string {
-  const hm = normalizeStartTimeToHm(startTime);
-  const hasDur = typeof durationMinutes === "number" && Number.isFinite(durationMinutes);
-  const dur = hasDur ? clampStayDurationMinutes(durationMinutes) : null;
-  if (!hm) return "";
-  if (dur === null) return hm;
-  return `${hm} · ${dur}분`;
+  const start = normalizeStartTimeToHm(startTime);
+  const end = normalizeStartTimeToHm(endTime ?? "");
+  if (!start) return "";
+  if (!end) return start;
+  return `${start} – ${end}${end < start ? " (+1일)" : ""}`;
 }
 
-/** `HH:mm` (24시제) 을 `h:mm AM/PM` 으로 변환. */
 function hmToTwelveHourWithPeriod(hm: string): string {
-  const [hStr, mStr = "00"] = hm.split(":");
-  const h24 = parseInt(hStr ?? "0", 10);
-  if (!Number.isFinite(h24)) return hm;
-  const period = h24 >= 12 ? "PM" : "AM";
-  const h12 = h24 % 12 || 12;
-  return `${h12}:${mStr} ${period}`;
+  const [hour, minute] = hm.split(":");
+  const h = Number(hour);
+  return `${h % 12 || 12}:${minute} ${h >= 12 ? "PM" : "AM"}`;
 }
 
-/** 시작 ~ 종료 시간 range 표시용 (AM/PM). 체류가 명시적 0 이면 `"9:00 AM~"` 형식으로 표시. */
 export function formatScheduleTimeRange(
   startTime: string,
-  durationMinutes: number | null | undefined,
+  endTime: string | null | undefined,
 ): string {
-  const hm = normalizeStartTimeToHm(startTime);
-  if (!hm) return "";
-  const hasDur = typeof durationMinutes === "number" && Number.isFinite(durationMinutes);
-  const startFmt = hmToTwelveHourWithPeriod(hm);
-  if (!hasDur) return startFmt;
-  const dur = clampStayDurationMinutes(durationMinutes);
-  if (dur === 0) return `${startFmt}~`;
-  const endFmt = hmToTwelveHourWithPeriod(addMinutesToHm(hm, dur));
-  return `${startFmt} – ${endFmt}`;
-}
-
-/** API `startTime`을 `<input type="time">`용 `HH:mm`으로 바꿈. 미설정·공백·파싱 불가면 `""`. */
-export function normalizeStartTimeToHm(value: string): string {
-  const v = value.trim();
-  if (!v) return "";
-  const hm = /^(\d{1,2}):(\d{2})(?::\d{2})?/.exec(v);
-  if (hm) {
-    const h = Math.min(23, Math.max(0, parseInt(hm[1], 10)));
-    const m = Math.min(59, Math.max(0, parseInt(hm[2], 10)));
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  }
-  const d = new Date(v);
-  if (!Number.isNaN(d.getTime())) {
-    return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-  }
-  return "";
+  const start = normalizeStartTimeToHm(startTime);
+  const end = normalizeStartTimeToHm(endTime ?? "");
+  if (!start) return "";
+  const startLabel = hmToTwelveHourWithPeriod(start);
+  if (!end) return startLabel;
+  return `${startLabel} – ${hmToTwelveHourWithPeriod(end)}${end < start ? " (+1일)" : ""}`;
 }
 
 /**

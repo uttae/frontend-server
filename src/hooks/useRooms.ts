@@ -7,7 +7,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 import { useStompContext } from "@/contexts/StompContext";
-import { toast } from "sonner";
 
 import {
   HttpError,
@@ -17,7 +16,6 @@ import {
   createRoomBookmarks,
   createRoom,
   createRoomSchedule,
-  createScheduleItem,
   deleteScheduleItem,
   reorderScheduleItem,
   moveScheduleItemToSchedule,
@@ -53,7 +51,6 @@ import {
   type RoomDetail,
   type RoomListItem,
   type RoomListResponse,
-  type RoomSchedule,
 } from "@/lib/api/rooms";
 import {
   applyRoomScheduleItemToPlanPlaces,
@@ -73,7 +70,6 @@ import {
   bookmarkCategoriesQueryKey,
   joinRequestsQueryKey,
   roomAllBookmarksQueryKey,
-  roomBookmarksByRoomRootQueryKey,
   roomBookmarksQueryKey,
   ROOMS_QUERY_KEY,
   roomDetailQueryKey,

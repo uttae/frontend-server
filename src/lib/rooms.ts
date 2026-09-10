@@ -5,7 +5,6 @@ import type {
   RoomDetail,
   RoomListItem,
   RoomListResponse,
-  RoomSchedule,
 } from "@/lib/api/rooms";
 import { getRoomDetail, getRoomSchedules } from "@/lib/api/rooms";
 import type { RoomScheduleWithItems } from "@/lib/api/rooms/schedules";

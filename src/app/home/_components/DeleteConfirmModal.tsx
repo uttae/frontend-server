@@ -46,8 +46,8 @@ export function DeleteConfirmModal({ room, onClose, onDeleted }: Props) {
     >
       <div className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-xl">
         <div className="px-6 pb-2 pt-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-            <Trash2 size={22} className="text-brand-red" />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
+            <Trash2 size={22} className="text-status-negative" />
           </div>
           <h2 className="text-[19px] font-bold">여행을 삭제할까요?</h2>
           <p className="mt-1.5 text-[17px] text-dark-gray">

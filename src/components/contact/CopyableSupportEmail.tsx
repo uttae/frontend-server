@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 type CopyableSupportEmailProps = {
   variant?: "inline" | "card";
-  /** brand-red 등 진한 배경 위 */
+  /** primary 등 진한 배경 위 */
   tone?: "default" | "onBrand";
   className?: string;
 };

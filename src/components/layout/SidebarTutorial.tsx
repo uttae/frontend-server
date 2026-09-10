@@ -254,7 +254,7 @@ export function SidebarTutorial() {
       </svg>
 
       <div
-        className="pointer-events-none fixed rounded-[18px] border-2 border-white shadow-[0_0_0_4px_rgba(241,45,51,0.45),0_0_24px_rgba(255,255,255,0.35)]"
+        className="pointer-events-none fixed rounded-[18px] border-2 border-white shadow-[0_0_0_4px_rgba(1,131,255,0.45),0_0_24px_rgba(255,255,255,0.35)]"
         style={{
           left: spotlight.x,
           top: spotlight.y,
@@ -280,7 +280,7 @@ export function SidebarTutorial() {
 
         <div className="relative">
           <div className="mb-5 flex items-center justify-between">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-brand-red">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <Icon size={24} />
             </div>
             {!isLastStep ? (
@@ -295,7 +295,7 @@ export function SidebarTutorial() {
             ) : null}
           </div>
 
-          <p className="text-[14px] font-semibold tracking-wide text-brand-red">
+          <p className="text-[14px] font-semibold tracking-wide text-primary">
             {step.eyebrow}
           </p>
           <h2 id="sidebar-tutorial-title" className="mt-1 text-2xl font-bold text-gray-950">
@@ -313,7 +313,7 @@ export function SidebarTutorial() {
               <span
                 key={tutorialStep.target}
                 className={`h-1.5 rounded-full transition-all ${
-                  index === stepIndex ? "w-6 bg-brand-red" : "w-1.5 bg-gray-300"
+                  index === stepIndex ? "w-6 bg-primary" : "w-1.5 bg-gray-300"
                 }`}
                 aria-hidden="true"
               />
@@ -324,7 +324,7 @@ export function SidebarTutorial() {
           </div>
 
           {errorMessage ? (
-            <p className="mt-3 text-[14px] font-medium text-brand-red" role="alert">
+            <p className="mt-3 text-[14px] font-medium text-status-negative" role="alert">
               {errorMessage}
             </p>
           ) : null}
@@ -356,7 +356,7 @@ export function SidebarTutorial() {
                 setStepIndex((current) => current + 1);
               }}
               disabled={isCompleting}
-              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-brand-red px-4 text-[17px] font-semibold text-white transition hover:bg-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-red disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary px-4 text-[17px] font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isCompleting ? "저장 중…" : isLastStep ? "튜토리얼 완료" : "다음"}
               {!isLastStep && !isCompleting ? <ChevronRight size={17} /> : null}

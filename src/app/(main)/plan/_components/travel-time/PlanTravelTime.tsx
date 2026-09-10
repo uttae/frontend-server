@@ -367,7 +367,7 @@ export function PlanTravelTime({
     >
       <div className={PLAN_SEGMENT_RAIL_LINE_CLASS} aria-hidden />
       <div className="relative flex min-h-10 items-center gap-3">
-        <TravelRouteRail arrowClassName="text-brand-red" layout="row" />
+        <TravelRouteRail arrowClassName="text-primary" layout="row" />
         {directionsCard}
       </div>
     </div>

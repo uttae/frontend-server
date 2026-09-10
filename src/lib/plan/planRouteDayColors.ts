@@ -8,8 +8,8 @@ const GOLDEN_ANGLE_HUE_STEP = 137.5083565656715;
 /** H,S,L 모두 표준 표기: H° 0–360, S와 L은 0–100 */
 function hslToRgb(hDeg: number, sPct: number, lPct: number): [number, number, number] {
   const hNorm = ((((hDeg % 360) + 360) % 360) / 360);
-  let s = Math.max(0, Math.min(100, sPct)) / 100;
-  let l = Math.max(0, Math.min(100, lPct)) / 100;
+  const s = Math.max(0, Math.min(100, sPct)) / 100;
+  const l = Math.max(0, Math.min(100, lPct)) / 100;
 
   if (s === 0) {
     const v = Math.round(l * 255);

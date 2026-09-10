@@ -54,7 +54,7 @@ export function BookmarkFolderDetailHeader({
             <Link
               href={BOOKMARK_LIST_PATH}
               className={cn(
-                "flex w-fit shrink-0 items-center justify-center rounded-full bg-brand-red text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90",
+                "flex w-fit shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90",
                 pageToolbarButtonCompactGapClass,
                 pageToolbarButtonCompactTextClass,
                 pageToolbarButtonCompactPaddingClass,

@@ -125,7 +125,7 @@ function WheelColumn({
       className={cn(
         "w-14 snap-y snap-mandatory overflow-y-scroll outline-none",
         "[&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none]",
-        "rounded-lg focus-visible:ring-2 focus-visible:ring-brand-red/40",
+        "rounded-lg focus-visible:ring-2 focus-visible:ring-primary/40",
         disabled && "pointer-events-none opacity-60",
       )}
       style={{
@@ -183,7 +183,7 @@ export function TimeWheelPicker({
     <div className="relative isolate flex items-center justify-center gap-2">
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 z-0 rounded-xl bg-brand-red/[0.08] ring-1 ring-brand-red/25"
+        className="pointer-events-none absolute inset-x-0 z-0 rounded-xl bg-primary/[0.08] ring-1 ring-primary/25"
         style={{
           top: CENTER_INDEX * ITEM_HEIGHT,
           height: ITEM_HEIGHT,

@@ -1,6 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+
+import { useClientReady } from "./useClientReady";
 
 import {
   CHAT_PANEL_MINIMIZED_DEFAULT,
@@ -11,13 +13,9 @@ import {
 } from "@/lib/chat/chat-panel-minimized-size";
 
 export function useChatPanelMinimizedSize() {
-  const [size, setSizeState] = useState<ChatPanelMinimizedSize>(
-    CHAT_PANEL_MINIMIZED_DEFAULT,
-  );
-
-  useEffect(() => {
-    setSizeState(readChatPanelMinimizedSize());
-  }, []);
+  const ready = useClientReady();
+  const [draftSize, setSizeState] = useState<ChatPanelMinimizedSize | null>(null);
+  const size = draftSize ?? (ready ? readChatPanelMinimizedSize() : CHAT_PANEL_MINIMIZED_DEFAULT);
 
   const clampSize = useCallback((width: number, height: number) => {
     if (typeof window === "undefined") {

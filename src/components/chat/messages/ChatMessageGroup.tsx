@@ -65,7 +65,7 @@ function AiRequestMetaRow({
           <span className="inline-flex items-center gap-1.5">
             <span>{labelForAiStatus(ar.aiStatus)}</span>
             <Loader2
-              className="h-3.5 w-3.5 shrink-0 animate-spin text-brand-green"
+              className="h-3.5 w-3.5 shrink-0 animate-spin text-primary-strong"
               aria-hidden
             />
           </span>

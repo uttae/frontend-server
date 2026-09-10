@@ -75,14 +75,14 @@ export function DestinationChipsField({
           {values.map((v, i) => (
             <span
               key={`${v}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-brand-red/10 py-1.5 pl-3 pr-1.5 text-[15px] text-brand-red"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1.5 pl-3 pr-1.5 text-[15px] text-primary"
             >
               {v}
               <button
                 type="button"
                 onClick={() => remove(i)}
                 aria-label={`${v} 삭제`}
-                className="rounded-full p-0.5 transition hover:bg-brand-red/20"
+                className="rounded-full p-0.5 transition hover:bg-primary/20"
               >
                 <X size={14} />
               </button>
@@ -104,7 +104,7 @@ export function DestinationChipsField({
         />
       )}
       {inlineWarning ? (
-        <p className="text-[14px] text-brand-red">{inlineWarning}</p>
+        <p className="text-[14px] text-primary">{inlineWarning}</p>
       ) : null}
     </div>
   );

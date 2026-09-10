@@ -8,13 +8,13 @@ const chatTypographyMessage = {
   bubble: "text-[14px] leading-relaxed",
   systemBody: "text-[14px] leading-relaxed",
   metaMuted: "text-[11px] leading-relaxed text-dark-gray",
-  wooriSenderLabel: "text-[11px] font-medium leading-relaxed text-brand-red",
-  aiRequestBubblePrefix: "text-[14px] font-semibold leading-relaxed text-brand-green",
-  placeTitle: "text-[14px] font-semibold leading-snug text-brand-green",
+  wooriSenderLabel: "text-[11px] font-medium leading-relaxed text-primary",
+  aiRequestBubblePrefix: "text-[14px] font-semibold leading-relaxed text-text",
+  placeTitle: "text-[14px] font-semibold leading-snug text-primary-strong",
   placeRating: "text-xs font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-xs leading-relaxed text-[#99A1AF]",
   input: "text-[14px] leading-relaxed",
-  inputAiLabel: "text-[14px] leading-relaxed text-brand-green font-semibold",
+  inputAiLabel: "text-[14px] leading-relaxed text-primary-strong font-semibold",
 } as const;
 
 /** 패널 최소화(좁은 폭) */
@@ -22,13 +22,13 @@ const chatTypographyMinimized = {
   bubble: "text-[13px] leading-relaxed",
   systemBody: "text-[13px] leading-relaxed",
   metaMuted: "text-[10px] leading-relaxed text-dark-gray",
-  wooriSenderLabel: "text-[10px] font-medium leading-relaxed text-brand-red",
-  aiRequestBubblePrefix: "text-[13px] font-semibold leading-relaxed text-brand-green",
-  placeTitle: "text-[13px] font-semibold leading-snug text-brand-green",
+  wooriSenderLabel: "text-[10px] font-medium leading-relaxed text-primary",
+  aiRequestBubblePrefix: "text-[13px] font-semibold leading-relaxed text-text",
+  placeTitle: "text-[13px] font-semibold leading-snug text-primary-strong",
   placeRating: "text-[11px] font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-[11px] leading-relaxed text-[#99A1AF]",
   input: "text-[13px] leading-relaxed",
-  inputAiLabel: "text-[13px] leading-relaxed text-brand-green font-semibold",
+  inputAiLabel: "text-[13px] leading-relaxed text-primary-strong font-semibold",
 } as const;
 
 export type ChatMessageTextTypography =
@@ -54,7 +54,7 @@ export function resolveChatMessageTypography(
 /**
  * AI 응답 말풍선(밝은 배경) 위 `**강조**` — 진한 본문과 대비되게 브랜드 그린으로 강조.
  */
-export const chatAiBubbleEmphasisClass = "font-semibold text-brand-green";
+export const chatAiBubbleEmphasisClass = "font-semibold text-primary-strong";
 
 /** AI 응답 말풍선(밝은 배경) 내 대화 요약 등 블록 제목 */
 export function chatAiBubbleBlockTitleClass(isMinimized: boolean): string {
@@ -87,7 +87,7 @@ export function chatAiBubbleListTextClass(isMinimized: boolean): string {
 
 /** AI 장소 추천 블록·reason 공통 `**강조**` — 본문 슬레이트 톤과 어울리는 브랜드 그린 */
 export const chatAiBubblePlaceRecommendationEmphasisClass =
-  "font-semibold text-brand-green";
+  "font-semibold text-primary-strong";
 
 /** 장소 추천 블록 헤더 `heading.title` — 본문·reason과 맞춘 어두운 계열 */
 export function chatAiBubblePlaceRecommendationHeadingTitleClass(

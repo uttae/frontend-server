@@ -42,7 +42,7 @@ export function OgPlacePreviewCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex cursor-pointer overflow-hidden rounded-xl border border-gray-border bg-white text-left shadow-sm transition hover:border-brand-green/40 hover:shadow-md",
+        "group flex cursor-pointer overflow-hidden rounded-xl border border-gray-border bg-white text-left shadow-sm transition hover:border-primary/40 hover:shadow-md",
         isMinimized ? "w-full max-w-[228px]" : "w-[260px]",
         className,
       )}

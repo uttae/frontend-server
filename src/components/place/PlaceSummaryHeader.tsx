@@ -63,7 +63,7 @@ export function PlaceSummaryHeader({
           type="button"
           onClick={onSendToChat}
           disabled={sendToChatDisabled}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand-red/35 bg-brand-red/5 py-3 text-[14px] font-semibold text-brand-red shadow-sm transition hover:bg-brand-red/10 active:bg-brand-red/15 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/35 bg-primary/5 py-3 text-[14px] font-semibold text-primary shadow-sm transition hover:bg-primary/10 active:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="채팅으로 보내기"
         >
           <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
@@ -76,7 +76,7 @@ export function PlaceSummaryHeader({
           type="button"
           onClick={onAddToSchedule}
           disabled={addToScheduleDisabled || !onAddToSchedule}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-red py-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-red-600 active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Calendar className="h-4 w-4" strokeWidth={2} />
           일정에 추가
@@ -85,7 +85,7 @@ export function PlaceSummaryHeader({
           type="button"
           onClick={onAddBookmark}
           disabled={addBookmarkDisabled || !onAddBookmark}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-brand-red py-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-red-600 active:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-[14px] font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Bookmark className="h-4 w-4" strokeWidth={2} />
           북마크에 추가

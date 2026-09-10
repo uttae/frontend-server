@@ -70,11 +70,11 @@ function WaitingContent() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-gradient-to-b from-bubble-gray/60 via-white to-white px-4 py-12">
       <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(241,45,51,0.07),_transparent_55%)]"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(1,131,255,0.07),_transparent_55%)]"
         aria-hidden
       />
 
-      <BrandLogo alt="" />
+      <BrandLogo variant="combination" size="M" alt="우때 로고" />
 
       <div className="relative w-full max-w-sm rounded-3xl border border-gray-border bg-white/95 p-8 shadow-[0_24px_80px_-12px_rgba(15,23,42,0.10)] backdrop-blur-sm">
         {/* 아이콘 */}
@@ -82,13 +82,13 @@ function WaitingContent() {
           <div className="relative flex h-24 w-24 items-center justify-center">
             {!isRejected && (
               <>
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-red/20" />
-                <span className="absolute inline-flex h-16 w-16 animate-ping rounded-full bg-brand-red/15 [animation-delay:0.4s]" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/20" />
+                <span className="absolute inline-flex h-16 w-16 animate-ping rounded-full bg-primary/15 [animation-delay:0.4s]" />
               </>
             )}
             <div
               className={`relative flex h-16 w-16 items-center justify-center rounded-full ${
-                isRejected ? "bg-gray-100" : "bg-brand-red/10"
+                isRejected ? "bg-gray-100" : "bg-primary/10"
               }`}
             >
               {isRejected ? (
@@ -116,7 +116,7 @@ function WaitingContent() {
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  className="text-brand-red"
+                  className="text-primary"
                 >
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
@@ -156,7 +156,7 @@ function WaitingContent() {
 
         {/* 오류 */}
         {fetchError && (
-          <p className="mb-4 rounded-xl bg-red-50 px-4 py-2.5 text-center text-[14px] text-brand-red">
+          <p className="mb-4 rounded-xl bg-status-negative/10 px-4 py-2.5 text-center text-[14px] text-status-negative">
             상태 조회에 실패했습니다. 다시 시도해 주세요.
           </p>
         )}
@@ -200,7 +200,7 @@ export default function WaitingPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-bubble-gray/80 via-white to-white">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-brand-red" />
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
         </div>
       }
     >

@@ -252,7 +252,7 @@ export function DestinationSearchInput({
                 <span className="flex min-w-0 flex-1 items-baseline truncate">
                   <PlacePredictionInlineDescription
                     prediction={p}
-                    matchClassName="font-semibold text-brand-red"
+                    matchClassName="font-semibold text-primary"
                     primaryTextClassName="text-base text-black"
                     secondaryTextClassName="ml-1.5 truncate text-[13px] text-light-gray"
                   />

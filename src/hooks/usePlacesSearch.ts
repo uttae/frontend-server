@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import {
   searchPlaces,
@@ -119,29 +119,29 @@ export function usePlacesSearch(
     ? `${sessionKey}@${searchGeneration}`
     : `disabled@${searchGeneration}`;
 
-  const [pageIndex, setPageIndex] = useState(0);
-  const pageTokensRef = useRef<(string | undefined)[]>([undefined]);
-  const paginationEpochRef = useRef(paginationEpoch);
-
-  if (paginationEpoch !== paginationEpochRef.current) {
-    paginationEpochRef.current = paginationEpoch;
-    pageTokensRef.current = [undefined];
-    if (pageIndex !== 0) {
-      setPageIndex(0);
-    }
+  const [pagination, setPagination] = useState({
+    epoch: paginationEpoch,
+    pageIndex: 0,
+    tokens: [undefined] as (string | undefined)[],
+  });
+  const current = pagination.epoch === paginationEpoch
+    ? pagination
+    : { epoch: paginationEpoch, pageIndex: 0, tokens: [undefined] };
+  if (pagination.epoch !== paginationEpoch) {
+    setPagination(current);
   }
-
-  const pageToken = pageTokensRef.current[pageIndex];
+  const { pageIndex } = current;
+  const pageToken = current.tokens[pageIndex];
 
   const queryResult = useQuery({
-    queryKey: placesSearchQueryKey(
+    queryKey: [...placesSearchQueryKey(
       trimmedQuery,
       latitude,
       longitude,
       radius,
       pageSize,
       pageIndex,
-    ),
+    ), searchGeneration],
     queryFn: () =>
       fetchPlacesPageWithPhotos({
         query: trimmedQuery,
@@ -156,32 +156,34 @@ export function usePlacesSearch(
     placeholderData: (previousData, previousQuery) => {
       if (!previousData || !previousQuery) return undefined;
       return sessionKeyFromPlacesSearchQueryKey(previousQuery.queryKey) ===
-        sessionKey
+        sessionKey && previousQuery.queryKey[8] === searchGeneration
         ? previousData
         : undefined;
     },
   });
 
-  useEffect(() => {
-    if (paginationEpochRef.current !== paginationEpoch) return;
-    const next = queryResult.data?.nextPageToken;
-    if (!next) return;
-    pageTokensRef.current[pageIndex + 1] = next;
-  }, [queryResult.data?.nextPageToken, pageIndex, paginationEpoch]);
-
   const items = queryResult.data?.items ?? [];
-  const hasNextPage = Boolean(queryResult.data?.nextPageToken);
+  const nextPageToken = queryResult.isPlaceholderData
+    ? null
+    : queryResult.data?.nextPageToken;
+  const hasNextPage = Boolean(nextPageToken);
   const hasPreviousPage = pageIndex > 0;
 
   const goToPreviousPage = useCallback(() => {
-    setPageIndex((i) => Math.max(0, i - 1));
-  }, []);
+    setPagination((prev) => prev.epoch === paginationEpoch
+      ? { ...prev, pageIndex: Math.max(0, prev.pageIndex - 1) }
+      : prev);
+  }, [paginationEpoch, setPagination]);
 
   const goToNextPage = useCallback(() => {
-    if (!hasNextPage) return;
-    if (pageTokensRef.current[pageIndex + 1] === undefined) return;
-    setPageIndex((i) => i + 1);
-  }, [hasNextPage, pageIndex]);
+    if (!nextPageToken || queryResult.isFetching) return;
+    setPagination((prev) => {
+      if (prev.epoch !== paginationEpoch || prev.pageIndex !== pageIndex) return prev;
+      const tokens = prev.tokens.slice(0, pageIndex + 1);
+      tokens.push(nextPageToken);
+      return { ...prev, tokens, pageIndex: pageIndex + 1 };
+    });
+  }, [nextPageToken, pageIndex, paginationEpoch, queryResult.isFetching, setPagination]);
 
   return {
     items,

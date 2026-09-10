@@ -7,7 +7,7 @@ import { chatAssets } from "@/lib/public-assets";
 export const chatMessageChrome = {
   bubbleBase: "w-fit rounded-xl px-4 py-2",
   otherBubble: "bg-[#f4f6f8] text-gray-900",
-  mineBubble: "bg-brand-red text-white",
+  mineBubble: "bg-primary text-white",
   aiBubble:
     "border border-ai-bubble-border bg-ai-bubble text-gray-900 shadow-sm shadow-slate-900/5",
   systemPill:

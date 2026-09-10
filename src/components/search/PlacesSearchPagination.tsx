@@ -33,7 +33,7 @@ export function PlacesSearchPagination({
             disabled={disabled}
             onClick={onPrevious}
             className={cn(
-              "inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-gray-border bg-white px-3 text-[15px] font-semibold text-dark-gray shadow-sm transition hover:border-brand-green/40 hover:text-brand-green disabled:cursor-not-allowed disabled:opacity-45",
+              "inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-gray-border bg-white px-3 text-[15px] font-semibold text-dark-gray shadow-sm transition hover:border-primary/40 hover:text-primary-strong disabled:cursor-not-allowed disabled:opacity-45",
             )}
             aria-label="이전 페이지"
           >
@@ -43,7 +43,7 @@ export function PlacesSearchPagination({
         ) : null}
       </div>
 
-      <span className="shrink-0 rounded-full bg-brand-green/[0.08] px-3 py-1.5 text-center text-[14px] font-semibold text-brand-green">
+      <span className="shrink-0 rounded-full bg-primary/[0.08] px-3 py-1.5 text-center text-[14px] font-semibold text-primary-strong">
         {pageLabel}
       </span>
 
@@ -54,7 +54,7 @@ export function PlacesSearchPagination({
             disabled={disabled}
             onClick={onNext}
             className={cn(
-              "inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-gray-border bg-white px-3 text-[15px] font-semibold text-dark-gray shadow-sm transition hover:border-brand-green/40 hover:text-brand-green disabled:cursor-not-allowed disabled:opacity-45",
+              "inline-flex h-9 cursor-pointer items-center gap-1 rounded-full border border-gray-border bg-white px-3 text-[15px] font-semibold text-dark-gray shadow-sm transition hover:border-primary/40 hover:text-primary-strong disabled:cursor-not-allowed disabled:opacity-45",
             )}
             aria-label="다음 페이지"
           >

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { CookieSettingsButton } from "@/components/analytics/CookieSettingsProvider";
 
 import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -21,15 +23,16 @@ function FooterDot() {
   );
 }
 
-export function SiteFooter({ className }: { className?: string }) {
+export function SiteFooter({ className, logo }: { className?: string; logo?: ReactNode }) {
   const year = new Date().getFullYear();
 
   return (
     <footer
-      className={cn("relative z-10 bg-brand-red text-white", className)}
+      className={cn("relative z-10 bg-primary text-white", className)}
     >
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
         <div className="flex flex-col items-center">
+          {logo ? <Link href="/" aria-label="우때 홈">{logo}</Link> : null}
           <nav
             aria-label="정책 문서"
             className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-sm"
@@ -45,6 +48,12 @@ export function SiteFooter({ className }: { className?: string }) {
                 </Link>
               </span>
             ))}
+            <span className="inline-flex items-center gap-1.5">
+              <FooterDot />
+              <CookieSettingsButton className={`${linkClassName} cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}>
+                쿠키 설정
+              </CookieSettingsButton>
+            </span>
           </nav>
 
           <section

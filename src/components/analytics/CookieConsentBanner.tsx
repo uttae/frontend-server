@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CookieSettingsButton } from "./CookieSettingsProvider";
 import { motion, useReducedMotion } from "framer-motion";
 
 import {
@@ -35,10 +36,13 @@ export function CookieConsentBanner({
           사용합니다. 쿠키 사용에 동의하시겠습니까?{" "}
           <Link
             href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
-            className="font-medium text-brand-red underline-offset-2 hover:underline"
+            className="font-medium text-primary underline-offset-2 hover:underline"
           >
             개인정보 처리방침
-          </Link>
+          </Link>{" · "}
+          <CookieSettingsButton className="cursor-pointer rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+            쿠키 설정
+          </CookieSettingsButton>
         </p>
 
         <SettingsActionButtonRow className="shrink-0 pt-0 sm:min-w-[220px]">

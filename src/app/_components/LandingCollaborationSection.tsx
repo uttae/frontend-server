@@ -25,9 +25,9 @@ export function LandingCollaborationSection() {
         </div>
         <div className="mx-auto mt-10 grid max-w-5xl gap-6 landing-lg:grid-cols-2">
           {LANDING_COLLABORATION_FEATURES.map(({ icon: Icon, ...feature }) => (
-            <article key={feature.title} className="overflow-hidden rounded-3xl border border-gray-border bg-gradient-to-br from-white to-brand-red/[0.045] px-6 pt-8">
+            <article key={feature.title} className="overflow-hidden rounded-3xl border border-gray-border bg-gradient-to-br from-white to-primary/[0.045] px-6 pt-8">
               <div>
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-red/10 text-brand-red">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Icon className="h-5 w-5" aria-hidden />
                 </span>
                 <p className={`${landingTypography.eyebrow} mt-5`}>{feature.eyebrow}</p>

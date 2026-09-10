@@ -22,7 +22,7 @@ export function PlanOrderIndexBadge({
   className,
 }: {
   orderIndex: number;
-  /** 지도 일차 경로색과 동일한 hex — 유효하지 않으면 brand-red 클래스 */
+  /** 지도 일차 경로색과 동일한 hex — 유효하지 않으면 primary 클래스 */
   backgroundColorHex?: string;
   className?: string;
 }) {
@@ -38,7 +38,7 @@ export function PlanOrderIndexBadge({
       className={cn(
         "flex shrink-0 items-center justify-center rounded-md font-bold text-white",
         PLAN_PLACE_CARD_TW.orderBadgeCompact,
-        !customBg && "bg-brand-red",
+        !customBg && "bg-primary",
         className,
       )}
       style={customBg ? { backgroundColor: hex } : undefined}
@@ -60,7 +60,7 @@ export function PlanScheduleItemDeleteButton({
     <button
       type="button"
       className={cn(
-        "shrink-0 cursor-pointer rounded-lg text-dark-gray transition hover:bg-brand-red/10 hover:text-brand-red disabled:cursor-not-allowed disabled:opacity-40",
+        "shrink-0 cursor-pointer rounded-lg text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40",
         PLAN_PLACE_CARD_TW.deleteButtonCompact,
       )}
       aria-label="일정에서 삭제"

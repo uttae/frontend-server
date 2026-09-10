@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { fetchAndSeedScheduleRoutesBatch } from "@/lib/plan/schedule-bulk-hydration";
@@ -16,8 +16,7 @@ export function usePrefetchScheduleRoutes(
   enabled: boolean,
 ): boolean {
   const queryClient = useQueryClient();
-  const [batchDone, setBatchDone] = useState(false);
-  const initialBatchCompletedKeysRef = useRef(new Set<string>());
+  const [completedKeys, setCompletedKeys] = useState<ReadonlySet<string>>(() => new Set());
 
   const scheduleKey = `${roomId.trim()}:${scheduleId}`;
 
@@ -28,17 +27,14 @@ export function usePrefetchScheduleRoutes(
 
   useLayoutEffect(() => {
     if (!enabled || !roomId.trim() || places.length < 2 || !fingerprint.length) {
-      setBatchDone(false);
       return;
     }
 
-    if (initialBatchCompletedKeysRef.current.has(scheduleKey)) {
-      setBatchDone(true);
+    if (completedKeys.has(scheduleKey)) {
       return;
     }
 
     let cancelled = false;
-    setBatchDone(false);
 
     void fetchAndSeedScheduleRoutesBatch(
       queryClient,
@@ -47,16 +43,15 @@ export function usePrefetchScheduleRoutes(
       places,
     ).finally(() => {
       if (!cancelled) {
-        initialBatchCompletedKeysRef.current.add(scheduleKey);
-        setBatchDone(true);
+        setCompletedKeys((keys) => new Set(keys).add(scheduleKey));
       }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [enabled, fingerprint, places, queryClient, roomId, scheduleId, scheduleKey]);
+  }, [completedKeys, enabled, fingerprint, places, queryClient, roomId, scheduleId, scheduleKey]);
 
   /** enabled 전환 직후 이전 true 잔존으로 GET이 먼저 나가지 않도록 — batch 완료 전엔 false */
-  return !enabled || batchDone;
+  return !enabled || (places.length >= 2 && fingerprint.length > 0 && completedKeys.has(scheduleKey));
 }

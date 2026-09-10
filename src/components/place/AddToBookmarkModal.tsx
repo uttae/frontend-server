@@ -251,7 +251,7 @@ export function AddToBookmarkModal({
 
           {categoriesError && (
             <div className="space-y-2 px-5 py-6 text-center">
-              <p className="text-[17px] text-brand-red">
+              <p className="text-[17px] text-primary">
                 {categoriesErr instanceof Error
                   ? categoriesErr.message
                   : "카테고리를 불러오지 못했습니다."}
@@ -305,7 +305,7 @@ export function AddToBookmarkModal({
                           className={cn(
                             "flex size-9 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
                             sel
-                              ? "border-brand-red bg-brand-red text-white shadow-sm"
+                              ? "border-primary bg-primary text-white shadow-sm"
                               : "border-gray-300 bg-white text-transparent",
                           )}
                         >
@@ -324,7 +324,7 @@ export function AddToBookmarkModal({
               className={cn(
                 "border-t border-gray-border px-5 py-3 text-center text-[17px]",
                 submitFeedback.variant === "error"
-                  ? "text-brand-red"
+                  ? "text-primary"
                   : "text-dark-gray",
               )}
             >
@@ -350,7 +350,7 @@ export function AddToBookmarkModal({
               selectedIds.size === 0 ||
               (categories?.length === 0 && !categoriesLoading)
             }
-            className="flex-1 rounded-xl bg-brand-red py-2.5 text-[17px] font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
+            className="flex-1 rounded-xl bg-primary py-2.5 text-[17px] font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
           >
             {isAddingBookmarks ? "추가 중…" : "추가"}
           </button>

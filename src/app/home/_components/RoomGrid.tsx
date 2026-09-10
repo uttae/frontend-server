@@ -27,7 +27,7 @@ export function RoomGrid({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-brand-red" />
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
       </div>
     );
   }
@@ -41,7 +41,7 @@ export function RoomGrid({
         <button
           type="button"
           onClick={onRetry}
-          className="mt-3 rounded-full bg-brand-red px-4 py-2 text-[17px] font-semibold text-white transition hover:opacity-90"
+          className="mt-3 rounded-full bg-primary px-4 py-2 text-[17px] font-semibold text-white transition hover:opacity-90"
         >
           다시 시도
         </button>
@@ -53,7 +53,7 @@ export function RoomGrid({
     if (isMobileDevice) {
       return (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-gray-border px-6 py-14 text-center">
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-red/10 text-brand-red">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
             <Monitor className="h-6 w-6" aria-hidden />
           </span>
           <div className="space-y-1">

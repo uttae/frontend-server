@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
-import { PolicyPageShell } from "@/components/agreements/PolicyPageShell";
-import { AnalyticsConsentSettings } from "@/components/analytics/AnalyticsConsentSettings";
+import { redirect } from "next/navigation";
+import { COOKIE_SETTINGS_LANDING_PATH } from "@/lib/analytics/paths";
 import { NOINDEX_FOLLOW_METADATA } from "@/lib/public-site-metadata";
 
 export const metadata: Metadata = {
@@ -11,9 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacySettingsPage() {
-  return (
-    <PolicyPageShell title="개인정보 설정">
-      <AnalyticsConsentSettings />
-    </PolicyPageShell>
-  );
+  redirect(COOKIE_SETTINGS_LANDING_PATH);
 }

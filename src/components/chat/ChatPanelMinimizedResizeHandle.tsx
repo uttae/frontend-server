@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 
 import type { ChatPanelMinimizedSize } from "@/lib/chat/chat-panel-minimized-size";
 import { cn } from "@/lib/utils";
@@ -64,38 +64,19 @@ function ResizeTarget({
   clampSize,
   sessionRef,
 }: ResizeTargetProps) {
-  const handlePointerMove = useCallback(
-    (event: PointerEvent) => {
-      const session = sessionRef.current;
-      if (!session || event.pointerId !== session.pointerId) return;
-      onResize(resolveSize(session, event.clientX, event.clientY, clampSize));
-    },
-    [clampSize, onResize, sessionRef],
-  );
-
-  const endDrag = useCallback(
-    (event: PointerEvent) => {
-      const session = sessionRef.current;
-      if (!session || event.pointerId !== session.pointerId) return;
-
-      window.removeEventListener("pointermove", handlePointerMove);
-      window.removeEventListener("pointerup", endDrag);
-      window.removeEventListener("pointercancel", endDrag);
-      document.body.style.userSelect = "";
-      sessionRef.current = null;
-
-      onResizeEnd(
-        resolveSize(session, event.clientX, event.clientY, clampSize),
-      );
-    },
-    [clampSize, handlePointerMove, onResizeEnd, sessionRef],
-  );
+  const latest = useRef({ onResize, onResizeEnd, clampSize });
+  const cleanupRef = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    latest.current = { onResize, onResizeEnd, clampSize };
+  }, [onResize, onResizeEnd, clampSize]);
+  useEffect(() => () => cleanupRef.current?.(), []);
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLButtonElement>) => {
       event.preventDefault();
       event.stopPropagation();
 
+      if (sessionRef.current) return;
       sessionRef.current = {
         pointerId: event.pointerId,
         axis,
@@ -106,12 +87,33 @@ function ResizeTarget({
       };
 
       event.currentTarget.setPointerCapture(event.pointerId);
+      const previousUserSelect = document.body.style.userSelect;
+      const cleanup = () => {
+        window.removeEventListener("pointermove", handlePointerMove);
+        window.removeEventListener("pointerup", endDrag);
+        window.removeEventListener("pointercancel", endDrag);
+        document.body.style.userSelect = previousUserSelect;
+        sessionRef.current = null;
+        cleanupRef.current = null;
+      };
+      function handlePointerMove(move: PointerEvent) {
+        const session = sessionRef.current;
+        if (!session || move.pointerId !== session.pointerId) return;
+        latest.current.onResize(resolveSize(session, move.clientX, move.clientY, latest.current.clampSize));
+      }
+      function endDrag(end: PointerEvent) {
+        const session = sessionRef.current;
+        if (!session || end.pointerId !== session.pointerId) return;
+        cleanup();
+        latest.current.onResizeEnd(resolveSize(session, end.clientX, end.clientY, latest.current.clampSize));
+      }
+      cleanupRef.current = cleanup;
       document.body.style.userSelect = "none";
       window.addEventListener("pointermove", handlePointerMove);
       window.addEventListener("pointerup", endDrag);
       window.addEventListener("pointercancel", endDrag);
     },
-    [axis, endDrag, handlePointerMove, sessionRef, size.height, size.width],
+    [axis, sessionRef, size.height, size.width],
   );
 
   return (

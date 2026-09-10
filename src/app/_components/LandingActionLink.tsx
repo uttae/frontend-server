@@ -16,7 +16,7 @@ export function LandingActionLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex cursor-pointer items-center justify-center rounded-full border border-transparent bg-brand-red px-5 py-2.5 font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-2",
+        "inline-flex cursor-pointer items-center justify-center rounded-full border border-transparent bg-primary px-5 py-2.5 font-semibold text-white transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         className,
       )}
     >

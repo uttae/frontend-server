@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+import { COOKIE_SETTINGS_QUERY_KEY } from "@/lib/analytics/paths";
 import { appendSetCookies } from "@/lib/auth-cookies";
 import { verifySessionWithOptionalRefresh } from "@/lib/auth-server";
 import { isProtectedAppPath } from "@/lib/auth-session";
@@ -66,6 +67,12 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname === "/") {
+    if (request.nextUrl.searchParams.get(COOKIE_SETTINGS_QUERY_KEY) === "open") {
+      return withRefreshedCookies(
+        withNoindexNofollow(NextResponse.next()),
+        setCookies,
+      );
+    }
     if (hasSession) {
       return withNoindexNofollow(
         withRefreshedCookies(
