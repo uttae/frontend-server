@@ -9,10 +9,10 @@ export type RoomScheduleItem = {
   itemId: number;
   scheduleId: number;
   googlePlaceId: string;
-  /** 서버가 미설정 상태를 `null` 로 응답 가능 */
+  /** 날짜·시간대 없는 `HH:mm`, 미설정은 `null` */
   startTime: string | null;
-  /** 서버가 미설정 상태를 `null` 로 응답 가능 */
-  durationMinutes: number | null;
+  /** 날짜·시간대 없는 `HH:mm`, 미설정은 `null` */
+  endTime: string | null;
   memo?: string;
   orderIndex: number;
   /** 현재 항목 → 다음 항목 공유 이동수단 — 서버 DB 저장, 기본 `DRIVING` */
@@ -28,8 +28,9 @@ export type UpdateTravelModeRequest = {
 export type RoomScheduleItemCreateRequest = {
   googlePlaceId: string;
   /** 로컬 시:분, 예: `"09:45"`. 미지정 시 서버는 저장하지 않음(미설정 상태) */
-  startTime?: string;
-  durationMinutes?: number;
+  startTime?: string | null;
+  /** 종료를 지정하려면 시작 필요. 시작보다 이르면 다음 날, 같으면 0분 */
+  endTime?: string | null;
   /** 0-based 삽입 위치. 생략하면 맨 뒤에 추가 */
   orderIndex?: number;
 };
@@ -45,7 +46,7 @@ export type RoomScheduleItemUpdateRequest = {
   /** `null` 이면 미설정으로 초기화, `undefined` 는 변경 없음 */
   startTime?: string | null;
   /** `null` 이면 미설정으로 초기화, `undefined` 는 변경 없음 */
-  durationMinutes?: number | null;
+  endTime?: string | null;
   /** 키를 내면 서버가 갱신. 빈 문자열이면 삭제 */
   memo?: string | null;
 };

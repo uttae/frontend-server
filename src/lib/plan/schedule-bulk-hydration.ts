@@ -102,7 +102,7 @@ function planPlaceFromItemAndPreview(
       subtitle: preview.formattedAddress,
       primaryTypeDisplayName: preview.primaryTypeDisplayName,
       startTime: item.startTime ?? undefined,
-      durationMinutes: item.durationMinutes ?? undefined,
+      endTime: item.endTime ?? undefined,
       travelMode: item.travelMode,
       memo: memoFromScheduleItem(item),
     };
@@ -114,7 +114,7 @@ function planPlaceFromItemAndPreview(
     title: PLAN_PLACE_PREVIEW_ERROR_TITLE,
     subtitle: item.googlePlaceId,
     startTime: item.startTime ?? undefined,
-    durationMinutes: item.durationMinutes ?? undefined,
+    endTime: item.endTime ?? undefined,
     travelMode: item.travelMode,
     memo: memoFromScheduleItem(item),
   };

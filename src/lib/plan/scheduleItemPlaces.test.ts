@@ -28,7 +28,7 @@ const scheduleItem = (
   scheduleId: 10,
   googlePlaceId: `place-${itemId}`,
   startTime: null,
-  durationMinutes: null,
+  endTime: null,
   orderIndex,
   travelMode,
   createdAt: "2026-07-16T00:00:00Z",
@@ -93,7 +93,7 @@ describe("mergeCreatedScheduleItemDelta", () => {
 });
 
 describe("applyRoomScheduleItemToPlanPlaces", () => {
-  it("clears cached start time and duration when the server returns null", () => {
+  it("clears cached start and end time when the server returns null", () => {
     const prev: PlanPlace[] = [
       {
         id: "item-1",
@@ -101,7 +101,7 @@ describe("applyRoomScheduleItemToPlanPlaces", () => {
         googlePlaceId: "places/abc",
         title: "Old place",
         startTime: "09:00",
-        durationMinutes: 90,
+        endTime: "10:30",
         travelMode: "WALKING",
       },
     ];
@@ -110,7 +110,7 @@ describe("applyRoomScheduleItemToPlanPlaces", () => {
       scheduleId: 10,
       googlePlaceId: "places/abc",
       startTime: null,
-      durationMinutes: null,
+      endTime: null,
       orderIndex: 0,
       travelMode: "WALKING",
       createdAt: "2026-07-11T00:00:00Z",
@@ -119,6 +119,67 @@ describe("applyRoomScheduleItemToPlanPlaces", () => {
     const next = applyRoomScheduleItemToPlanPlaces(prev, updated);
 
     expect(next?.[0]).not.toHaveProperty("startTime");
-    expect(next?.[0]).not.toHaveProperty("durationMinutes");
+    expect(next?.[0]).not.toHaveProperty("endTime");
+  });
+});
+
+describe("end time cache and reorder", () => {
+  it("merges an end-only change without losing memo or preview", () => {
+    const prev = {
+      ...planPlace(1),
+      startTime: "23:00",
+      endTime: "01:00",
+      memo: "keep",
+    };
+    const next = applyRoomScheduleItemToPlanPlaces([prev], {
+      ...scheduleItem(1, 0),
+      startTime: "23:00",
+      endTime: "02:00",
+    });
+    expect(next?.[0]).toMatchObject({
+      startTime: "23:00",
+      endTime: "02:00",
+      memo: "keep",
+      title: "Place 1",
+    });
+  });
+  it("hydrates includeItems without a place preview", async () => {
+    const { planPlaceFromItemAndPreview } =
+      await import("./schedule-bulk-hydration");
+    const item = {
+      ...scheduleItem(1, 0),
+      startTime: "23:00",
+      endTime: "01:00",
+    };
+    expect(planPlaceFromItemAndPreview(item, null)).toMatchObject({
+      startTime: "23:00",
+      endTime: "01:00",
+    });
+  });
+  it("merges server end times in insertion deltas", () => {
+    const next = mergeCreatedScheduleItemDelta([planPlace(1)], planPlace(2), {
+      createdItem: scheduleItem(2, 1),
+      updatedItems: [
+        { ...scheduleItem(1, 0), startTime: "00:00", endTime: "23:59" },
+      ],
+      affectedRouteItemIds: [],
+    });
+    expect(next?.[0]).toMatchObject({ startTime: "00:00", endTime: "23:59" });
+  });
+  it("chains reorder while retaining overnight duration, zero and unset ends", async () => {
+    const { buildChainedStartPatchesForReorder } =
+      await import("./scheduleItemPlaces");
+    const items = [
+      { ...scheduleItem(1, 0), startTime: "23:00", endTime: "01:00" },
+      { ...scheduleItem(2, 1), startTime: "09:00", endTime: "09:00" },
+      { ...scheduleItem(3, 2), startTime: null, endTime: null },
+      { ...scheduleItem(4, 3), startTime: "00:00", endTime: "23:59" },
+    ];
+    expect(buildChainedStartPatchesForReorder(items)).toEqual([
+      { itemId: 1, startTime: "00:00", endTime: "02:00" },
+      { itemId: 2, startTime: "02:00", endTime: "02:00" },
+      { itemId: 3, startTime: "02:00", endTime: null },
+      { itemId: 4, startTime: "02:00", endTime: "01:59" },
+    ]);
   });
 });

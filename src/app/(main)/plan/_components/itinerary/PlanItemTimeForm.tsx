@@ -7,14 +7,10 @@ import { toast } from "sonner";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import {
-  addMinutesToHm,
-  clampStayDurationMinutes,
   computeDurationMinutesFromRange,
-  formatStayDurationMinutes,
   normalizeStartTimeToHm,
-  SCHEDULE_STAY_DURATION_MAX_MINUTES,
+  validateScheduleTimeDraft,
 } from "@/lib/plan/scheduleTime";
-import { cn } from "@/lib/utils";
 
 import { TimeWheelPicker, type TimeWheelValue } from "./TimeWheelPicker";
 
@@ -23,7 +19,7 @@ type PlanItemTimeEditorProps = {
   scheduleId: number;
   itemId: number;
   startTime: string;
-  durationMinutes: number | null | undefined;
+  endTime: string | null | undefined;
   onClose: () => void;
 };
 
@@ -44,38 +40,23 @@ function formatWheelToHm({ hour, minute }: TimeWheelValue): string {
   return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 
-function initialEndHm(
-  startHm: string,
-  durationMinutes: number | null | undefined,
-): string {
-  if (!startHm) return "";
-  if (typeof durationMinutes !== "number" || !Number.isFinite(durationMinutes)) {
-    return "";
-  }
-  return addMinutesToHm(startHm, clampStayDurationMinutes(durationMinutes));
-}
-
 export function PlanItemTimeEditor({
   roomId,
   scheduleId,
   itemId,
   startTime,
-  durationMinutes,
+  endTime,
   onClose,
 }: PlanItemTimeEditorProps) {
   const serverStartHm = normalizeStartTimeToHm(startTime);
 
-  const [startHm, setStartHm] = useState(() => serverStartHm);
-  const [endHm, setEndHm] = useState(() =>
-    initialEndHm(serverStartHm, durationMinutes),
-  );
-
+  const serverEndHm = normalizeStartTimeToHm(endTime ?? "");
+  // 편집한 필드의 초안은 보존하고 나머지는 재조회된 서버 값을 따릅니다.
+  const [draftStart, setStartHm] = useState<string>();
+  const [draftEnd, setEndHm] = useState<string>();
+  const startHm = draftStart ?? serverStartHm;
+  const endHm = draftEnd ?? serverEndHm;
   const { mutateAsync, isPending } = useUpdateScheduleItem();
-
-  useEffect(() => {
-    setStartHm(serverStartHm);
-    setEndHm(initialEndHm(serverStartHm, durationMinutes));
-  }, [serverStartHm, durationMinutes]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -88,13 +69,7 @@ export function PlanItemTimeEditor({
   const hasDraftValue = startHm.length > 0 || endHm.length > 0;
 
   const durationPreview =
-    startHm && endHm
-      ? computeDurationMinutesFromRange(startHm, endHm)
-      : null;
-
-  const durationOverLimit =
-    durationPreview != null &&
-    durationPreview > SCHEDULE_STAY_DURATION_MAX_MINUTES;
+    startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
 
   function handleReset() {
     setStartHm("");
@@ -102,28 +77,10 @@ export function PlanItemTimeEditor({
   }
 
   async function handleSave() {
-    const trimmedStart = startHm.trim();
-    const trimmedEnd = endHm.trim();
-
-    if (trimmedEnd.length > 0 && trimmedStart.length === 0) {
-      toast.error("시작 시각 없이 종료 시각만 설정할 수 없어요.");
+    const validation = validateScheduleTimeDraft(startHm, endHm);
+    if (!validation.valid) {
+      toast.error(validation.message);
       return;
-    }
-
-    let durationToSend: number | null = null;
-    if (trimmedStart.length > 0 && trimmedEnd.length > 0) {
-      const dur = computeDurationMinutesFromRange(trimmedStart, trimmedEnd);
-      if (dur === null) {
-        toast.error("시간을 올바르게 선택해 주세요.");
-        return;
-      }
-      if (dur > SCHEDULE_STAY_DURATION_MAX_MINUTES) {
-        toast.error(
-          `체류 시간은 ${SCHEDULE_STAY_DURATION_MAX_MINUTES}분 이하여야 해요.`,
-        );
-        return;
-      }
-      durationToSend = dur;
     }
 
     try {
@@ -132,28 +89,24 @@ export function PlanItemTimeEditor({
         scheduleId,
         itemId,
         body: {
-          startTime: trimmedStart.length > 0 ? trimmedStart : null,
-          durationMinutes: durationToSend,
+          ...(startHm !== serverStartHm ? { startTime: startHm || null } : {}),
+          ...(endHm !== serverEndHm || (draftStart === "" && serverStartHm)
+            ? { endTime: endHm || null }
+            : {}),
         },
       });
       toast.success("시간을 저장했어요.");
       onClose();
-    } catch {
-      toast.error("시간을 저장하지 못했어요.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "시간을 저장하지 못했어요.",
+      );
     }
   }
 
-  const baselineStart = serverStartHm;
-  const baselineDur = formatStayDurationMinutes(durationMinutes);
-  const currentDurStr =
-    durationPreview != null ? String(durationPreview) : "0";
-  const dirty =
-    baselineStart !== startHm ||
-    baselineDur !== currentDurStr ||
-    // baseline may have had duration=null (미설정) — 종료를 지웠으면 dirty
-    (typeof durationMinutes !== "number" && endHm.length > 0);
-
-  const canSave = !isPending && dirty && !durationOverLimit;
+  const dirty = serverStartHm !== startHm || serverEndHm !== endHm;
+  const canSave =
+    !isPending && dirty && validateScheduleTimeDraft(startHm, endHm).valid;
 
   return (
     <div
@@ -198,6 +151,15 @@ export function PlanItemTimeEditor({
           <div className="flex items-start justify-center gap-3">
             <div className="flex flex-col items-center gap-1.5">
               <span className={fieldLabelClass}>시작</span>
+              <button
+                type="button"
+                aria-label="시작 시각 지우기"
+                onClick={handleReset}
+                disabled={isPending || !startHm}
+                className="text-xs text-dark-gray disabled:opacity-40"
+              >
+                {startHm ? "지우기" : "미설정"}
+              </button>
               <TimeWheelPicker
                 value={parseHmToWheel(startHm, DEFAULT_START_WHEEL)}
                 disabled={isPending}
@@ -211,6 +173,7 @@ export function PlanItemTimeEditor({
               <span className={fieldLabelClass} aria-hidden>
                 {" "}
               </span>
+              <span className="text-xs" aria-hidden>{" "}</span>
               <div
                 aria-hidden
                 className="flex items-center justify-center text-xl font-semibold text-gray-400"
@@ -221,6 +184,15 @@ export function PlanItemTimeEditor({
             </div>
             <div className="flex flex-col items-center gap-1.5">
               <span className={fieldLabelClass}>종료</span>
+              <button
+                type="button"
+                aria-label="종료 시각 지우기"
+                onClick={() => setEndHm("")}
+                disabled={isPending || !endHm}
+                className="text-xs text-dark-gray disabled:opacity-40"
+              >
+                {endHm ? "지우기" : "미설정"}
+              </button>
               <TimeWheelPicker
                 value={parseHmToWheel(
                   endHm,
@@ -247,17 +219,9 @@ export function PlanItemTimeEditor({
                 종료 없이도 저장할 수 있어요
               </span>
             ) : durationPreview != null ? (
-              <span
-                className={cn(
-                  "tabular-nums",
-                  durationOverLimit ? "text-primary" : "text-dark-gray/85",
-                )}
-              >
-                체류 시간 {Math.floor(durationPreview / 60)}시간{" "}
-                {durationPreview % 60}분
-                {durationOverLimit
-                  ? ` · 최대 ${SCHEDULE_STAY_DURATION_MAX_MINUTES}분 초과`
-                  : ""}
+              <span className="tabular-nums text-dark-gray/85">
+                {endHm < startHm ? "다음 날 종료 (+1일) · " : ""}
+                {Math.floor(durationPreview / 60)}시간 {durationPreview % 60}분
               </span>
             ) : null}
           </div>

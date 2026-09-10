@@ -28,7 +28,13 @@ import {
   removeRouteQueriesForDeletedItemSource,
 } from "@/lib/plan/scheduleStompRouteScope";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
-import { addMinutesToHm, hmToMinutesSinceMidnight, minutesSinceMidnightToHm, normalizeStartTimeToHm } from "@/lib/plan/scheduleTime";
+import {
+  addMinutesToHm,
+  computeDurationMinutesFromRange,
+  hmToMinutesSinceMidnight,
+  minutesSinceMidnightToHm,
+  normalizeStartTimeToHm,
+} from "@/lib/plan/scheduleTime";
 import type { PlanPlace } from "@/lib/plan/types";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
 
@@ -72,9 +78,8 @@ function patchPlanPlaceFromScheduleItem(
 ): PlanPlace {
   const hasServerStart =
     typeof item.startTime === "string" && item.startTime.trim().length > 0;
-  const serverDurationOk =
-    typeof item.durationMinutes === "number" &&
-    Number.isFinite(item.durationMinutes);
+  const hasServerEnd =
+    typeof item.endTime === "string" && item.endTime.length > 0;
   const next: PlanPlace = {
     ...existing,
     googlePlaceId: item.googlePlaceId,
@@ -86,10 +91,10 @@ function patchPlanPlaceFromScheduleItem(
   } else if (hasServerStart) {
     next.startTime = item.startTime;
   }
-  if (item.durationMinutes === null) {
-    delete next.durationMinutes;
-  } else if (serverDurationOk) {
-    next.durationMinutes = item.durationMinutes;
+  if (item.endTime === null) {
+    delete next.endTime;
+  } else if (hasServerEnd) {
+    next.endTime = item.endTime;
   }
   return next;
 }
@@ -451,54 +456,31 @@ function earliestAnchoredHmFromScheduleItems(items: RoomScheduleItem[]): string 
 }
 
 /**
- * 리오더 후 이전 항목 `시작 + 체류`로 시작 시각을 이어 붙입니다.
- * 1번 칸 시작은 현재 목록 안에서 **가장 이른 시작 시각**(앵커)으로 고정해, 순서 변경만 할 때 기준이 늘지 않습니다.
+ * 기존 순서 변경 동작을 유지하되, 시각 범위로 계산한 길이만큼 종료도 함께 옮깁니다.
+ * 가장 이른 시작을 앵커로 사용하며 미정 종료는 null로 보존합니다.
  */
 export function buildChainedStartPatchesForReorder(
   items: RoomScheduleItem[],
-): Array<{ itemId: number; startTime: string; durationMinutes: number }> {
+): Array<{ itemId: number; startTime: string; endTime: string | null }> {
   const sorted = sortRoomScheduleItemsByOrder(items);
   if (sorted.length === 0) return [];
-
-  const anchorHm = earliestAnchoredHmFromScheduleItems(sorted);
-
+  let targetHm = earliestAnchoredHmFromScheduleItems(sorted);
   const patches: Array<{
     itemId: number;
     startTime: string;
-    durationMinutes: number;
+    endTime: string | null;
   }> = [];
-
-  let prevStartHm = anchorHm;
-  let prevDur =
-    typeof sorted[0].durationMinutes === "number" &&
-    Number.isFinite(sorted[0].durationMinutes) ?
-      sorted[0].durationMinutes
-    : 0;
-
-  for (let i = 0; i < sorted.length; i++) {
-    const item = sorted[i];
-    const dur =
-      typeof item.durationMinutes === "number" &&
-      Number.isFinite(item.durationMinutes) ?
-        item.durationMinutes
-      : 0;
-
-    const targetHm =
-      i === 0 ? anchorHm : addMinutesToHm(prevStartHm, prevDur);
-
-    const currentHm = normalizeStartTimeToHm(item.startTime ?? "");
-    if (currentHm !== targetHm) {
-      patches.push({
-        itemId: item.itemId,
-        startTime: targetHm,
-        durationMinutes: dur,
-      });
+  for (const item of sorted) {
+    const duration = computeDurationMinutesFromRange(
+      item.startTime ?? "",
+      item.endTime ?? "",
+    );
+    const endTime = duration === null ? null : addMinutesToHm(targetHm, duration);
+    if (normalizeStartTimeToHm(item.startTime ?? "") !== targetHm) {
+      patches.push({ itemId: item.itemId, startTime: targetHm, endTime });
     }
-
-    prevStartHm = targetHm;
-    prevDur = dur;
+    targetHm = endTime ?? targetHm;
   }
-
   return patches;
 }
 
@@ -548,7 +530,7 @@ export async function syncPlanPlacesAfterReorderSuccess(
     for (const p of patches) {
       const updated = await updateScheduleItem(rid, scheduleId, p.itemId, {
         startTime: p.startTime,
-        durationMinutes: p.durationMinutes,
+        endTime: p.endTime,
       });
       byItemId.set(updated.itemId, updated);
     }
@@ -599,9 +581,8 @@ export function applyRoomScheduleItemToPlanPlaces(
     const hasServerStart =
       typeof updated.startTime === "string" &&
       updated.startTime.trim().length > 0;
-    const serverDurationOk =
-      typeof updated.durationMinutes === "number" &&
-      Number.isFinite(updated.durationMinutes);
+    const hasServerEnd =
+      typeof updated.endTime === "string" && updated.endTime.length > 0;
     const next: PlanPlace = {
       ...p,
       googlePlaceId: updated.googlePlaceId,
@@ -613,10 +594,10 @@ export function applyRoomScheduleItemToPlanPlaces(
     } else if (hasServerStart) {
       next.startTime = updated.startTime;
     }
-    if (updated.durationMinutes === null) {
-      delete next.durationMinutes;
-    } else if (serverDurationOk) {
-      next.durationMinutes = updated.durationMinutes;
+    if (updated.endTime === null) {
+      delete next.endTime;
+    } else if (hasServerEnd) {
+      next.endTime = updated.endTime;
     }
     return next;
   });
@@ -637,7 +618,7 @@ async function planPlaceFromScheduleItem(
       subtitle: preview.formattedAddress,
       primaryTypeDisplayName: preview.primaryTypeDisplayName,
       startTime: item.startTime ?? undefined,
-      durationMinutes: item.durationMinutes ?? undefined,
+      endTime: item.endTime ?? undefined,
       travelMode: item.travelMode,
       memo: memoFromScheduleItem(item),
     };
@@ -649,7 +630,7 @@ async function planPlaceFromScheduleItem(
       title: "장소 정보를 불러올 수 없음",
       subtitle: item.googlePlaceId,
       startTime: item.startTime ?? undefined,
-      durationMinutes: item.durationMinutes ?? undefined,
+      endTime: item.endTime ?? undefined,
       travelMode: item.travelMode,
       memo: memoFromScheduleItem(item),
     };

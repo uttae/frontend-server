@@ -14,8 +14,8 @@ export type PlanPlace = {
   /** `GET /places/{id}/preview` 성공 시 — 지도 마커·경로 표시용 */
   location?: { lat: number; lng: number };
   /** 서버 일정 항목 — PATCH 시 사용 (`HH:mm` 등 API 그대로) */
-  startTime?: string;
-  durationMinutes?: number;
+  startTime?: string | null;
+  endTime?: string | null;
   /** 서버 저장 공유 이동수단(`schedule_items.travel_mode`) — PATCH `…/travel-mode`로 변경, 기본 `DRIVING` */
   travelMode?: string;
   /** 일정 항목 메모 — PATCH로만 설정 */
