@@ -1,27 +1,30 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useClientReady } from "./useClientReady";
 
-/** sessionStorage에 dismiss 플래그가 없으면 `visible: true` — hydration 후 갱신 */
+/** sessionStorage에 dismiss 플래그가 없으면 visible — hydration 후 갱신 */
 export function useSessionPromptVisible(storageKey: string) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
+  const ready = useClientReady();
+  const [dismissedKeys, setDismissedKeys] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
+  let storedDismissed = false;
+  if (ready) {
     try {
-      setVisible(sessionStorage.getItem(storageKey) !== "1");
+      storedDismissed = sessionStorage.getItem(storageKey) === "1";
     } catch {
-      setVisible(true);
+      /* private mode / quota */
     }
-  }, [storageKey]);
-
+  }
+  const visible = ready && !storedDismissed && !dismissedKeys.has(storageKey);
   const dismiss = useCallback(() => {
     try {
       sessionStorage.setItem(storageKey, "1");
     } catch {
       /* private mode / quota */
     }
-    setVisible(false);
+    setDismissedKeys((keys) => new Set(keys).add(storageKey));
   }, [storageKey]);
-
   return { visible, dismiss };
 }

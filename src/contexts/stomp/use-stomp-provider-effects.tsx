@@ -60,7 +60,6 @@ export function useStompClientLifecycleEffect({
   queryClientRef,
   setConnectionState,
 }: LifecycleOpts): void {
-  /* eslint-disable react-hooks/set-state-in-effect -- STOMP connect 시 컨텍스트와 상태 동기화 */
   useEffect(() => {
     if (!stompEligible) {
       useStompConnectionStore.getState().clearConnectionIssue();
@@ -151,6 +150,12 @@ export function useStompClientLifecycleEffect({
       teardownConnectedClient();
     };
   }, [
+    clientRef,
+    forcedExitConsumedRef,
+    pathnameRef,
+    queryClientRef,
+    setConnectionState,
+    userRoomsQueueUnsubRef,
     getResolvedRoomId,
     invalidateRoomTopics,
     notifyForcedRoomExit,
@@ -159,7 +164,6 @@ export function useStompClientLifecycleEffect({
     suppressCloseRecoveryRef,
     teardownConnectedClient,
   ]);
-  /* eslint-enable react-hooks/set-state-in-effect */
 }
 
 type RoomTopicsOpts = {
@@ -198,6 +202,7 @@ export function useStompRoomTopicsResyncEffect({
       unsubscribeRoomTopics();
     }
   }, [
+    clientRef,
     connected,
     resolvedRoomId,
     roomTopicsDeferred,

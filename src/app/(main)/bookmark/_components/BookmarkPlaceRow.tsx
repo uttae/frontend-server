@@ -4,7 +4,6 @@ import { ChevronLeft, MoreHorizontal } from "lucide-react";
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
 } from "react";
@@ -106,9 +105,10 @@ export function BookmarkPlaceRow({
     });
   }, [menuOpen, menuPhase, otherCategories.length]);
 
-  useLayoutEffect(() => {
-    updateMenuPosition();
-  }, [updateMenuPosition, menuPhase]);
+  const attachMenuPanel = useCallback((node: HTMLDivElement | null) => {
+    menuPanelRef.current = node;
+    if (node) updateMenuPosition();
+  }, [updateMenuPosition]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -195,17 +195,17 @@ export function BookmarkPlaceRow({
         </button>
 
         {menuOpen &&
-          menuPosition &&
           typeof document !== "undefined" &&
           createPortal(
             <div
-              ref={menuPanelRef}
+              ref={attachMenuPanel}
               style={{
                 position: "fixed",
-                top: menuPosition.top,
-                left: menuPosition.left,
-                width: menuPosition.width,
+                top: menuPosition?.top ?? 0,
+                left: menuPosition?.left ?? 0,
+                width: menuPosition?.width ?? MENU_WIDTH_PX,
                 zIndex: 200,
+                visibility: menuPosition ? "visible" : "hidden",
               }}
               className="animate-in fade-in-0 zoom-in-95 max-h-[22rem] overflow-y-auto rounded-xl border border-gray-border/80 bg-white p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)] duration-150"
               role="menu"

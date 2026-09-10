@@ -10,7 +10,6 @@ import { useChatActions } from "@/hooks/useChatActions";
 import {
   AnalyticsEvents,
   trackAnalyticsEvent,
-  type ItinerarySource,
 } from "@/lib/analytics/track";
 
 import type { SearchResultCardProps } from "./SearchResultCard";
@@ -45,15 +44,14 @@ export function PlaceDetailPanel({
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   const {
-    analyticsRankBucketRef,
-    analyticsSourceRef,
-    itinerarySourceRef,
+    analyticsRankBucket,
+    analyticsSource,
+    itinerarySource: selectedItinerarySource,
   } = useSelectedPlace();
   const { sendPlaceMessage, canSend } = useChatActions();
   const { openChat } = useChat();
 
-  const itinerarySource: ItinerarySource =
-    itinerarySourceRef.current ?? "search";
+  const itinerarySource = selectedItinerarySource ?? "search";
 
   const { data: detailData, isLoading: isDetailLoading } =
     usePlaceDetailData(googlePlaceId);
@@ -81,12 +79,12 @@ export function PlaceDetailPanel({
     lastTrackedPlaceIdRef.current = placeId;
     trackAnalyticsEvent(AnalyticsEvents.viewPlace, {
       place_category: displayCategory,
-      rank_bucket: analyticsRankBucketRef.current ?? undefined,
-      interaction_source: analyticsSourceRef.current ?? itinerarySource,
+      rank_bucket: analyticsRankBucket ?? undefined,
+      interaction_source: analyticsSource ?? itinerarySource,
     });
   }, [
-    analyticsRankBucketRef,
-    analyticsSourceRef,
+    analyticsRankBucket,
+    analyticsSource,
     displayCategory,
     googlePlaceId,
     isDetailLoading,

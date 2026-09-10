@@ -34,21 +34,21 @@ export function usePlanChatPanelReveal({
 
   const [revealForced, setRevealForced] = useState(false);
 
+  const waiting = chatState === "maximized" && deferReveal;
+  const [wasWaiting, setWasWaiting] = useState(waiting);
+  if (wasWaiting !== waiting) {
+    setWasWaiting(waiting);
+    setRevealForced(false);
+  }
+
   useEffect(() => {
-    if (chatState !== "maximized") {
-      setRevealForced(false);
-      return;
-    }
-    if (!deferReveal) {
-      setRevealForced(false);
-      return;
-    }
+    if (!waiting) return;
     const id = window.setTimeout(
       () => setRevealForced(true),
       PLAN_CHAT_REVEAL_FALLBACK_MS,
     );
     return () => window.clearTimeout(id);
-  }, [chatState, deferReveal]);
+  }, [waiting]);
 
   if (chatState !== "maximized") return true;
   if (!deferReveal) return true;
