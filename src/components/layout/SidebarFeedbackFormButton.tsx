@@ -3,11 +3,9 @@
 import { ClipboardList } from "lucide-react";
 
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
+import { FEEDBACK_FORM_URL } from "@/lib/contact";
 
-import {
-  FEEDBACK_FORM_CLICKED_KEY,
-  FEEDBACK_FORM_URL,
-} from "./sidebarFeedbackForm";
+import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 import { SidebarPingBadge } from "./SidebarPingBadge";
 import { sidebarNavButtonClassName } from "./sidebarNavButton";
 
