@@ -28,13 +28,15 @@ import {
 type Props = {
   room: RoomTripFormSource;
   readOnly?: boolean;
+  onCancel?: () => void;
+  onSaved?: () => void;
 };
 
 export function RoomTripEditForm(props: Props) {
   return <RoomTripEditSession key={props.room.id} {...props} />;
 }
 
-function RoomTripEditSession({ room, readOnly = false }: Props) {
+function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Props) {
   const saved = toTripFormValues(room);
 
   const [title, setTitle] = useState(saved.title);
@@ -100,6 +102,7 @@ function RoomTripEditSession({ room, readOnly = false }: Props) {
         onSuccess: () => {
           setShrinkConfirmOpen(false);
           toast.success("여행 정보가 수정되었어요");
+          onSaved?.();
         },
       },
     );
@@ -113,6 +116,7 @@ function RoomTripEditSession({ room, readOnly = false }: Props) {
     startDate,
     title,
     updateRoom,
+    onSaved,
   ]);
 
   function handleCancel() {
@@ -122,6 +126,7 @@ function RoomTripEditSession({ room, readOnly = false }: Props) {
     setStartDate(next.startDate);
     setEndDate(next.endDate);
     setShrinkConfirmOpen(false);
+    onCancel?.();
   }
 
   function handleApply() {
@@ -170,7 +175,7 @@ function RoomTripEditSession({ room, readOnly = false }: Props) {
           <SettingsActionButton
             variant="secondary"
             onClick={handleCancel}
-            disabled={!isDirty || isPending}
+            disabled={(!onCancel && !isDirty) || isPending}
           >
             취소
           </SettingsActionButton>

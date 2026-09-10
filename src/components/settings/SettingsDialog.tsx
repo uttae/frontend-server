@@ -47,15 +47,17 @@ export function SettingsDialog({
     background.forEach((node) => node.setAttribute("inert", ""));
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const focusScope = () => dialog.querySelector<HTMLElement>('[role="alertdialog"][aria-modal="true"]') ?? dialog;
     const focusable = () => [
-      ...dialog.querySelectorAll<HTMLElement>(
+      ...focusScope().querySelectorAll<HTMLElement>(
         'button:not(:disabled), a[href], summary, input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
       ),
     ];
     focusable()[0]?.focus();
 
     function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.defaultPrevented) return;
+      if (event.key === "Escape" && focusScope() === dialog) {
         event.preventDefault();
         onClose();
       }
@@ -72,7 +74,7 @@ export function SettingsDialog({
       }
     }
     function containFocus(event: FocusEvent) {
-      if (!dialog.contains(event.target as Node)) focusable()[0]?.focus();
+      if (!focusScope().contains(event.target as Node)) focusable()[0]?.focus();
     }
     document.addEventListener("keydown", handleKey);
     document.addEventListener("focusin", containFocus);
