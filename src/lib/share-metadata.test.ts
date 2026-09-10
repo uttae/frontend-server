@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
 
+import { metadata as landingPageMetadata } from "@/app/page";
 import { metadata as invitePageMetadata } from "@/app/join/[inviteCode]/layout";
 import { brandAssets } from "@/lib/public-assets";
 import { PUBLIC_SITE } from "@/lib/public-site";
@@ -16,8 +17,8 @@ const meta = new Map(
 
 describe("invite share metadata", () => {
   it("uses the existing public brand PNG for every static social image URL", () => {
-    const imageUrl = "https://www.uttae.app/brand/App_Icon.png";
-    expect(inviteShareMetadata.imagePath).toBe("/brand/App_Icon.png");
+    const imageUrl = "https://www.uttae.app/brand/Glyph.png";
+    expect(inviteShareMetadata.imagePath).toBe("/brand/Glyph.png");
     expect(inviteShareMetadata.imagePath).toBe(brandAssets.shareImage);
     expect(new URL(inviteShareMetadata.imagePath, PUBLIC_SITE.origin).href).toBe(imageUrl);
     for (const key of ["og:image", "og:image:secure_url", "twitter:image"]) {
@@ -33,10 +34,17 @@ describe("invite share metadata", () => {
     const { info } = await sharp(bytes).raw().toBuffer({ resolveWithObject: true });
 
     expect(metadata.format).toBe("png");
-    expect([info.width, info.height]).toEqual([130, 130]);
+    expect([info.width, info.height]).toEqual([1200, 1200]);
     expect([inviteShareMetadata.imageWidth, inviteShareMetadata.imageHeight]).toEqual([info.width, info.height]);
     expect(meta.get("og:image:width")).toBe(String(info.width));
     expect(meta.get("og:image:height")).toBe(String(info.height));
+  });
+
+  it("uses the same image and real dimensions on the landing page", () => {
+    expect(landingPageMetadata.openGraph).toMatchObject({
+      images: [{ url: "/brand/Glyph.png", width: 1200, height: 1200 }],
+    });
+    expect(landingPageMetadata.twitter).toMatchObject({ images: ["/brand/Glyph.png"] });
   });
 
   it("keeps the static title and descriptions aligned with shared metadata", () => {
