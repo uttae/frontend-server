@@ -141,8 +141,6 @@ export function PlanDaySection({
     sourceScheduleId !== trackedSid &&
     hoverTargetScheduleId === trackedSid;
 
-  const isHighlighted = isDragging || isCrossDayItemDropTarget;
-
   const showScheduleMenu =
     onRequestDeleteSchedule != null || onRequestInsertScheduleAfter != null;
 

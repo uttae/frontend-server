@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -16,7 +15,8 @@ import { SearchResultCard } from "@/components/place";
 import { SetSectionMaxWidth } from "@/contexts/SectionWidthContext";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
-import { buildSearchMapSnapshotFromMapCenterStore } from "@/lib/map-viewport-commit";
+import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
+import type { SearchMapSnapshot } from "@/stores/search-recenter-store";
 import {
   clearActiveSearchMapPins,
   placeSearchResultsToMapPins,
@@ -63,92 +63,68 @@ export default function SearchPage() {
   const { sendPlaceMessage, canSend } = useChatActions();
   const { openChat } = useChat();
 
-  const [query, setQuery] = useState("");
-  /** 마지막 검색·재검색 시점의 지도 중심 — 드래그만으로는 바뀌지 않음 */
-  const [searchCoords, setSearchCoords] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  /** 마지막 검색 시점 뷰포트 반경(m) — `GET /places/search` radius */
-  const [searchRadius, setSearchRadius] = useState<number | undefined>(
-    undefined,
-  );
-  /** 검색·재검색 커밋마다 증가 — `usePlacesSearch` pageToken 초기화 */
-  const [searchGeneration, setSearchGeneration] = useState(0);
+  const zoom = useMapCenterStore((s) => s.zoom);
+  const radiusMeters = useMapCenterStore((s) => s.radiusMeters);
+  const viewport: SearchMapSnapshot | null = mapCenter ? {
+    center: mapCenter,
+    zoom,
+    radius: clampPlacesSearchRadiusMeters(
+      radiusMeters != null && Number.isFinite(radiusMeters) ? radiusMeters : 5000,
+    ),
+  } : null;
+  const [search, setSearch] = useState({
+    query: qParam,
+    snapshot: qParam ? viewport : null,
+    generation: qParam && viewport ? 1 : 0,
+    recenterRequestId: searchRecenterRequestId,
+    mode: "text" as "text" | "map_recenter",
+  });
+  const urlChanged = search.query !== qParam;
+  const recentered = search.recenterRequestId !== searchRecenterRequestId;
+  if (urlChanged || recentered || (qParam && !search.snapshot && viewport)) {
+    setSearch({
+      query: qParam,
+      snapshot: qParam ? viewport : null,
+      generation: search.generation + 1,
+      recenterRequestId: searchRecenterRequestId,
+      mode: !urlChanged && recentered ? "map_recenter" : "text",
+    });
+  }
+  const query = search.query;
+  const searchCoords = search.snapshot?.center ?? null;
+  const searchRadius = search.snapshot?.radius;
+  const searchGeneration = search.generation;
   const lastTrackedSearchGenerationRef = useRef(0);
-  const searchModeRef = useRef<"map_recenter" | "text">("text");
   const searchPinsEpochRef = useRef(0);
 
-  const commitSearchAtCurrentView = useCallback(
-    (trimmedQuery: string) => {
-      const trimmed = trimmedQuery.trim();
-      const { clearSearchSnapshot, setSearchSnapshot } =
-        useSearchRecenterStore.getState();
-
-      if (!trimmed.length) {
-        clearSearchSnapshot();
-        setSearchCoords(null);
-        setSearchRadius(undefined);
-        return;
-      }
-
-      clearActiveSearchMapPins();
-      searchPinsEpochRef.current =
-        useMapPinsFocusStore.getState().claimFocus("search");
-      const snapshot = buildSearchMapSnapshotFromMapCenterStore();
-      if (!snapshot) {
-        clearSearchSnapshot();
-        setSearchCoords(null);
-        setSearchRadius(undefined);
-        return;
-      }
-
-      setSearchSnapshot(snapshot);
-      setSearchCoords(snapshot.center);
-      setSearchRadius(snapshot.radius);
-      setSearchGeneration((g) => g + 1);
-    },
-    [],
-  );
-
+  // Publish the committed snapshot to the map; state ownership stays in this render.
   useLayoutEffect(() => {
-    searchModeRef.current = "text";
-    if (!qParam) {
-      setQuery("");
-      commitSearchAtCurrentView("");
+    const { clearSearchSnapshot, setSearchSnapshot } = useSearchRecenterStore.getState();
+    clearActiveSearchMapPins();
+    if (!search.snapshot) {
+      clearSearchSnapshot();
       return;
     }
-    setQuery(qParam);
-    commitSearchAtCurrentView(qParam);
-  }, [qParam, commitSearchAtCurrentView]);
-
-  /** 지도 준비 전 URL 진입(`?q=`) 시, 카메라 동기화 후 첫 검색 스냅샷 */
-  useEffect(() => {
-    if (!qParam) return;
-    if (!mapCenter) return;
-    if (searchCoords !== null) return;
-    commitSearchAtCurrentView(qParam);
-  }, [qParam, mapCenter, searchCoords, commitSearchAtCurrentView]);
+    searchPinsEpochRef.current = useMapPinsFocusStore.getState().claimFocus("search");
+    setSearchSnapshot(search.snapshot);
+  }, [search.snapshot, search.generation]);
 
   function handleSearch(q: string) {
     const trimmed = q.trim();
-    searchModeRef.current = "text";
-    setQuery(trimmed);
-    commitSearchAtCurrentView(trimmed);
-
+    if (trimmed === qParam) {
+      setSearch({
+        query: trimmed,
+        snapshot: trimmed ? viewport : null,
+        generation: search.generation + 1,
+        recenterRequestId: searchRecenterRequestId,
+        mode: "text",
+      });
+    }
     const params = new URLSearchParams(searchParams.toString());
     if (trimmed) params.set("q", trimmed);
     else params.delete("q");
     router.replace(`/search?${params.toString()}`, { scroll: false });
   }
-
-  useEffect(() => {
-    if (searchRecenterRequestId === 0) return;
-    const trimmed = query.trim();
-    if (!trimmed.length) return;
-    searchModeRef.current = "map_recenter";
-    commitSearchAtCurrentView(trimmed);
-  }, [searchRecenterRequestId, query, commitSearchAtCurrentView]);
 
   const {
     items,
@@ -157,7 +133,6 @@ export default function SearchPage() {
     hasNextPage,
     goToPreviousPage,
     goToNextPage,
-    isPending,
     isFetching,
     isError,
     isSuccess,
@@ -179,7 +154,7 @@ export default function SearchPage() {
     lastTrackedSearchGenerationRef.current = searchGeneration;
     trackAnalyticsEvent(AnalyticsEvents.search, {
       result_count_bucket: bucketResultCount(items.length),
-      search_mode: searchModeRef.current,
+      search_mode: search.mode,
     });
   }, [
     isFetching,
@@ -188,6 +163,7 @@ export default function SearchPage() {
     query,
     searchCoords,
     searchGeneration,
+    search.mode,
   ]);
 
   const hasActiveSearch = query.trim().length > 0 && searchCoords !== null;

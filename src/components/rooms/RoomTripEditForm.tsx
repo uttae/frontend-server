@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -30,7 +30,11 @@ type Props = {
   readOnly?: boolean;
 };
 
-export function RoomTripEditForm({ room, readOnly = false }: Props) {
+export function RoomTripEditForm(props: Props) {
+  return <RoomTripEditSession key={props.room.id} {...props} />;
+}
+
+function RoomTripEditSession({ room, readOnly = false }: Props) {
   const saved = toTripFormValues(room);
 
   const [title, setTitle] = useState(saved.title);
@@ -39,32 +43,21 @@ export function RoomTripEditForm({ room, readOnly = false }: Props) {
   const [endDate, setEndDate] = useState(saved.endDate);
   const [shrinkConfirmOpen, setShrinkConfirmOpen] = useState(false);
 
-  const baselineStartRef = useRef(saved.startDate);
-  useEffect(() => {
-    baselineStartRef.current = toTripFormValues(room).startDate;
-  }, [room.id]);
-
-  const baselineStartYmd = baselineStartRef.current;
+  // Keep the original date floor throughout this room's edit session.
+  const [baselineStartYmd] = useState(saved.startDate);
   const endDateMin = tripEndDateMinYmd(startDate, baselineStartYmd);
 
   const { data: schedules } = useRoomSchedules(room.id);
   const { mutate: updateRoom, isPending, error } = useUpdateRoom();
-
-  const destinationsSignature = room.destinations.join(" ");
-
-  useEffect(() => {
-    const next = toTripFormValues(room);
-    setTitle(next.title);
-    setDestinations(next.destinations);
-    setStartDate(next.startDate);
-    setEndDate(next.endDate);
-  }, [
-    room.id,
-    room.title,
-    destinationsSignature,
-    room.startDate,
-    room.endDate,
-  ]);
+  const savedSignature = JSON.stringify(saved);
+  const [previousSavedSignature, setPreviousSavedSignature] = useState(savedSignature);
+  if (previousSavedSignature !== savedSignature) {
+    setPreviousSavedSignature(savedSignature);
+    setTitle(saved.title);
+    setDestinations(saved.destinations);
+    setStartDate(saved.startDate);
+    setEndDate(saved.endDate);
+  }
 
   const dateRangeInvalid = isTripDateRangeInvalid(startDate, endDate);
   const scheduleDayLimitExceeded = isTripScheduleDayLimitExceeded(
@@ -111,6 +104,7 @@ export function RoomTripEditForm({ room, readOnly = false }: Props) {
       },
     );
   }, [
+    setShrinkConfirmOpen,
     destinations,
     endDate,
     room.id,

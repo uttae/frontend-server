@@ -118,6 +118,38 @@ export function useChatMessages(
     useState<ReadDividerPlacement>(EMPTY_READ_DIVIDER_PLACEMENT);
   const [scrollToAnchor, setScrollToAnchor] =
     useState<ChatScrollAnchorRequest | null>(null);
+  const [renderedContext, setRenderedContext] = useState({ roomId, userId, fetchHistory });
+  const [roomSnapshots, setRoomSnapshots] = useState<Record<string, {
+    rawMessages: ServerChatMessage[];
+    hasMore: boolean;
+    hasMoreNewer: boolean;
+    readMarkerMessageId: string | null;
+    readDividerPlacement: ReadDividerPlacement;
+  }>>({});
+  if (renderedContext.roomId !== roomId || renderedContext.userId !== userId) {
+    const sameUser = renderedContext.userId === userId;
+    const saved = sameUser && roomId ? roomSnapshots[roomId] : undefined;
+    setRoomSnapshots(sameUser && roomId && renderedContext.roomId ? {
+      ...roomSnapshots,
+      [renderedContext.roomId]: { rawMessages, hasMore, hasMoreNewer, readMarkerMessageId, readDividerPlacement },
+    } : {});
+    setRawMessages(saved?.rawMessages ?? []);
+    setHasMore(saved?.hasMore ?? true);
+    setHasMoreNewer(saved?.hasMoreNewer ?? false);
+    setReadMarkerMessageId(saved?.readMarkerMessageId ?? null);
+    setReadDividerPlacement(saved?.readDividerPlacement ?? EMPTY_READ_DIVIDER_PLACEMENT);
+    setIsFetchingOlder(false);
+    setIsFetchingNewer(false);
+    setScrollToAnchor(null);
+    setRenderedContext({ roomId, userId, fetchHistory });
+  } else if (renderedContext.fetchHistory !== fetchHistory) {
+    setRenderedContext({ roomId, userId, fetchHistory });
+    if (!fetchHistory) {
+      setReadMarkerMessageId(null);
+      setReadDividerPlacement(EMPTY_READ_DIVIDER_PLACEMENT);
+      setScrollToAnchor(null);
+    }
+  }
   const { sendChatMessage, sendAiMessage, sendCancelAiRequest } =
     useChatActions();
 
@@ -141,6 +173,14 @@ export function useChatMessages(
   const isFetchingOlderRef = useRef(false);
   const isFetchingNewerRef = useRef(false);
   const rawMessagesRef = useRef<ServerChatMessage[]>([]);
+
+  const roomLifetimeRef = useRef(0);
+  useLayoutEffect(() => {
+    roomLifetimeRef.current += 1;
+    isFetchingOlderRef.current = false;
+    isFetchingNewerRef.current = false;
+    return () => { roomLifetimeRef.current += 1; };
+  }, [roomId, userId]);
 
   useLayoutEffect(() => {
     rawMessagesRef.current = rawMessages;
@@ -253,7 +293,7 @@ export function useChatMessages(
   );
 
   const restoreSessionReadBoundary = useCallback(
-    async (targetRoomId: string) => {
+    (targetRoomId: string) => {
       const rid = targetRoomId.trim();
       if (!rid) return;
 
@@ -263,9 +303,7 @@ export function useChatMessages(
         fetchHistoryRef.current &&
         activeRoomIdRef.current === rid;
 
-      try {
-        const { lastReadMessageId } =
-          await getRoomMessageReadStatus(targetRoomId);
+      return getRoomMessageReadStatus(targetRoomId).then(async ({ lastReadMessageId }) => {
         if (!isCurrentRequest()) return;
 
         if (!lastReadMessageId) {
@@ -307,7 +345,7 @@ export function useChatMessages(
         if (canRenderReadDivider(bridged.slice, placement)) {
           publishScrollToAnchor(lastReadMessageId);
         }
-      } catch {
+      }).catch(() => {
         if (!isCurrentRequest()) return;
         const fallbackLastRead = lastReadMarkerByRoomRef.current.get(rid);
         const fallbackPlacement =
@@ -321,7 +359,7 @@ export function useChatMessages(
           setReadDividerPlacement(fallbackPlacement);
           publishScrollToAnchor(fallbackLastRead);
         }
-      }
+      });
     },
     [
       applySessionReadBoundary,
@@ -334,9 +372,6 @@ export function useChatMessages(
   useEffect(() => {
     if (!roomId) {
       readBoundaryRestoreVersionRef.current += 1;
-      setRawMessages([]);
-      setReadMarkerMessageId(null);
-      setReadDividerPlacement(EMPTY_READ_DIVIDER_PLACEMENT);
       prevRoomForHistoryGateRef.current = null;
       prevFetchHistoryRef.current = false;
       historyFetchedRoomIdsRef.current.clear();
@@ -346,63 +381,28 @@ export function useChatMessages(
       lastReadMarkerByRoomRef.current.clear();
       readDividerPlacementByRoomRef.current.clear();
       recoveringSequenceRoomsRef.current.clear();
-      setHasMore(true);
-      setHasMoreNewer(false);
-      setIsFetchingOlder(false);
-      setIsFetchingNewer(false);
-      isFetchingOlderRef.current = false;
-      isFetchingNewerRef.current = false;
-      setScrollToAnchor(null);
       return;
     }
 
     if (!fetchHistory) {
       readBoundaryRestoreVersionRef.current += 1;
-      const prevR = prevRoomForHistoryGateRef.current;
-      if (prevR !== null && prevR !== roomId) {
-        setRawMessages([]);
-        setHasMore(true);
-        setHasMoreNewer(false);
-      }
       prevRoomForHistoryGateRef.current = roomId;
       prevFetchHistoryRef.current = false;
-      setReadMarkerMessageId(null);
-      setReadDividerPlacement(EMPTY_READ_DIVIDER_PLACEMENT);
-      setScrollToAnchor(null);
       return;
     }
 
-    const reopened = prevFetchHistoryRef.current === false;
+    const reopened = !prevFetchHistoryRef.current || prevRoomForHistoryGateRef.current !== roomId;
     prevFetchHistoryRef.current = true;
     prevRoomForHistoryGateRef.current = roomId;
-
     if (userId == null) return;
 
     const gateKey = chatHistoryGateKey(userId, roomId);
     const ridTrim = roomId.trim();
-
     if (historyFetchedRoomIdsRef.current.has(gateKey)) {
-      const hm = hasMoreByRoomRef.current.get(roomId);
-      setHasMore(hm !== false);
-      const hmn = hasMoreNewerByRoomRef.current.get(roomId);
-      setHasMoreNewer(hmn === true);
-
-      const savedLastRead = lastReadMarkerByRoomRef.current.get(ridTrim);
-      const savedPlacement = readDividerPlacementByRoomRef.current.get(ridTrim);
-      if (reopened && savedLastRead && savedPlacement) {
-        setReadMarkerMessageId(savedLastRead);
-        setReadDividerPlacement(savedPlacement);
-      }
-
-      if (!reopened) return;
-      void restoreSessionReadBoundary(roomId);
+      if (reopened) void restoreSessionReadBoundary(roomId);
       return;
     }
 
-    setRawMessages([]);
-    setHasMore(true);
-    setHasMoreNewer(false);
-    setReadMarkerMessageId(null);
     let cancelled = false;
     const restoreVersion = ++readBoundaryRestoreVersionRef.current;
     const isCurrentRequest = () =>
@@ -526,7 +526,7 @@ export function useChatMessages(
 
   const fetchOlderMessages = useCallback(() => {
     const rid = roomId;
-    if (!rid) return;
+    if (!rid || activeRoomIdRef.current !== rid.trim()) return;
     if (isFetchingOlderRef.current) return;
     if (hasMoreByRoomRef.current.get(rid) === false) return;
 
@@ -534,6 +534,7 @@ export function useChatMessages(
     if (!oldest) return;
 
     isFetchingOlderRef.current = true;
+    const lifetime = roomLifetimeRef.current;
     setIsFetchingOlder(true);
 
     void getRoomMessages(rid, {
@@ -541,6 +542,7 @@ export function useChatMessages(
       size: CHAT_MESSAGE_PAGE_SIZE,
     })
       .then((history) => {
+        if (roomLifetimeRef.current !== lifetime) return;
         const normalizedHistory = normalizeFetchedRoomMessages(history);
         const more = hasOlderHistoryPage(
           normalizedHistory.length,
@@ -561,6 +563,7 @@ export function useChatMessages(
         /* 유지: hasMore 그대로, 다음 스크롤에서 재시도 가능 */
       })
       .finally(() => {
+        if (roomLifetimeRef.current !== lifetime) return;
         isFetchingOlderRef.current = false;
         setIsFetchingOlder(false);
       });
@@ -568,7 +571,7 @@ export function useChatMessages(
 
   const fetchNewerMessages = useCallback(() => {
     const rid = roomId;
-    if (!rid) return;
+    if (!rid || activeRoomIdRef.current !== rid.trim()) return;
     if (isFetchingNewerRef.current) return;
     if (hasMoreNewerByRoomRef.current.get(rid) !== true) return;
 
@@ -576,6 +579,7 @@ export function useChatMessages(
     if (!newest) return;
 
     isFetchingNewerRef.current = true;
+    const lifetime = roomLifetimeRef.current;
     setIsFetchingNewer(true);
 
     void getRoomMessages(rid, {
@@ -583,6 +587,7 @@ export function useChatMessages(
       size: CHAT_MESSAGE_PAGE_SIZE,
     })
       .then((history) => {
+        if (roomLifetimeRef.current !== lifetime) return;
         const normalizedHistory = normalizeFetchedRoomMessages(history);
         const more = hasOlderHistoryPage(
           normalizedHistory.length,
@@ -603,6 +608,7 @@ export function useChatMessages(
         /* 유지: hasMoreNewer 그대로, 다음 스크롤에서 재시도 가능 */
       })
       .finally(() => {
+        if (roomLifetimeRef.current !== lifetime) return;
         isFetchingNewerRef.current = false;
         setIsFetchingNewer(false);
       });
@@ -612,12 +618,14 @@ export function useChatMessages(
     (rid: string, afterSeq: number) => {
       if (recoveringSequenceRoomsRef.current.has(rid)) return;
       recoveringSequenceRoomsRef.current.add(rid);
+      const lifetime = roomLifetimeRef.current;
 
       void getRoomMessages(rid, {
         afterSequence: String(afterSeq),
         size: CHAT_MESSAGE_PAGE_SIZE,
       })
         .then((rows) => {
+          if (roomLifetimeRef.current !== lifetime) return;
           const normalized = normalizeFetchedRoomMessages(rows);
           setRawMessages((prev) => mergeServerMessageLists(prev, normalized));
           bumpRoomLastSequence(lastSequenceByRoomRef.current, rid, normalized);
@@ -635,10 +643,12 @@ export function useChatMessages(
 
   const jumpToLatest = useCallback(() => {
     const rid = roomId;
-    if (!rid) return;
+    if (!rid || activeRoomIdRef.current !== rid.trim()) return;
 
+    const lifetime = roomLifetimeRef.current;
     void getRoomMessages(rid, { size: CHAT_MESSAGE_PAGE_SIZE })
       .then((history) => {
+        if (roomLifetimeRef.current !== lifetime) return;
         const normalized = normalizeFetchedRoomMessages(history);
         const more = hasOlderHistoryPage(
           normalized.length,
@@ -652,6 +662,7 @@ export function useChatMessages(
         lastSequenceByRoomRef.current.delete(rid);
         setRawMessages([]);
         queueMicrotask(() => {
+          if (roomLifetimeRef.current !== lifetime) return;
           setRawMessages(normalized);
           bumpRoomLastSequence(lastSequenceByRoomRef.current, rid, normalized);
           void warmPlacePhotoQueriesFromChatHistory(queryClient, normalized);
@@ -670,6 +681,7 @@ export function useChatMessages(
 
     const handler = (msg: ServerChatMessage) => {
       const rid = roomId.trim();
+      if (activeRoomIdRef.current !== rid) return;
       const lastSeq = lastSequenceByRoomRef.current.get(rid);
       const seq = msg.sequence;
       const isNew = !rawMessagesRef.current.some((m) => m.id === msg.id);

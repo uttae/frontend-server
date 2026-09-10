@@ -81,9 +81,10 @@ export function AddFromBookmarkModal({
   const bookmarkListReady =
     !bookmarksLoading && bookmarkRows !== undefined;
 
-  const bookmarkItems: RoomBookmark[] = Array.isArray(bookmarkRows)
-    ? bookmarkRows
-    : [];
+  const bookmarkItems: RoomBookmark[] = useMemo(
+    () => Array.isArray(bookmarkRows) ? bookmarkRows : [],
+    [bookmarkRows],
+  );
 
   const placeQueryDefs = useMemo(() => {
     if (!bookmarkListReady) return [];

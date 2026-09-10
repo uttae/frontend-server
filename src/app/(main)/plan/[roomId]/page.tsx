@@ -4,8 +4,6 @@ import { Suspense, useLayoutEffect } from "react";
 import { useParams } from "next/navigation";
 
 import { PlanPageView } from "../_components/itinerary/PlanPageView";
-import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
-import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { useSessionStore } from "@/stores/session-store";
 
 function PlanRoomPageContent() {

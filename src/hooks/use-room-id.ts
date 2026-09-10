@@ -1,6 +1,7 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect } from "react";
+import { useClientReady } from "./useClientReady";
 import { usePathname } from "next/navigation";
 
 import { roomIdFromPlanPathname } from "@/lib/plan-room-path";
@@ -16,7 +17,7 @@ import {
 /**
  * 방 ID 해석 — hydration 안전.
  * 첫 페인트(SSR·클라이언트 hydration)는 URL·Zustand만 사용하고,
- * `useLayoutEffect` 이후 sessionStorage까지 반영합니다.
+ * hydration 이후 sessionStorage까지 반영합니다.
  */
 export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
   const currentRoomId = useSessionStore((s) => s.currentRoomId);
@@ -25,28 +26,17 @@ export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
     urlRoomId,
   );
 
-  const [roomContextReady, setRoomContextReady] = useState(false);
-  const [resolvedRoomId, setResolvedRoomId] = useState<string | null>(
-    ssrSafeRoomId,
-  );
+  const roomContextReady = useClientReady();
+  const effectiveRoomId = roomContextReady
+    ? resolveCurrentRoomId(currentRoomId, urlRoomId)
+    : ssrSafeRoomId;
 
   useLayoutEffect(() => {
     bootstrapCurrentRoomFromSessionStorage();
-    const id = resolveCurrentRoomId(
-      useSessionStore.getState().currentRoomId,
-      urlRoomId,
-    );
-    setResolvedRoomId(id);
-    if (id) {
-      const stored = useSessionStore.getState().currentRoomId?.trim() ?? "";
-      if (stored !== id) {
-        useSessionStore.getState().setCurrentRoomId(id);
-      }
+    if (effectiveRoomId && useSessionStore.getState().currentRoomId !== effectiveRoomId) {
+      useSessionStore.getState().setCurrentRoomId(effectiveRoomId);
     }
-    setRoomContextReady(true);
-  }, [urlRoomId, currentRoomId]);
-
-  const effectiveRoomId = roomContextReady ? resolvedRoomId : ssrSafeRoomId;
+  }, [effectiveRoomId]);
 
   return { effectiveRoomId, roomContextReady };
 }

@@ -50,7 +50,10 @@ export function MobileViewProvider({ children }: { children: ReactNode }) {
   }, [state.isMobileDevice]);
 
   const value = useMemo(
-    () => state,
+    () => ({
+      isMobileDevice: state.isMobileDevice,
+      isMobileLandscape: state.isMobileLandscape,
+    }),
     [state.isMobileDevice, state.isMobileLandscape],
   );
 

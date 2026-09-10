@@ -5,6 +5,16 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    files: ["tailwind.config.js"],
+    rules: {
+      // CSS @config로 로드하는 기존 CommonJS 설정의 공유 토큰 import만 허용합니다.
+      "@typescript-eslint/no-require-imports": [
+        "error",
+        { allow: ["^\\./src/lib/layout-tokens$"] },
+      ],
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

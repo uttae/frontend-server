@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -36,9 +36,11 @@ export function MapDiscoverToolbar({
   const { setToolbarRef } = useMapToolbarLayout();
   const [ratingDropdownOpen, setRatingDropdownOpen] = useState(false);
 
-  useEffect(() => {
+  const [previousCategoryId, setPreviousCategoryId] = useState(selectedCategoryId);
+  if (previousCategoryId !== selectedCategoryId) {
+    setPreviousCategoryId(selectedCategoryId);
     if (selectedCategoryId == null) setRatingDropdownOpen(false);
-  }, [selectedCategoryId]);
+  }
 
   return (
     <div

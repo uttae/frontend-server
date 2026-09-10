@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 
@@ -20,9 +20,11 @@ export function ChatMemberAvatarRing({
 }) {
   const [imgFailed, setImgFailed] = useState(false);
 
-  useEffect(() => {
+  const [previousAvatarUrl, setPreviousAvatarUrl] = useState(avatarUrl);
+  if (previousAvatarUrl !== avatarUrl) {
+    setPreviousAvatarUrl(avatarUrl);
     setImgFailed(false);
-  }, [avatarUrl]);
+  }
 
   const showImage = Boolean(avatarUrl?.trim()) && !imgFailed;
   const showPlaceholderOverlay =
