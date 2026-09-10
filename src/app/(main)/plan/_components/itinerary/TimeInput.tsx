@@ -7,13 +7,13 @@ export function TimeInput({
   onChange,
   disabled,
   describedBy,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   onChange: (value: string) => void;
   disabled: boolean;
   describedBy: string;
-}) {
+}>) {
   const parts = value ? value.split(":") : ["", ""];
   const update = (index: number, next: string) => {
     const updated = [...parts];
