@@ -60,11 +60,15 @@ it("external route changes close chat too", async () => {
   expect(host.querySelector("[data-chat]")).toBeNull();
   expect(active()).toEqual([items()[2]]);
 });
-it.each([[0, "-"], [4, "4"], [120, "99+"]])("retains unread value %i and the separate feedback survey", async (count, label) => {
+it.each([[4, "4"], [120, "99+"]])("retains unread value %i and the separate feedback survey", async (count, label) => {
   state.unread = count; await render();
   expect(items()[3].textContent).toContain(label);
   expect(host.querySelector('a[aria-label="피드백 설문"]')).not.toBeNull();
   expect(host.querySelector('a[href="/room-settings"]')).toBeNull();
+});
+it("hides the unread badge when no messages are unread", async () => {
+  await render();
+  expect(items()[3].querySelector("span.pointer-events-none")).toBeNull();
 });
 it("omits the sidebar contact entry while retaining the separate feedback survey", async () => {
   await render();

@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import type { ServerChatMessage } from "@/types/chat";
 import { normalizeServerChatMessage } from "@/lib/chat";
+import { invalidateRoomUnreadCount } from "@/lib/chat/message-read";
 import { applyRoomBookmarkStompMessage } from "@/lib/stomp/bookmarks-dispatch";
 import { parseRoomPresenceMessage } from "@/lib/stomp/events";
 import { parseRoomMemberMessage } from "@/lib/stomp/member-events";
@@ -90,6 +91,7 @@ export function subscribeRoomStompTopics(
         const parsed: unknown = JSON.parse(message.body);
         const msg = normalizeServerChatMessage(parsed);
         if (!msg) return;
+        invalidateRoomUnreadCount(queryClientRef.current, subscribedRoomId);
         options.onRoomChatMessage?.(msg);
       } catch {
         // malformed payload — ignore

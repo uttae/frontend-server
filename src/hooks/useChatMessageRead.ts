@@ -5,7 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import { newestServerMessageByCreatedAt } from "@/lib/chat";
 import {
-  invalidateRoomUnreadCount,
   optimisticallyClearRoomUnreadCount,
   publishRoomMessageRead,
 } from "@/lib/chat/message-read";
@@ -67,10 +66,8 @@ export function useChatMessageRead({
         markMessagesReadRef.current(_msg.id);
         return;
       }
-      const rid = roomId?.trim();
-      if (rid) invalidateRoomUnreadCount(queryClient, rid);
     },
-    [roomId, queryClient],
+    [],
   );
 
   useLayoutEffect(() => {
