@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  LANDING_COLLABORATION_FEATURES,
-  LANDING_FEATURE_STORIES,
   LANDING_HOW_STEPS,
   LANDING_TEAM_MEMBERS,
   LANDING_VALUES,
@@ -15,15 +13,6 @@ describe("landing content contracts", () => {
       "지도 기반 장소 탐색",
       "실시간 팀 협업",
       "여행 맥락을 아는 AI",
-    ]);
-    expect(LANDING_FEATURE_STORIES.map((item) => item.screenshotKey)).toEqual([
-      "map",
-      "placeShare",
-      "plan",
-    ]);
-    expect(LANDING_COLLABORATION_FEATURES.map((item) => item.screenshotKey)).toEqual([
-      "chat",
-      "ai",
     ]);
     expect(LANDING_HOW_STEPS).toHaveLength(3);
   });

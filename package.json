@@ -7,8 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run",
-    "assets:landing-domain": "node scripts/update-landing-screenshot-domain.mjs"
+    "test": "vitest run"
   },
   "dependencies": {
     "@amplitude/unified": "^1.1.28",
