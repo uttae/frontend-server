@@ -1,3 +1,4 @@
+import { invalidateExpenses } from "@/lib/expenses/expense-queries";
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
@@ -208,6 +209,13 @@ export async function dispatchRoomScheduleEvent(
 ): Promise<void> {
   const rid = String(event.roomId ?? "").trim();
   if (!rid) return;
+  if (
+    ["ROOM_SCHEDULES_RESYNCED", "SCHEDULE_ITEM_MOVED", "SCHEDULE_ITEM_DELETED"].includes(
+      event.type,
+    )
+  ) {
+    await invalidateExpenses(queryClient, rid);
+  }
   const epochStore = usePlanMapDirectionsEpochStore.getState();
 
   switch (event.type) {

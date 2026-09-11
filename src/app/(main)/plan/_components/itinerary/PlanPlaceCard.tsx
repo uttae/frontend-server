@@ -1,5 +1,7 @@
 "use client";
 
+import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
+
 import type { DragEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
@@ -91,7 +93,7 @@ export function PlanPlaceCard({
 
   const handleDeleteScheduleItem = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("이 장소를 일정에서 삭제할까요?")) return;
+    if (!confirm("이 장소와 연결된 모든 지출을 삭제할까요?")) return;
     try {
       await removeScheduleItemMutate({
         roomId: scheduleTimeEdit.roomId,
@@ -437,6 +439,13 @@ export function PlanPlaceCard({
           >
             {memoTrigger}
             {timeTrigger}
+            {scheduleTimeEdit && scheduleItemId !== null && (
+              <ExpenseEntryButton
+                scheduleId={scheduleTimeEdit.scheduleId}
+                scheduleItemId={scheduleItemId}
+                label="장소 지출 추가"
+              />
+            )}
           </div>
         ) : null}
       </article>

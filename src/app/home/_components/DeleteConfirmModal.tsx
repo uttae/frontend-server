@@ -52,7 +52,7 @@ export function DeleteConfirmModal({ room, onClose, onDeleted }: Props) {
           <h2 className="text-[19px] font-bold">여행을 삭제할까요?</h2>
           <p className="mt-1.5 text-[17px] text-dark-gray">
             <span className="font-semibold">{room.title}</span> 여행이 영구적으로
-            삭제됩니다.
+            삭제됩니다. 모든 일정과 지출도 함께 삭제돼요.
           </p>
         </div>
         <SettingsActionButtonRow className="px-6 py-5 pt-0">
