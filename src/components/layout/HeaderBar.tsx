@@ -52,10 +52,10 @@ const HeaderBar = () => {
         <div className="relative flex w-20 shrink-0 flex-col items-center justify-center py-1.5">
           <Link
             href="/home"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray [&>img]:size-8"
             aria-label="홈으로 이동"
           >
-            <BrandLogo variant="symbol" size="S" alt="" />
+            <BrandLogo variant="symbol" size="M" alt="" />
           </Link>
           <div
             className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border"
@@ -76,9 +76,9 @@ const HeaderBar = () => {
                     aria-haspopup="dialog"
                     data-tutorial-target="room-settings"
                     onClick={() => setEditOpen(true)}
-                    className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                   >
-                    <Pencil size={18} aria-hidden />
+                    <Pencil size={14} aria-hidden />
                   </button>
                 </div>
                 <span className="block truncate text-[14px] leading-tight text-dark-gray">

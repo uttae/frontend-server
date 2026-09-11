@@ -32,7 +32,7 @@ it("stable incoming handlers see committed panel/connection state and read dedup
   await hook.render({ roomId: "a", panelOpen: false });
   const incoming = hook.current.onIncomingMessage;
   await act(async () => incoming(msg, true));
-  expect(invalidate).toHaveBeenCalledTimes(1);
+  expect(invalidate).not.toHaveBeenCalled();
   expect(state.client.publish).not.toHaveBeenCalled();
   await hook.render({ roomId: "a", panelOpen: true });
   expect(hook.current.onIncomingMessage).toBe(incoming);
