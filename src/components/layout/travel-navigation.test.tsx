@@ -70,11 +70,11 @@ it("hides the unread badge when no messages are unread", async () => {
   await render();
   expect(items()[3].querySelector("span.pointer-events-none")).toBeNull();
 });
-it("omits the sidebar contact entry while retaining the separate feedback survey", async () => {
+it("shows labeled feedback and bug report links in the sidebar", async () => {
   await render();
   const sidebar = host.querySelector("aside")!;
-  expect(sidebar.querySelector('a[aria-label="피드백 설문"]')).not.toBeNull();
-  expect(sidebar.querySelector('a[aria-label="버그 제보"], a[href="/contact"]')).toBeNull();
+  expect(sidebar.querySelector('a[aria-label="피드백 설문"]')?.textContent).toContain("피드백");
+  expect(sidebar.querySelector('a[aria-label="버그 제보"]')?.textContent).toContain("버그제보");
 });
 it("mobile has five bottom destinations and retains the existing map/schedule URLs outside them", async () => {
   state.mobile = true; await render();

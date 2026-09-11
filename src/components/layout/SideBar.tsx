@@ -4,10 +4,13 @@ import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
-import { sidebarIcons } from "@/lib/public-assets";
+import { sidebarWireframeIcons as sidebarIcons } from "@/lib/public-assets";
+import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 
 import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";
 import { SidebarFeedbackFormButton } from "./SidebarFeedbackFormButton";
+import { SidebarContactButton } from "./SidebarContactButton";
+import { SidebarIcon } from "./SidebarIcon";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { sidebarNavButtonClassName } from "./sidebarNavButton";
 
@@ -37,8 +40,11 @@ function SideBar() {
     pendingJoinRequestsCount > 0 && !isOnSettingsArea;
 
   return (
-    <aside className="flex h-full w-20 shrink-0 flex-col items-center gap-2 border-r border-gray-border bg-white py-2">
-      <nav aria-label="여행 주요 메뉴" className="flex w-full flex-col items-center gap-2 px-1">
+    <aside
+      className="flex h-full shrink-0 flex-col items-center overflow-y-auto border-r border-border-subtle bg-background [scrollbar-gutter:auto] [scrollbar-width:thin]"
+      style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}
+    >
+      <nav aria-label="여행 주요 메뉴" className="flex w-full shrink-0 flex-col items-center [&>div:first-child>a]:h-[90px] [&>div:first-child>a]:pt-5">
         {SIDEBAR_ITEMS.map((item) => (
           <SidebarNavItem
             key={item.href}
@@ -59,8 +65,7 @@ function SideBar() {
           aria-pressed={isChatActive}
           data-tutorial-target="chat"
         >
-          {/* eslint-disable-next-line @next/next/no-img-element -- existing local navigation asset */}
-          <img src={sidebarIcons.chat} alt="" className="h-6 w-6" />
+          <SidebarIcon src={sidebarIcons.chat} isActive={isChatActive} />
           <span>채팅</span>
           <SidebarChatUnreadBadge />
         </button>
@@ -74,8 +79,9 @@ function SideBar() {
           showPingBadge={showSettingsNotification}
         />
       </nav>
-      <div className="mt-auto flex flex-col items-center gap-2 px-1 pb-4">
+      <div className="mt-auto flex w-full shrink-0 flex-col items-center pt-4">
         <SidebarFeedbackFormButton />
+        <SidebarContactButton />
       </div>
     </aside>
   );
