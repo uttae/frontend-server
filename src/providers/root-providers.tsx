@@ -6,6 +6,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 
 import { AnonymousAnalyticsRouteTracker } from "@/components/analytics/AnonymousAnalyticsRouteTracker";
+import { LandingSectionTracker } from "@/components/analytics/LandingSectionTracker";
 import { AppChromeShell } from "@/providers/app-chrome-shell";
 
 const PROVIDER_FREE_PUBLIC_PATHS = new Set(["/", "/login"]);
@@ -45,9 +46,10 @@ export function AppRootProviders({ children }: { children: ReactNode }) {
     return () => media.removeListener(apply);
   }, []);
 
-  if (PROVIDER_FREE_PUBLIC_PATHS.has(pathname)) {
-    return <LightweightPublicShell>{children}</LightweightPublicShell>;
-  }
-
-  return <FullAppProviderStack>{children}</FullAppProviderStack>;
+  return <>
+    <LandingSectionTracker />
+    {PROVIDER_FREE_PUBLIC_PATHS.has(pathname)
+      ? <LightweightPublicShell>{children}</LightweightPublicShell>
+      : <FullAppProviderStack>{children}</FullAppProviderStack>}
+  </>;
 }

@@ -1,0 +1,35 @@
+import { afterEach, expect, it, vi } from "vitest";
+const amplitude = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/analytics/amplitude", () => ({ sendAmplitudeDataCommand: amplitude, revokeAmplitudeConsent: vi.fn() }));
+vi.mock("@/lib/analytics/runtime", () => ({ analyticsRuntime: { enabled: true } }));
+afterEach(() => { vi.resetModules(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
+it("delivers queued landing events once per sink, including after repeated initialization", async () => {
+  const ga = vi.fn();
+  vi.stubGlobal("window", { gtag: ga, location: { protocol: "http:", hostname: "localhost" } });
+  vi.stubGlobal("document", { cookie: "uttae_analytics_consent=v1:granted" });
+  const client = await import("./client");
+  for (const name of ["cta_click", "section_view"]) client.sendAnalyticsDataCommand("event", name, { page_type: "landing" });
+  expect(amplitude).toHaveBeenCalledTimes(2);
+  client.initializeGoogleAnalytics("G-TEST", false);
+  client.initializeGoogleAnalytics("G-TEST", false);
+  expect(ga.mock.calls.filter(([type]) => type === "event")).toHaveLength(2);
+  expect(amplitude).toHaveBeenCalledTimes(2);
+});
+it("discards revoked queued events and never backfills pending or denied interactions", async () => {
+  const ga = vi.fn();
+  vi.stubGlobal("window", { gtag: ga, location: { protocol: "http:", hostname: "localhost" } });
+  vi.stubGlobal("document", { cookie: "" });
+  const client = await import("./client");
+  const { analyticsConsentStore: consent } = await import("./consent-store");
+  client.sendAnalyticsDataCommand("event", "cta_click");
+  consent.set("denied");
+  client.sendAnalyticsDataCommand("event", "cta_click");
+  consent.set("granted");
+  client.sendAnalyticsDataCommand("event", "section_view");
+  client.revokeGoogleAnalyticsConsent();
+  consent.set("denied");
+  consent.set("granted");
+  client.initializeGoogleAnalytics("G-TEST", false);
+  expect(ga.mock.calls.filter(([type]) => type === "event")).toHaveLength(0);
+  expect(amplitude).toHaveBeenCalledTimes(1);
+});
