@@ -33,7 +33,9 @@
 .heroInner { position: relative; height: 600px; max-width: 1440px; margin: auto; container-type: inline-size; }
 .heroBackground, .airplane, .suitcases { display: none; }
 .mobileHeroBackground { position: absolute; width: 554px; height: 554px; top: 172px; left: calc(50% - 277px); max-width: none; }
-.heroWeb { position: absolute; left: 50%; top: 316px; transform: translateX(-50%); width: min(317px, 80.66vw); height: min(240px, 61.069vw); }
+.heroWeb { position: absolute; left: 50%; top: 316px; transform: translateX(-50%); width: min(317px, 80.66vw); height: min(240px, 61.069vw); background: #005bd9; border-radius: 4% / 5.291%; }
+/* Preserve the 750×567 frame's 10px inset and 20px inner radius without reducing the screenshot's resolution. */
+.heroWebImage { position: absolute; left: 1.333333%; top: 1.763668%; width: 97.333333%; height: 96.472663%; border-radius: 2.739726% / 3.656307%; object-fit: cover; object-position: left top; }
 .heroCopy { position: relative; padding: 60px 16px 0; text-align: center; }
 .heroCopy h1 { color: var(--color-text-inverse); font-size: 32px; font-weight: 700; line-height: 42px; }
 .heroCopy h1 span { color: var(--landing-lime); }
