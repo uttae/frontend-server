@@ -196,6 +196,7 @@ export function DestinationSearchInput({
           {leadingGlyph}
           <input
             ref={inputRef}
+            aria-label="목적지 검색"
             type="text"
             value={inputValue}
             onChange={handleInputChange}

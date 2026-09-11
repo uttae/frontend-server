@@ -8,11 +8,11 @@ export function SidebarChatUnreadBadge() {
   const { roomId } = useCurrentRoomId();
   const { data } = useRoomUnreadCount(roomId);
   const unreadCount = data?.unreadCount ?? 0;
-  const label =
-    !roomId || unreadCount === 0 ? "-" : formatUnreadCountBadge(unreadCount);
+  if (!roomId || unreadCount <= 0) return null;
+  const label = formatUnreadCountBadge(unreadCount);
 
   return (
-    <span className="pointer-events-none absolute text-[14px] font-bold text-white">
+    <span className="pointer-events-none absolute right-0 top-0 rounded-full bg-primary px-1 text-[11px] font-bold leading-4 text-white">
       {label}
     </span>
   );

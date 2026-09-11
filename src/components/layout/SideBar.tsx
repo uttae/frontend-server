@@ -7,24 +7,14 @@ import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeC
 import { sidebarIcons } from "@/lib/public-assets";
 
 import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";
-import { SidebarContactButton } from "./SidebarContactButton";
 import { SidebarFeedbackFormButton } from "./SidebarFeedbackFormButton";
 import { SidebarNavItem } from "./SidebarNavItem";
+import { sidebarNavButtonClassName } from "./sidebarNavButton";
 
 const SIDEBAR_ITEMS = [
-  { key: "search", href: "/search", icon: sidebarIcons.search },
-  { key: "plan", href: "/plan", icon: sidebarIcons.plan },
-  { key: "bookmark", href: "/bookmark", icon: sidebarIcons.bookmark },
-  {
-    key: "member-settings",
-    href: "/member-settings",
-    icon: sidebarIcons.memberSettings,
-  },
-  {
-    key: "room-settings",
-    href: "/room-settings",
-    icon: sidebarIcons.roomSettings,
-  },
+  { key: "plan", href: "/plan", label: "일정", icon: sidebarIcons.plan },
+  { key: "search", href: "/search", label: "검색", icon: sidebarIcons.search },
+  { key: "bookmark", href: "/bookmark", label: "북마크", icon: sidebarIcons.bookmark },
 ] as const;
 
 function isSidebarItemActive(pathname: string, key: string, href: string) {
@@ -36,7 +26,7 @@ function isSidebarItemActive(pathname: string, key: string, href: string) {
 
 function SideBar() {
   const pathname = usePathname();
-  const { chatState, openChat } = useChat();
+  const { chatState, openChat, closeChat } = useChat();
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
 
   const isChatActive = chatState !== "closed";
@@ -47,40 +37,45 @@ function SideBar() {
     pendingJoinRequestsCount > 0 && !isOnSettingsArea;
 
   return (
-    <aside className="flex h-full w-13 shrink-0 flex-col items-center gap-2 border-r border-gray-border bg-white">
-      <button
-        onClick={openChat}
-        className={`relative flex w-20 cursor-pointer items-center justify-center rounded-br-2xl py-2 transition hover:opacity-80 ${
-          isChatActive ? "bg-primary/80" : "bg-primary"
-        }`}
-        aria-label="sidebar-chat"
-        data-tutorial-target="chat"
-      >
-        <img src={sidebarIcons.chat} alt="" className="h-9 w-9 brightness-0 invert" />
-        <SidebarChatUnreadBadge />
-      </button>
-
-      <div className="flex flex-col items-center gap-2 px-1">
-      {SIDEBAR_ITEMS.map((item) => (
+    <aside className="flex h-full w-20 shrink-0 flex-col items-center gap-2 border-r border-gray-border bg-white py-2">
+      <nav aria-label="여행 주요 메뉴" className="flex w-full flex-col items-center gap-2 px-1">
+        {SIDEBAR_ITEMS.map((item) => (
+          <SidebarNavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            label={item.label}
+            tutorialTarget={item.key}
+            isActive={!isChatActive && isSidebarItemActive(pathname, item.key, item.href)}
+            onClick={closeChat}
+            showDividerBelow={item.key === "bookmark"}
+          />
+        ))}
+        <button
+          type="button"
+          onClick={openChat}
+          className={`relative ${sidebarNavButtonClassName(isChatActive)}`}
+          aria-label="채팅"
+          aria-pressed={isChatActive}
+          data-tutorial-target="chat"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- existing local navigation asset */}
+          <img src={sidebarIcons.chat} alt="" className="h-6 w-6" />
+          <span>채팅</span>
+          <SidebarChatUnreadBadge />
+        </button>
         <SidebarNavItem
-          key={item.href}
-          href={item.href}
-          icon={item.icon}
-          label={`sidebar-${item.href.slice(1)}`}
-          tutorialTarget={item.key}
-          isActive={isSidebarItemActive(pathname, item.key, item.href)}
-          showPingBadge={
-            item.key === "member-settings" && showSettingsNotification
-          }
-          showDividerBelow={item.key === "bookmark"}
+          href="/member-settings"
+          icon={sidebarIcons.memberSettings}
+          label="멤버"
+          tutorialTarget="member-settings"
+          isActive={!isChatActive && isOnMemberSettings}
+          onClick={closeChat}
+          showPingBadge={showSettingsNotification}
         />
-      ))}
-
-      </div>
-
+      </nav>
       <div className="mt-auto flex flex-col items-center gap-2 px-1 pb-4">
         <SidebarFeedbackFormButton />
-        <SidebarContactButton />
       </div>
     </aside>
   );

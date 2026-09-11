@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/plan/room" }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
+vi.mock("@/hooks/useCurrentRoomMembership", () => ({ useCurrentRoomMembership: () => ({ roomId: "room", roomSource: null, isHost: false, isLoading: false }) }));
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: undefined }) }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomsList: () => ({ data: { rooms: [] }, isPending: false }),
@@ -22,12 +23,15 @@ import { BookmarkFoldersView } from "@/app/(main)/bookmark/_components/BookmarkF
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
 
 describe("planning chrome", () => {
-  it("uses only the existing symbol in the home link", () => {
+  it("uses the transparent blue glyph in the home link", () => {
     const container = document.createElement("div");
     container.innerHTML = renderToStaticMarkup(<HeaderBar />);
     const home = container.querySelector('a[aria-label="홈으로 이동"]');
     expect(home?.getAttribute("href")).toBe("/home");
-    expect(home?.querySelector("img")?.getAttribute("src")).toBe("/brand/App_Icon.svg");
+    expect(home?.querySelector("img")?.getAttribute("src")).toBe("/brand/Glyph_M.svg");
+    expect(home?.querySelector("img")?.getAttribute("width")).toBe("45");
+    expect(home?.querySelector("img")?.getAttribute("height")).toBe("45");
+    expect(home?.querySelector("img")?.getAttribute("alt")).toBe("");
     expect(container.querySelectorAll("img")).toHaveLength(1);
   });
   it("links directly to the approved bug report form with a consistent label and tooltip", () => {

@@ -3,13 +3,24 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { invalidateRoomUnreadCount } from "@/lib/chat/message-read";
 import { validateRoomAccess } from "@/lib/rooms";
-import { useChatPanelStore } from "@/stores/chat-panel-store";
+import { useChatPanelOpen } from "@/hooks/useChatPanelOpen";
 import { useSessionStore } from "@/stores/session-store";
+
+function RoomUnreadCountSync({ roomId }: { roomId: string }) {
+  const queryClient = useQueryClient();
+  const chatPanelOpen = useChatPanelOpen();
+
+  useEffect(() => {
+    if (!chatPanelOpen) invalidateRoomUnreadCount(queryClient, roomId);
+  }, [roomId, chatPanelOpen, queryClient]);
+
+  return null;
+}
 
 /**
  * 인증은 미들웨어(`GET /api/auth/session` → HttpOnly 쿠키 검증)에서 처리합니다.
@@ -20,15 +31,7 @@ import { useSessionStore } from "@/stores/session-store";
  */
 export function MainRoomGate({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { roomId, roomContextReady } = useCurrentRoomId();
-  const chatPanelOpen = useChatPanelStore((s) => s.chatState !== "closed");
-
-  /** /home 등 룸 밖에서 (main)으로 재진입 — 패널 닫힘일 때만 unread GET */
-  useEffect(() => {
-    if (!roomContextReady || !roomId || chatPanelOpen) return;
-    invalidateRoomUnreadCount(queryClient, roomId);
-  }, [roomId, roomContextReady, chatPanelOpen, queryClient]);
 
   useEffect(() => {
     if (!roomContextReady || !roomId) return;
@@ -55,5 +58,12 @@ export function MainRoomGate({ children }: { children: ReactNode }) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <Suspense fallback={null}>
+        <RoomUnreadCountSync roomId={roomId} />
+      </Suspense>
+      {children}
+    </>
+  );
 }

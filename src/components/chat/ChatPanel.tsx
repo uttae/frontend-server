@@ -28,15 +28,18 @@ import {
 
 export function ChatPanel({
   mobileInline = false,
+  inline = false,
 }: {
   mobileInline?: boolean;
+  inline?: boolean;
 }) {
   const router = useRouter();
   const { chatState, openChat, minimizeChat, closeChat } = useChat();
   const { chatPanelDockWidthCss, chatPanelRevealReady } =
     useMainChromeLayoutWidth();
-  const isMinimized = !mobileInline && chatState === "minimized";
-  const panelOpen = mobileInline || chatState !== "closed";
+  const isInline = mobileInline || inline;
+  const isMinimized = !isInline && chatState === "minimized";
+  const panelOpen = isInline || chatState !== "closed";
   const { roomId } = useCurrentRoomId();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
   const [mobileHistoryReadyState, setMobileHistoryReadyState] = useState({
@@ -100,7 +103,7 @@ export function ChatPanel({
 
   const panelBody = (
     <>
-      {!mobileInline ? (
+      {!isInline ? (
         <ChatPanelHeader
           roomTitle={title}
           onlineCount={onlineCount}
@@ -147,7 +150,7 @@ export function ChatPanel({
     </>
   );
 
-  if (mobileInline) {
+  if (isInline) {
     return (
       <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white">
         {panelBody}

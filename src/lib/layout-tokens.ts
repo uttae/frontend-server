@@ -3,8 +3,8 @@ export const width = {
   s2: "720px",
 } as const;
 
-/** SideBar·HeaderBar 홈 열 `w-13` (Tailwind spacing 13 = 3.25rem) */
-export const MAIN_SIDEBAR_RAIL_WIDTH = "3.25rem" as const;
+/** SideBar·HeaderBar 홈 열 `w-20` (아이콘과 텍스트 레일) */
+export const MAIN_SIDEBAR_RAIL_WIDTH = "5rem" as const;
 
 /** 채팅·LeftSection 최소 폭. maximized `ChatPanel`은 LeftSection 실측(`style.width`)까지 확장 */
 export const CHAT_PANEL_DOCKED_WIDTH = width.s1;

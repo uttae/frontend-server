@@ -14,9 +14,9 @@ export function BrandLogo({
 }: Readonly<BrandLogoProps>) {
   const LOGO_ASSETS = {
     symbol: {
-      S: { src: "/brand/App_Icon.svg", width: 23, height: 23 },
-      M: { src: "/brand/App_Icon.svg", width: 45, height: 45 },
-      L: { src: "/brand/App_Icon.svg", width: 290, height: 130 },
+      S: { src: "/brand/Glyph_S.svg", width: 23, height: 23 },
+      M: { src: "/brand/Glyph_M.svg", width: 45, height: 45 },
+      L: { src: "/brand/Glyph_L.svg", width: 90, height: 90 },
     },
     wordmark: {
       S: { src: "/brand/Wordmark_S.svg", width: 47, height: 23 },

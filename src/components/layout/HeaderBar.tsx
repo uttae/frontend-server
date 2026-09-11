@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
 
 import { BrandLogo } from "@/components/BrandLogo";
+import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
@@ -14,6 +16,8 @@ import {
 } from "@/lib/plan/tripRange";
 
 const HeaderBar = () => {
+  const [editOpen, setEditOpen] = useState(false);
+  const closeEdit = useCallback(() => setEditOpen(false), []);
   const { roomId } = useCurrentRoomId();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
   const { data, isPending } = useRoomsList();
@@ -45,13 +49,13 @@ const HeaderBar = () => {
   return (
     <header className="border-b-2 border-primary">
       <div className="flex items-center">
-        <div className="relative flex w-13 shrink-0 flex-col items-center justify-center py-1.5">
+        <div className="relative flex w-20 shrink-0 flex-col items-center justify-center py-1.5">
           <Link
             href="/home"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray [&>img]:size-8"
             aria-label="홈으로 이동"
           >
-            <BrandLogo variant="symbol" size="S" alt="" />
+            <BrandLogo variant="symbol" size="M" alt="" />
           </Link>
           <div
             className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border"
@@ -62,9 +66,21 @@ const HeaderBar = () => {
           <div className="min-w-0 bg-white py-1.5">
             {currentRoom || displayTitle ? (
               <>
-                <span className="block truncate text-[17px] font-semibold leading-tight">
-                  {displayTitle || currentRoom?.title}
-                </span>
+                <div className="flex min-w-0 items-center gap-1">
+                  <span className="block truncate text-[17px] font-semibold leading-tight">
+                    {displayTitle || currentRoom?.title}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="여행 정보 수정"
+                    aria-haspopup="dialog"
+                    data-tutorial-target="room-settings"
+                    onClick={() => setEditOpen(true)}
+                    className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  >
+                    <Pencil size={14} aria-hidden />
+                  </button>
+                </div>
                 <span className="block truncate text-[14px] leading-tight text-dark-gray">
                   {dateStr}
                 </span>
@@ -84,6 +100,7 @@ const HeaderBar = () => {
           </div>
         </div>
       </div>
+      {editOpen ? <RoomTripEditDialog key={rid} onClose={closeEdit} /> : null}
     </header>
   );
 };
