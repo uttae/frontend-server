@@ -1,13 +1,14 @@
 "use client";
 
-import { ClipboardList } from "lucide-react";
-
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
 import { FEEDBACK_FORM_URL } from "@/lib/contact";
+import { sidebarWireframeIcons } from "@/lib/public-assets";
+import { cn } from "@/lib/utils";
 
 import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 import { SidebarPingBadge } from "./SidebarPingBadge";
 import { sidebarNavButtonClassName } from "./sidebarNavButton";
+import { SidebarIcon } from "./SidebarIcon";
 
 export function SidebarFeedbackFormButton() {
   const { visible: showBadge, dismiss } = useSessionPromptVisible(
@@ -15,20 +16,17 @@ export function SidebarFeedbackFormButton() {
   );
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <a
         href={FEEDBACK_FORM_URL}
         target="_blank"
         rel="noopener noreferrer"
         onClick={dismiss}
-        className={sidebarNavButtonClassName()}
+        className={cn(sidebarNavButtonClassName(), "font-normal tracking-normal text-text")}
         aria-label="피드백 설문"
       >
-        <ClipboardList
-          className="h-6 w-6 text-dark-gray"
-          strokeWidth={2}
-          aria-hidden
-        />
+        <SidebarIcon src={sidebarWireframeIcons.feedback} />
+        <span>피드백</span>
       </a>
 
       {showBadge ? <SidebarPingBadge /> : null}

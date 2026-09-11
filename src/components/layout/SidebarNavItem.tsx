@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { SidebarPingBadge } from "./SidebarPingBadge";
 import { sidebarNavButtonClassName } from "./sidebarNavButton";
+import { SidebarIcon } from "./SidebarIcon";
 
 type SidebarNavItemProps = {
   href: string;
@@ -25,7 +26,7 @@ export function SidebarNavItem({
   showDividerBelow = false,
 }: SidebarNavItemProps) {
   return (
-    <div className="relative">
+    <div className="relative w-full">
       <Link
         href={href}
         className={sidebarNavButtonClassName(isActive)}
@@ -34,14 +35,14 @@ export function SidebarNavItem({
         onClick={onClick}
         data-tutorial-target={tutorialTarget}
       >
-        <img src={icon} alt="" className="h-6 w-6" />
+        <SidebarIcon src={icon} isActive={isActive} />
         <span>{label}</span>
       </Link>
 
       {showPingBadge ? <SidebarPingBadge /> : null}
 
       {showDividerBelow ? (
-        <div className="mt-2 w-10 border-t border-gray-border" />
+        <div className="w-full border-t border-border-subtle" />
       ) : null}
     </div>
   );

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 
-import { BrandLogo } from "@/components/BrandLogo";
+import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
@@ -49,13 +49,14 @@ const HeaderBar = () => {
   return (
     <header className="border-b-2 border-primary">
       <div className="flex items-center">
-        <div className="relative flex w-20 shrink-0 flex-col items-center justify-center py-1.5">
+        <div className="relative flex shrink-0 flex-col items-center justify-center py-1.5" style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}>
           <Link
             href="/home"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray [&>img]:size-8"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-fill-subtle"
             aria-label="홈으로 이동"
           >
-            <BrandLogo variant="symbol" size="M" alt="" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- exact Figma symbol_M export (455:1367) */}
+            <img src="/brand/Symbol_M.svg" alt="" width={45} height={45} className="block size-[45px] shrink-0" />
           </Link>
           <div
             className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border"
