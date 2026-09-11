@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import {
   ArrowRight,
   BedDouble,
@@ -27,11 +28,12 @@ import {
 import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
 
 export const expenseButtonClass =
-  "min-h-10 rounded-full border border-gray-border px-3 py-2 text-sm font-semibold transition hover:bg-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
+  "min-h-10 rounded-full border border-gray-border px-3 py-2 text-sm font-semibold cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 export const expenseInputClass =
   "mt-1 min-h-11 w-full min-w-0 rounded-xl border border-gray-border bg-white px-3 py-2 text-base focus:outline-primary";
 // Group the integer string directly so large amounts and trailing decimals stay exact.
 export function formatExpenseAmount(amount: string) {
+  if (!/^-?\d*(?:\.\d*)?$/.test(amount)) return amount;
   const [integer, fraction] = amount.split(".");
   return (
     integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
@@ -65,7 +67,7 @@ export function ExpensePerson({
   return (
     <span
       data-user-id={userId}
-      className="inline-flex min-w-0 items-center gap-1.5 align-middle"
+      className="inline-flex min-w-0 max-w-full items-center gap-1.5 align-middle"
     >
       <ChatMemberAvatarRing
         avatarUrl={person.imageUrl ?? undefined}
@@ -73,7 +75,7 @@ export function ExpensePerson({
         chromeAvatarClassName="h-7 w-7 shrink-0 overflow-hidden rounded-full"
         reduceMotion={true}
       />
-      <span className="break-words">
+      <span className="min-w-0 [overflow-wrap:anywhere]">
         {person.label}{" "}
         {(person.unknown || memberStatus !== "success") && (
           <span className="text-xs text-dark-gray">#{userId}</span>
@@ -94,17 +96,23 @@ export function expenseDayLabel(
 export function ExpenseRolePicker({
   title,
   members,
+  currentUserId,
   selected,
   original,
   onChange,
 }: {
   title: string;
   members: RoomMember[];
+  currentUserId?: number;
   selected: number[];
   original: number[];
   onChange: (ids: number[]) => void;
 }) {
-  const options = roleOptions(members, original, selected);
+  const titleId = useId();
+  const options = roleOptions(members, original, selected).sort(
+    (a, b) =>
+      Number(b.userId === currentUserId) - Number(a.userId === currentUserId),
+  );
   const pendingMembers = members.filter(
     (member) =>
       member.status === "PENDING" &&
@@ -112,14 +120,23 @@ export function ExpenseRolePicker({
       selected.includes(member.userId),
   );
   return (
-    <fieldset className="min-w-0 space-y-2 rounded-2xl bg-light-gray/50 p-3">
-      <legend className="px-1 font-semibold">
-        {title} · 균등 분담 ({selected.length}명)
-      </legend>
+    <fieldset
+      aria-labelledby={titleId}
+      className="min-w-0 space-y-3 rounded-2xl bg-light-gray/50 p-4"
+    >
+      <div
+        id={titleId}
+        className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1"
+      >
+        <span className="font-semibold">{title}</span>
+        <span className="text-xs font-medium text-dark-gray">
+          선택 {selected.length}명
+        </span>
+      </div>
       {options.map((option) => (
         <label
           key={option.userId}
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm transition hover:bg-white has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30"
+          className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-sm transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed focus-within:ring-2 focus-within:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30"
         >
           <input
             type="checkbox"
@@ -131,7 +148,7 @@ export function ExpenseRolePicker({
                   : selected.filter((id) => id !== option.userId),
               )
             }
-            className="h-4 w-4 shrink-0 accent-primary"
+            className="h-4 w-4 shrink-0 cursor-pointer accent-primary disabled:cursor-not-allowed"
           />
           <ExpensePerson
             userId={option.userId}
@@ -237,7 +254,7 @@ export function ExpenseList({
                 {expenseCategoryLabel(e.category)}
               </p>
               <details className="group mt-2">
-                <summary className="flex min-h-8 w-fit cursor-pointer list-none items-center gap-1 text-xs text-dark-gray [&::-webkit-details-marker]:hidden">
+                <summary className="flex min-h-8 w-fit cursor-pointer list-none rounded-lg px-1 transition-colors hover:bg-primary/5 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center gap-1 text-xs text-dark-gray [&::-webkit-details-marker]:hidden">
                   결제·분담 내역{" "}
                   <ChevronDown
                     size={14}
@@ -402,7 +419,7 @@ export function ExpenseSummaryView({
             ))}
           </ul>
           <details className="group border-t border-gray-border pt-4">
-            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between font-semibold [&::-webkit-details-marker]:hidden">
+            <summary className="flex min-h-10 cursor-pointer list-none rounded-lg px-1 transition-colors hover:bg-primary/5 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center justify-between font-semibold [&::-webkit-details-marker]:hidden">
               지출 분석{" "}
               <ChevronDown
                 size={16}
@@ -415,8 +432,8 @@ export function ExpenseSummaryView({
                 <h4 className="mb-1 font-semibold">카테고리별</h4>
                 {c.categories.map((t) => (
                   <p key={t.category} className="break-all">
-                    {expenseCategoryLabel(t.category)} · {t.totalAmount}{" "}
-                    {c.currency}
+                    {expenseCategoryLabel(t.category)} ·{" "}
+                    {formatExpenseAmount(t.totalAmount)} {c.currency}
                   </p>
                 ))}
               </div>
@@ -428,7 +445,7 @@ export function ExpenseSummaryView({
                     className="break-all"
                   >
                     {expenseDayLabel(t.expenseGroup, t.scheduleId, schedules)} ·{" "}
-                    {t.totalAmount} {c.currency}
+                    {formatExpenseAmount(t.totalAmount)} {c.currency}
                   </p>
                 ))}
               </div>

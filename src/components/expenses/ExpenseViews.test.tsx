@@ -19,6 +19,36 @@ const expense = {
   createdAt: "",
   updatedAt: "",
 };
+
+it("groups category and daily totals without losing decimal precision", () => {
+  const html = renderToStaticMarkup(
+    <ExpenseSummaryView
+      members={[]}
+      memberStatus="success"
+      schedules={[]}
+      summary={{
+        currencies: [
+          {
+            currency: "USD",
+            totalAmount: "1234567.00",
+            categories: [{ category: "OTHER", totalAmount: "1234567.00" }],
+            days: [
+              {
+                expenseGroup: "PREPARATION",
+                scheduleId: null,
+                totalAmount: "1234567.00",
+              },
+            ],
+            individuals: [],
+            transfers: [],
+          },
+        ],
+      }}
+    />,
+  );
+  expect(html).toContain("기타 · 1,234,567.00 USD");
+  expect(html).toContain("여행 준비 · 1,234,567.00 USD");
+});
 it("renders exact server split and transfers including unknown people, no recalculation", () => {
   const html = renderToStaticMarkup(
     <ExpenseSummaryView

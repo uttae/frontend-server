@@ -1,7 +1,9 @@
+import { ExpenseSelect } from "./ExpenseSelect";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import type { Expense } from "@/lib/api/rooms/expenses";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
+import { ExpenseRolePicker } from "./ExpenseViews";
 const mocks = vi.hoisted(() => ({
   save: vi.fn(),
   close: vi.fn(),
@@ -20,6 +22,71 @@ const currencies = [
   { currency: "USD", fractionDigits: 2, maximumAmount: "999999999999999.99" },
   { currency: "KRW", fractionDigits: 0, maximumAmount: "999999999999999" },
 ];
+
+it("preselects self in both roles for new expenses and keeps self first", async () => {
+  await mount(null);
+  const state = mocks.state as { members: { userId: number }[] };
+  mocks.state = {
+    ...state,
+    currentUserId: 2,
+    members: [
+      ...state.members,
+      {
+        userId: 2,
+        status: "ACTIVE",
+        role: "MEMBER",
+        nickname: "나",
+        profileImageUrl: null,
+      },
+    ],
+  };
+  await act(async () =>
+    renderer.update(
+      <ExpenseEditor key="self" initial={{}} onClose={mocks.close} />,
+    ),
+  );
+  for (const picker of renderer.root.findAllByType(ExpenseRolePicker)) {
+    expect(picker.props.selected).toEqual([2]);
+    expect(
+      picker
+        .findAll(
+          (node) =>
+            node.type === "span" && node.props["data-user-id"] !== undefined,
+        )
+        .map((node) => node.props["data-user-id"]),
+    ).toEqual([2, 1]);
+    await act(async () =>
+      picker
+        .findAllByType("input")[0]
+        .props.onChange({ target: { checked: false } }),
+    );
+  }
+  await act(async () =>
+    renderer.update(
+      <ExpenseEditor key="self" initial={{}} onClose={mocks.close} />,
+    ),
+  );
+  for (const picker of renderer.root.findAllByType(ExpenseRolePicker))
+    expect(picker.props.selected).toEqual([]);
+});
+
+it("formats typed amounts without changing exact submitted decimals", async () => {
+  await mount();
+  const amount = renderer.root
+    .findAllByType("input")
+    .find((i) => i.props.inputMode === "decimal")!;
+  await act(async () =>
+    amount.props.onChange({ target: { value: "999,999,999,999,999.99" } }),
+  );
+  expect(amount.props.value).toBe("999,999,999,999,999.99");
+  await act(async () =>
+    renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+  );
+  expect(mocks.save).toHaveBeenCalledWith(
+    expect.objectContaining({ totalAmount: "999999999999999.99" }),
+    10,
+  );
+});
 const base = {
   expenseGroup: "TRIP_DAY" as const,
   scheduleId: 10,
@@ -44,6 +111,7 @@ async function mount(
   mocks.save.mockReset();
   mocks.close.mockReset();
   mocks.state = {
+    currentUserId: 1,
     roomId: "r",
     members: [
       {
@@ -97,8 +165,8 @@ it("preserves original unknown payer and exact amount when editing", async () =>
 });
 it("clears both links for preparation and clears place when changing day", async () => {
   await mount();
-  const select = renderer.root.findAllByType("select")[0];
-  await act(async () => select.props.onChange({ target: { value: "11" } }));
+  const select = renderer.root.findAllByType(ExpenseSelect)[0];
+  await act(async () => select.props.onChange("11"));
   await act(async () =>
     renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
   );
@@ -112,9 +180,7 @@ it("clears both links for preparation and clears place when changing day", async
   );
   await mount();
   await act(async () =>
-    renderer.root
-      .findAllByType("select")[0]
-      .props.onChange({ target: { value: "PREPARATION" } }),
+    renderer.root.findAllByType(ExpenseSelect)[0].props.onChange("PREPARATION"),
   );
   await act(async () =>
     renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
@@ -189,13 +255,11 @@ it.each([
     await act(async () => amount.props.onChange({ target: { value: "100" } }));
     for (const checkbox of renderer.root
       .findAllByType("input")
-      .filter((i) => i.props.type === "checkbox"))
+      .filter((i) => i.props.type === "checkbox" && !i.props.checked))
       await act(async () =>
         checkbox.props.onChange({ target: { checked: true } }),
       );
-    await act(async () =>
-      categorySelect().props.onChange({ target: { value: "OTHER" } }),
-    );
+    await act(async () => categorySelect().props.onChange("OTHER"));
     await act(async () =>
       renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
     );
@@ -252,7 +316,7 @@ const categories = [
 ] as const;
 function categorySelect() {
   const selects = renderer.root
-    .findAllByType("select")
+    .findAllByType(ExpenseSelect)
     .filter((node) => node.props.name === "category");
   expect(selects, "a category selector is available").toHaveLength(1);
   return selects[0];
@@ -264,7 +328,7 @@ async function fillNewExpense() {
   await act(async () => amount.props.onChange({ target: { value: "100" } }));
   for (const checkbox of renderer.root
     .findAllByType("input")
-    .filter((i) => i.props.type === "checkbox")) {
+    .filter((i) => i.props.type === "checkbox" && !i.props.checked)) {
     await act(async () =>
       checkbox.props.onChange({ target: { checked: true } }),
     );
@@ -279,10 +343,9 @@ it("requires explicit selection and offers exactly seven labeled categories in a
   expect(mocks.save).not.toHaveBeenCalled();
   expect(categorySelect().props.value).toBe("");
   expect(
-    categorySelect()
-      .findAllByType("option")
-      .filter((o) => o.props.value !== "")
-      .map((o) => [o.props.value, o.children.join("")]),
+    categorySelect().props.options.map(
+      (o: { value: string; label: string }) => [o.value, o.label],
+    ),
   ).toEqual(categories);
 });
 it.each(categories)(
@@ -290,9 +353,7 @@ it.each(categories)(
   async (category) => {
     await mount(null);
     await fillNewExpense();
-    await act(async () =>
-      categorySelect().props.onChange({ target: { value: category } }),
-    );
+    await act(async () => categorySelect().props.onChange(category));
     await act(async () =>
       renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
     );
@@ -315,9 +376,7 @@ it.each(categories)(
       10,
     );
     const replacement = category === "OTHER" ? "FLIGHT" : "OTHER";
-    await act(async () =>
-      categorySelect().props.onChange({ target: { value: replacement } }),
-    );
+    await act(async () => categorySelect().props.onChange(replacement));
     mocks.save.mockRejectedValueOnce(new Error("카테고리 저장 실패"));
     await act(async () =>
       renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),

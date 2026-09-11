@@ -98,6 +98,7 @@ function useExpenses(roomId: string) {
     roomId,
     members,
     memberStatus: memberQuery.status,
+    currentUserId: user?.id,
     canManage,
     schedules: schedules.data ?? [],
     schedulesReady: schedules.isSuccess,
@@ -159,7 +160,7 @@ export function ExpenseEntryButton({
         e.stopPropagation();
         context.open({ scheduleId, scheduleItemId });
       }}
-      className="min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong hover:bg-primary/10 disabled:opacity-50"
+      className="min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
     >
       + {label}
     </button>

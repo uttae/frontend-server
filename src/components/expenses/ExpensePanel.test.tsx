@@ -1,3 +1,4 @@
+import { ExpenseSelect } from "./ExpenseSelect";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { ExpensePanel } from "./ExpensePanel";
@@ -12,9 +13,7 @@ it("opens an expense in the selected trip day", async () => {
   await mount();
   mocks.open.mockClear();
   await act(async () =>
-    renderer.root
-      .findByType("select")
-      .props.onChange({ target: { value: "10" } }),
+    renderer.root.findByType(ExpenseSelect).props.onChange("10"),
   );
   const add = renderer.root
     .findAllByType("button")
@@ -54,9 +53,7 @@ it("keeps exact whole-trip currency totals visible while filtering", async () =>
   };
   await act(async () => renderer.update(<ExpensePanel />));
   await act(async () =>
-    renderer.root
-      .findByType("select")
-      .props.onChange({ target: { value: "PREPARATION" } }),
+    renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
   );
   const text = JSON.stringify(renderer.toJSON());
   expect(text).toContain("999,999,999,999,999.99");
@@ -123,9 +120,7 @@ async function mount() {
 it("filters preparation and trip day without altering server summary scope", async () => {
   await mount();
   await act(async () =>
-    renderer.root
-      .findByType("select")
-      .props.onChange({ target: { value: "PREPARATION" } }),
+    renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
   );
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
   expect(JSON.stringify(renderer.toJSON())).toContain("준비");
@@ -162,9 +157,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
 it("returns to all expenses when the selected day is deleted remotely", async () => {
   await mount();
   await act(async () =>
-    renderer.root
-      .findByType("select")
-      .props.onChange({ target: { value: "10" } }),
+    renderer.root.findByType(ExpenseSelect).props.onChange("10"),
   );
   const state = mocks.state as { list: { data: { id: number }[] } };
   mocks.state = {
@@ -177,6 +170,6 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  expect(renderer.root.findByType("select").props.value).toBe("ALL");
+  expect(renderer.root.findByType(ExpenseSelect).props.value).toBe("ALL");
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
 });

@@ -1,5 +1,9 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+import { ExpenseSelect } from "./ExpenseSelect";
+import { ExpenseCurrencyPicker } from "./ExpenseCurrencyPicker";
+import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
@@ -31,6 +35,14 @@ export function ExpenseEditor({
 }) {
   const context = useExpenseContext();
   const original = initial.expense;
+  const self =
+    context.canManage &&
+    context.members.some(
+      (member) =>
+        member.userId === context.currentUserId && member.status === "ACTIVE",
+    )
+      ? context.currentUserId
+      : undefined;
   const [body, setBody] = useState<
     Omit<ExpenseInput, "category"> & { category: ExpenseInput["category"] | "" }
   >(() =>
@@ -49,8 +61,8 @@ export function ExpenseEditor({
             "",
           category: "",
           memo: "",
-          payerUserIds: [],
-          participantUserIds: [],
+          payerUserIds: self === undefined ? [] : [self],
+          participantUserIds: self === undefined ? [] : [self],
         },
   );
   const [error, setError] = useState("");
@@ -58,7 +70,6 @@ export function ExpenseEditor({
   const submitLock = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
-  const currencyListId = useId();
   const errorId = useId();
   const places = useSchedulePlanPlaces(context.roomId, body.scheduleId);
   useEffect(() => {
@@ -158,7 +169,7 @@ export function ExpenseEditor({
       <form
         onSubmit={submit}
         noValidate
-        className="space-y-5 p-5 sm:p-6"
+        className="@container/expense-editor space-y-5 p-5 sm:p-6"
         aria-describedby={error ? errorId : undefined}
       >
         <div className="flex items-center justify-between gap-3 border-b border-gray-border pb-4">
@@ -170,43 +181,25 @@ export function ExpenseEditor({
             onClick={onClose}
             disabled={pending}
             aria-label="닫기"
-            className="flex size-10 items-center justify-center rounded-full bg-light-gray text-dark-gray hover:bg-gray-border disabled:opacity-50"
+            className="flex size-10 items-center justify-center rounded-full bg-light-gray text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-border enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <p className="text-sm text-dark-gray">
-          얼마를 썼나요? 결제한 사람과 함께 나눌 사람을 선택해 주세요.
-        </p>
         <fieldset disabled={pending} className="min-w-0 space-y-4">
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-3 rounded-2xl bg-light-gray/60 p-4">
+          <div className="grid min-w-0 grid-cols-1 @min-[440px]/expense-editor:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-2xl bg-light-gray/60 p-4">
+            <ExpenseCurrencyPicker
+              value={body.currency}
+              currencies={context.currencies.data ?? []}
+              disabled={pending || !context.currencies.isSuccess}
+              onChange={(value) => change("currency", value)}
+            />
             <label className="block min-w-0 text-sm font-semibold">
-              통화 검색
-              <input
-                className={expenseInputClass}
-                list={currencyListId}
-                value={body.currency}
-                onChange={(e) =>
-                  change("currency", e.target.value.toUpperCase())
-                }
-                placeholder="통화 코드 검색"
-                autoComplete="off"
-              />
-              <datalist id={currencyListId}>
-                {context.currencies.data?.map((c) => (
-                  <option key={c.currency} value={c.currency}>
-                    소수 {c.fractionDigits}자리
-                  </option>
-                ))}
-              </datalist>
-            </label>
-            <label className="block min-w-0 text-sm font-semibold">
-              금액
-              <input
-                className={`${expenseInputClass} font-bold tabular-nums`}
-                inputMode="decimal"
+              <span className="block text-sm leading-5">금액</span>
+              <ExpenseAmountInput
                 value={body.totalAmount}
-                onChange={(e) => change("totalAmount", e.target.value)}
+                fractionDigits={currency?.fractionDigits}
+                onChange={(value) => change("totalAmount", value)}
                 placeholder={
                   currency
                     ? currency.fractionDigits
@@ -214,15 +207,14 @@ export function ExpenseEditor({
                       : "0"
                     : "금액"
                 }
-                autoComplete="off"
               />
             </label>
           </div>
           {currency && (
             <p className="break-all text-xs text-dark-gray">
               {currency.fractionDigits === 0
-                ? `${currency.currency} 금액은 정수로 입력해 주세요.`
-                : `${currency.currency} 금액은 소수 ${currency.fractionDigits}자리로 입력해 주세요.`}
+                ? `${currency.currency} 금액은 입력을 마치면 소수점 아래를 버려요.`
+                : `입력을 마치면 소수 ${currency.fractionDigits}자리에 맞춰 0을 채우거나 초과 자리를 버려요.`}
             </p>
           )}
           {!context.currencies.isSuccess && (
@@ -232,98 +224,85 @@ export function ExpenseEditor({
                 : "통화 목록을 불러오는 중…"}
             </p>
           )}
-          <label className="block text-sm font-semibold">
-            지출 구분
-            <select
-              className={expenseInputClass}
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">지출 구분</p>
+            <ExpenseSelect
+              label="지출 구분"
+              disabled={pending}
               value={
                 body.expenseGroup === "PREPARATION"
                   ? "PREPARATION"
                   : String(body.scheduleId)
               }
-              onChange={(e) => {
+              options={[
+                { value: "PREPARATION", label: "여행 준비" },
+                ...context.schedules.map((s) => ({
+                  value: String(s.scheduleId),
+                  label: `${s.dayNumber}일차`,
+                })),
+              ]}
+              onChange={(value) => {
                 setBody((prev) => ({
                   ...prev,
                   expenseGroup:
-                    e.target.value === "PREPARATION"
-                      ? "PREPARATION"
-                      : "TRIP_DAY",
-                  scheduleId:
-                    e.target.value === "PREPARATION"
-                      ? null
-                      : Number(e.target.value),
+                    value === "PREPARATION" ? "PREPARATION" : "TRIP_DAY",
+                  scheduleId: value === "PREPARATION" ? null : Number(value),
                   scheduleItemId: null,
                 }));
                 setError("");
               }}
-            >
-              <option value="PREPARATION">여행 준비</option>
-              {context.schedules.map((s) => (
-                <option key={s.scheduleId} value={s.scheduleId}>
-                  {s.dayNumber}일차
-                </option>
-              ))}
-            </select>
-          </label>
+            />
+          </div>
           {body.expenseGroup === "TRIP_DAY" && (
-            <label className="block text-sm font-semibold">
-              연결 장소 (선택)
-              <select
-                className={expenseInputClass}
-                value={body.scheduleItemId ?? ""}
-                onChange={(e) =>
-                  change(
-                    "scheduleItemId",
-                    e.target.value ? Number(e.target.value) : null,
-                  )
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">연결 장소 (선택)</p>
+              <ExpenseSelect
+                label="연결 장소 (선택)"
+                value={
+                  body.scheduleItemId === null
+                    ? ""
+                    : String(body.scheduleItemId)
                 }
-                disabled={!places.isSuccess}
-              >
-                <option value="">장소 연결 없음</option>
-                {places.data
-                  ?.filter((p) => p.itemId !== undefined)
-                  .map((p) => (
-                    <option key={p.itemId} value={p.itemId}>
-                      {p.title}
-                    </option>
-                  ))}
-              </select>
+                disabled={pending || !places.isSuccess}
+                options={[
+                  { value: "", label: "장소 연결 없음" },
+                  ...(places.data ?? [])
+                    .filter((p) => p.itemId !== undefined)
+                    .map((p) => ({ value: String(p.itemId), label: p.title })),
+                ]}
+                onChange={(value) =>
+                  change("scheduleItemId", value ? Number(value) : null)
+                }
+              />
               {!places.isSuccess && (
-                <span className="text-sm text-dark-gray">
+                <p className="text-sm text-dark-gray">
                   {places.isError
                     ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
                     : "장소 확인 중…"}
-                </span>
+                </p>
               )}
-            </label>
+            </div>
           )}
-          <label className="block text-sm font-semibold">
-            카테고리
-            <select
+          <div className="space-y-1">
+            <p className="text-sm font-semibold">카테고리</p>
+            <ExpenseSelect
               name="category"
-              required
-              className={expenseInputClass}
+              label="카테고리"
+              placeholder="카테고리 선택"
+              disabled={pending}
               value={body.category}
-              onChange={(e) => {
-                if (isExpenseCategory(e.target.value))
-                  change("category", e.target.value);
+              options={[...expenseCategories]}
+              onChange={(value) => {
+                if (isExpenseCategory(value)) change("category", value);
               }}
-            >
-              <option value="" disabled>
-                카테고리 선택
-              </option>
-              {expenseCategories.map((category) => (
-                <option key={category.value} value={category.value}>
-                  {category.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            />
+          </div>
           {context.memberStatus === "success" ? (
             <div className="grid min-w-0 gap-3 sm:grid-cols-2">
               <ExpenseRolePicker
                 title="결제자"
                 members={context.members}
+                currentUserId={context.currentUserId}
                 selected={body.payerUserIds}
                 original={original?.payerUserIds ?? []}
                 onChange={(ids) => change("payerUserIds", ids)}
@@ -331,6 +310,7 @@ export function ExpenseEditor({
               <ExpenseRolePicker
                 title="부담자"
                 members={context.members}
+                currentUserId={context.currentUserId}
                 selected={body.participantUserIds}
                 original={original?.participantUserIds ?? []}
                 onChange={(ids) => change("participantUserIds", ids)}
@@ -378,7 +358,10 @@ export function ExpenseEditor({
           </button>
           <button
             type="submit"
-            className={`${expenseButtonClass} bg-primary text-white hover:bg-primary-strong`}
+            className={cn(
+              expenseButtonClass,
+              "bg-primary text-white enabled:hover:bg-primary-strong",
+            )}
             disabled={!ready || pending}
           >
             {pending ? "저장 중…" : "저장"}

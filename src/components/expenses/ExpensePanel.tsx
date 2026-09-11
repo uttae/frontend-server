@@ -1,5 +1,6 @@
 "use client";
 
+import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
 import type { Expense } from "@/lib/api/rooms/expenses";
 import { Plus, RefreshCw, ReceiptText, Users } from "lucide-react";
@@ -85,7 +86,7 @@ export function ExpensePanel() {
                   : {},
               )
             }
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white transition hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
           >
             <Plus size={17} aria-hidden="true" />
             지출 추가
@@ -132,7 +133,7 @@ export function ExpensePanel() {
             type="button"
             aria-label={refreshing ? "새로고침 중" : "새로고침"}
             title="새로고침"
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-dark-gray hover:bg-white disabled:opacity-50"
+            className="flex size-10 shrink-0 items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-white enabled:hover:text-primary-strong disabled:cursor-not-allowed disabled:opacity-50"
             disabled={refreshing || context.busy}
             onClick={() => void refresh()}
           >
@@ -207,22 +208,21 @@ export function ExpensePanel() {
                 {context.list.isSuccess ? `${filtered.length}건` : ""}
               </span>
             </h3>
-            <label className="min-w-0 text-sm text-dark-gray">
-              <span className="sr-only">준비·일차 필터</span>
-              <select
-                className="min-h-10 max-w-full rounded-lg border border-gray-border bg-white px-3 py-2 text-sm focus:outline-primary"
+            <div className="w-36 max-w-full">
+              <ExpenseSelect
+                label="준비·일차 필터"
                 value={activeFilter}
-                onChange={(e) => setFilter(e.target.value)}
-              >
-                <option value="ALL">전체 지출</option>
-                <option value="PREPARATION">여행 준비</option>
-                {context.schedules.map((s) => (
-                  <option key={s.scheduleId} value={s.scheduleId}>
-                    {s.dayNumber}일차
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={setFilter}
+                options={[
+                  { value: "ALL", label: "전체 지출" },
+                  { value: "PREPARATION", label: "여행 준비" },
+                  ...context.schedules.map((s) => ({
+                    value: String(s.scheduleId),
+                    label: `${s.dayNumber}일차`,
+                  })),
+                ]}
+              />
+            </div>
           </div>
           {context.list.isSuccess && (
             <ExpenseList
