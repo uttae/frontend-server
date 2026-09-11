@@ -21,6 +21,8 @@ export function optimisticallyClearRoomUnreadCount(
   queryClient: QueryClient,
   roomId: string,
 ): void {
+  // 읽음 처리 전에 시작한 조회가 나중에 0을 덮어쓰지 않도록 취소한다.
+  void queryClient.cancelQueries({ queryKey: roomUnreadCountQueryKey(roomId) });
   queryClient.setQueryData(roomUnreadCountQueryKey(roomId), { unreadCount: 0 });
 }
 

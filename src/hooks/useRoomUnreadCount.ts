@@ -4,11 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 
 import { getRoomUnreadCount } from "@/lib/api/rooms";
 import { roomUnreadCountQueryKey } from "@/lib/query-keys";
-import { useChatPanelStore } from "@/stores/chat-panel-store";
+import { useChatPanelOpen } from "@/hooks/useChatPanelOpen";
 
 export function useRoomUnreadCount(roomId: string | null) {
   const id = roomId?.trim() ?? "";
-  const chatPanelOpen = useChatPanelStore((s) => s.chatState !== "closed");
+  const chatPanelOpen = useChatPanelOpen();
 
   return useQuery({
     queryKey: roomUnreadCountQueryKey(id || null),
