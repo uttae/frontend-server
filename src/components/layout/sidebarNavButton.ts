@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export function sidebarNavButtonClassName(isActive = false) {
   return cn(
-    "flex cursor-pointer min-h-14 w-16 flex-col items-center justify-center gap-1 rounded-xl text-[12px] font-medium text-dark-gray transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
-    isActive ? "bg-light-gray text-primary" : "bg-transparent hover:bg-light-gray",
+    "flex h-[68px] w-full shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 pt-0.5 text-[12px] leading-4 tracking-[-0.02em] transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary-strong",
+    isActive ? "bg-primary font-bold text-text-inverse" : "bg-transparent font-medium text-text hover:bg-fill-subtle",
   );
 }

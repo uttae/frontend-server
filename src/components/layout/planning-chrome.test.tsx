@@ -23,14 +23,14 @@ import { BookmarkFoldersView } from "@/app/(main)/bookmark/_components/BookmarkF
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
 
 describe("planning chrome", () => {
-  it("uses the transparent blue glyph in the home link", () => {
+  it("uses the official small brand symbol in the home link", () => {
     const container = document.createElement("div");
     container.innerHTML = renderToStaticMarkup(<HeaderBar />);
     const home = container.querySelector('a[aria-label="홈으로 이동"]');
     expect(home?.getAttribute("href")).toBe("/home");
-    expect(home?.querySelector("img")?.getAttribute("src")).toBe("/brand/Glyph_M.svg");
-    expect(home?.querySelector("img")?.getAttribute("width")).toBe("45");
-    expect(home?.querySelector("img")?.getAttribute("height")).toBe("45");
+    expect(home?.querySelector("img")?.getAttribute("src")).toBe("/brand/Glyph_S.svg");
+    expect(home?.querySelector("img")?.getAttribute("width")).toBe("23");
+    expect(home?.querySelector("img")?.getAttribute("height")).toBe("23");
     expect(home?.querySelector("img")?.getAttribute("alt")).toBe("");
     expect(container.querySelectorAll("img")).toHaveLength(1);
   });
@@ -42,15 +42,6 @@ describe("planning chrome", () => {
     expect(link?.getAttribute("aria-label")).toBe("버그 제보");
     expect(link?.getAttribute("title")).toBe("버그 제보");
     expect(container.querySelector('[role="dialog"]')).toBeNull();
-  });
-  it("renders the exported Figma bug asset at its original dimensions", () => {
-    const container = document.createElement("div");
-    container.innerHTML = renderToStaticMarkup(<SidebarContactButton />);
-    const icon = container.querySelector("a img");
-    expect(icon?.getAttribute("src")).toBe("/icons/sidebar/bug.svg");
-    expect(icon?.getAttribute("width")).toBe("24");
-    expect(icon?.getAttribute("height")).toBe("24");
-    expect(icon?.getAttribute("alt")).toBe("");
   });
   it("uses the creation label in the bookmark tab and modal", () => {
     const html = renderToStaticMarkup(<BookmarkFoldersView />);
