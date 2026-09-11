@@ -64,8 +64,13 @@ it.each([[0, "-"], [4, "4"], [120, "99+"]])("retains unread value %i and the sep
   state.unread = count; await render();
   expect(items()[3].textContent).toContain(label);
   expect(host.querySelector('a[aria-label="피드백 설문"]')).not.toBeNull();
-  expect(host.querySelector('a[aria-label="버그 제보"]')).not.toBeNull();
   expect(host.querySelector('a[href="/room-settings"]')).toBeNull();
+});
+it("omits the sidebar contact entry while retaining the separate feedback survey", async () => {
+  await render();
+  const sidebar = host.querySelector("aside")!;
+  expect(sidebar.querySelector('a[aria-label="피드백 설문"]')).not.toBeNull();
+  expect(sidebar.querySelector('a[aria-label="버그 제보"], a[href="/contact"]')).toBeNull();
 });
 it("mobile has five bottom destinations and retains the existing map/schedule URLs outside them", async () => {
   state.mobile = true; await render();

@@ -73,7 +73,6 @@ it("retains landing and room footers and removes only the requested navigation e
     "member-settings",
     "room-settings",
     "SidebarFeedbackFormButton",
-    "SidebarContactButton",
     "openChat",
   ])
     expect(sidebar).toContain(entry);

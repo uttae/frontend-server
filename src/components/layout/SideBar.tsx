@@ -7,7 +7,6 @@ import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeC
 import { sidebarIcons } from "@/lib/public-assets";
 
 import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";
-import { SidebarContactButton } from "./SidebarContactButton";
 import { SidebarFeedbackFormButton } from "./SidebarFeedbackFormButton";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { sidebarNavButtonClassName } from "./sidebarNavButton";
@@ -77,7 +76,6 @@ function SideBar() {
       </nav>
       <div className="mt-auto flex flex-col items-center gap-2 px-1 pb-4">
         <SidebarFeedbackFormButton />
-        <SidebarContactButton />
       </div>
     </aside>
   );
