@@ -58,7 +58,7 @@ function LoginShell({ children }: { children: ReactNode }) {
           <ArrowLeft className="h-5 w-5" aria-hidden />
         </Link>
         <div className="flex flex-col items-center gap-6 text-center">
-          <div className="flex flex-col items-center gap-3">
+          <div className="flex flex-col items-center gap-3 [&>img]:h-[27px] [&>img]:w-[88.2px]">
             <BrandLogo variant="combination" size="M" alt="우때 로고" />
             <p className="text-[17px] leading-relaxed text-dark-gray">
               로그인하고 여행 계획을 이어가세요!
