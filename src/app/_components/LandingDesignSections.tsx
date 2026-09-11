@@ -13,7 +13,7 @@ const windows = [
 
 function ProblemAndSolution() {
   return <>
-    <section className={styles.problem}>
+    <section data-landing-section="problem" className={styles.problem}>
       <div className={styles.problemInner}>
         <LandingArtwork name="problem-background.svg" width={1440} height={1198.2} className={styles.problemBackground} />
         <LandingArtwork name="mobile-problem-background.svg" width={394} height={399.28} className={styles.mobileProblemBackground} />
@@ -34,7 +34,7 @@ function ProblemAndSolution() {
         </div>
       </div>
     </section>
-    <section className={styles.solution}>
+    <section data-landing-section="solution" className={styles.solution}>
       <div className={styles.solutionInner}>
         <div className={styles.solutionTitle}>
           {/* The approved desktop spells this SOULTION; mobile spells SOLUTION. */}
@@ -78,7 +78,7 @@ const features = [
 ] as const;
 
 function Features() {
-  return <section id="features" className={styles.features} aria-label="우때 기능">
+  return <section id="features" data-landing-section="features" className={styles.features} aria-label="우때 기능">
     <div className={styles.featuresInner}>
       {features.map((feature, index) => <article className={styles.feature} key={feature.image}>
         <div className={styles.featureCopy}>
@@ -111,7 +111,7 @@ function Features() {
 }
 
 function Devices() {
-  return <section className={styles.devices}>
+  return <section data-landing-section="devices" className={styles.devices}>
     <div className={styles.devicesInner}>
       <div className={styles.devicesTitle}>
         <p className={styles.eyebrow}>KEY POINT</p>
@@ -140,7 +140,7 @@ const steps = [
 ] as const;
 
 function TravelSteps() {
-  return <section id="how-it-works" className={styles.how}>
+  return <section id="how-it-works" data-landing-section="travel_steps" className={styles.how}>
     <div className={styles.howInner}>
       <h2><span>여행 계획은</span><br />이렇게 완성하세요!</h2>
       <ol className={styles.cards}>

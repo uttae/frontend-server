@@ -31,6 +31,8 @@ export function setAnalyticsUserId(userId: number | null | undefined): void {
 }
 
 export const AnalyticsEvents = {
+  ctaClick: "cta_click",
+  sectionView: "section_view",
   signUp: "sign_up",
   login: "login",
   createBookmarkFolder: "create_bookmark_folder",
@@ -64,7 +66,25 @@ const tutorialSkipSteps = ["1", "2", "3", "4", "5"] as const;
 export type TutorialAnalyticsVersion = typeof TUTORIAL_ANALYTICS_VERSION;
 export type TutorialExitReason = "complete" | "skip";
 
+export type LandingSectionId =
+  | "hero"
+  | "problem"
+  | "solution"
+  | "features"
+  | "devices"
+  | "travel_steps"
+  | "final_cta";
+
 export type AnalyticsEventParamsMap = {
+  [AnalyticsEvents.ctaClick]: {
+    page_type: "landing";
+    cta_id: "login" | "start_trip";
+    cta_position: "header" | "hero" | "final";
+  };
+  [AnalyticsEvents.sectionView]: {
+    page_type: "landing";
+    section_id: LandingSectionId;
+  };
   [AnalyticsEvents.signUp]: {
     entry_point: AnalyticsEntryPoint;
     method: "google";
