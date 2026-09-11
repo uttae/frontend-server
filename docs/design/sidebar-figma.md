@@ -22,4 +22,4 @@ SVG는 새 기준 노드의 `get_design_context`가 반환한 24px 에셋을 수
 | feedback.svg | 3140:1881 |
 | bug.svg | 1049:2942 |
 
-헤더 홈 열도 공통 레일 폭 68px을 사용한다. 새 사이드바 컴포넌트에는 로고가 없으므로 기존에 추출한 브랜딩 페이지 [symbol_M 455:1367](https://www.figma.com/design/uJLn6DbZ6MMpWyfuOXr6wu/Uttae?node-id=455-1367)의 검정 심볼(`public/brand/Symbol_M.svg`, 45×45px)은 유지한다.
+헤더 홈 열도 공통 레일 폭 68px을 사용한다. 새 사이드바 컴포넌트에는 로고가 없으므로 `main`의 공식 `BrandLogo` 파란 심볼을 사용한다. 사용자 요청에 따라 방 목록 로고와 같은 S 크기(`public/brand/Glyph_S.svg`, 23×23px)로 표시한다. 헤더 높이는 하단 테두리를 포함해 56px이며 제목과 날짜는 두 줄로 유지한다.
