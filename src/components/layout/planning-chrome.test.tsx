@@ -28,9 +28,9 @@ describe("planning chrome", () => {
     container.innerHTML = renderToStaticMarkup(<HeaderBar />);
     const home = container.querySelector('a[aria-label="홈으로 이동"]');
     expect(home?.getAttribute("href")).toBe("/home");
-    expect(home?.querySelector("img")?.getAttribute("src")).toBe("/brand/Glyph_S.svg");
-    expect(home?.querySelector("img")?.getAttribute("width")).toBe("23");
-    expect(home?.querySelector("img")?.getAttribute("height")).toBe("23");
+    expect(home?.querySelector("img")?.getAttribute("src")).toBe("/brand/Glyph_M.svg");
+    expect(home?.querySelector("img")?.getAttribute("width")).toBe("45");
+    expect(home?.querySelector("img")?.getAttribute("height")).toBe("45");
     expect(home?.querySelector("img")?.getAttribute("alt")).toBe("");
     expect(container.querySelectorAll("img")).toHaveLength(1);
   });
