@@ -23,7 +23,7 @@ export const sidebarIcons = {
   bug: "/icons/sidebar/bug.svg",
 } as const;
 
-/** Figma 811:1211 exports; desktop wireframe, separate from mobile assets. */
+/** Figma 1049:2992 exports; desktop wireframe, separate from mobile assets. */
 export const sidebarWireframeIcons = {
   plan: "/icons/sidebar/figma/calendar.svg",
   search: "/icons/sidebar/figma/search.svg",

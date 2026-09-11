@@ -74,7 +74,7 @@ it("shows labeled feedback and bug report links in the sidebar", async () => {
   await render();
   const sidebar = host.querySelector("aside")!;
   expect(sidebar.querySelector('a[aria-label="피드백 설문"]')?.textContent).toContain("피드백");
-  expect(sidebar.querySelector('a[aria-label="버그 제보"]')?.textContent).toContain("버그제보");
+  expect(sidebar.querySelector('a[aria-label="버그 제보"]')?.textContent).toContain("버그 제보");
 });
 it("mobile has five bottom destinations and retains the existing map/schedule URLs outside them", async () => {
   state.mobile = true; await render();

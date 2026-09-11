@@ -3,8 +3,8 @@ export const width = {
   s2: "720px",
 } as const;
 
-/** Figma 사이드바 811:1211 · HeaderBar 홈 열 공통 폭 */
-export const MAIN_SIDEBAR_RAIL_WIDTH = "94px" as const;
+/** Figma 사이드바 1049:2992 · HeaderBar 홈 열 공통 폭 */
+export const MAIN_SIDEBAR_RAIL_WIDTH = "68px" as const;
 
 /** 채팅·LeftSection 최소 폭. maximized `ChatPanel`은 LeftSection 실측(`style.width`)까지 확장 */
 export const CHAT_PANEL_DOCKED_WIDTH = width.s1;

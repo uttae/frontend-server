@@ -1,5 +1,5 @@
 <svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="bug" clip-path="url(#clip0_0_100)">
+<g id="bug" clip-path="url(#clip0_0_86)">
 <g id="Vector">
 </g>
 <path id="Vector_2" d="M9 9V8C9 7.20435 9.31607 6.44129 9.87868 5.87868C10.4413 5.31607 11.2044 5 12 5C12.7956 5 13.5587 5.31607 14.1213 5.87868C14.6839 6.44129 15 7.20435 15 8V9" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -13,7 +13,7 @@
 <path id="Vector_10" d="M20 7L16.25 9.4" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 <defs>
-<clipPath id="clip0_0_100">
+<clipPath id="clip0_0_86">
 <rect width="24" height="24" fill="white"/>
 </clipPath>
 </defs>

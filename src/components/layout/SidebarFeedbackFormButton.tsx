@@ -3,7 +3,6 @@
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
 import { FEEDBACK_FORM_URL } from "@/lib/contact";
 import { sidebarWireframeIcons } from "@/lib/public-assets";
-import { cn } from "@/lib/utils";
 
 import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 import { SidebarPingBadge } from "./SidebarPingBadge";
@@ -22,7 +21,7 @@ export function SidebarFeedbackFormButton() {
         target="_blank"
         rel="noopener noreferrer"
         onClick={dismiss}
-        className={cn(sidebarNavButtonClassName(), "font-normal tracking-normal text-text")}
+        className={sidebarNavButtonClassName()}
         aria-label="피드백 설문"
       >
         <SidebarIcon src={sidebarWireframeIcons.feedback} />

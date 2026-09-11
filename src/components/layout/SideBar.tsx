@@ -41,10 +41,10 @@ function SideBar() {
 
   return (
     <aside
-      className="flex h-full shrink-0 flex-col items-center overflow-y-auto border-r border-border-subtle bg-background [scrollbar-gutter:auto] [scrollbar-width:thin]"
+      className="flex h-full shrink-0 flex-col items-center overflow-y-auto bg-background [scrollbar-gutter:auto] [scrollbar-width:thin]"
       style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}
     >
-      <nav aria-label="여행 주요 메뉴" className="flex w-full shrink-0 flex-col items-center [&>div:first-child>a]:h-[90px] [&>div:first-child>a]:pt-5">
+      <nav aria-label="여행 주요 메뉴" className="flex w-full shrink-0 flex-col items-center">
         {SIDEBAR_ITEMS.map((item) => (
           <SidebarNavItem
             key={item.href}
@@ -79,7 +79,7 @@ function SideBar() {
           showPingBadge={showSettingsNotification}
         />
       </nav>
-      <div className="mt-auto flex w-full shrink-0 flex-col items-center pt-4">
+      <div className="mt-auto flex w-full shrink-0 flex-col items-center">
         <SidebarFeedbackFormButton />
         <SidebarContactButton />
       </div>
