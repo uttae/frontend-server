@@ -73,7 +73,6 @@ it("retains landing and room footers and removes only the requested navigation e
     "member-settings",
     "room-settings",
     "SidebarFeedbackFormButton",
-    "SidebarContactButton",
     "openChat",
   ])
     expect(sidebar).toContain(entry);
@@ -84,7 +83,7 @@ it("retains landing and room footers and removes only the requested navigation e
   expect(profile).toContain("회원 탈퇴");
   const mobile = source("components/mobile/MobileMainTabs.tsx");
   expect(mobile).not.toMatch(/privacy-settings|쿠키 설정/);
-  for (const entry of ["북마크", "멤버", "방설정", "채팅", "일정", "지도"])
+  for (const entry of ["북마크", "멤버", "검색", "채팅", "일정"])
     expect(mobile).toContain(entry);
   expect(source("components/layout/MainLayoutChrome.tsx")).not.toContain(
     "SiteFooter",

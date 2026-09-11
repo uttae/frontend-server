@@ -2,91 +2,39 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { Bookmark, CalendarDays, MessageCircleMore, Search, Users } from "lucide-react";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import {
-  buildMobilePlanPanelHref,
-  MOBILE_PLAN_PANEL_ORDER,
-  readMobilePlanPanel,
-  type MobilePlanPanel,
-} from "@/lib/mobile-view";
+import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
+import { SidebarChatUnreadBadge } from "@/components/layout/SidebarChatUnreadBadge";
 import { cn } from "@/lib/utils";
 
-type MobileTab = {
-  label: string;
-  href: string;
-  matchPrefix: string;
-  panel?: MobilePlanPanel;
-};
-
-const STATIC_TABS: readonly MobileTab[] = [
-  { label: "북마크", href: "/bookmark", matchPrefix: "/bookmark" },
-  { label: "멤버", href: "/member-settings", matchPrefix: "/member-settings" },
-  { label: "방설정", href: "/room-settings", matchPrefix: "/room-settings" },
-];
-
-const PLAN_PANEL_LABELS: Record<MobilePlanPanel, string> = {
-  chat: "채팅",
-  schedule: "일정",
-  map: "지도",
-};
-
-function isTabActive(pathname: string, prefix: string): boolean {
-  return pathname === prefix || pathname.startsWith(`${prefix}/`);
-}
-
-/** 모바일 전용 상단 탭 바 — 데스크톱에서는 사이드바 사용 */
+/** 모바일 전용 하단 탭 바 — 지도 전환은 기존 플랜 패널 URL을 사용합니다. */
 export function MobileMainTabs() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isMobileDevice } = useMobileView();
-
   if (!isMobileDevice) return null;
 
+  const isPlan = pathname === "/plan" || pathname.startsWith("/plan/");
   const currentPanel = readMobilePlanPanel(searchParams.get("view"));
-  const planTabs: readonly MobileTab[] = MOBILE_PLAN_PANEL_ORDER.map(
-    (panel) => ({
-      label: PLAN_PANEL_LABELS[panel],
-      href: buildMobilePlanPanelHref(pathname, panel),
-      matchPrefix: "/plan",
-      panel,
-    }),
-  );
-  const tabs = [...planTabs, ...STATIC_TABS];
-
+  const tabs = [
+    { label: "일정", href: buildMobilePlanPanelHref(pathname, "schedule"), icon: CalendarDays, active: isPlan && currentPanel !== "chat" },
+    { label: "검색", href: "/search", icon: Search, active: pathname === "/search" || pathname.startsWith("/search/") },
+    { label: "북마크", href: "/bookmark", icon: Bookmark, active: pathname === "/bookmark" || pathname.startsWith("/bookmark/") },
+    { label: "채팅", href: buildMobilePlanPanelHref(pathname, "chat"), icon: MessageCircleMore, active: isPlan && currentPanel === "chat" },
+    { label: "멤버", href: "/member-settings", icon: Users, active: pathname === "/member-settings" || pathname.startsWith("/member-settings/") },
+  ];
   return (
-    <nav
-      aria-label="모바일 주요 메뉴"
-      className="flex shrink-0 border-b border-gray-border bg-white"
-    >
-      {tabs.map((tab) => {
-        const active =
-          tab.panel != null
-            ? isTabActive(pathname, tab.matchPrefix) &&
-              currentPanel === tab.panel
-            : isTabActive(pathname, tab.matchPrefix);
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              "relative flex flex-1 items-center justify-center py-3 text-[14px] font-medium transition-colors",
-              active
-                ? "text-primary"
-                : "text-dark-gray hover:text-gray-900",
-            )}
-          >
-            {tab.label}
-            {active ? (
-              <span
-                aria-hidden
-                className="absolute inset-x-4 bottom-0 h-0.5 rounded-full bg-primary"
-              />
-            ) : null}
-          </Link>
-        );
-      })}
+    <nav aria-label="모바일 주요 메뉴" className="grid shrink-0 grid-cols-5 border-t border-gray-border bg-white pb-[env(safe-area-inset-bottom)]">
+      {tabs.map(({ label, href, icon: Icon, active }) => (
+        <Link key={label} href={href} aria-label={label} aria-current={active ? "page" : undefined}
+          className={cn("relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 py-2 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary", active ? "text-primary" : "text-dark-gray hover:text-gray-900")}>
+          <Icon size={20} aria-hidden />
+          <span>{label}</span>
+          {label === "채팅" ? <SidebarChatUnreadBadge /> : null}
+        </Link>
+      ))}
     </nav>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { CalendarRange } from "lucide-react";
 
 import {
@@ -19,6 +19,17 @@ export function TripDateShrinkConfirmModal({
   onClose,
   onConfirm,
 }: Props) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const trigger = document.activeElement;
+    dialogRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    return () => {
+      queueMicrotask(() => {
+        if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus();
+      });
+    };
+  }, []);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape" && !isPending) onClose();
@@ -35,6 +46,7 @@ export function TripDateShrinkConfirmModal({
       }}
     >
       <div
+        ref={dialogRef}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="trip-date-shrink-dialog-title"

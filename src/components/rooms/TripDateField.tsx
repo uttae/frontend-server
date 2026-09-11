@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   id: string;
+  label?: string;
   value: string;
   min?: string;
   max?: string;
@@ -18,6 +19,7 @@ type Props = {
 
 export function TripDateField({
   id,
+  label,
   value,
   min,
   max = "9999-12-31",
@@ -46,6 +48,7 @@ export function TripDateField({
     >
       <input
         id={id}
+        aria-label={label}
         ref={inputRef}
         type="date"
         value={value}

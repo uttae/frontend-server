@@ -36,12 +36,12 @@ type TutorialStep = {
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
-    target: "chat",
-    eyebrow: "함께 이야기하기",
-    title: "채팅",
+    target: "plan",
+    eyebrow: "여행 동선 만들기",
+    title: "일정",
     description:
-      "여행 멤버들과 실시간으로 대화하고, AI에게 여행지 추천도 받아보세요.",
-    icon: MessageCircleMore,
+      "날짜별로 장소를 추가하고 순서를 정해 우리만의 여행 일정을 완성해 보세요.",
+    icon: CalendarDays,
   },
   {
     target: "search",
@@ -52,20 +52,20 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     icon: MapPin,
   },
   {
-    target: "plan",
-    eyebrow: "여행 동선 만들기",
-    title: "일정",
-    description:
-      "날짜별로 장소를 추가하고 순서를 정해 우리만의 여행 일정을 완성해 보세요.",
-    icon: CalendarDays,
-  },
-  {
     target: "bookmark",
     eyebrow: "후보 장소 모아두기",
     title: "북마크",
     description:
       "마음에 드는 장소를 폴더별로 저장하고, 필요할 때 일정에 바로 추가할 수 있어요.",
     icon: Bookmark,
+  },
+  {
+    target: "chat",
+    eyebrow: "함께 이야기하기",
+    title: "채팅",
+    description:
+      "여행 멤버들과 실시간으로 대화하고, AI에게 여행지 추천도 받아보세요.",
+    icon: MessageCircleMore,
   },
   {
     target: "member-settings",
@@ -78,9 +78,9 @@ const TUTORIAL_STEPS: TutorialStep[] = [
   {
     target: "room-settings",
     eyebrow: "여행 정보 다듬기",
-    title: "여행 설정",
+    title: "여행 정보 수정",
     description:
-      "여행 이름과 기간 등 방의 기본 정보를 확인하고 수정할 수 있어요.",
+      "여행 제목 옆 연필 버튼을 누르면 여행 이름, 목적지와 기간을 확인하고 수정할 수 있어요.",
     icon: Settings,
   },
 ];

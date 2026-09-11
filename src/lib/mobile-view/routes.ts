@@ -1,5 +1,4 @@
 const MAIN_MOBILE_BLOCKED_PREFIXES = [
-  "/search",
   "/settings",
   "/contact",
 ] as const;

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/plan/room" }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
+vi.mock("@/hooks/useCurrentRoomMembership", () => ({ useCurrentRoomMembership: () => ({ roomId: "room", roomSource: null, isHost: false, isLoading: false }) }));
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: undefined }) }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomsList: () => ({ data: { rooms: [] }, isPending: false }),
