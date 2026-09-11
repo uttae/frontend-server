@@ -71,6 +71,10 @@
 .tags li { display: flex; align-items: center; justify-content: center; gap: 2px; padding: 4px 8px 4px 4px; background: var(--color-fill-default); border-radius: 4px; color: var(--color-text-subtle); font-size: 11px; font-weight: 600; line-height: 16px; white-space: nowrap; }
 .tags img { width: 16px; height: 16px; flex: none; }
 .featureImage { display: block; margin: auto; object-fit: cover; }
+.searchPreview { position: relative; isolation: isolate; }
+.searchPlaces, .searchFolders { position: absolute; object-fit: contain; border: 1px solid var(--color-border-default); border-radius: 12px; background: white; box-shadow: 0 0 4px #0000000f, 4px 4px 24px #8b92a829; }
+.searchPlaces { left: 0; top: 0; width: calc(420 / 731 * 100%); height: calc(420 * 892 / 752 / 564 * 100%); }
+.searchFolders { z-index: 1; left: calc(243 / 731 * 100%); top: calc(201 / 564 * 100%); width: calc(464 / 731 * 100%); height: calc(464 * 510 / 698 / 564 * 100%); }
 .feature:nth-child(1) .featureImage { width: min(305px, 77.608vw); height: min(236px, 60.051vw); }
 .feature:nth-child(2) .featureImage { width: min(293px, 74.555vw); height: min(220px, 55.98vw); box-shadow: 0 0 4px #0000000f, 4px 4px 24px #8b92a829; }
 .feature:nth-child(3) .featureImage { width: min(359px, 91.349vw); height: min(400px, 101.781vw); }

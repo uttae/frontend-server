@@ -10,7 +10,7 @@ export function LandingHero() {
       <div className={styles.airplane}>
         <LandingArtwork name="airplane.png" width={387} height={387} />
       </div>
-      <LandingArtwork name="hero-web.png" width={750} height={567} className={styles.heroWeb}
+      <LandingArtwork name="hero-web-current.png" width={750} height={567} className={styles.heroWeb}
         alt="지도와 날짜별 여행 일정을 한곳에서 확인하는 우때 화면" priority />
       <div className={styles.heroCopy}>
         <h1>올인원 해외여행<br />플래너, <span>우때</span></h1>

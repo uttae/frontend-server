@@ -43,7 +43,7 @@ function ProblemAndSolution() {
           <h2>복잡한 여행 계획은 <span>우때 하나로 끝!</span></h2>
         </div>
         <LandingArtwork name="laptop-shadow.svg" mobileName="mobile-laptop-shadow.svg" width={1188} height={142} className={styles.laptopShadow} />
-        <LandingArtwork name="laptop.png" width={992} height={604} className={styles.laptop}
+        <LandingArtwork name="laptop-current.png" width={992} height={604} className={styles.laptop}
           alt="여행 일정과 지도를 함께 보여주는 우때 노트북 화면" />
       </div>
     </section>
@@ -56,15 +56,15 @@ const features = [
     description: ["마음에 드는 여행지를 검색하고 저장해", "바로 여행 일정에 활용해 보세요."],
     tags: ["가고 싶은 곳 저장하기", "검색한 장소 북마크", "일정에 추가하기"],
     icons: ["CarbonLocationStarFilled", "BoxiconsBookmarkFilled", "AntDesignCalendarFilled"],
-    image: "search.png", width: 731, height: 564,
-    alt: "검색한 여행 장소를 북마크에 저장하는 화면",
+    image: "search-places-current.png", width: 752, height: 892,
+    alt: "카페 북마크 폴더에 저장한 장소 목록",
   },
   {
     title: ["저장한 장소로", "일정을 완성해요"],
     description: ["저장해둔 장소를 날짜별로 배치하고", "지도에서 여행 동선을 한눈에 확인하세요."],
     tags: ["날짜별 일정 정리", "지도에서 동선 확인", "실시간 공동 편집"],
     icons: ["CiListChecklist", "HeroiconsMap16Solid", "BxsMessageSquareEdit"],
-    image: "schedule.png", width: 774, height: 580,
+    image: "schedule-current.png", width: 774, height: 580,
     alt: "저장한 장소로 날짜별 일정과 지도 동선을 완성한 화면",
   },
   {
@@ -95,8 +95,17 @@ function Features() {
             </li>)}
           </ul>
         </div>
-        <LandingArtwork name={feature.image} width={feature.width} height={feature.height}
-          alt={feature.alt} className={styles.featureImage} />
+        {index === 0 ? (
+          <div className={`${styles.featureImage} ${styles.searchPreview}`}>
+            <LandingArtwork name={feature.image} width={feature.width} height={feature.height}
+              alt={feature.alt} className={styles.searchPlaces} />
+            <LandingArtwork name="search-folders-current.png" width={698} height={510}
+              alt="관광지·카페·음식점 북마크 폴더 목록" className={styles.searchFolders} />
+          </div>
+        ) : (
+          <LandingArtwork name={feature.image} width={feature.width} height={feature.height}
+            alt={feature.alt} className={styles.featureImage} />
+        )}
       </article>)}
       <div className={styles.track} aria-hidden="true">
         <LandingArtwork name="track-upper.svg" width={838} height={894} className={styles.trackUpper} />
@@ -118,9 +127,9 @@ function Devices() {
         <h2>여행 계획은 PC에서 편리하게<br />여행 중에는 모바일로 가볍게</h2>
       </div>
       <div className={styles.deviceImages}>
-        <LandingArtwork name="web.png" width={750} height={566.5} className={styles.deviceWeb}
+        <LandingArtwork name="web-current.png" width={750} height={566.5} className={styles.deviceWeb}
           alt="PC에서 여행 일정을 계획하는 우때 화면" />
-        <LandingArtwork name="phone.png" width={222} height={464.5} className={styles.devicePhone}
+        <LandingArtwork name="phone-current.png" width={222} height={464.5} className={styles.devicePhone}
           alt="여행 중 모바일에서 일정을 확인하는 우때 화면" />
       </div>
     </div>
