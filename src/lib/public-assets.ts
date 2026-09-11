@@ -23,6 +23,17 @@ export const sidebarIcons = {
   bug: "/icons/sidebar/bug.svg",
 } as const;
 
+/** Figma 1049:2992 exports; desktop wireframe, separate from mobile assets. */
+export const sidebarWireframeIcons = {
+  plan: "/icons/sidebar/figma/calendar.svg",
+  search: "/icons/sidebar/figma/search.svg",
+  bookmark: "/icons/sidebar/figma/bookmark.svg",
+  chat: "/icons/sidebar/figma/chat.svg",
+  memberSettings: "/icons/sidebar/figma/members.svg",
+  feedback: "/icons/sidebar/figma/feedback.svg",
+  bug: "/icons/sidebar/figma/bug.svg",
+} as const;
+
 export const chatAssets = {
   woori: "/icons/woori.svg",
 } as const;
