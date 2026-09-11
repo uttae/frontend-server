@@ -1,6 +1,6 @@
 export function SidebarPingBadge() {
   return (
-    <span className="pointer-events-none absolute right-4 top-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className="pointer-events-none absolute right-[18px] top-2.5 flex h-3.5 w-3.5 items-center justify-center">
       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
       <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
     </span>

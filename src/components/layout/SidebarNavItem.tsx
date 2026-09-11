@@ -42,7 +42,7 @@ export function SidebarNavItem({
       {showPingBadge ? <SidebarPingBadge /> : null}
 
       {showDividerBelow ? (
-        <div className="w-full border-t border-border-subtle" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 border-t border-border-subtle" />
       ) : null}
     </div>
   );

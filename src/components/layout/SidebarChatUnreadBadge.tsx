@@ -12,7 +12,7 @@ export function SidebarChatUnreadBadge() {
   const label = formatUnreadCountBadge(unreadCount);
 
   return (
-    <span className="pointer-events-none absolute right-4 top-2 rounded-full border border-background bg-primary px-1 text-[11px] font-bold leading-4 text-white">
+    <span className="pointer-events-none absolute left-1/2 top-2.5 flex h-4 min-w-4 items-center justify-center rounded-full border border-background bg-primary px-0.5 text-[11px] font-semibold leading-none tracking-[-0.02em] text-text-inverse">
       {label}
     </span>
   );
