@@ -35,6 +35,7 @@ export type ExpenseInput = {
 };
 export type Expense = ExpenseInput & {
   id: number;
+  version: number;
   createdAt: string;
   updatedAt: string;
 };
@@ -103,7 +104,14 @@ export const createExpense = (roomId: string, body: ExpenseInput) =>
 export const patchExpense = (
   roomId: string,
   id: number,
-  body: Partial<ExpenseInput>,
-) => request<Expense>(roomId, `/${id}`, { method: "PATCH", ...jsonBody(body) });
-export const deleteExpense = (roomId: string, id: number) =>
-  request<void>(roomId, `/${id}`, { method: "DELETE" });
+  body: Partial<ExpenseInput> & { expectedVersion: number },
+) =>
+  request<Expense>(roomId, `/${id}`, { method: "PATCH", ...jsonBody(body) });
+export const deleteExpense = (
+  roomId: string,
+  id: number,
+  expectedVersion: number,
+) =>
+  request<void>(roomId, `/${id}?expectedVersion=${expectedVersion}`, {
+    method: "DELETE",
+  });

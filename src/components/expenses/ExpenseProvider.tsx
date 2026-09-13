@@ -71,18 +71,44 @@ function useExpenses(roomId: string) {
   });
   const mutation = useMutation({
     mutationFn: async (
-      op: { body: ExpenseInput; id?: number } | { deleteId: number },
+      op:
+        | { body: ExpenseInput; id?: number; expectedVersion?: number }
+        | { deleteId: number; expectedVersion: number },
     ) => {
       if (!canManage)
         throw new Error(
           "현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.",
         );
-      if ("deleteId" in op) return deleteExpense(roomId, op.deleteId);
-      return op.id === undefined
-        ? createExpense(roomId, op.body)
-        : patchExpense(roomId, op.id, op.body);
+      if ("deleteId" in op)
+        return deleteExpense(roomId, op.deleteId, op.expectedVersion);
+      if (op.id === undefined) return createExpense(roomId, op.body);
+      if (op.expectedVersion === undefined)
+        throw new Error("수정할 지출을 다시 열어 주세요.");
+      return patchExpense(roomId, op.id, {
+        ...op.body,
+        expectedVersion: op.expectedVersion,
+      });
     },
-    onSuccess: () => invalidateExpenses(client, roomId),
+    retry: false,
+    onSuccess: async (record, op) => {
+      // Cancel earlier reads before installing the committed REST result.
+      await client.cancelQueries({
+        queryKey: expenseKeys.list(roomId),
+        exact: true,
+      });
+      client.setQueryData<Expense[]>(
+        expenseKeys.list(roomId),
+        (previous = []) => {
+          if ("deleteId" in op)
+            return previous.filter((e) => e.id !== op.deleteId);
+          if (!record) return previous;
+          return [...previous.filter((e) => e.id !== record.id), record].sort(
+            (a, b) => a.id - b.id,
+          );
+        },
+      );
+      await invalidateExpenses(client, roomId);
+    },
   });
   const lock = useRef(false);
   async function run(op: Parameters<typeof mutation.mutateAsync>[0]) {
@@ -106,8 +132,23 @@ function useExpenses(roomId: string) {
     summary,
     currencies,
     busy: mutation.isPending,
-    save: (body: ExpenseInput, id?: number) => run({ body, id }),
-    remove: (expense: Expense) => run({ deleteId: expense.id }),
+    save: (body: ExpenseInput, id?: number, expectedVersion?: number) =>
+      run({ body, id, expectedVersion }),
+    remove: (expense: Expense) =>
+      run({ deleteId: expense.id, expectedVersion: expense.version }),
+    readLatest: async (id: number) => {
+      await client.cancelQueries({
+        queryKey: expenseKeys.list(roomId),
+        exact: true,
+      });
+      const records = await client.fetchQuery({
+        queryKey: expenseKeys.list(roomId),
+        queryFn: () => getExpenses(roomId),
+        staleTime: 0,
+        retry: false,
+      });
+      return records.find((record) => record.id === id);
+    },
     refresh: () =>
       Promise.all([invalidateExpenses(client, roomId), schedules.refetch()]),
   };

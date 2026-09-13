@@ -24,19 +24,24 @@ it("uses exact unenveloped REST contract and string money", async () => {
     participantUserIds: [1, 2, 3],
   };
   fetcher.mockResolvedValue(
-    new Response(JSON.stringify({ ...body, id: 10 }), { status: 201 }),
+    new Response(JSON.stringify({ ...body, id: 10, version: 0, createdAt: "", updatedAt: "" }), { status: 201 }),
   );
   expect((await createExpense("room", body)).totalAmount).toBe(
     body.totalAmount,
   );
   expect(fetcher.mock.calls[0][0]).toBe("http://fixture/rooms/room/expenses");
   expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual(body);
-  fetcher.mockResolvedValue(new Response(JSON.stringify({ ...body, id: 10 })));
-  await patchExpense("room", 10, { memo: null });
+  fetcher.mockResolvedValue(
+    new Response(JSON.stringify({ ...body, id: 10, version: 0, createdAt: "", updatedAt: "" })),
+  );
+  await patchExpense("room", 10, { memo: null, expectedVersion: 0 });
   expect(fetcher.mock.calls[1][1].method).toBe("PATCH");
-  expect(JSON.parse(fetcher.mock.calls[1][1].body)).toEqual({ memo: null });
+  expect(JSON.parse(fetcher.mock.calls[1][1].body)).toEqual({
+    memo: null,
+    expectedVersion: 0,
+  });
   fetcher.mockResolvedValue(new Response(null, { status: 204 }));
-  await expect(deleteExpense("room", 10)).resolves.toBeUndefined();
+  await expect(deleteExpense("room", 10, 0)).resolves.toBeUndefined();
 });
 it("reads lists summary currencies and preserves server error code", async () => {
   for (const [fn, path, payload] of [
@@ -92,6 +97,7 @@ it.each(categories)(
     const expense = {
       ...body,
       id: 10,
+      version: 0,
       createdAt: "2026-09-09T12:00:00Z",
       updatedAt: "2026-09-09T12:00:00Z",
     };
@@ -108,16 +114,22 @@ it.each(categories)(
       new Response(JSON.stringify({ ...expense, category: replacement })),
     );
     expect(
-      (await patchExpense("r", 10, { category: replacement })).category,
+      (
+        await patchExpense("r", 10, {
+          category: replacement,
+          expectedVersion: 0,
+        })
+      ).category,
     ).toBe(replacement);
     expect(fetcher.mock.lastCall?.[1].method).toBe("PATCH");
     expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual({
       category: replacement,
+      expectedVersion: 0,
     });
     fetcher.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await expect(deleteExpense("r", 10)).resolves.toBeUndefined();
+    await expect(deleteExpense("r", 10, 0)).resolves.toBeUndefined();
     expect(fetcher.mock.lastCall?.[0]).toBe(
-      "http://fixture/rooms/r/expenses/10",
+      "http://fixture/rooms/r/expenses/10?expectedVersion=0",
     );
     expect(fetcher.mock.lastCall?.[1].method).toBe("DELETE");
   },
@@ -150,6 +162,30 @@ it("preserves ordered server category totals and BAD_REQUEST category errors", a
     ),
   );
   await expect(
-    patchExpense("r", 10, { category: "FLIGHT" }),
+    patchExpense("r", 10, { category: "FLIGHT", expectedVersion: 0 }),
   ).rejects.toMatchObject({ status: 400, code: "BAD_REQUEST" });
+});
+
+it("preserves version and EXPENSE_CONFLICT for guarded mutations", async () => {
+  fetcher.mockResolvedValueOnce(
+    new Response(JSON.stringify([{ id: 10, version: 7 }])),
+  );
+  expect(await getExpenses("r")).toEqual([{ id: 10, version: 7 }]);
+  fetcher.mockImplementation(
+    async () =>
+      new Response(
+        JSON.stringify({ code: "EXPENSE_CONFLICT", message: "changed" }),
+        { status: 409 },
+      ),
+  );
+  await expect(
+    patchExpense("r", 10, { expectedVersion: 7 }),
+  ).rejects.toMatchObject({ status: 409, code: "EXPENSE_CONFLICT" });
+  await expect(deleteExpense("r", 10, 7)).rejects.toMatchObject({
+    status: 409,
+    code: "EXPENSE_CONFLICT",
+  });
+  expect(fetcher.mock.lastCall?.[0]).toBe(
+    "http://fixture/rooms/r/expenses/10?expectedVersion=7",
+  );
 });

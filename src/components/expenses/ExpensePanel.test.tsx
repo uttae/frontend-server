@@ -1,10 +1,14 @@
+vi.mock("@/lib/api/config", () => ({ API_BASE: "http://fixture" }));
 import { ExpenseSelect } from "./ExpenseSelect";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { ExpensePanel } from "./ExpensePanel";
+beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const mocks = vi.hoisted(() => ({
   state: null as unknown,
   remove: vi.fn(),
+  readLatest: vi.fn(),
   open: vi.fn(),
   refresh: vi.fn(),
 }));
@@ -70,6 +74,7 @@ afterEach(async () => {
 });
 async function mount() {
   const base = {
+    version: 0,
     currency: "KRW",
     totalAmount: "100",
     category: "OTHER",
@@ -110,9 +115,11 @@ async function mount() {
     busy: false,
     open: mocks.open,
     remove: mocks.remove,
+    readLatest: mocks.readLatest,
     refresh: mocks.refresh,
   };
   mocks.remove.mockReset();
+  mocks.readLatest.mockReset();
   await act(async () => {
     renderer = create(<ExpensePanel />);
   });
@@ -173,3 +180,69 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
   expect(renderer.root.findByType(ExpenseSelect).props.value).toBe("ALL");
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
 });
+
+function panelButton(label: string) {
+  return renderer.root
+    .findAllByType("button")
+    .find((b) => b.children.includes(label));
+}
+it("retains deletion selection and requires confirmation of the fetched version without automatic retry", async () => {
+  await mount();
+  vi.stubGlobal(
+    "confirm",
+    vi.fn(() => true),
+  );
+  const state = mocks.state as { list: { data: Expense[] } };
+  const latest = {
+    ...state.list.data[0],
+    version: 3,
+    memo: "remote delete review",
+  };
+  mocks.remove.mockRejectedValueOnce(
+    new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
+  );
+  mocks.readLatest.mockResolvedValueOnce(latest);
+  await act(async () => panelButton("삭제")!.props.onClick());
+  expect(mocks.readLatest).toHaveBeenCalledWith(1);
+  expect(mocks.remove).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(renderer.toJSON())).toContain("remote delete review");
+  mocks.state = {
+    ...state,
+    list: {
+      ...state.list,
+      data: [{ ...latest, version: 4 }, state.list.data[1]],
+    },
+  };
+  await act(async () => renderer.update(<ExpensePanel />));
+  vi.stubGlobal(
+    "confirm",
+    vi.fn(() => false),
+  );
+  await act(async () =>
+    panelButton("최신 지출 확인 후 삭제")!.props.onClick(),
+  );
+  expect(mocks.remove).toHaveBeenCalledTimes(1);
+  vi.stubGlobal(
+    "confirm",
+    vi.fn(() => true),
+  );
+  await act(async () =>
+    panelButton("최신 지출 확인 후 삭제")!.props.onClick(),
+  );
+  expect(mocks.remove).toHaveBeenLastCalledWith(latest);
+});
+it.each(["missing", "offline"])(
+  "does not retry delete when recovery is %s",
+  async (mode) => {
+    await mount();
+    vi.stubGlobal("confirm", () => true);
+    mocks.remove.mockRejectedValueOnce(
+      new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
+    );
+    if (mode === "missing") mocks.readLatest.mockResolvedValueOnce(undefined);
+    else mocks.readLatest.mockRejectedValueOnce(new Error("offline"));
+    await act(async () => panelButton("삭제")!.props.onClick());
+    expect(mocks.remove).toHaveBeenCalledTimes(1);
+    expect(panelButton("최신 지출 확인 후 삭제")).toBeUndefined();
+  },
+);

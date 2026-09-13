@@ -2,7 +2,7 @@
 
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
-import type { Expense } from "@/lib/api/rooms/expenses";
+import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { Plus, RefreshCw, ReceiptText, Users } from "lucide-react";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
@@ -17,6 +17,25 @@ export function ExpensePanel() {
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [conflict, setConflict] = useState<{
+    selected: Expense;
+    latest?: Expense;
+    failed?: boolean;
+  } | null>(null);
+  async function recover(selected: Expense) {
+    setConflict({ selected });
+    setDeleting(true);
+    try {
+      setConflict({
+        selected,
+        latest: await context.readLatest(selected.id),
+      });
+    } catch {
+      setConflict({ selected, failed: true });
+    } finally {
+      setDeleting(false);
+    }
+  }
   const lock = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const activeFilter =
@@ -34,15 +53,28 @@ export function ExpensePanel() {
           : e.expenseGroup === "TRIP_DAY" &&
             String(e.scheduleId) === activeFilter),
     ) ?? [];
-  async function remove(expense: Expense) {
-    if (lock.current || context.busy || !context.canManage) return;
+  async function remove(expense: Expense, reviewed = false) {
+    if (
+      lock.current ||
+      deleting ||
+      context.busy ||
+      !context.canManage ||
+      (conflict && !reviewed)
+    )
+      return;
     if (!confirm("이 지출을 삭제할까요? 정산 요약에도 반영돼요.")) return;
     lock.current = true;
     setDeleting(true);
     setError("");
     try {
       await context.remove(expense);
+      setConflict(null);
     } catch (e) {
+      if (
+        e instanceof ExpenseApiError &&
+        (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")
+      )
+        await recover(expense);
       setError(e instanceof Error ? e.message : "지출 삭제에 실패했어요.");
     } finally {
       lock.current = false;
@@ -181,6 +213,68 @@ export function ExpensePanel() {
           현재 참여 중인 방장과 멤버만 지출에 접근할 수 있어요.
         </p>
       )}
+      {conflict && (
+        <div
+          role="alert"
+          className="space-y-3 rounded-xl border border-gray-border p-3"
+        >
+          <p>
+            삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시
+            확인해 주세요.
+          </p>
+          {conflict.latest ? (
+            <>
+              <ExpenseList
+                expenses={[conflict.latest]}
+                members={context.members}
+                memberStatus={context.memberStatus}
+                schedules={context.schedules}
+                canManage={false}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                busy={false}
+              />
+              <button
+                type="button"
+                className={expenseButtonClass}
+                disabled={deleting || context.busy || !context.canManage}
+                onClick={() => void remove(conflict.latest!, true)}
+              >
+                최신 지출 확인 후 삭제
+              </button>
+            </>
+          ) : (
+            <p>
+              {deleting
+                ? "최신 지출 확인 중…"
+                : conflict.failed
+                  ? "최신 지출 조회에 실패했어요. 삭제는 중단돼요."
+                  : "이미 삭제된 지출이에요."}
+            </p>
+          )}
+          {conflict.failed && (
+            <button
+              type="button"
+              className={expenseButtonClass}
+              disabled={deleting}
+              onClick={() => void recover(conflict.selected)}
+            >
+              최신 지출 다시 조회
+            </button>
+          )}
+          <button
+            type="button"
+            className={expenseButtonClass}
+            disabled={deleting || context.busy}
+            onClick={() => {
+              setConflict(null);
+              setError("");
+            }}
+          >
+            삭제 취소
+          </button>
+        </div>
+      )}
       {error && (
         <p role="alert" className="text-sm text-status-negative">
           {error}
@@ -233,7 +327,7 @@ export function ExpensePanel() {
               canManage={context.canManage}
               onEdit={(expense) => context.open({ expense })}
               onDelete={(expense) => void remove(expense)}
-              busy={context.busy || deleting}
+              busy={context.busy || deleting || Boolean(conflict)}
             />
           )}
         </>
