@@ -639,7 +639,7 @@ it("mobile plan links to the shared cost list without another provider, while da
   expect(stomp.unsubscribe).not.toHaveBeenCalled();
 });
 
-it("cost page exposes the selected-room list and manual refresh through the same provider", async () => {
+it("cost page hides healthy refresh and retries failed reads through the same provider", async () => {
   const { default: CostPage } = await import("@/app/(main)/cost/page");
   gateState.roomId = "r";
   useSessionStore.setState({ sessionReady: true });
@@ -651,10 +651,17 @@ it("cost page exposes the selected-room list and manual refresh through the same
   expect(renderer.root.findByType("h1").children).toEqual(["비용"]);
   expect(JSON.stringify(renderer.toJSON())).toContain("old");
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
-  const before = mocks.list.mock.calls.length;
-  const refresh = renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "새로고침")!;
-  await act(async () => { refresh.props.onClick(); await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(mocks.list.mock.calls.length).toBeGreaterThan(before);
+  expect(renderer.root.findAllByType("button").filter(b => /새로고침|조회 다시 시도/.test(b.props["aria-label"] ?? ""))).toHaveLength(0);
+  mocks.list.mockRejectedValue(new Error("list offline"));
+  await act(async () => { await expect(getExpenseRecovery(client, "r").refresh("all")).rejects.toThrow("list offline"); });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(JSON.stringify(renderer.toJSON())).toContain("list offline");
+  mocks.list.mockResolvedValue([{ ...record, memo: "recovered expense" }]);
+  const retry = renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "조회 다시 시도");
+  expect(retry).toBeDefined();
+  await act(async () => { retry!.props.onClick(); await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(JSON.stringify(renderer.toJSON())).toContain("recovered expense");
+  expect(renderer.root.findAllByType("button").filter(b => /새로고침|조회 다시 시도/.test(b.props["aria-label"] ?? ""))).toHaveLength(0);
 });
 
 

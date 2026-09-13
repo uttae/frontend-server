@@ -308,3 +308,45 @@ it("closes the expense panel after room access is revoked", async () => {
   await act(async () => renderer.update(<ExpensePanel />));
   expect(renderer.toJSON()).toBeNull();
 });
+
+
+it.each(["ready", "pending", "disconnected"])(
+  "does not offer a manual expense refresh while sync is %s",
+  async (syncStatus) => {
+    await mount();
+    mocks.state = { ...(mocks.state as object), syncStatus };
+    await act(async () => renderer.update(<ExpensePanel />));
+    expect(renderer.root.findAllByType("button").filter((button) =>
+      /새로고침|조회 다시 시도/.test(button.props["aria-label"] ?? ""),
+    )).toHaveLength(0);
+    const rendered = JSON.stringify(renderer.toJSON());
+    expect(rendered).not.toContain("새로고침");
+    if (syncStatus === "disconnected") expect(rendered).toContain("연결 복구 안내");
+    if (syncStatus === "pending") expect(rendered).toContain("최신 지출 확인 중");
+  },
+);
+
+it.each(["sync", "members", "list", "summary", "budget", "krwSummary"])(
+  "offers a retry only until the failed %s read recovers",
+  async (failed) => {
+    await mount();
+    const healthy = mocks.state as Record<string, unknown>;
+    mocks.state = {
+      ...healthy,
+      ...(failed === "sync" ? { syncStatus: "error" }
+        : failed === "members" ? { memberStatus: "error", canManage: false }
+        : { [failed]: { ...(healthy[failed] as object), isSuccess: false, isError: true } }),
+    };
+    await act(async () => renderer.update(<ExpensePanel />));
+    expect(JSON.stringify(renderer.toJSON())).not.toContain("새로고침");
+    const retry = () => renderer.root.findAllByType("button")
+      .find((button) => /조회 다시 시도/.test(button.props["aria-label"] ?? ""));
+    expect(retry()).toBeDefined();
+    let finish!: () => void;
+    mocks.refresh.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
+    await act(async () => retry()!.props.onClick());
+    expect(retry()!.props.disabled).toBe(true);
+    await act(async () => { mocks.state = healthy; finish(); });
+    expect(retry()).toBeUndefined();
+  },
+);

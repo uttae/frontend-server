@@ -32,7 +32,7 @@ export function ExpenseBudgetSummary() {
           {budget.isPending && <p role="status">예산을 불러오는 중…</p>}
           {budget.isError && (
             <p role="alert" className="text-sm text-status-negative">
-              예산 조회에 실패했어요. 새로고침해 주세요.
+              예산 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
           {budget.isSuccess && (
@@ -62,7 +62,7 @@ export function ExpenseBudgetSummary() {
         {krwSummary.isError && (
           <p role="alert" className="text-status-negative">
             원화 참고 요약 조회에 실패했어요. 이전 값은 최신 상태가 아닐 수
-            있어요. 새로고침해 주세요.
+            있어요. 조회 다시 시도 버튼을 눌러 주세요.
           </p>
         )}
         {reference && (
