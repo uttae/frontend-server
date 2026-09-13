@@ -1,5 +1,8 @@
 "use client";
 
+import { ExpenseProvider } from "@/components/expenses/ExpenseProvider";
+import { ExpensePanel } from "@/components/expenses/ExpensePanel";
+
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
@@ -33,6 +36,15 @@ import { PlanContainerRefProvider } from "../plan-container";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
+  const roomId = useSessionStore((s) => s.currentRoomId) ?? "";
+  return (
+    <ExpenseProvider key={roomId} roomId={roomId}>
+      <PlanPageContent />
+    </ExpenseProvider>
+  );
+}
+
+function PlanPageContent() {
   const { isReadOnly, copy } = usePlanMobileReadOnly();
   const planContainerRef = useRef<HTMLDivElement>(null);
   
@@ -117,8 +129,8 @@ export function PlanPageView() {
 
       const isLastScheduleDay = sortedSchedules.length === 1;
       const confirmMessage = isLastScheduleDay
-        ? "마지막 일차는 삭제할 수 없어요. 일차의 장소 목록만 비워질까요?"
-        : "이 일차를 삭제할까요?";
+        ? "마지막 일차는 남고, 이 일차의 모든 장소와 지출이 삭제돼요. 비울까요?"
+        : "이 일차와 포함된 모든 장소·지출을 삭제할까요?";
       if (!confirm(confirmMessage)) return;
 
       deleteSchedule({ roomId, scheduleId: sid });
@@ -174,6 +186,7 @@ export function PlanPageView() {
         className={pageContentClassName}
       >
         {pageHeader}
+        <ExpensePanel />
 
         {isError ? (
           <p

@@ -1,5 +1,7 @@
 "use client";
 
+import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
+
 import type { CSSProperties, Ref } from "react";
 
 import { usePlanDaySectionCrossDayDrop } from "@/hooks/usePlanDaySectionCrossDayDrop";
@@ -63,6 +65,9 @@ export function PlanScheduleDayBlock({
       dragHandleProps={dragHandleProps}
       crossDaySectionDropProps={crossDaySectionDropProps}
     >
+      <div className="mb-2 flex justify-end">
+        <ExpenseEntryButton scheduleId={scheduleId} label={`${title} 지출 추가`} />
+      </div>
       <PlanItinerary roomId={roomId} scheduleId={scheduleId} />
     </PlanDaySection>
   );
