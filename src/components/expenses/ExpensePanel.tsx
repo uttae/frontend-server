@@ -95,11 +95,21 @@ export function ExpensePanel() {
     }
   }
   const query = tab === "list" ? context.list : context.summary;
+  if (context.revoked) return null;
   return (
     <section
       aria-label="지출 및 정산"
       className="@container/expenses min-w-0 space-y-5 rounded-2xl border border-gray-border bg-white p-4 @min-[600px]/plan:p-6"
     >
+      <p role="status" className="text-sm text-dark-gray">
+        {context.syncStatus === "ready"
+          ? "최근 지출 조회 완료 · 변경 알림과 30초 간격으로 다시 확인해요."
+          : context.syncStatus === "disconnected"
+            ? "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 새로고침으로 최신 값을 확인할 수 있어요."
+            : context.syncStatus === "error"
+              ? "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 새로고침해 주세요."
+              : "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요."}
+      </p>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold tracking-tight">지출 및 정산</h2>
@@ -221,8 +231,8 @@ export function ExpensePanel() {
           className="space-y-3 rounded-xl border border-gray-border p-3"
         >
           <p>
-            삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시
-            확인해 주세요.
+            삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시 확인해
+            주세요.
           </p>
           {conflict.latest ? (
             <>

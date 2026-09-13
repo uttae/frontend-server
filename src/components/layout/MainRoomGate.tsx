@@ -7,6 +7,8 @@ import { Suspense, useEffect } from "react";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { invalidateRoomUnreadCount } from "@/lib/chat/message-read";
+import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
+import { useSessionUser } from "@/hooks/useSessionUser";
 import { validateRoomAccess } from "@/lib/rooms";
 import { useChatPanelOpen } from "@/hooks/useChatPanelOpen";
 import { useSessionStore } from "@/stores/session-store";
@@ -31,15 +33,21 @@ function RoomUnreadCountSync({ roomId }: { roomId: string }) {
  */
 export function MainRoomGate({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const sessionReady = useSessionStore((s) => s.sessionReady);
+  const { data: user } = useSessionUser();
   const { roomId, roomContextReady } = useCurrentRoomId();
 
   useEffect(() => {
-    if (!roomContextReady || !roomId) return;
+    if (!roomContextReady || !roomId || !sessionReady || !user?.id) return;
 
+    const confirm = beginExpenseRoomAdmission(queryClient);
     let cancelled = false;
     void (async () => {
       const verdict = await validateRoomAccess(roomId);
-      if (cancelled || verdict !== "forbidden") return;
+      if (cancelled) return;
+      confirm(roomId, verdict === "ok");
+      if (verdict !== "forbidden") return;
       const session = useSessionStore.getState();
       session.clearCurrentRoomId();
       router.replace("/home");
@@ -47,7 +55,7 @@ export function MainRoomGate({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [roomId, roomContextReady, router]);
+  }, [roomId, roomContextReady, router, queryClient, sessionReady, user?.id]);
 
   useEffect(() => {
     if (!roomContextReady || roomId) return;

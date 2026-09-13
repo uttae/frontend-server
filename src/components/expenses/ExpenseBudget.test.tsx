@@ -36,6 +36,7 @@ const reference: ExpenseKrwSummary = {
 };
 function state(b = budget, r = reference) {
   return {
+    syncStatus: "ready",
     canManage: true,
     budgetBusy: false,
     budget: { data: b, isSuccess: true, isError: false, isPending: false },
@@ -70,9 +71,7 @@ afterEach(async () => {
 });
 async function modal(initial = budget) {
   await act(async () =>
-    root.render(
-      <ExpenseBudgetModal initial={initial} onClose={mocks.close} />,
-    ),
+    root.render(<ExpenseBudgetModal initial={initial} onClose={mocks.close} />),
   );
 }
 async function summary() {
@@ -104,9 +103,7 @@ async function submit() {
   await act(async () => {
     document
       .querySelector("form")!
-      .dispatchEvent(
-        new Event("submit", { bubbles: true, cancelable: true }),
-      );
+      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 }
 const text = () => document.body.textContent!;
@@ -340,3 +337,11 @@ it("partial zero is labeled partial and unset never becomes a zero budget", asyn
   expect(text()).toContain("미설정");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
 });
+it.each(["disconnected", "pending", "error"])(
+  "suppresses definite remainder while %s even with cached successful data",
+  async (syncStatus) => {
+    mocks.state = { ...state(), syncStatus };
+    await summary();
+    expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
+  },
+);

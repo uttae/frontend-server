@@ -88,6 +88,7 @@ async function mount() {
   mocks.state = {
     members: [],
     memberStatus: "success",
+    syncStatus: "ready",
     canManage: true,
     schedules: [{ scheduleId: 10, dayNumber: 1 }],
     list: {
@@ -235,17 +236,13 @@ it("retains deletion selection and requires confirmation of the fetched version 
     "confirm",
     vi.fn(() => false),
   );
-  await act(async () =>
-    panelButton("최신 지출 확인 후 삭제")!.props.onClick(),
-  );
+  await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
   expect(mocks.remove).toHaveBeenCalledTimes(1);
   vi.stubGlobal(
     "confirm",
     vi.fn(() => true),
   );
-  await act(async () =>
-    panelButton("최신 지출 확인 후 삭제")!.props.onClick(),
-  );
+  await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
   expect(mocks.remove).toHaveBeenLastCalledWith(latest);
 });
 it.each(["missing", "offline"])(
@@ -304,4 +301,10 @@ it("keeps shared budget comparison alongside original settlement without countin
   expect(rendered).toContain("0.50");
   expect(rendered).toContain("USD");
   expect(rendered).toContain("참고 잔여 예산");
+});
+it("closes the expense panel after room access is revoked", async () => {
+  await mount();
+  mocks.state = { ...(mocks.state as object), revoked: true };
+  await act(async () => renderer.update(<ExpensePanel />));
+  expect(renderer.toJSON()).toBeNull();
 });

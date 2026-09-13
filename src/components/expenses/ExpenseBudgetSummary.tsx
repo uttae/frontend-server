@@ -7,13 +7,15 @@ import { ExpenseBudgetModal } from "./ExpenseBudgetModal";
 import { expenseButtonClass, formatExpenseAmount } from "./ExpenseViews";
 
 export function ExpenseBudgetSummary() {
-  const { budget, krwSummary, canManage, budgetBusy } = useExpenseContext();
+  const { budget, krwSummary, canManage, budgetBusy, syncStatus } =
+    useExpenseContext();
   const [opened, setOpened] = useState<ExpenseBudget | null>(null);
   const close = useCallback(() => setOpened(null), []);
   const reference = krwSummary.data;
   const amount = budget.data?.budgetKrw;
   const converted = reference?.convertedTotalKrw;
   const comparable =
+    syncStatus === "ready" &&
     budget.isSuccess &&
     krwSummary.isSuccess &&
     amount != null &&
@@ -26,9 +28,7 @@ export function ExpenseBudgetSummary() {
     <div className="mt-4 space-y-4 border-t border-gray-border pt-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-sm font-medium text-dark-gray">
-            여행 전체 예산
-          </h3>
+          <h3 className="text-sm font-medium text-dark-gray">여행 전체 예산</h3>
           {budget.isPending && <p role="status">예산을 불러오는 중…</p>}
           {budget.isError && (
             <p role="alert" className="text-sm text-status-negative">

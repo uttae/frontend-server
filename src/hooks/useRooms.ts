@@ -1,3 +1,5 @@
+import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
+import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   useMutation,
@@ -607,14 +609,29 @@ export function useRoomMembers(roomId: string | null) {
 }
 
 export function useJoinRoom() {
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (inviteCode: string) => joinRoom(inviteCode),
+    mutationFn: async (inviteCode: string) => {
+      const confirm = beginExpenseRoomAdmission(client);
+      const response = await joinRoom(inviteCode);
+      confirm(response.id, response.httpStatus === 200);
+      return response;
+    },
   });
 }
 
 export function useCheckJoinStatus() {
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (roomId: string) => getJoinStatus(roomId),
+    mutationFn: async (roomId: string) => {
+      const confirm = beginExpenseRoomAdmission(client);
+      const response = await getJoinStatus(roomId);
+      confirm(
+        roomId,
+        response.id === roomId && joinStatusForWaitingUi(response) === "APPROVED",
+      );
+      return response;
+    },
   });
 }
 

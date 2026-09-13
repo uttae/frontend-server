@@ -5,6 +5,7 @@ import {
   useContext,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,23 +20,27 @@ import {
   getExpenseKrwSummary,
   putExpenseBudget,
   type ExpenseBudgetInput,
+  type ExpenseBudget,
   patchExpense,
   type Expense,
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
 import { canManageExpenses } from "@/lib/expenses/expense-policy";
-import {
-  expenseKeys,
-  invalidateExpenses,
-} from "@/lib/expenses/expense-queries";
+import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
+import { expenseKeys } from "@/lib/expenses/expense-queries";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { useRoomSchedules } from "@/hooks/useRooms";
+import { useExpenseRecovery } from "@/hooks/useExpenseRecovery";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
 
 function useExpenses(roomId: string) {
   const client = useQueryClient();
   const { data: user } = useSessionUser();
-  const enabled = Boolean(roomId && user);
+  const { recovery, revoked, syncStatus } = useExpenseRecovery(
+    roomId,
+    Boolean(roomId && user),
+  );
+  const enabled = Boolean(roomId && user) && !revoked;
   // A complete successful GET is required before declaring an ID unknown.
   // The shared presence cache may contain only a partial STOMP member snapshot.
   const memberQuery = useQuery({
@@ -48,15 +53,16 @@ function useExpenses(roomId: string) {
     refetchOnWindowFocus: true,
   });
   const members = memberQuery.data?.members ?? [];
-  const canManage = canManageExpenses(user?.id, members, memberQuery.status);
-  const schedules = useRoomSchedules(roomId || null);
-  // Keep focus/reconnect and manual refresh until expense realtime is validated.
+  const canManage =
+    !revoked && canManageExpenses(user?.id, members, memberQuery.status);
+  const schedules = useRoomSchedules(revoked ? null : roomId || null);
+  // Recovery owns focus/reconnect reads; manual refresh remains available.
   const options = {
     enabled,
     retry: false,
     staleTime: 0,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   };
   const list = useQuery({
     ...options,
@@ -80,19 +86,33 @@ function useExpenses(roomId: string) {
   });
   const budgetMutation = useMutation({
     mutationFn: (body: ExpenseBudgetInput) => {
-      if (!canManage)
+      if (!canManage || recovery.getSnapshot() === "revoked")
         throw new Error(
           "현재 참여 중인 방장과 멤버만 예산을 변경할 수 있어요.",
         );
       return putExpenseBudget(roomId, body);
     },
     retry: false,
+    onError: recovery.handleError,
     onSuccess: async (record) => {
+      if (recovery.getSnapshot() === "revoked") return;
+      const current = client.getQueryData<ExpenseBudget>(
+        expenseKeys.budget(roomId),
+      );
+      if (current && current.version > record.version) {
+        await recovery.refresh("budget").catch(() => {});
+        return;
+      }
       await client.cancelQueries({
         queryKey: expenseKeys.budget(roomId),
         exact: true,
       });
-      client.setQueryData(expenseKeys.budget(roomId), record);
+      if (recovery.getSnapshot() === "revoked") return;
+      client.setQueryData<ExpenseBudget>(
+        expenseKeys.budget(roomId),
+        (previous) =>
+          previous && previous.version > record.version ? previous : record,
+      );
     },
   });
   const budgetLock = useRef(false);
@@ -116,7 +136,7 @@ function useExpenses(roomId: string) {
         | { body: ExpenseInput; id?: number; expectedVersion?: number }
         | { deleteId: number; expectedVersion: number },
     ) => {
-      if (!canManage)
+      if (!canManage || recovery.getSnapshot() === "revoked")
         throw new Error(
           "현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.",
         );
@@ -131,24 +151,41 @@ function useExpenses(roomId: string) {
       });
     },
     retry: false,
-    onSuccess: async (record, op) => {
+    onMutate: () => recovery.listRevision,
+    onError: recovery.handleError,
+    onSuccess: async (record, op, revision) => {
+      if (recovery.getSnapshot() === "revoked") return;
+      const previous = client.getQueryData<Expense[]>(expenseKeys.list(roomId));
+      const existing =
+        record && previous?.find((item) => item.id === record.id);
+      if (
+        (existing && record && existing.version > record.version) ||
+        (!existing && revision !== recovery.listRevision)
+      ) {
+        await recovery.refresh("expenses").catch(() => {});
+        return;
+      }
       // Cancel earlier reads before installing the committed REST result.
       await client.cancelQueries({
         queryKey: expenseKeys.list(roomId),
         exact: true,
       });
+      if (recovery.getSnapshot() === "revoked") return;
       client.setQueryData<Expense[]>(
         expenseKeys.list(roomId),
         (previous = []) => {
           if ("deleteId" in op)
             return previous.filter((e) => e.id !== op.deleteId);
           if (!record) return previous;
+          const existing = previous.find((item) => item.id === record.id);
+          if (existing && existing.version > record.version) return previous;
           return [...previous.filter((e) => e.id !== record.id), record].sort(
             (a, b) => a.id - b.id,
           );
         },
       );
-      await invalidateExpenses(client, roomId);
+      // The write committed; failed follow-up reads are shown by syncStatus.
+      await recovery.refresh("expenses").catch(() => {});
     },
   });
   const lock = useRef(false);
@@ -163,6 +200,19 @@ function useExpenses(roomId: string) {
   }
   return {
     roomId,
+    revoked,
+    syncStatus:
+      syncStatus !== "ready"
+        ? syncStatus
+        : [list, summary, budget, krwSummary, currencies].some(
+              (query) => query.isError,
+            )
+          ? "error"
+          : [list, summary, budget, krwSummary, currencies].some(
+                (query) => !query.isSuccess || query.isFetching,
+              )
+            ? "pending"
+            : "ready",
     members,
     memberStatus: memberQuery.status,
     currentUserId: user?.id,
@@ -177,10 +227,14 @@ function useExpenses(roomId: string) {
     saveBudget,
     budgetBusy: budgetMutation.isPending,
     readLatestBudget: async () => {
+      if (recovery.getSnapshot() === "revoked")
+        throw new Error("방 접근 권한이 없어요.");
       await client.cancelQueries({
         queryKey: expenseKeys.budget(roomId),
         exact: true,
       });
+      if (recovery.getSnapshot() === "revoked")
+        throw new Error("방 접근 권한이 없어요.");
       return client.fetchQuery({
         queryKey: expenseKeys.budget(roomId),
         queryFn: () => getExpenseBudget(roomId),
@@ -194,10 +248,14 @@ function useExpenses(roomId: string) {
     remove: (expense: Expense) =>
       run({ deleteId: expense.id, expectedVersion: expense.version }),
     readLatest: async (id: number) => {
+      if (recovery.getSnapshot() === "revoked")
+        throw new Error("방 접근 권한이 없어요.");
       await client.cancelQueries({
         queryKey: expenseKeys.list(roomId),
         exact: true,
       });
+      if (recovery.getSnapshot() === "revoked")
+        throw new Error("방 접근 권한이 없어요.");
       const records = await client.fetchQuery({
         queryKey: expenseKeys.list(roomId),
         queryFn: () => getExpenses(roomId),
@@ -207,7 +265,13 @@ function useExpenses(roomId: string) {
       return records.find((record) => record.id === id);
     },
     refresh: () =>
-      Promise.all([invalidateExpenses(client, roomId), schedules.refetch()]),
+      recovery.getSnapshot() === "revoked"
+        ? Promise.resolve([])
+        : Promise.all([
+            recovery.refresh("all"),
+            memberQuery.refetch(),
+            schedules.refetch(),
+          ]),
   };
 }
 type ExpenseContextValue = ReturnType<typeof useExpenses> & {
@@ -219,7 +283,7 @@ export function useExpenseContext() {
   if (!value) throw new Error("ExpenseProvider가 필요해요.");
   return value;
 }
-export function ExpenseProvider({
+function ExpenseProviderLifetime({
   roomId,
   children,
 }: {
@@ -231,11 +295,21 @@ export function ExpenseProvider({
   return (
     <ExpenseContext.Provider value={{ ...state, open: setEntry }}>
       {children}
-      {entry && (
+      {!state.revoked && entry && (
         <ExpenseEditor initial={entry} onClose={() => setEntry(null)} />
       )}
     </ExpenseContext.Provider>
   );
+}
+export function ExpenseProvider(props: { roomId: string; children: ReactNode }) {
+  const client = useQueryClient();
+  const store = getExpenseRecoveryStore(client, props.roomId);
+  const recovery = useSyncExternalStore(
+    store.subscribe,
+    store.getSnapshot,
+    store.getSnapshot,
+  );
+  return <ExpenseProviderLifetime key={recovery.generation} {...props} />;
 }
 export function ExpenseEntryButton({
   scheduleId,
