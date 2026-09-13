@@ -22,6 +22,8 @@ function dataLayerCommands(dataLayer: readonly unknown[]): unknown[][] {
 describe("AnalyticsEvents", () => {
   it("exposes the frontend GA event schema", () => {
     expect(AnalyticsEvents).toEqual({
+      ctaClick: "cta_click",
+      sectionView: "section_view",
       signUp: "sign_up",
       login: "login",
       createBookmarkFolder: "create_bookmark_folder",

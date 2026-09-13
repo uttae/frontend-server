@@ -13,7 +13,7 @@ export function LandingHeader() {
           <Link href="/#features">기능</Link>
           <Link href="/#how-it-works">사용방법</Link>
         </nav>
-        <LandingActionLink href="/login" className={styles.login}>로그인</LandingActionLink>
+        <LandingActionLink href="/login" analytics={{ cta_id: "login", cta_position: "header" }} className={styles.login}>로그인</LandingActionLink>
       </div>
     </div>
   </header>;

@@ -88,7 +88,10 @@ function sendInitializationCommand(...args: unknown[]): void {
 function openAnalyticsTransport(): void {
   analyticsTransportReady = true;
   for (const command of pendingAnalyticsCommands.splice(0)) {
-    sendAnalyticsDataCommand(...command);
+    // Amplitude received this command on initial dispatch; this queue is GA-only.
+    if (analyticsConsentStore.isGranted() && analyticsRuntime.enabled) {
+      ensureGoogleTag()?.(...command);
+    }
   }
 }
 
