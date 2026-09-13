@@ -99,6 +99,27 @@ it("tracks complete sections independently and ignores unrecognized markup", () 
   grant(); advance(1000);
   expect(sink.mock.calls.map(call => call[2].section_id)).toEqual(["hero", "problem", "solution", "features", "devices", "travel_steps", "final_cta"]);
 });
+it("stops scheduling after all sections are counted, stays idle on restart, and tracks a new visit", () => {
+  const hero = document.querySelector("section")!;
+  for (const id of ["problem", "solution", "features", "devices", "travel_steps", "final_cta"]) {
+    const section = document.createElement("section"); section.dataset.landingSection = id;
+    section.getBoundingClientRect = hero.getBoundingClientRect; document.body.append(section);
+  }
+  grant(); advance(1100);
+  expect(sink).toHaveBeenCalledTimes(7);
+  expect(vi.getTimerCount()).toBe(0);
+
+  visibility(false); visibility(true);
+  act(() => { consent.set("denied"); }); grant();
+  act(() => root.unmount()); root = createRoot(container); render();
+  advance(1100);
+  expect(vi.getTimerCount()).toBe(0);
+  expect(sink).toHaveBeenCalledTimes(7);
+
+  render("/login"); render(); advance(1100);
+  expect(sink).toHaveBeenCalledTimes(14);
+  expect(vi.getTimerCount()).toBe(0);
+});
 it("a fresh module/document lifetime allows a new view after refresh", async () => {
   grant(); advance(1000); expect(sink).toHaveBeenCalledTimes(1);
   act(() => root.unmount()); vi.resetModules();

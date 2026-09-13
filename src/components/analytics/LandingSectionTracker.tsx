@@ -62,6 +62,10 @@ export function LandingSectionTracker() {
       }
     };
     const tick = () => {
+      if (counted.size === sectionIds.length) {
+        reset();
+        return;
+      }
       evaluate();
       // Sampling rendered geometry also catches layout shifts with no scroll or
       // resize event, including upstream content and responsive image changes.
