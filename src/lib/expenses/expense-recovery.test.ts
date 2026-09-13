@@ -6,6 +6,9 @@ import { expenseKeys } from "./expense-queries";
 const api = vi.hoisted(() => ({
   read: vi.fn<(_key: string) => Promise<never[]>>(async () => []),
 }));
+vi.mock("@/lib/api/rooms/members", () => ({
+  getRoomMembers: () => api.read("members"),
+}));
 vi.mock("@/lib/api/rooms/expenses", () => ({
   getExpenses: () => api.read("list"),
   getExpenseSummary: () => api.read("summary"),
@@ -16,7 +19,7 @@ vi.mock("@/lib/api/rooms/expenses", () => ({
 afterEach(() => {
   vi.clearAllMocks();
 });
-it("refreshes five endpoints without active observers and routes minimal own-session events", async () => {
+it("refreshes six endpoints without active observers and routes minimal own-session events", async () => {
   const client = new QueryClient();
   const recovery = getExpenseRecovery(client, "r");
   await recovery.refresh("all");
@@ -24,6 +27,7 @@ it("refreshes five endpoints without active observers and routes minimal own-ses
     "budget",
     "currencies",
     "list",
+    "members",
     "summary",
     "summary-krw",
   ]);
@@ -225,3 +229,29 @@ it("late revoked-controller errors cannot invalidate a fresh admission in flight
   expect(getExpenseRecovery(client, "r")).not.toBe(old);
   client.clear();
 });
+
+
+it.each(["members", "currencies"])(
+  "visible revalidation retries failed %s before reporting ready",
+  async (dependency) => {
+    const client = new QueryClient();
+    const recovery = getExpenseRecovery(client, "r");
+    api.read.mockImplementation(async (key) => {
+      if (key === dependency) throw new Error("offline");
+      return [];
+    });
+    try {
+      await expect(recovery.refresh("all")).rejects.toThrow("offline");
+      expect(recovery.getSnapshot()).toBe("error");
+      api.read.mockResolvedValue([]);
+      await recovery.refresh("budget");
+      expect(recovery.getSnapshot()).toBe("error");
+      await recovery.refresh("visible");
+      expect(client.getQueryState(["room-expenses", "r", dependency])?.status).toBe("success");
+      expect(recovery.getSnapshot()).toBe("ready");
+    } finally {
+      api.read.mockResolvedValue([]);
+      client.clear();
+    }
+  },
+);

@@ -656,3 +656,40 @@ it("cost page exposes the selected-room list and manual refresh through the same
   await act(async () => { refresh.props.onClick(); await new Promise(resolve => setTimeout(resolve, 20)); });
   expect(mocks.list.mock.calls.length).toBeGreaterThan(before);
 });
+
+
+it.each(["reconnect", "visible"])(
+  "recovers failed members and editing permissions on %s without manual refresh",
+  async (trigger) => {
+    await mountMutations();
+    mocks.members.mockRejectedValue(new Error("offline"));
+    await act(async () => {
+      await client.refetchQueries({ queryKey: expenseKeys.members("r"), exact: true });
+    });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    expect(context.memberStatus).toBe("error");
+    expect(context.canManage).toBe(false);
+    expect(context.syncStatus).toBe("error");
+    mocks.members.mockResolvedValue({
+      members: [{ userId: 1, role: "HOST", status: "ACTIVE" }],
+    });
+    if (trigger === "reconnect") {
+      const render = () => (
+        <QueryClientProvider client={client}>
+          <ExpenseProvider roomId="r"><MutationProbe /></ExpenseProvider>
+        </QueryClientProvider>
+      );
+      stomp.connected = false;
+      await act(async () => { renderer.update(render()); });
+      stomp.connected = true;
+      await act(async () => { renderer.update(render()); });
+    } else {
+      const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
+      await act(async () => { await getExpenseRecovery(client, "r").refresh("visible"); });
+    }
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+    expect(context.memberStatus).toBe("success");
+    expect(context.canManage).toBe(true);
+    expect(context.syncStatus).toBe("ready");
+  },
+);

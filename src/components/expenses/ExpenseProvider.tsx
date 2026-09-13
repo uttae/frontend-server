@@ -204,11 +204,11 @@ function useExpenses(roomId: string) {
     syncStatus:
       syncStatus !== "ready"
         ? syncStatus
-        : [list, summary, budget, krwSummary, currencies].some(
+        : [list, summary, budget, krwSummary, currencies, memberQuery].some(
               (query) => query.isError,
             )
           ? "error"
-          : [list, summary, budget, krwSummary, currencies].some(
+          : [list, summary, budget, krwSummary, currencies, memberQuery].some(
                 (query) => !query.isSuccess || query.isFetching,
               )
             ? "pending"
@@ -269,7 +269,6 @@ function useExpenses(roomId: string) {
         ? Promise.resolve([])
         : Promise.all([
             recovery.refresh("all"),
-            memberQuery.refetch(),
             schedules.refetch(),
           ]),
   };

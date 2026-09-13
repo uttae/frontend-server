@@ -6,6 +6,7 @@ import {
   getExpenseBudget,
   getExpenseCurrencies,
 } from "@/lib/api/rooms/expenses";
+import { getRoomMembers } from "@/lib/api/rooms/members";
 import { expenseKeys } from "./expense-queries";
 
 type Scope = "all" | "expenses" | "budget" | "visible";
@@ -145,9 +146,7 @@ class ExpenseRecovery {
         ? ["budget"]
         : scope === "expenses"
           ? ["list", "summary", "summary-krw"]
-          : scope === "visible"
-            ? ["list", "summary", "summary-krw", "budget"]
-            : ["list", "summary", "summary-krw", "budget", "currencies"];
+          : ["list", "summary", "summary-krw", "budget", "currencies", "members"];
     keys.forEach((key) => this.pending.add(key));
     this.setStatus("pending");
     if (!this.running) {
@@ -170,6 +169,7 @@ class ExpenseRecovery {
         "summary-krw": () => getExpenseKrwSummary(this.roomId),
         budget: () => getExpenseBudget(this.roomId),
         currencies: () => getExpenseCurrencies(this.roomId),
+        members: () => getRoomMembers(this.roomId),
       };
       const results = await Promise.allSettled(
         keys.map(async (key) => {
