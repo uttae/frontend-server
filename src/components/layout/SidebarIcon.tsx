@@ -1,7 +1,13 @@
+import Image from "next/image";
+import { sidebarIcons } from "@/lib/public-assets";
 import { cn } from "@/lib/utils";
 
-/** Exact Figma SVG silhouette; semantic colors support both selected states. */
+/** Preserve the calculator artwork; other icons use semantic silhouette colors. */
 export function SidebarIcon({ src, isActive = false }: { src: string; isActive?: boolean }) {
+  if (src === sidebarIcons.cost) {
+    return <Image src={src} alt="" width={24} height={24} className="block size-6 shrink-0" />;
+  }
+
   return (
     <span
       aria-hidden="true"

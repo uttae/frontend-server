@@ -1,7 +1,6 @@
 "use client";
 
-import { ExpenseProvider } from "@/components/expenses/ExpenseProvider";
-import { ExpensePanel } from "@/components/expenses/ExpensePanel";
+import Link from "next/link";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
@@ -36,15 +35,6 @@ import { PlanContainerRefProvider } from "../plan-container";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
-  const roomId = useSessionStore((s) => s.currentRoomId) ?? "";
-  return (
-    <ExpenseProvider key={roomId} roomId={roomId}>
-      <PlanPageContent />
-    </ExpenseProvider>
-  );
-}
-
-function PlanPageContent() {
   const { isReadOnly, copy } = usePlanMobileReadOnly();
   const planContainerRef = useRef<HTMLDivElement>(null);
   
@@ -161,7 +151,19 @@ function PlanPageContent() {
   const pageContentClassName =
     "@container/plan space-y-2.5 overflow-x-auto pb-8";
 
-  const pageHeader = <MainPageHeader title="일정" />;
+  const pageHeader = (
+    <MainPageHeader
+      title="일정"
+      action={
+        <Link
+          href="/cost"
+          className="flex min-h-10 items-center rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong transition-colors hover:bg-primary/10 focus-visible:outline-2"
+        >
+          비용 보기
+        </Link>
+      }
+    />
+  );
 
   if (showInitialLoading) {
     return (
@@ -186,7 +188,6 @@ function PlanPageContent() {
         className={pageContentClassName}
       >
         {pageHeader}
-        <ExpensePanel />
 
         {isError ? (
           <p

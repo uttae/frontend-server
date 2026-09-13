@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
 
+import { ExpenseProvider } from "@/components/expenses/ExpenseProvider";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { invalidateRoomUnreadCount } from "@/lib/chat/message-read";
 import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
@@ -71,7 +72,9 @@ export function MainRoomGate({ children }: { children: ReactNode }) {
       <Suspense fallback={null}>
         <RoomUnreadCountSync roomId={roomId} />
       </Suspense>
-      {children}
+      <ExpenseProvider key={roomId} roomId={roomId}>
+        {children}
+      </ExpenseProvider>
     </>
   );
 }

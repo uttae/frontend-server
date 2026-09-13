@@ -45,6 +45,9 @@ vi.mock("@/hooks/useSessionUser", () => ({
   useSessionUser: () => ({ data: { id: 1 } }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
+  useSchedulePlanPlaces: () => ({ data: [], isSuccess: true }),
+  useDeleteRoomSchedule: () => ({ mutate: vi.fn(), isPending: false }),
+  useCreateRoomSchedule: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useRoomSchedules: () => ({
     data: [],
     isSuccess: true,
@@ -52,7 +55,8 @@ vi.mock("@/hooks/useRooms", () => ({
   }),
 }));
 vi.mock("@/lib/api/rooms/members", () => ({ getRoomMembers: mocks.members }));
-vi.mock("@/lib/api/rooms/expenses", () => ({
+vi.mock("@/lib/api/rooms/expenses", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/api/rooms/expenses")>(),
   getExpenses: mocks.list,
   getExpenseBudget: mocks.budget,
   getExpenseKrwSummary: mocks.krw,
@@ -556,4 +560,99 @@ it("new authorized lifetime permits writes while late old PATCH and PUT stay fen
   await act(async () => { await context.saveBudget({ budgetKrw: "200", expectedVersion: 20 }); });
   expect(client.getQueryData(expenseKeys.budget("r"))).toMatchObject({ version: 21 });
   expect(old.getSnapshot()).toBe("revoked");
+});
+
+const gateState = vi.hoisted(() => ({ roomId: "r" as string | null, roomContextReady: true }));
+const gateRouter = vi.hoisted(() => ({ replace: vi.fn() }));
+vi.mock("next/link", () => ({ default: ({ children, href }: React.ComponentProps<"a">) => <a href={href}>{children}</a> }));
+vi.mock("next/navigation", () => ({ useRouter: () => gateRouter }));
+vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => gateState }));
+vi.mock("@/hooks/useChatPanelOpen", () => ({ useChatPanelOpen: () => true }));
+vi.mock("@/lib/rooms", () => ({ validateRoomAccess: async () => "ok" }));
+import { MainRoomGate } from "@/components/layout/MainRoomGate";
+import { ExpenseEntryButton } from "./ExpenseProvider";
+import { useSessionStore } from "@/stores/session-store";
+
+it("shares one room subscription across route children and resets it on selected-room changes", async () => {
+  gateState.roomId = "r";
+  gateState.roomContextReady = false;
+  useSessionStore.setState({ sessionReady: true });
+  mocks.members.mockResolvedValue({ members: [{ userId: 1, role: "HOST", status: "ACTIVE" }] });
+  mocks.list.mockResolvedValue([]);
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const tree = (label: string) => <QueryClientProvider client={client}><MainRoomGate><ExpenseEntryButton label={label} scheduleId={10} scheduleItemId={20} /></MainRoomGate></QueryClientProvider>;
+  await act(async () => { renderer = create(tree("장소 지출")); });
+  expect(renderer.toJSON()).toBeNull();
+  expect(stomp.subscribe).not.toHaveBeenCalled();
+  gateState.roomContextReady = true;
+  await act(async () => { renderer.update(tree("장소 지출")); });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(renderer.root.findAllByType("button").some(b => b.children.join("").includes("장소 지출"))).toBe(true);
+  expect(stomp.subscribe).toHaveBeenCalledTimes(1);
+  expect(stomp.subscribe.mock.calls[0][0]).toBe("/topic/rooms/r/expenses");
+  await act(async () => { renderer.update(tree("일차 지출")); });
+  expect(stomp.subscribe).toHaveBeenCalledTimes(1);
+  expect(stomp.unsubscribe).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation: () => {} }));
+  expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(1);
+  gateState.roomId = "other";
+  await act(async () => { renderer.update(tree("다른 방")); });
+  expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
+  expect(stomp.unsubscribe).toHaveBeenCalledTimes(1);
+  expect(stomp.subscribe).toHaveBeenCalledTimes(2);
+  expect(stomp.subscribe.mock.lastCall![0]).toBe("/topic/rooms/other/expenses");
+  gateState.roomId = null;
+  await act(async () => { renderer.update(tree("선택 안 됨")); });
+  expect(renderer.toJSON()).toBeNull();
+  expect(stomp.unsubscribe).toHaveBeenCalledTimes(2);
+  expect(gateRouter.replace).toHaveBeenCalledWith("/home");
+});
+
+vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: undefined }) }));
+vi.mock("@/hooks/usePlanMobileReadOnly", () => ({ usePlanMobileReadOnly: () => ({ isReadOnly: true, copy: { scheduleEmpty: "empty" } }) }));
+vi.mock("@/hooks/usePlanScheduleDayReorder", () => ({ usePlanScheduleDayReorder: () => ({ getSectionProps: () => ({}), listContainerProps: {}, isMovePending: false }) }));
+vi.mock("@/app/(main)/plan/_components/itinerary/PlanScheduleDayBlock", () => ({ PlanScheduleDayBlock: () => null }));
+import { PlanPageView } from "@/app/(main)/plan/_components/itinerary/PlanPageView";
+import { ExpenseEditor } from "./ExpenseEditor";
+
+it("mobile plan links to the shared cost list without another provider, while day/place entries keep their target", async () => {
+  gateState.roomId = "r";
+  useSessionStore.setState({ sessionReady: true, currentRoomId: "r" });
+  mocks.members.mockResolvedValue({ members: [{ userId: 1, role: "HOST", status: "ACTIVE" }] });
+  mocks.list.mockResolvedValue([]);
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  await act(async () => { renderer = create(<QueryClientProvider client={client}><MainRoomGate><PlanPageView /><ExpenseEntryButton scheduleId={10} label="일차 지출" /><ExpenseEntryButton scheduleId={10} scheduleItemId={20} label="장소 지출" /></MainRoomGate></QueryClientProvider>); });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(renderer.root.findAllByType("a").some(a => a.props.href === "/cost" && a.children.join("").includes("비용"))).toBe(true);
+  expect(stomp.subscribe).toHaveBeenCalledTimes(1);
+  for (const [label, initial] of [["일차 지출", { scheduleId: 10 }], ["장소 지출", { scheduleId: 10, scheduleItemId: 20 }]] as const) {
+    const button = renderer.root.findAllByType("button").find(b => b.children.join("").includes(label))!;
+    await act(async () => button.props.onClick({ stopPropagation: () => {} }));
+    expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(1);
+    expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual(initial);
+    await act(async () => renderer.root.findByType(ExpenseEditor).props.onClose());
+  }
+  const { default: CostPage } = await import("@/app/(main)/cost/page");
+  await act(async () => { renderer.update(<QueryClientProvider client={client}><MainRoomGate><CostPage /></MainRoomGate></QueryClientProvider>); });
+  expect(renderer.root.findByType("h1").children).toEqual(["비용"]);
+  expect(stomp.subscribe).toHaveBeenCalledTimes(1);
+  expect(stomp.unsubscribe).not.toHaveBeenCalled();
+});
+
+it("cost page exposes the selected-room list and manual refresh through the same provider", async () => {
+  const { default: CostPage } = await import("@/app/(main)/cost/page");
+  gateState.roomId = "r";
+  useSessionStore.setState({ sessionReady: true });
+  mocks.members.mockResolvedValue({ members: [{ userId: 1, role: "HOST", status: "ACTIVE" }] });
+  mocks.list.mockResolvedValue([record]);
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  await act(async () => { renderer = create(<QueryClientProvider client={client}><MainRoomGate><CostPage /></MainRoomGate></QueryClientProvider>); });
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(renderer.root.findByType("h1").children).toEqual(["비용"]);
+  expect(JSON.stringify(renderer.toJSON())).toContain("old");
+  expect(stomp.subscribe).toHaveBeenCalledTimes(1);
+  const before = mocks.list.mock.calls.length;
+  const refresh = renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "새로고침")!;
+  await act(async () => { refresh.props.onClick(); await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(mocks.list.mock.calls.length).toBeGreaterThan(before);
 });

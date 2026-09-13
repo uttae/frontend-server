@@ -41,10 +41,10 @@ function active() { return [...nav().querySelectorAll('[aria-current="page"], [a
 
 it("desktop selects chat alone in the content panel and route links restore route content", async () => {
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "채팅", "멤버"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "비용", "채팅", "멤버"]);
   expect(active()).toHaveLength(1);
-  await act(async () => items()[3].click());
-  expect(active()).toEqual([items()[3]]);
+  await act(async () => items()[4].click());
+  expect(active()).toEqual([items()[4]]);
   expect(host.querySelector("article")).toBeNull();
   expect(host.querySelectorAll("[data-chat]")).toHaveLength(1);
   expect(host.querySelector("[data-main-content-scroll] [data-chat]")).not.toBeNull();
@@ -62,13 +62,13 @@ it("external route changes close chat too", async () => {
 });
 it.each([[4, "4"], [120, "99+"]])("retains unread value %i and the separate feedback survey", async (count, label) => {
   state.unread = count; await render();
-  expect(items()[3].textContent).toContain(label);
+  expect(items()[4].textContent).toContain(label);
   expect(host.querySelector('a[aria-label="피드백 설문"]')).not.toBeNull();
   expect(host.querySelector('a[href="/room-settings"]')).toBeNull();
 });
 it("hides the unread badge when no messages are unread", async () => {
   await render();
-  expect(items()[3].querySelector("span.pointer-events-none")).toBeNull();
+  expect(items()[4].querySelector("span.pointer-events-none")).toBeNull();
 });
 it("shows labeled feedback and bug report links in the sidebar", async () => {
   await render();
@@ -102,8 +102,41 @@ it.each([false, true])("keeps one selected destination while visiting all route 
   state.mobile = mobile;
   for (const [pathname, index] of [["/plan/room", 0], ["/search", 1], ["/bookmark/folder", 2], ["/member-settings", 4]] as const) {
     state.pathname = pathname; await render();
-    expect(active()).toEqual([items()[index]]);
+    expect(active()).toEqual([items()[!mobile && index === 4 ? 5 : index]]);
     expect(host.querySelector("[data-chat]")).toBeNull();
     expect(host.querySelector("article")).not.toBeNull();
+  }
+});
+
+it("cost follows bookmarks, selects alone and closes chat", async () => {
+  await render();
+  await act(async () => useChatPanelStore.getState().openChat());
+  const cost = nav().querySelector<HTMLAnchorElement>('a[href="/cost"]');
+  expect(cost).not.toBeNull();
+  await act(async () => cost!.click());
+  state.pathname = "/cost"; await render();
+  expect(active()).toEqual([cost]);
+  expect(host.querySelector("article")).not.toBeNull();
+  expect(isMainRouteBlockedOnMobile("/cost")).toBe(false);
+});
+
+it.each(["/plan/room", "/cost"])("renders cost in original SVG colors at 24x24 on %s", async pathname => {
+  state.pathname = pathname;
+  await render();
+  const cost = items()[3];
+  const image = cost.querySelector("img");
+  expect(image).not.toBeNull();
+  expect(image!.getAttribute("src")).toBe("/icons/sidebar/calculator.svg");
+  expect(image!.getAttribute("width")).toBe("24");
+  expect(image!.getAttribute("height")).toBe("24");
+  expect(cost.querySelector('[style*="mask"]')).toBeNull();
+  expect(image!.style.filter).toBe("");
+  expect(cost.classList.contains("bg-primary")).toBe(pathname === "/cost");
+  for (const [index, item] of items().entries()) {
+    if (index === 3) continue;
+    const mask = item.querySelector<HTMLElement>('[style*="mask"]');
+    expect(mask).not.toBeNull();
+    expect(mask!.classList.contains("bg-primary-subtle")).toBe(index === 0 && pathname === "/plan/room");
+    expect(mask!.classList.contains("bg-icon")).toBe(!(index === 0 && pathname === "/plan/room"));
   }
 });
