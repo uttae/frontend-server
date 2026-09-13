@@ -1,5 +1,6 @@
 "use client";
 
+import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
@@ -176,6 +177,7 @@ export function ExpensePanel() {
             />
           </button>
         </div>
+        <ExpenseBudgetSummary />
         <div className="mt-4 flex flex-wrap gap-2" aria-label="지출 보기">
           <button
             type="button"

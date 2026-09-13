@@ -189,3 +189,57 @@ it("preserves version and EXPENSE_CONFLICT for guarded mutations", async () => {
     "http://fixture/rooms/r/expenses/10?expectedVersion=7",
   );
 });
+
+it("reads shared budget and exact KRW reference DTO without changing null or zero", async () => {
+  const api = await import("./expenses");
+  for (const amount of [null, "0", "999999999999999"]) {
+    const payload = { budgetKrw: amount, currency: "KRW", version: 0 };
+    fetcher.mockResolvedValueOnce(new Response(JSON.stringify(payload)));
+    expect(await api.getExpenseBudget("r")).toEqual(payload);
+    expect(fetcher.mock.lastCall?.[0]).toBe(
+      "http://fixture/rooms/r/expenses/budget",
+    );
+  }
+  const reference = {
+    originalTotals: [{ currency: "KWD", totalAmount: "1.234" }],
+    convertedTotalKrw: null,
+    rateDate: null,
+    rateSource: "ECB",
+    stale: true,
+    missingCurrencies: ["KWD"],
+    isComplete: false,
+  };
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify(reference)));
+  expect(await api.getExpenseKrwSummary("r")).toEqual(reference);
+  expect(fetcher.mock.lastCall?.[0]).toBe(
+    "http://fixture/rooms/r/expenses/summary/krw",
+  );
+});
+it("PUTs only integer KRW string and reviewed version, preserving BUDGET_CONFLICT", async () => {
+  const api = await import("./expenses");
+  fetcher.mockResolvedValueOnce(
+    new Response(
+      JSON.stringify({ budgetKrw: "0", currency: "KRW", version: 1 }),
+    ),
+  );
+  expect(
+    await api.putExpenseBudget("r", { budgetKrw: "0", expectedVersion: 0 }),
+  ).toEqual({ budgetKrw: "0", currency: "KRW", version: 1 });
+  expect(fetcher.mock.lastCall?.[1].method).toBe("PUT");
+  expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual({
+    budgetKrw: "0",
+    expectedVersion: 0,
+  });
+  fetcher.mockResolvedValueOnce(
+    new Response(
+      JSON.stringify({ code: "BUDGET_CONFLICT", message: "changed" }),
+      { status: 409 },
+    ),
+  );
+  await expect(
+    api.putExpenseBudget("r", {
+      budgetKrw: "999999999999999",
+      expectedVersion: 1,
+    }),
+  ).rejects.toMatchObject({ status: 409, code: "BUDGET_CONFLICT" });
+});

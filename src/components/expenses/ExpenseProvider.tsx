@@ -15,6 +15,10 @@ import {
   getExpenseCurrencies,
   getExpenses,
   getExpenseSummary,
+  getExpenseBudget,
+  getExpenseKrwSummary,
+  putExpenseBudget,
+  type ExpenseBudgetInput,
   patchExpense,
   type Expense,
   type ExpenseInput,
@@ -46,7 +50,7 @@ function useExpenses(roomId: string) {
   const members = memberQuery.data?.members ?? [];
   const canManage = canManageExpenses(user?.id, members, memberQuery.status);
   const schedules = useRoomSchedules(roomId || null);
-  // No expense-specific realtime event exists. Refresh on focus/reconnect and on demand.
+  // Keep focus/reconnect and manual refresh until expense realtime is validated.
   const options = {
     enabled,
     retry: false,
@@ -64,6 +68,43 @@ function useExpenses(roomId: string) {
     queryKey: expenseKeys.summary(roomId),
     queryFn: () => getExpenseSummary(roomId),
   });
+  const budget = useQuery({
+    ...options,
+    queryKey: expenseKeys.budget(roomId),
+    queryFn: () => getExpenseBudget(roomId),
+  });
+  const krwSummary = useQuery({
+    ...options,
+    queryKey: expenseKeys.krwSummary(roomId),
+    queryFn: () => getExpenseKrwSummary(roomId),
+  });
+  const budgetMutation = useMutation({
+    mutationFn: (body: ExpenseBudgetInput) => {
+      if (!canManage)
+        throw new Error(
+          "현재 참여 중인 방장과 멤버만 예산을 변경할 수 있어요.",
+        );
+      return putExpenseBudget(roomId, body);
+    },
+    retry: false,
+    onSuccess: async (record) => {
+      await client.cancelQueries({
+        queryKey: expenseKeys.budget(roomId),
+        exact: true,
+      });
+      client.setQueryData(expenseKeys.budget(roomId), record);
+    },
+  });
+  const budgetLock = useRef(false);
+  async function saveBudget(body: ExpenseBudgetInput) {
+    if (budgetLock.current) throw new Error("이전 요청을 처리하고 있어요.");
+    budgetLock.current = true;
+    try {
+      return await budgetMutation.mutateAsync(body);
+    } finally {
+      budgetLock.current = false;
+    }
+  }
   const currencies = useQuery({
     ...options,
     queryKey: expenseKeys.currencies(roomId),
@@ -131,6 +172,22 @@ function useExpenses(roomId: string) {
     list,
     summary,
     currencies,
+    budget,
+    krwSummary,
+    saveBudget,
+    budgetBusy: budgetMutation.isPending,
+    readLatestBudget: async () => {
+      await client.cancelQueries({
+        queryKey: expenseKeys.budget(roomId),
+        exact: true,
+      });
+      return client.fetchQuery({
+        queryKey: expenseKeys.budget(roomId),
+        queryFn: () => getExpenseBudget(roomId),
+        staleTime: 0,
+        retry: false,
+      });
+    },
     busy: mutation.isPending,
     save: (body: ExpenseInput, id?: number, expectedVersion?: number) =>
       run({ body, id, expectedVersion }),

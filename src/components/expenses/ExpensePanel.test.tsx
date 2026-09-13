@@ -112,6 +112,23 @@ async function mount() {
       ],
     },
     summary: { isSuccess: true, data: { currencies: [] } },
+    budget: {
+      isSuccess: true,
+      data: { budgetKrw: "1000", currency: "KRW", version: 0 },
+    },
+    krwSummary: {
+      isSuccess: true,
+      data: {
+        originalTotals: [],
+        convertedTotalKrw: "501",
+        rateDate: "2026-09-11",
+        rateSource: "ECB",
+        stale: false,
+        missingCurrencies: [],
+        isComplete: true,
+      },
+    },
+    budgetBusy: false,
     busy: false,
     open: mocks.open,
     remove: mocks.remove,
@@ -246,3 +263,45 @@ it.each(["missing", "offline"])(
     expect(panelButton("최신 지출 확인 후 삭제")).toBeUndefined();
   },
 );
+
+it("keeps shared budget comparison alongside original settlement without counting transfers", async () => {
+  await mount();
+  mocks.state = {
+    ...(mocks.state as object),
+    summary: {
+      isSuccess: true,
+      data: {
+        currencies: [
+          {
+            currency: "USD",
+            totalAmount: "1.00",
+            individuals: [],
+            categories: [],
+            days: [],
+            transfers: [{ fromUserId: 1, toUserId: 2, amount: "0.50" }],
+          },
+        ],
+      },
+    },
+  };
+  await act(async () => renderer.update(<ExpensePanel />));
+  expect(JSON.stringify(renderer.toJSON())).toContain("여행 전체 예산");
+  const comparison = renderer.root.findByProps({ "aria-label": "예산 비교" });
+  expect(
+    JSON.stringify(
+      comparison.children.map((c) =>
+        typeof c === "string" ? c : c.props.children,
+      ),
+    ),
+  ).toContain("499");
+  await act(async () =>
+    renderer.root
+      .findAllByType("button")
+      .find((b) => b.children.includes("정산 요약"))!
+      .props.onClick(),
+  );
+  const rendered = JSON.stringify(renderer.toJSON());
+  expect(rendered).toContain("0.50");
+  expect(rendered).toContain("USD");
+  expect(rendered).toContain("참고 잔여 예산");
+});

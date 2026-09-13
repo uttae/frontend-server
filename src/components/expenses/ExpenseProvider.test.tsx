@@ -7,6 +7,21 @@ const mocks = vi.hoisted(() => ({
   members: vi.fn<() => Promise<unknown>>(() => new Promise(() => {})),
   list: vi.fn<() => Promise<Expense[]>>(async () => []),
   summary: vi.fn<() => Promise<unknown>>(async () => ({ currencies: [] })),
+  budget: vi.fn(async () => ({
+    budgetKrw: null as string | null,
+    currency: "KRW",
+    version: 0,
+  })),
+  krw: vi.fn(async () => ({
+    originalTotals: [],
+    convertedTotalKrw: "0",
+    rateDate: null,
+    rateSource: "ECB",
+    stale: true,
+    missingCurrencies: [],
+    isComplete: true,
+  })),
+  putBudget: vi.fn(),
   patch: vi.fn(),
   remove: vi.fn(),
   create: vi.fn(),
@@ -15,11 +30,18 @@ vi.mock("@/hooks/useSessionUser", () => ({
   useSessionUser: () => ({ data: { id: 1 } }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
-  useRoomSchedules: () => ({ data: [], isSuccess: true }),
+  useRoomSchedules: () => ({
+    data: [],
+    isSuccess: true,
+    refetch: async () => ({ data: [] }),
+  }),
 }));
 vi.mock("@/lib/api/rooms/members", () => ({ getRoomMembers: mocks.members }));
 vi.mock("@/lib/api/rooms/expenses", () => ({
   getExpenses: mocks.list,
+  getExpenseBudget: mocks.budget,
+  getExpenseKrwSummary: mocks.krw,
+  putExpenseBudget: mocks.putBudget,
   getExpenseSummary: mocks.summary,
   getExpenseCurrencies: async () => [],
   createExpense: mocks.create,
@@ -185,4 +207,89 @@ it("forwards DELETE reviewed version and removes the record before summary refre
     finish({ currencies: [] });
     await deleting;
   });
+});
+
+it("loads both reference queries and includes them in normal refresh", async () => {
+  await mountMutations();
+  expect(context.budget.data).toMatchObject({ budgetKrw: null, version: 0 });
+  expect(context.krwSummary.data).toMatchObject({ convertedTotalKrw: "0" });
+  const reads = [mocks.budget.mock.calls.length, mocks.krw.mock.calls.length];
+  await act(async () => {
+    await context.refresh();
+  });
+  expect(mocks.budget.mock.calls.length).toBeGreaterThan(reads[0]);
+  expect(mocks.krw.mock.calls.length).toBeGreaterThan(reads[1]);
+});
+it("saves as ACTIVE MEMBER, guards duplicate writes and installs PUT result", async () => {
+  await mountMutations();
+  mocks.members.mockResolvedValue({
+    members: [{ userId: 1, role: "MEMBER", status: "ACTIVE" }],
+  });
+  await act(async () => {
+    await context.refresh();
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(context.canManage).toBe(true);
+  expect(context.members[0].role).toBe("MEMBER");
+  let finish!: (value: unknown) => void;
+  mocks.putBudget.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  let saving!: Promise<unknown>;
+  await act(async () => {
+    saving = context.saveBudget({ budgetKrw: "0", expectedVersion: 0 });
+  });
+  await expect(
+    context.saveBudget({ budgetKrw: "10", expectedVersion: 0 }),
+  ).rejects.toThrow();
+  expect(mocks.putBudget).toHaveBeenLastCalledWith("r", {
+    budgetKrw: "0",
+    expectedVersion: 0,
+  });
+  await act(async () => {
+    finish({ budgetKrw: "0", currency: "KRW", version: 1 });
+    await saving;
+  });
+  expect(client.getQueryData(expenseKeys.budget("r"))).toEqual({
+    budgetKrw: "0",
+    currency: "KRW",
+    version: 1,
+  });
+});
+it("fresh budget recovery propagates failure instead of accepting cached budget", async () => {
+  await mountMutations();
+  mocks.budget.mockResolvedValueOnce({
+    budgetKrw: "20",
+    currency: "KRW",
+    version: 7,
+  });
+  await expect(context.readLatestBudget()).resolves.toMatchObject({
+    budgetKrw: "20",
+    version: 7,
+  });
+  mocks.budget.mockRejectedValueOnce(new Error("offline"));
+  await expect(context.readLatestBudget()).rejects.toThrow("offline");
+});
+it("does not permit budget writes after member access is lost", async () => {
+  await mountMutations();
+  mocks.members.mockResolvedValue({
+    members: [{ userId: 1, role: "MEMBER", status: "LEFT" }],
+  });
+  await act(async () => {
+    await context.refresh();
+  });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(context.canManage).toBe(false);
+  const before = mocks.putBudget.mock.calls.length;
+  await expect(
+    context.saveBudget({ budgetKrw: "1", expectedVersion: 0 }),
+  ).rejects.toThrow();
+  expect(mocks.putBudget.mock.calls.length).toBe(before);
 });

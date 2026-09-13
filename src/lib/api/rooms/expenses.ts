@@ -115,3 +115,31 @@ export const deleteExpense = (
   request<void>(roomId, `/${id}?expectedVersion=${expectedVersion}`, {
     method: "DELETE",
   });
+
+export type ExpenseBudget = {
+  budgetKrw: string | null;
+  currency: "KRW";
+  version: number;
+};
+export type ExpenseBudgetInput = {
+  budgetKrw: string;
+  expectedVersion: number;
+};
+export type ExpenseKrwSummary = {
+  originalTotals: { currency: string; totalAmount: string }[];
+  convertedTotalKrw: string | null;
+  rateDate: string | null;
+  rateSource: "ECB";
+  stale: boolean;
+  missingCurrencies: string[];
+  isComplete: boolean;
+};
+export const getExpenseBudget = (roomId: string) =>
+  request<ExpenseBudget>(roomId, "/budget");
+export const putExpenseBudget = (roomId: string, body: ExpenseBudgetInput) =>
+  request<ExpenseBudget>(roomId, "/budget", {
+    method: "PUT",
+    ...jsonBody(body),
+  });
+export const getExpenseKrwSummary = (roomId: string) =>
+  request<ExpenseKrwSummary>(roomId, "/summary/krw");
