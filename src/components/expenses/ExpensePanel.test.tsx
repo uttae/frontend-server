@@ -159,7 +159,7 @@ it("filters preparation and trip day without altering server summary scope", asy
       .find((b) => b.children.includes("정산 요약"))!
       .props.onClick(),
   );
-  expect(JSON.stringify(renderer.toJSON())).toContain("방 전체 지출");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("방 전체 지출을 기준으로 정산해요.");
 });
 it("requires confirmation and preserves list with visible deletion failure", async () => {
   await mount();
@@ -264,7 +264,7 @@ it.each(["missing", "offline"])(
   },
 );
 
-it("keeps shared budget comparison alongside original settlement without counting transfers", async () => {
+it("keeps budget and original-currency settlement without comparison or explanatory copy", async () => {
   await mount();
   mocks.state = {
     ...(mocks.state as object),
@@ -280,20 +280,21 @@ it("keeps shared budget comparison alongside original settlement without countin
             days: [],
             transfers: [{ fromUserId: 1, toUserId: 2, amount: "0.50" }],
           },
+          {
+            currency: "KRW",
+            totalAmount: "1000",
+            individuals: [],
+            categories: [],
+            days: [],
+            transfers: [{ fromUserId: 2, toUserId: 1, amount: "500" }],
+          },
         ],
       },
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
   expect(JSON.stringify(renderer.toJSON())).toContain("여행 전체 예산");
-  const comparison = renderer.root.findByProps({ "aria-label": "예산 비교" });
-  expect(
-    JSON.stringify(
-      comparison.children.map((c) =>
-        typeof c === "string" ? c : c.props.children,
-      ),
-    ),
-  ).toContain("499");
+  expect(renderer.root.findAllByProps({ "aria-label": "예산 비교" })).toHaveLength(0);
   await act(async () =>
     renderer.root
       .findAllByType("button")
@@ -303,7 +304,11 @@ it("keeps shared budget comparison alongside original settlement without countin
   const rendered = JSON.stringify(renderer.toJSON());
   expect(rendered).toContain("0.50");
   expect(rendered).toContain("USD");
-  expect(rendered).toContain("참고 잔여 예산");
+  expect(rendered).toContain("KRW 정산");
+  expect(rendered).toContain("500");
+  expect(rendered).not.toContain("참고 잔여 예산");
+  expect(rendered).not.toContain("통화별로 따로 정산");
+  expect(rendered).not.toContain("아래 금액을 확인하고 직접 송금");
 });
 it("closes the expense panel after room access is revoked", async () => {
   await mount();

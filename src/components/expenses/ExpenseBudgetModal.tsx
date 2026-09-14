@@ -126,9 +126,6 @@ export function ExpenseBudgetModal({
               setError("");
             }}
           />
-          <p className="mt-2 text-sm text-dark-gray">
-            원화 정수로 입력해 주세요. 0원도 설정할 수 있어요.
-          </p>
         </div>
         {error && (
           <p

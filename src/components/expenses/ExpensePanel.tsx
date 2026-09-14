@@ -183,9 +183,6 @@ export function ExpensePanel() {
             정산 요약
           </button>
         </div>
-        {context.summary.data && context.summary.data.currencies.length > 1 && (
-          <p className="mt-3 text-xs text-dark-gray">통화별로 따로 정산해요.</p>
-        )}
       </div>
       {context.memberStatus !== "success" && (
         <p role="status" className="text-sm text-dark-gray">
