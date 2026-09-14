@@ -390,3 +390,36 @@ it("keeps caret after middle edits and skips formatting commas on deletion", asy
   await submit();
   expect(mocks.save).not.toHaveBeenCalled();
 });
+
+it("keeps the trip total one scale step smaller with long-number wrapping", async () => {
+  mocks.state = state(budget, { ...reference, convertedTotalKrw: "9007199254740993" });
+  await summary();
+  const total = [...host.querySelectorAll("p")].find(
+    (p) => p.textContent === "9,007,199,254,740,993 KRW",
+  )!;
+  expect(total.classList.contains("text-2xl")).toBe(true);
+  expect(total.classList.contains("break-all")).toBe(true);
+});
+
+it("groups budget and edit control on a white card with wrapping space for large amounts", async () => {
+  mocks.state = state({ ...budget, budgetKrw: "999999999999999" });
+  await summary();
+  const title = [...host.querySelectorAll("h3")].find(
+    (h) => h.textContent === "여행 전체 예산",
+  )!;
+  const content = title.parentElement!;
+  const card = content.parentElement!;
+  for (const token of ["rounded-xl", "bg-white", "p-3", "flex-wrap"])
+    expect(card.classList.contains(token), token).toBe(true);
+  for (const token of ["min-w-0", "max-w-full"])
+    expect(content.classList.contains(token), token).toBe(true);
+  expect(content.querySelector("p")?.textContent).toBe("999,999,999,999,999 KRW");
+  expect(content.querySelector("p")?.classList.contains("break-all")).toBe(true);
+  expect(card.contains(button("예산 수정"))).toBe(true);
+  expect(button("예산 수정").classList.contains("shrink-0")).toBe(true);
+  await click("예산 수정");
+  expect(input().value).toBe("999,999,999,999,999");
+  await type("1,234,567");
+  await submit();
+  expect(mocks.save).toHaveBeenCalledWith({ budgetKrw: "1234567", expectedVersion: 2 });
+});

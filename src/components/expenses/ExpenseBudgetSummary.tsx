@@ -31,7 +31,7 @@ export function ExpenseBudgetSummary() {
             있어요. 조회 다시 시도 버튼을 눌러 주세요.
           </p>
         )}
-        <p className="break-all text-3xl font-bold tracking-tight tabular-nums">
+        <p className="break-all text-2xl font-bold tracking-tight tabular-nums">
           {hasCompleteTotal ? `${formatExpenseAmount(converted)} KRW` : "—"}
         </p>
         {reference && (
@@ -46,8 +46,8 @@ export function ExpenseBudgetSummary() {
           </>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-3">
+        <div className="min-w-0 max-w-full">
           <h3 className="text-sm font-medium text-dark-gray">여행 전체 예산</h3>
           {budget.isPending && <p role="status">예산을 불러오는 중…</p>}
           {budget.isError && (
@@ -66,7 +66,7 @@ export function ExpenseBudgetSummary() {
         {canManage && budget.isSuccess && (
           <button
             type="button"
-            className={expenseButtonClass}
+            className={`${expenseButtonClass} shrink-0`}
             disabled={budgetBusy}
             onClick={() => setOpened(budget.data)}
           >
