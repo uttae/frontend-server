@@ -63,7 +63,7 @@ it("opens the same dialog from footer and banner without navigation, even with a
 const source = (file: string) => readFileSync(`src/${file}`, "utf8");
 it("retains landing and room footers and removes only the requested navigation entries", () => {
   expect(source("app/_components/LandingView.tsx")).toContain("<SiteFooter");
-  expect(source("app/home/page.tsx")).toContain("<SiteFooter");
+  expect(source("app/home/(with-header)/layout.tsx")).toContain("<SiteFooter");
   const sidebar = source("components/layout/SideBar.tsx");
   expect(sidebar).not.toContain("PrivacySettingsLink");
   for (const entry of [
@@ -80,7 +80,9 @@ it("retains landing and room footers and removes only the requested navigation e
   expect(profile).not.toContain("개인정보 설정");
   expect(profile).not.toContain("PrivacySettingsLink");
   expect(profile).toContain("로그아웃");
-  expect(profile).toContain("회원 탈퇴");
+  expect(profile).not.toContain("회원 탈퇴");
+  expect(profile).toContain("내 정보");
+  expect(profile).toContain("/home/my-info");
   const mobile = source("components/mobile/MobileMainTabs.tsx");
   expect(mobile).not.toMatch(/privacy-settings|쿠키 설정/);
   for (const entry of ["북마크", "멤버", "검색", "채팅", "일정"])
