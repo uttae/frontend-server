@@ -14,6 +14,9 @@ export function ExpenseBudgetSummary() {
   const reference = krwSummary.data;
   const amount = budget.data?.budgetKrw;
   const converted = reference?.convertedTotalKrw;
+  const incomplete =
+    reference &&
+    (!reference.isComplete || reference.missingCurrencies.length > 0);
   const comparable =
     syncStatus === "ready" &&
     budget.isSuccess &&
@@ -25,7 +28,42 @@ export function ExpenseBudgetSummary() {
     !reference.stale;
   const difference = comparable ? BigInt(amount) - BigInt(converted) : null;
   return (
-    <div className="mt-4 space-y-4 border-t border-gray-border pt-4">
+    <div className="space-y-4">
+      <div className="space-y-2 text-sm">
+        <h3 className="text-sm font-medium text-dark-gray">여행 전체 지출</h3>
+        <p className="text-xs text-dark-gray">원화로 환산한 참고 금액이에요.</p>
+        {krwSummary.isPending && (
+          <p role="status">원화 참고 요약을 불러오는 중…</p>
+        )}
+        {krwSummary.isError && (
+          <p role="alert" className="text-status-negative">
+            원화 참고 요약 조회에 실패했어요. 이전 값은 최신 상태가 아닐 수
+            있어요. 조회 다시 시도 버튼을 눌러 주세요.
+          </p>
+        )}
+        {reference && (
+          <>
+            <p className="break-all text-3xl font-bold tracking-tight tabular-nums">
+              {converted === null
+                ? "환산 금액 없음"
+                : `${formatExpenseAmount(converted!)} KRW`}
+            </p>
+            {incomplete && (
+              <p>
+                환산 가능한 지출 합계 · 제외 통화:{" "}
+                {reference.missingCurrencies.join(", ") || "확인 필요"}
+              </p>
+            )}
+            {reference.stale && (
+              <p>
+                {reference.rateDate
+                  ? "환율 갱신에 실패하여 이전 성공 환율을 사용한 참고값이에요."
+                  : "성공한 환율 정보가 없어 외화 환산을 확인할 수 없어요."}
+              </p>
+            )}
+          </>
+        )}
+      </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <h3 className="text-sm font-medium text-dark-gray">여행 전체 예산</h3>
@@ -52,60 +90,6 @@ export function ExpenseBudgetSummary() {
           >
             {amount === null ? "예산 설정" : "예산 수정"}
           </button>
-        )}
-      </div>
-      <div className="space-y-2 text-sm">
-        <h3 className="font-semibold">원화 참고 지출</h3>
-        {krwSummary.isPending && (
-          <p role="status">원화 참고 요약을 불러오는 중…</p>
-        )}
-        {krwSummary.isError && (
-          <p role="alert" className="text-status-negative">
-            원화 참고 요약 조회에 실패했어요. 이전 값은 최신 상태가 아닐 수
-            있어요. 조회 다시 시도 버튼을 눌러 주세요.
-          </p>
-        )}
-        {reference && (
-          <>
-            <p className="break-all text-lg font-bold tabular-nums">
-              {converted === null
-                ? "환산 금액 없음"
-                : `${formatExpenseAmount(converted!)} KRW`}
-              {(!reference.isComplete ||
-                reference.missingCurrencies.length > 0) &&
-                " · 부분 합계"}
-            </p>
-            {(!reference.isComplete ||
-              reference.missingCurrencies.length > 0) && (
-              <p>
-                일부 통화 제외 합계예요. 제외 통화:{" "}
-                {reference.missingCurrencies.join(", ") || "확인 필요"}
-              </p>
-            )}
-            {reference.stale && (
-              <p>
-                {reference.rateDate
-                  ? "환율 갱신에 실패하여 이전 성공 환율을 사용한 참고값이에요."
-                  : "성공한 환율 정보가 없어 외화 환산을 확인할 수 없어요."}
-              </p>
-            )}
-            <p className="text-dark-gray">
-              환율 제공일: {reference.rateDate ?? "제공일 없음"}
-            </p>
-            <p className="text-xs leading-relaxed text-dark-gray">
-              출처:{" "}
-              <a
-                className="underline underline-offset-2"
-                href="https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html"
-                target="_blank"
-                rel="noreferrer"
-              >
-                European Central Bank (ECB)
-              </a>
-              . EUR 기준 환율을 원화로 교차 환산한 참고값이며 거래·정산용이
-              아닙니다.
-            </p>
-          </>
         )}
       </div>
       {difference !== null ? (

@@ -10,7 +10,6 @@ import {
   ExpenseList,
   ExpenseSummaryView,
   expenseButtonClass,
-  formatExpenseAmount,
 } from "./ExpenseViews";
 export function ExpensePanel() {
   const context = useExpenseContext();
@@ -107,15 +106,15 @@ export function ExpensePanel() {
       aria-label="지출 및 정산"
       className="@container/expenses min-w-0 space-y-5 rounded-2xl border border-gray-border bg-white p-4 @min-[600px]/plan:p-6"
     >
-      <p role="status" className="text-sm text-dark-gray">
-        {context.syncStatus === "ready"
-          ? "최근 지출 조회 완료 · 변경 알림과 30초 간격으로 다시 확인해요."
-          : context.syncStatus === "disconnected"
+      {context.syncStatus !== "ready" && (
+        <p role="status" className="text-sm text-dark-gray">
+          {context.syncStatus === "disconnected"
             ? "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요."
             : context.syncStatus === "error"
               ? "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요."
               : "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요."}
-      </p>
+        </p>
+      )}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-bold tracking-tight">지출 및 정산</h2>
@@ -145,38 +144,7 @@ export function ExpensePanel() {
       <div className="rounded-2xl bg-gray-50 p-4 @min-[480px]/expenses:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-dark-gray">여행 전체 지출</p>
-            {context.summary.isPending && (
-              <p role="status" className="mt-2 text-sm text-dark-gray">
-                총액을 불러오는 중…
-              </p>
-            )}
-            {context.summary.isError && (
-              <p role="alert" className="mt-2 text-sm text-status-negative">
-                총액을 불러오지 못했어요. 조회 다시 시도 버튼을 눌러 주세요.
-              </p>
-            )}
-            {context.summary.isSuccess && (
-              <div className="mt-2 flex flex-wrap gap-x-7 gap-y-2">
-                {context.summary.data.currencies.length ? (
-                  context.summary.data.currencies.map((c) => (
-                    <p
-                      key={c.currency}
-                      className="min-w-0 break-all text-3xl font-bold tracking-tight tabular-nums"
-                    >
-                      {formatExpenseAmount(c.totalAmount)}{" "}
-                      <span className="text-sm font-medium tracking-normal text-dark-gray">
-                        {c.currency}
-                      </span>
-                    </p>
-                  ))
-                ) : (
-                  <p className="text-lg font-semibold">
-                    첫 지출을 기록해 보세요
-                  </p>
-                )}
-              </div>
-            )}
+            <ExpenseBudgetSummary />
           </div>
           {readFailed && (
             <button
@@ -195,7 +163,6 @@ export function ExpensePanel() {
             </button>
           )}
         </div>
-        <ExpenseBudgetSummary />
         <div className="mt-4 flex flex-wrap gap-2" aria-label="지출 보기">
           <button
             type="button"

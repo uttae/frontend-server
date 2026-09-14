@@ -10,6 +10,7 @@ import {
   SettingsActionButton,
   SettingsActionButtonRow,
 } from "@/components/settings/SettingsActionButton";
+import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
   expenseButtonClass,
@@ -66,7 +67,7 @@ export function ExpenseBudgetModal({
       return;
     if (!/^[0-9]{1,15}$/.test(draft)) {
       setError(
-        "예산은 1~15자리 숫자로 입력해 주세요. 소수점·공백·구분자는 사용할 수 없어요.",
+        "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.",
       );
       return;
     }
@@ -110,7 +111,7 @@ export function ExpenseBudgetModal({
           <label htmlFor={inputId} className="font-semibold">
             예산 (KRW)
           </label>
-          <input
+          <ExpenseAmountInput
             id={inputId}
             type="text"
             inputMode="numeric"
@@ -120,8 +121,8 @@ export function ExpenseBudgetModal({
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : undefined}
             className={expenseInputClass}
-            onChange={(e) => {
-              setDraft(e.target.value);
+            onChange={(value) => {
+              setDraft(value);
               setError("");
             }}
           />

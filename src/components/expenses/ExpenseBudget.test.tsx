@@ -114,7 +114,7 @@ it.each([null, "0", "123456789"])(
     expect(document.querySelector("h2")?.textContent).toBe(
       amount === null ? "예산 설정" : "예산 수정",
     );
-    expect(input().value).toBe(amount ?? "");
+    expect(input().value).toBe(amount === "123456789" ? "123,456,789" : amount ?? "");
     expect(text()).toContain("여행 전체의 예산을 설정해 주세요.");
     expect(document.querySelector("select")).toBeNull();
     await click("취소");
@@ -152,7 +152,6 @@ it.each([
   " ",
   " 1",
   "1 ",
-  "1,000",
   "-1",
   "+1",
   "1.0",
@@ -165,7 +164,7 @@ it.each([
   await type(value);
   await submit();
   expect(mocks.save).not.toHaveBeenCalled();
-  expect(input().value).toBe(value);
+  expect(input().value).toBe(value === "1000000000000000" ? "1,000,000,000,000,000" : value);
   expect(document.querySelector('[role="alert"]')).not.toBeNull();
 });
 it("locks duplicate submit and close while pending, and preserves draft on failure", async () => {
@@ -245,15 +244,14 @@ it("summary opens shared modal for unset or zero budget", async () => {
   expect(document.querySelector("dialog")).not.toBeNull();
   expect(input().value).toBe("");
 });
-it("shows server reference with actual ECB attribution link and provided date", async () => {
+it("shows one reference travel total without persistent exchange metadata", async () => {
   await summary();
-  expect(text()).toContain("501");
-  expect(text()).toContain("2026-09-11");
-  expect(text()).toContain("European Central Bank (ECB)");
-  expect(text()).toContain("거래·정산용이 아닙니다.");
-  expect(document.querySelector("a")?.href).toBe(
-    "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
-  );
+  expect(text()).toContain("여행 전체 지출");
+  expect(text()).toContain("501 KRW");
+  expect(text()).not.toContain("원화 참고 지출");
+  expect(text()).not.toContain("2026-09-11");
+  expect(text()).not.toContain("출처");
+  expect(document.querySelector("a")).toBeNull();
   expect(text()).toContain("참고 잔여 예산");
   expect(text()).toContain("499");
 });
@@ -300,7 +298,7 @@ it.each([
   if (patch.convertedTotalKrw === null)
     expect(text()).toContain("환산 금액 없음");
   if (patch.rateDate === null) {
-    expect(text()).toContain("제공일 없음");
+    expect(text()).toContain("성공한 환율 정보가 없어");
     expect(text()).not.toContain("2026-09-11");
   }
 });
@@ -332,7 +330,7 @@ it("partial zero is labeled partial and unset never becomes a zero budget", asyn
     },
   );
   await summary();
-  expect(text()).toContain("부분 합계");
+  expect(text()).toContain("환산 가능한 지출 합계");
   expect(text()).toContain("KWD");
   expect(text()).toContain("미설정");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
@@ -345,3 +343,35 @@ it.each(["disconnected", "pending", "error"])(
     expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
   },
 );
+
+it("formats pasted budget and serializes only digits", async () => {
+  await modal();
+  await type("1,234,567");
+  expect(input().value).toBe("1,234,567");
+  await submit();
+  expect(mocks.save).toHaveBeenCalledWith({ budgetKrw: "1234567", expectedVersion: 2 });
+});
+it("keeps caret after middle edits and skips formatting commas on deletion", async () => {
+  await modal({ ...budget, budgetKrw: "12345" });
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input(), "129,345");
+    input().setSelectionRange(3, 3);
+    input().dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  expect(input().value).toBe("129,345");
+  expect(input().selectionStart).toBe(3);
+  input().setSelectionRange(4, 4);
+  await act(async () => input().dispatchEvent(new KeyboardEvent("keydown", { key: "Backspace", bubbles: true })));
+  expect(input().selectionStart).toBe(3);
+  await type("12,345");
+  expect(input().value).toBe("12,345");
+  input().setSelectionRange(2, 2);
+  await act(async () => input().dispatchEvent(new KeyboardEvent("keydown", { key: "Delete", bubbles: true })));
+  expect(input().selectionStart).toBe(3);
+  await type("12,45");
+  expect(input().value).toBe("1,245");
+  await type("");
+  expect(input().value).toBe("");
+  await submit();
+  expect(mocks.save).not.toHaveBeenCalled();
+});

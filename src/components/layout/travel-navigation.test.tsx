@@ -120,23 +120,17 @@ it("cost follows bookmarks, selects alone and closes chat", async () => {
   expect(isMainRouteBlockedOnMobile("/cost")).toBe(false);
 });
 
-it.each(["/plan/room", "/cost"])("renders cost in original SVG colors at 24x24 on %s", async pathname => {
+it.each(["/plan/room", "/cost"])("colors every sidebar icon consistently on %s", async pathname => {
   state.pathname = pathname;
   await render();
-  const cost = items()[3];
-  const image = cost.querySelector("img");
-  expect(image).not.toBeNull();
-  expect(image!.getAttribute("src")).toBe("/icons/sidebar/calculator.svg");
-  expect(image!.getAttribute("width")).toBe("24");
-  expect(image!.getAttribute("height")).toBe("24");
-  expect(cost.querySelector('[style*="mask"]')).toBeNull();
-  expect(image!.style.filter).toBe("");
-  expect(cost.classList.contains("bg-primary")).toBe(pathname === "/cost");
+  expect(items()[3].querySelector("img")).toBeNull();
   for (const [index, item] of items().entries()) {
-    if (index === 3) continue;
     const mask = item.querySelector<HTMLElement>('[style*="mask"]');
     expect(mask).not.toBeNull();
-    expect(mask!.classList.contains("bg-primary-subtle")).toBe(index === 0 && pathname === "/plan/room");
-    expect(mask!.classList.contains("bg-icon")).toBe(!(index === 0 && pathname === "/plan/room"));
+    const selected = pathname === "/cost" ? index === 3 : index === 0;
+    expect(mask!.classList.contains("bg-primary-subtle")).toBe(selected);
+    expect(mask!.classList.contains("bg-icon")).toBe(!selected);
+    expect(mask!.classList.contains("size-6")).toBe(true);
   }
+  expect(items()[3].querySelector<HTMLElement>('[style*="mask"]')!.style.maskImage).toContain("/icons/sidebar/calculator.svg");
 });

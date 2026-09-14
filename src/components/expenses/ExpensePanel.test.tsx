@@ -27,7 +27,7 @@ it("opens an expense in the selected trip day", async () => {
   expect(mocks.open).toHaveBeenCalledWith({ scheduleId: 10 });
 });
 
-it("keeps exact whole-trip currency totals visible while filtering", async () => {
+it("keeps a single reference travel total visible while filtering", async () => {
   await mount();
   mocks.state = {
     ...(mocks.state as object),
@@ -60,8 +60,11 @@ it("keeps exact whole-trip currency totals visible while filtering", async () =>
     renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
   );
   const text = JSON.stringify(renderer.toJSON());
-  expect(text).toContain("999,999,999,999,999.99");
-  expect(text).toContain("12,300");
+  expect(text).not.toContain("999,999,999,999,999.99");
+  expect(text).not.toContain("12,300");
+  expect(text).toContain("501");
+  expect(text.match(/여행 전체 지출/g)).toHaveLength(1);
+  expect(text).not.toContain("원화 참고 지출");
 });
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => mocks.state,
@@ -348,5 +351,33 @@ it.each(["sync", "members", "list", "summary", "budget", "krwSummary"])(
     expect(retry()!.props.disabled).toBe(true);
     await act(async () => { mocks.state = healthy; finish(); });
     expect(retry()).toBeUndefined();
+  },
+);
+
+
+it.each(["initial load", "change", "reconnect"])(
+  "removes the top success explanation and its layout slot after %s succeeds",
+  async (scenario) => {
+    await mount();
+    const healthy = mocks.state as object;
+    if (scenario !== "initial load") {
+      mocks.state = {
+        ...healthy,
+        syncStatus: scenario === "reconnect" ? "disconnected" : "pending",
+      };
+      await act(async () => renderer.update(<ExpensePanel />));
+      expect(JSON.stringify(renderer.toJSON())).toContain(
+        scenario === "reconnect" ? "연결 복구 안내" : "최신 지출 확인 중",
+      );
+      mocks.state = healthy;
+      await act(async () => renderer.update(<ExpensePanel />));
+    }
+    const section = renderer.root.findByProps({ "aria-label": "지출 및 정산" });
+    const first = section.children[0];
+    expect(typeof first).not.toBe("string");
+    if (typeof first === "string") throw new Error("Expected panel heading");
+    expect(first.findAllByType("h2").map((heading) => heading.children.join("")))
+      .toEqual(["지출 및 정산"]);
+    expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 지출 조회 완료|30초 간격/);
   },
 );
