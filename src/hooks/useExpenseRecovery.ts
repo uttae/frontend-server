@@ -42,11 +42,9 @@ export function useExpenseRecovery(roomId: string, enabled: boolean) {
     };
     document.addEventListener("visibilitychange", recoverVisible);
     window.addEventListener("focus", recoverVisible);
-    const timer = window.setInterval(recoverVisible, 30_000);
     return () => {
       document.removeEventListener("visibilitychange", recoverVisible);
       window.removeEventListener("focus", recoverVisible);
-      window.clearInterval(timer);
     };
   }, [enabled, recovery, revoked]);
   return {

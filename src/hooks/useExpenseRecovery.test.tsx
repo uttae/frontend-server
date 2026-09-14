@@ -24,15 +24,18 @@ vi.mock("@/lib/api/rooms/expenses", () => ({
   getExpenseCurrencies: () => mocks.read("currencies"),
 }));
 function Probe() {
-  const { syncStatus } = useExpenseRecovery("r", true);
-  return <p>{syncStatus}</p>;
+  const { recovery, syncStatus } = useExpenseRecovery("r", true);
+  return <>
+    <p>{syncStatus}</p>
+    <button onClick={() => { void recovery.refresh("all").catch(() => {}); }}>Retry</button>
+  </>;
 }
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
-it("revalidates all required reads on visible focus and every visible 30 seconds, cleans listeners on exit", async () => {
+it.each([30_000, 60_000, 90_000])("does not recover after %i ms alone; visible focus and visibility still recover and clean up", async (elapsed) => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   const visibility = vi
@@ -59,17 +62,9 @@ it("revalidates all required reads on visible focus and every visible 30 seconds
     ]);
     mocks.read.mockClear();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(30_000);
+      await vi.advanceTimersByTimeAsync(elapsed);
     });
-    expect(mocks.read.mock.calls.map((c) => c[0]).sort()).toEqual([
-      "budget",
-      "currencies",
-      "krw",
-      "list",
-      "members",
-      "summary",
-    ]);
-    mocks.read.mockClear();
+    expect(mocks.read).not.toHaveBeenCalled();
     visibility.mockReturnValue("hidden");
     await act(async () => {
       window.dispatchEvent(new Event("focus"));
@@ -100,6 +95,7 @@ it("revalidates all required reads on visible focus and every visible 30 seconds
 
 it("entry with warm inactive cache and reconnect each fetch all six endpoints", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.useFakeTimers();
   mocks.read.mockClear();
   mocks.connected = true;
   const client = new QueryClient();
@@ -122,8 +118,10 @@ it("entry with warm inactive cache and reconnect each fetch all six endpoints", 
     await act(async () => {
       render();
     });
-    expect(host.textContent).toBe("disconnected");
+    expect(host.querySelector("p")?.textContent).toBe("disconnected");
     mocks.read.mockClear();
+    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    expect(mocks.read).not.toHaveBeenCalled();
     mocks.connected = true;
     await act(async () => {
       render();
@@ -136,7 +134,7 @@ it("entry with warm inactive cache and reconnect each fetch all six endpoints", 
       "members",
       "summary",
     ]);
-    expect(host.textContent).toBe("ready");
+    expect(host.querySelector("p")?.textContent).toBe("ready");
   } finally {
     await act(async () => root.unmount());
     client.clear();
@@ -159,16 +157,16 @@ it("revoked remount/reconnect stays terminal; mounted old consumer cannot adopt 
     await act(async () => { render(); });
     mocks.connected = true;
     await act(async () => { render("remount"); });
-    expect(host.textContent).toBe("revoked");
+    expect(host.querySelector("p")?.textContent).toBe("revoked");
     expect(mocks.read).not.toHaveBeenCalled();
     await act(async () => {
       beginExpenseRoomAdmission(client)("r", true);
       render("remount");
     });
-    expect(host.textContent).toBe("revoked");
+    expect(host.querySelector("p")?.textContent).toBe("revoked");
     expect(mocks.read).not.toHaveBeenCalled();
     await act(async () => { render("authorized-entry"); });
-    expect(host.textContent).toBe("ready");
+    expect(host.querySelector("p")?.textContent).toBe("ready");
     expect(mocks.read).toHaveBeenCalledTimes(6);
     expect(old.getSnapshot()).toBe("revoked");
   } finally { await act(async () => root.unmount()); client.clear(); }
@@ -225,6 +223,52 @@ it.each([
     for (const key of ["list", "summary", "summary-krw"])
       expect(client.getQueryData(["room-expenses", "r", key])).toEqual([{ revision: 2 }]);
     expect(recovery.getSnapshot()).toBe("ready");
+  } finally {
+    mocks.read.mockResolvedValue([]);
+    await act(async () => root.unmount());
+    client.clear();
+  }
+});
+
+it("invalidation and manual error retry still recover after an idle 90 seconds", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.useFakeTimers();
+  vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+  mocks.connected = true;
+  mocks.read.mockResolvedValue([]);
+  mocks.subscribe.mockClear();
+  const client = new QueryClient();
+  const host = document.createElement("div");
+  const root = createRoot(host);
+  try {
+    await act(async () => {
+      root.render(<QueryClientProvider client={client}><Probe /></QueryClientProvider>);
+    });
+    mocks.read.mockClear();
+    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    expect(mocks.read).not.toHaveBeenCalled();
+    const deliver = mocks.subscribe.mock.calls[0][1];
+    for (const [type, expected] of [
+      ["EXPENSES_INVALIDATED", ["krw", "list", "summary"]],
+      ["BUDGET_INVALIDATED", ["budget"]],
+    ] as const) {
+      mocks.read.mockClear();
+      await act(async () => {
+        deliver({ body: JSON.stringify({ roomId: "r", type }) });
+      });
+      expect(mocks.read.mock.calls.map(([key]) => key).sort()).toEqual(expected);
+    }
+    mocks.read.mockRejectedValue(new Error("offline"));
+    await act(async () => { host.querySelector("button")!.click(); });
+    expect(host.querySelector("p")?.textContent).toBe("error");
+    mocks.read.mockResolvedValue([]).mockClear();
+    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    expect(mocks.read).not.toHaveBeenCalled();
+    await act(async () => { host.querySelector("button")!.click(); });
+    expect(mocks.read.mock.calls.map(([key]) => key).sort()).toEqual([
+      "budget", "currencies", "krw", "list", "members", "summary",
+    ]);
+    expect(host.querySelector("p")?.textContent).toBe("ready");
   } finally {
     mocks.read.mockResolvedValue([]);
     await act(async () => root.unmount());
