@@ -1,22 +1,128 @@
 "use client";
 
+import { MainPageHeader } from "@/components/layout/MainPageHeader";
+import {
+  pageToolbarButtonCompactGapClass,
+  pageToolbarButtonCompactIconClass,
+  pageToolbarButtonCompactIconStroke,
+  pageToolbarButtonCompactPaddingClass,
+  pageToolbarButtonCompactTextClass,
+} from "@/components/layout/page-toolbar-button";
+import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
-import type { Expense } from "@/lib/api/rooms/expenses";
-import { Plus, RefreshCw, ReceiptText, Users } from "lucide-react";
+import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
+import { Plus, RefreshCw, ReceiptText, Users, ChartNoAxesColumn } from "lucide-react";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
   ExpenseList,
   ExpenseSummaryView,
+  ExpenseAnalysisView,
   expenseButtonClass,
-  formatExpenseAmount,
 } from "./ExpenseViews";
+type DeleteConflict = { selected: Expense; latest?: Expense; failed?: boolean };
+
+function ExpenseDeleteConflict({
+  conflict,
+  deleting,
+  onRemove,
+  onRecover,
+  onCancel,
+}: Readonly<{
+  conflict: DeleteConflict;
+  deleting: boolean;
+  onRemove: (expense: Expense) => void;
+  onRecover: (expense: Expense) => void;
+  onCancel: () => void;
+}>) {
+  const context = useExpenseContext();
+  let message = "이미 삭제된 지출이에요.";
+  if (deleting) message = "최신 지출 확인 중…";
+  else if (conflict.failed) message = "최신 지출 조회에 실패했어요. 삭제는 중단돼요.";
+  return (
+    <div
+      role="alert"
+      className="space-y-3 rounded-xl border border-gray-border p-3"
+    >
+      <p>
+        삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시 확인해
+        주세요.
+      </p>
+      {conflict.latest ? (
+        <>
+          <ExpenseList
+            roomId={context.roomId}
+            expenses={[conflict.latest]}
+            members={context.members}
+            memberStatus={context.memberStatus}
+            schedules={context.schedules}
+            canManage={false}
+            onEdit={() => {}}
+            onDelete={() => {}}
+            busy={false}
+          />
+          <button
+            type="button"
+            className={expenseButtonClass}
+            disabled={deleting || context.busy || !context.canManage}
+            onClick={() => onRemove(conflict.latest!)}
+          >
+            최신 지출 확인 후 삭제
+          </button>
+        </>
+      ) : (
+        <p>{message}</p>
+      )}
+      {conflict.failed && (
+        <button
+          type="button"
+          className={expenseButtonClass}
+          disabled={deleting}
+          onClick={() => onRecover(conflict.selected)}
+        >
+          최신 지출 다시 조회
+        </button>
+      )}
+      <button
+        type="button"
+        className={expenseButtonClass}
+        disabled={deleting || context.busy}
+        onClick={onCancel}
+      >
+        삭제 취소
+      </button>
+    </div>
+  );
+}
+
+function syncStatusMessage(status: string) {
+  if (status === "disconnected") return "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요.";
+  if (status === "error") return "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요.";
+  return "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요.";
+}
+
 export function ExpensePanel() {
   const context = useExpenseContext();
-  const [tab, setTab] = useState<"list" | "summary">("list");
+  const [tab, setTab] = useState<"list" | "summary" | "analysis">("list");
+  const [settlementScope, setSettlementScope] = useState<"mine" | "all">("mine");
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [conflict, setConflict] = useState<DeleteConflict | null>(null);
+  async function recover(selected: Expense) {
+    setConflict({ selected });
+    setDeleting(true);
+    try {
+      setConflict({
+        selected,
+        latest: await context.readLatest(selected.id),
+      });
+    } catch {
+      setConflict({ selected, failed: true });
+    } finally {
+      setDeleting(false);
+    }
+  }
   const lock = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const activeFilter =
@@ -34,15 +140,28 @@ export function ExpensePanel() {
           : e.expenseGroup === "TRIP_DAY" &&
             String(e.scheduleId) === activeFilter),
     ) ?? [];
-  async function remove(expense: Expense) {
-    if (lock.current || context.busy || !context.canManage) return;
+  async function remove(expense: Expense, reviewed = false) {
+    if (
+      lock.current ||
+      deleting ||
+      context.busy ||
+      !context.canManage ||
+      (conflict && !reviewed)
+    )
+      return;
     if (!confirm("이 지출을 삭제할까요? 정산 요약에도 반영돼요.")) return;
     lock.current = true;
     setDeleting(true);
     setError("");
     try {
       await context.remove(expense);
+      setConflict(null);
     } catch (e) {
+      if (
+        e instanceof ExpenseApiError &&
+        (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")
+      )
+        await recover(expense);
       setError(e instanceof Error ? e.message : "지출 삭제에 실패했어요.");
     } finally {
       lock.current = false;
@@ -56,25 +175,27 @@ export function ExpensePanel() {
     try {
       await context.refresh();
     } catch {
-      setError("새로고침에 실패했어요.");
+      setError("조회 재시도에 실패했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setRefreshing(false);
     }
   }
+  const readFailed =
+    context.syncStatus === "error" ||
+    context.memberStatus === "error" ||
+    [context.list, context.summary, context.budget, context.krwSummary].some(
+      (query) => query.isError,
+    );
   const query = tab === "list" ? context.list : context.summary;
+  if (context.revoked) return null;
   return (
     <section
       aria-label="지출 및 정산"
-      className="@container/expenses min-w-0 space-y-5 rounded-2xl border border-gray-border bg-white p-4 @min-[600px]/plan:p-6"
+      className="@container/expenses min-w-0 space-y-5"
     >
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">지출 및 정산</h2>
-          <p className="mt-1 text-sm text-dark-gray">
-            함께 쓴 여행 경비를 한눈에 확인해요.
-          </p>
-        </div>
-        {context.canManage && (
+      <MainPageHeader
+        title="지출"
+        action={context.canManage && (
           <button
             type="button"
             aria-label="지출 추가"
@@ -86,63 +207,39 @@ export function ExpensePanel() {
                   : {},
               )
             }
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+            className={`inline-flex shrink-0 items-center rounded-full bg-primary text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 ${pageToolbarButtonCompactGapClass} ${pageToolbarButtonCompactPaddingClass} ${pageToolbarButtonCompactTextClass}`}
           >
-            <Plus size={17} aria-hidden="true" />
+            <Plus className={pageToolbarButtonCompactIconClass} strokeWidth={pageToolbarButtonCompactIconStroke} aria-hidden="true" />
             지출 추가
           </button>
         )}
-      </div>
+      />
+      {context.syncStatus !== "ready" && (
+        <output style={{ display: "block" }} className="text-sm text-dark-gray">
+          {syncStatusMessage(context.syncStatus)}
+        </output>
+      )}
       <div className="rounded-2xl bg-gray-50 p-4 @min-[480px]/expenses:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-dark-gray">여행 전체 지출</p>
-            {context.summary.isPending && (
-              <p role="status" className="mt-2 text-sm text-dark-gray">
-                총액을 불러오는 중…
-              </p>
-            )}
-            {context.summary.isError && (
-              <p role="alert" className="mt-2 text-sm text-status-negative">
-                총액을 불러오지 못했어요. 새로고침해 주세요.
-              </p>
-            )}
-            {context.summary.isSuccess && (
-              <div className="mt-2 flex flex-wrap gap-x-7 gap-y-2">
-                {context.summary.data.currencies.length ? (
-                  context.summary.data.currencies.map((c) => (
-                    <p
-                      key={c.currency}
-                      className="min-w-0 break-all text-3xl font-bold tracking-tight tabular-nums"
-                    >
-                      {formatExpenseAmount(c.totalAmount)}{" "}
-                      <span className="text-sm font-medium tracking-normal text-dark-gray">
-                        {c.currency}
-                      </span>
-                    </p>
-                  ))
-                ) : (
-                  <p className="text-lg font-semibold">
-                    첫 지출을 기록해 보세요
-                  </p>
-                )}
-              </div>
-            )}
+            <ExpenseBudgetSummary />
           </div>
-          <button
-            type="button"
-            aria-label={refreshing ? "새로고침 중" : "새로고침"}
-            title="새로고침"
-            className="flex size-10 shrink-0 items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-white enabled:hover:text-primary-strong disabled:cursor-not-allowed disabled:opacity-50"
-            disabled={refreshing || context.busy}
-            onClick={() => void refresh()}
-          >
-            <RefreshCw
-              size={17}
-              aria-hidden="true"
-              className={refreshing ? "motion-safe:animate-spin" : ""}
-            />
-          </button>
+          {readFailed && (
+            <button
+              type="button"
+              aria-label={refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
+              className={`${expenseButtonClass} inline-flex shrink-0 items-center gap-1.5`}
+              disabled={refreshing || context.busy}
+              onClick={() => void refresh()}
+            >
+              <RefreshCw
+                size={17}
+                aria-hidden="true"
+                className={refreshing ? "motion-safe:animate-spin" : ""}
+              />
+              {refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
+            </button>
+          )}
         </div>
         <div className="mt-4 flex flex-wrap gap-2" aria-label="지출 보기">
           <button
@@ -163,16 +260,22 @@ export function ExpensePanel() {
             <Users size={16} aria-hidden="true" />
             정산 요약
           </button>
+          <button
+            type="button"
+            aria-pressed={tab === "analysis"}
+            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "analysis" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
+            onClick={() => setTab("analysis")}
+          >
+            <ChartNoAxesColumn size={16} aria-hidden="true" />
+            지출 분석
+          </button>
         </div>
-        {context.summary.data && context.summary.data.currencies.length > 1 && (
-          <p className="mt-3 text-xs text-dark-gray">통화별로 따로 정산해요.</p>
-        )}
       </div>
       {context.memberStatus !== "success" && (
         <p role="status" className="text-sm text-dark-gray">
           {context.memberStatus === "pending"
             ? "멤버 확인 중…"
-            : "멤버 정보 조회 실패. 새로고침으로 다시 시도해 주세요."}{" "}
+            : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
           지출의 사용자 ID와 금액은 유지돼요.
         </p>
       )}
@@ -181,6 +284,18 @@ export function ExpensePanel() {
           현재 참여 중인 방장과 멤버만 지출에 접근할 수 있어요.
         </p>
       )}
+      {conflict && (
+        <ExpenseDeleteConflict
+          conflict={conflict}
+          deleting={deleting}
+          onRemove={expense => void remove(expense, true)}
+          onRecover={expense => void recover(expense)}
+          onCancel={() => {
+            setConflict(null);
+            setError("");
+          }}
+        />
+      )}
       {error && (
         <p role="alert" className="text-sm text-status-negative">
           {error}
@@ -188,7 +303,7 @@ export function ExpensePanel() {
       )}
       {query.isPending && (
         <p role="status" className="py-4 text-dark-gray">
-          {tab === "list" ? "지출" : "정산"}을 불러오는 중…
+          {{ list: "지출", analysis: "지출 분석", summary: "정산" }[tab]}을 불러오는 중…
         </p>
       )}
       {query.isError && (
@@ -196,7 +311,7 @@ export function ExpensePanel() {
           {query.error instanceof Error
             ? query.error.message
             : "조회에 실패했어요."}{" "}
-          새로고침으로 다시 시도해 주세요.
+          조회 다시 시도 버튼을 눌러 주세요.
         </p>
       )}
       {tab === "list" && (
@@ -226,6 +341,7 @@ export function ExpensePanel() {
           </div>
           {context.list.isSuccess && (
             <ExpenseList
+                roomId={context.roomId}
               expenses={filtered}
               members={context.members}
               memberStatus={context.memberStatus}
@@ -233,13 +349,23 @@ export function ExpensePanel() {
               canManage={context.canManage}
               onEdit={(expense) => context.open({ expense })}
               onDelete={(expense) => void remove(expense)}
-              busy={context.busy || deleting}
+              busy={context.busy || deleting || Boolean(conflict)}
             />
           )}
         </>
       )}
       {tab === "summary" && context.summary.isSuccess && (
         <ExpenseSummaryView
+          currentUserId={context.currentUserId}
+          scope={settlementScope}
+          onScopeChange={setSettlementScope}
+          summary={context.summary.data}
+          members={context.members}
+          memberStatus={context.memberStatus}
+        />
+      )}
+      {tab === "analysis" && context.summary.isSuccess && (
+        <ExpenseAnalysisView
           summary={context.summary.data}
           members={context.members}
           memberStatus={context.memberStatus}

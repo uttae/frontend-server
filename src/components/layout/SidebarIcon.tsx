@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/** Exact Figma SVG silhouette; semantic colors support both selected states. */
+/** Apply the same semantic colors while preserving each SVG silhouette. */
 export function SidebarIcon({ src, isActive = false }: { src: string; isActive?: boolean }) {
   return (
     <span

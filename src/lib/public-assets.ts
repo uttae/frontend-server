@@ -14,6 +14,7 @@ export const faviconAssets = {
 } as const;
 
 export const sidebarIcons = {
+  cost: "/icons/sidebar/calculator.svg",
   chat: "/icons/sidebar/chat.svg",
   search: "/icons/sidebar/search.svg",
   plan: "/icons/sidebar/calendar-days.svg",

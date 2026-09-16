@@ -1,15 +1,22 @@
+// Place-cache subscriptions are covered by ExpensePlaceLabel.test.tsx.
+vi.mock("./ExpensePlaceLabel", () => ({ ExpensePlaceLabel: () => null }));
+vi.mock("@/lib/api/config", () => ({ API_BASE: "http://fixture" }));
 import { ExpenseSelect } from "./ExpenseSelect";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, expect, it, vi } from "vitest";
-import type { Expense } from "@/lib/api/rooms/expenses";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
 import { ExpenseRolePicker } from "./ExpenseViews";
+beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const mocks = vi.hoisted(() => ({
   save: vi.fn(),
+  readLatest: vi.fn(),
   close: vi.fn(),
   state: null as unknown,
 }));
-vi.mock("./ExpenseProvider", () => ({ useExpenseContext: () => mocks.state }));
+vi.mock("./ExpenseProvider", () => ({
+  useExpenseContext: () => mocks.state,
+}));
 vi.mock("@/hooks/useRooms", () => ({
   useSchedulePlanPlaces: () => ({
     data: [{ itemId: 100, title: "경복궁" }],
@@ -85,6 +92,7 @@ it("formats typed amounts without changing exact submitted decimals", async () =
   expect(mocks.save).toHaveBeenCalledWith(
     expect.objectContaining({ totalAmount: "999999999999999.99" }),
     10,
+    0,
   );
 });
 const base = {
@@ -98,6 +106,7 @@ const base = {
   payerUserIds: [1, 99],
   participantUserIds: [1],
   id: 10,
+  version: 0,
   createdAt: "",
   updatedAt: "",
 };
@@ -109,6 +118,7 @@ async function mount(
 ) {
   if (renderer) await act(async () => renderer.unmount());
   mocks.save.mockReset();
+  mocks.readLatest.mockReset();
   mocks.close.mockReset();
   mocks.state = {
     currentUserId: 1,
@@ -131,6 +141,8 @@ async function mount(
     schedulesReady: true,
     currencies: { data: currencies, isSuccess: true, isError: false },
     save: mocks.save,
+    readLatest: mocks.readLatest,
+    list: { isSuccess: true, data: original ? [original] : [] },
     busy: false,
   };
   await act(async () => {
@@ -160,6 +172,7 @@ it("preserves original unknown payer and exact amount when editing", async () =>
       scheduleItemId: 100,
     }),
     10,
+    0,
   );
   expect(mocks.close).toHaveBeenCalledOnce();
 });
@@ -177,10 +190,13 @@ it("clears both links for preparation and clears place when changing day", async
       scheduleItemId: null,
     }),
     10,
+    0,
   );
   await mount();
   await act(async () =>
-    renderer.root.findAllByType(ExpenseSelect)[0].props.onChange("PREPARATION"),
+    renderer.root
+      .findAllByType(ExpenseSelect)[0]
+      .props.onChange("PREPARATION"),
   );
   await act(async () =>
     renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
@@ -192,6 +208,7 @@ it("clears both links for preparation and clears place when changing day", async
       scheduleItemId: null,
     }),
     10,
+    0,
   );
 });
 it("blocks wrong currency scale without truncating and guards rapid duplicate submit", async () => {
@@ -199,12 +216,16 @@ it("blocks wrong currency scale without truncating and guards rapid duplicate su
   const amount = renderer.root
     .findAllByType("input")
     .find((i) => i.props.inputMode === "decimal")!;
-  await act(async () => amount.props.onChange({ target: { value: "10.001" } }));
+  await act(async () =>
+    amount.props.onChange({ target: { value: "10.001" } }),
+  );
   await act(async () =>
     renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
   );
   expect(mocks.save).not.toHaveBeenCalled();
-  await act(async () => amount.props.onChange({ target: { value: "10.01" } }));
+  await act(async () =>
+    amount.props.onChange({ target: { value: "10.01" } }),
+  );
   let finish!: () => void;
   mocks.save.mockImplementation(
     () =>
@@ -252,7 +273,9 @@ it.each([
     const amount = renderer.root
       .findAllByType("input")
       .find((i) => i.props.inputMode === "decimal")!;
-    await act(async () => amount.props.onChange({ target: { value: "100" } }));
+    await act(async () =>
+      amount.props.onChange({ target: { value: "100" } }),
+    );
     for (const checkbox of renderer.root
       .findAllByType("input")
       .filter((i) => i.props.type === "checkbox" && !i.props.checked))
@@ -261,7 +284,9 @@ it.each([
       );
     await act(async () => categorySelect().props.onChange("OTHER"));
     await act(async () =>
-      renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+      renderer.root
+        .findByType("form")
+        .props.onSubmit({ preventDefault() {} }),
     );
     expect(mocks.save).toHaveBeenCalledWith(
       {
@@ -275,6 +300,7 @@ it.each([
         payerUserIds: [1],
         participantUserIds: [1],
       },
+      undefined,
       undefined,
     );
   },
@@ -300,6 +326,7 @@ it("cannot re-add an unknown payer after deselection and keeps input on server r
   expect(mocks.save).toHaveBeenCalledWith(
     expect.objectContaining({ payerUserIds: [1], totalAmount: "10.01" }),
     10,
+    0,
   );
   expect(mocks.close).not.toHaveBeenCalled();
   expect(JSON.stringify(renderer.toJSON())).toContain("서버 검증 실패");
@@ -355,10 +382,13 @@ it.each(categories)(
     await fillNewExpense();
     await act(async () => categorySelect().props.onChange(category));
     await act(async () =>
-      renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+      renderer.root
+        .findByType("form")
+        .props.onSubmit({ preventDefault() {} }),
     );
     expect(mocks.save).toHaveBeenCalledWith(
       expect.objectContaining({ category, totalAmount: "100" }),
+      undefined,
       undefined,
     );
   },
@@ -369,21 +399,27 @@ it.each(categories)(
     await mount({ ...base, category });
     expect(categorySelect().props.value).toBe(category);
     await act(async () =>
-      renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+      renderer.root
+        .findByType("form")
+        .props.onSubmit({ preventDefault() {} }),
     );
     expect(mocks.save).toHaveBeenLastCalledWith(
       expect.objectContaining({ category }),
       10,
+      0,
     );
     const replacement = category === "OTHER" ? "FLIGHT" : "OTHER";
     await act(async () => categorySelect().props.onChange(replacement));
     mocks.save.mockRejectedValueOnce(new Error("카테고리 저장 실패"));
     await act(async () =>
-      renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+      renderer.root
+        .findByType("form")
+        .props.onSubmit({ preventDefault() {} }),
     );
     expect(mocks.save).toHaveBeenLastCalledWith(
       expect.objectContaining({ category: replacement }),
       10,
+      0,
     );
     expect(categorySelect().props.value).toBe(replacement);
     expect(JSON.stringify(renderer.toJSON())).toContain("카테고리 저장 실패");
@@ -432,7 +468,9 @@ it.each(["Escape", "닫기", "취소", "save"])(
       } else {
         renderer.root
           .findAllByType("button")
-          .find((b) => (b.props["aria-label"] ?? b.children.join("")) === path)!
+          .find(
+            (b) => (b.props["aria-label"] ?? b.children.join("")) === path,
+          )!
           .props.onClick();
       }
     });
@@ -468,12 +506,15 @@ it("keeps focus in the editor and locks dismissal during save, then restores it 
     expect(
       renderer.root
         .findAllByType("button")
-        .find((b) => (b.props["aria-label"] ?? b.children.join("")) === label)!
-        .props.disabled,
+        .find(
+          (b) => (b.props["aria-label"] ?? b.children.join("")) === label,
+        )!.props.disabled,
     ).toBe(true);
   }
   await act(async () =>
-    renderer.root.findByType("dialog").props.onCancel({ preventDefault() {} }),
+    renderer.root
+      .findByType("dialog")
+      .props.onCancel({ preventDefault() {} }),
   );
   expect(mocks.close).not.toHaveBeenCalled();
   expect(opener.focus).not.toHaveBeenCalled();
@@ -492,7 +533,152 @@ it("keeps the editor focused on save rejection and restores focus on later dismi
   expect(opener.focus).not.toHaveBeenCalled();
   expect(ownerDocument.activeElement).toBe(closeButton);
   await act(async () =>
-    renderer.root.findByType("dialog").props.onCancel({ preventDefault() {} }),
+    renderer.root
+      .findByType("dialog")
+      .props.onCancel({ preventDefault() {} }),
   );
   expect(opener.focus).toHaveBeenCalledOnce();
+});
+
+async function submitVersioned() {
+  await act(async () =>
+    renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
+  );
+}
+function recoveryButton(label: string) {
+  return renderer.root
+    .findAllByType("button")
+    .find((b) => b.children.includes(label));
+}
+it("keeps the opened version when background list and entry refresh", async () => {
+  await mount();
+  mocks.state = {
+    ...(mocks.state as object),
+    list: { isSuccess: true, data: [{ ...base, version: 9 }] },
+  };
+  await act(async () =>
+    renderer.update(
+      <ExpenseEditor
+        initial={{ expense: { ...base, version: 9 } }}
+        onClose={mocks.close}
+      />,
+    ),
+  );
+  await submitVersioned();
+  expect(mocks.save).toHaveBeenLastCalledWith(expect.anything(), 10, 0);
+});
+it("retains the draft and requires explicit latest-record review before saving again", async () => {
+  await mount();
+  await act(async () =>
+    renderer.root
+      .findByType("textarea")
+      .props.onChange({ target: { value: "my draft" } }),
+  );
+  mocks.save.mockRejectedValueOnce(
+    new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
+  );
+  mocks.readLatest.mockResolvedValueOnce({
+    ...base,
+    version: 2,
+    memo: "remote memo",
+  });
+  await submitVersioned();
+  expect(mocks.readLatest).toHaveBeenCalledWith(10);
+  expect(mocks.close).not.toHaveBeenCalled();
+  expect(renderer.root.findByType("textarea").props.value).toBe("my draft");
+  expect(JSON.stringify(renderer.toJSON())).toContain("remote memo");
+  await submitVersioned();
+  expect(mocks.save).toHaveBeenCalledTimes(1);
+  await act(async () =>
+    recoveryButton("최신 지출 확인 후 수정 계속")!.props.onClick(),
+  );
+  expect(mocks.save).toHaveBeenCalledTimes(1);
+  await submitVersioned();
+  expect(mocks.save).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      memo: "my draft",
+      payerUserIds: [1, 99],
+      totalAmount: "10.01",
+    }),
+    10,
+    2,
+  );
+});
+it.each([undefined, { ...base, version: 2, scheduleId: 11 }])(
+  "blocks retry for a deleted or moved conflict target",
+  async (latest) => {
+    await mount();
+    mocks.save.mockRejectedValueOnce(
+      new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
+    );
+    mocks.readLatest.mockResolvedValueOnce(latest);
+    await submitVersioned();
+    await submitVersioned();
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+    expect(recoveryButton("최신 지출 확인 후 수정 계속")).toBeUndefined();
+    expect(mocks.close).not.toHaveBeenCalled();
+  },
+);
+it("blocks save after failed conflict read until a fresh read and explicit review", async () => {
+  await mount();
+  mocks.save.mockRejectedValueOnce(
+    new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
+  );
+  mocks.readLatest.mockRejectedValueOnce(new Error("offline"));
+  await submitVersioned();
+  await submitVersioned();
+  expect(mocks.save).toHaveBeenCalledTimes(1);
+  mocks.readLatest.mockResolvedValueOnce({ ...base, version: 3 });
+  await act(async () =>
+    recoveryButton("최신 지출 다시 조회")!.props.onClick(),
+  );
+  expect(mocks.save).toHaveBeenCalledTimes(1);
+  await act(async () =>
+    recoveryButton("최신 지출 확인 후 수정 계속")!.props.onClick(),
+  );
+  await submitVersioned();
+  expect(mocks.save).toHaveBeenLastCalledWith(expect.anything(), 10, 3);
+});
+it.each([{ data: [] }, { data: [{ ...base, version: 1, scheduleId: 11 }] }])(
+  "blocks saving a target already known deleted or moved",
+  async ({ data }) => {
+    await mount();
+    mocks.state = {
+      ...(mocks.state as object),
+      list: { isSuccess: true, data },
+    };
+    await act(async () =>
+      renderer.update(
+        <ExpenseEditor initial={{ expense: base }} onClose={mocks.close} />,
+      ),
+    );
+    await submitVersioned();
+    expect(mocks.save).not.toHaveBeenCalled();
+  },
+);
+
+it("reveals every save failure, including a repeated error message", async () => {
+  const scrollIntoView = vi.fn();
+  await mount(base, {}, element => element.type === "p" ? { scrollIntoView } : null);
+  mocks.save.mockRejectedValue(new Error("저장 실패"));
+  const submit = () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} });
+  await act(async () => { await submit(); });
+  expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
+  await act(async () => { await submit(); });
+  expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  expect(JSON.stringify(renderer.toJSON())).toContain("저장 실패");
+});
+
+it("reveals repeated validation errors without smooth scrolling when reduced motion is requested", async () => {
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
+  const scrollIntoView = vi.fn();
+  await mount(null, {}, element => element.type === "p" ? { scrollIntoView } : null);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await act(async () => {
+      await renderer.root.findByType("form").props.onSubmit({ preventDefault() {} });
+    });
+  }
+  expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest", behavior: "instant" });
+  expect(mocks.save).not.toHaveBeenCalled();
 });

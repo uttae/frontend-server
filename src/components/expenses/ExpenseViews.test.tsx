@@ -1,8 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import {
   ExpenseList,
   ExpenseSummaryView,
+  ExpenseAnalysisView,
   ExpenseRolePicker,
 } from "./ExpenseViews";
 const expense = {
@@ -16,13 +18,14 @@ const expense = {
   memo: "준비 비용",
   payerUserIds: [1, 2],
   participantUserIds: [1, 2, 3],
+  version: 0,
   createdAt: "",
   updatedAt: "",
 };
 
 it("groups category and daily totals without losing decimal precision", () => {
   const html = renderToStaticMarkup(
-    <ExpenseSummaryView
+    <ExpenseAnalysisView
       members={[]}
       memberStatus="success"
       schedules={[]}
@@ -47,14 +50,13 @@ it("groups category and daily totals without losing decimal precision", () => {
     />,
   );
   expect(html).toContain("기타 · 1,234,567.00 USD");
-  expect(html).toContain("여행 준비 · 1,234,567.00 USD");
+  expect(html).not.toContain("여행 준비 · 1,234,567.00 USD");
 });
 it("renders exact server split and transfers including unknown people, no recalculation", () => {
   const html = renderToStaticMarkup(
-    <ExpenseSummaryView
+    <ExpenseSummaryView scope="all"
       members={[]}
       memberStatus="success"
-      schedules={[]}
       summary={{
         currencies: [
           {
@@ -106,9 +108,7 @@ it("renders exact server split and transfers including unknown people, no recalc
     "1.66",
     "(알 수 없음)",
     "사용자 정보를 확인할 수 없어요",
-    "기타",
-    "여행 준비",
-    "송금 제안",
+    "전체 정산",
   ])
     expect(html).toContain(text);
   expect(html).toContain('data-user-id="1"');
@@ -198,7 +198,7 @@ it.each(categories)("labels listed %s expenses as %s", (category, label) => {
 it("renders the server category order and exact amounts, omitting unused categories", () => {
   const render = (rows: (typeof categories)[number][]) =>
     renderToStaticMarkup(
-      <ExpenseSummaryView
+      <ExpenseAnalysisView
         members={[]}
         memberStatus="success"
         schedules={[]}
@@ -234,4 +234,126 @@ it("renders the server category order and exact amounts, omitting unused categor
   expect(subset).toContain("기타 · 20.01 USD");
   for (const index of [0, 1, 3, 4, 5])
     expect(subset).not.toContain(categories[index][1]);
+});
+
+const personalSummary = {
+  currencies: [{
+    currency: "KRW", totalAmount: "90000", categories: [], days: [],
+    individuals: [{ userId: 1, paidAmount: "20000", owedAmount: "50000", netAmount: "-30000" }],
+    transfers: [
+      { fromUserId: 1, toUserId: 2, amount: "30000" },
+      { fromUserId: 3, toUserId: 4, amount: "10000" },
+    ],
+  }, {
+    currency: "USD", totalAmount: "12.34", categories: [], days: [],
+    individuals: [{ userId: 1, paidAmount: "12.34", owedAmount: "0.00", netAmount: "12.34" }],
+    transfers: [{ fromUserId: 2, toUserId: 1, amount: "12.34" }],
+  }],
+};
+it("defaults to my settlement, showing only my counterparties and separate currencies", () => {
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" currentUserId={1} />);
+  expect(html).toContain("보낼 금액");
+  expect(html).toContain("받을 금액");
+  expect(html).toContain("30,000 KRW");
+  expect(html).toContain("12.34 USD");
+  expect(html).not.toContain('data-user-id="3"');
+  expect(html).not.toContain('data-user-id="4"');
+  expect(html).not.toContain("순액");
+  expect(html).toContain("계산 내역");
+  expect(html).toContain("내가 낸 금액");
+  expect(html).toContain("내 몫");
+  expect(html).not.toContain("지출 분석");
+});
+it("does not claim settlement completion when there are no personal transfers", () => {
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" currentUserId={5} />);
+  expect(html).toContain("주고받을 금액이 없어요");
+  expect(html).not.toContain("정산 완료");
+});
+it("does not show other people's transfers while the current user is unavailable", () => {
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="pending" />);
+  expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중");
+  expect(html).not.toContain("30,000 KRW");
+});
+
+it("scales analysis bars against the largest amount and handles zero totals", () => {
+  const render = (amounts: string[]) => renderToStaticMarkup(
+    <ExpenseAnalysisView members={[]} memberStatus="success" schedules={[]} summary={{ currencies: [{
+      currency: "USD", totalAmount: "150.00", individuals: [], transfers: [], days: [],
+      categories: amounts.map((totalAmount, i) => ({ category: i === 0 ? "FOOD" : "OTHER", totalAmount })),
+    }] }} />,
+  );
+  const html = render(["100.00", "50.00"]);
+  expect(html).toContain('width:100%');
+  expect(html).toContain('width:50%');
+  const opacities = [...html.matchAll(/opacity:([0-9.]+)/g)].map(match => Number(match[1]));
+  expect(opacities[0]).toBeGreaterThan(opacities[1]);
+  const equal = [...render(["50", "50"]).matchAll(/opacity:([0-9.]+)/g)].map(match => Number(match[1]));
+  expect(equal[0]).toBe(equal[1]);
+  expect(html).toContain('aria-label="USD 카테고리별 지출 그래프"');
+  const zero = render(["0.00", "0.00"]);
+  expect(zero).not.toMatch(/NaN|Infinity/);
+  expect(zero).toContain('width:0%');
+});
+
+it("shows only the selected analysis graph and preserves exact daily amounts", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let renderer: ReactTestRenderer | undefined;
+  try {
+    await act(async () => {
+      renderer = create(<ExpenseAnalysisView members={[]} memberStatus="success" schedules={[]} summary={{ currencies: [{
+        currency: "USD", totalAmount: "1234567.00", individuals: [], transfers: [],
+        categories: [{ category: "OTHER", totalAmount: "1234567.00" }],
+        days: [{ expenseGroup: "PREPARATION", scheduleId: null, totalAmount: "1234567.00" }],
+      }] }} />);
+    });
+    const graphs = () => renderer!.root.findAllByType("figure");
+    expect(graphs()).toHaveLength(1);
+    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 지출 그래프");
+    await act(async () => renderer!.root.findAllByType("button").find(b => b.children.includes("일차별"))!.props.onClick());
+    expect(graphs()).toHaveLength(1);
+    expect(graphs()[0].props["aria-label"]).toBe("USD 준비·일차별 지출 그래프");
+    expect(JSON.stringify(renderer!.toJSON())).toContain("여행 준비 · 1,234,567.00 USD");
+    await act(async () => renderer!.root.findAllByType("button").find(b => b.children.includes("카테고리별"))!.props.onClick());
+    expect(graphs()).toHaveLength(1);
+    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 지출 그래프");
+  } finally {
+    await act(async () => renderer?.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+it("opens editing from the expense card and keeps deletion as a separate action", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let renderer: ReactTestRenderer | undefined;
+  const onEdit = vi.fn();
+  const onDelete = vi.fn();
+  const render = (canManage: boolean, busy = false) => <ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage={canManage} busy={busy} onEdit={onEdit} onDelete={onDelete} />;
+  try {
+    await act(async () => { renderer = create(render(true)); });
+    expect(renderer!.root.findAllByType("details")).toHaveLength(1);
+    expect(JSON.stringify(renderer!.toJSON())).toContain("결제자");
+    expect(JSON.stringify(renderer!.toJSON())).toContain("부담자");
+    const buttons = renderer!.root.findAllByType("button");
+    expect(buttons).toHaveLength(2);
+    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("지출 수정"))!.props.onClick());
+    expect(onEdit).toHaveBeenCalledWith(expense);
+    onEdit.mockClear();
+    await act(async () => buttons.find(b => b.props["aria-label"] === "지출 삭제")!.props.onClick());
+    expect(onDelete).toHaveBeenCalledWith(expense);
+    expect(onEdit).not.toHaveBeenCalled();
+    await act(async () => renderer!.update(render(true, true)));
+    expect(renderer!.root.findAllByType("button").every(b => b.props.disabled)).toBe(true);
+    await act(async () => renderer!.update(render(false)));
+    expect(renderer!.root.findAllByType("button")).toHaveLength(0);
+  } finally {
+    await act(async () => renderer?.unmount());
+    vi.unstubAllGlobals();
+  }
+});
+
+it("announces unavailable identity before an empty personal settlement", () => {
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={{ currencies: [] }} members={[]} memberStatus="pending" />);
+  expect(html).toContain('<output');
+  expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중…");
+  expect(html).not.toContain("정산할 지출이 없어요.");
 });

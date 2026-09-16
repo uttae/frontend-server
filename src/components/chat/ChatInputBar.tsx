@@ -321,7 +321,7 @@ export function ChatInputBar({
                 isMinimized ? "text-[13px]" : "text-[14px]",
               )}
             >
-              <span className="font-medium text-primary-strong">
+              <span className="font-medium text-secondary-default">
                 {CHAT_AI_MENTION_LABEL}
               </span>
               <span className="ml-2 text-dark-gray">AI에게 질문하기</span>

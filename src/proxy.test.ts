@@ -9,7 +9,7 @@ vi.mock("@/lib/auth-server", () => ({
   verifySessionWithOptionalRefresh,
 }));
 
-import { proxy } from "@/proxy";
+import { config, proxy } from "@/proxy";
 
 function inviteRequest(userAgent: string): NextRequest {
   return new NextRequest("https://www.uttae.app/join/test-invite", {
@@ -79,6 +79,8 @@ describe("protected route redirect indexing contract", () => {
     "/plan/room-1",
     "/bookmark/folder-1",
     "/search",
+    "/cost",
+    "/cost/detail",
     "/member-settings",
     "/room-settings",
     "/contact",
@@ -142,5 +144,17 @@ it("keeps the explicit cookie settings landing entry accessible to authenticated
   expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
   expect(response.headers.get("location")).toBeNull();
   expect(response.headers.get("x-middleware-next")).toBe("1");
+  expect(response.headers.get("set-cookie")).toBe("session=refreshed; Path=/; HttpOnly");
+});
+
+it("routes cost requests through session verification and retains refreshed cookies", async () => {
+  const { unstable_doesMiddlewareMatch } = await import("next/experimental/testing/server");
+  for (const path of ["/cost", "/cost/detail"]) {
+    expect(unstable_doesMiddlewareMatch({ config, url: `https://www.uttae.app${path}` })).toBe(true);
+  }
+  verifySessionWithOptionalRefresh.mockResolvedValue({ ok: true, setCookies: ["session=refreshed; Path=/; HttpOnly"] });
+  const response = await proxy(appRequest("/cost"));
+  expect(response.headers.get("x-middleware-next")).toBe("1");
+  expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
   expect(response.headers.get("set-cookie")).toBe("session=refreshed; Path=/; HttpOnly");
 });

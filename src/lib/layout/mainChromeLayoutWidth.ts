@@ -87,28 +87,16 @@ export type ResolveLeftSectionTargetMaxWidthParams = {
 };
 
 /**
- * LeftSection `maxWidth` 목표(px). `null`이면 flex(`none`).
+ * 협업 공간은 탭·채팅 상태와 무관하게 일정 기준의 전체 폭(사이드바 포함)을 사용.
  * 모바일은 호출측에서 `"100%"` 처리.
  */
 export function resolveLeftSectionTargetMaxWidthPx({
-  pathname,
-  contentWidthToken,
-  chatState,
   isMobile,
   rootFontPx = DEFAULT_ROOT_FONT_PX,
 }: ResolveLeftSectionTargetMaxWidthParams): number | null {
   if (isMobile) return null;
 
-  if (isPlanPath(pathname)) {
-    return chatState === "maximized"
-      ? contentTokenToLeftSectionMaxPx(width.s1, rootFontPx)
-      : parseLayoutLengthToPx(width.s2, rootFontPx);
-  }
-
-  const token = resolveEffectiveContentWidthToken(pathname, contentWidthToken);
-  if (!token.length) return null;
-
-  return contentTokenToLeftSectionMaxPx(token, rootFontPx);
+  return parseLayoutLengthToPx(width.s2, rootFontPx);
 }
 
 export function resolveLeftSectionAnimateMaxWidth({

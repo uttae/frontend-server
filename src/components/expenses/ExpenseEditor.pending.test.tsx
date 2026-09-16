@@ -37,6 +37,7 @@ const base: Expense = {
   memo: "source memo",
   payerUserIds: [1, 2],
   participantUserIds: [1],
+  version: 0,
   createdAt: "",
   updatedAt: "",
 };
@@ -106,7 +107,7 @@ it.each(["결제자", "부담자"] as const)(
       expenseGroup: "PREPARATION", scheduleId: null, scheduleItemId: null,
       totalAmount: "100", currency: "KRW", category: "OTHER", memo: "source memo",
       payerUserIds: [1], participantUserIds: [1],
-    }, 10);
+    }, 10, 0);
     expect(expense).toEqual(source);
   },
 );
@@ -134,7 +135,7 @@ it("removes the same PENDING person independently from each role", async () => {
   expect(mocks.save).not.toHaveBeenCalled();
   await act(async () => removeButton("부담자").props.onClick());
   await submit();
-  expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ payerUserIds: [1], participantUserIds: [1] }), 10);
+  expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ payerUserIds: [1], participantUserIds: [1] }), 10, 0);
 });
 
 it.each(["결제자", "부담자"] as const)("reports a clear error when the last %s is removed", async (title) => {
@@ -177,13 +178,13 @@ it("preserves unknown roles, disallows copying/readding unknowns, and still sele
   expect(text(picker("결제자"))).not.toContain("#98");
   expect(text(picker("부담자"))).not.toContain("#99");
   await submit();
-  expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1, 98] }), 10);
+  expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1, 98] }), 10, 0);
   const labels = picker("결제자").findAllByType("label");
   await act(async () => labels.find((l) => text(l).includes("#99"))!.findByType("input").props.onChange({ target: { checked: false } }));
   expect(text(picker("결제자"))).not.toContain("#99");
   await act(async () => labels.find((l) => text(l).includes("나간 멤버"))!.findByType("input").props.onChange({ target: { checked: true } }));
   await submit();
-  expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 3], participantUserIds: [1, 98] }), 10);
+  expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 3], participantUserIds: [1, 98] }), 10, 0);
 });
 
 it.each(["pending", "error"] as MemberQueryStatus[])("does not infer membership or alter selections during member %s", async (memberStatus) => {
