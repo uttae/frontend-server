@@ -1,5 +1,8 @@
 "use client";
 
+import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
+import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
+
 import type { DragEvent } from "react";
 import { useCallback, useRef, useState } from "react";
 import Image from "next/image";
@@ -25,7 +28,6 @@ import {
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 import {
-  formatScheduleStaySummary,
   formatScheduleTimeRange,
 } from "@/lib/plan/scheduleTime";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -91,7 +93,7 @@ export function PlanPlaceCard({
 
   const handleDeleteScheduleItem = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("이 장소를 일정에서 삭제할까요?")) return;
+    if (!confirm("이 장소와 연결된 모든 지출을 삭제할까요?")) return;
     try {
       await removeScheduleItemMutate({
         roomId: scheduleTimeEdit.roomId,
@@ -229,15 +231,11 @@ export function PlanPlaceCard({
 
   const memoText = typeof place.memo === "string" ? place.memo.trim() : "";
   const hasMemo = memoText.length > 0;
-  const staySummary = formatScheduleStaySummary(
-    place.startTime ?? "",
-    place.endTime,
-  );
   const timeRange = formatScheduleTimeRange(
     place.startTime ?? "",
     place.endTime,
   );
-  const hasTime = Boolean(staySummary);
+  const hasTime = Boolean(timeRange);
 
   const deleteButton = canManageServerItem ? (
     <PlanScheduleItemDeleteButton
@@ -289,7 +287,7 @@ export function PlanPlaceCard({
         strokeWidth={2}
         aria-hidden
       />
-      시간 설정
+      {timeRange || "시간 설정"}
     </button>
   ) : null;
 
@@ -415,7 +413,7 @@ export function PlanPlaceCard({
             ) : null}
           </div>
 
-          {timeRange ? (
+          {timeRange && !canEditScheduleItem ? (
             <span
               className={cn(
                 "mt-auto inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
@@ -437,6 +435,15 @@ export function PlanPlaceCard({
           >
             {memoTrigger}
             {timeTrigger}
+            {scheduleTimeEdit && scheduleItemId !== null && (
+              <ExpenseEntryButton
+                scheduleId={scheduleTimeEdit.scheduleId}
+                scheduleItemId={scheduleItemId}
+                label="지출 추가"
+                className={PLAN_PLACE_CARD_TW.triggerButton}
+                icon={<ExpenseIcon className={PLAN_PLACE_CARD_TW.triggerIcon} />}
+              />
+            )}
           </div>
         ) : null}
       </article>

@@ -1,3 +1,6 @@
+import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
+import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
+import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   useMutation,
   useQuery,
@@ -200,6 +203,7 @@ export function useDeleteRoomSchedule() {
       scheduleId: number;
     }) => deleteRoomSchedule(roomId, scheduleId),
     onSuccess: async (_data, { roomId, scheduleId }) => {
+      await invalidateExpenses(queryClient, roomId);
       const id = roomId.trim();
       if (!id.length) return;
 
@@ -257,6 +261,7 @@ export function useMoveRoomSchedule() {
     onSuccess: async (_data, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
+      await invalidateExpenses(queryClient, id);
       await hydrateRoomSchedulesFromServer(queryClient, id);
     },
   });
@@ -291,6 +296,7 @@ export function useMoveScheduleItemToSchedule() {
       _moved,
       { roomId, sourceScheduleId, targetScheduleId, itemId },
     ) => {
+      await invalidateExpenses(queryClient, roomId);
       await syncAfterCrossScheduleItemMove(
         queryClient,
         roomId,
@@ -434,6 +440,7 @@ export function useDeleteScheduleItem() {
       itemId: number;
     }) => deleteScheduleItem(vars.roomId, vars.scheduleId, vars.itemId),
     onSuccess: async (_, { roomId, scheduleId, itemId }) => {
+      await invalidateExpenses(queryClient, roomId);
       await applyScheduleItemDeletedOnClient(
         queryClient,
         roomId,
@@ -544,6 +551,7 @@ export function useUpdateRoom() {
         (data.endDate !== undefined && data.endDate !== prevEnd);
 
       if (datesChanged) {
+        await invalidateExpenses(queryClient, roomId);
         await hydrateRoomSchedulesFromServer(queryClient, roomId);
       }
     },
@@ -554,7 +562,8 @@ export function useDeleteRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (roomId: string) => deleteRoom(roomId),
-    onSuccess: () => {
+    onSuccess: (_, roomId) => {
+      queryClient.removeQueries({ queryKey: expenseKeys.room(roomId) });
       queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });
@@ -600,14 +609,29 @@ export function useRoomMembers(roomId: string | null) {
 }
 
 export function useJoinRoom() {
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (inviteCode: string) => joinRoom(inviteCode),
+    mutationFn: async (inviteCode: string) => {
+      const confirm = beginExpenseRoomAdmission(client);
+      const response = await joinRoom(inviteCode);
+      confirm(response.id, response.httpStatus === 200);
+      return response;
+    },
   });
 }
 
 export function useCheckJoinStatus() {
+  const client = useQueryClient();
   return useMutation({
-    mutationFn: (roomId: string) => getJoinStatus(roomId),
+    mutationFn: async (roomId: string) => {
+      const confirm = beginExpenseRoomAdmission(client);
+      const response = await getJoinStatus(roomId);
+      confirm(
+        roomId,
+        response.id === roomId && joinStatusForWaitingUi(response) === "APPROVED",
+      );
+      return response;
+    },
   });
 }
 

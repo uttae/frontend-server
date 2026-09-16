@@ -1,5 +1,7 @@
 "use client";
 
+import { expenseKeys } from "@/lib/expenses/expense-queries";
+
 import type { QueryClient } from "@tanstack/react-query";
 
 import type {
@@ -76,6 +78,7 @@ export function dispatchRoomMemberEvent(
 ): void {
   const rid = String(event.roomId ?? "").trim() || subscribedRoomId;
   if (!rid) return;
+  void queryClient.invalidateQueries({ queryKey: expenseKeys.members(rid) });
 
   switch (event.type) {
     case "MEMBER_JOINED": {

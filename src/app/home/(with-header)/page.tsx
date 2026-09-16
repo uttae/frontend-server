@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 
-import { MobileReadOnlyNotice } from "@/components/mobile/MobileReadOnlyNotice";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useRoomsList } from "@/hooks/useRooms";
 import {
@@ -14,12 +13,10 @@ import {
 } from "@/components/layout/page-toolbar-button";
 import { cn } from "@/lib/utils";
 import { RoomListItem } from "@/lib/api/rooms";
-import { SiteFooter } from "@/components/layout/SiteFooter";
 
-import { HomeHeader } from "./_components/HomeHeader";
-import { RoomGrid } from "./_components/RoomGrid";
-import { DeleteConfirmModal } from "./_components/DeleteConfirmModal";
-import { LeaveConfirmModal } from "./_components/LeaveConfirmModal";
+import { RoomGrid } from "../_components/RoomGrid";
+import { DeleteConfirmModal } from "../_components/DeleteConfirmModal";
+import { LeaveConfirmModal } from "../_components/LeaveConfirmModal";
 
 export default function HomePage() {
   const { isMobileDevice } = useMobileView();
@@ -30,10 +27,7 @@ export default function HomePage() {
   const [leavingRoom, setLeavingRoom] = useState<RoomListItem | null>(null);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <MobileReadOnlyNotice />
-      <HomeHeader />
-
+    <>
       <main className="mx-auto w-full max-w-5xl flex-1 px-6 py-8">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -74,8 +68,6 @@ export default function HomePage() {
         </div>
       </main>
 
-      <SiteFooter />
-
       {deletingRoom && (
         <DeleteConfirmModal
           room={deletingRoom}
@@ -89,6 +81,6 @@ export default function HomePage() {
           onClose={() => setLeavingRoom(null)}
         />
       )}
-    </div>
+    </>
   );
 }

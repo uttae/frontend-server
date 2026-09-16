@@ -24,7 +24,7 @@ describe.each([
       text: "여행 장소를 추천해 주세요",
     };
 
-    it("renders the AI mention with readable foreground and the panel font size", () => {
+    it("renders the AI mention with the lime color and the panel font size", () => {
       const html = renderToStaticMarkup(
         <Group messages={[{ ...message, isAiRequest: true }]} isMinimized={isMinimized} />,
       );
@@ -32,7 +32,7 @@ describe.each([
 
       expect(mentions).toHaveLength(1);
       const classes = mentions[0][1].split(/\s+/);
-      expect(classes).toContain("text-text");
+      expect(classes).toContain("text-secondary-default");
       expect(classes).not.toContain("text-white");
       expect(classes).toContain(isMinimized ? "text-[13px]" : "text-[14px]");
       expect(classes).not.toContain(isMinimized ? "text-[14px]" : "text-[13px]");
