@@ -110,6 +110,8 @@ export const config = {
     "/plan",
     "/plan/:roomId",
     "/plan/:roomId/:path*",
+    "/cost",
+    "/cost/:path*",
     "/bookmark",
     "/bookmark/:path*",
     "/search",

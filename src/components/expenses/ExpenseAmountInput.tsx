@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, type ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 import { expenseInputClass, formatExpenseAmount } from "./ExpenseViews";
 
@@ -9,12 +9,17 @@ export function ExpenseAmountInput({
   onChange,
   placeholder,
   fractionDigits,
+  ...inputProps
 }: {
   value: string;
   onChange: (value: string) => void;
-  placeholder: string;
+  placeholder?: string;
   fractionDigits?: number;
-}) {
+} & Pick<
+  ComponentProps<"input">,
+  "id" | "type" | "inputMode" | "autoComplete" | "disabled" |
+  "aria-invalid" | "aria-describedby" | "className"
+>) {
   const input = useRef<HTMLInputElement>(null);
   const caret = useRef<number | null>(null);
   const formatted = formatExpenseAmount(value);
@@ -31,9 +36,14 @@ export function ExpenseAmountInput({
   }, [formatted]);
   return (
     <input
+      {...inputProps}
       ref={input}
-      className={cn(expenseInputClass, "block h-14 font-bold tabular-nums")}
-      inputMode="decimal"
+      className={cn(
+        expenseInputClass,
+        "block h-14 font-bold tabular-nums",
+        inputProps.className,
+      )}
+      inputMode={inputProps.inputMode ?? "decimal"}
       value={formatted}
       placeholder={placeholder}
       autoComplete="off"

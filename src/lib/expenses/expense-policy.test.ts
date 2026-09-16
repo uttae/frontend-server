@@ -116,6 +116,7 @@ describe("expense roles and links", () => {
     const original = {
       ...body,
       id: 1,
+      version: 0,
       createdAt: "",
       updatedAt: "",
       payerUserIds: [99],

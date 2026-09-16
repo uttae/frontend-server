@@ -326,10 +326,6 @@ export function ExpenseSummaryView({
 }: PeopleProps & { summary: ExpenseSummary; schedules: RoomSchedule[] }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm leading-relaxed text-dark-gray">
-        방 전체 지출을 기준으로 정산해요. 아래 금액을 확인하고 직접 송금해
-        주세요.
-      </p>
       {!summary.currencies.length && (
         <p className="py-4 text-center text-dark-gray">정산할 지출이 없어요.</p>
       )}

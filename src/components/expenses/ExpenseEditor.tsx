@@ -7,6 +7,7 @@ import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
+  ExpenseApiError,
   expenseCategories,
   isExpenseCategory,
   type Expense,
@@ -16,6 +17,7 @@ import { validateExpense } from "@/lib/expenses/expense-policy";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
+  ExpenseList,
   ExpenseRolePicker,
   expenseButtonClass,
   expenseInputClass,
@@ -34,7 +36,12 @@ export function ExpenseEditor({
   onClose: () => void;
 }) {
   const context = useExpenseContext();
-  const original = initial.expense;
+  // This snapshot advances only after the user reviews a conflict response.
+  const [original, setOriginal] = useState(initial.expense);
+  const [conflict, setConflict] = useState<{
+    latest?: Expense;
+    failed?: boolean;
+  } | null>(null);
   const self =
     context.canManage &&
     context.members.some(
@@ -83,6 +90,36 @@ export function ExpenseEditor({
     };
   }, []);
   const pending = saving || context.busy;
+  const currentTarget = context.list?.data?.find(
+    (e) => e.id === original?.id,
+  );
+  const targetChanged = Boolean(
+    original &&
+      context.list?.isSuccess &&
+      (!currentTarget ||
+        currentTarget.expenseGroup !== original.expenseGroup ||
+        currentTarget.scheduleId !== original.scheduleId ||
+        currentTarget.scheduleItemId !== original.scheduleItemId),
+  );
+  const conflictMoved = Boolean(
+    conflict?.latest &&
+      original &&
+      (conflict.latest.expenseGroup !== original.expenseGroup ||
+        conflict.latest.scheduleId !== original.scheduleId ||
+        conflict.latest.scheduleItemId !== original.scheduleItemId),
+  );
+  async function recover() {
+    if (!original) return;
+    setConflict({});
+    setSaving(true);
+    try {
+      setConflict({ latest: await context.readLatest(original.id) });
+    } catch {
+      setConflict({ failed: true });
+    } finally {
+      setSaving(false);
+    }
+  }
   const ready =
     context.canManage &&
     context.memberStatus === "success" &&
@@ -102,6 +139,7 @@ export function ExpenseEditor({
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (submitLock.current || pending) return;
+    if (conflict || targetChanged) return;
     if (!ready) {
       setError("멤버·통화·일차 정보를 확인한 뒤 다시 시도해 주세요.");
       return;
@@ -147,9 +185,15 @@ export function ExpenseEditor({
       participantUserIds: body.participantUserIds,
     };
     try {
-      await context.save(payload, original?.id);
+      await context.save(payload, original?.id, original?.version);
       onClose();
     } catch (e) {
+      if (
+        e instanceof ExpenseApiError &&
+        (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")
+      ) {
+        await recover();
+      }
       setError(e instanceof Error ? e.message : "지출을 저장하지 못했어요.");
     } finally {
       submitLock.current = false;
@@ -342,6 +386,74 @@ export function ExpenseEditor({
             현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.
           </p>
         )}
+        {targetChanged && (
+          <p role="alert">
+            지출이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤
+            최신 지출을 다시 열어 주세요.
+          </p>
+        )}
+        {conflict && (
+          <div
+            role="alert"
+            className="space-y-3 rounded-xl border border-gray-border p-3"
+          >
+            <p>
+              지출이 변경되었어요. 입력 내용은 유지돼요. 최신 지출을 확인해
+              주세요.
+            </p>
+            {conflict.latest ? (
+              <>
+                <ExpenseList
+                  expenses={[conflict.latest]}
+                  members={context.members}
+                  memberStatus={context.memberStatus}
+                  schedules={context.schedules}
+                  canManage={false}
+                  onEdit={() => {}}
+                  onDelete={() => {}}
+                  busy={false}
+                />
+                {conflictMoved ? (
+                  <p>
+                    연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신
+                    지출을 다시 열어 주세요.
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className={expenseButtonClass}
+                    disabled={pending || targetChanged}
+                    onClick={() => {
+                      setOriginal(conflict.latest);
+                      setConflict(null);
+                      setError("");
+                    }}
+                  >
+                    최신 지출 확인 후 수정 계속
+                  </button>
+                )}
+              </>
+            ) : (
+              <p>
+                {pending
+                  ? "최신 지출 확인 중…"
+                  : conflict.failed
+                    ? "최신 지출 조회에 실패했어요. 저장은 중단돼요."
+                    : "지출이 삭제되었어요. 입력 내용은 복사할 수 있어요."}
+              </p>
+            )}
+            {conflict.failed && (
+              <button
+                type="button"
+                className={expenseButtonClass}
+                disabled={pending}
+                onClick={() => void recover()}
+              >
+                최신 지출 다시 조회
+              </button>
+            )}
+          </div>
+        )}
         {error && (
           <p id={errorId} role="alert" className="text-sm text-status-negative">
             {error}
@@ -362,7 +474,7 @@ export function ExpenseEditor({
               expenseButtonClass,
               "bg-primary text-white enabled:hover:bg-primary-strong",
             )}
-            disabled={!ready || pending}
+            disabled={!ready || pending || Boolean(conflict) || targetChanged}
           >
             {pending ? "저장 중…" : "저장"}
           </button>

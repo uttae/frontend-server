@@ -4,7 +4,10 @@ import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
-import { sidebarWireframeIcons as sidebarIcons } from "@/lib/public-assets";
+import {
+  sidebarWireframeIcons as sidebarIcons,
+  sidebarIcons as sharedSidebarIcons,
+} from "@/lib/public-assets";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 
 import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";
@@ -18,6 +21,7 @@ const SIDEBAR_ITEMS = [
   { key: "plan", href: "/plan", label: "일정", icon: sidebarIcons.plan },
   { key: "search", href: "/search", label: "검색", icon: sidebarIcons.search },
   { key: "bookmark", href: "/bookmark", label: "북마크", icon: sidebarIcons.bookmark },
+  { key: "cost", href: "/cost", label: "비용", icon: sharedSidebarIcons.cost },
 ] as const;
 
 function isSidebarItemActive(pathname: string, key: string, href: string) {
@@ -54,7 +58,7 @@ function SideBar() {
             tutorialTarget={item.key}
             isActive={!isChatActive && isSidebarItemActive(pathname, item.key, item.href)}
             onClick={closeChat}
-            showDividerBelow={item.key === "bookmark"}
+            showDividerBelow={item.key === "cost"}
           />
         ))}
         <button

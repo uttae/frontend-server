@@ -16,6 +16,7 @@ const expense = {
   memo: "준비 비용",
   payerUserIds: [1, 2],
   participantUserIds: [1, 2, 3],
+  version: 0,
   createdAt: "",
   updatedAt: "",
 };
