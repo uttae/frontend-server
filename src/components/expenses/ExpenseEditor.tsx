@@ -404,6 +404,7 @@ export function ExpenseEditor({
             {conflict.latest ? (
               <>
                 <ExpenseList
+                roomId={context.roomId}
                   expenses={[conflict.latest]}
                   members={context.members}
                   memberStatus={context.memberStatus}

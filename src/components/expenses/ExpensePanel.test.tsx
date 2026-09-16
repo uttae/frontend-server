@@ -169,14 +169,14 @@ it("requires confirmation and preserves list with visible deletion failure", asy
   );
   let button = renderer.root
     .findAllByType("button")
-    .find((b) => b.children.includes("삭제"))!;
+    .find((b) => b.props["aria-label"] === "지출 삭제")!;
   await act(async () => button.props.onClick());
   expect(mocks.remove).not.toHaveBeenCalled();
   vi.stubGlobal("confirm", () => true);
   mocks.remove.mockRejectedValue(new Error("삭제 실패"));
   button = renderer.root
     .findAllByType("button")
-    .find((b) => b.children.includes("삭제"))!;
+    .find((b) => b.props["aria-label"] === "지출 삭제")!;
   await act(async () => button.props.onClick());
   expect(JSON.stringify(renderer.toJSON())).toContain("삭제 실패");
   expect(renderer.root.findAllByType("li")).toHaveLength(2);
@@ -205,7 +205,7 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
 function panelButton(label: string) {
   return renderer.root
     .findAllByType("button")
-    .find((b) => b.children.includes(label));
+    .find((b) => b.children.includes(label) || (label === "삭제" && b.props["aria-label"] === "지출 삭제"));
 }
 it("retains deletion selection and requires confirmation of the fetched version without automatic retry", async () => {
   await mount();

@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
+import { ExpensePlaceLabel } from "./ExpensePlaceLabel";
 import {
   ArrowRight,
   BedDouble,
@@ -10,6 +11,7 @@ import {
   ReceiptText,
   ShoppingBag,
   TrainFront,
+  Trash2,
   Utensils,
 } from "lucide-react";
 import {
@@ -201,6 +203,7 @@ export function ExpenseRolePicker({
   );
 }
 export function ExpenseList({
+  roomId,
   expenses,
   members,
   memberStatus,
@@ -210,6 +213,7 @@ export function ExpenseList({
   onDelete,
   busy,
 }: PeopleProps & {
+  roomId?: string;
   expenses: Expense[];
   schedules: RoomSchedule[];
   canManage: boolean;
@@ -234,14 +238,30 @@ export function ExpenseList({
   return (
     <ul className="divide-y divide-gray-border">
       {expenses.map((e) => (
-        <li key={e.id} className="min-w-0 py-4 first:pt-1 last:pb-0">
+        <li key={e.id} className="min-w-0 py-1">
+          <div className={`relative min-w-0 rounded-xl p-3 transition-colors ${canManage && !busy ? "hover:bg-primary/5" : ""}`}>
+          {canManage && (
+            <button
+              type="button"
+              aria-label={`${e.memo || expenseCategoryLabel(e.category)} ${formatExpenseAmount(e.totalAmount)} ${e.currency} 지출 수정`}
+              aria-haspopup="dialog"
+              disabled={busy}
+              onClick={() => onEdit(e)}
+              className="absolute inset-0 z-10 cursor-pointer rounded-xl focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed"
+            />
+          )}
           <div className="flex items-start gap-3">
             <CategoryIcon category={e.category} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <p className="min-w-0 flex-1 basis-28 break-words font-semibold">
-                  {e.memo || expenseCategoryLabel(e.category)}
-                </p>
+                <div className="flex min-w-0 flex-1 basis-28 flex-wrap items-center gap-x-2 gap-y-1">
+                  <p className="break-words font-semibold">
+                    {e.memo || expenseCategoryLabel(e.category)}
+                  </p>
+                  {roomId && e.scheduleId !== null && e.scheduleItemId !== null && (
+                    <ExpensePlaceLabel roomId={roomId} scheduleId={e.scheduleId} itemId={e.scheduleItemId} />
+                  )}
+                </div>
                 <p className="max-w-full break-all text-right text-base font-bold tabular-nums">
                   {formatExpenseAmount(e.totalAmount)}{" "}
                   <span className="text-xs font-medium text-dark-gray">
@@ -253,8 +273,9 @@ export function ExpenseList({
                 {expenseDayLabel(e.expenseGroup, e.scheduleId, schedules)} ·{" "}
                 {expenseCategoryLabel(e.category)}
               </p>
-              <details className="group mt-2">
-                <summary className="flex min-h-8 w-fit cursor-pointer list-none rounded-lg px-1 transition-colors hover:bg-primary/5 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center gap-1 text-xs text-dark-gray [&::-webkit-details-marker]:hidden">
+              <div className="relative mt-2">
+              <details className="group relative z-20 pr-10">
+                <summary className="flex min-h-8 w-fit cursor-pointer list-none rounded-lg px-1 transition-colors hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center gap-1 text-xs text-dark-gray [&::-webkit-details-marker]:hidden">
                   결제·분담 내역{" "}
                   <ChevronDown
                     size={14}
@@ -284,34 +305,25 @@ export function ExpenseList({
                       ))}
                     </div>
                   ))}
-                  {e.scheduleItemId !== null && (
-                    <p className="text-xs text-dark-gray">
-                      연결 장소 #{e.scheduleItemId}
-                    </p>
-                  )}
-                  {canManage && (
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        className={expenseButtonClass}
-                        disabled={busy}
-                        onClick={() => onEdit(e)}
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        className={`${expenseButtonClass} text-status-negative`}
-                        disabled={busy}
-                        onClick={() => onDelete(e)}
-                      >
-                        삭제
-                      </button>
-                    </div>
-                  )}
                 </div>
               </details>
+              {canManage && (
+                <div className="absolute right-0 top-0 z-20">
+                  <button
+                    type="button"
+                    aria-label="지출 삭제"
+                    title="지출 삭제"
+                    disabled={busy}
+                    onClick={() => onDelete(e)}
+                    className="relative z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-dark-gray transition-colors hover:text-status-negative focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
+              </div>
             </div>
+          </div>
           </div>
         </li>
       ))}

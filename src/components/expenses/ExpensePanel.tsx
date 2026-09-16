@@ -223,6 +223,7 @@ export function ExpensePanel() {
           {conflict.latest ? (
             <>
               <ExpenseList
+                roomId={context.roomId}
                 expenses={[conflict.latest]}
                 members={context.members}
                 memberStatus={context.memberStatus}
@@ -318,6 +319,7 @@ export function ExpensePanel() {
           </div>
           {context.list.isSuccess && (
             <ExpenseList
+                roomId={context.roomId}
               expenses={filtered}
               members={context.members}
               memberStatus={context.memberStatus}

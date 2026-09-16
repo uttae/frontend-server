@@ -322,3 +322,32 @@ it("shows only the selected analysis graph and preserves exact daily amounts", a
     vi.unstubAllGlobals();
   }
 });
+
+it("opens editing from the expense card and keeps deletion as a separate action", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let renderer: ReactTestRenderer | undefined;
+  const onEdit = vi.fn();
+  const onDelete = vi.fn();
+  const render = (canManage: boolean, busy = false) => <ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage={canManage} busy={busy} onEdit={onEdit} onDelete={onDelete} />;
+  try {
+    await act(async () => { renderer = create(render(true)); });
+    expect(renderer!.root.findAllByType("details")).toHaveLength(1);
+    expect(JSON.stringify(renderer!.toJSON())).toContain("결제자");
+    expect(JSON.stringify(renderer!.toJSON())).toContain("부담자");
+    const buttons = renderer!.root.findAllByType("button");
+    expect(buttons).toHaveLength(2);
+    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("지출 수정"))!.props.onClick());
+    expect(onEdit).toHaveBeenCalledWith(expense);
+    onEdit.mockClear();
+    await act(async () => buttons.find(b => b.props["aria-label"] === "지출 삭제")!.props.onClick());
+    expect(onDelete).toHaveBeenCalledWith(expense);
+    expect(onEdit).not.toHaveBeenCalled();
+    await act(async () => renderer!.update(render(true, true)));
+    expect(renderer!.root.findAllByType("button").every(b => b.props.disabled)).toBe(true);
+    await act(async () => renderer!.update(render(false)));
+    expect(renderer!.root.findAllByType("button")).toHaveLength(0);
+  } finally {
+    await act(async () => renderer?.unmount());
+    vi.unstubAllGlobals();
+  }
+});
