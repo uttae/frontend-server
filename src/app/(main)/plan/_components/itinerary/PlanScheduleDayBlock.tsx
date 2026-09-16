@@ -1,6 +1,6 @@
 "use client";
 
-import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
+import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 
 import type { CSSProperties, Ref } from "react";
 
@@ -42,6 +42,7 @@ export function PlanScheduleDayBlock({
   interactionLocked = false,
 }: PlanScheduleDayBlockProps) {
   const { isReadOnly } = usePlanMobileReadOnly();
+  const expenses = useExpenseContext();
   const { data: placesData } = useSchedulePlanPlaces(roomId, scheduleId);
   const placesCount = placesData?.length ?? 0;
 
@@ -57,6 +58,8 @@ export function PlanScheduleDayBlock({
       title={title}
       subtitle={subtitle}
       itineraryScheduleId={scheduleId}
+      onRequestAddExpense={expenses.canManage ? () => expenses.open({ scheduleId }) : undefined}
+      isAddExpenseDisabled={expenses.busy}
       onRequestDeleteSchedule={onRequestDeleteSchedule}
       onRequestInsertScheduleAfter={onRequestInsertScheduleAfter}
       isScheduleMenuDisabled={isScheduleMenuDisabled}
@@ -65,9 +68,6 @@ export function PlanScheduleDayBlock({
       dragHandleProps={dragHandleProps}
       crossDaySectionDropProps={crossDaySectionDropProps}
     >
-      <div className="mb-2 flex justify-end">
-        <ExpenseEntryButton scheduleId={scheduleId} label={`${title} 지출 추가`} />
-      </div>
       <PlanItinerary roomId={roomId} scheduleId={scheduleId} />
     </PlanDaySection>
   );
