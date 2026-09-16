@@ -20,6 +20,87 @@ import {
   ExpenseAnalysisView,
   expenseButtonClass,
 } from "./ExpenseViews";
+type DeleteConflict = { selected: Expense; latest?: Expense; failed?: boolean };
+
+function ExpenseDeleteConflict({
+  conflict,
+  deleting,
+  onRemove,
+  onRecover,
+  onCancel,
+}: Readonly<{
+  conflict: DeleteConflict;
+  deleting: boolean;
+  onRemove: (expense: Expense) => void;
+  onRecover: (expense: Expense) => void;
+  onCancel: () => void;
+}>) {
+  const context = useExpenseContext();
+  let message = "이미 삭제된 지출이에요.";
+  if (deleting) message = "최신 지출 확인 중…";
+  else if (conflict.failed) message = "최신 지출 조회에 실패했어요. 삭제는 중단돼요.";
+  return (
+    <div
+      role="alert"
+      className="space-y-3 rounded-xl border border-gray-border p-3"
+    >
+      <p>
+        삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시 확인해
+        주세요.
+      </p>
+      {conflict.latest ? (
+        <>
+          <ExpenseList
+            roomId={context.roomId}
+            expenses={[conflict.latest]}
+            members={context.members}
+            memberStatus={context.memberStatus}
+            schedules={context.schedules}
+            canManage={false}
+            onEdit={() => {}}
+            onDelete={() => {}}
+            busy={false}
+          />
+          <button
+            type="button"
+            className={expenseButtonClass}
+            disabled={deleting || context.busy || !context.canManage}
+            onClick={() => onRemove(conflict.latest!)}
+          >
+            최신 지출 확인 후 삭제
+          </button>
+        </>
+      ) : (
+        <p>{message}</p>
+      )}
+      {conflict.failed && (
+        <button
+          type="button"
+          className={expenseButtonClass}
+          disabled={deleting}
+          onClick={() => onRecover(conflict.selected)}
+        >
+          최신 지출 다시 조회
+        </button>
+      )}
+      <button
+        type="button"
+        className={expenseButtonClass}
+        disabled={deleting || context.busy}
+        onClick={onCancel}
+      >
+        삭제 취소
+      </button>
+    </div>
+  );
+}
+
+function syncStatusMessage(status: string) {
+  if (status === "disconnected") return "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요.";
+  if (status === "error") return "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요.";
+  return "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요.";
+}
+
 export function ExpensePanel() {
   const context = useExpenseContext();
   const [tab, setTab] = useState<"list" | "summary" | "analysis">("list");
@@ -27,11 +108,7 @@ export function ExpensePanel() {
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [conflict, setConflict] = useState<{
-    selected: Expense;
-    latest?: Expense;
-    failed?: boolean;
-  } | null>(null);
+  const [conflict, setConflict] = useState<DeleteConflict | null>(null);
   async function recover(selected: Expense) {
     setConflict({ selected });
     setDeleting(true);
@@ -138,13 +215,9 @@ export function ExpensePanel() {
         )}
       />
       {context.syncStatus !== "ready" && (
-        <p role="status" className="text-sm text-dark-gray">
-          {context.syncStatus === "disconnected"
-            ? "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요."
-            : context.syncStatus === "error"
-              ? "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요."
-              : "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요."}
-        </p>
+        <output style={{ display: "block" }} className="text-sm text-dark-gray">
+          {syncStatusMessage(context.syncStatus)}
+        </output>
       )}
       <div className="rounded-2xl bg-gray-50 p-4 @min-[480px]/expenses:p-5">
         <div className="flex items-start justify-between gap-3">
@@ -212,67 +285,16 @@ export function ExpensePanel() {
         </p>
       )}
       {conflict && (
-        <div
-          role="alert"
-          className="space-y-3 rounded-xl border border-gray-border p-3"
-        >
-          <p>
-            삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시 확인해
-            주세요.
-          </p>
-          {conflict.latest ? (
-            <>
-              <ExpenseList
-                roomId={context.roomId}
-                expenses={[conflict.latest]}
-                members={context.members}
-                memberStatus={context.memberStatus}
-                schedules={context.schedules}
-                canManage={false}
-                onEdit={() => {}}
-                onDelete={() => {}}
-                busy={false}
-              />
-              <button
-                type="button"
-                className={expenseButtonClass}
-                disabled={deleting || context.busy || !context.canManage}
-                onClick={() => void remove(conflict.latest!, true)}
-              >
-                최신 지출 확인 후 삭제
-              </button>
-            </>
-          ) : (
-            <p>
-              {deleting
-                ? "최신 지출 확인 중…"
-                : conflict.failed
-                  ? "최신 지출 조회에 실패했어요. 삭제는 중단돼요."
-                  : "이미 삭제된 지출이에요."}
-            </p>
-          )}
-          {conflict.failed && (
-            <button
-              type="button"
-              className={expenseButtonClass}
-              disabled={deleting}
-              onClick={() => void recover(conflict.selected)}
-            >
-              최신 지출 다시 조회
-            </button>
-          )}
-          <button
-            type="button"
-            className={expenseButtonClass}
-            disabled={deleting || context.busy}
-            onClick={() => {
-              setConflict(null);
-              setError("");
-            }}
-          >
-            삭제 취소
-          </button>
-        </div>
+        <ExpenseDeleteConflict
+          conflict={conflict}
+          deleting={deleting}
+          onRemove={expense => void remove(expense, true)}
+          onRecover={expense => void recover(expense)}
+          onCancel={() => {
+            setConflict(null);
+            setError("");
+          }}
+        />
       )}
       {error && (
         <p role="alert" className="text-sm text-status-negative">
@@ -281,7 +303,7 @@ export function ExpensePanel() {
       )}
       {query.isPending && (
         <p role="status" className="py-4 text-dark-gray">
-          {tab === "list" ? "지출" : tab === "analysis" ? "지출 분석" : "정산"}을 불러오는 중…
+          {{ list: "지출", analysis: "지출 분석", summary: "정산" }[tab]}을 불러오는 중…
         </p>
       )}
       {query.isError && (
@@ -340,7 +362,6 @@ export function ExpensePanel() {
           summary={context.summary.data}
           members={context.members}
           memberStatus={context.memberStatus}
-          schedules={context.schedules}
         />
       )}
       {tab === "analysis" && context.summary.isSuccess && (

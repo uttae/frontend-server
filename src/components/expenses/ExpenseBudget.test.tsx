@@ -423,3 +423,18 @@ it("groups budget and edit control on a white card with wrapping space for large
   await submit();
   expect(mocks.save).toHaveBeenCalledWith({ budgetKrw: "1234567", expectedVersion: 2 });
 });
+
+it("announces both pending budget reads with native status outputs", async () => {
+  const pending = state();
+  pending.budget.isPending = true;
+  pending.budget.isSuccess = false;
+  pending.krwSummary.isPending = true;
+  pending.krwSummary.isSuccess = false;
+  mocks.state = pending;
+  await summary();
+  const outputs = [...host.querySelectorAll("output")];
+  expect(outputs.map(output => output.textContent)).toEqual([
+    "원화 참고 요약을 불러오는 중…", "예산을 불러오는 중…",
+  ]);
+  expect(outputs.every(output => output.style.display === "block")).toBe(true);
+});

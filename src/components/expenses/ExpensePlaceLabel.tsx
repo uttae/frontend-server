@@ -5,11 +5,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import type { PlanPlace } from "@/lib/plan/types";
 
-export function ExpensePlaceLabel({ roomId, scheduleId, itemId }: {
+export function ExpensePlaceLabel({ roomId, scheduleId, itemId }: Readonly<{
   roomId: string;
   scheduleId: number;
   itemId: number;
-}) {
+}>) {
   const client = useQueryClient();
   const subscribe = useCallback(
     (onChange: () => void) => client.getQueryCache().subscribe(onChange),

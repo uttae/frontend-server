@@ -28,6 +28,85 @@ export type ExpenseEntry = {
   scheduleItemId?: number;
 };
 
+function ExpenseEditorConflict({
+  conflict,
+  conflictMoved,
+  pending,
+  targetChanged,
+  onContinue,
+  onRecover,
+}: Readonly<{
+  conflict: { latest?: Expense; failed?: boolean };
+  conflictMoved: boolean;
+  pending: boolean;
+  targetChanged: boolean;
+  onContinue: () => void;
+  onRecover: () => void;
+}>) {
+  const context = useExpenseContext();
+  let message = "지출이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
+  if (pending) message = "최신 지출 확인 중…";
+  else if (conflict.failed) message = "최신 지출 조회에 실패했어요. 저장은 중단돼요.";
+  return (
+    <div
+      role="alert"
+      className="space-y-3 rounded-xl border border-gray-border p-3"
+    >
+      <p>
+        지출이 변경되었어요. 입력 내용은 유지돼요. 최신 지출을 확인해
+        주세요.
+      </p>
+      {conflict.latest ? (
+        <>
+          <ExpenseList
+            roomId={context.roomId}
+            expenses={[conflict.latest]}
+            members={context.members}
+            memberStatus={context.memberStatus}
+            schedules={context.schedules}
+            canManage={false}
+            onEdit={() => {}}
+            onDelete={() => {}}
+            busy={false}
+          />
+          {conflictMoved ? (
+            <p>
+              연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신
+              지출을 다시 열어 주세요.
+            </p>
+          ) : (
+            <button
+              type="button"
+              className={expenseButtonClass}
+              disabled={pending || targetChanged}
+              onClick={onContinue}
+            >
+              최신 지출 확인 후 수정 계속
+            </button>
+          )}
+        </>
+      ) : (
+        <p>{message}</p>
+      )}
+      {conflict.failed && (
+        <button
+          type="button"
+          className={expenseButtonClass}
+          disabled={pending}
+          onClick={onRecover}
+        >
+          최신 지출 다시 조회
+        </button>
+      )}
+    </div>
+  );
+}
+
+function amountPlaceholder(currency: { fractionDigits: number } | undefined) {
+  if (!currency) return "금액";
+  return currency.fractionDigits ? `0.${"0".repeat(currency.fractionDigits)}` : "0";
+}
+
 export function ExpenseEditor({
   initial,
   onClose,
@@ -72,11 +151,11 @@ export function ExpenseEditor({
           participantUserIds: self === undefined ? [] : [self],
         },
   );
-  const [error, setErrorMessage] = useState("");
+  const [error, setError] = useState("");
   const [errorOccurrence, setErrorOccurrence] = useState(0);
   const errorMessageRef = useRef<HTMLParagraphElement>(null);
-  function setError(message: string) {
-    setErrorMessage(message);
+  function reportError(message: string) {
+    setError(message);
     if (message) setErrorOccurrence(count => count + 1);
   }
   useEffect(() => {
@@ -149,19 +228,19 @@ export function ExpenseEditor({
     value: ExpenseInput[K],
   ) {
     setBody((prev) => ({ ...prev, [key]: value }));
-    setError("");
+    reportError("");
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (submitLock.current || pending) return;
     if (conflict || targetChanged) return;
     if (!ready) {
-      setError("멤버·통화·일차 정보를 확인한 뒤 다시 시도해 주세요.");
+      reportError("멤버·통화·일차 정보를 확인한 뒤 다시 시도해 주세요.");
       return;
     }
     const category = body.category;
     if (!isExpenseCategory(category)) {
-      setError("카테고리를 선택해 주세요.");
+      reportError("카테고리를 선택해 주세요.");
       return;
     }
     const days = context.schedules.map((s) => ({
@@ -181,12 +260,12 @@ export function ExpenseEditor({
       days,
     );
     if (validation) {
-      setError(validation);
+      reportError(validation);
       return;
     }
     submitLock.current = true;
     setSaving(true);
-    setError("");
+    reportError("");
     // Send only request fields, never id/timestamps from the original response.
     const payload: ExpenseInput = {
       expenseGroup: body.expenseGroup,
@@ -209,7 +288,7 @@ export function ExpenseEditor({
       ) {
         await recover();
       }
-      setError(e instanceof Error ? e.message : "지출을 저장하지 못했어요.");
+      reportError(e instanceof Error ? e.message : "지출을 저장하지 못했어요.");
     } finally {
       submitLock.current = false;
       setSaving(false);
@@ -260,13 +339,7 @@ export function ExpenseEditor({
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
                 onChange={(value) => change("totalAmount", value)}
-                placeholder={
-                  currency
-                    ? currency.fractionDigits
-                      ? `0.${"0".repeat(currency.fractionDigits)}`
-                      : "0"
-                    : "금액"
-                }
+                placeholder={amountPlaceholder(currency)}
               />
             </label>
           </div>
@@ -302,7 +375,7 @@ export function ExpenseEditor({
                   scheduleId: value === "PREPARATION" ? null : Number(value),
                   scheduleItemId: null,
                 }));
-                setError("");
+                reportError("");
               }}
             />
           </div>
@@ -402,67 +475,18 @@ export function ExpenseEditor({
           </p>
         )}
         {conflict && (
-          <div
-            role="alert"
-            className="space-y-3 rounded-xl border border-gray-border p-3"
-          >
-            <p>
-              지출이 변경되었어요. 입력 내용은 유지돼요. 최신 지출을 확인해
-              주세요.
-            </p>
-            {conflict.latest ? (
-              <>
-                <ExpenseList
-                roomId={context.roomId}
-                  expenses={[conflict.latest]}
-                  members={context.members}
-                  memberStatus={context.memberStatus}
-                  schedules={context.schedules}
-                  canManage={false}
-                  onEdit={() => {}}
-                  onDelete={() => {}}
-                  busy={false}
-                />
-                {conflictMoved ? (
-                  <p>
-                    연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신
-                    지출을 다시 열어 주세요.
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    className={expenseButtonClass}
-                    disabled={pending || targetChanged}
-                    onClick={() => {
-                      setOriginal(conflict.latest);
-                      setConflict(null);
-                      setError("");
-                    }}
-                  >
-                    최신 지출 확인 후 수정 계속
-                  </button>
-                )}
-              </>
-            ) : (
-              <p>
-                {pending
-                  ? "최신 지출 확인 중…"
-                  : conflict.failed
-                    ? "최신 지출 조회에 실패했어요. 저장은 중단돼요."
-                    : "지출이 삭제되었어요. 입력 내용은 복사할 수 있어요."}
-              </p>
-            )}
-            {conflict.failed && (
-              <button
-                type="button"
-                className={expenseButtonClass}
-                disabled={pending}
-                onClick={() => void recover()}
-              >
-                최신 지출 다시 조회
-              </button>
-            )}
-          </div>
+          <ExpenseEditorConflict
+            conflict={conflict}
+            conflictMoved={conflictMoved}
+            pending={pending}
+            targetChanged={targetChanged}
+            onContinue={() => {
+              setOriginal(conflict.latest);
+              setConflict(null);
+              reportError("");
+            }}
+            onRecover={() => void recover()}
+          />
         )}
         {error && (
           <p

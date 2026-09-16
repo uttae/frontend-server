@@ -21,10 +21,10 @@ import {
 export function ExpenseBudgetModal({
   initial,
   onClose,
-}: {
+}: Readonly<{
   initial: ExpenseBudget;
   onClose: () => void;
-}) {
+}>) {
   const context = useExpenseContext();
   const [opened] = useState(initial);
   const [draft, setDraft] = useState(initial.budgetKrw ?? "");
@@ -65,7 +65,7 @@ export function ExpenseBudgetModal({
   async function save() {
     if (lock.current || context.budgetBusy || !context.canManage || conflict)
       return;
-    if (!/^[0-9]{1,15}$/.test(draft)) {
+    if (!/^\d{1,15}$/.test(draft)) {
       setError(
         "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.",
       );

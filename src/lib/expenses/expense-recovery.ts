@@ -72,16 +72,16 @@ export function beginExpenseRoomAdmission(client: QueryClient) {
 class ExpenseRecovery {
   readonly generation = ++generation;
   private status: Status = "pending";
-  private listeners = new Set<() => void>();
-  private pending = new Set<string>();
-  private failed = new Set<string>();
+  private readonly listeners = new Set<() => void>();
+  private readonly pending = new Set<string>();
+  private readonly failed = new Set<string>();
   private running: Promise<void> | null = null;
-  private unsubscribeQueryCache: () => void;
+  private readonly unsubscribeQueryCache: () => void;
   // Advances for authoritative reads and local writes, fencing late mutations.
   listRevision = 0;
   constructor(
-    private client: QueryClient,
-    private roomId: string,
+    private readonly client: QueryClient,
+    private readonly roomId: string,
   ) {
     this.unsubscribeQueryCache = client.getQueryCache().subscribe((event) => {
       if (
@@ -141,21 +141,16 @@ class ExpenseRecovery {
   };
   refresh = (scope: Scope): Promise<void> => {
     if (this.status === "revoked") return Promise.resolve();
-    const keys =
-      scope === "budget"
-        ? ["budget"]
-        : scope === "expenses"
-          ? ["list", "summary", "summary-krw"]
-          : ["list", "summary", "summary-krw", "budget", "currencies", "members"];
+    let keys = ["list", "summary", "summary-krw", "budget", "currencies", "members"];
+    if (scope === "budget") keys = ["budget"];
+    else if (scope === "expenses") keys = ["list", "summary", "summary-krw"];
     keys.forEach((key) => this.pending.add(key));
     this.setStatus("pending");
-    if (!this.running) {
-      this.running = Promise.resolve()
-        .then(() => this.drain())
-        .finally(() => {
-          this.running = null;
-        });
-    }
+    this.running ??= Promise.resolve()
+      .then(() => this.drain())
+      .finally(() => {
+        this.running = null;
+      });
     return this.running;
   };
   private async drain() {

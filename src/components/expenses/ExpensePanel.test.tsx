@@ -412,3 +412,16 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
   expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
 });
+
+it.each([
+  ["disconnected", "실시간 연결이 끊겼어요."],
+  ["error", "최신 상태 확인에 실패했어요."],
+  ["pending", "최신 지출 확인 중…"],
+])("announces %s sync status with a native block output", async (syncStatus, message) => {
+  await mount();
+  mocks.state = { ...(mocks.state as object), syncStatus };
+  await act(async () => renderer.update(<ExpensePanel />));
+  const output = renderer.root.findAllByType("output").find(node => node.children.join("").startsWith(message));
+  expect(output).toBeDefined();
+  expect(output!.props.style).toEqual({ display: "block" });
+});

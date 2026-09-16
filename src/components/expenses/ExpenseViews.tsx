@@ -332,7 +332,6 @@ export function ExpenseList({
 }
 type SettlementProps = PeopleProps & {
   summary: ExpenseSummary;
-  schedules: RoomSchedule[];
   currentUserId?: number;
   scope?: "mine" | "all";
   onScopeChange?: (scope: "mine" | "all") => void;
@@ -346,9 +345,9 @@ function settlementBalance(amount: string) {
     : { label: "받을 금액", amount: absolute, color: "text-primary-strong" };
 }
 
-function SettlementCalculation({ paid, owed, currency, mine = false }: {
+function SettlementCalculation({ paid, owed, currency, mine = false }: Readonly<{
   paid: string; owed: string; currency: string; mine?: boolean;
-}) {
+}>) {
   return (
     <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
       {[[mine ? "내가 낸 금액" : "낸 금액", paid], [mine ? "내 몫" : "부담할 몫", owed]].map(([label, value]) => (
@@ -359,6 +358,89 @@ function SettlementCalculation({ paid, owed, currency, mine = false }: {
       ))}
     </dl>
   );
+}
+
+function SettlementContent({ summary, members, memberStatus, currentUserId, scope }: Readonly<SettlementProps>) {
+  if (scope === "mine" && currentUserId === undefined) {
+    return <output style={{ display: "block" }} className="py-4 text-sm text-dark-gray">내 정산을 확인할 사용자 정보를 불러오는 중…</output>;
+  }
+  if (!summary.currencies.length) {
+    return <p className="py-6 text-center text-sm text-dark-gray">정산할 지출이 없어요.</p>;
+  }
+  return summary.currencies.map((c) => {
+    const transfers = scope === "mine" ? c.transfers.filter(t => t.fromUserId === currentUserId || t.toUserId === currentUserId) : c.transfers;
+    const me = c.individuals.find(p => p.userId === currentUserId);
+    return (
+      <section key={c.currency} aria-label={`${c.currency} 정산`} className="min-w-0 space-y-3 border-b border-gray-border pb-5 last:border-b-0 last:pb-0">
+        <h3 className="text-sm font-semibold text-dark-gray">{c.currency}</h3>
+        {!transfers.length ? (
+          <p className="rounded-xl bg-gray-50 px-4 py-5 text-sm text-dark-gray">주고받을 금액이 없어요.</p>
+        ) : (
+          <ul className="divide-y divide-gray-border">
+            {transfers.map((t, index) => {
+              const sending = t.fromUserId === currentUserId;
+              const counterparty = sending ? t.toUserId : t.fromUserId;
+              return (
+                <li key={`${t.fromUserId}-${t.toUserId}-${index}`} className="py-3 first:pt-0">
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+                      {scope === "mine" ? (
+                        <ExpensePerson userId={counterparty} members={members} memberStatus={memberStatus} />
+                      ) : (
+                        <>
+                          <ExpensePerson userId={t.fromUserId} members={members} memberStatus={memberStatus} />
+                          <ArrowRight size={16} aria-label="받는 사람" className="shrink-0 text-dark-gray" />
+                          <ExpensePerson userId={t.toUserId} members={members} memberStatus={memberStatus} />
+                        </>
+                      )}
+                    </div>
+                    <div className="ml-auto text-right">
+                      <p className="text-xs text-dark-gray">{scope === "mine" && !sending ? "받을 금액" : "보낼 금액"}</p>
+                      <p className={`mt-0.5 break-all text-base font-semibold tabular-nums ${scope === "mine" && sending ? "text-status-negative" : "text-primary-strong"}`}>
+                        {formatExpenseAmount(t.amount)} {c.currency}
+                      </p>
+                    </div>
+                  </div>
+                  {[t.fromUserId, t.toUserId].some(id => expensePerson(id, members, memberStatus).unknown) && (
+                    <p className="mt-2 text-xs text-dark-gray">사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어 있어요.</p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {scope === "mine" && me && (
+          <details className="group rounded-xl bg-gray-50 px-4 py-1">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm text-dark-gray focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+              계산 내역 <ChevronDown size={16} className="group-open:rotate-180" aria-hidden />
+            </summary>
+            <div className="pb-3"><SettlementCalculation paid={me.paidAmount} owed={me.owedAmount} currency={c.currency} mine /></div>
+          </details>
+        )}
+        {scope === "all" && (
+          <details className="group rounded-xl bg-gray-50 px-4 py-1">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm text-dark-gray focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+              멤버별 계산 내역 <ChevronDown size={16} className="group-open:rotate-180" aria-hidden />
+            </summary>
+            <ul className="divide-y divide-gray-border">
+              {c.individuals.map(p => {
+                const balance = settlementBalance(p.netAmount);
+                return (
+                  <li key={p.userId} className="py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <ExpensePerson userId={p.userId} members={members} memberStatus={memberStatus} />
+                      <span className={`font-semibold ${balance.color}`}>{balance.label} {formatExpenseAmount(balance.amount)} {c.currency}</span>
+                    </div>
+                    <SettlementCalculation paid={p.paidAmount} owed={p.owedAmount} currency={c.currency} />
+                  </li>
+                );
+              })}
+            </ul>
+          </details>
+        )}
+      </section>
+    );
+  });
 }
 
 export function ExpenseSummaryView({
@@ -374,93 +456,16 @@ export function ExpenseSummaryView({
           </button>
         ))}
       </div>
-      {scope === "mine" && currentUserId === undefined ? (
-        <p role="status" className="py-4 text-sm text-dark-gray">내 정산을 확인할 사용자 정보를 불러오는 중…</p>
-      ) : !summary.currencies.length ? (
-        <p className="py-6 text-center text-sm text-dark-gray">정산할 지출이 없어요.</p>
-      ) : summary.currencies.map((c) => {
-        const transfers = scope === "mine" ? c.transfers.filter(t => t.fromUserId === currentUserId || t.toUserId === currentUserId) : c.transfers;
-        const me = c.individuals.find(p => p.userId === currentUserId);
-        return (
-          <section key={c.currency} aria-label={`${c.currency} 정산`} className="min-w-0 space-y-3 border-b border-gray-border pb-5 last:border-b-0 last:pb-0">
-            <h3 className="text-sm font-semibold text-dark-gray">{c.currency}</h3>
-            {!transfers.length ? (
-              <p className="rounded-xl bg-gray-50 px-4 py-5 text-sm text-dark-gray">주고받을 금액이 없어요.</p>
-            ) : (
-              <ul className="divide-y divide-gray-border">
-                {transfers.map((t, index) => {
-                  const sending = t.fromUserId === currentUserId;
-                  const counterparty = sending ? t.toUserId : t.fromUserId;
-                  return (
-                    <li key={`${t.fromUserId}-${t.toUserId}-${index}`} className="py-3 first:pt-0">
-                      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
-                          {scope === "mine" ? (
-                            <ExpensePerson userId={counterparty} members={members} memberStatus={memberStatus} />
-                          ) : (
-                            <>
-                              <ExpensePerson userId={t.fromUserId} members={members} memberStatus={memberStatus} />
-                              <ArrowRight size={16} aria-label="받는 사람" className="shrink-0 text-dark-gray" />
-                              <ExpensePerson userId={t.toUserId} members={members} memberStatus={memberStatus} />
-                            </>
-                          )}
-                        </div>
-                        <div className="ml-auto text-right">
-                          <p className="text-xs text-dark-gray">{scope === "mine" ? sending ? "보낼 금액" : "받을 금액" : "보낼 금액"}</p>
-                          <p className={`mt-0.5 break-all text-base font-semibold tabular-nums ${scope === "mine" && sending ? "text-status-negative" : "text-primary-strong"}`}>
-                            {formatExpenseAmount(t.amount)} {c.currency}
-                          </p>
-                        </div>
-                      </div>
-                      {[t.fromUserId, t.toUserId].some(id => expensePerson(id, members, memberStatus).unknown) && (
-                        <p className="mt-2 text-xs text-dark-gray">사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어 있어요.</p>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {scope === "mine" && me && (
-              <details className="group rounded-xl bg-gray-50 px-4 py-1">
-                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm text-dark-gray focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
-                  계산 내역 <ChevronDown size={16} className="group-open:rotate-180" aria-hidden />
-                </summary>
-                <div className="pb-3"><SettlementCalculation paid={me.paidAmount} owed={me.owedAmount} currency={c.currency} mine /></div>
-              </details>
-            )}
-            {scope === "all" && (
-              <details className="group rounded-xl bg-gray-50 px-4 py-1">
-                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm text-dark-gray focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
-                  멤버별 계산 내역 <ChevronDown size={16} className="group-open:rotate-180" aria-hidden />
-                </summary>
-                <ul className="divide-y divide-gray-border">
-                  {c.individuals.map(p => {
-                    const balance = settlementBalance(p.netAmount);
-                    return (
-                      <li key={p.userId} className="py-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                          <ExpensePerson userId={p.userId} members={members} memberStatus={memberStatus} />
-                          <span className={`font-semibold ${balance.color}`}>{balance.label} {formatExpenseAmount(balance.amount)} {c.currency}</span>
-                        </div>
-                        <SettlementCalculation paid={p.paidAmount} owed={p.owedAmount} currency={c.currency} />
-                      </li>
-                    );
-                  })}
-                </ul>
-              </details>
-            )}
-          </section>
-        );
-      })}
+      <SettlementContent summary={summary} members={members} memberStatus={memberStatus} currentUserId={currentUserId} scope={scope} />
     </div>
   );
 }
 
-function ExpenseBarChart({ title, currency, rows }: {
+function ExpenseBarChart({ title, currency, rows }: Readonly<{
   title: string;
   currency: string;
   rows: { id: string; label: string; amount: string }[];
-}) {
+}>) {
   // Visual proportions use numbers; displayed monetary amounts keep the exact server strings.
   const values = rows.map(row => Math.max(0, Number(row.amount) || 0));
   const maximum = Math.max(0, ...values);

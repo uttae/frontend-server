@@ -201,21 +201,16 @@ function useExpenses(roomId: string) {
       lock.current = false;
     }
   }
+  const reads = [list, summary, budget, krwSummary, currencies, memberQuery];
+  let resolvedSyncStatus = syncStatus;
+  if (syncStatus === "ready") {
+    if (reads.some(query => query.isError)) resolvedSyncStatus = "error";
+    else if (reads.some(query => !query.isSuccess || query.isFetching)) resolvedSyncStatus = "pending";
+  }
   return {
     roomId,
     revoked,
-    syncStatus:
-      syncStatus !== "ready"
-        ? syncStatus
-        : [list, summary, budget, krwSummary, currencies, memberQuery].some(
-              (query) => query.isError,
-            )
-          ? "error"
-          : [list, summary, budget, krwSummary, currencies, memberQuery].some(
-                (query) => !query.isSuccess || query.isFetching,
-              )
-            ? "pending"
-            : "ready",
+    syncStatus: resolvedSyncStatus,
     members,
     memberStatus: memberQuery.status,
     currentUserId: user?.id,
@@ -288,10 +283,10 @@ export function useExpenseContext() {
 function ExpenseProviderLifetime({
   roomId,
   children,
-}: {
+}: Readonly<{
   roomId: string;
   children: ReactNode;
-}) {
+}>) {
   const state = useExpenses(roomId);
   const [entry, setEntry] = useState<ExpenseEntry | null>(null);
   return (
@@ -303,7 +298,7 @@ function ExpenseProviderLifetime({
     </ExpenseContext.Provider>
   );
 }
-export function ExpenseProvider(props: { roomId: string; children: ReactNode }) {
+export function ExpenseProvider(props: Readonly<{ roomId: string; children: ReactNode }>) {
   const client = useQueryClient();
   const store = getExpenseRecoveryStore(client, props.roomId);
   const recovery = useSyncExternalStore(
@@ -319,13 +314,13 @@ export function ExpenseEntryButton({
   label = "지출 추가",
   className = "min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
   icon = "+ ",
-}: {
+}: Readonly<{
   scheduleId?: number;
   scheduleItemId?: number;
   label?: string;
   className?: string;
   icon?: ReactNode;
-}) {
+}>) {
   const context = useContext(ExpenseContext);
   if (!context?.canManage) return null;
   const latest = scheduleItemId === undefined ? undefined : context.list.data

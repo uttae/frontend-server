@@ -47,9 +47,12 @@ export function useExpenseRecovery(roomId: string, enabled: boolean) {
       window.removeEventListener("focus", recoverVisible);
     };
   }, [enabled, recovery, revoked]);
+  let syncStatus: typeof status | "disconnected" = status;
+  if (revoked) syncStatus = "revoked";
+  else if (!connected) syncStatus = "disconnected";
   return {
     recovery,
     revoked,
-    syncStatus: revoked ? "revoked" : !connected ? "disconnected" : status,
+    syncStatus,
   };
 }

@@ -308,7 +308,7 @@ it("does not permit budget writes after member access is lost", async () => {
   await expect(
     context.saveBudget({ budgetKrw: "1", expectedVersion: 0 }),
   ).rejects.toThrow();
-  expect(mocks.putBudget.mock.calls.length).toBe(before);
+  expect(mocks.putBudget.mock.calls).toHaveLength(before);
 });
 
 it("subscribes to the exact expense topic and consumes minimal events from own sessions", async () => {

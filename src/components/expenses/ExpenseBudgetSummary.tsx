@@ -23,7 +23,7 @@ export function ExpenseBudgetSummary() {
       <div className="space-y-2 text-sm">
         <h3 className="text-sm font-medium text-dark-gray">여행 전체 지출</h3>
         {krwSummary.isPending && (
-          <p role="status">원화 참고 요약을 불러오는 중…</p>
+          <output style={{ display: "block" }}>원화 참고 요약을 불러오는 중…</output>
         )}
         {krwSummary.isError && (
           <p role="alert" className="text-status-negative">
@@ -49,7 +49,7 @@ export function ExpenseBudgetSummary() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-3">
         <div className="min-w-0 max-w-full">
           <h3 className="text-sm font-medium text-dark-gray">여행 전체 예산</h3>
-          {budget.isPending && <p role="status">예산을 불러오는 중…</p>}
+          {budget.isPending && <output style={{ display: "block" }}>예산을 불러오는 중…</output>}
           {budget.isError && (
             <p role="alert" className="text-sm text-status-negative">
               예산 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.

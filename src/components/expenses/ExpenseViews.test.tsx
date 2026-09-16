@@ -57,7 +57,6 @@ it("renders exact server split and transfers including unknown people, no recalc
     <ExpenseSummaryView scope="all"
       members={[]}
       memberStatus="success"
-      schedules={[]}
       summary={{
         currencies: [
           {
@@ -252,7 +251,7 @@ const personalSummary = {
   }],
 };
 it("defaults to my settlement, showing only my counterparties and separate currencies", () => {
-  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" schedules={[]} currentUserId={1} />);
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" currentUserId={1} />);
   expect(html).toContain("보낼 금액");
   expect(html).toContain("받을 금액");
   expect(html).toContain("30,000 KRW");
@@ -266,12 +265,12 @@ it("defaults to my settlement, showing only my counterparties and separate curre
   expect(html).not.toContain("지출 분석");
 });
 it("does not claim settlement completion when there are no personal transfers", () => {
-  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" schedules={[]} currentUserId={5} />);
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" currentUserId={5} />);
   expect(html).toContain("주고받을 금액이 없어요");
   expect(html).not.toContain("정산 완료");
 });
 it("does not show other people's transfers while the current user is unavailable", () => {
-  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="pending" schedules={[]} />);
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="pending" />);
   expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중");
   expect(html).not.toContain("30,000 KRW");
 });
@@ -350,4 +349,11 @@ it("opens editing from the expense card and keeps deletion as a separate action"
     await act(async () => renderer?.unmount());
     vi.unstubAllGlobals();
   }
+});
+
+it("announces unavailable identity before an empty personal settlement", () => {
+  const html = renderToStaticMarkup(<ExpenseSummaryView summary={{ currencies: [] }} members={[]} memberStatus="pending" />);
+  expect(html).toContain('<output');
+  expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중…");
+  expect(html).not.toContain("정산할 지출이 없어요.");
 });
