@@ -656,3 +656,29 @@ it.each([{ data: [] }, { data: [{ ...base, version: 1, scheduleId: 11 }] }])(
     expect(mocks.save).not.toHaveBeenCalled();
   },
 );
+
+it("reveals every save failure, including a repeated error message", async () => {
+  const scrollIntoView = vi.fn();
+  await mount(base, {}, element => element.type === "p" ? { scrollIntoView } : null);
+  mocks.save.mockRejectedValue(new Error("저장 실패"));
+  const submit = () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} });
+  await act(async () => { await submit(); });
+  expect(scrollIntoView).toHaveBeenCalledWith({ block: "nearest", behavior: "smooth" });
+  await act(async () => { await submit(); });
+  expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  expect(JSON.stringify(renderer.toJSON())).toContain("저장 실패");
+});
+
+it("reveals repeated validation errors without smooth scrolling when reduced motion is requested", async () => {
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: true }) });
+  const scrollIntoView = vi.fn();
+  await mount(null, {}, element => element.type === "p" ? { scrollIntoView } : null);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await act(async () => {
+      await renderer.root.findByType("form").props.onSubmit({ preventDefault() {} });
+    });
+  }
+  expect(scrollIntoView).toHaveBeenCalledTimes(2);
+  expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest", behavior: "instant" });
+  expect(mocks.save).not.toHaveBeenCalled();
+});

@@ -72,7 +72,22 @@ export function ExpenseEditor({
           participantUserIds: self === undefined ? [] : [self],
         },
   );
-  const [error, setError] = useState("");
+  const [error, setErrorMessage] = useState("");
+  const [errorOccurrence, setErrorOccurrence] = useState(0);
+  const errorMessageRef = useRef<HTMLParagraphElement>(null);
+  function setError(message: string) {
+    setErrorMessage(message);
+    if (message) setErrorOccurrence(count => count + 1);
+  }
+  useEffect(() => {
+    if (!error) return;
+    const reduceMotion = typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    errorMessageRef.current?.scrollIntoView({
+      block: "nearest",
+      behavior: reduceMotion ? "instant" : "smooth",
+    });
+  }, [error, errorOccurrence]);
   const [saving, setSaving] = useState(false);
   const submitLock = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -450,7 +465,13 @@ export function ExpenseEditor({
           </div>
         )}
         {error && (
-          <p id={errorId} role="alert" className="text-sm text-status-negative">
+          <p
+            key={errorOccurrence}
+            ref={errorMessageRef}
+            id={errorId}
+            role="alert"
+            className="scroll-my-4 text-sm text-status-negative"
+          >
             {error}
           </p>
         )}
