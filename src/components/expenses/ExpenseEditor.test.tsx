@@ -1,3 +1,5 @@
+// Place-cache subscriptions are covered by ExpensePlaceLabel.test.tsx.
+vi.mock("./ExpensePlaceLabel", () => ({ ExpensePlaceLabel: () => null }));
 vi.mock("@/lib/api/config", () => ({ API_BASE: "http://fixture" }));
 import { ExpenseSelect } from "./ExpenseSelect";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";

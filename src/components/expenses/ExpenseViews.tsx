@@ -124,7 +124,7 @@ export function ExpenseRolePicker({
   return (
     <fieldset
       aria-labelledby={titleId}
-      className="min-w-0 space-y-3 rounded-2xl bg-light-gray/50 p-4"
+      className="min-w-0 space-y-3 rounded-2xl bg-gray-50 p-4"
     >
       <div
         id={titleId}

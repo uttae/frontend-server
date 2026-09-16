@@ -208,15 +208,15 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="@container/expense-editor space-y-5 p-5 sm:p-6"
+        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden"
         aria-describedby={error ? errorId : undefined}
       >
-        <div className="flex items-center justify-between gap-3 border-b border-gray-border pb-4">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
           <h2 id={titleId} className="text-xl font-bold">
             {original ? "지출 수정" : "지출 추가"}
           </h2>
@@ -225,13 +225,14 @@ export function ExpenseEditor({
             onClick={onClose}
             disabled={pending}
             aria-label="닫기"
-            className="flex size-10 items-center justify-center rounded-full bg-light-gray text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-border enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex size-10 items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 [scrollbar-gutter:stable] sm:p-6">
         <fieldset disabled={pending} className="min-w-0 space-y-4">
-          <div className="grid min-w-0 grid-cols-1 @min-[440px]/expense-editor:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-2xl bg-light-gray/60 p-4">
+          <div className="grid min-w-0 grid-cols-1 @min-[440px]/expense-editor:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-2xl bg-gray-50 p-4">
             <ExpenseCurrencyPicker
               value={body.currency}
               currencies={context.currencies.data ?? []}
@@ -254,13 +255,6 @@ export function ExpenseEditor({
               />
             </label>
           </div>
-          {currency && (
-            <p className="break-all text-xs text-dark-gray">
-              {currency.fractionDigits === 0
-                ? `${currency.currency} 금액은 입력을 마치면 소수점 아래를 버려요.`
-                : `입력을 마치면 소수 ${currency.fractionDigits}자리에 맞춰 0을 채우거나 초과 자리를 버려요.`}
-            </p>
-          )}
           {!context.currencies.isSuccess && (
             <p role="status" className="text-sm text-dark-gray">
               {context.currencies.isError
@@ -460,7 +454,8 @@ export function ExpenseEditor({
             {error}
           </p>
         )}
-        <div className="sticky -bottom-5 -mx-5 -mb-5 flex flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 sm:-bottom-6 sm:-mx-6 sm:-mb-6 sm:px-6">
+        </div>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 sm:px-6">
           <button
             type="button"
             className={expenseButtonClass}
