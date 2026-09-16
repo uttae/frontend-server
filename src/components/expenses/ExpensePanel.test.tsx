@@ -268,6 +268,7 @@ it("keeps budget and original-currency settlement without comparison or explanat
   await mount();
   mocks.state = {
     ...(mocks.state as object),
+    currentUserId: 1,
     summary: {
       isSuccess: true,
       data: {
@@ -381,8 +382,33 @@ it.each(["initial load", "change", "reconnect"])(
     const first = section.children[0];
     expect(typeof first).not.toBe("string");
     if (typeof first === "string") throw new Error("Expected panel heading");
-    expect(first.findAllByType("h2").map((heading) => heading.children.join("")))
-      .toEqual(["지출 및 정산"]);
+    expect(first.findAllByType("h1").map((heading) => heading.children.join("")))
+      .toEqual(["지출"]);
     expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 지출 조회 완료|30초 간격/);
   },
 );
+
+it("switches from my settlement to all transfers and keeps analysis in a separate view", async () => {
+  await mount();
+  mocks.state = {
+    ...(mocks.state as object), currentUserId: 1,
+    summary: { isSuccess: true, data: { currencies: [{
+      currency: "KRW", totalAmount: "12345", individuals: [], days: [],
+      categories: [{ category: "FOOD", totalAmount: "12345" }],
+      transfers: [{ fromUserId: 3, toUserId: 4, amount: "12345" }],
+    }] } },
+  };
+  await act(async () => renderer.update(<ExpensePanel />));
+  const click = async (label: string) => act(async () => {
+    renderer.root.findAllByType("button").find(b => b.children.includes(label))!.props.onClick();
+  });
+  await click("정산 요약");
+  expect(JSON.stringify(renderer.toJSON())).toContain("주고받을 금액이 없어요");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("12,345");
+  await click("전체 정산");
+  expect(JSON.stringify(renderer.toJSON())).toContain("12,345");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("카테고리별");
+  await click("지출 분석");
+  expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
+});

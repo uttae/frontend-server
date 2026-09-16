@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import {
   ArrowRight,
   BedDouble,
@@ -318,135 +318,216 @@ export function ExpenseList({
     </ul>
   );
 }
-export function ExpenseSummaryView({
-  summary,
-  members,
-  memberStatus,
-  schedules,
-}: PeopleProps & { summary: ExpenseSummary; schedules: RoomSchedule[] }) {
+type SettlementProps = PeopleProps & {
+  summary: ExpenseSummary;
+  schedules: RoomSchedule[];
+  currentUserId?: number;
+  scope?: "mine" | "all";
+  onScopeChange?: (scope: "mine" | "all") => void;
+};
+
+function settlementBalance(amount: string) {
+  const absolute = amount.replace(/^-/, "");
+  if (/^0+(?:\.0+)?$/.test(absolute)) return { label: "주고받을 금액 없음", amount: absolute, color: "text-dark-gray" };
+  return amount.startsWith("-")
+    ? { label: "보낼 금액", amount: absolute, color: "text-status-negative" }
+    : { label: "받을 금액", amount: absolute, color: "text-primary-strong" };
+}
+
+function SettlementCalculation({ paid, owed, currency, mine = false }: {
+  paid: string; owed: string; currency: string; mine?: boolean;
+}) {
   return (
-    <div className="space-y-4">
-      {!summary.currencies.length && (
-        <p className="py-4 text-center text-dark-gray">정산할 지출이 없어요.</p>
-      )}
-      {summary.currencies.map((c) => (
-        <section
-          key={c.currency}
-          aria-label={`${c.currency} 정산`}
-          className="min-w-0 space-y-4 border-b border-gray-border pb-6 last:border-b-0 last:pb-0"
-        >
-          <h3 className="break-all text-lg font-bold">
-            {c.currency} 합계{" "}
-            <span className="tabular-nums">
-              {formatExpenseAmount(c.totalAmount)}
-            </span>
-          </h3>
-          <h4 className="font-semibold">송금 제안</h4>
-          {!c.transfers.length && (
-            <p className="text-sm text-dark-gray">제안할 송금이 없어요.</p>
-          )}
-          <ul className="space-y-2">
-            {c.transfers.map((t, index) => (
-              <li
-                key={index}
-                className="space-y-2 rounded-xl bg-primary/5 p-4 text-sm"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <ExpensePerson
-                    userId={t.fromUserId}
-                    members={members}
-                    memberStatus={memberStatus}
-                  />
-                  <ArrowRight
-                    size={16}
-                    aria-label="받는 사람"
-                    className="shrink-0 text-dark-gray"
-                  />
-                  <ExpensePerson
-                    userId={t.toUserId}
-                    members={members}
-                    memberStatus={memberStatus}
+    <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+      {[[mine ? "내가 낸 금액" : "낸 금액", paid], [mine ? "내 몫" : "부담할 몫", owed]].map(([label, value]) => (
+        <div key={label}>
+          <dt className="text-xs text-dark-gray">{label}</dt>
+          <dd className="mt-1 break-all font-medium tabular-nums">{formatExpenseAmount(value)} {currency}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+export function ExpenseSummaryView({
+  summary, members, memberStatus, currentUserId, scope = "mine", onScopeChange,
+}: SettlementProps) {
+  return (
+    <div className="space-y-5">
+      <div className="flex gap-1 border-b border-gray-border" aria-label="정산 범위">
+        {([ ["mine", "내 정산"], ["all", "전체 정산"] ] as const).map(([value, label]) => (
+          <button key={value} type="button" aria-pressed={scope === value} onClick={() => onScopeChange?.(value)}
+            className={`min-h-10 cursor-pointer border-b-2 px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${scope === value ? "border-primary text-primary-strong" : "border-transparent text-dark-gray hover:text-primary-strong"}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {scope === "mine" && currentUserId === undefined ? (
+        <p role="status" className="py-4 text-sm text-dark-gray">내 정산을 확인할 사용자 정보를 불러오는 중…</p>
+      ) : !summary.currencies.length ? (
+        <p className="py-6 text-center text-sm text-dark-gray">정산할 지출이 없어요.</p>
+      ) : summary.currencies.map((c) => {
+        const transfers = scope === "mine" ? c.transfers.filter(t => t.fromUserId === currentUserId || t.toUserId === currentUserId) : c.transfers;
+        const me = c.individuals.find(p => p.userId === currentUserId);
+        return (
+          <section key={c.currency} aria-label={`${c.currency} 정산`} className="min-w-0 space-y-3 border-b border-gray-border pb-5 last:border-b-0 last:pb-0">
+            <h3 className="text-sm font-semibold text-dark-gray">{c.currency}</h3>
+            {!transfers.length ? (
+              <p className="rounded-xl bg-gray-50 px-4 py-5 text-sm text-dark-gray">주고받을 금액이 없어요.</p>
+            ) : (
+              <ul className="divide-y divide-gray-border">
+                {transfers.map((t, index) => {
+                  const sending = t.fromUserId === currentUserId;
+                  const counterparty = sending ? t.toUserId : t.fromUserId;
+                  return (
+                    <li key={`${t.fromUserId}-${t.toUserId}-${index}`} className="py-3 first:pt-0">
+                      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                        <div className="flex min-w-0 flex-wrap items-center gap-2 text-sm">
+                          {scope === "mine" ? (
+                            <ExpensePerson userId={counterparty} members={members} memberStatus={memberStatus} />
+                          ) : (
+                            <>
+                              <ExpensePerson userId={t.fromUserId} members={members} memberStatus={memberStatus} />
+                              <ArrowRight size={16} aria-label="받는 사람" className="shrink-0 text-dark-gray" />
+                              <ExpensePerson userId={t.toUserId} members={members} memberStatus={memberStatus} />
+                            </>
+                          )}
+                        </div>
+                        <div className="ml-auto text-right">
+                          <p className="text-xs text-dark-gray">{scope === "mine" ? sending ? "보낼 금액" : "받을 금액" : "보낼 금액"}</p>
+                          <p className={`mt-0.5 break-all text-base font-semibold tabular-nums ${scope === "mine" && sending ? "text-status-negative" : "text-primary-strong"}`}>
+                            {formatExpenseAmount(t.amount)} {c.currency}
+                          </p>
+                        </div>
+                      </div>
+                      {[t.fromUserId, t.toUserId].some(id => expensePerson(id, members, memberStatus).unknown) && (
+                        <p className="mt-2 text-xs text-dark-gray">사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어 있어요.</p>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {scope === "mine" && me && (
+              <details className="group rounded-xl bg-gray-50 px-4 py-1">
+                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm text-dark-gray focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+                  계산 내역 <ChevronDown size={16} className="group-open:rotate-180" aria-hidden />
+                </summary>
+                <div className="pb-3"><SettlementCalculation paid={me.paidAmount} owed={me.owedAmount} currency={c.currency} mine /></div>
+              </details>
+            )}
+            {scope === "all" && (
+              <details className="group rounded-xl bg-gray-50 px-4 py-1">
+                <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between text-sm text-dark-gray focus-visible:outline-2 focus-visible:outline-primary [&::-webkit-details-marker]:hidden">
+                  멤버별 계산 내역 <ChevronDown size={16} className="group-open:rotate-180" aria-hidden />
+                </summary>
+                <ul className="divide-y divide-gray-border">
+                  {c.individuals.map(p => {
+                    const balance = settlementBalance(p.netAmount);
+                    return (
+                      <li key={p.userId} className="py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                          <ExpensePerson userId={p.userId} members={members} memberStatus={memberStatus} />
+                          <span className={`font-semibold ${balance.color}`}>{balance.label} {formatExpenseAmount(balance.amount)} {c.currency}</span>
+                        </div>
+                        <SettlementCalculation paid={p.paidAmount} owed={p.owedAmount} currency={c.currency} />
+                      </li>
+                    );
+                  })}
+                </ul>
+              </details>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function ExpenseBarChart({ title, currency, rows }: {
+  title: string;
+  currency: string;
+  rows: { id: string; label: string; amount: string }[];
+}) {
+  // Visual proportions use numbers; displayed monetary amounts keep the exact server strings.
+  const values = rows.map(row => Math.max(0, Number(row.amount) || 0));
+  const maximum = Math.max(0, ...values);
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return (
+    <figure aria-label={`${currency} ${title} 지출 그래프`} className="min-w-0 rounded-2xl border border-gray-border p-4">
+      {!rows.length ? (
+        <p className="py-4 text-sm text-dark-gray">표시할 지출이 없어요.</p>
+      ) : (
+        <ul className="space-y-4">
+          {rows.map((row, index) => {
+            const percentage = maximum > 0 ? values[index] / maximum * 100 : 0;
+            const share = total > 0 ? values[index] / total : 0;
+            const limePercent = (1 - share) * 12;
+            return (
+              <li key={row.id} aria-label={`${row.label} · ${formatExpenseAmount(row.amount)} ${currency}`}>
+                <div className="mb-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-sm">
+                  <span className="min-w-0 break-words text-dark-gray">{row.label}</span>
+                  <span className="break-all font-semibold tabular-nums">{formatExpenseAmount(row.amount)} <span className="text-xs font-normal text-dark-gray">{currency}</span></span>
+                </div>
+                <div aria-hidden="true" className="h-3 overflow-hidden rounded-full bg-gray-100">
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{
+                      width: `${percentage}%`,
+                      opacity: 0.75 + share * 0.25,
+                      backgroundColor: `color-mix(in srgb, var(--color-primary-default) ${100 - limePercent}%, var(--color-secondary-default) ${limePercent}%)`,
+                    }}
                   />
                 </div>
-                <p className="break-all font-bold tabular-nums">
-                  {formatExpenseAmount(t.amount)} {c.currency}
-                </p>
-                {[t.fromUserId, t.toUserId].some(
-                  (id) => expensePerson(id, members, memberStatus).unknown,
-                ) && (
-                  <p className="text-xs text-dark-gray">
-                    사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어
-                    있어요.
-                  </p>
-                )}
               </li>
-            ))}
-          </ul>
-          <h4 className="font-semibold">멤버별 정산</h4>
-          <p className="text-xs text-dark-gray">
-            순액: 양수는 받을 금액, 음수는 보낼 금액
-          </p>
-          <ul className="space-y-2">
-            {c.individuals.map((p) => (
-              <li
-                key={p.userId}
-                className="border-b border-gray-border py-3 text-sm last:border-b-0"
-              >
-                <ExpensePerson
-                  userId={p.userId}
-                  members={members}
-                  memberStatus={memberStatus}
-                />
-                <dl className="mt-2 grid grid-cols-1 gap-2 @min-[480px]/expenses:grid-cols-3">
-                  {[
-                    ["결제", p.paidAmount],
-                    ["부담", p.owedAmount],
-                    ["순액", p.netAmount],
-                  ].map(([label, value]) => (
-                    <div key={label}>
-                      <dt className="text-xs text-dark-gray">{label}</dt>
-                      <dd className="break-all font-semibold tabular-nums">
-                        {formatExpenseAmount(value)} {c.currency}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </li>
-            ))}
-          </ul>
-          <details className="group border-t border-gray-border pt-4">
-            <summary className="flex min-h-10 cursor-pointer list-none rounded-lg px-1 transition-colors hover:bg-primary/5 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center justify-between font-semibold [&::-webkit-details-marker]:hidden">
-              지출 분석{" "}
-              <ChevronDown
-                size={16}
-                className="group-open:rotate-180"
-                aria-hidden="true"
-              />
-            </summary>
-            <div className="grid gap-2 text-sm @min-[480px]/expenses:grid-cols-2">
-              <div>
-                <h4 className="mb-1 font-semibold">카테고리별</h4>
-                {c.categories.map((t) => (
-                  <p key={t.category} className="break-all">
-                    {expenseCategoryLabel(t.category)} ·{" "}
-                    {formatExpenseAmount(t.totalAmount)} {c.currency}
-                  </p>
-                ))}
-              </div>
-              <div>
-                <h4 className="mb-1 font-semibold">준비·일차별</h4>
-                {c.days.map((t) => (
-                  <p
-                    key={`${t.expenseGroup}-${t.scheduleId}`}
-                    className="break-all"
-                  >
-                    {expenseDayLabel(t.expenseGroup, t.scheduleId, schedules)} ·{" "}
-                    {formatExpenseAmount(t.totalAmount)} {c.currency}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </details>
+            );
+          })}
+        </ul>
+      )}
+    </figure>
+  );
+}
+
+export function ExpenseAnalysisView({ summary, schedules }: PeopleProps & { summary: ExpenseSummary; schedules: RoomSchedule[] }) {
+  const [groupBy, setGroupBy] = useState<"category" | "day">("category");
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-1 border-b border-gray-border" aria-label="지출 분석 기준">
+        {([["category", "카테고리별"], ["day", "일차별"]] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={groupBy === value}
+            onClick={() => setGroupBy(value)}
+            className={`min-h-10 cursor-pointer border-b-2 px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${groupBy === value ? "border-primary text-primary-strong" : "border-transparent text-dark-gray hover:text-primary-strong"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {!summary.currencies.length && <p className="py-6 text-center text-sm text-dark-gray">분석할 지출이 없어요.</p>}
+      {summary.currencies.map(c => (
+        <section key={c.currency} aria-label={`${c.currency} 지출 분석`} className="space-y-3">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-base font-semibold">{c.currency}</h3>
+            <p className="text-sm text-dark-gray">합계 <span className="ml-1 text-lg font-bold tabular-nums text-text">{formatExpenseAmount(c.totalAmount)}</span> {c.currency}</p>
+          </div>
+          {groupBy === "category" ? (
+          <ExpenseBarChart
+            title="카테고리별"
+            currency={c.currency}
+            rows={c.categories.map(t => ({ id: t.category, label: expenseCategoryLabel(t.category), amount: t.totalAmount }))}
+          />
+          ) : (
+          <ExpenseBarChart
+            title="준비·일차별"
+            currency={c.currency}
+            rows={[...c.days].sort((a, b) => {
+              const order = (day: typeof a) => day.expenseGroup === "PREPARATION" ? -1 : schedules.find(s => s.scheduleId === day.scheduleId)?.dayNumber ?? Number.MAX_SAFE_INTEGER;
+              return order(a) - order(b);
+            }).map(t => ({ id: `${t.expenseGroup}-${t.scheduleId}`, label: expenseDayLabel(t.expenseGroup, t.scheduleId, schedules), amount: t.totalAmount }))}
+          />
+          )}
         </section>
       ))}
     </div>

@@ -21,7 +21,7 @@ const SIDEBAR_ITEMS = [
   { key: "plan", href: "/plan", label: "일정", icon: sidebarIcons.plan },
   { key: "search", href: "/search", label: "검색", icon: sidebarIcons.search },
   { key: "bookmark", href: "/bookmark", label: "북마크", icon: sidebarIcons.bookmark },
-  { key: "cost", href: "/cost", label: "비용", icon: sharedSidebarIcons.cost },
+  { key: "cost", href: "/cost", label: "지출", icon: sharedSidebarIcons.cost },
 ] as const;
 
 function isSidebarItemActive(pathname: string, key: string, href: string) {

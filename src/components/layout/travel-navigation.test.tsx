@@ -41,7 +41,7 @@ function active() { return [...nav().querySelectorAll('[aria-current="page"], [a
 
 it("desktop selects chat alone in the content panel and route links restore route content", async () => {
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "비용", "채팅", "멤버"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "지출", "채팅", "멤버"]);
   expect(active()).toHaveLength(1);
   await act(async () => items()[4].click());
   expect(active()).toEqual([items()[4]]);

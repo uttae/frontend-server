@@ -159,7 +159,7 @@ export function PlanPageView() {
           href="/cost"
           className="flex min-h-10 items-center rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong transition-colors hover:bg-primary/10 focus-visible:outline-2"
         >
-          비용 보기
+          지출 보기
         </Link>
       }
     />

@@ -1,19 +1,29 @@
 "use client";
 
+import { MainPageHeader } from "@/components/layout/MainPageHeader";
+import {
+  pageToolbarButtonCompactGapClass,
+  pageToolbarButtonCompactIconClass,
+  pageToolbarButtonCompactIconStroke,
+  pageToolbarButtonCompactPaddingClass,
+  pageToolbarButtonCompactTextClass,
+} from "@/components/layout/page-toolbar-button";
 import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
-import { Plus, RefreshCw, ReceiptText, Users } from "lucide-react";
+import { Plus, RefreshCw, ReceiptText, Users, ChartNoAxesColumn } from "lucide-react";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
   ExpenseList,
   ExpenseSummaryView,
+  ExpenseAnalysisView,
   expenseButtonClass,
 } from "./ExpenseViews";
 export function ExpensePanel() {
   const context = useExpenseContext();
-  const [tab, setTab] = useState<"list" | "summary">("list");
+  const [tab, setTab] = useState<"list" | "summary" | "analysis">("list");
+  const [settlementScope, setSettlementScope] = useState<"mine" | "all">("mine");
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -104,25 +114,11 @@ export function ExpensePanel() {
   return (
     <section
       aria-label="지출 및 정산"
-      className="@container/expenses min-w-0 space-y-5 rounded-2xl border border-gray-border bg-white p-4 @min-[600px]/plan:p-6"
+      className="@container/expenses min-w-0 space-y-5"
     >
-      {context.syncStatus !== "ready" && (
-        <p role="status" className="text-sm text-dark-gray">
-          {context.syncStatus === "disconnected"
-            ? "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요."
-            : context.syncStatus === "error"
-              ? "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요."
-              : "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요."}
-        </p>
-      )}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight">지출 및 정산</h2>
-          <p className="mt-1 text-sm text-dark-gray">
-            함께 쓴 여행 경비를 한눈에 확인해요.
-          </p>
-        </div>
-        {context.canManage && (
+      <MainPageHeader
+        title="지출"
+        action={context.canManage && (
           <button
             type="button"
             aria-label="지출 추가"
@@ -134,13 +130,22 @@ export function ExpensePanel() {
                   : {},
               )
             }
-            className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50"
+            className={`inline-flex shrink-0 items-center rounded-full bg-primary text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 ${pageToolbarButtonCompactGapClass} ${pageToolbarButtonCompactPaddingClass} ${pageToolbarButtonCompactTextClass}`}
           >
-            <Plus size={17} aria-hidden="true" />
+            <Plus className={pageToolbarButtonCompactIconClass} strokeWidth={pageToolbarButtonCompactIconStroke} aria-hidden="true" />
             지출 추가
           </button>
         )}
-      </div>
+      />
+      {context.syncStatus !== "ready" && (
+        <p role="status" className="text-sm text-dark-gray">
+          {context.syncStatus === "disconnected"
+            ? "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요."
+            : context.syncStatus === "error"
+              ? "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요."
+              : "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요."}
+        </p>
+      )}
       <div className="rounded-2xl bg-gray-50 p-4 @min-[480px]/expenses:p-5">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -181,6 +186,15 @@ export function ExpensePanel() {
           >
             <Users size={16} aria-hidden="true" />
             정산 요약
+          </button>
+          <button
+            type="button"
+            aria-pressed={tab === "analysis"}
+            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "analysis" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
+            onClick={() => setTab("analysis")}
+          >
+            <ChartNoAxesColumn size={16} aria-hidden="true" />
+            지출 분석
           </button>
         </div>
       </div>
@@ -266,7 +280,7 @@ export function ExpensePanel() {
       )}
       {query.isPending && (
         <p role="status" className="py-4 text-dark-gray">
-          {tab === "list" ? "지출" : "정산"}을 불러오는 중…
+          {tab === "list" ? "지출" : tab === "analysis" ? "지출 분석" : "정산"}을 불러오는 중…
         </p>
       )}
       {query.isError && (
@@ -318,6 +332,17 @@ export function ExpensePanel() {
       )}
       {tab === "summary" && context.summary.isSuccess && (
         <ExpenseSummaryView
+          currentUserId={context.currentUserId}
+          scope={settlementScope}
+          onScopeChange={setSettlementScope}
+          summary={context.summary.data}
+          members={context.members}
+          memberStatus={context.memberStatus}
+          schedules={context.schedules}
+        />
+      )}
+      {tab === "analysis" && context.summary.isSuccess && (
+        <ExpenseAnalysisView
           summary={context.summary.data}
           members={context.members}
           memberStatus={context.memberStatus}
