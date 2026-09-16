@@ -274,8 +274,8 @@ export function ExpenseList({
                 {expenseCategoryLabel(e.category)}
               </p>
               <div className="relative mt-2">
-              <details className="group relative z-20 pr-10">
-                <summary className="flex min-h-8 w-fit cursor-pointer list-none rounded-lg px-1 transition-colors hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center gap-1 text-xs text-dark-gray [&::-webkit-details-marker]:hidden">
+              <details className="group pointer-events-none relative z-20 pr-10">
+                <summary className="pointer-events-auto flex min-h-8 w-fit cursor-pointer list-none rounded-lg px-1 transition-colors hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary items-center gap-1 text-xs text-dark-gray [&::-webkit-details-marker]:hidden">
                   결제·분담 내역{" "}
                   <ChevronDown
                     size={14}
