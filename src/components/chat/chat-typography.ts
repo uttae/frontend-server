@@ -9,12 +9,12 @@ const chatTypographyMessage = {
   systemBody: "text-[14px] leading-relaxed",
   metaMuted: "text-[11px] leading-relaxed text-dark-gray",
   wooriSenderLabel: "text-[11px] font-medium leading-relaxed text-primary",
-  aiRequestBubblePrefix: "text-[14px] font-semibold leading-relaxed text-text",
+  aiRequestBubblePrefix: "text-[14px] font-semibold leading-relaxed text-secondary-default",
   placeTitle: "text-[14px] font-semibold leading-snug text-primary-strong",
   placeRating: "text-xs font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-xs leading-relaxed text-[#99A1AF]",
   input: "text-[14px] leading-relaxed",
-  inputAiLabel: "text-[14px] leading-relaxed text-primary-strong font-semibold",
+  inputAiLabel: "text-[14px] leading-relaxed text-secondary-default font-semibold",
 } as const;
 
 /** 패널 최소화(좁은 폭) */
@@ -23,12 +23,12 @@ const chatTypographyMinimized = {
   systemBody: "text-[13px] leading-relaxed",
   metaMuted: "text-[10px] leading-relaxed text-dark-gray",
   wooriSenderLabel: "text-[10px] font-medium leading-relaxed text-primary",
-  aiRequestBubblePrefix: "text-[13px] font-semibold leading-relaxed text-text",
+  aiRequestBubblePrefix: "text-[13px] font-semibold leading-relaxed text-secondary-default",
   placeTitle: "text-[13px] font-semibold leading-snug text-primary-strong",
   placeRating: "text-[11px] font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-[11px] leading-relaxed text-[#99A1AF]",
   input: "text-[13px] leading-relaxed",
-  inputAiLabel: "text-[13px] leading-relaxed text-primary-strong font-semibold",
+  inputAiLabel: "text-[13px] leading-relaxed text-secondary-default font-semibold",
 } as const;
 
 export type ChatMessageTextTypography =
