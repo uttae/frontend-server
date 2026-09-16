@@ -32,6 +32,9 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { useRoomSchedules } from "@/hooks/useRooms";
 import { useExpenseRecovery } from "@/hooks/useExpenseRecovery";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
+import { formatExpenseAmount } from "./ExpenseViews";
+import { cn } from "@/lib/utils";
+import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 
 function useExpenses(roomId: string) {
   const client = useQueryClient();
@@ -314,26 +317,40 @@ export function ExpenseEntryButton({
   scheduleId,
   scheduleItemId,
   label = "지출 추가",
+  className = "min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
+  icon = "+ ",
 }: {
   scheduleId?: number;
   scheduleItemId?: number;
   label?: string;
+  className?: string;
+  icon?: ReactNode;
 }) {
   const context = useContext(ExpenseContext);
   if (!context?.canManage) return null;
+  const latest = scheduleItemId === undefined ? undefined : context.list.data
+    ?.filter((expense) => expense.scheduleId === scheduleId && expense.scheduleItemId === scheduleItemId)
+    .reduce<Expense | undefined>((selected, expense) => {
+      if (!selected) return expense;
+      const difference = (Date.parse(expense.createdAt) || 0) - (Date.parse(selected.createdAt) || 0);
+      return difference > 0 || (difference === 0 && expense.id > selected.id) ? expense : selected;
+    }, undefined);
+  const amountLabel = latest ? `${formatExpenseAmount(latest.totalAmount)} ${latest.currency}` : null;
   return (
     <button
       type="button"
       data-plan-card-no-drag
-      disabled={context.busy}
+      disabled={context.busy || (scheduleItemId !== undefined && !context.list.isSuccess)}
+      aria-label={amountLabel ? `${amountLabel} 지출 수정` : undefined}
+      aria-haspopup="dialog"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
-        context.open({ scheduleId, scheduleItemId });
+        context.open(latest ? { expense: latest } : { scheduleId, scheduleItemId });
       }}
-      className="min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+      className={cn(className, latest && PLAN_PLACE_CARD_TW.triggerButtonActive, "disabled:cursor-not-allowed disabled:opacity-50")}
     >
-      + {label}
+      {latest && typeof icon === "string" ? null : icon}{amountLabel ?? label}
     </button>
   );
 }

@@ -700,3 +700,42 @@ it.each(["reconnect", "visible"])(
     expect(context.syncStatus).toBe("ready");
   },
 );
+
+async function mountPlaceExpenseButton(records: Expense[]) {
+  await mountMutations();
+  await act(async () => {
+    client.setQueryData(expenseKeys.list("r"), records);
+    renderer.update(
+      <QueryClientProvider client={client}>
+        <ExpenseProvider roomId="r">
+          <ExpenseEntryButton scheduleId={2} scheduleItemId={3} label="지출 추가" />
+        </ExpenseProvider>
+      </QueryClientProvider>,
+    );
+  });
+}
+
+it("shows the latest created place expense and opens that expense for editing", async () => {
+  const latest = { ...record, id: 12, scheduleId: 2, scheduleItemId: 3, totalAmount: "12345", createdAt: "2026-09-16T02:00:00Z" };
+  await mountPlaceExpenseButton([
+    latest,
+    { ...latest, id: 99, createdAt: "2026-09-15T02:00:00Z", updatedAt: "2026-09-17T02:00:00Z" },
+    { ...latest, id: 100, scheduleItemId: 4, createdAt: "2026-09-18T02:00:00Z" },
+  ]);
+  const button = renderer.root.findByType("button");
+  expect(button.children.join("")).toBe("12,345 KRW");
+  await act(async () => button.props.onClick({ stopPropagation() {} }));
+  expect(renderer.root.findByType(ExpenseEditor).props.initial.expense.id).toBe(12);
+});
+
+it("returns to add mode after the last linked expense is deleted", async () => {
+  await mountPlaceExpenseButton([{ ...record, scheduleId: 2, scheduleItemId: 3 }]);
+  await act(async () => {
+    client.setQueryData(expenseKeys.list("r"), []);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  const button = renderer.root.findByType("button");
+  expect(button.children.join("")).toContain("지출 추가");
+  await act(async () => button.props.onClick({ stopPropagation() {} }));
+  expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2, scheduleItemId: 3 });
+});
