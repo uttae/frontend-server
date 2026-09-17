@@ -58,7 +58,7 @@ export function HomeHeader() {
             ref={buttonRef}
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary transition hover:opacity-90"
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full transition hover:opacity-90"
             aria-label="프로필"
             aria-expanded={open}
           >
