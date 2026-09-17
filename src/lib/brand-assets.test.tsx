@@ -19,14 +19,18 @@ const BRAND_BLUE = [1, 131, 255] as const;
  * 캔버스 대비 글리프가 차지하는 비율. 가장자리까지 꽉 채우면 iOS 라운드 마스크와
  * PWA maskable 안전 영역에서 잘리므로 상한을 둔다.
  */
-const CONTENT_RATIO = { min: 0.6, max: 0.78 };
+const APP_ICON_CONTENT_RATIO = { min: 0.6, max: 0.78 };
+const TAB_ICON_CONTENT_RATIO = { min: 0.82, max: 0.9 };
 
 /** 좌우/상하 여백 차이 허용치 — 글리프가 캔버스 중앙에서 크게 밀리지 않도록 한다. */
 const CENTERING_TOLERANCE = 0.07;
 
-const faviconPngs = [
+const tabFaviconPngs = [
   [faviconAssets.icon16, 16],
   [faviconAssets.icon32, 32],
+] as const;
+
+const appIconPngs = [
   [faviconAssets.appleTouchIcon, 180],
   ["/favicon/android-chrome-192x192.png", 192],
   ["/favicon/android-chrome-512x512.png", 512],
@@ -89,7 +93,11 @@ function contentBounds(data: Buffer, size: number) {
  * 투명 배경 위에 단색 브랜드 블루 글리프가, 안전 여백을 두고 중앙에 놓였는지 검사한다.
  * 픽셀 단위 원본 대조 대신 이 계약만 확인해 내보내기 도구 교체를 허용한다.
  */
-function expectBrandGlyph(data: Buffer, size: number) {
+function expectBrandGlyph(
+  data: Buffer,
+  size: number,
+  contentRatio = APP_ICON_CONTENT_RATIO,
+) {
   let transparent = 0;
   let opaque = 0;
   let pureBlue = 0;
@@ -129,18 +137,22 @@ function expectBrandGlyph(data: Buffer, size: number) {
 
   const bounds = contentBounds(data, size);
   for (const ratio of [bounds.width, bounds.height]) {
-    expect(ratio).toBeGreaterThanOrEqual(CONTENT_RATIO.min);
-    expect(ratio).toBeLessThanOrEqual(CONTENT_RATIO.max);
+    expect(ratio).toBeGreaterThanOrEqual(contentRatio.min);
+    expect(ratio).toBeLessThanOrEqual(contentRatio.max);
   }
   expect(bounds.horizontalDrift).toBeLessThanOrEqual(CENTERING_TOLERANCE);
   expect(bounds.verticalDrift).toBeLessThanOrEqual(CENTERING_TOLERANCE);
 }
 
-async function expectGlyphPng(bytes: Buffer, size: number) {
+async function expectGlyphPng(
+  bytes: Buffer,
+  size: number,
+  contentRatio = APP_ICON_CONTENT_RATIO,
+) {
   const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
   expect([info.width, info.height, info.channels]).toEqual([size, size, 4]);
-  expectBrandGlyph(data, size);
+  expectBrandGlyph(data, size, contentRatio);
 }
 
 describe("official blue glyph assets", () => {
@@ -154,22 +166,29 @@ describe("official blue glyph assets", () => {
     },
   );
 
-  it.each(faviconPngs)("exports %s as a transparent, safely inset blue PNG", async (url, size) => {
+  it.each(appIconPngs)("exports %s as a transparent, safely inset blue PNG", async (url, size) => {
     expect((await sharp(asset(url)).metadata()).format).toBe("png");
     await expectGlyphPng(asset(url), size);
   });
 
-  it("keeps a single glyph scale across every favicon size", async () => {
-    const ratios = await Promise.all(
-      faviconPngs.map(async ([url, size]) => {
-        const data = await sharp(asset(url)).ensureAlpha().raw().toBuffer();
-        return contentBounds(data, size).width;
-      }),
-    );
+  it.each(tabFaviconPngs)("exports %s at the larger browser-tab scale", async (url, size) => {
+    expect((await sharp(asset(url)).metadata()).format).toBe("png");
+    await expectGlyphPng(asset(url), size, TAB_ICON_CONTENT_RATIO);
+  });
 
-    // 사이즈마다 따로 만든 게 아니라 같은 규칙으로 뽑혔는지 — 반올림 오차 범위만 허용.
-    for (const ratio of ratios) {
-      expect(ratio).toBeCloseTo(ratios[0], 1);
+  it("keeps a consistent glyph scale within each icon group", async () => {
+    for (const icons of [tabFaviconPngs, appIconPngs]) {
+      const ratios = await Promise.all(
+        icons.map(async ([url, size]) => {
+          const data = await sharp(asset(url)).ensureAlpha().raw().toBuffer();
+          return contentBounds(data, size).width;
+        }),
+      );
+
+      // 사이즈마다 따로 만든 게 아니라 같은 규칙으로 뽑혔는지 — 반올림 오차 범위만 허용.
+      for (const ratio of ratios) {
+        expect(ratio).toBeCloseTo(ratios[0], 1);
+      }
     }
   });
 
@@ -189,7 +208,7 @@ describe("official blue glyph assets", () => {
 
       const frame = decodeIcoFrame(ico.subarray(offset, offset + length));
       expect([frame.width, frame.height]).toEqual([size, size]);
-      expectBrandGlyph(frame.data, size);
+      expectBrandGlyph(frame.data, size, TAB_ICON_CONTENT_RATIO);
     }
   });
 
