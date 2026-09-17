@@ -5,7 +5,7 @@ import { faviconAssets } from "@/lib/public-assets";
 import { PUBLIC_SITE } from "@/lib/public-site";
 import { SHARE_IMAGE } from "@/lib/public-site-metadata";
 
-const DEFAULT_TITLE = "우때";
+const DEFAULT_TITLE = "우때 | 올인원 해외여행 플래너";
 const DEFAULT_DESCRIPTION = "실시간 협업 여행 플래너";
 
 export const metadata: Metadata = {
