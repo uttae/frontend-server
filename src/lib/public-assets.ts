@@ -2,7 +2,7 @@
 
 export const brandAssets = {
   logo: "/brand/textlogo.svg",
-  shareImage: "/brand/Glyph.png",
+  shareImage: "/brand/og_image.png",
 } as const;
 
 export const faviconAssets = {

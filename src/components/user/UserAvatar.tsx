@@ -16,7 +16,7 @@ export function UserAvatar({ user, size = 32 }: Props) {
 
   return (
     <span
-      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary"
+      className="flex shrink-0 items-center justify-center overflow-hidden rounded-full"
       style={{ width: size, height: size }}
     >
       {showImage ? (

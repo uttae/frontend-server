@@ -3,11 +3,30 @@ import "./globals.css";
 import { AppRootProviders } from "@/providers/root-providers";
 import { faviconAssets } from "@/lib/public-assets";
 import { PUBLIC_SITE } from "@/lib/public-site";
+import { SHARE_IMAGE } from "@/lib/public-site-metadata";
+
+const DEFAULT_TITLE = "우때 | 올인원 해외여행 플래너";
+const DEFAULT_DESCRIPTION = "실시간 협업 여행 플래너";
 
 export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_SITE.origin),
-  title: "우때",
-  description: "실시간 협업 여행 플래너",
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  // 자체 openGraph를 선언하지 않는 라우트가 상속하는 기본 링크 프리뷰.
+  openGraph: {
+    type: "website",
+    siteName: PUBLIC_SITE.serviceName,
+    locale: "ko_KR",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [SHARE_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    images: [SHARE_IMAGE.url],
+  },
   icons: {
     icon: [
       { url: faviconAssets.icon32, sizes: "32x32", type: "image/png" },
