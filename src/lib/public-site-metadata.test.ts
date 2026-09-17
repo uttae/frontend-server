@@ -7,8 +7,10 @@ import {
   PUBLIC_INDEXABLE_ROUTES,
   PUBLIC_ROBOT_DISALLOW_PATHS,
   publicPageMetadata,
+  SHARE_IMAGE,
   SOFTWARE_APPLICATION_JSON_LD,
 } from "@/lib/public-site-metadata";
+import { metadata as rootLayoutMetadata } from "@/app/layout";
 
 describe("public site structured data", () => {
   it("describes the operator and both founders with public links", () => {
@@ -88,6 +90,41 @@ describe("public site structured data", () => {
     expect(PUBLIC_INDEXABLE_ROUTES.map((entry) => entry.path)).not.toContain(
       "/product",
     );
+  });
+
+  it("gives every indexable route an Open Graph and Twitter card image", () => {
+    for (const entry of PUBLIC_INDEXABLE_ROUTES) {
+      const metadata = publicPageMetadata(entry.path);
+      const canonical = new URL(entry.path, "https://www.uttae.app").toString();
+
+      expect(metadata.openGraph).toMatchObject({
+        type: "website",
+        siteName: "우때",
+        locale: "ko_KR",
+        url: canonical,
+        title: entry.title,
+        description: entry.description,
+        images: [SHARE_IMAGE],
+      });
+      expect(metadata.twitter).toMatchObject({
+        card: "summary_large_image",
+        title: entry.title,
+        description: entry.description,
+        images: [SHARE_IMAGE.url],
+      });
+    }
+  });
+
+  it("falls back to a default share image for routes that declare no openGraph", () => {
+    expect(rootLayoutMetadata.openGraph).toMatchObject({
+      type: "website",
+      siteName: "우때",
+      images: [SHARE_IMAGE],
+    });
+    expect(rootLayoutMetadata.twitter).toMatchObject({
+      card: "summary_large_image",
+      images: [SHARE_IMAGE.url],
+    });
   });
 
   it("defines the two non-indexable crawler policies", () => {

@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 
 import { SUPPORT_EMAIL } from "@/lib/contact";
+import { brandAssets } from "@/lib/public-assets";
 import { PUBLIC_FOUNDERS, PUBLIC_SITE } from "@/lib/public-site";
+
+/** 링크 프리뷰 공용 이미지 — 1.91:1 불투명 PNG. 투명 배경은 카카오톡·슬랙에서 합성 결과가 달라진다. */
+export const SHARE_IMAGE = {
+  url: brandAssets.shareImage,
+  width: 1200,
+  height: 630,
+  alt: PUBLIC_SITE.serviceName,
+} as const;
 
 export const PUBLIC_INDEXABLE_ROUTES = [
   {
@@ -59,12 +68,27 @@ export function publicPageMetadata(
     throw new Error(`Missing public metadata for ${path}`);
   }
 
+  const canonical = new URL(route.path, PUBLIC_SITE.origin).toString();
+
   return {
     title: route.title,
     description: route.description,
     robots: { index: true, follow: true },
-    alternates: {
-      canonical: new URL(route.path, PUBLIC_SITE.origin).toString(),
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      siteName: PUBLIC_SITE.serviceName,
+      locale: "ko_KR",
+      url: canonical,
+      title: route.title,
+      description: route.description,
+      images: [SHARE_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: route.title,
+      description: route.description,
+      images: [SHARE_IMAGE.url],
     },
   };
 }
