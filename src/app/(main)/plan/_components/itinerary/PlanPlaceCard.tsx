@@ -16,7 +16,6 @@ import { useInViewport } from "@/hooks/useInViewport";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import {
   useDeleteScheduleItem,
-  useUpdateScheduleItem,
 } from "@/hooks/useRooms";
 import { usePlanPlaceCardPhoto } from "@/hooks/usePlanPlaceCardPhoto";
 import { bucketItemCount } from "@/lib/analytics/context";
@@ -33,7 +32,7 @@ import {
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
-import { PlanItemMemoEditor, PlanItemMemoReadOnly } from "./PlanItemMemoForm";
+import { PlanItemMemoEditor, PlanItemMemoReadOnly, PlanItemMemoDisplay } from "./PlanItemMemoForm";
 import { PlanItemTimeEditor } from "./PlanItemTimeForm";
 import {
   isPlanPlaceCardInteractiveTarget,
@@ -85,8 +84,6 @@ export function PlanPlaceCard({
 
   const { mutateAsync: removeScheduleItemMutate, isPending: isDeletingItem } =
     useDeleteScheduleItem();
-  const { mutateAsync: updateScheduleItemMutate, isPending: isUpdatingItem } =
-    useUpdateScheduleItem();
 
   const canManageServerItem =
     Boolean(scheduleTimeEdit) && typeof place.itemId === "number";
@@ -113,22 +110,6 @@ export function PlanPlaceCard({
     place.itemId,
     removeScheduleItemMutate,
   ]);
-
-  const handleDeleteMemo = useCallback(async () => {
-    if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("메모를 삭제하시겠습니까?")) return;
-    try {
-      await updateScheduleItemMutate({
-        roomId: scheduleTimeEdit.roomId,
-        scheduleId: scheduleTimeEdit.scheduleId,
-        itemId: place.itemId,
-        body: { memo: "" },
-      });
-      toast.success("메모를 삭제했어요.");
-    } catch {
-      toast.error("메모를 삭제하지 못했어요.");
-    }
-  }, [scheduleTimeEdit, place.itemId, updateScheduleItemMutate]);
 
   const handlePointerDownCapture = useCallback(
     (e: React.PointerEvent) => {
@@ -229,7 +210,7 @@ export function PlanPlaceCard({
       })
     : null;
 
-  const memoText = typeof place.memo === "string" ? place.memo.trim() : "";
+  const memoText = typeof place.memo === "string" ? place.memo : "";
   const hasMemo = memoText.length > 0;
   const timeRange = formatScheduleTimeRange(
     place.startTime ?? "",
@@ -467,18 +448,15 @@ export function PlanPlaceCard({
           scheduleId={scheduleTimeEdit.scheduleId}
           itemId={scheduleItemId}
           memo={place.memo}
+          memoVersion={place.memoVersion}
           onClose={() => setMemoOpen(false)}
         />
       ) : null}
 
       {hasMemo && !memoOpen ? (
-        <PlanItemMemoReadOnly
-          memo={memoText}
-          onDelete={
-            canEditScheduleItem ? () => void handleDeleteMemo() : undefined
-          }
-          isDeleting={isUpdatingItem}
-        />
+        canEditScheduleItem && scheduleTimeEdit && scheduleItemId !== null
+          ? <PlanItemMemoDisplay {...scheduleTimeEdit} itemId={scheduleItemId} memo={place.memo} memoVersion={place.memoVersion} />
+          : <PlanItemMemoReadOnly memo={memoText} />
       ) : null}
     </div>
   );

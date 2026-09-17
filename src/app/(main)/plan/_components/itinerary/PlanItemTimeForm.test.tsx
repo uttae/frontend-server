@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   error: vi.fn(),
 }));
 vi.mock("@/hooks/useRooms", () => ({
+  useScheduleItemSaving: () => false,
   useUpdateScheduleItem: () => ({
     mutateAsync: mocks.mutateAsync,
     isPending: false,

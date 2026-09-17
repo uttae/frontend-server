@@ -10,9 +10,13 @@ import {
 } from "./use-stomp-provider-effects";
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
+  hydrateSchedules: vi.fn(),
   ping: vi.fn(),
   queue: vi.fn(),
   stop: vi.fn(),
+}));
+vi.mock("@/lib/rooms", () => ({
+  hydrateRoomSchedulesFromServer: mocks.hydrateSchedules,
 }));
 vi.mock("@/lib/stomp/client", () => ({
   createStompClient: mocks.create,
@@ -37,6 +41,7 @@ it("stable dependencies keep one client and pathname/room resync uses current co
     onWebSocketClose: () => {},
   } as unknown as Client;
   mocks.create.mockReturnValue(client);
+  mocks.hydrateSchedules.mockResolvedValue([]);
   mocks.ping.mockReturnValue(mocks.stop);
   mocks.queue.mockReturnValue(vi.fn());
   const subscribe = vi.fn();
@@ -78,6 +83,21 @@ it("stable dependencies keep one client and pathname/room resync uses current co
       isBinaryBody: false,
       binaryBody: new Uint8Array(),
     }),
+  );
+  expect(mocks.hydrateSchedules).not.toHaveBeenCalled();
+  await act(async () =>
+    client.onConnect({
+      command: "CONNECTED",
+      headers: {},
+      body: "",
+      isBinaryBody: false,
+      binaryBody: new Uint8Array(),
+    }),
+  );
+  expect(mocks.hydrateSchedules).toHaveBeenCalledOnce();
+  expect(mocks.hydrateSchedules).toHaveBeenCalledWith(
+    opts.queryClientRef.current,
+    "a",
   );
   await hook.render({ room: "b", deferred: false });
   expect(subscribe.mock.lastCall?.[1]).toBe("b");

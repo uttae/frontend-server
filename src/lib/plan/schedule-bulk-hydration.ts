@@ -1,3 +1,4 @@
+import { scheduleLifetime } from "@/lib/plan/memo-cache";
 import type { QueryClient } from "@tanstack/react-query";
 
 import type { RoomScheduleWithItems } from "@/lib/api/rooms/schedules";
@@ -85,7 +86,7 @@ function memoFromScheduleItem(item: RoomScheduleItem): string | undefined {
   const raw = item.memo;
   if (typeof raw !== "string") return undefined;
   const trimmed = raw.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
+  return trimmed.length > 0 ? raw : undefined;
 }
 
 function planPlaceFromItemAndPreview(
@@ -105,6 +106,7 @@ function planPlaceFromItemAndPreview(
       endTime: item.endTime ?? undefined,
       travelMode: item.travelMode,
       memo: memoFromScheduleItem(item),
+      memoVersion: item.memoVersion,
     };
   }
   return {
@@ -117,6 +119,7 @@ function planPlaceFromItemAndPreview(
     endTime: item.endTime ?? undefined,
     travelMode: item.travelMode,
     memo: memoFromScheduleItem(item),
+      memoVersion: item.memoVersion,
   };
 }
 
@@ -194,6 +197,7 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return;
 
+  const lifetime = scheduleLifetime(queryClient, rid);
   const placeIds = collectGooglePlaceIdsFromSchedules(schedules);
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
@@ -208,6 +212,7 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
       queryClient,
       items,
     );
+    if (lifetime !== scheduleLifetime(queryClient, rid)) return;
     queryClient.setQueryData(scheduleItemsQueryKey(rid, sid), places);
   }
 }
@@ -338,7 +343,9 @@ export async function hydrateRoomSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return [];
 
+  const lifetime = scheduleLifetime(queryClient, rid);
   const schedules = await getRoomSchedules(rid, { includeItems: true });
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return queryClient.getQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid)) ?? [];
   const sorted = sortRoomSchedules(schedules);
   await hydrateScheduleItemsFromSchedulesWithItems(queryClient, rid, sorted);
   return sorted;

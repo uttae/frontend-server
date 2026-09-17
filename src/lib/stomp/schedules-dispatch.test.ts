@@ -24,6 +24,7 @@ vi.mock("@/lib/api/rooms/schedule-items", () => ({
 }));
 
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
+  removeScheduleItemFromPlanPlacesCache: vi.fn(),
   mergeOrRefetchSchedulePlanPlacesFromItems:
     mocks.mergeOrRefetchSchedulePlanPlacesFromItems,
   refetchSchedulePlanPlacesIntoCache: mocks.refetchSchedulePlanPlacesIntoCache,

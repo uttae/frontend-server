@@ -1,8 +1,10 @@
+import { SCHEDULE_ITEM_UPDATE_KEY, updateScheduleItemInCache, type ScheduleItemUpdate } from "@/lib/plan/memo-save";
 import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
 import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   useMutation,
+  useIsMutating,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -22,7 +24,6 @@ import {
   deleteScheduleItem,
   reorderScheduleItem,
   moveScheduleItemToSchedule,
-  updateScheduleItem,
   updateScheduleItemTravelMode,
   deleteRoomBookmark,
   deleteBookmarkCategory,
@@ -46,7 +47,6 @@ import {
   type RoomCreateRequest,
   type RoomScheduleCreateRequest,
   type ReorderScheduleItemRequest,
-  type RoomScheduleItemUpdateRequest,
   type RoomUpdateRequest,
   transferHost,
   updateBookmarkCategory,
@@ -361,36 +361,20 @@ export function useCreateScheduleItem() {
 export function useUpdateScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: {
-      roomId: string;
-      scheduleId: number;
-      itemId: number;
-      body: RoomScheduleItemUpdateRequest;
-    }) =>
-      updateScheduleItem(
-        vars.roomId,
-        vars.scheduleId,
-        vars.itemId,
-        vars.body,
-      ),
-    onSuccess: (updated, { roomId, scheduleId, body }) => {
-      const rid = roomId.trim();
-      if (!rid.length) return;
-      const key = scheduleItemsQueryKey(rid, scheduleId);
-      const prev = queryClient.getQueryData<PlanPlace[]>(key);
-      const merged = applyRoomScheduleItemToPlanPlaces(prev, updated, {
-        memoTouched: Object.prototype.hasOwnProperty.call(body, "memo"),
-      });
-      if (merged) {
-        queryClient.setQueryData(key, merged);
-      } else {
-        void queryClient.invalidateQueries({
-          queryKey: key,
-          refetchType: "active",
-        });
-      }
-    },
+    mutationKey: SCHEDULE_ITEM_UPDATE_KEY,
+    retry: false,
+    mutationFn: (vars: ScheduleItemUpdate) => updateScheduleItemInCache(queryClient, vars),
   });
+}
+
+export function useScheduleItemSaving(roomId: string, scheduleId: number, itemId: number) {
+  return useIsMutating({
+    mutationKey: SCHEDULE_ITEM_UPDATE_KEY,
+    predicate: (mutation) => {
+      const vars = mutation.state.variables as ScheduleItemUpdate | undefined;
+      return vars?.roomId.trim() === roomId.trim() && vars.scheduleId === scheduleId && vars.itemId === itemId;
+    },
+  }) > 0;
 }
 
 /**

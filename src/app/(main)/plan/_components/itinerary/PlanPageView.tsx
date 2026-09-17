@@ -32,6 +32,7 @@ import {
 } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { PlanContainerRefProvider } from "../plan-container";
+import { PlanMemoDraftRecovery } from "./PlanItemMemoForm";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
@@ -173,6 +174,7 @@ export function PlanPageView() {
           className={pageContentClassName}
         >
           {pageHeader}
+        <PlanMemoDraftRecovery roomId={roomId} />
           <p className="py-8 text-center text-[17px] text-dark-gray">
             일정을 불러오는 중…
           </p>
@@ -188,6 +190,7 @@ export function PlanPageView() {
         className={pageContentClassName}
       >
         {pageHeader}
+        <PlanMemoDraftRecovery roomId={roomId} />
 
         {isError ? (
           <p

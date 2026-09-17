@@ -1,3 +1,4 @@
+import { advanceScheduleLifetime, invalidateMemoTarget } from "@/lib/plan/memo-cache";
 import { revokeExpenseRoomAccess } from "@/lib/expenses/expense-recovery";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -41,6 +42,8 @@ export function evictRoomFromClientCaches(
 ): void {
   const rid = roomId.trim();
   if (!rid.length) return;
+  advanceScheduleLifetime(queryClient, rid);
+  invalidateMemoTarget(queryClient, rid);
   revokeExpenseRoomAccess(queryClient, rid);
 
   queryClient.setQueryData<RoomListResponse>(ROOMS_QUERY_KEY, (prev) => {
