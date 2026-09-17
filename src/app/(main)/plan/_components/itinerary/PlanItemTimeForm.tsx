@@ -154,6 +154,18 @@ export function PlanItemTimeEditor({
           </h2>
           <button
             type="button"
+            aria-label="시간 초기화"
+            onClick={() => {
+              setStartHm("");
+              setEndHm("");
+            }}
+            disabled={isPending || (!startHm && !endHm)}
+            className="h-9 shrink-0 cursor-pointer rounded-lg px-2 text-xs font-medium text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            초기화
+          </button>
+          <button
+            type="button"
             aria-label="닫기"
             onClick={onClose}
             disabled={isPending}
