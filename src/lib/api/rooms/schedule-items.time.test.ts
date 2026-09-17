@@ -17,7 +17,7 @@ describe("schedule time JSON contract", () => {
     { endTime: "01:00" },
     { endTime: null },
     { startTime: null, endTime: null },
-    { memo: "memo" },
+    { memo: "memo", expectedMemoVersion: 0 },
     { startTime: "00:00", endTime: "00:00" },
   ])("preserves PATCH field presence and null: %o", async (body) => {
     await api.updateScheduleItem("room", 10, 1, body);
@@ -69,5 +69,18 @@ describe("schedule time JSON contract", () => {
     expect(await api.getScheduleItemRoute("room", 10, 1)).toMatchObject({
       durationSeconds: 1200,
     });
+  });
+});
+
+describe("memo concurrency contract", () => {
+  it.each([undefined, null, -1, 1.5, "0", Number.MAX_SAFE_INTEGER + 1])("rejects invalid expected version %s before transport", async (version) => {
+    await expect(api.updateScheduleItem("room", 10, 1, {
+      memo: "draft", expectedMemoVersion: version as number,
+    })).rejects.toThrow();
+    expect(apiFetch).not.toHaveBeenCalled();
+  });
+  it("preserves structured memo conflict status and code", async () => {
+    apiFetch.mockResolvedValue(new Response(JSON.stringify({ code: "SCHEDULE_MEMO_CONFLICT", message: "changed" }), { status: 409 }));
+    await expect(api.updateScheduleItem("room", 10, 1, { memo: "draft", expectedMemoVersion: 0 })).rejects.toMatchObject({ status: 409, code: "SCHEDULE_MEMO_CONFLICT" });
   });
 });

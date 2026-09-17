@@ -183,3 +183,26 @@ describe("end time cache and reorder", () => {
     ]);
   });
 });
+
+describe("memo version merges", () => {
+  it("rejects a late lower memo version while accepting independent time fields", () => {
+    const prev = [{ ...planPlace(1), memo: "new", memoVersion: 4 }];
+    const result = applyRoomScheduleItemToPlanPlaces(prev, {
+      ...scheduleItem(1, 0), memo: "old", memoVersion: 3, startTime: "09:00",
+    });
+    expect(result?.[0]).toMatchObject({ memo: "new", memoVersion: 4, startTime: "09:00" });
+  });
+  it("accepts a versioned omitted memo as a clear", () => {
+    const result = applyRoomScheduleItemToPlanPlaces(
+      [{ ...planPlace(1), memo: "old", memoVersion: 3 }],
+      { ...scheduleItem(1, 0), memoVersion: 4 },
+    );
+    expect(result?.[0].memo).toBeUndefined();
+    expect(result?.[0].memoVersion).toBe(4);
+  });
+  it("never inserts a deleted item from a late PATCH", () => {
+    expect(applyRoomScheduleItemToPlanPlaces([planPlace(2)], {
+      ...scheduleItem(1, 0), memo: "late", memoVersion: 5,
+    })).toBeNull();
+  });
+});

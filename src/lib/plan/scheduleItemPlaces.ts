@@ -1,3 +1,5 @@
+import { advanceScheduleLifetime, invalidateMemoTarget, scheduleLifetime } from "@/lib/plan/memo-cache";
+import { isMemoVersion, mergeMemo } from "@/lib/plan/memo-version";
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -49,7 +51,7 @@ function memoFromScheduleItem(item: RoomScheduleItem): string | undefined {
   const raw = item.memo;
   if (typeof raw !== "string") return undefined;
   const trimmed = raw.trim();
-  return trimmed.length > 0 ? trimmed : undefined;
+  return trimmed.length > 0 ? raw : undefined;
 }
 
 type ApplyScheduleItemPatchOptions = {
@@ -63,7 +65,7 @@ function memoFromScheduleItemPatch(
   updated: RoomScheduleItem,
   options?: ApplyScheduleItemPatchOptions,
 ): string | undefined {
-  if (options?.memoTouched) {
+  if (options?.memoTouched || isMemoVersion(updated.memoVersion)) {
     return memoFromScheduleItem(updated);
   }
   if (!Object.prototype.hasOwnProperty.call(updated, "memo")) {
@@ -85,6 +87,7 @@ function patchPlanPlaceFromScheduleItem(
     googlePlaceId: item.googlePlaceId,
     travelMode: item.travelMode,
     memo: memoFromScheduleItem(item),
+      memoVersion: item.memoVersion,
   };
   if (item.startTime === null) {
     delete next.startTime;
@@ -96,7 +99,7 @@ function patchPlanPlaceFromScheduleItem(
   } else if (hasServerEnd) {
     next.endTime = item.endTime;
   }
-  return next;
+  return mergeMemo(existing, next);
 }
 
 /**
@@ -185,6 +188,8 @@ export function removeScheduleItemFromPlanPlacesCache(
 ): boolean {
   const rid = roomId.trim();
   if (!rid.length) return false;
+  advanceScheduleLifetime(queryClient, rid);
+  invalidateMemoTarget(queryClient, rid, scheduleId, deletedItemId);
   const key = scheduleItemsQueryKey(rid, scheduleId);
   const prev = queryClient.getQueryData<PlanPlace[]>(key);
   if (!prev?.length) return false;
@@ -238,7 +243,9 @@ export async function refetchSchedulePlanPlacesIntoCache(
 ): Promise<PlanPlace[]> {
   const rid = roomId.trim();
   if (!rid.length) return [];
+  const lifetime = scheduleLifetime(queryClient, rid);
   const items = await getScheduleItems(rid, scheduleId);
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return readSchedulePlanPlacesFromCache(queryClient, rid, scheduleId);
   await mergeOrRefetchSchedulePlanPlacesFromItems(
     queryClient,
     rid,
@@ -262,12 +269,15 @@ export async function mergeOrRefetchSchedulePlanPlacesFromItems(
   if (!rid.length) return;
   const key = scheduleItemsQueryKey(rid, scheduleId);
   const prev = queryClient.getQueryData<PlanPlace[]>(key);
+  const lifetime = scheduleLifetime(queryClient, rid);
   const merged = await mergeScheduleItemsIntoPlanPlaces(prev, items);
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return;
   if (merged) {
     queryClient.setQueryData(key, merged);
     return;
   }
   const places = await buildPlanPlacesFromScheduleItems(items);
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return;
   queryClient.setQueryData(key, places);
 }
 
@@ -283,6 +293,7 @@ export async function syncAfterCrossScheduleItemMove(
   const rid = roomId.trim();
   if (!rid.length) return;
 
+  advanceScheduleLifetime(queryClient, rid);
   const scheduleIds =
     sourceScheduleId === targetScheduleId
       ? [sourceScheduleId]
@@ -297,14 +308,9 @@ export async function syncAfterCrossScheduleItemMove(
         )
       : null;
 
+  if (movedItemId != null) removeScheduleItemFromPlanPlacesCache(queryClient, rid, sourceScheduleId, movedItemId);
   for (const sid of scheduleIds) {
-    const items = await getScheduleItems(rid, sid);
-    await mergeOrRefetchSchedulePlanPlacesFromItems(
-      queryClient,
-      rid,
-      sid,
-      items,
-    );
+    await refetchSchedulePlanPlacesIntoCache(queryClient, rid, sid);
   }
 
   if (affectedRouteItemIds !== undefined) {
@@ -384,6 +390,7 @@ export async function ensureSchedulePlanPlacesEnriched(
     return cached;
   }
 
+  const lifetime = scheduleLifetime(queryClient, rid);
   const items = await resolveScheduleItemsFromCacheOrHydrate(
     queryClient,
     rid,
@@ -393,8 +400,9 @@ export async function ensureSchedulePlanPlacesEnriched(
     queryClient,
     items,
   );
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return readSchedulePlanPlacesFromCache(queryClient, rid, scheduleId);
   queryClient.setQueryData(key, places);
-  return places;
+  return readSchedulePlanPlacesFromCache(queryClient, rid, scheduleId);
 }
 
 /** hydrate가 채운 `schedule-items` 캐시를 읽습니다 (`[]` 포함). */
@@ -497,6 +505,7 @@ export async function syncPlanPlacesAfterReorderSuccess(
   const rid = roomId.trim();
   if (!rid.length) return;
 
+  const lifetime = scheduleLifetime(queryClient, rid);
   const oldOrderedIds = readOrderedItemIdsFromScheduleItemsCache(
     queryClient,
     rid,
@@ -528,6 +537,7 @@ export async function syncPlanPlacesAfterReorderSuccess(
 
   try {
     for (const p of patches) {
+      if (lifetime !== scheduleLifetime(queryClient, rid)) return;
       const updated = await updateScheduleItem(rid, scheduleId, p.itemId, {
         startTime: p.startTime,
         endTime: p.endTime,
@@ -550,6 +560,7 @@ export async function syncPlanPlacesAfterReorderSuccess(
     return;
   }
 
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return;
   const finalItems = sortRoomScheduleItemsByOrder([...byItemId.values()]);
   await mergeOrRefetchSchedulePlanPlacesFromItems(
     queryClient,
@@ -588,6 +599,7 @@ export function applyRoomScheduleItemToPlanPlaces(
       googlePlaceId: updated.googlePlaceId,
       travelMode: updated.travelMode,
       memo: memoFromScheduleItemPatch(p, updated, options),
+      memoVersion: updated.memoVersion,
     };
     if (updated.startTime === null) {
       delete next.startTime;
@@ -599,7 +611,7 @@ export function applyRoomScheduleItemToPlanPlaces(
     } else if (hasServerEnd) {
       next.endTime = updated.endTime;
     }
-    return next;
+    return mergeMemo(p, next);
   });
   return found ? out : null;
 }
@@ -621,6 +633,7 @@ async function planPlaceFromScheduleItem(
       endTime: item.endTime ?? undefined,
       travelMode: item.travelMode,
       memo: memoFromScheduleItem(item),
+      memoVersion: item.memoVersion,
     };
   } catch {
     return {
@@ -633,6 +646,7 @@ async function planPlaceFromScheduleItem(
       endTime: item.endTime ?? undefined,
       travelMode: item.travelMode,
       memo: memoFromScheduleItem(item),
+      memoVersion: item.memoVersion,
     };
   }
 }
@@ -779,14 +793,16 @@ export async function fetchScheduleItemsAsPlanPlaces(
     const cached = qc.getQueryData<PlanPlace[]>(key);
     if (cached != null) return cached;
 
+    const lifetime = scheduleLifetime(qc, rid);
     const items = await resolveScheduleItemsFromCacheOrHydrate(
       qc,
       rid,
       scheduleId,
     );
     const places = await buildPlanPlacesFromScheduleItems(items);
+    if (lifetime !== scheduleLifetime(qc, rid)) return readSchedulePlanPlacesFromCache(qc, rid, scheduleId);
     qc.setQueryData(key, places);
-    return places;
+    return readSchedulePlanPlacesFromCache(qc, rid, scheduleId);
   }
 
   return [];

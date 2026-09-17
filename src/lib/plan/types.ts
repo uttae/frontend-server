@@ -20,6 +20,7 @@ export type PlanPlace = {
   travelMode?: string;
   /** 일정 항목 메모 — PATCH로만 설정 */
   memo?: string;
+  memoVersion?: number;
 };
 
 /** 일차별 플랜 메타 — 섹션 헤더용 (`places`는 현재 빈 배열) */

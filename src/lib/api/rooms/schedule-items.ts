@@ -1,3 +1,4 @@
+import { isMemoVersion } from "@/lib/plan/memo-version";
 import { apiFetch } from "@/lib/api/client";
 import {
   chunkArray,
@@ -13,7 +14,8 @@ export type RoomScheduleItem = {
   startTime: string | null;
   /** 날짜·시간대 없는 `HH:mm`, 미설정은 `null` */
   endTime: string | null;
-  memo?: string;
+  memo?: string | null;
+  memoVersion?: number;
   orderIndex: number;
   /** 현재 항목 → 다음 항목 공유 이동수단 — 서버 DB 저장, 기본 `DRIVING` */
   travelMode: string;
@@ -49,6 +51,7 @@ export type RoomScheduleItemUpdateRequest = {
   endTime?: string | null;
   /** 키를 내면 서버가 갱신. 빈 문자열이면 삭제 */
   memo?: string | null;
+  expectedMemoVersion?: number;
 };
 
 export type ReorderScheduleItemRequest = {
@@ -187,7 +190,7 @@ export async function getScheduleItems(
   return requestJson(
     apiUrl(`/rooms/${roomId}/schedules/${scheduleId}/items`),
     undefined,
-    { errorMessage: "일정 장소 목록 조회 실패" },
+    { errorMessage: "일정 장소 목록 조회 실패", useHttpError: true },
   );
 }
 
@@ -209,10 +212,13 @@ export async function updateScheduleItem(
   itemId: number,
   body: RoomScheduleItemUpdateRequest,
 ): Promise<RoomScheduleItem> {
+  if (Object.prototype.hasOwnProperty.call(body, "memo") && !isMemoVersion(body.expectedMemoVersion)) {
+    throw new Error("메모 버전을 확인할 수 없어 저장할 수 없어요.");
+  }
   return requestJson(
     apiUrl(`/rooms/${roomId}/schedules/${scheduleId}/items/${itemId}`),
     { method: "PATCH", ...jsonBody(body) },
-    { errorMessage: "일정 항목 수정 실패" },
+    { errorMessage: "일정 항목 수정 실패", useHttpError: true },
   );
 }
 

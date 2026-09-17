@@ -1,6 +1,6 @@
 import { apiFetch } from "./client";
 import { API_BASE } from "./config";
-import { HttpError, readUserFacingMessageFromApiBody } from "./errors";
+import { HttpError, readNormalizedApiErrorCode, readUserFacingMessageFromApiBody } from "./errors";
 
 export type RequestJsonOptions = {
   errorMessage: string;
@@ -23,7 +23,7 @@ export async function requestJson<T>(
     const body = await tryParseJson(res);
     const detail = readUserFacingMessageFromApiBody(body);
     const msg = detail ?? `${options.errorMessage}: ${res.status}`;
-    if (options.useHttpError) throw new HttpError(res.status, msg);
+    if (options.useHttpError) throw new HttpError(res.status, msg, readNormalizedApiErrorCode(body) ?? undefined);
     throw new Error(msg);
   }
   return res.json() as Promise<T>;
@@ -39,7 +39,7 @@ export async function requestVoid(
     const body = await tryParseJson(res);
     const detail = readUserFacingMessageFromApiBody(body);
     const msg = detail ?? `${options.errorMessage}: ${res.status}`;
-    if (options.useHttpError) throw new HttpError(res.status, msg);
+    if (options.useHttpError) throw new HttpError(res.status, msg, readNormalizedApiErrorCode(body) ?? undefined);
     throw new Error(msg);
   }
 }

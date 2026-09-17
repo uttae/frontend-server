@@ -14,6 +14,7 @@ import {
 } from "@/lib/stomp/stomp-session-recovery";
 import { startSessionPresencePing } from "@/lib/stomp/sessionPresencePing";
 import { subscribeUserRoomsQueue } from "@/lib/stomp/subscribe-user-rooms-queue";
+import { hydrateRoomSchedulesFromServer } from "@/lib/rooms";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
 import { useStompConnectionStore } from "@/stores/stomp-connection-store";
 
@@ -72,6 +73,7 @@ export function useStompClientLifecycleEffect({
 
     const stopPingRef: { current: (() => void) | null } = { current: null };
     let effectActive = true;
+    let hasConnected = false;
 
     const stopAppPing = () => {
       stopPingRef.current?.();
@@ -118,7 +120,13 @@ export function useStompClientLifecycleEffect({
       const rid = getResolvedRoomId();
       if (rid && !pathDefersRoomStompRoomTopics(pathnameRef.current)) {
         subscribeToRoomTopics(client, rid);
+        if (hasConnected) {
+          void hydrateRoomSchedulesFromServer(queryClientRef.current, rid).catch(
+            () => undefined,
+          );
+        }
       }
+      hasConnected = true;
     };
 
     client.onDisconnect = () => {

@@ -1,9 +1,10 @@
+import { installScheduleMemoCache } from "@/lib/plan/memo-cache";
 import { QueryClient } from "@tanstack/react-query";
 
 let registeredQueryClient: QueryClient | null = null;
 
 export function createQueryClient() {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         retry: 1,
@@ -12,6 +13,8 @@ export function createQueryClient() {
       },
     },
   });
+  installScheduleMemoCache(client);
+  return client;
 }
 
 export function getOrCreateQueryClient(): QueryClient {

@@ -1,3 +1,4 @@
+import { advanceScheduleLifetime, invalidateMemoTarget, scheduleLifetime } from "@/lib/plan/memo-cache";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api/client";
@@ -29,6 +30,8 @@ export function removeCachesForDeletedSchedule(
   const rid = roomId.trim();
   if (!rid.length) return;
 
+  advanceScheduleLifetime(queryClient, rid);
+  invalidateMemoTarget(queryClient, rid, scheduleId);
   clearPersistedScheduleRoutesForSchedule(rid, scheduleId);
 
   queryClient.removeQueries({
@@ -103,7 +106,9 @@ export async function hydrateRoomSchedulesFromServer(
   const rid = roomId.trim();
   if (!rid.length) return [];
 
+  const lifetime = scheduleLifetime(queryClient, rid);
   const schedules = await getRoomSchedules(rid, { includeItems: true });
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return queryClient.getQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid)) ?? [];
   const sorted = sortRoomSchedules(schedules);
 
   const prevSchedules =
@@ -130,6 +135,7 @@ export async function hydrateRoomSchedulesFromServer(
     sorted as RoomScheduleWithItems[],
   );
 
+  if (lifetime !== scheduleLifetime(queryClient, rid)) return queryClient.getQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid)) ?? [];
   for (const s of sorted) {
     const key = scheduleItemsQueryKey(rid, s.scheduleId);
     if (queryClient.getQueryData<PlanPlace[]>(key) === undefined) {
@@ -137,7 +143,7 @@ export async function hydrateRoomSchedulesFromServer(
     }
   }
 
-  return sorted;
+  return queryClient.getQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid)) ?? [];
 }
 
 /** `useRoomSchedules`와 동일 경로로 일정·장소 preview hydrate가 끝날 때까지 대기합니다. */

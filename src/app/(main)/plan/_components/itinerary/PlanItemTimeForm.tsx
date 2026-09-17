@@ -4,7 +4,7 @@ import { Clock, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { useUpdateScheduleItem } from "@/hooks/useRooms";
+import { useScheduleItemSaving, useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import {
   computeDurationMinutesFromRange,
@@ -46,7 +46,9 @@ export function PlanItemTimeEditor({
   const [draftEnd, setEndHm] = useState<string>();
   const startHm = canonicalDraft(draftStart ?? serverStartHm);
   const endHm = canonicalDraft(draftEnd ?? serverEndHm);
-  const { mutateAsync, isPending } = useUpdateScheduleItem();
+  const { mutateAsync, isPending: ownPending } = useUpdateScheduleItem();
+  const sharedPending = useScheduleItemSaving(roomId, scheduleId, itemId);
+  const isPending = ownPending || sharedPending;
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const savingRef = useRef(false);

@@ -1,12 +1,14 @@
+import { getScheduleItems } from "@/lib/api/rooms/schedule-items";
+import { advanceScheduleLifetime, scheduleLifetime } from "@/lib/plan/memo-cache";
 import { invalidateExpenses } from "@/lib/expenses/expense-queries";
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
+  removeScheduleItemFromPlanPlacesCache,
   mergeOrRefetchSchedulePlanPlacesFromItems,
   refetchSchedulePlanPlacesIntoCache,
   syncAfterCrossScheduleItemMove,
 } from "@/lib/plan/scheduleItemPlaces";
-import { getScheduleItems } from "@/lib/api/rooms/schedule-items";
 import {
   invalidateScheduleItemRouteForSources,
   invalidateScheduleItemRouteForWholeSchedule,
@@ -160,13 +162,10 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
       syncSchedulePlacesRouteInvalidationPending.delete(mapKey);
       void (async () => {
         try {
+          const lifetime = scheduleLifetime(queryClient, rid);
           const rows = await getScheduleItems(rid, sid);
-          await mergeOrRefetchSchedulePlanPlacesFromItems(
-            queryClient,
-            rid,
-            sid,
-            rows,
-          );
+          if (lifetime !== scheduleLifetime(queryClient, rid)) return;
+          await mergeOrRefetchSchedulePlanPlacesFromItems(queryClient, rid, sid, rows);
           if (routeBucket?.scope === "whole") {
             await invalidateScheduleItemRouteForWholeSchedule(
               queryClient,
@@ -214,6 +213,9 @@ export async function dispatchRoomScheduleEvent(
       event.type,
     )
   ) {
+    advanceScheduleLifetime(queryClient, rid);
+    if (event.type === "SCHEDULE_ITEM_DELETED" && event.scheduleId != null && event.itemId != null) removeScheduleItemFromPlanPlacesCache(queryClient, rid, event.scheduleId, event.itemId);
+    if (event.type === "SCHEDULE_ITEM_MOVED" && event.scheduleIds?.[0] != null && event.itemId != null) removeScheduleItemFromPlanPlacesCache(queryClient, rid, event.scheduleIds[0], event.itemId);
     await invalidateExpenses(queryClient, rid);
   }
   const epochStore = usePlanMapDirectionsEpochStore.getState();
@@ -280,13 +282,10 @@ export async function dispatchRoomScheduleEvent(
 
       removeRouteQueriesForDeletedItemSource(queryClient, rid, sid, itemId);
 
+      const lifetime = scheduleLifetime(queryClient, rid);
       const items = await getScheduleItems(rid, sid);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        sid,
-        items,
-      );
+      if (lifetime !== scheduleLifetime(queryClient, rid)) return;
+      await mergeOrRefetchSchedulePlanPlacesFromItems(queryClient, rid, sid, items);
 
       const sources = event.affectedRouteItemIds;
       if (sources === null) {
@@ -342,13 +341,10 @@ export async function dispatchRoomScheduleEvent(
         return;
       }
 
+      const lifetime = scheduleLifetime(queryClient, rid);
       const items = await getScheduleItems(rid, sid);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        sid,
-        items,
-      );
+      if (lifetime !== scheduleLifetime(queryClient, rid)) return;
+      await mergeOrRefetchSchedulePlanPlacesFromItems(queryClient, rid, sid, items);
       const sources = event.affectedRouteItemIds;
       enqueueDebouncedInvalidateScheduleRoutes(
         queryClient,
