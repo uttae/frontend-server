@@ -14,25 +14,16 @@ const outputs = [
   ["public/favicon/android-chrome-512x512.png", 512],
 ];
 
-function renderPng(size, padded = false) {
-  const padding = padded ? Math.round(size / 16) : 0;
-  const contentSize = size - padding * 2;
+function renderPng(size) {
   // Rasterize at the target resolution instead of enlarging a 90px bitmap.
   return sharp(source, { density: 72 * size / 90 })
-    .resize(contentSize, contentSize)
-    .extend({
-      top: padding,
-      bottom: padding,
-      left: padding,
-      right: padding,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    })
+    .resize(size, size)
     .png()
     .toBuffer();
 }
 
 for (const [path, size] of outputs) {
-  await writeFile(path, await renderPng(size, size === 16 || size === 32));
+  await writeFile(path, await renderPng(size));
 }
 
 // ICO directory with lossless RGBA PNG frames, supported by modern browsers.
@@ -43,7 +34,7 @@ directory.writeUInt16LE(sizes.length, 4);
 const frames = [];
 let offset = directory.length;
 for (const [index, size] of sizes.entries()) {
-  const png = await renderPng(size, true);
+  const png = await renderPng(size);
   const entry = 6 + index * 16;
   directory[entry] = size;
   directory[entry + 1] = size;
