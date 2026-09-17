@@ -52,6 +52,30 @@ function edit(value: string) {
 function button(text: string) { return [...host.querySelectorAll("button")].find((b) => b.textContent === text)!; }
 
 describe("memo editing", () => {
+  it("keeps the editor layout passive around its native checklist button", () => {
+    const qc = createQueryClient();
+    const clicks = vi.fn();
+    const keys = vi.fn();
+    document.body.addEventListener("click", clicks);
+    document.body.addEventListener("keydown", keys);
+    act(() => root.render(<QueryClientProvider client={qc}>
+      <PlanItemMemoEditor roomId="r" scheduleId={10} itemId={4} memo="old" memoVersion={2} onClose={() => {}} />
+    </QueryClientProvider>));
+
+    const add = button("체크리스트 추가");
+    add.focus();
+    expect(document.activeElement).toBe(add);
+    act(() => add.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+    expect(keys).toHaveBeenCalledTimes(1);
+    // jsdom does not synthesize the browser's keyboard activation click.
+    act(() => add.click());
+    expect(host.querySelector('textarea[aria-label="일정 메모"]')?.getAttribute("aria-label")).toBe("일정 메모");
+    expect(host.querySelector("textarea")!.value).toBe("old\n- [ ] ");
+    document.body.removeEventListener("click", clicks);
+    document.body.removeEventListener("keydown", keys);
+    expect(clicks).toHaveBeenCalledTimes(1);
+  });
+
   it("adopts a remote update while the editor is still clean", () => {
     const qc = createQueryClient();
     const render = (memo: string, version: number) =>

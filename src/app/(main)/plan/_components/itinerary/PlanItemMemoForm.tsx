@@ -183,7 +183,7 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, memoVersi
   }
   const disabled = saving.isPending || saving.blocked || saving.needsRefresh;
   return <>
-    <div className={PLAN_PLACE_CARD_TW.editorModule} onMouseDown={stopCardActivation} onClick={stopCardActivation}>
+    <div className={PLAN_PLACE_CARD_TW.editorModule}>
       <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}><MemoIcon className="h-6 w-6" /></div>
       <div className={PLAN_PLACE_CARD_TW.editorBody}>
         <textarea aria-label="일정 메모" value={draft} maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH} rows={4}
