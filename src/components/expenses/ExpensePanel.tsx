@@ -1,6 +1,7 @@
 "use client";
 
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import {
   pageToolbarButtonCompactGapClass,
   pageToolbarButtonCompactIconClass,
@@ -11,6 +12,7 @@ import {
 import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { Plus, RefreshCw, ReceiptText, Users, ChartNoAxesColumn } from "lucide-react";
 import { useExpenseContext } from "./ExpenseProvider";
@@ -124,6 +126,7 @@ export function ExpensePanel() {
     }
   }
   const lock = useRef(false);
+  const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const activeFilter =
     filter === "ALL" ||
@@ -140,7 +143,7 @@ export function ExpensePanel() {
           : e.expenseGroup === "TRIP_DAY" &&
             String(e.scheduleId) === activeFilter),
     ) ?? [];
-  async function remove(expense: Expense, reviewed = false) {
+  function remove(expense: Expense, reviewed = false) {
     if (
       lock.current ||
       deleting ||
@@ -149,13 +152,19 @@ export function ExpensePanel() {
       (conflict && !reviewed)
     )
       return;
-    if (!confirm("이 지출을 삭제할까요? 정산 요약에도 반영돼요.")) return;
+    setExpenseToDelete(expense);
+  }
+  // 실패 시 충돌 확인·에러 문구를 패널에 보여주므로 성공·실패와 무관하게 닫는다
+  async function confirmRemove() {
+    const expense = expenseToDelete;
+    if (!expense || lock.current || deleting) return;
     lock.current = true;
     setDeleting(true);
     setError("");
     try {
       await context.remove(expense);
       setConflict(null);
+      toast.success("지출을 삭제했어요.");
     } catch (e) {
       if (
         e instanceof ExpenseApiError &&
@@ -166,6 +175,7 @@ export function ExpensePanel() {
     } finally {
       lock.current = false;
       setDeleting(false);
+      setExpenseToDelete(null);
     }
   }
   async function refresh() {
@@ -372,6 +382,16 @@ export function ExpensePanel() {
           schedules={context.schedules}
         />
       )}
+      {expenseToDelete ? (
+        <ConfirmDialog
+          title="이 지출을 삭제할까요?"
+          description="정산 요약에도 반영돼요."
+          confirmLabel="삭제"
+          isPending={deleting}
+          onConfirm={() => void confirmRemove()}
+          onCancel={() => setExpenseToDelete(null)}
+        />
+      ) : null}
     </section>
   );
 }
