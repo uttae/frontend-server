@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { Toaster } from "sonner";
 
+import { AppToaster } from "@/components/AppToaster";
 import { CookieSettingsProvider } from "@/components/analytics/CookieSettingsProvider";
 import { ConsentGatedAnalytics } from "@/components/analytics/ConsentGatedAnalytics";
 import { MobileChrome } from "@/components/mobile/MobileChrome";
@@ -32,7 +32,7 @@ export function AppChromeShell({
           {analytics}
         </ConsentGatedAnalytics>
       ) : null}
-      <Toaster position="bottom-right" richColors />
+      <AppToaster />
     </CookieSettingsProvider>
   );
 }
