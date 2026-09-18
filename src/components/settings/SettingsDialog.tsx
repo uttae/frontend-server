@@ -28,10 +28,12 @@ export function SettingsDialog({
   title,
   onClose,
   children,
+  size = "default",
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  size?: "default" | "compact";
 }) {
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -108,7 +110,7 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[640px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"
+        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6`}
       >
         <div className="mb-2 flex items-center justify-between gap-4">
           <h2 id={titleId} className="text-[22px] font-bold">

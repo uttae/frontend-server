@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 
 import { usePlanScheduleDayReorder } from "@/hooks/usePlanScheduleDayReorder";
 import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
@@ -67,6 +68,10 @@ export function PlanPageView() {
   } = useRoomSchedules(roomIdForQueries);
   const { mutate: deleteSchedule, isPending: isDeletingSchedule } =
     useDeleteRoomSchedule();
+  const [dayToDelete, setDayToDelete] = useState<{
+    scheduleId: number;
+    isLast: boolean;
+  } | null>(null);
   const { mutateAsync: createScheduleAsync, isPending: isCreatingSchedule } =
     useCreateRoomSchedule();
 
@@ -116,17 +121,24 @@ export function PlanPageView() {
       if (isDeletingSchedule) return;
       const sid = sortedSchedules[dayIndex]?.scheduleId;
       if (sid == null) return;
-
-      const isLastScheduleDay = sortedSchedules.length === 1;
-      const confirmMessage = isLastScheduleDay
-        ? "마지막 일차는 남고, 이 일차의 모든 장소와 지출이 삭제돼요. 비울까요?"
-        : "이 일차와 포함된 모든 장소·지출을 삭제할까요?";
-      if (!confirm(confirmMessage)) return;
-
-      deleteSchedule({ roomId, scheduleId: sid });
+      setDayToDelete({ scheduleId: sid, isLast: sortedSchedules.length === 1 });
     },
-    [deleteSchedule, isDeletingSchedule, roomId, sortedSchedules],
+    [isDeletingSchedule, roomId, sortedSchedules],
   );
+
+  const handleConfirmDeleteScheduleDay = useCallback(() => {
+    if (!dayToDelete) return;
+    const { isLast } = dayToDelete;
+    deleteSchedule(
+      { roomId, scheduleId: dayToDelete.scheduleId },
+      {
+        onSuccess: () => {
+          setDayToDelete(null);
+          toast.success(isLast ? "일차를 비웠어요." : "일차를 삭제했어요.");
+        },
+      },
+    );
+  }, [dayToDelete, deleteSchedule, roomId]);
 
   const handleInsertScheduleAfter = useCallback(
     (dayIndex: number) => {
@@ -248,6 +260,20 @@ export function PlanPageView() {
           </div>
         ) : null}
       </div>
+      {dayToDelete ? (
+        <ConfirmDialog
+          title={dayToDelete.isLast ? "이 일차를 비울까요?" : "이 일차를 삭제할까요?"}
+          description={
+            dayToDelete.isLast
+              ? "마지막 일차는 남고, 이 일차의 모든 장소와 지출이 삭제돼요."
+              : "이 일차에 포함된 모든 장소와 지출도 함께 삭제돼요."
+          }
+          confirmLabel={dayToDelete.isLast ? "비우기" : "삭제"}
+          isPending={isDeletingSchedule}
+          onConfirm={handleConfirmDeleteScheduleDay}
+          onCancel={() => setDayToDelete(null)}
+        />
+      ) : null}
     </PlanContainerRefProvider>
   );
 }

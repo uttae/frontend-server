@@ -9,6 +9,7 @@ import Image from "next/image";
 import { Clock, Loader2, MapPin } from "lucide-react";
 
 import { MemoIcon } from "@/components/icons";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { toast } from "sonner";
 
 import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
@@ -87,13 +88,15 @@ export function PlanPlaceCard({
     useDeleteScheduleItem();
   const { mutateAsync: updateScheduleItemMutate, isPending: isUpdatingItem } =
     useUpdateScheduleItem();
+  const [confirmTarget, setConfirmTarget] = useState<"item" | "memo" | null>(
+    null,
+  );
 
   const canManageServerItem =
     Boolean(scheduleTimeEdit) && typeof place.itemId === "number";
 
   const handleDeleteScheduleItem = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("이 장소와 연결된 모든 지출을 삭제할까요?")) return;
     try {
       await removeScheduleItemMutate({
         roomId: scheduleTimeEdit.roomId,
@@ -104,6 +107,7 @@ export function PlanPlaceCard({
         item_count_bucket: bucketItemCount(itineraryItemCount - 1),
       });
       toast.success("일정에서 삭제했어요.");
+      setConfirmTarget(null);
     } catch {
       toast.error("삭제하지 못했어요.");
     }
@@ -116,7 +120,6 @@ export function PlanPlaceCard({
 
   const handleDeleteMemo = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("메모를 삭제하시겠습니까?")) return;
     try {
       await updateScheduleItemMutate({
         roomId: scheduleTimeEdit.roomId,
@@ -125,6 +128,7 @@ export function PlanPlaceCard({
         body: { memo: "" },
       });
       toast.success("메모를 삭제했어요.");
+      setConfirmTarget(null);
     } catch {
       toast.error("메모를 삭제하지 못했어요.");
     }
@@ -240,7 +244,7 @@ export function PlanPlaceCard({
   const deleteButton = canManageServerItem ? (
     <PlanScheduleItemDeleteButton
       disabled={isDeletingItem}
-      onDelete={() => void handleDeleteScheduleItem()}
+      onDelete={() => setConfirmTarget("item")}
     />
   ) : null;
 
@@ -475,9 +479,28 @@ export function PlanPlaceCard({
         <PlanItemMemoReadOnly
           memo={memoText}
           onDelete={
-            canEditScheduleItem ? () => void handleDeleteMemo() : undefined
+            canEditScheduleItem ? () => setConfirmTarget("memo") : undefined
           }
           isDeleting={isUpdatingItem}
+        />
+      ) : null}
+      {confirmTarget === "item" ? (
+        <ConfirmDialog
+          title="일정에서 이 장소를 삭제할까요?"
+          description="이 장소와 연결된 모든 지출도 함께 삭제돼요."
+          confirmLabel="삭제"
+          isPending={isDeletingItem}
+          onConfirm={() => void handleDeleteScheduleItem()}
+          onCancel={() => setConfirmTarget(null)}
+        />
+      ) : null}
+      {confirmTarget === "memo" ? (
+        <ConfirmDialog
+          title="메모를 삭제할까요?"
+          confirmLabel="삭제"
+          isPending={isUpdatingItem}
+          onConfirm={() => void handleDeleteMemo()}
+          onCancel={() => setConfirmTarget(null)}
         />
       ) : null}
     </div>

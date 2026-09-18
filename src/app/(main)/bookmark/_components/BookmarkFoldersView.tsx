@@ -2,6 +2,7 @@
 
 import { BookmarkPlus, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
@@ -14,6 +15,7 @@ import {
   pageToolbarButtonCompactTextClass,
 } from "@/components/layout/page-toolbar-button";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { pickUniqueUntitledBookmarkCategoryName } from "@/lib/bookmark-untitled-category-name";
 import {
@@ -43,6 +45,10 @@ export function BookmarkFoldersView() {
     isPending: isDeleting,
     variables: deleteVariables,
   } = useDeleteBookmarkCategory();
+  const [folderToDelete, setFolderToDelete] = useState<{
+    categoryId: number;
+    title: string;
+  } | null>(null);
   const {
     mutate: updateCategory,
     isPending: isUpdating,
@@ -150,13 +156,21 @@ export function BookmarkFoldersView() {
     const categoryId = Number.parseInt(folder.id, 10);
     if (!Number.isFinite(categoryId)) return;
 
-    const ok = window.confirm(
-      `「${folder.title}」 카테고리를 삭제할까요? 소속 북마크 항목도 함께 삭제됩니다.`,
-    );
-    if (!ok) return;
-
     closeMenu();
-    deleteCategory({ roomId, categoryId });
+    setFolderToDelete({ categoryId, title: folder.title });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!roomId || !folderToDelete) return;
+    deleteCategory(
+      { roomId, categoryId: folderToDelete.categoryId },
+      {
+        onSuccess: () => {
+          setFolderToDelete(null);
+          toast.success("북마크 목록을 삭제했어요.");
+        },
+      },
+    );
   };
 
   const isRowDeleting = (folderId: string) =>
@@ -343,6 +357,16 @@ export function BookmarkFoldersView() {
           formError={folderFormError}
         />
       )}
+      {folderToDelete ? (
+        <ConfirmDialog
+          title={`「${folderToDelete.title}」 북마크 목록을 삭제할까요?`}
+          description="소속 북마크 항목도 함께 삭제됩니다."
+          confirmLabel="삭제"
+          isPending={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setFolderToDelete(null)}
+        />
+      ) : null}
     </div>
   );
 }
