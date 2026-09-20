@@ -76,6 +76,24 @@ afterEach(async () => {
 });
 
 describe("schedule time editor", () => {
+  it.each(["01:00", null])("resets both times only after applying with end %s", async (endTime) => {
+    props.endTime = endTime;
+    await render();
+    await click("시간 초기화");
+    expect(fields.map((_, i) => selected(i))).toEqual(["", "", "", ""]);
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    expect(props.onClose).not.toHaveBeenCalled();
+    await click("적용");
+    expect(body()).toEqual({ startTime: null, endTime: null });
+    expect(props.onClose).toHaveBeenCalledOnce();
+  });
+  it("can cancel a reset without changing saved times", async () => {
+    await render();
+    await click("시간 초기화");
+    await click("취소");
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    expect(props.onClose).toHaveBeenCalledOnce();
+  });
   it("reenters with the exact saved overnight end and sends only an edited end", async () => {
     await render();
     expect(selected(2)).toBe("01");

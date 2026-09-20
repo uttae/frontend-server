@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import { brandAssets } from "@/lib/public-assets";
 import { NOINDEX_NOFOLLOW_METADATA } from "@/lib/public-site-metadata";
 import { inviteShareMetadata } from "@/lib/share-metadata";
 
@@ -20,7 +19,7 @@ export const metadata: Metadata = {
     description: inviteShareMetadata.description,
     images: [
       {
-        url: brandAssets.shareImage,
+        url: inviteShareMetadata.imagePath,
         width: inviteShareMetadata.imageWidth,
         height: inviteShareMetadata.imageHeight,
         alt: "우때",
@@ -31,7 +30,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: inviteShareMetadata.title,
     description: inviteShareMetadata.description,
-    images: [brandAssets.shareImage],
+    images: [inviteShareMetadata.imagePath],
   },
 };
 

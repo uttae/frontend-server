@@ -1,5 +1,7 @@
 "use client";
 
+import { RouteVisibilityIcon } from "@/components/icons/RouteVisibilityIcon";
+import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
@@ -12,7 +14,6 @@ import {
   GripVertical,
   MoreHorizontal,
   Plus,
-  Route,
   Trash2,
 } from "lucide-react";
 import { useCallback, useId, useRef, useState } from "react";
@@ -40,6 +41,8 @@ export type PlanDaySectionProps = {
    * 일차(schedule) 단위 삭제 — schedule-item(장소) 삭제와 구분됩니다.
    * 지정 시 헤더 우측에 더보기 메뉴가 표시됩니다.
    */
+  onRequestAddExpense?: () => void;
+  isAddExpenseDisabled?: boolean;
   onRequestDeleteSchedule?: () => void;
   /** 해당 일차 바로 뒤에 빈 일차 삽입 */
   onRequestInsertScheduleAfter?: () => void;
@@ -64,6 +67,8 @@ export function PlanDaySection({
   defaultExpanded = true,
   itineraryScheduleId,
   children,
+  onRequestAddExpense,
+  isAddExpenseDisabled = false,
   onRequestDeleteSchedule,
   onRequestInsertScheduleAfter,
   isDeleteScheduleDisabled = false,
@@ -142,7 +147,7 @@ export function PlanDaySection({
     hoverTargetScheduleId === trackedSid;
 
   const showScheduleMenu =
-    onRequestDeleteSchedule != null || onRequestInsertScheduleAfter != null;
+    onRequestAddExpense != null || onRequestDeleteSchedule != null || onRequestInsertScheduleAfter != null;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -241,7 +246,7 @@ export function PlanDaySection({
                   : "text-dark-gray hover:bg-bubble-gray/60",
               )}
             >
-              <Route className="h-5 w-5" aria-hidden />
+              <RouteVisibilityIcon visible={routeVisible} />
             </button>
           ) : null}
           {showScheduleMenu ? (
@@ -271,11 +276,27 @@ export function PlanDaySection({
                   className="absolute right-0 top-full z-50 mt-1 w-max overflow-hidden rounded-xl border border-gray-border bg-white py-1 shadow-lg"
                   role="menu"
                 >
+                  {onRequestAddExpense ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      disabled={isAddExpenseDisabled}
+                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onRequestAddExpense();
+                      }}
+                    >
+                      <ExpenseIcon className="size-4 shrink-0" />
+                      {title} 지출 추가
+                    </button>
+                  ) : null}
                   {onRequestInsertScheduleAfter ? (
                     <button
                       type="button"
                       role="menuitem"
-                      className="flex cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-neutral-900 hover:bg-bubble-gray"
+                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-neutral-900 hover:bg-bubble-gray"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
@@ -283,7 +304,7 @@ export function PlanDaySection({
                       }}
                     >
                       <Plus className="size-4 shrink-0" aria-hidden />
-                      일차 추가하기
+                      일차 추가
                     </button>
                   ) : null}
                   {onRequestDeleteSchedule ? (
@@ -292,7 +313,7 @@ export function PlanDaySection({
                       role="menuitem"
                       disabled={isDeleteScheduleDisabled}
                       className={cn(
-                        "flex items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-status-negative hover:bg-bubble-gray",
+                        "flex w-full items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-status-negative hover:bg-bubble-gray",
                         isDeleteScheduleDisabled
                           ? "cursor-not-allowed opacity-40"
                           : "cursor-pointer",
@@ -305,7 +326,7 @@ export function PlanDaySection({
                       }}
                     >
                       <Trash2 className="size-4 shrink-0" aria-hidden />
-                      일차 삭제하기
+                      일차 삭제
                     </button>
                   ) : null}
                 </div>

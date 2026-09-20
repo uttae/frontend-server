@@ -4,6 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { ExpensePanel } from "./ExpensePanel";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const mocks = vi.hoisted(() => ({
   state: null as unknown,
@@ -69,6 +70,9 @@ it("keeps a single reference travel total visible while filtering", async () => 
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => mocks.state,
   ExpenseEntryButton: () => <button>준비 지출 추가</button>,
+}));
+vi.mock("@/components/settings/ConfirmDialog", () => ({
+  ConfirmDialog: () => null,
 }));
 let renderer: ReactTestRenderer;
 afterEach(async () => {
@@ -163,21 +167,19 @@ it("filters preparation and trip day without altering server summary scope", asy
 });
 it("requires confirmation and preserves list with visible deletion failure", async () => {
   await mount();
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => false),
-  );
   let button = renderer.root
     .findAllByType("button")
     .find((b) => b.props["aria-label"] === "지출 삭제")!;
   await act(async () => button.props.onClick());
+  await answerConfirm(false);
   expect(mocks.remove).not.toHaveBeenCalled();
-  vi.stubGlobal("confirm", () => true);
+  expect(renderer.root.findAllByType(ConfirmDialog)).toHaveLength(0);
   mocks.remove.mockRejectedValue(new Error("삭제 실패"));
   button = renderer.root
     .findAllByType("button")
     .find((b) => b.props["aria-label"] === "지출 삭제")!;
   await act(async () => button.props.onClick());
+  await answerConfirm(true);
   expect(JSON.stringify(renderer.toJSON())).toContain("삭제 실패");
   expect(renderer.root.findAllByType("li")).toHaveLength(2);
 });
@@ -202,6 +204,12 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
 });
 
+async function answerConfirm(confirmed: boolean) {
+  const dialog = renderer.root.findByType(ConfirmDialog);
+  await act(async () =>
+    confirmed ? dialog.props.onConfirm() : dialog.props.onCancel(),
+  );
+}
 function panelButton(label: string) {
   return renderer.root
     .findAllByType("button")
@@ -209,10 +217,6 @@ function panelButton(label: string) {
 }
 it("retains deletion selection and requires confirmation of the fetched version without automatic retry", async () => {
   await mount();
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => true),
-  );
   const state = mocks.state as { list: { data: Expense[] } };
   const latest = {
     ...state.list.data[0],
@@ -224,6 +228,7 @@ it("retains deletion selection and requires confirmation of the fetched version 
   );
   mocks.readLatest.mockResolvedValueOnce(latest);
   await act(async () => panelButton("삭제")!.props.onClick());
+  await answerConfirm(true);
   expect(mocks.readLatest).toHaveBeenCalledWith(1);
   expect(mocks.remove).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(renderer.toJSON())).toContain("remote delete review");
@@ -235,30 +240,24 @@ it("retains deletion selection and requires confirmation of the fetched version 
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => false),
-  );
   await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
+  await answerConfirm(false);
   expect(mocks.remove).toHaveBeenCalledTimes(1);
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => true),
-  );
   await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
+  await answerConfirm(true);
   expect(mocks.remove).toHaveBeenLastCalledWith(latest);
 });
 it.each(["missing", "offline"])(
   "does not retry delete when recovery is %s",
   async (mode) => {
     await mount();
-    vi.stubGlobal("confirm", () => true);
     mocks.remove.mockRejectedValueOnce(
       new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
     );
     if (mode === "missing") mocks.readLatest.mockResolvedValueOnce(undefined);
     else mocks.readLatest.mockRejectedValueOnce(new Error("offline"));
     await act(async () => panelButton("삭제")!.props.onClick());
+    await answerConfirm(true);
     expect(mocks.remove).toHaveBeenCalledTimes(1);
     expect(panelButton("최신 지출 확인 후 삭제")).toBeUndefined();
   },

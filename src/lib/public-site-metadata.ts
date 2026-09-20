@@ -1,12 +1,21 @@
 import type { Metadata } from "next";
 
 import { SUPPORT_EMAIL } from "@/lib/contact";
+import { brandAssets } from "@/lib/public-assets";
 import { PUBLIC_FOUNDERS, PUBLIC_SITE } from "@/lib/public-site";
+
+/** 링크 프리뷰 공용 이미지 — 1.91:1 불투명 PNG. 투명 배경은 카카오톡·슬랙에서 합성 결과가 달라진다. */
+export const SHARE_IMAGE = {
+  url: brandAssets.shareImage,
+  width: 1200,
+  height: 630,
+  alt: PUBLIC_SITE.serviceName,
+} as const;
 
 export const PUBLIC_INDEXABLE_ROUTES = [
   {
     path: "/",
-    title: "우때 — 실시간 협업 여행 플래너",
+    title: "우때 | 올인원 해외여행 플래너",
     description:
       "우때에서 친구들과 장소를 찾고 대화하며 여행 일정을 함께 완성하세요.",
     changeFrequency: "weekly",
@@ -14,28 +23,28 @@ export const PUBLIC_INDEXABLE_ROUTES = [
   },
   {
     path: "/terms",
-    title: "이용약관 — 우때",
+    title: "우때 | 이용약관",
     description: "우때 서비스 이용 조건과 회원의 권리 및 의무를 안내합니다.",
     changeFrequency: "yearly",
     priority: 0.3,
   },
   {
     path: "/privacy",
-    title: "개인정보 처리방침 — 우때",
+    title: "우때 | 개인정보 처리방침",
     description: "우때의 개인정보 수집, 이용, 보관 및 보호 방침을 안내합니다.",
     changeFrequency: "yearly",
     priority: 0.3,
   },
   {
     path: "/operations-policy",
-    title: "운영정책 — 우때",
+    title: "우때 | 운영정책",
     description: "우때 서비스의 이용 기준과 운영 원칙을 안내합니다.",
     changeFrequency: "yearly",
     priority: 0.3,
   },
   {
     path: "/copyright-policy",
-    title: "저작권 정책 — 우때",
+    title: "우때 | 저작권 정책",
     description: "우때 서비스 콘텐츠의 저작권 및 이용 정책을 안내합니다.",
     changeFrequency: "yearly",
     priority: 0.3,
@@ -59,12 +68,27 @@ export function publicPageMetadata(
     throw new Error(`Missing public metadata for ${path}`);
   }
 
+  const canonical = new URL(route.path, PUBLIC_SITE.origin).toString();
+
   return {
     title: route.title,
     description: route.description,
     robots: { index: true, follow: true },
-    alternates: {
-      canonical: new URL(route.path, PUBLIC_SITE.origin).toString(),
+    alternates: { canonical },
+    openGraph: {
+      type: "website",
+      siteName: PUBLIC_SITE.serviceName,
+      locale: "ko_KR",
+      url: canonical,
+      title: route.title,
+      description: route.description,
+      images: [SHARE_IMAGE],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: route.title,
+      description: route.description,
+      images: [SHARE_IMAGE.url],
     },
   };
 }

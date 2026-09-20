@@ -8,6 +8,9 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+
 import { BookmarkPlacePreviewCard } from "./BookmarkPlacePreviewCard";
 import {
   useBookmarkCategories,
@@ -59,6 +62,7 @@ export function BookmarkPlaceRow({
   const { mutate: moveBookmark, isPending: moving } = useMoveRoomBookmark();
   const { mutate: deleteItem, isPending: deleting } =
     useDeleteRoomBookmarkItem();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const busy = moving || deleting;
   const otherCategories =
@@ -151,10 +155,20 @@ export function BookmarkPlaceRow({
 
   const handleDelete = () => {
     if (!Number.isFinite(bookmarkId) || busy) return;
-    const ok = window.confirm("이 장소를 북마크에서 삭제할까요?");
-    if (!ok) return;
     closeMenu();
-    deleteItem({ roomId, bookmarkId, categoryId: currentCategoryId });
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    deleteItem(
+      { roomId, bookmarkId, categoryId: currentCategoryId },
+      {
+        onSuccess: () => {
+          setConfirmOpen(false);
+          toast.success("북마크에서 삭제했어요.");
+        },
+      },
+    );
   };
 
   return (
@@ -271,6 +285,15 @@ export function BookmarkPlaceRow({
             document.body,
           )}
       </div>
+      {confirmOpen ? (
+        <ConfirmDialog
+          title="이 장소를 북마크에서 삭제할까요?"
+          confirmLabel="삭제"
+          isPending={deleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }
