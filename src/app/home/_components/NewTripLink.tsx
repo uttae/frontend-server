@@ -11,7 +11,8 @@ export function NewTripLink({ className }: { className?: string }) {
         className,
       )}
     >
-      <Image src="/rooms/figma/plus.svg" width={24} height={24} alt="" className="size-6" />
+      <Image src="/rooms/figma/plus.svg" width={24} height={24} alt="" className="size-6 mobile:hidden" />
+      <Image src="/rooms/figma/plus-mobile.svg" width={20} height={20} alt="" className="hidden size-5 mobile:block" />
       <span className="px-1.5">새 여행 시작</span>
     </Link>
   );

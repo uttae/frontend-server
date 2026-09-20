@@ -49,9 +49,11 @@ export function HomeHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border-subtle bg-fill-subtle mobile:border-b-0">
-      <div className="mx-auto flex h-16 max-w-[1184px] items-center justify-between gap-4 px-6 mobile:h-14 mobile:px-5">
-        <BrandLogo variant="combination" size="S" alt="로고" />
+    <header className="sticky top-0 z-40 h-16 shrink-0 border-b border-border-subtle bg-fill-subtle mobile:h-14 mobile:border-b-0">
+      <div className="mx-auto flex h-full max-w-[1184px] items-center justify-between gap-4 px-6 mobile:px-5">
+        <div className="[&_img]:h-[22px] [&_img]:w-[75.5px]">
+          <BrandLogo variant="combination" size="S" alt="로고" />
+        </div>
 
         <div ref={profileRef} className="relative">
           <button
@@ -72,7 +74,7 @@ export function HomeHeader() {
           {open && (
             <div className="absolute right-2 top-[48.5px] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] bg-white text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
               {user && (
-                <div className="border-b-[0.5px] border-border-subtle py-5 pl-5 pr-4">
+                <div className="py-5 pl-5 pr-4 shadow-[inset_0_-0.5px_0_var(--color-border-subtle)]">
                   <p className="truncate text-[18px] font-bold leading-[22px] tracking-[-0.02em]">
                     {user.nickname}
                   </p>
@@ -84,7 +86,7 @@ export function HomeHeader() {
               <Link
                 href="/home/my-info"
                 onClick={() => setOpen(false)}
-                className="flex h-[52px] w-full items-center gap-2 border-b-[0.5px] border-border-subtle py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
+                className="flex h-[52px] w-full items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
               >
                 <Image src="/rooms/figma/user.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
                 내 정보
@@ -92,7 +94,7 @@ export function HomeHeader() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-[52px] w-full cursor-pointer items-center gap-2 border-b-[0.5px] border-border-subtle py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
+                className="flex h-[52px] w-full cursor-pointer items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
               >
                 <Image src="/rooms/figma/logout.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
                 로그아웃
