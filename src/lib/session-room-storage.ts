@@ -1,4 +1,4 @@
-import { roomIdFromPlanPathname } from "@/lib/plan-room-path";
+import { parseRoomContextPath } from "@/lib/room-context-path";
 
 /** Zustand `currentRoomId` — 탭 수명 sessionStorage */
 export const SESSION_CURRENT_ROOM_ID_KEY = "hau:session:currentRoomId:v1";
@@ -60,13 +60,12 @@ export function resolveCurrentRoomId(
   );
 }
 
-/** Zustand + `/plan/[roomId]` URL (sessionStorage 미포함, STOMP·SSR 첫 페인트용) */
+/** Zustand + 방 컨텍스트 URL (sessionStorage 미포함, STOMP·SSR 첫 페인트용) */
 export function resolveRoomIdFromPathname(
   storeRoomId: string | null | undefined,
   pathname: string,
 ): string | null {
-  return resolveRoomIdFromStoreAndUrl(
-    storeRoomId,
-    roomIdFromPlanPathname(pathname),
-  );
+  const route = parseRoomContextPath(pathname);
+  if (route.invalidPackingPath) return null;
+  return resolveRoomIdFromStoreAndUrl(storeRoomId, route.roomId);
 }

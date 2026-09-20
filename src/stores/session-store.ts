@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { parseRoomContextPath } from "@/lib/room-context-path";
 
 import {
   clearCurrentRoomIdSessionStorage,
@@ -46,9 +47,11 @@ export const useSessionStore = create<SessionStore>()((set) => ({
 }));
 
 /** sessionStorage 방 ID를 Zustand에 동기 시드 */
-export function bootstrapCurrentRoomFromSessionStorage(): void {
+export function bootstrapCurrentRoomFromSessionStorage(pathname?: string): void {
   if (typeof window === "undefined") return;
-  const roomId = readCurrentRoomIdFromSessionStorage();
+  const route = parseRoomContextPath(pathname ?? window.location.pathname);
+  if (route.invalidPackingPath) return;
+  const roomId = route.roomId ?? readCurrentRoomIdFromSessionStorage();
   if (!roomId) return;
 
   const { currentRoomId, setCurrentRoomId } = useSessionStore.getState();

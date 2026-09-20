@@ -107,6 +107,7 @@ export const config = {
     "/auth/callback",
     "/home",
     "/home/:path*",
+    "/packing/:path*",
     "/plan",
     "/plan/:roomId",
     "/plan/:roomId/:path*",

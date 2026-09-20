@@ -1,0 +1,7 @@
+.columns { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.body[data-expanded="false"] { display: none; }
+@media (min-width: 1024px) {
+  .columns { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+  .body[data-expanded="false"] { display: block; }
+  .collapse { display: none; }
+}

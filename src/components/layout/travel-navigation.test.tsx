@@ -134,3 +134,24 @@ it.each(["/plan/room", "/cost"])("colors every sidebar icon consistently on %s",
   }
   expect(items()[3].querySelector<HTMLElement>('[style*="mask"]')!.style.maskImage).toContain("/icons/sidebar/calculator.svg");
 });
+
+it.each([false, true])("packing adds no destination or active state and retains mobile tabs (mobile=%s)", async mobile => {
+  state.mobile = mobile;
+  state.pathname = "/packing/12345678-1234-1234-1234-123456789abc";
+  await render();
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "검색", "북마크", "채팅", "멤버"] : ["일정", "검색", "북마크", "지출", "채팅", "멤버"]);
+  expect(active()).toHaveLength(0);
+  expect(host.querySelector('[href^="/packing"]')).toBeNull();
+  expect(host.querySelector("[data-map]")).toBeNull();
+  expect(host.querySelector("[data-main-content-scroll]")?.className).toContain("overflow-hidden");
+  expect(host.querySelector("[data-main-content-scroll]")?.className).not.toContain("overflow-y-auto");
+  if (!mobile) {
+    expect(host.querySelector("aside")?.parentElement?.className).toBe("hidden shrink-0 lg:flex");
+    await act(async () => items()[4].click());
+    expect(active()).toEqual([items()[4]]);
+    expect(host.querySelector("[data-chat]")).not.toBeNull();
+    await act(async () => useChatPanelStore.getState().closeChat());
+    expect(host.querySelector("article")).not.toBeNull();
+    expect(active()).toHaveLength(0);
+  }
+});

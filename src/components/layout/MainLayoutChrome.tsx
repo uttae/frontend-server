@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { isPackingPath } from "@/lib/room-context-path";
 import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -33,6 +34,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   }, [pathname, closeChat]);
   const showDesktopChat = !isMobileDevice && chatState !== "closed";
 
+  const isPackingRoute = isPackingPath(pathname);
   const isPlanRoute = pathname === "/plan" || pathname.startsWith("/plan/");
   const mobilePlanPanel =
     isMobileDevice && isPlanRoute
@@ -58,8 +60,8 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
             </div>
           ) : null}
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
-            {!isMobileDevice ? <SideBar /> : null}
-            <MainContentScrollArea fill={showMobilePlanSurface || showDesktopChat}>
+            {!isMobileDevice ? (isPackingRoute ? <div className="hidden shrink-0 lg:flex"><SideBar /></div> : <SideBar />) : null}
+            <MainContentScrollArea fill={isPackingRoute || showMobilePlanSurface || showDesktopChat}>
               {showDesktopChat ? <ChatPanel inline /> : showMobilePlanSurface ? (
                 mobilePlanPanel === "map" ? (
                   <MapWithDetailPanel mobileInline />
@@ -74,7 +76,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           <MobileMainTabs />
         </LeftSection>
 
-        {!isMobileDevice ? <MapWithDetailPanel /> : null}
+        {!isMobileDevice && !isPackingRoute ? <MapWithDetailPanel /> : null}
         {!isMobileDevice ? <SidebarTutorial /> : null}
       </div>
     </main>

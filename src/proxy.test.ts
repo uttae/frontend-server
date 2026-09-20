@@ -158,3 +158,12 @@ it("routes cost requests through session verification and retains refreshed cook
   expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
   expect(response.headers.get("set-cookie")).toBe("session=refreshed; Path=/; HttpOnly");
 });
+it("protects every packing path with the existing session contract", async () => {
+  const { unstable_doesMiddlewareMatch } = await import("next/experimental/testing/server");
+  verifySessionWithOptionalRefresh.mockResolvedValue({ ok: false, setCookies: [] });
+  for (const path of ["/packing", "/packing/room", "/packing/room/extra"]) {
+    expect(unstable_doesMiddlewareMatch({ config, url: `https://www.uttae.app${path}` })).toBe(true);
+    const response = await proxy(appRequest(path));
+    expect(response.headers.get("location")).toBe("https://www.uttae.app/login");
+  }
+});
