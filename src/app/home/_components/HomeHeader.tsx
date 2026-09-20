@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -70,10 +70,10 @@ export function HomeHeader() {
           </button>
 
           {open && (
-            <div className="absolute right-2 top-full z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] bg-white text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
+            <div className="absolute right-2 top-[48.5px] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] bg-white text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
               {user && (
-                <div className="border-b border-border-subtle py-5 pl-5 pr-4">
-                  <p className="truncate text-[18px] font-bold leading-[22px]">
+                <div className="border-b-[0.5px] border-border-subtle py-5 pl-5 pr-4">
+                  <p className="truncate text-[18px] font-bold leading-[22px] tracking-[-0.02em]">
                     {user.nickname}
                   </p>
                   <p className="mt-1 truncate text-body-s-regular text-text-subtle">
@@ -84,16 +84,17 @@ export function HomeHeader() {
               <Link
                 href="/home/my-info"
                 onClick={() => setOpen(false)}
-                className="flex min-h-[52px] w-full items-center justify-between border-b border-border-subtle py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
+                className="flex h-[52px] w-full items-center gap-2 border-b-[0.5px] border-border-subtle py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
               >
+                <Image src="/rooms/figma/user.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
                 내 정보
-                <ChevronRight className="h-4 w-4 text-dark-gray" aria-hidden />
               </Link>
               <button
                 type="button"
                 onClick={handleLogout}
-                className="min-h-[52px] w-full py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
+                className="flex h-[52px] w-full cursor-pointer items-center gap-2 border-b-[0.5px] border-border-subtle py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
               >
+                <Image src="/rooms/figma/logout.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
                 로그아웃
               </button>
             </div>
