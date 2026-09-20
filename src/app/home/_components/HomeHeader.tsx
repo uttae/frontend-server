@@ -49,8 +49,8 @@ export function HomeHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-border bg-white">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-6 py-2">
+    <header className="sticky top-0 z-40 border-b border-border-subtle bg-fill-subtle mobile:border-b-0">
+      <div className="mx-auto flex h-16 max-w-[1184px] items-center justify-between gap-4 px-6 mobile:h-14 mobile:px-5">
         <BrandLogo variant="combination" size="S" alt="로고" />
 
         <div ref={profileRef} className="relative">
@@ -58,25 +58,25 @@ export function HomeHeader() {
             ref={buttonRef}
             type="button"
             onClick={() => setOpen((v) => !v)}
-            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full transition hover:opacity-90"
+            className="flex size-12 items-center justify-center rounded-[8px] transition hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
             aria-label="프로필"
             aria-expanded={open}
           >
-            {user ? (
-              <UserAvatar user={user} size={32} />
+            {user?.profileImageUrl ? (
+              <UserAvatar user={user} size={36} />
             ) : (
-              <span className="text-[14px] font-semibold text-white">?</span>
+              <span className="size-9 rounded-full bg-fill-strong" aria-hidden />
             )}
           </button>
 
           {open && (
-            <div className="absolute right-0 top-full z-50 mt-1 w-56 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-gray-border bg-white shadow-lg">
+            <div className="absolute right-2 top-full z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] bg-white text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
               {user && (
-                <div className="border-b border-gray-border px-4 py-2.5">
-                  <p className="truncate text-[14px] font-semibold text-black">
+                <div className="border-b border-border-subtle py-5 pl-5 pr-4">
+                  <p className="truncate text-[18px] font-bold leading-[22px]">
                     {user.nickname}
                   </p>
-                  <p className="truncate text-[13px] text-dark-gray">
+                  <p className="mt-1 truncate text-body-s-regular text-text-subtle">
                     {user.email}
                   </p>
                 </div>
@@ -84,7 +84,7 @@ export function HomeHeader() {
               <Link
                 href="/home/my-info"
                 onClick={() => setOpen(false)}
-                className="flex w-full items-center justify-between border-b border-gray-border px-4 py-2.5 text-left text-[17px] text-dark-gray transition hover:bg-bubble-gray"
+                className="flex min-h-[52px] w-full items-center justify-between border-b border-border-subtle py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
               >
                 내 정보
                 <ChevronRight className="h-4 w-4 text-dark-gray" aria-hidden />
@@ -92,7 +92,7 @@ export function HomeHeader() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="w-full px-4 py-2.5 text-left text-[17px] text-dark-gray transition hover:bg-bubble-gray"
+                className="min-h-[52px] w-full py-3.5 pl-5 pr-4 text-left text-label-l-regular transition hover:bg-fill"
               >
                 로그아웃
               </button>

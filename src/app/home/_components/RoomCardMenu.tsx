@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { LogOut, MoreHorizontal, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { LogOut, Trash2 } from "lucide-react";
 
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { RoomListItem } from "@/lib/api/rooms";
 import { isHostRole } from "@/lib/rooms";
-import { cn } from "@/lib/utils";
 
 type Props = {
   room: RoomListItem;
@@ -17,34 +17,42 @@ type Props = {
 export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   useOnClickOutside(menuRef, () => setOpen(false));
+
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        buttonRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [open]);
 
   const isHost = isHostRole(room.role);
 
   return (
     <div ref={menuRef} className="relative">
       <button
+        ref={buttonRef}
         type="button"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        className={cn(
-          "flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border-2 bg-white/90 transition [&_svg]:transition",
-          "hover:border-primary hover:bg-primary [&_svg]:text-dark-gray hover:[&_svg]:text-white",
-          open
-            ? "border-primary bg-primary [&_svg]:text-white"
-            : "border-gray-border",
-        )}
-        aria-label="더보기"
+        className="flex size-11 cursor-pointer items-center justify-center rounded-[8px] transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
+        aria-label={`${room.title} 더보기`}
         aria-expanded={open}
       >
-        <MoreHorizontal size={13} className="transition" />
+        <Image src="/rooms/figma/menu.svg" alt="" width={24} height={24} className="size-6" />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-1 w-32 overflow-hidden rounded-xl border border-gray-border bg-white shadow-lg">
+        <div className="absolute right-0 top-9 z-30 w-40 overflow-hidden rounded-[12px] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
           {isHost ? (
             <button
               type="button"
@@ -53,10 +61,10 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
                 setOpen(false);
                 onDelete(room);
               }}
-              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[17px] text-primary transition hover:bg-bubble-gray"
+              className="flex min-h-12 w-full cursor-pointer items-center gap-2 px-4 py-3.5 text-left text-body-s-regular text-text transition hover:bg-fill"
             >
-              <Trash2 size={13} />
-              삭제하기
+              <Trash2 size={20} aria-hidden />
+              방 삭제하기
             </button>
           ) : (
             <button
@@ -66,9 +74,9 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
                 setOpen(false);
                 onLeave(room);
               }}
-              className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[17px] text-dark-gray transition hover:bg-bubble-gray"
+              className="flex min-h-12 w-full cursor-pointer items-center gap-2 px-4 py-3.5 text-left text-body-s-regular text-text transition hover:bg-fill"
             >
-              <LogOut size={13} />
+              <LogOut size={20} aria-hidden />
               방 나가기
             </button>
           )}
