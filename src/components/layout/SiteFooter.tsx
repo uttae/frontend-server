@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CookieSettingsButton } from "@/components/analytics/CookieSettingsProvider";
+import { BrandLogo } from "@/components/BrandLogo";
 
 import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -23,8 +24,44 @@ function FooterDot() {
   );
 }
 
-export function SiteFooter({ className, logo }: { className?: string; logo?: ReactNode }) {
+export function SiteFooter({ className, logo, variant = "default" }: {
+  className?: string;
+  logo?: ReactNode;
+  variant?: "default" | "room-list";
+}) {
   const year = new Date().getFullYear();
+
+  if (variant === "room-list") {
+    return (
+      <footer className={cn("bg-fill text-text mobile:hidden", className)}>
+        <div className="mx-auto flex max-w-[1272px] flex-col gap-10 px-6 pb-20 pt-[60px]">
+          <Link href="/" aria-label="우때 홈" className="w-fit [&_img]:h-[22px] [&_img]:w-[73px]">
+            <BrandLogo variant="combination" size="S" />
+          </Link>
+          <nav aria-label="정책 문서" className="flex min-h-[60px] flex-wrap items-center gap-x-5 gap-y-3 text-label-l-regular">
+            {POLICY_LINKS.map((item, index) => (
+              <span key={item.href} className="inline-flex items-center gap-5">
+                {index > 0 && <span aria-hidden className="h-9 w-px bg-border" />}
+                <Link href={item.href} className="flex h-12 items-center hover:underline">{item.label}</Link>
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-5">
+              <span aria-hidden className="h-9 w-px bg-border" />
+              <CookieSettingsButton className="h-12 cursor-pointer hover:underline">
+                쿠키 설정
+              </CookieSettingsButton>
+            </span>
+          </nav>
+          <dl className="grid w-fit grid-cols-1 gap-x-[100px] gap-y-1.5 text-label-l-regular md:grid-cols-[max-content_max-content]">
+            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">서비스명</dt><dd>우때</dd></div>
+            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">운영자</dt><dd>팀 우때 (Team Uttae)</dd></div>
+            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">이메일</dt><dd><a href={`mailto:${SUPPORT_EMAIL}`} className="hover:underline">{SUPPORT_EMAIL}</a></dd></div>
+            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">호스팅</dt><dd>Amazon Web Services (AWS)</dd></div>
+          </dl>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer

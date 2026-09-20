@@ -10,7 +10,6 @@ import { TripFormFields } from "@/components/rooms/TripFormFields";
 
 import { bucketTripDays } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import { useRedirectOnMobileDevice } from "@/hooks/useMobileRedirects";
 import { useCreateRoom } from "@/hooks/useRooms";
 import type { RoomDetail } from "@/lib/api/rooms";
 import { formatDateYmd } from "@/lib/plan/tripRange";
@@ -27,7 +26,6 @@ import { useSessionStore } from "@/stores/session-store";
 export default function NewTripPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  useRedirectOnMobileDevice("/home");
   const [title, setTitle] = useState("");
   const [destinations, setDestinations] = useState<string[]>([]);
   const [startDate, setStartDate] = useState("");
