@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  type SyntheticEvent,
-} from "react";
+import { useCallback, useLayoutEffect, useRef } from "react";
 
 import {
   SettingsActionButton,
@@ -22,9 +17,6 @@ type Props = {
   onConfirm: () => void;
   onCancel: () => void;
 };
-
-/** 포털 안의 클릭이 React 트리를 따라 호스트(카드 클릭·드래그 등)로 올라가지 않게 막는다. 키 입력은 SettingsDialog가 document에서 받으므로 막지 않는다 */
-const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 
 export function ConfirmDialog({
   title,
@@ -45,36 +37,33 @@ export function ConfirmDialog({
   }, []);
 
   return (
-    <div
-      className="contents"
-      onClick={stopPropagation}
-      onMouseDown={stopPropagation}
-      onPointerDown={stopPropagation}
-      onTouchStart={stopPropagation}
+    <SettingsDialog
+      title={title}
+      onClose={handleClose}
+      size="compact"
+      stopPortalEventPropagation
     >
-      <SettingsDialog title={title} onClose={handleClose} size="compact">
-        {description ? (
-          <p className="text-[17px] leading-relaxed text-dark-gray">
-            {description}
-          </p>
-        ) : null}
-        <SettingsActionButtonRow className="mt-6">
-          <SettingsActionButton
-            variant="secondary"
-            onClick={handleClose}
-            disabled={isPending}
-          >
-            {cancelLabel}
-          </SettingsActionButton>
-          <SettingsActionButton
-            variant="primary"
-            onClick={onConfirm}
-            disabled={isPending}
-          >
-            {isPending ? "처리 중…" : confirmLabel}
-          </SettingsActionButton>
-        </SettingsActionButtonRow>
-      </SettingsDialog>
-    </div>
+      {description ? (
+        <p className="text-[17px] leading-relaxed text-dark-gray">
+          {description}
+        </p>
+      ) : null}
+      <SettingsActionButtonRow className="mt-6">
+        <SettingsActionButton
+          variant="secondary"
+          onClick={handleClose}
+          disabled={isPending}
+        >
+          {cancelLabel}
+        </SettingsActionButton>
+        <SettingsActionButton
+          variant="primary"
+          onClick={onConfirm}
+          disabled={isPending}
+        >
+          {isPending ? "처리 중…" : confirmLabel}
+        </SettingsActionButton>
+      </SettingsActionButtonRow>
+    </SettingsDialog>
   );
 }
