@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import { RoomListItem } from "@/lib/api/rooms";
 import { RoomCard } from "./RoomCard";
 import { NewTripLink } from "./NewTripLink";
@@ -50,7 +51,9 @@ export function RoomGrid({
     return (
       <div className="flex flex-col items-center justify-center gap-8 rounded-[12px] bg-fill px-5 py-20 text-center">
         <div className="flex flex-col items-center gap-3">
-          <div aria-hidden className="size-[100px] rounded-[8px] bg-fill-strong" />
+          <div aria-hidden className="flex size-[100px] items-center justify-center">
+            <BrandLogo variant="symbol" size="L" alt="" />
+          </div>
           <p className="text-body-l-regular text-text-subtle mobile:text-body-m-regular">
             아직 생성된 여행방이 없어요<br />
             우때와 함께 여행계획을 시작해보아요!
