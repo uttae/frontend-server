@@ -31,7 +31,8 @@
 .partTitle { display: flex; flex: 1; align-items: center; min-width: 0; gap: 10px; font-size: 16px; line-height: 22px; font-weight: 700; }
 .partTitle h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .partTitle span { flex-shrink: 0; }
-.partActions { display: flex; flex-shrink: 0; }
+.partActions { display: flex; flex-shrink: 0; opacity: 0; pointer-events: none; }
+.partHeader:hover .partActions, .partHeader:focus-within .partActions { opacity: 1; pointer-events: auto; }
 .addItem { flex-shrink: 0; width: 68px; min-height: 28px; font-size: 14px; line-height: 20px; }
 .iconButton { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 28px; color: var(--color-icon-subtle); border-radius: 4px; cursor: pointer; }
 .iconButton:hover { color: var(--color-primary-default); background: var(--color-fill-default); }
@@ -55,11 +56,9 @@
 .editor { padding: 12px 0; }
 .newPart { margin-bottom: 24px; max-width: 380px; }
 .draft .save { color: var(--color-text-inverse); background: var(--color-primary-default); }
-@media (hover: hover) and (pointer: fine) {
-  .partActions { opacity: 0; pointer-events: none; }
-  .partHeader:hover .partActions, .partHeader:focus-within .partActions { opacity: 1; pointer-events: auto; }
-}
-@media (hover: none) {
+/* Lack of hover is not evidence of touch: pointer-less desktops still use disclosure. */
+@media (any-pointer: coarse) {
+  .partActions { opacity: 1; pointer-events: auto; }
   .itemRename { position: static; opacity: 1; pointer-events: auto; }
 }
 @media (min-width: 1024px) {
