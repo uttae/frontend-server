@@ -26,8 +26,9 @@
 ## 2. 아이콘의 사용
 - 아이콘은 [Figma 디자인 시스템 Icon](https://www.figma.com/design/uJLn6DbZ6MMpWyfuOXr6wu/Uttae_%ED%86%B5%ED%95%A9?node-id=201-12969)을 우선 사용한다
   - SVG로 받아 `public/icons/`에 두고 사용한다
-  - 필요한 아이콘이 Figma에 없으면 임의로 만들거나 다른 라이브러리에서 가져오지 말고, 디자이너에게 추가를 요청한다
+  - 필요한 아이콘이 Figma에 없으면 임의로 만들거나 다른 라이브러리에서 가져오지 말고, 디자이너/개발자에게 추가를 요청한다
 - 크기 규격: Figma 권장 사이즈(12 / 16 / 20 / 24 / 28 / 32)를 따른다
+- stroke는 1.8로 고정한다. 
 - 기존 `lucide-react`, `src/components/icons/`는 Figma 아이콘으로 점진적으로 전환한다. 신규 코드에서 새로 추가하지 않는다
 
 

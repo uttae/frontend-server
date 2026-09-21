@@ -54,6 +54,7 @@ module.exports = {
           subtle: "var(--color-fill-subtle)",
           DEFAULT: "var(--color-fill-default)",
           strong: "var(--color-fill-strong)",
+          elevate: "var(--color-fill-elevate)",
         },
         border: {
           subtle: "var(--color-border-subtle)",
