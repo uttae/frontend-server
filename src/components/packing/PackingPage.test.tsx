@@ -17,7 +17,7 @@ afterEach(() => { if(renderer) act(() => renderer.unmount()); vi.unstubAllGlobal
 async function mount() { await act(async () => { renderer = create(<PackingPage />); }); }
 function button(label: string) { return renderer.root.findAllByType('button').find(n => n.props['aria-label'] === label || n.children.join('') === label)!; }
 function input(label: string) { return renderer.root.findAllByType('input').find(n => n.props['aria-label'] === label)!; }
-it('renders only authoritative data and first-only expansion without fabricated progress', async () => { await mount(); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(1); expect(renderer.root.findAllByProps({'aria-expanded':false})).toHaveLength(1); expect(renderer.root.findByProps({className:'ml-2'}).children.join('')).toBe('0/1'); });
+it('renders only authoritative data and first-only expansion without fabricated progress', async () => { await mount(); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(1); expect(renderer.root.findAllByProps({'aria-expanded':false})).toHaveLength(1); expect(renderer.root.findByProps({'aria-label':'전체 준비 현황'}).children.join('')).toBe('0 / 1개 준비 완료'); });
 it('does not show a false empty list while loading', async () => { state.data = null; state.status = 'loading'; await mount(); expect(JSON.stringify(renderer.toJSON())).toContain('불러오는 중'); expect(renderer.root.findAllByType('input')).toHaveLength(0); });
 it('keeps drafts editable while writes are blocked, and preserves failed drafts', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'약'}})); state.status = 'writing'; await act(async () => renderer.update(<PackingPage />)); expect(input('새 준비물 이름').props.disabled).toBeUndefined(); expect(button('추가').props.disabled).toBe(true); state.status='ready'; coordinator.execute.mockResolvedValue({kind:'error'}); await act(async () => renderer.update(<PackingPage />)); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(input('새 준비물 이름').props.value).toBe('약'); });
 it('sends desired checkbox value with stable ID and delegates deletion', async () => { await mount(); await act(async () => renderer.root.findByProps({type:'checkbox'}).props.onChange({target:{checked:true}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:11,checked:true}); await act(async () => button('준비물 삭제: 여권').props.onClick()); expect(coordinator.prepareDelete).toHaveBeenCalledWith('item',11); });
@@ -57,7 +57,7 @@ it('renders the exact authoritative 8-part/40-item initial response in 3/3/2 col
   expect(checkboxes).toHaveLength(40);
   expect(checkboxes.every(node => node.props.checked === false)).toBe(true);
   expect(checkboxes.map(node => node.props['aria-label'])).toEqual(approvedSeed.flatMap(part => part.names.map(name => `${name} 준비 완료`)));
-  expect(renderer.root.findByProps({className:'ml-2'}).children.join('')).toBe('0/40');
+  expect(renderer.root.findByProps({'aria-label':'전체 준비 현황'}).children.join('')).toBe('0 / 40개 준비 완료');
   expect(renderer.root.findAllByType('button').filter(node => node.children.join('') === '+ 메모')).toHaveLength(40);
   expect(renderer.root.findAllByType('button').filter(node => node.children.join('') === '메모')).toHaveLength(0);
   expect(renderer.root.findAllByType('textarea')).toHaveLength(0);
@@ -163,4 +163,52 @@ it('closes unchanged memo editor after confirmed deletion', async () => {
   await act(async()=>renderer.update(<PackingPage/>));
   expect(renderer.root.findAllByType('textarea')).toHaveLength(0);
   expect(button('+ 메모')).toBeDefined();
+});
+
+
+it('shows authoritative part progress beside each heading and updates checked totals', async () => {
+  await mount();
+  expect(renderer.root.findByType('h1').children.join('')).toBe('준비물 체크리스트');
+  expect(renderer.root.findByProps({'aria-label':'서류 준비 현황'}).children.join('')).toBe('0 / 1');
+  expect(renderer.root.findByProps({'aria-label':'가방 준비 현황'}).children.join('')).toBe('0 / 0');
+  expect(button('새로고침')).toBeUndefined();
+  state.data!.parts[0].items[0].checked = true;
+  await act(async () => renderer.update(<PackingPage />));
+  expect(renderer.root.findByProps({'aria-label':'서류 준비 현황'}).children.join('')).toBe('1 / 1');
+  expect(renderer.root.findByProps({'aria-label':'전체 준비 현황'}).children.join('')).toBe('1 / 1개 준비 완료');
+});
+
+it('opens a collapsed part when its header add action starts an inline draft', async () => {
+  await mount();
+  const add = button('준비물 추가: 가방');
+  expect(add.children.join('')).toBe('+ 추가');
+  await act(async () => add.props.onClick());
+  expect(button('가방 펼치기 또는 접기').props['aria-expanded']).toBe(true);
+  expect(input('새 준비물 이름')).toBeDefined();
+  expect(button('서류 펼치기 또는 접기').props['aria-expanded']).toBe(true);
+  await act(async () => button('취소').props.onClick());
+  expect(renderer.root.findAllByType('form')).toHaveLength(0);
+});
+
+it('keeps compact rename and delete actions accessible without repeated text labels', async () => {
+  await mount();
+  for (const label of ['준비물 이름 수정: 여권', '파트 이름 수정: 서류', '파트 삭제: 서류']) {
+    expect(button(label)).toBeDefined();
+    expect(button(label).children.join('')).not.toMatch(/수정|삭제/);
+  }
+  expect(button('준비물 삭제: 여권').children.join('')).not.toContain('삭제');
+  await act(async () => button('파트 이름 수정: 서류').props.onClick());
+  expect(input('파트 이름').props.value).toBe('서류');
+  await act(async () => button('취소').props.onClick());
+  await act(async () => button('파트 삭제: 서류').props.onClick());
+  expect(coordinator.prepareDelete).toHaveBeenCalledWith('part', 1);
+});
+
+it('deletes a saved memo from its compact action without deleting the item', async () => {
+  coordinator.execute.mockReturnValue(new Promise(() => {}));
+  state.data!.parts[0].items[0] = {...item,memo:{id:11,itemId:11,content:'saved'}};
+  await mount();
+  await act(async () => button('메모 삭제: 여권').props.onClick({currentTarget: {isConnected:true}}));
+  expect(coordinator.execute).toHaveBeenCalledWith({type:'deleteMemo',id:11});
+  expect(coordinator.prepareDelete).not.toHaveBeenCalled();
 });

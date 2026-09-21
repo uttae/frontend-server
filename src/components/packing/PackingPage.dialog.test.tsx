@@ -38,3 +38,40 @@ it('traps confirmation focus, handles Escape without deleting and restores main 
     expect(main.hasAttribute('inert')).toBe(false);
   } finally {await act(async()=>root.unmount());}
 });
+
+it('focuses an inline editor without scrolling and returns focus on Escape', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  mocks.context = {scopeKey:'room:1', state:{data:{id:1,roomId:'room',ownerUserId:1,version:1,initializedAt:'2026-01-01T00:00:00Z',parts:[{id:1,name:'서류',column:0,position:0,items:[{id:11,partId:1,name:'여권',checked:false,position:0,memo:null}]}]},status:'ready',message:null,undo:[],confirmation:null},coordinator:{execute:vi.fn(),refresh:vi.fn(),prepareDelete:vi.fn()}};
+  const host = document.createElement('div');document.body.append(host);
+  const root = createRoot(host);
+  const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+  try {
+    await act(async () => root.render(<PackingPage />));
+    const opener = host.querySelector<HTMLButtonElement>('[aria-label="준비물 이름 수정: 여권"]')!;
+    opener.focus();
+    await act(async () => opener.click());
+    expect(document.activeElement).toBe(host.querySelector('input[aria-label="준비물 이름"]'));
+    expect(focus).toHaveBeenLastCalledWith({preventScroll:true});
+    await act(async () => document.activeElement!.dispatchEvent(new KeyboardEvent('keydown', {key:'Escape',bubbles:true})));
+    expect(host.querySelector('form')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  } finally {await act(async () => root.unmount());focus.mockRestore();}
+});
+
+it.each([false, true])('restores saved-memo deletion focus only if the user stayed on its action (moved=%s)', async moved => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  const item = {id:11,partId:1,name:'여권',checked:false,position:0,memo:{id:11,itemId:11,content:'saved'} as {id:number;itemId:number;content:string}|null};
+  let finish!:(value:{kind:string})=>void;
+  mocks.context = {scopeKey:'room:1',state:{data:{id:1,roomId:'room',ownerUserId:1,version:1,initializedAt:'2026-01-01T00:00:00Z',parts:[{id:1,name:'서류',column:0,position:0,items:[item]}]},status:'ready',message:null,undo:[],confirmation:null},coordinator:{execute:vi.fn().mockReturnValue(new Promise(resolve=>{finish=resolve;})),refresh:vi.fn(),prepareDelete:vi.fn()}};
+  const host=document.createElement('div');document.body.append(host);const root=createRoot(host);
+  try {
+    await act(async()=>root.render(<PackingPage/>));
+    const remove=host.querySelector<HTMLButtonElement>('[aria-label="메모 삭제: 여권"]')!;
+    const other=host.querySelector<HTMLButtonElement>('[aria-label="준비물 이름 수정: 여권"]')!;
+    remove.focus();await act(async()=>remove.click());
+    if(moved) other.focus();
+    item.memo=null;await act(async()=>root.render(<PackingPage/>));
+    await act(async()=>finish({kind:'success'}));
+    expect(document.activeElement).toBe(moved ? other : host.querySelector('[aria-label="메모 추가: 여권"]'));
+  } finally {await act(async()=>root.unmount());}
+});
