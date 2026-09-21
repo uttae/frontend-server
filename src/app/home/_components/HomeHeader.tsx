@@ -75,7 +75,7 @@ export function HomeHeader() {
             <div className="absolute right-2 top-[48.5px] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] bg-white text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
               {user && (
                 <div className="py-5 pl-5 pr-4 shadow-[inset_0_-0.5px_0_var(--color-border-subtle)]">
-                  <p className="truncate text-title-s font-bold leading-[22px] tracking-[-0.02em]">
+                  <p className="truncate text-label-xl-emphasis font-bold leading-[22px] tracking-[-0.02em]">
                     {user.nickname}
                   </p>
                   <p className="mt-1 truncate text-body-s-regular text-text-subtle">
