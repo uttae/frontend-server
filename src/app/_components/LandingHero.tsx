@@ -16,7 +16,7 @@ export function LandingHero() {
           alt="지도와 날짜별 여행 일정을 한곳에서 확인하는 우때 화면" priority />
       </div>
       <div className={styles.heroCopy}>
-        <h1>올인원 해외여행<br />플래너, <span>우때</span></h1>
+        <h1>올인원 여행 계획<br />워크스페이스, <span>우때</span></h1>
         <p>장소부터 일정, 여행 정보까지 해외여행에<br />필요한 계획을 한곳에서 정리하세요.</p>
         <LandingActionLink href="/login" analytics={{ cta_id: "start_trip", cta_position: "hero" }} className={`${styles.action} ${styles.heroAction}`}>
           여행 시작하기

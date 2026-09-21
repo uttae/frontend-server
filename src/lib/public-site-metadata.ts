@@ -15,7 +15,7 @@ export const SHARE_IMAGE = {
 export const PUBLIC_INDEXABLE_ROUTES = [
   {
     path: "/",
-    title: "우때 | 올인원 해외여행 플래너",
+    title: "우때 | 올인원 여행 계획 워크스페이스",
     description:
       "우때에서 친구들과 장소를 찾고 대화하며 여행 일정을 함께 완성하세요.",
     changeFrequency: "weekly",
@@ -137,7 +137,7 @@ export const SOFTWARE_APPLICATION_JSON_LD = {
   operatingSystem: "Web",
   browserRequirements: "Requires a modern web browser",
   description:
-    "친구들과 장소를 찾고 대화하며 일정과 이동 동선을 완성하는 실시간 협업 여행 플래너",
+    "친구들과 장소를 찾고 대화하며 일정과 이동 동선을 완성하는 올인원 여행 계획 워크스페이스",
   featureList: [
     "지도 기반 장소 탐색",
     "실시간 채팅과 장소 공유",
