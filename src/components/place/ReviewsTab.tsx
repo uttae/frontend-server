@@ -20,7 +20,7 @@ function ReviewsLink({ reviewsUri }: { reviewsUri?: string | null }) {
       href={reviewsUri}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1 text-label-s-regular font-medium text-primary underline-offset-2 hover:underline"
+      className="inline-flex items-center gap-1 text-label-s-regular mobile:text-label-xs-regular font-medium text-primary underline-offset-2 hover:underline"
     >
       리뷰 전체보기
       <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -37,7 +37,7 @@ export function ReviewsTab({
   if (reviews.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 px-5 py-16 text-center">
-        <p className="text-body-m-emphasis font-medium text-[#364153]">등록된 리뷰가 없어요</p>
+        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-[#364153]">등록된 리뷰가 없어요</p>
         <p className="text-body-xs-regular text-dark-gray">
           아직 리뷰가 수집되지 않았습니다.
         </p>
@@ -53,7 +53,7 @@ export function ReviewsTab({
           <p className="text-body-xs-emphasis font-medium text-dark-gray">Google 평점</p>
           <div className="mt-1 flex items-end justify-between gap-4">
             <div className="flex items-center gap-2">
-              <p className="text-heading-m font-bold text-[#364153]">
+              <p className="text-heading-m mobile:text-heading-s font-bold text-[#364153]">
                 {rating.toFixed(1)}
               </p>
               <StarRow rating={rating} />
@@ -73,12 +73,12 @@ export function ReviewsTab({
       <div className="space-y-4">
         {reviews.map((review, i) => (
           <div key={i} className="flex gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-body-s-emphasis font-medium text-dark-gray">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
               {review.authorDisplayName.charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="text-body-s-emphasis font-medium text-[#364153]">
+                <span className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-[#364153]">
                   {review.authorDisplayName}
                 </span>
                 <span className="text-body-xs-regular text-dark-gray">

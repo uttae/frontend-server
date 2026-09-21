@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 const mapChipButtonBaseClass =
-  "shrink-0 cursor-pointer rounded-full px-3 py-1.5 text-label-m-regular font-medium shadow-md transition-[background-color,color,opacity,box-shadow] duration-200";
+  "shrink-0 cursor-pointer rounded-full px-3 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium shadow-md transition-[background-color,color,opacity,box-shadow] duration-200";
 
 /** 지도 필터 칩 — 미적용(전체·영업 중 off) */
 export function mapFilterChipInactiveClassName() {

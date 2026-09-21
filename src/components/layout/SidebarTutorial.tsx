@@ -288,22 +288,22 @@ export function SidebarTutorial() {
                 type="button"
                 onClick={() => void finishTutorial("skip")}
                 disabled={isCompleting}
-                className="rounded-lg px-2 py-1 text-label-m-regular font-medium text-dark-gray transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg px-2 py-1 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray transition hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 건너뛰기
               </button>
             ) : null}
           </div>
 
-          <p className="text-body-s-emphasis font-semibold tracking-wide text-primary">
+          <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold tracking-wide text-primary">
             {step.eyebrow}
           </p>
-          <h2 id="sidebar-tutorial-title" className="mt-1 text-heading-s font-bold text-gray-950">
+          <h2 id="sidebar-tutorial-title" className="mt-1 text-heading-s mobile:text-title-l font-bold text-gray-950">
             {step.title}
           </h2>
           <p
             id="sidebar-tutorial-description"
-            className="mt-2 min-h-15 text-body-m-regular leading-6 text-dark-gray"
+            className="mt-2 min-h-15 text-body-m-regular mobile:text-body-s-regular leading-6 text-dark-gray"
           >
             {step.description}
           </p>
@@ -318,13 +318,13 @@ export function SidebarTutorial() {
                 aria-hidden="true"
               />
             ))}
-            <span className="ml-2 text-body-s-emphasis font-medium text-dark-gray">
+            <span className="ml-2 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
               {stepIndex + 1} / {TUTORIAL_STEPS.length}
             </span>
           </div>
 
           {errorMessage ? (
-            <p className="mt-3 text-body-s-emphasis font-medium text-status-negative" role="alert">
+            <p className="mt-3 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-status-negative" role="alert">
               {errorMessage}
             </p>
           ) : null}
@@ -338,7 +338,7 @@ export function SidebarTutorial() {
                   setStepIndex((current) => current - 1);
                 }}
                 disabled={isCompleting}
-                className="flex h-11 items-center justify-center gap-1 rounded-xl border border-gray-border px-4 text-label-l-emphasis font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 items-center justify-center gap-1 rounded-xl border border-gray-border px-4 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ChevronLeft size={17} />
                 이전
@@ -356,7 +356,7 @@ export function SidebarTutorial() {
                 setStepIndex((current) => current + 1);
               }}
               disabled={isCompleting}
-              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary px-4 text-label-l-emphasis font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 flex-1 items-center justify-center gap-1 rounded-xl bg-primary px-4 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white transition hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isCompleting ? "저장 중…" : isLastStep ? "튜토리얼 완료" : "다음"}
               {!isLastStep && !isCompleting ? <ChevronRight size={17} /> : null}

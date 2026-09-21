@@ -31,7 +31,7 @@ export function CookieConsentBanner({
       className="fixed inset-x-0 bottom-0 z-[100] border-t border-gray-border bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm"
     >
       <div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-        <p className="text-body-m-regular leading-relaxed text-dark-gray">
+        <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
           우때는 서비스 개선과 방문 통계 분석을 위해 Google Analytics 쿠키를
           사용합니다. 쿠키 사용에 동의하시겠습니까?{" "}
           <Link

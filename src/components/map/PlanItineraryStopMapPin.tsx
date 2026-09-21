@@ -43,7 +43,7 @@ export function PlanItineraryStopMapPin({
       <span
         className={cn(
           "pointer-events-none absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 font-semibold tabular-nums leading-none tracking-tight text-white",
-          twoDigits ? "text-body-s-regular" : "text-body-l-regular",
+          twoDigits ? "text-body-s-regular mobile:text-body-xs-regular" : "text-body-l-regular mobile:text-body-m-regular",
         )}
         style={{ textShadow: "0 1px 2px rgba(0,0,0,0.42)" }}
         aria-hidden

@@ -220,11 +220,11 @@ export function AddToBookmarkModal({
         <div className="shrink-0 px-5 pb-2 pt-3">
           <h2
             id="add-bookmark-modal-title"
-            className="text-title-l font-semibold text-neutral-900"
+            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
           >
             북마크에 추가
           </h2>
-          <p className="mt-1 text-body-s-regular leading-relaxed text-dark-gray break-keep text-pretty">
+          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
             북마크를 선택한 뒤 추가해 주세요.
           </p>
         </div>
@@ -235,7 +235,7 @@ export function AddToBookmarkModal({
             disabled={isCreatingCategory || isAddingBookmarks}
             onClick={openCreateFolderModal}
             className={cn(
-              "flex w-full items-center gap-2.5 border-b border-gray-border px-5 py-3.5 text-left text-label-l-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray",
+              "flex w-full items-center gap-2.5 border-b border-gray-border px-5 py-3.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray",
               "disabled:opacity-55",
             )}
           >
@@ -244,14 +244,14 @@ export function AddToBookmarkModal({
           </button>
 
           {categoriesLoading && (
-            <p className="px-5 py-6 text-center text-body-m-regular text-dark-gray">
+            <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
               불러오는 중…
             </p>
           )}
 
           {categoriesError && (
             <div className="space-y-2 px-5 py-6 text-center">
-              <p className="text-body-m-regular text-primary">
+              <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
                 {categoriesErr instanceof Error
                   ? categoriesErr.message
                   : "카테고리를 불러오지 못했습니다."}
@@ -259,7 +259,7 @@ export function AddToBookmarkModal({
               <button
                 type="button"
                 onClick={() => refetch()}
-                className="text-label-l-regular font-medium text-neutral-900 underline"
+                className="text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
               >
                 다시 시도
               </button>
@@ -268,7 +268,7 @@ export function AddToBookmarkModal({
 
           {categories && categories.length === 0 && !categoriesLoading && (
             <div className="px-5 py-8 text-center">
-              <p className="text-body-s-regular leading-relaxed text-dark-gray break-keep text-pretty">
+              <p className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
                 아직 북마크가 없어요.
               </p>
             </div>
@@ -294,10 +294,10 @@ export function AddToBookmarkModal({
                       >
                         <FolderRibbonIcon color={c.colorCode} />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-body-l-emphasis font-medium text-neutral-900">
+                          <p className="truncate text-body-l-emphasis mobile:text-body-m-emphasis font-medium text-neutral-900">
                             {c.name}
                           </p>
-                          <p className="mt-0.5 text-body-m-regular text-dark-gray">
+                          <p className="mt-0.5 text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                             {c.placeCount ?? 0}개 장소
                           </p>
                         </div>
@@ -322,7 +322,7 @@ export function AddToBookmarkModal({
           {submitFeedback && (
             <p
               className={cn(
-                "border-t border-gray-border px-5 py-3 text-center text-body-m-regular",
+                "border-t border-gray-border px-5 py-3 text-center text-body-m-regular mobile:text-body-s-regular",
                 submitFeedback.variant === "error"
                   ? "text-primary"
                   : "text-dark-gray",
@@ -338,7 +338,7 @@ export function AddToBookmarkModal({
             type="button"
             onClick={onClose}
             disabled={isAddingBookmarks}
-            className="flex-1 rounded-xl border border-gray-border py-2.5 text-label-l-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:opacity-60"
+            className="flex-1 rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:opacity-60"
           >
             닫기
           </button>
@@ -350,7 +350,7 @@ export function AddToBookmarkModal({
               selectedIds.size === 0 ||
               (categories?.length === 0 && !categoriesLoading)
             }
-            className="flex-1 rounded-xl bg-primary py-2.5 text-label-l-emphasis font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
+            className="flex-1 rounded-xl bg-primary py-2.5 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
           >
             {isAddingBookmarks ? "추가 중…" : "추가"}
           </button>

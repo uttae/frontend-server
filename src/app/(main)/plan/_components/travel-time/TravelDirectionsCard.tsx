@@ -91,7 +91,7 @@ export function TravelDirectionsCard({
           onClick={onToggleMenu}
         >
           <TravelModeGlyph mode={headerTravelMode} />
-          <span className="inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep text-body-s-emphasis font-medium leading-tight text-gray-900">
+          <span className="inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep text-body-s-emphasis mobile:text-body-xs-emphasis font-medium leading-tight text-gray-900">
             <span className="min-w-0">{summaryLine}</span>
             <ChevronDown
               className={cn(
@@ -156,7 +156,7 @@ export function TravelDirectionsCard({
                 );
               const selected = value === effectiveMode;
               const rowClass = cn(
-                "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-body-s-regular",
+                "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-body-s-regular mobile:text-body-xs-regular",
                 !readOnly && "hover:bg-gray-border/30",
                 selected &&
                   (readOnly ?
@@ -215,7 +215,7 @@ export function TravelDirectionsCard({
               <li>
                 <button
                   type="button"
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-label-m-regular hover:bg-gray-border/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular hover:bg-gray-border/30 disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={() => {
                     const c = canonicalScheduleTravelMode(modeRaw);
                     if (!c) {
@@ -243,7 +243,7 @@ export function TravelDirectionsCard({
 
           <button
             type="button"
-            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-label-m-regular text-dark-gray hover:bg-gray-border/30"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular text-dark-gray hover:bg-gray-border/30"
             onClick={onHideDirections}
           >
             <EyeOff className="h-4 w-4 shrink-0" aria-hidden />

@@ -44,7 +44,7 @@ export function ConfirmDialog({
       stopPortalEventPropagation
     >
       {description ? (
-        <p className="text-body-m-regular leading-relaxed text-dark-gray">
+        <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
           {description}
         </p>
       ) : null}

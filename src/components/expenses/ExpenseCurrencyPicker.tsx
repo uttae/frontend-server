@@ -73,7 +73,7 @@ export function ExpenseCurrencyPicker({
     >
       <span
         id={id + "-label"}
-        className="block text-body-s-emphasis font-semibold leading-5"
+        className="block text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-5"
       >
         통화
       </span>
@@ -93,7 +93,7 @@ export function ExpenseCurrencyPicker({
           setActive(0);
           setOpen(!isOpen);
         }}
-        className="mt-1 flex h-14 w-full min-w-0 items-center gap-2 rounded-xl border border-gray-border bg-white px-3 py-2 text-left text-label-m-regular cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-1 flex h-14 w-full min-w-0 items-center gap-2 rounded-xl border border-gray-border bg-white px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="min-w-0 flex-1">
           <span className="block font-semibold">{value || "통화 선택"}</span>
@@ -188,7 +188,7 @@ export function ExpenseCurrencyPicker({
                 className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left cursor-pointer transition-colors hover:bg-primary/10 ${index === activeIndex ? "bg-primary/5" : ""}`}
               >
                 <span className="min-w-0">
-                  <span className="block break-words text-body-s-emphasis font-medium">
+                  <span className="block break-words text-body-s-emphasis mobile:text-body-xs-emphasis font-medium">
                     {currencyName(c.currency)}
                   </span>
                   <span className="block text-body-xs-regular text-dark-gray">
@@ -206,7 +206,7 @@ export function ExpenseCurrencyPicker({
             ))}
           </div>
           {!results.length && (
-            <p role="status" className="px-4 pb-4 text-body-s-regular text-dark-gray">
+            <p role="status" className="px-4 pb-4 text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
               검색 결과가 없어요.
             </p>
           )}

@@ -51,7 +51,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
             <div className="flex shrink-0 justify-end border-b border-gray-border px-3 py-1">
               <Link
                 href={buildMobilePlanPanelHref(pathname, mobilePlanPanel === "map" ? "schedule" : "map")}
-                className="flex min-h-11 items-center rounded-lg px-3 text-label-m-regular font-medium text-primary focus-visible:outline-2"
+                className="flex min-h-11 items-center rounded-lg px-3 text-label-m-regular mobile:text-label-s-regular font-medium text-primary focus-visible:outline-2"
               >
                 {mobilePlanPanel === "map" ? "일정 보기" : "지도 보기"}
               </Link>

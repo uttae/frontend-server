@@ -280,7 +280,7 @@ export function PlacesSearchInput({
                   <PlacePredictionInlineDescription
                     prediction={prediction}
                     matchClassName="font-semibold text-primary-strong"
-                    primaryTextClassName="text-body-m-regular text-[#111827]"
+                    primaryTextClassName="text-body-m-regular mobile:text-body-s-regular text-[#111827]"
                     secondaryTextClassName="ml-1.5 truncate text-body-xs-regular text-[#9ca3af]"
                   />
                 </span>
@@ -333,7 +333,7 @@ export function PlacesSearchInput({
           <button
             type="submit"
             disabled={!inputValue.trim() || disabled}
-            className="shrink-0 rounded-lg bg-primary px-4 py-2 text-label-l-regular font-medium text-white disabled:opacity-40"
+            className="shrink-0 rounded-lg bg-primary px-4 py-2 text-label-l-regular mobile:text-label-m-regular font-medium text-white disabled:opacity-40"
           >
             검색
           </button>

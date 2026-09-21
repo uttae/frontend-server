@@ -87,11 +87,11 @@ export default function JoinPage() {
         <BrandLogo variant="combination" size="M" alt="우때 로고" />
         <div className="w-full max-w-sm rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
           <p className="mb-1 font-semibold text-primary">입장 요청 실패</p>
-          <p className="text-body-m-regular text-dark-gray">{error}</p>
+          <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">{error}</p>
         </div>
         <button
           onClick={() => router.replace("/home")}
-          className="text-label-l-regular text-dark-gray underline underline-offset-4 hover:text-black"
+          className="text-label-l-regular mobile:text-label-m-regular text-dark-gray underline underline-offset-4 hover:text-black"
         >
           홈으로 돌아가기
         </button>
@@ -103,7 +103,7 @@ export default function JoinPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4">
       <BrandLogo variant="combination" size="M" alt="우때 로고" />
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
-      <p className="text-body-m-regular text-dark-gray">입장 요청 중…</p>
+      <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">입장 요청 중…</p>
     </div>
   );
 }

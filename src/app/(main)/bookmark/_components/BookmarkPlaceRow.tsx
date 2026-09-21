@@ -229,7 +229,7 @@ export function BookmarkPlaceRow({
                   <button
                     type="button"
                     role="menuitem"
-                    className="block w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-label-l-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
+                    className="block w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={busy}
                     onClick={() => setMenuPhase("pickCategory")}
                   >
@@ -238,7 +238,7 @@ export function BookmarkPlaceRow({
                   <button
                     type="button"
                     role="menuitem"
-                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-label-l-regular font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={busy}
                     onClick={handleDelete}
                   >
@@ -249,7 +249,7 @@ export function BookmarkPlaceRow({
                 <>
                   <button
                     type="button"
-                    className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-2.5 py-2 text-left text-label-l-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
+                    className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-2.5 py-2 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
                     onClick={() => setMenuPhase("main")}
                   >
                     <ChevronLeft className="size-4 shrink-0" />
@@ -257,7 +257,7 @@ export function BookmarkPlaceRow({
                   </button>
                   <div className="mx-1 my-1 border-t border-gray-border" />
                   {otherCategories.length === 0 ? (
-                    <p className="rounded-lg bg-gray-50 px-3 py-3 text-center text-body-s-regular leading-relaxed text-dark-gray">
+                    <p className="rounded-lg bg-gray-50 px-3 py-3 text-center text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
                       이동할 다른 카테고리가 없습니다.
                     </p>
                   ) : (
@@ -266,7 +266,7 @@ export function BookmarkPlaceRow({
                         key={c.categoryId}
                         type="button"
                         role="menuitem"
-                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-label-l-regular text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={busy}
                         onClick={() => handleMoveTo(c.categoryId)}
                       >

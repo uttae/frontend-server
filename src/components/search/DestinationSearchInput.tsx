@@ -254,7 +254,7 @@ export function DestinationSearchInput({
                   <PlacePredictionInlineDescription
                     prediction={p}
                     matchClassName="font-semibold text-primary"
-                    primaryTextClassName="text-body-m-regular text-black"
+                    primaryTextClassName="text-body-m-regular mobile:text-body-s-regular text-black"
                     secondaryTextClassName="ml-1.5 truncate text-body-xs-regular text-light-gray"
                   />
                 </span>
@@ -267,7 +267,7 @@ export function DestinationSearchInput({
       {selectionOnly ? (
         <p
           id={selectionOnlyFooterId}
-          className="mt-2 text-body-s-regular leading-relaxed text-light-gray"
+          className="mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
         >
           {DESTINATION_SELECTION_HINT}
         </p>

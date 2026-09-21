@@ -53,7 +53,7 @@ export function LeaveConfirmModal({ room, onClose }: Props) {
             <LogOut size={22} className="text-dark-gray" />
           </div>
           <h2 className="text-title-s font-bold">정말 방에서 나가시겠어요?</h2>
-          <p className="mt-1.5 text-body-m-regular leading-relaxed text-dark-gray">
+          <p className="mt-1.5 text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
             <span className="font-semibold">{room.title}</span> 방을 나가면
             현재 여행 플랜에 접근할 수 없게 됩니다.
           </p>

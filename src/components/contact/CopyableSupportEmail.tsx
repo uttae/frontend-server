@@ -43,7 +43,7 @@ export function CopyableSupportEmail({
           className="group flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-light-gray"
           aria-label={`${SUPPORT_EMAIL} 복사`}
         >
-          <span className="min-w-0 flex-1 select-text truncate text-body-m-emphasis font-medium text-black">
+          <span className="min-w-0 flex-1 select-text truncate text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-black">
             {SUPPORT_EMAIL}
           </span>
           <Copy

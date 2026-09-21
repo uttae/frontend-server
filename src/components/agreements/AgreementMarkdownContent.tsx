@@ -18,16 +18,16 @@ function createAgreementMarkdownComponents(
   variant: MarkdownVariant,
 ): Components {
   const isDocument = variant === "document";
-  const bodyText = isDocument ? "text-body-l-regular" : "text-body-m-regular";
+  const bodyText = isDocument ? "text-body-l-regular mobile:text-body-m-regular" : "text-body-m-regular mobile:text-body-s-regular";
   const h1Class = isDocument
-    ? "mb-4 text-heading-m font-bold text-neutral-900"
-    : "mb-3 text-title-l font-bold text-neutral-900";
+    ? "mb-4 text-heading-m mobile:text-heading-s font-bold text-neutral-900"
+    : "mb-3 text-title-l mobile:text-title-m font-bold text-neutral-900";
   const h2Class = isDocument
-    ? "mb-3 mt-6 text-heading-s font-bold text-neutral-900"
+    ? "mb-3 mt-6 text-heading-s mobile:text-title-l font-bold text-neutral-900"
     : "mb-2 mt-4 text-title-s font-bold text-neutral-900";
   const h3Class = isDocument
-    ? "mb-2 mt-4 text-title-l font-semibold text-neutral-900"
-    : "mb-2 mt-3 text-body-m-emphasis font-semibold text-neutral-900";
+    ? "mb-2 mt-4 text-title-l mobile:text-title-m font-semibold text-neutral-900"
+    : "mb-2 mt-3 text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-neutral-900";
 
   return {
     h1({ children }) {
@@ -172,7 +172,7 @@ function createAgreementMarkdownComponents(
         <pre
           className={cn(
             "my-2 overflow-x-auto rounded-lg bg-bubble-gray p-3 font-mono leading-relaxed",
-            isDocument ? "text-body-m-regular" : "text-body-s-regular",
+            isDocument ? "text-body-m-regular mobile:text-body-s-regular" : "text-body-s-regular mobile:text-body-xs-regular",
           )}
         >
           {children}

@@ -155,7 +155,7 @@ export function AddMemberPanel({
     <div className={embedded ? "min-w-0" : "overflow-hidden rounded-xl border border-gray-border bg-gray-50"}>
       {!embedded && (
       <div className="flex items-center justify-between border-b border-gray-border bg-white px-4 py-3">
-        <span className="text-body-m-emphasis font-semibold text-gray-800">멤버 초대</span>
+        <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-gray-800">멤버 초대</span>
         <button
           onClick={onClose}
           className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-dark-gray transition-colors hover:bg-gray-100"
@@ -177,7 +177,7 @@ export function AddMemberPanel({
       )}
 
       <div className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-3 p-4"}>
-        <p className="text-body-s-regular text-dark-gray">
+        <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           아래 초대 링크를 복사해 멤버를 초대하세요.
         </p>
 
@@ -186,7 +186,7 @@ export function AddMemberPanel({
             {inviteUrl ? (
               <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 bg-transparent text-body-s-regular text-dark-gray outline-none disabled:opacity-40" />
             ) : (
-              <span className="truncate text-body-s-regular text-light-gray">
+              <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-light-gray">
                 {isRoomDetailLoading
                   ? "방 정보를 불러오는 중…"
                   : isRegenerating
@@ -201,7 +201,7 @@ export function AddMemberPanel({
             type="button"
             onClick={handleCopy}
             disabled={!inviteUrl || isRegenerating}
-            className={`flex-shrink-0 cursor-pointer rounded-lg border px-3 py-2 text-label-m-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+            className={`flex-shrink-0 cursor-pointer rounded-lg border px-3 py-2 text-label-m-regular mobile:text-label-s-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               copied
                 ? "border-status-positive bg-status-positive/10 text-status-positive"
                 : "border-gray-border bg-white text-dark-gray hover:border-gray-400"
@@ -215,7 +215,7 @@ export function AddMemberPanel({
           type="button"
           onClick={() => void handleShare()}
           disabled={!inviteUrl || isRegenerating}
-          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-label-m-emphasis font-semibold text-white shadow-sm transition hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-white shadow-sm transition hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Share2 size={16} strokeWidth={2.2} aria-hidden />
           친구에게 공유
@@ -225,7 +225,7 @@ export function AddMemberPanel({
           type="button"
           onClick={handleRegenerate}
           disabled={isRegenerating}
-          className="flex cursor-pointer items-center gap-1.5 self-start text-label-m-regular text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex cursor-pointer items-center gap-1.5 self-start text-label-m-regular mobile:text-label-s-regular text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
         >
           <RefreshCw
             size={12}

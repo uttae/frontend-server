@@ -42,7 +42,7 @@ function AiRequestMetaRow({
     return (
       <div
         className={cn(
-          "mt-1 flex max-w-full text-body-s-regular",
+          "mt-1 flex max-w-full text-body-s-regular mobile:text-body-xs-regular",
           isOwnMessage ? "w-auto self-end justify-end" : "w-full justify-start",
           typo.metaMuted,
         )}
@@ -55,7 +55,7 @@ function AiRequestMetaRow({
   return (
     <div
       className={cn(
-        "mt-1 flex max-w-full flex-row flex-wrap items-center gap-x-2 gap-y-1 text-body-s-regular",
+        "mt-1 flex max-w-full flex-row flex-wrap items-center gap-x-2 gap-y-1 text-body-s-regular mobile:text-body-xs-regular",
         isOwnMessage ? "w-auto self-end justify-end" : "w-full justify-start",
         typo.metaMuted,
       )}

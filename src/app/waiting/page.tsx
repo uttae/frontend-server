@@ -132,19 +132,19 @@ function WaitingContent() {
         <div className="mb-6 text-center">
           {isRejected ? (
             <>
-              <h1 className="mb-2 text-title-l font-semibold text-gray-800">
+              <h1 className="mb-2 text-title-l mobile:text-title-m font-semibold text-gray-800">
                 입장이 거절되었습니다
               </h1>
-              <p className="text-body-m-regular leading-relaxed text-dark-gray">
+              <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
                 방장이 입장 요청을 거절했습니다.
               </p>
             </>
           ) : (
             <>
-              <h1 className="mb-2 text-title-l font-semibold text-gray-800">
+              <h1 className="mb-2 text-title-l mobile:text-title-m font-semibold text-gray-800">
                 입장 승인 대기 중
               </h1>
-              <p className="text-body-m-regular leading-relaxed text-dark-gray">
+              <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
                 <span className="font-medium text-gray-800">{roomTitle}</span>{" "}
                 방의 방장이 입장 요청을 확인 중입니다.
                 <br />
@@ -156,7 +156,7 @@ function WaitingContent() {
 
         {/* 오류 */}
         {fetchError && (
-          <p className="mb-4 rounded-xl bg-status-negative/10 px-4 py-2.5 text-center text-body-s-regular text-status-negative">
+          <p className="mb-4 rounded-xl bg-status-negative/10 px-4 py-2.5 text-center text-body-s-regular mobile:text-body-xs-regular text-status-negative">
             상태 조회에 실패했습니다. 다시 시도해 주세요.
           </p>
         )}
@@ -167,7 +167,7 @@ function WaitingContent() {
             type="button"
             onClick={handleRefresh}
             disabled={isChecking}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-border py-2.5 text-label-l-regular font-medium text-dark-gray transition-colors hover:border-gray-400 hover:text-black disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-dark-gray transition-colors hover:border-gray-400 hover:text-black disabled:opacity-50"
           >
             <RefreshCw size={14} className={isChecking ? "animate-spin" : ""} />
             {isChecking ? "확인 중…" : "입장 상태 새로고침"}
@@ -179,7 +179,7 @@ function WaitingContent() {
           <button
             type="button"
             onClick={() => router.replace("/home")}
-            className="w-full rounded-xl border border-gray-border py-2.5 text-label-l-regular font-medium text-dark-gray transition-colors hover:border-gray-400 hover:text-black"
+            className="w-full rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-dark-gray transition-colors hover:border-gray-400 hover:text-black"
           >
             홈으로 돌아가기
           </button>
@@ -187,7 +187,7 @@ function WaitingContent() {
       </div>
 
       {!isRejected && (
-        <p className="relative text-body-s-regular text-light-gray">
+        <p className="relative text-body-s-regular mobile:text-body-xs-regular text-light-gray">
           페이지를 닫아도 승인 후에 로그인하면 참가 완료됩니다.
         </p>
       )}

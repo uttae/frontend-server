@@ -28,7 +28,7 @@ export function MobileReadOnlyNotice() {
           <Monitor size={14} strokeWidth={2.2} aria-hidden />
         </span>
         <div className="min-w-0 flex-1 leading-snug">
-          <p className="text-body-s-emphasis font-semibold text-primary">
+          <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold text-primary">
             {mobileReadOnlyNoticeCopy.title}
           </p>
           <p className="mt-0.5 text-body-xs-regular text-muted-brown">

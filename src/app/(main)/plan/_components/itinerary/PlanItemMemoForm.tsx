@@ -74,10 +74,10 @@ function MemoOverwriteConfirmDialog({
         onMouseDown={(e) => e.stopPropagation()}
         className="w-full max-w-sm rounded-2xl border border-gray-border bg-white p-5 shadow-lg"
       >
-        <h2 id="memo-overwrite-dialog-title" className="text-body-m-emphasis font-semibold text-gray-900">
+        <h2 id="memo-overwrite-dialog-title" className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-gray-900">
           다른 사람의 입력을 덮어씁니다!
         </h2>
-        <p id="memo-overwrite-dialog-desc" className="mt-2 text-body-s-regular leading-relaxed text-dark-gray">
+        <p id="memo-overwrite-dialog-desc" className="mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
           다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다.
         </p>
         <div className="mt-5 flex justify-end gap-2">
@@ -85,7 +85,7 @@ function MemoOverwriteConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onCancel}
-            className="cursor-pointer rounded-md border border-gray-border px-3 py-1.5 text-label-m-regular font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-md border border-gray-border px-3 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             취소
           </button>
@@ -93,7 +93,7 @@ function MemoOverwriteConfirmDialog({
             type="button"
             disabled={isPending}
             onClick={onConfirm}
-            className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-label-m-regular font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? "저장 중…" : "확인"}
           </button>
@@ -120,7 +120,7 @@ export function PlanItemMemoReadOnly({
       <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
         <MemoIcon className="h-6 w-6" />
       </div>
-      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-body-s-regular leading-relaxed text-gray-900">
+      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-gray-900">
         {renderTextWithLinks(text, {
           linkClassName: MEMO_LINK_CLASS_NAME,
           onLinkClick: (e) => e.stopPropagation(),

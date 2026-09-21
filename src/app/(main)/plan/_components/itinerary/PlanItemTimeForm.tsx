@@ -224,7 +224,7 @@ export function PlanItemTimeEditor({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="h-10 shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-4 text-label-m-regular font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-10 shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-4 text-label-m-regular mobile:text-label-s-regular font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               취소
             </button>
@@ -232,7 +232,7 @@ export function PlanItemTimeEditor({
               type="button"
               onClick={() => void handleSave()}
               disabled={!canSave}
-              className="h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-label-m-regular font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-label-m-regular mobile:text-label-s-regular font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isPending ? "저장 중…" : "적용"}
             </button>

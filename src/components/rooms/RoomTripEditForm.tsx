@@ -163,7 +163,7 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
       />
 
       {error && !readOnly && (
-        <p className="text-center text-body-m-regular text-primary">
+        <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
           {error instanceof Error
             ? error.message
             : "수정에 실패했어요. 다시 시도해주세요."}

@@ -10,19 +10,19 @@ export function LoginErrorAlert({ message, onDismiss }: LoginErrorAlertProps) {
       className="flex w-full gap-3 rounded-xl border border-primary/35 bg-primary/[0.06] px-3.5 py-3 text-left"
     >
       <span
-        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-body-s-emphasis font-bold text-primary"
+        className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-body-s-emphasis mobile:text-body-xs-emphasis font-bold text-primary"
         aria-hidden
       >
         !
       </span>
       <div className="min-w-0 flex-1">
-        <p className="text-body-m-emphasis font-medium text-primary">로그인에 실패했습니다</p>
-        <p className="mt-1 text-body-m-regular leading-relaxed text-muted-brown">{message}</p>
+        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">로그인에 실패했습니다</p>
+        <p className="mt-1 text-body-m-regular mobile:text-body-s-regular leading-relaxed text-muted-brown">{message}</p>
         {onDismiss && (
           <button
             type="button"
             onClick={onDismiss}
-            className="mt-2 text-label-m-regular font-medium text-primary underline-offset-2 hover:underline"
+            className="mt-2 text-label-m-regular mobile:text-label-s-regular font-medium text-primary underline-offset-2 hover:underline"
           >
             닫기
           </button>

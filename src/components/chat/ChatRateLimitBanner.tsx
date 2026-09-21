@@ -29,7 +29,7 @@ export function ChatRateLimitBanner({
       <div
         className={cn(
           "flex items-center gap-2 px-3 py-2 text-primary",
-          isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
+          isMinimized ? "text-body-xs-regular" : "text-body-s-regular mobile:text-body-xs-regular",
         )}
       >
         <AlertCircle

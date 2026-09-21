@@ -17,7 +17,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
   if (isPending) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-10 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-        <p className="text-body-m-regular text-dark-gray">문서를 불러오는 중…</p>
+        <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">문서를 불러오는 중…</p>
       </div>
     );
   }
@@ -25,10 +25,10 @@ export function PolicyDocumentView({ agreementType }: Props) {
   if (isError) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-primary/35 bg-primary/[0.06] px-6 py-8 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)]">
-        <p className="text-body-m-emphasis font-medium text-primary">
+        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">
           문서를 불러오지 못했습니다
         </p>
-        <p className="mt-2 text-body-m-regular text-muted-brown">
+        <p className="mt-2 text-body-m-regular mobile:text-body-s-regular text-muted-brown">
           {error instanceof Error
             ? error.message
             : "잠시 후 다시 시도해 주세요."}
@@ -36,7 +36,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
         <button
           type="button"
           onClick={() => void refetch()}
-          className="mt-4 text-label-l-regular font-medium text-primary underline-offset-2 hover:underline"
+          className="mt-4 text-label-l-regular mobile:text-label-m-regular font-medium text-primary underline-offset-2 hover:underline"
         >
           다시 시도
         </button>
@@ -47,7 +47,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
   if (!agreement) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-10 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-        <p className="text-body-m-regular text-dark-gray">
+        <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">
           현재 게시된 문서를 찾을 수 없습니다.
         </p>
       </div>
@@ -57,8 +57,8 @@ export function PolicyDocumentView({ agreementType }: Props) {
   return (
     <article className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-8 shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:px-8 sm:py-10">
       <header className="border-b border-gray-border pb-6">
-        <h2 className="text-heading-m font-bold text-neutral-900">{agreement.title}</h2>
-        <p className="mt-2 text-body-m-regular text-dark-gray">버전 {agreement.version}</p>
+        <h2 className="text-heading-m mobile:text-heading-s font-bold text-neutral-900">{agreement.title}</h2>
+        <p className="mt-2 text-body-m-regular mobile:text-body-s-regular text-dark-gray">버전 {agreement.version}</p>
       </header>
 
       <div className="pt-6">
@@ -68,7 +68,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
             variant="document"
           />
         ) : (
-          <p className="whitespace-pre-wrap text-body-l-regular leading-relaxed text-dark-gray">
+          <p className="whitespace-pre-wrap text-body-l-regular mobile:text-body-m-regular leading-relaxed text-dark-gray">
             {agreement.content}
           </p>
         )}

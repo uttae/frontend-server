@@ -91,7 +91,7 @@ export function SearchResultCard({
       <div className="min-w-0 flex-1">
         {/* 이름 + 유형 */}
         <div className="flex items-baseline gap-1.5">
-          <h3 className="truncate text-body-m-emphasis font-semibold leading-5 tracking-tight text-primary-strong">
+          <h3 className="truncate text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-5 tracking-tight text-primary-strong">
             {name}
           </h3>
           {category && (

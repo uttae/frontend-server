@@ -111,7 +111,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
       <>
         <BookmarkFolderDetailHeader folder={folder} />
         <div className={`${SCROLLBAR} py-10`}>
-          <p className="text-center text-body-m-regular text-dark-gray">
+          <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
             유효하지 않은 카테고리입니다.
           </p>
         </div>
@@ -124,7 +124,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
       <>
         <BookmarkFolderDetailHeader folder={folder} />
         <div className={`${SCROLLBAR} py-10`}>
-          <p className="text-center text-body-m-regular text-dark-gray">불러오는 중…</p>
+          <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">불러오는 중…</p>
         </div>
       </>
     );
@@ -135,7 +135,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
       <>
         <BookmarkFolderDetailHeader folder={folder} />
         <div className={`${SCROLLBAR} space-y-3 py-10`}>
-          <p className="text-center text-body-m-regular text-primary">
+          <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
             {bookmarksErr instanceof Error
               ? bookmarksErr.message
               : "목록을 불러오지 못했습니다."}
@@ -144,7 +144,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
             <button
               type="button"
               onClick={() => refetch()}
-              className="cursor-pointer text-label-l-regular font-medium text-neutral-900 underline"
+              className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
             >
               다시 시도
             </button>
@@ -159,12 +159,12 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
       <BookmarkFolderDetailHeader folder={folder} />
       <div className={SCROLLBAR}>
         {cardsLoading ? (
-          <p className="py-10 text-center text-body-m-regular text-dark-gray">
+          <p className="py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
             장소 정보를 불러오는 중…
           </p>
         ) : cardsError ? (
           <div className="space-y-3 py-10">
-            <p className="text-center text-body-m-regular text-primary">
+            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
               {firstPlaceError instanceof Error
                 ? firstPlaceError.message
                 : "장소 정보를 불러오지 못했습니다."}
@@ -173,14 +173,14 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
               <button
                 type="button"
                 onClick={retryPlacePreviews}
-                className="cursor-pointer text-label-l-regular font-medium text-neutral-900 underline"
+                className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
               >
                 다시 시도
               </button>
             </div>
           </div>
         ) : places.length === 0 ? (
-          <p className="py-10 text-center text-body-m-regular text-dark-gray">
+          <p className="py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
             담긴 장소가 없습니다.
           </p>
         ) : (

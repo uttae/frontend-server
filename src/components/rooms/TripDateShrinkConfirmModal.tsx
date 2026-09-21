@@ -66,7 +66,7 @@ export function TripDateShrinkConfirmModal({
           </h2>
           <p
             id="trip-date-shrink-dialog-desc"
-            className="mt-1.5 text-body-m-regular leading-relaxed text-dark-gray"
+            className="mt-1.5 text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"
           >
             여행 기간을 줄이면 제거되는 일차의 모든 장소와 지출도 함께 삭제돼요.
             계속할까요?

@@ -22,7 +22,7 @@ export function ChatReadDivider({ isMinimized = false }: { isMinimized?: boolean
       />
       <span
         className={cn(
-          "shrink-0 text-center text-body-s-regular text-black/45",
+          "shrink-0 text-center text-body-s-regular mobile:text-body-xs-regular text-black/45",
           isMinimized && "text-body-xs-regular",
         )}
       >

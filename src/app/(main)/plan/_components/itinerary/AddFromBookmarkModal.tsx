@@ -213,22 +213,22 @@ export function AddFromBookmarkModal({
         <div className="shrink-0 px-5 pb-2 pt-3">
           <h2
             id="add-from-bookmark-modal-title"
-            className="text-title-l font-semibold text-neutral-900"
+            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
           >
             북마크에서 추가
           </h2>
-          <p className="mt-1 text-body-s-regular leading-relaxed text-dark-gray break-keep text-pretty">
+          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
             북마크 장소를 이 일차에 추가해요.
           </p>
         </div>
 
         {categoriesLoading ? (
-          <p className="px-5 py-6 text-center text-body-m-regular text-dark-gray">
+          <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
             불러오는 중…
           </p>
         ) : categoriesError ? (
           <div className="space-y-2 px-5 py-6 text-center">
-            <p className="text-body-m-regular text-primary">
+            <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
               {categoriesErr instanceof Error
                 ? categoriesErr.message
                 : "북마크를 불러오지 못했습니다."}
@@ -236,14 +236,14 @@ export function AddFromBookmarkModal({
             <button
               type="button"
               onClick={() => void refetchCategories()}
-              className="cursor-pointer text-label-l-regular font-medium text-neutral-900 underline"
+              className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
             >
               다시 시도
             </button>
           </div>
         ) : !categories?.length ? (
           <div className="px-5 py-8 text-center">
-            <p className="text-body-s-regular leading-relaxed text-dark-gray break-keep text-pretty">
+            <p className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
               아직 북마크가 없어요.
             </p>
           </div>
@@ -261,7 +261,7 @@ export function AddFromBookmarkModal({
                       aria-pressed={selected}
                       onClick={() => setSelectedCategoryId(c.categoryId)}
                       className={cn(
-                        "flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-left text-label-m-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                        "flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
                         selected
                           ? "border-primary bg-primary/10 text-gray-900"
                           : "border-gray-border bg-white text-dark-gray hover:bg-gray-50",
@@ -280,12 +280,12 @@ export function AddFromBookmarkModal({
 
             <div className="min-h-0 flex-1 overflow-y-auto border-t border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent]">
               {bookmarksLoading ? (
-                <p className="px-5 py-6 text-center text-body-m-regular text-dark-gray">
+                <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                   장소 목록을 불러오는 중…
                 </p>
               ) : bookmarksError ? (
                 <div className="space-y-2 px-5 py-6 text-center">
-                  <p className="text-body-m-regular text-primary">
+                  <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
                     {bookmarksErr instanceof Error
                       ? bookmarksErr.message
                       : "장소 목록을 불러오지 못했습니다."}
@@ -293,17 +293,17 @@ export function AddFromBookmarkModal({
                   <button
                     type="button"
                     onClick={() => void refetchBookmarks()}
-                    className="cursor-pointer text-label-l-regular font-medium text-neutral-900 underline"
+                    className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
                   >
                     다시 시도
                   </button>
                 </div>
               ) : cardsLoading && bookmarkPlaces.length === 0 ? (
-                <p className="px-5 py-6 text-center text-body-m-regular text-dark-gray">
+                <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                   장소 정보를 불러오는 중…
                 </p>
               ) : bookmarkPlaces.length === 0 ? (
-                <p className="px-5 py-8 text-center text-body-m-regular text-dark-gray">
+                <p className="px-5 py-8 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                   담긴 장소가 없습니다.
                 </p>
               ) : (
@@ -339,7 +339,7 @@ export function AddFromBookmarkModal({
             type="button"
             onClick={onClose}
             disabled={busy}
-            className="w-full cursor-pointer rounded-xl border border-gray-border py-2.5 text-label-l-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full cursor-pointer rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-60"
           >
             닫기
           </button>

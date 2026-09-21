@@ -39,8 +39,8 @@ export const PLAN_PLACE_CARD_TW = {
   subtitle: "text-body-xs-regular leading-snug text-dark-gray/85",
   controlsStack: "flex min-w-0 flex-col gap-0.5",
   orderBadgeCompact:
-    "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular shadow-md",
-  titleCompact: "text-body-m-emphasis font-semibold leading-snug text-gray-900",
+    "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular mobile:text-body-xs-regular shadow-md",
+  titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
   titleClamp: "line-clamp-2",
   subtitleClamp: "line-clamp-2",
   primaryTypeBadge:
@@ -50,11 +50,11 @@ export const PLAN_PLACE_CARD_TW = {
   triggerRow:
     "flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1",
   triggerButton:
-    "flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-label-m-regular font-medium text-dark-gray/85 transition hover:bg-sky-50 hover:text-sky-600",
+    "flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray/85 transition hover:bg-sky-50 hover:text-sky-600",
   triggerButtonActive: "text-sky-600 font-semibold",
   triggerIcon: "h-4 w-4 shrink-0",
   editorModule:
-    "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular text-gray-900",
+    "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular mobile:text-body-xs-regular text-gray-900",
   editorSideLabelWrapper:
     "flex shrink-0 flex-col items-center justify-center gap-1 pt-0.5 text-dark-gray",
   editorSideLabelText:

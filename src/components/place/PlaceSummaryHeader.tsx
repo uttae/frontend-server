@@ -31,16 +31,16 @@ export function PlaceSummaryHeader({
     <div className="border-b border-gray-border px-5 pb-5 pt-4">
       <div className="flex items-start gap-3">
         <h2 className="min-w-0 flex-1 leading-snug">
-          <span className="block text-title-l font-bold tracking-tight text-[#111827]">
+          <span className="block text-title-l mobile:text-title-m font-bold tracking-tight text-[#111827]">
             {name}
           </span>
-          <span className="block text-body-m-regular font-normal text-[#6b7280]">
+          <span className="block text-body-m-regular mobile:text-body-s-regular font-normal text-[#6b7280]">
             {category}
           </span>
         </h2>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-body-m-regular">
+      <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-body-m-regular mobile:text-body-s-regular">
         <Star className="h-4 w-4 shrink-0 fill-[#FDC700] text-[#FDC700]" />
         <span className="font-semibold text-[#364153]">
           {rating != null ? rating.toFixed(1) : "-"}
@@ -63,7 +63,7 @@ export function PlaceSummaryHeader({
           type="button"
           onClick={onSendToChat}
           disabled={sendToChatDisabled}
-          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/35 bg-primary/5 py-3 text-label-m-emphasis font-semibold text-primary shadow-sm transition hover:bg-primary/10 active:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-lg border border-primary/35 bg-primary/5 py-3 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary shadow-sm transition hover:bg-primary/10 active:bg-primary/15 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label="채팅으로 보내기"
         >
           <Send className="h-4 w-4 shrink-0" strokeWidth={2} />
@@ -76,7 +76,7 @@ export function PlaceSummaryHeader({
           type="button"
           onClick={onAddToSchedule}
           disabled={addToScheduleDisabled || !onAddToSchedule}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-label-m-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Calendar className="h-4 w-4" strokeWidth={2} />
           일정에 추가
@@ -85,7 +85,7 @@ export function PlaceSummaryHeader({
           type="button"
           onClick={onAddBookmark}
           disabled={addBookmarkDisabled || !onAddBookmark}
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-label-m-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-3 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Bookmark className="h-4 w-4" strokeWidth={2} />
           북마크에 추가

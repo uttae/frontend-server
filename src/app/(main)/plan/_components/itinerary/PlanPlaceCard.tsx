@@ -422,7 +422,7 @@ export function PlanPlaceCard({
               className={cn(
                 "mt-auto inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
                 PLAN_PLACE_CARD_TW.titleCompact,
-                "text-body-s-regular tabular-nums text-primary-strong",
+                "text-body-s-regular mobile:text-body-xs-regular tabular-nums text-primary-strong",
               )}
             >
               {timeRange}

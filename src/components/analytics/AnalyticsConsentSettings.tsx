@@ -51,17 +51,17 @@ export function AnalyticsConsentSettingsView({
 
   return (
     <section>
-      <p className="text-body-s-regular leading-relaxed text-dark-gray">
+      <p className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
         서비스 개선을 위한 분석 쿠키 사용 여부를 선택해 주세요.
       </p>
       <div className="mt-4 flex items-center justify-between gap-4 border-y border-gray-border py-4">
         <div className="min-w-0">
-          <h3 id={categoryId} className="text-body-m-emphasis font-semibold">
+          <h3 id={categoryId} className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold">
             분석 쿠키
           </h3>
           <p
             id={descriptionId}
-            className="mt-1 text-body-s-regular leading-relaxed text-dark-gray"
+            className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray"
           >
             Google Analytics로 방문과 기능 사용 통계를 분석합니다.
           </p>
@@ -92,7 +92,7 @@ export function AnalyticsConsentSettingsView({
           아직 저장된 선택이 없습니다.
         </p>
       )}
-      <details className="mt-4 text-body-s-regular leading-relaxed text-dark-gray">
+      <details className="mt-4 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
         <summary className="w-fit cursor-pointer rounded-sm font-medium underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
           자세히 보기
         </summary>
@@ -105,14 +105,14 @@ export function AnalyticsConsentSettingsView({
       <div className="mt-4 flex items-center justify-between gap-4">
         <Link
           href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
-          className="rounded-sm text-label-m-regular font-medium text-dark-gray underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="rounded-sm text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           개인정보 처리방침
         </Link>
         <SettingsActionButton
           variant="primary"
           flex={false}
-          className="min-h-11 min-w-24 px-6 text-body-s-regular focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="min-h-11 min-w-24 px-6 text-body-s-regular mobile:text-body-xs-regular focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           onClick={onSave}
         >
           저장
@@ -120,7 +120,7 @@ export function AnalyticsConsentSettingsView({
       </div>
       <p
         aria-live="polite"
-        className="text-body-s-regular leading-relaxed text-dark-gray not-empty:mt-3"
+        className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray not-empty:mt-3"
       >
         {message}
       </p>

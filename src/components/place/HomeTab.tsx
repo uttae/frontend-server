@@ -39,7 +39,7 @@ export function HomeTab({
                   href={googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 inline-flex items-center gap-1 text-label-s-regular font-medium text-primary-strong underline-offset-2 hover:underline"
+                  className="mt-1 inline-flex items-center gap-1 text-label-s-regular mobile:text-label-xs-regular font-medium text-primary-strong underline-offset-2 hover:underline"
                 >
                   Google Maps에서 보기
                   <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -72,7 +72,7 @@ export function HomeTab({
             <Phone className="h-3.5 w-3.5 shrink-0 text-dark-gray" />
             <a
               href={`tel:${phone}`}
-              className="text-label-s-regular text-[#364153] underline-offset-2 hover:underline"
+              className="text-label-s-regular mobile:text-label-xs-regular text-[#364153] underline-offset-2 hover:underline"
             >
               {phone}
             </a>
@@ -85,7 +85,7 @@ export function HomeTab({
               href={website}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate text-label-s-regular text-[#364153] underline-offset-2 hover:underline"
+              className="truncate text-label-s-regular mobile:text-label-xs-regular text-[#364153] underline-offset-2 hover:underline"
             >
               {website.replace(/^https?:\/\//, "")}
             </a>

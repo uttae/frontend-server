@@ -225,7 +225,7 @@ export function ExpensePanel() {
         )}
       />
       {context.syncStatus !== "ready" && (
-        <output style={{ display: "block" }} className="text-body-s-regular text-dark-gray">
+        <output style={{ display: "block" }} className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           {syncStatusMessage(context.syncStatus)}
         </output>
       )}
@@ -282,7 +282,7 @@ export function ExpensePanel() {
         </div>
       </div>
       {context.memberStatus !== "success" && (
-        <p role="status" className="text-body-s-regular text-dark-gray">
+        <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           {context.memberStatus === "pending"
             ? "멤버 확인 중…"
             : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
@@ -290,7 +290,7 @@ export function ExpensePanel() {
         </p>
       )}
       {context.memberStatus === "success" && !context.canManage && (
-        <p role="alert" className="text-body-s-regular text-status-negative">
+        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
           현재 참여 중인 방장과 멤버만 지출에 접근할 수 있어요.
         </p>
       )}
@@ -307,7 +307,7 @@ export function ExpensePanel() {
         />
       )}
       {error && (
-        <p role="alert" className="text-body-s-regular text-status-negative">
+        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
           {error}
         </p>
       )}
@@ -317,7 +317,7 @@ export function ExpensePanel() {
         </p>
       )}
       {query.isError && (
-        <p role="alert" className="text-body-s-regular text-status-negative">
+        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
           {query.error instanceof Error
             ? query.error.message
             : "조회에 실패했어요."}{" "}
@@ -327,9 +327,9 @@ export function ExpensePanel() {
       {tab === "list" && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-body-m-emphasis font-bold">
+            <h3 className="text-body-m-emphasis mobile:text-body-s-emphasis font-bold">
               지출 내역{" "}
-              <span className="ml-1 text-body-s-emphasis font-medium text-dark-gray">
+              <span className="ml-1 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
                 {context.list.isSuccess ? `${filtered.length}건` : ""}
               </span>
             </h3>

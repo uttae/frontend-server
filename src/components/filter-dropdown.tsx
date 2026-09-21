@@ -81,7 +81,7 @@ export function FilterDropdown<T extends string>({
                 setOpen(false);
               }}
               className={cn(
-                "w-full cursor-pointer px-3 py-2 text-left text-label-m-regular transition hover:bg-gray-50",
+                "w-full cursor-pointer px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular transition hover:bg-gray-50",
                 value === opt.value
                   ? "font-semibold text-primary"
                   : "text-black",

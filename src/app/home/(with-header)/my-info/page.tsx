@@ -86,13 +86,13 @@ export default function MyInfoPage() {
         <div className="mx-auto w-full max-w-xl">
           <Link
             href="/home"
-            className="inline-flex items-center gap-1 text-label-m-regular text-dark-gray transition hover:text-neutral-900"
+            className="inline-flex items-center gap-1 text-label-m-regular mobile:text-label-s-regular text-dark-gray transition hover:text-neutral-900"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
             방 목록으로 돌아가기
           </Link>
 
-          <h1 className="mt-4 text-heading-s font-bold tracking-tight text-neutral-900">
+          <h1 className="mt-4 text-heading-s mobile:text-title-l font-bold tracking-tight text-neutral-900">
             내 정보
           </h1>
 
@@ -105,14 +105,14 @@ export default function MyInfoPage() {
           {/* users/me 조회 실패는 예외 대신 null로 반환된다 */}
           {!isLoading && !user && (
             <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-16 text-center">
-              <p className="text-body-m-emphasis font-medium text-dark-gray">
+              <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-dark-gray">
                 내 정보를 불러오지 못했어요
               </p>
               <button
                 type="button"
                 onClick={() => refetch()}
                 disabled={isFetching}
-                className="mt-3 rounded-full bg-primary px-4 py-2 text-label-l-emphasis font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-3 rounded-full bg-primary px-4 py-2 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {isFetching ? "불러오는 중…" : "다시 시도"}
               </button>
@@ -125,7 +125,7 @@ export default function MyInfoPage() {
                 <div className="flex items-center gap-3">
                   <UserAvatar user={user} size={56} />
                   <div className="min-w-0">
-                    <p className="break-words text-body-m-emphasis font-semibold text-black">
+                    <p className="break-words text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-black">
                       {user.nickname}
                     </p>
                     <p className="text-body-xs-regular text-dark-gray">
@@ -137,7 +137,7 @@ export default function MyInfoPage() {
                 <dl className="mt-5 space-y-4 border-t border-gray-border pt-4">
                   <div>
                     <dt className="text-body-xs-regular text-dark-gray">이메일</dt>
-                    <dd className="mt-1 break-all text-body-s-regular text-black">
+                    <dd className="mt-1 break-all text-body-s-regular mobile:text-body-xs-regular text-black">
                       {user.email}
                     </dd>
                   </div>
@@ -145,7 +145,7 @@ export default function MyInfoPage() {
                     <dt className="text-body-xs-regular text-dark-gray">
                       로그인 방식
                     </dt>
-                    <dd className="mt-1 text-body-s-regular text-black">
+                    <dd className="mt-1 text-body-s-regular mobile:text-body-xs-regular text-black">
                       {providerLabel(user.provider)}
                     </dd>
                   </div>
@@ -153,10 +153,10 @@ export default function MyInfoPage() {
               </section>
 
               <section className="mt-6">
-                <h2 className="text-body-s-emphasis font-semibold text-dark-gray">
+                <h2 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold text-dark-gray">
                   개인정보 설정
                 </h2>
-                <CookieSettingsButton className="mt-2 flex w-full cursor-pointer items-center justify-between rounded-xl border border-gray-border px-4 py-3 text-left text-label-m-regular text-black transition hover:bg-bubble-gray">
+                <CookieSettingsButton className="mt-2 flex w-full cursor-pointer items-center justify-between rounded-xl border border-gray-border px-4 py-3 text-left text-label-m-regular mobile:text-label-s-regular text-black transition hover:bg-bubble-gray">
                   분석 쿠키 설정
                   <ChevronRight className="h-4 w-4 text-dark-gray" aria-hidden />
                 </CookieSettingsButton>
@@ -179,7 +179,7 @@ export default function MyInfoPage() {
                 <button
                   type="button"
                   onClick={() => setShowWithdrawConfirm(true)}
-                  className="mt-3 block text-label-s-regular text-dark-gray underline underline-offset-2 transition hover:text-neutral-900"
+                  className="mt-3 block text-label-s-regular mobile:text-label-xs-regular text-dark-gray underline underline-offset-2 transition hover:text-neutral-900"
                 >
                   회원 탈퇴
                 </button>

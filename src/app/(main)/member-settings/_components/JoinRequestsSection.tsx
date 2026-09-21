@@ -53,17 +53,17 @@ function JoinRequestCard({
             className="h-9 w-9 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-body-m-emphasis font-semibold text-primary">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-primary">
             {request.nickname.charAt(0)}
           </div>
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-body-m-emphasis font-medium text-gray-800">
+        <p className="truncate text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-gray-800">
           {request.nickname}
         </p>
-        <p className="text-body-s-regular text-dark-gray">
+        <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           {formatRelativeTime(request.requestedAt)}
         </p>
       </div>
@@ -97,7 +97,7 @@ export function JoinRequestsSection({ roomId }: Props) {
   if (isLoading) {
     return (
       <section className="flex flex-col gap-3">
-        <p className="text-body-s-emphasis font-semibold uppercase tracking-wide text-dark-gray">
+        <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
           입장 요청
         </p>
         <div className="flex items-center justify-center rounded-xl border border-gray-border bg-white py-6">
@@ -114,7 +114,7 @@ export function JoinRequestsSection({ roomId }: Props) {
   return (
     <section className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <p className="text-body-s-emphasis font-semibold uppercase tracking-wide text-dark-gray">
+        <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
           입장 요청
         </p>
         <span className="rounded-full bg-primary px-1.5 py-0.5 text-body-xs-emphasis font-bold leading-none text-white">

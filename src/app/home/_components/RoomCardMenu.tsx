@@ -65,7 +65,7 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
                 setOpen(false);
                 setInviteOpen(true);
               }}
-              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular text-text shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
+              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular mobile:text-label-s-regular text-text shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
             >
               <Image src="/rooms/figma/invite.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
               초대하기
@@ -77,7 +77,7 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
                 setOpen(false);
                 onDelete(room);
               }}
-              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular text-status-negative shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
+              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular mobile:text-label-s-regular text-status-negative shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
             >
               <Image src="/rooms/figma/trash.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
               방 삭제하기
@@ -91,7 +91,7 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
                 setOpen(false);
                 onLeave(room);
               }}
-              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular text-text shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
+              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular mobile:text-label-s-regular text-text shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
             >
               <LogOut size={20} aria-hidden />
               방 나가기

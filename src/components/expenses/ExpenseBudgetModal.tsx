@@ -131,20 +131,20 @@ export function ExpenseBudgetModal({
           <p
             id={errorId}
             role="alert"
-            className="text-body-s-regular text-status-negative"
+            className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
           >
             {error}
           </p>
         )}
         {!context.canManage && (
-          <p role="alert" className="text-body-s-regular text-status-negative">
+          <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
             현재 참여 중인 방장과 멤버만 예산을 변경할 수 있어요.
           </p>
         )}
         {conflict && (
           <div
             role="alert"
-            className="space-y-3 rounded-xl border border-gray-border p-4 text-body-s-regular"
+            className="space-y-3 rounded-xl border border-gray-border p-4 text-body-s-regular mobile:text-body-xs-regular"
           >
             <p>
               공유 예산이 변경되었어요. 작성한 금액은 유지돼요. 최신 예산을

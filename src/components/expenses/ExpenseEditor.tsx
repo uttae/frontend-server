@@ -311,7 +311,7 @@ export function ExpenseEditor({
         aria-describedby={error ? errorId : undefined}
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
-          <h2 id={titleId} className="text-title-m font-bold">
+          <h2 id={titleId} className="text-title-m mobile:text-title-s font-bold">
             {original ? "지출 수정" : "지출 추가"}
           </h2>
           <button
@@ -333,8 +333,8 @@ export function ExpenseEditor({
               disabled={pending || !context.currencies.isSuccess}
               onChange={(value) => change("currency", value)}
             />
-            <label className="block min-w-0 text-label-m-emphasis font-semibold">
-              <span className="block text-body-s-regular leading-5">금액</span>
+            <label className="block min-w-0 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
+              <span className="block text-body-s-regular mobile:text-body-xs-regular leading-5">금액</span>
               <ExpenseAmountInput
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
@@ -344,14 +344,14 @@ export function ExpenseEditor({
             </label>
           </div>
           {!context.currencies.isSuccess && (
-            <p role="status" className="text-body-s-regular text-dark-gray">
+            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
               {context.currencies.isError
                 ? "통화 목록 조회에 실패했어요."
                 : "통화 목록을 불러오는 중…"}
             </p>
           )}
           <div className="space-y-1">
-            <p className="text-body-s-emphasis font-semibold">지출 구분</p>
+            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">지출 구분</p>
             <ExpenseSelect
               label="지출 구분"
               disabled={pending}
@@ -381,7 +381,7 @@ export function ExpenseEditor({
           </div>
           {body.expenseGroup === "TRIP_DAY" && (
             <div className="space-y-1">
-              <p className="text-body-s-emphasis font-semibold">연결 장소 (선택)</p>
+              <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">연결 장소 (선택)</p>
               <ExpenseSelect
                 label="연결 장소 (선택)"
                 value={
@@ -401,7 +401,7 @@ export function ExpenseEditor({
                 }
               />
               {!places.isSuccess && (
-                <p className="text-body-s-regular text-dark-gray">
+                <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
                   {places.isError
                     ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
                     : "장소 확인 중…"}
@@ -410,7 +410,7 @@ export function ExpenseEditor({
             </div>
           )}
           <div className="space-y-1">
-            <p className="text-body-s-emphasis font-semibold">카테고리</p>
+            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">카테고리</p>
             <ExpenseSelect
               name="category"
               label="카테고리"
@@ -443,13 +443,13 @@ export function ExpenseEditor({
               />
             </div>
           ) : (
-            <p role="status" className="text-body-s-regular text-dark-gray">
+            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
               {context.memberStatus === "error"
                 ? "멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요."
                 : "멤버 확인 중… 기존 선택은 유지돼요."}
             </p>
           )}
-          <label className="block text-label-m-emphasis font-semibold">
+          <label className="block text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
             메모 (선택)
             <textarea
               className={expenseInputClass}
@@ -494,7 +494,7 @@ export function ExpenseEditor({
             ref={errorMessageRef}
             id={errorId}
             role="alert"
-            className="scroll-my-4 text-body-s-regular text-status-negative"
+            className="scroll-my-4 text-body-s-regular mobile:text-body-xs-regular text-status-negative"
           >
             {error}
           </p>
