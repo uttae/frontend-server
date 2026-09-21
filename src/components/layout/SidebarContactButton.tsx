@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 import { sidebarWireframeIcons } from "@/lib/public-assets";
 
@@ -9,17 +8,14 @@ import { sidebarNavButtonClassName } from "./sidebarNavButton";
 import { SidebarIcon } from "./SidebarIcon";
 
 export function SidebarContactButton() {
-  const pathname = usePathname();
-  const isActive = pathname.startsWith("/contact");
-
   return (
     <Link
       href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header"
-      className={sidebarNavButtonClassName(isActive)}
+      className={sidebarNavButtonClassName(false)}
       aria-label="버그 제보"
       title="버그 제보"
     >
-      <SidebarIcon src={sidebarWireframeIcons.bug} isActive={isActive} />
+      <SidebarIcon src={sidebarWireframeIcons.bug} />
       <span>버그 제보</span>
     </Link>
   );
