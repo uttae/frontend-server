@@ -78,7 +78,7 @@ export function HomeHeader() {
                   <p className="truncate text-title-s font-bold leading-[22px] tracking-[-0.02em]">
                     {user.nickname}
                   </p>
-                  <p className="mt-1 truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">
+                  <p className="mt-1 truncate text-body-s-regular text-text-subtle">
                     {user.email}
                   </p>
                 </div>
@@ -86,7 +86,7 @@ export function HomeHeader() {
               <Link
                 href="/home/my-info"
                 onClick={() => setOpen(false)}
-                className="flex h-[52px] w-full items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular mobile:text-label-m-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
+                className="flex h-[52px] w-full items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
               >
                 <Image src="/rooms/figma/user.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
                 내 정보
@@ -94,7 +94,7 @@ export function HomeHeader() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="flex h-[52px] w-full cursor-pointer items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular mobile:text-label-m-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
+                className="flex h-[52px] w-full cursor-pointer items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
               >
                 <Image src="/rooms/figma/logout.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
                 로그아웃
