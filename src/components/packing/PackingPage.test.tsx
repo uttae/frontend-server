@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { PackingPage } from './PackingPage';
@@ -20,7 +21,7 @@ function input(label: string) { return renderer.root.findAllByType('input').find
 it('renders only authoritative data and first-only expansion without fabricated progress', async () => { await mount(); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(1); expect(renderer.root.findAllByProps({'aria-expanded':false})).toHaveLength(1); expect(renderer.root.findByProps({'aria-label':'전체 준비 현황'}).children.join('')).toBe('0 / 1개 준비 완료'); });
 it('does not show a false empty list while loading', async () => { state.data = null; state.status = 'loading'; await mount(); expect(JSON.stringify(renderer.toJSON())).toContain('불러오는 중'); expect(renderer.root.findAllByType('input')).toHaveLength(0); });
 it('keeps drafts editable while writes are blocked, and preserves failed drafts', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'약'}})); state.status = 'writing'; await act(async () => renderer.update(<PackingPage />)); expect(input('새 준비물 이름').props.disabled).toBeUndefined(); expect(button('추가').props.disabled).toBe(true); state.status='ready'; coordinator.execute.mockResolvedValue({kind:'error'}); await act(async () => renderer.update(<PackingPage />)); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(input('새 준비물 이름').props.value).toBe('약'); });
-it('sends desired checkbox value with stable ID and delegates deletion', async () => { await mount(); await act(async () => renderer.root.findByProps({type:'checkbox'}).props.onChange({target:{checked:true}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:11,checked:true}); await act(async () => button('준비물 삭제: 여권').props.onClick()); expect(coordinator.prepareDelete).toHaveBeenCalledWith('item',11); });
+it('sends desired checkbox value with stable ID and delegates deletion', async () => { await mount(); await act(async () => renderer.root.findByProps({type:'checkbox'}).props.onChange({target:{checked:true}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:11,checked:true}); await act(async () => button('준비물 삭제: 여권').props.onClick({currentTarget:document.createElement('button')})); expect(coordinator.prepareDelete).toHaveBeenCalledWith('item',11); });
 it('keeps expansion after refetch and does not auto-open after first deletion', async () => { await mount(); state.data = {...data,parts:[data.parts[1]]}; await act(async () => renderer.update(<PackingPage />)); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(0); });
 it('clears drafts on scope change', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'private'}})); mocks.context = {state,coordinator,scopeKey:'room:other'}; await act(async () => renderer.update(<PackingPage />)); expect(renderer.root.findAllByProps({'aria-label':'새 준비물 이름'})).toHaveLength(0); });
 it('shows exact undo action and dismisses expired undo', async () => { state.undo=[{id:11,name:'여권',remainingMs:9000}]; await mount(); expect(mocks.toast).toHaveBeenCalledWith(expect.any(String),expect.objectContaining({duration:9000,action:expect.objectContaining({label:'실행 취소'})})); state.undo=[]; await act(async () => renderer.update(<PackingPage />)); expect(mocks.dismiss).toHaveBeenCalled(); });
@@ -200,7 +201,7 @@ it('keeps compact rename and delete actions accessible without repeated text lab
   await act(async () => button('파트 이름 수정: 서류').props.onClick());
   expect(input('파트 이름').props.value).toBe('서류');
   await act(async () => button('취소').props.onClick());
-  await act(async () => button('파트 삭제: 서류').props.onClick());
+  await act(async () => button('파트 삭제: 서류').props.onClick({currentTarget:document.createElement('button')}));
   expect(coordinator.prepareDelete).toHaveBeenCalledWith('part', 1);
 });
 
