@@ -41,7 +41,7 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
           />
         </div>
         <div className="pb-5 pl-3 pr-14 pt-4 mobile:pb-4 mobile:pl-2 mobile:pt-3">
-          <h2 className="max-w-[260px] truncate text-[20px] font-bold leading-7 tracking-[-0.02em]" title={room.title}>
+          <h2 className="max-w-[260px] truncate text-title-m font-bold leading-7 tracking-[-0.02em]" title={room.title}>
             {room.title}
           </h2>
           <div className="mt-4 space-y-1 text-body-s-regular mobile:mt-3">

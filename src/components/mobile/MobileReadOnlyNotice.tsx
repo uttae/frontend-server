@@ -28,10 +28,10 @@ export function MobileReadOnlyNotice() {
           <Monitor size={14} strokeWidth={2.2} aria-hidden />
         </span>
         <div className="min-w-0 flex-1 leading-snug">
-          <p className="text-[14px] font-semibold text-primary">
+          <p className="text-body-s-emphasis font-semibold text-primary">
             {mobileReadOnlyNoticeCopy.title}
           </p>
-          <p className="mt-0.5 text-[13px] text-muted-brown">
+          <p className="mt-0.5 text-body-xs-regular text-muted-brown">
             {mobileReadOnlyNoticeCopy.description}
           </p>
         </div>
@@ -40,7 +40,7 @@ export function MobileReadOnlyNotice() {
           target="_blank"
           rel="noopener noreferrer"
           aria-label="피드백 보내기 (새 창)"
-          className="ml-1 inline-flex shrink-0 items-center gap-1 self-center rounded-full border border-primary/25 bg-white px-2.5 py-1 text-[12px] font-semibold text-primary shadow-sm transition hover:bg-primary/5 active:bg-primary/10"
+          className="ml-1 inline-flex shrink-0 items-center gap-1 self-center rounded-full border border-primary/25 bg-white px-2.5 py-1 text-label-xs-emphasis font-semibold text-primary shadow-sm transition hover:bg-primary/5 active:bg-primary/10"
         >
           <MessageSquareWarning size={13} strokeWidth={2.2} aria-hidden />
           피드백

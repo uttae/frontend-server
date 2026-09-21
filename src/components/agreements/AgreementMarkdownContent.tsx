@@ -18,16 +18,16 @@ function createAgreementMarkdownComponents(
   variant: MarkdownVariant,
 ): Components {
   const isDocument = variant === "document";
-  const bodyText = isDocument ? "text-[19px]" : "text-[17px]";
+  const bodyText = isDocument ? "text-body-l-regular" : "text-body-m-regular";
   const h1Class = isDocument
-    ? "mb-4 text-[29px] font-bold text-neutral-900"
-    : "mb-3 text-[22px] font-bold text-neutral-900";
+    ? "mb-4 text-heading-m font-bold text-neutral-900"
+    : "mb-3 text-title-l font-bold text-neutral-900";
   const h2Class = isDocument
-    ? "mb-3 mt-6 text-2xl font-bold text-neutral-900"
-    : "mb-2 mt-4 text-[19px] font-bold text-neutral-900";
+    ? "mb-3 mt-6 text-heading-s font-bold text-neutral-900"
+    : "mb-2 mt-4 text-title-s font-bold text-neutral-900";
   const h3Class = isDocument
-    ? "mb-2 mt-4 text-[22px] font-semibold text-neutral-900"
-    : "mb-2 mt-3 text-[17px] font-semibold text-neutral-900";
+    ? "mb-2 mt-4 text-title-l font-semibold text-neutral-900"
+    : "mb-2 mt-3 text-body-m-emphasis font-semibold text-neutral-900";
 
   return {
     h1({ children }) {
@@ -172,7 +172,7 @@ function createAgreementMarkdownComponents(
         <pre
           className={cn(
             "my-2 overflow-x-auto rounded-lg bg-bubble-gray p-3 font-mono leading-relaxed",
-            isDocument ? "text-[17px]" : "text-[14px]",
+            isDocument ? "text-body-m-regular" : "text-body-s-regular",
           )}
         >
           {children}

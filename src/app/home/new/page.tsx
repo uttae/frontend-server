@@ -86,7 +86,7 @@ export default function NewTripPage() {
           </Link>
         </div>
 
-        <h1 className="mb-8 text-center text-[29px] font-bold tracking-tight text-black">
+        <h1 className="mb-8 text-center text-heading-m font-bold tracking-tight text-black">
           새로운 여행 계획하기
         </h1>
 
@@ -103,7 +103,7 @@ export default function NewTripPage() {
         />
 
         {error && (
-          <p className="mt-3 text-center text-[17px] text-primary">
+          <p className="mt-3 text-center text-body-m-regular text-primary">
             {error instanceof Error
               ? error.message
               : "방 생성에 실패했어요. 다시 시도해주세요."}
@@ -114,14 +114,14 @@ export default function NewTripPage() {
           type="button"
           onClick={handleSubmit}
           disabled={!canSubmit}
-          className="mt-8 w-full rounded-full bg-primary py-4 text-[19px] font-semibold text-white shadow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="mt-8 w-full rounded-full bg-primary py-4 text-label-xl-emphasis font-semibold text-white shadow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "생성 중…" : "계획을 시작하세요"}
         </button>
 
         <Link
           href="/home"
-          className="mt-4 block text-center text-[17px] font-medium text-dark-gray underline-offset-4 transition hover:text-neutral-900 hover:underline"
+          className="mt-4 block text-center text-label-l-regular font-medium text-dark-gray underline-offset-4 transition hover:text-neutral-900 hover:underline"
         >
           홈으로 돌아가기
         </Link>

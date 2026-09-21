@@ -216,11 +216,11 @@ export function PlanDaySection({
             </span>
             <div className="min-w-0">
               <div className="flex min-w-0 items-center gap-2">
-                <h2 className="min-w-0 truncate text-[19px] font-semibold text-gray-900">
+                <h2 className="min-w-0 truncate text-title-s font-semibold text-gray-900">
                   {subtitle || title}
                 </h2>
                 {subtitle ? (
-                  <span className="inline-flex shrink-0 items-center rounded-md bg-sky-100 px-2 py-0.5 text-xs font-semibold text-sky-700">
+                  <span className="inline-flex shrink-0 items-center rounded-md bg-sky-100 px-2 py-0.5 text-body-xs-emphasis font-semibold text-sky-700">
                     {title}
                   </span>
                 ) : null}
@@ -281,7 +281,7 @@ export function PlanDaySection({
                       type="button"
                       role="menuitem"
                       disabled={isAddExpenseDisabled}
-                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-label-l-regular text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-40"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
@@ -296,7 +296,7 @@ export function PlanDaySection({
                     <button
                       type="button"
                       role="menuitem"
-                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-neutral-900 hover:bg-bubble-gray"
+                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-label-l-regular text-neutral-900 hover:bg-bubble-gray"
                       onClick={(e) => {
                         e.stopPropagation();
                         setMenuOpen(false);
@@ -313,7 +313,7 @@ export function PlanDaySection({
                       role="menuitem"
                       disabled={isDeleteScheduleDisabled}
                       className={cn(
-                        "flex w-full items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-[17px] text-status-negative hover:bg-bubble-gray",
+                        "flex w-full items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-label-l-regular text-status-negative hover:bg-bubble-gray",
                         isDeleteScheduleDisabled
                           ? "cursor-not-allowed opacity-40"
                           : "cursor-pointer",

@@ -386,7 +386,7 @@ export function PlanPlaceCard({
                     "min-w-0 flex-1",
                     PLAN_PLACE_CARD_TW.titleCompact,
                     PLAN_PLACE_CARD_TW.titleClamp,
-                    "mobile:text-lg",
+                    "mobile:text-title-s",
                   )}
                   title={place.title}
                 >
@@ -422,7 +422,7 @@ export function PlanPlaceCard({
               className={cn(
                 "mt-auto inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
                 PLAN_PLACE_CARD_TW.titleCompact,
-                "text-[14px] tabular-nums text-primary-strong",
+                "text-body-s-regular tabular-nums text-primary-strong",
               )}
             >
               {timeRange}

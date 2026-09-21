@@ -42,9 +42,9 @@ export function TimeInput({
                 disabled={disabled}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => update(index, e.target.value)}
-                className="h-10 w-full min-w-0 text-center text-base tabular-nums outline-none disabled:opacity-40"
+                className="h-10 w-full min-w-0 text-center text-body-m-regular tabular-nums outline-none disabled:opacity-40"
               />
-              <span aria-hidden className="text-xs text-dark-gray">{unit}</span>
+              <span aria-hidden className="text-body-xs-regular text-dark-gray">{unit}</span>
             </div>
           </div>
         );

@@ -72,7 +72,7 @@ export function SiteFooter({ className, logo, variant = "default" }: {
           {logo ? <Link href="/" aria-label="우때 홈">{logo}</Link> : null}
           <nav
             aria-label="정책 문서"
-            className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-sm"
+            className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-body-s-regular"
           >
             {POLICY_LINKS.map((item, index) => (
               <span
@@ -97,7 +97,7 @@ export function SiteFooter({ className, logo, variant = "default" }: {
             aria-label="운영자 정보"
             className="mt-2.5 w-full border-t border-white/25 pt-2.5"
           >
-            <dl className="mx-auto grid w-fit grid-cols-1 gap-y-1 text-sm sm:grid-cols-2 sm:gap-x-10 sm:gap-y-1">
+            <dl className="mx-auto grid w-fit grid-cols-1 gap-y-1 text-body-s-regular sm:grid-cols-2 sm:gap-x-10 sm:gap-y-1">
               <div className="flex min-w-0 gap-2">
                 <dt className="w-[3.25rem] shrink-0 text-white/50">서비스명</dt>
                 <dd className="min-w-0 text-white/85">우때</dd>
@@ -123,7 +123,7 @@ export function SiteFooter({ className, logo, variant = "default" }: {
             </dl>
           </section>
 
-          <p className="mt-2.5 text-center text-sm text-white/45">
+          <p className="mt-2.5 text-center text-body-s-regular text-white/45">
             © {year} 우때. All rights reserved.
           </p>
         </div>

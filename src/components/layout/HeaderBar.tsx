@@ -68,7 +68,7 @@ const HeaderBar = () => {
             {currentRoom || displayTitle ? (
               <>
                 <div className="flex min-w-0 items-center gap-1">
-                  <span className="block truncate text-[17px] font-semibold leading-tight">
+                  <span className="block truncate text-body-m-emphasis font-semibold leading-tight">
                     {displayTitle || currentRoom?.title}
                   </span>
                   <button
@@ -82,19 +82,19 @@ const HeaderBar = () => {
                     <Pencil size={14} aria-hidden />
                   </button>
                 </div>
-                <span className="block truncate text-[14px] leading-tight text-dark-gray">
+                <span className="block truncate text-body-s-regular leading-tight text-dark-gray">
                   {dateStr}
                 </span>
               </>
             ) : isPending ? (
               <span
-                className="block text-[17px] font-semibold leading-tight text-dark-gray"
+                className="block text-body-m-emphasis font-semibold leading-tight text-dark-gray"
                 aria-busy="true"
               >
                 …
               </span>
             ) : (
-              <span className="block truncate text-[17px] font-semibold leading-tight text-dark-gray">
+              <span className="block truncate text-body-m-emphasis font-semibold leading-tight text-dark-gray">
                 방 정보 없음
               </span>
             )}

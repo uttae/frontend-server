@@ -160,10 +160,10 @@ export default function LoginAgreementsPage() {
           <div className="flex flex-col items-center gap-3">
             <BrandLogo variant="combination" size="M" alt="우때 로고" />
             <div>
-              <h1 className="text-2xl font-bold text-neutral-900">
+              <h1 className="text-heading-s font-bold text-neutral-900">
                 {isSignup ? "서비스 약관 동의" : "변경된 약관 재동의"}
               </h1>
-              <p className="mt-2 text-[17px] leading-relaxed text-dark-gray">
+              <p className="mt-2 text-body-m-regular leading-relaxed text-dark-gray">
                 {isSignup
                   ? "가입을 완료하려면 필수 약관에 동의해 주세요."
                   : "계속 이용하려면 변경된 필수 약관에 다시 동의해 주세요."}
@@ -176,14 +176,14 @@ export default function LoginAgreementsPage() {
               role="alert"
               className="w-full rounded-xl border border-primary/35 bg-primary/[0.06] px-4 py-3 text-left"
             >
-              <p className="text-[17px] font-medium text-primary">
+              <p className="text-body-m-emphasis font-medium text-primary">
                 {errorMessage}
               </p>
               {isExpired && (
                 <button
                   type="button"
                   onClick={returnToLogin}
-                  className="mt-3 text-[17px] font-semibold text-primary underline-offset-2 hover:underline"
+                  className="mt-3 text-label-l-emphasis font-semibold text-primary underline-offset-2 hover:underline"
                 >
                   Google 로그인 다시 시작하기
                 </button>
@@ -198,7 +198,7 @@ export default function LoginAgreementsPage() {
             onClick={() => void handleSubmit()}
             disabled={submitDisabled}
             aria-disabled={submitDisabled}
-            className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-lg font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-label-xl-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSubmitting
               ? "처리 중…"

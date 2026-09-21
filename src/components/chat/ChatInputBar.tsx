@@ -318,7 +318,7 @@ export function ChatInputBar({
               aria-label={`${CHAT_AI_MENTION_LABEL}로 AI 질문 모드 적용`}
               className={cn(
                 "flex w-full cursor-pointer items-center px-3 py-2 text-left transition hover:bg-light-gray",
-                isMinimized ? "text-[13px]" : "text-[14px]",
+                isMinimized ? "text-label-s-regular" : "text-label-m-regular",
               )}
             >
               <span className="font-medium text-secondary-default">
@@ -353,7 +353,7 @@ export function ChatInputBar({
           placeholder="Shift+Enter로 줄바꿈"
           className={cn(
             "box-border min-h-0 w-full flex-1 resize-none overflow-y-auto bg-transparent py-1 leading-normal text-black outline-none placeholder:text-black/40 [scrollbar-color:#d9d9d9_transparent]",
-            isMinimized ? "text-[13px]" : "text-[14px]",
+            isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
           )}
           style={
             aiEnabled
@@ -414,7 +414,7 @@ export function ChatInputBar({
                 aria-label="입력란에 장소 추천 요청 문구 넣기"
                 className={cn(
                   "shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-2 py-1 text-black/80 transition hover:bg-light-gray",
-                  isMinimized ? "text-xs" : "text-[13px]",
+                  isMinimized ? "text-label-xs-regular" : "text-label-s-regular",
                 )}
               >
                 장소 추천
@@ -427,7 +427,7 @@ export function ChatInputBar({
                 aria-label="입력란에 대화 요약 요청 문구 넣기"
                 className={cn(
                   "shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-2 py-1 text-black/80 transition hover:bg-light-gray",
-                  isMinimized ? "text-xs" : "text-[13px]",
+                  isMinimized ? "text-label-xs-regular" : "text-label-s-regular",
                 )}
               >
                 대화 요약

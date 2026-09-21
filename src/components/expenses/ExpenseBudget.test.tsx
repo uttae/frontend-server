@@ -397,7 +397,7 @@ it("keeps the trip total one scale step smaller with long-number wrapping", asyn
   const total = [...host.querySelectorAll("p")].find(
     (p) => p.textContent === "9,007,199,254,740,993 KRW",
   )!;
-  expect(total.classList.contains("text-2xl")).toBe(true);
+  expect(total.classList.contains("text-heading-s")).toBe(true);
   expect(total.classList.contains("break-all")).toBe(true);
 });
 

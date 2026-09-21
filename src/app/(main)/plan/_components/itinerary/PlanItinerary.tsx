@@ -188,18 +188,18 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
       {isLoading ?
         <div className="flex items-center justify-center gap-2 py-8 text-dark-gray">
           <Loader2 className="h-5 w-5 animate-spin text-primary-strong" />
-          <span className="text-[17px]">장소 목록을 불러오는 중…</span>
+          <span className="text-body-m-regular">장소 목록을 불러오는 중…</span>
         </div>
       : null}
 
       {isError ?
-        <p className="py-4 text-center text-[17px] text-primary">
+        <p className="py-4 text-center text-body-m-regular text-primary">
           장소 목록을 불러오지 못했어요.
         </p>
       : null}
 
       {!isLoading && places.length === 0 ?
-        <p className="py-4 text-center text-[17px] text-dark-gray">
+        <p className="py-4 text-center text-body-m-regular text-dark-gray">
           {copy.placesEmpty}
         </p>
       : null}
@@ -290,7 +290,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
             onOpenBookmark={() => setBookmarkModal({})}
           />
           {isAdding ?
-            <p className="text-[14px] text-dark-gray">추가하는 중…</p>
+            <p className="text-body-s-regular text-dark-gray">추가하는 중…</p>
           : null}
         </div>
       : null}

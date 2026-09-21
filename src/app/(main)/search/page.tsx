@@ -328,7 +328,7 @@ export default function SearchPage() {
               />
             </div>
           ) : null}
-          <div className="relative z-[3] flex min-h-13 shrink-0 items-center gap-2 px-4 py-3 text-base font-semibold leading-snug tracking-tight text-primary drop-shadow-[0_0_10px_rgba(241,45,51,0.22)]">
+          <div className="relative z-[3] flex min-h-13 shrink-0 items-center gap-2 px-4 py-3 text-body-m-emphasis font-semibold leading-snug tracking-tight text-primary drop-shadow-[0_0_10px_rgba(241,45,51,0.22)]">
             <motion.span
               className="inline-flex shrink-0 text-primary"
               aria-hidden
@@ -357,7 +357,7 @@ export default function SearchPage() {
             <button
               type="button"
               onClick={() => router.replace("/search")}
-              className="ml-auto shrink-0 cursor-pointer rounded-md border border-primary/45 bg-white/92 px-2.5 py-1.5 text-[13px] font-medium text-dark-gray shadow-sm hover:bg-white"
+              className="ml-auto shrink-0 cursor-pointer rounded-md border border-primary/45 bg-white/92 px-2.5 py-1.5 text-label-s-regular font-medium text-dark-gray shadow-sm hover:bg-white"
             >
               취소
             </button>
@@ -370,14 +370,14 @@ export default function SearchPage() {
         {showSearchLoading && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-dark-gray">
             <Loader2 className="h-6 w-6 animate-spin text-primary-strong" />
-            <span className="text-[17px]">장소를 검색하는 중...</span>
+            <span className="text-body-m-regular">장소를 검색하는 중...</span>
           </div>
         )}
 
         {hasActiveSearch && isError && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-[#FF6467]">
             <AlertCircle className="h-6 w-6" />
-            <span className="text-[17px]">
+            <span className="text-body-m-regular">
               {error instanceof Error ? error.message : "검색에 실패했습니다."}
             </span>
           </div>
@@ -390,14 +390,14 @@ export default function SearchPage() {
           pageIndex === 0 && (
             <div className="flex flex-1 flex-col items-center justify-center gap-1 text-dark-gray">
               <Search className="h-6 w-6 text-[#99A1AF]" />
-              <span className="text-[17px]">검색 결과가 없습니다.</span>
+              <span className="text-body-m-regular">검색 결과가 없습니다.</span>
             </div>
           )}
 
         {!hasActiveSearch && (
           <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-1 text-[#99A1AF]">
             <Search className="h-8 w-8" />
-            <span className="text-[17px]">검색어를 입력해 주세요.</span>
+            <span className="text-body-m-regular">검색어를 입력해 주세요.</span>
           </div>
         )}
 

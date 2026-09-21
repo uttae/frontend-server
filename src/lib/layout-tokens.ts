@@ -36,42 +36,42 @@ export const PLAN_PLACE_CARD_TW = {
   contentColumn:
     "flex min-h-[6rem] min-w-0 flex-col justify-start gap-2 mobile:min-h-[4.5rem]",
   titleRow: "flex min-w-0 items-start gap-2.5",
-  subtitle: "text-xs leading-snug text-dark-gray/85",
+  subtitle: "text-body-xs-regular leading-snug text-dark-gray/85",
   controlsStack: "flex min-w-0 flex-col gap-0.5",
   orderBadgeCompact:
-    "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-sm shadow-md",
-  titleCompact: "text-base font-semibold leading-snug text-gray-900",
+    "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular shadow-md",
+  titleCompact: "text-body-m-emphasis font-semibold leading-snug text-gray-900",
   titleClamp: "line-clamp-2",
   subtitleClamp: "line-clamp-2",
   primaryTypeBadge:
-    "shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium leading-none text-dark-gray",
+    "shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-body-xs-emphasis font-medium leading-none text-dark-gray",
   deleteButtonCompact: "p-1 @min-[370px]/plan:p-1.5",
   deleteIconCompact: "h-5 w-5",
   triggerRow:
     "flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1",
   triggerButton:
-    "flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-dark-gray/85 transition hover:bg-sky-50 hover:text-sky-600",
+    "flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-label-m-regular font-medium text-dark-gray/85 transition hover:bg-sky-50 hover:text-sky-600",
   triggerButtonActive: "text-sky-600 font-semibold",
   triggerIcon: "h-4 w-4 shrink-0",
   editorModule:
-    "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-sm text-gray-900",
+    "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular text-gray-900",
   editorSideLabelWrapper:
     "flex shrink-0 flex-col items-center justify-center gap-1 pt-0.5 text-dark-gray",
   editorSideLabelText:
-    "text-xs font-medium leading-none text-dark-gray",
+    "text-body-xs-emphasis font-medium leading-none text-dark-gray",
   editorBody: "flex min-w-0 flex-1 flex-col gap-2",
   editorFooterRow:
-    "flex flex-wrap items-center justify-end gap-2 text-xs",
-  timeFieldLabel: "text-xs font-medium leading-none text-dark-gray/90",
+    "flex flex-wrap items-center justify-end gap-2 text-body-xs-regular",
+  timeFieldLabel: "text-body-xs-emphasis font-medium leading-none text-dark-gray/90",
   timeFieldsRow:
     "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-2",
   timeField: "flex min-w-0 w-full flex-col gap-1",
   timeInputCompact:
-    "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-sm shadow-none transition focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary/30",
+    "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-body-s-regular shadow-none transition focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary/30",
   timeSaveButtonCompact:
-    "h-8 shrink-0 rounded-md px-3 text-xs font-medium",
+    "h-8 shrink-0 rounded-md px-3 text-label-xs-regular font-medium",
   memoTextarea:
-    "min-h-[6rem] w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm leading-relaxed text-gray-900 shadow-none transition placeholder:text-dark-gray/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30",
+    "min-h-[6rem] w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-body-s-regular leading-relaxed text-gray-900 shadow-none transition placeholder:text-dark-gray/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30",
 } as const;
 
 /** 플랜 구간(경로) 카드 가로 고정폭(px). 좌측 패널 max(s2) 기준 본문 영역 근사 */

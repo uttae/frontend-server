@@ -21,7 +21,7 @@ export function RoomTripSettingsSection({
   return (
     <div className="flex min-w-0 w-full flex-col gap-4">
       {embedded ? (
-        description ? <p className="text-[14px] text-dark-gray">{description}</p> : null
+        description ? <p className="text-body-s-regular text-dark-gray">{description}</p> : null
       ) : (
         <MainPageHeader title="여행 정보 수정" description={description} />
       )}
@@ -31,7 +31,7 @@ export function RoomTripSettingsSection({
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
         </div>
       ) : !roomSource || !roomId ? (
-        <p className="py-10 text-center text-[17px] text-dark-gray">
+        <p className="py-10 text-center text-body-m-regular text-dark-gray">
           여행 정보를 불러오지 못했어요.
         </p>
       ) : (

@@ -126,7 +126,7 @@ export function SettingsDialog({
         className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6`}
       >
         <div className="mb-2 flex items-center justify-between gap-4">
-          <h2 id={titleId} className="text-[22px] font-bold">
+          <h2 id={titleId} className="text-title-l font-bold">
             {title}
           </h2>
           <button

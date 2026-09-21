@@ -49,7 +49,7 @@ function Avatar({
     );
   }
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-[17px] font-semibold text-primary">
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-body-m-emphasis font-semibold text-primary">
       {initial}
     </div>
   );
@@ -97,13 +97,13 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
       {/* Name + role */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="truncate text-[17px] font-medium text-gray-800">
+          <span className="truncate text-body-m-emphasis font-medium text-gray-800">
             {member.name}
           </span>
         </div>
         <div className="mt-0.5 flex flex-wrap items-center gap-1">
           <span
-            className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold leading-none ${
+            className={`inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none ${
               member.role === "HOST"
                 ? "bg-primary/10 text-primary"
                 : "bg-gray-100 text-dark-gray"
@@ -112,18 +112,18 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
             {member.role}
           </span>
           {isLeft ? (
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold leading-none bg-gray-100 text-dark-gray">
+            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none bg-gray-100 text-dark-gray">
               방 나감
             </span>
           ) : (
             <>
               {member.connectionStatus === "online" && (
-                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold leading-none bg-emerald-500/15 text-emerald-700">
+                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none bg-emerald-500/15 text-emerald-700">
                   온라인
                 </span>
               )}
               {member.connectionStatus === "offline" && (
-                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold leading-none bg-gray-100 text-dark-gray">
+                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none bg-gray-100 text-dark-gray">
                   오프라인
                 </span>
               )}
@@ -158,7 +158,7 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
                   onTransfer(member.id);
                   setOpen(false);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[14px] font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-label-m-regular font-medium text-gray-700 transition-colors hover:bg-gray-50"
               >
                 <svg
                   width="12"
@@ -181,7 +181,7 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
                   onKick(member.id);
                   setOpen(false);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-[14px] font-medium text-primary transition-colors hover:bg-primary/5"
+                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-label-m-regular font-medium text-primary transition-colors hover:bg-primary/5"
               >
                 <svg
                   width="12"

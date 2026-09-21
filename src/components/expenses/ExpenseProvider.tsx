@@ -312,7 +312,7 @@ export function ExpenseEntryButton({
   scheduleId,
   scheduleItemId,
   label = "지출 추가",
-  className = "min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
+  className = "min-h-10 rounded-xl px-3 py-2 text-label-m-emphasis font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
   icon = "+ ",
 }: Readonly<{
   scheduleId?: number;
