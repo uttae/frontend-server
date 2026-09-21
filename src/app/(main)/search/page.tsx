@@ -6,10 +6,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { motion, useReducedMotion } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, Loader2, Search, Send } from "lucide-react";
-import { toast } from "sonner";
+import { AlertCircle, Loader2, Search } from "lucide-react";
 
 import { SearchResultCard } from "@/components/place";
 import { SetSectionMaxWidth } from "@/contexts/SectionWidthContext";
@@ -31,15 +29,8 @@ import {
 import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
 import { PlacesSearchInput } from "@/components/search/PlacesSearchInput";
 import { PlacesSearchPagination } from "@/components/search/PlacesSearchPagination";
-import { useChatActions } from "@/hooks/useChatActions";
-import { useChat } from "@/hooks/useChat";
-import {
-  chatPlaceShareBannerGlowDurationSec,
-  chatPlaceShareBannerSweepDurationSec,
-} from "@/components/chat/chat-animations";
 import { bucketResultCount, bucketSearchRank } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import { useSessionStore } from "@/stores/session-store";
 import {
   searchPinWriteStillValid,
   useMapPinsFocusStore,
@@ -47,21 +38,14 @@ import {
 
 export default function SearchPage() {
   const router = useRouter();
-  const reduceMotion = useReducedMotion();
   const searchParams = useSearchParams();
   const qParam = searchParams.get("q")?.trim() ?? "";
-  const isShareMode = searchParams.get("share") === "chat";
-  const currentRoomId = useSessionStore((s) => s.currentRoomId);
-  const hasRoom =
-    typeof currentRoomId === "string" && currentRoomId.trim().length > 0;
 
   const { setSelectedPlace } = useSelectedPlace();
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const searchRecenterRequestId = useSearchRecenterStore(
     (s) => s.searchRecenterRequestId,
   );
-  const { sendPlaceMessage, canSend } = useChatActions();
-  const { openChat } = useChat();
 
   const zoom = useMapCenterStore((s) => s.zoom);
   const radiusMeters = useMapCenterStore((s) => s.radiusMeters);
@@ -214,27 +198,7 @@ export default function SearchPage() {
     [],
   );
 
-  const shareModeActive = isShareMode && hasRoom;
-
   function handleCardClick(result: PlaceSearchResult, index: number) {
-    if (shareModeActive) {
-      if (!canSend) {
-        toast.error("채팅 연결을 확인해주세요.");
-        return;
-      }
-      sendPlaceMessage({
-        googlePlaceId: result.googlePlaceId,
-        name: result.name,
-        formattedAddress: result.address ?? "",
-        latitude: result.location.lat,
-        longitude: result.location.lng,
-        rating: result.rating ?? 0,
-      });
-      toast.success("장소를 채팅으로 보냈어요");
-      router.replace("/search");
-      openChat();
-      return;
-    }
     setSelectedPlace(result, {
       analyticsRankBucket: bucketSearchRank(
         pageIndex * PLACES_SEARCH_PAGE_SIZE + index,
@@ -259,111 +223,6 @@ export default function SearchPage() {
           onClear={() => handleSearch("")}
         />
       </div>
-      {shareModeActive ? (
-        <motion.div
-          className="relative shrink-0 overflow-hidden border-b border-primary/40"
-          initial={reduceMotion ? false : { opacity: 0, y: -6 }}
-          animate={
-            reduceMotion
-              ? {
-                  opacity: 1,
-                  y: 0,
-                  backgroundColor: "rgba(241,45,51,0.09)",
-                }
-              : {
-                  opacity: 1,
-                  y: 0,
-                  backgroundColor: [
-                    "rgba(241,45,51,0.055)",
-                    "rgba(241,45,51,0.13)",
-                    "rgba(241,45,51,0.055)",
-                  ],
-                  boxShadow: [
-                    "inset 0 0 0 rgba(241,45,51,0)",
-                    "inset 0 -18px 40px rgba(241,45,51,0.125)",
-                    "inset 0 0 0 rgba(241,45,51,0)",
-                  ],
-                }
-          }
-          transition={
-            reduceMotion
-              ? { duration: 0 }
-              : {
-                  opacity: { type: "spring", stiffness: 420, damping: 32 },
-                  y: { type: "spring", stiffness: 420, damping: 32 },
-                  backgroundColor: {
-                    repeat: Infinity,
-                    duration: chatPlaceShareBannerGlowDurationSec,
-                    ease: "easeInOut",
-                  },
-                  boxShadow: {
-                    repeat: Infinity,
-                    duration: chatPlaceShareBannerGlowDurationSec,
-                    ease: "easeInOut",
-                  },
-                }
-          }
-        >
-          {!reduceMotion ? (
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-x-0 top-0 z-[2] h-[11px] overflow-hidden bg-gradient-to-b from-primary/[0.38] via-primary/[0.12] to-transparent"
-            >
-              <motion.div
-                className="absolute left-0 top-px h-[3px] w-[44%]"
-                style={{
-                  background:
-                    "linear-gradient(90deg, transparent 5%, rgba(251,165,173,1) 38%, rgba(255,248,249,1) 48%, rgba(241,45,51,1) 52%, rgba(255,190,196,1) 60%, transparent 95%)",
-                  boxShadow:
-                    "0 0 18px rgba(241,45,51,1), 0 0 32px rgba(241,45,51,0.65), 0 0 48px rgba(255,96,109,0.45)",
-                  filter: "blur(0.55px)",
-                }}
-                initial={false}
-                animate={{ left: ["-48%", "135%"] }}
-                transition={{
-                  repeat: Infinity,
-                  duration: chatPlaceShareBannerSweepDurationSec,
-                  ease: "linear",
-                }}
-              />
-            </div>
-          ) : null}
-          <div className="relative z-[3] flex min-h-13 shrink-0 items-center gap-2 px-4 py-3 text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug tracking-tight text-primary drop-shadow-[0_0_10px_rgba(241,45,51,0.22)]">
-            <motion.span
-              className="inline-flex shrink-0 text-primary"
-              aria-hidden
-              animate={
-                reduceMotion
-                  ? {}
-                  : {
-                      filter: [
-                        "drop-shadow(0 0 2px rgba(241,45,51,0.25))",
-                        "drop-shadow(0 0 7px rgba(241,45,51,0.55))",
-                        "drop-shadow(0 0 2px rgba(241,45,51,0.25))",
-                      ],
-                    }
-              }
-              transition={{
-                repeat: Infinity,
-                duration: chatPlaceShareBannerGlowDurationSec,
-                ease: "easeInOut",
-              }}
-            >
-              <Send className="h-4 w-4" />
-            </motion.span>
-            <span className="min-w-0 flex-1">
-              장소를 선택하면 채팅으로 전송됩니다.
-            </span>
-            <button
-              type="button"
-              onClick={() => router.replace("/search")}
-              className="ml-auto shrink-0 cursor-pointer rounded-md border border-primary/45 bg-white/92 px-2.5 py-1.5 text-label-s-regular mobile:text-label-xs-regular font-medium text-dark-gray shadow-sm hover:bg-white"
-            >
-              취소
-            </button>
-          </div>
-        </motion.div>
-      ) : null}
 
       {/* 결과 */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

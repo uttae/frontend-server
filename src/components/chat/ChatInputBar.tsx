@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Check, Search } from "lucide-react";
+import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { ChatEnterIcon } from "@/components/icons";
 import {
@@ -25,8 +25,6 @@ interface ChatInputBarProps {
   isMinimized: boolean;
   onSendChat: (content: string) => void;
   onSendAi: (content: string) => void;
-  onPlusClick?: () => void;
-  plusDisabled?: boolean;
   sendDisabled?: boolean;
 }
 
@@ -68,8 +66,6 @@ export function ChatInputBar({
   isMinimized,
   onSendChat,
   onSendAi,
-  onPlusClick,
-  plusDisabled = false,
   sendDisabled = false,
 }: ChatInputBarProps) {
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -368,23 +364,6 @@ export function ChatInputBar({
         )}
       >
         <div className="flex min-w-0 items-center gap-1">
-          <button
-            type="button"
-            onClick={onPlusClick}
-            disabled={plusDisabled || !onPlusClick}
-            aria-label="검색에서 장소 선택 시 이 방 채팅으로 보냅니다"
-            title="장소를 검색해서 고르면 채팅으로 전송돼요"
-            className={cn(
-              "flex shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray disabled:cursor-not-allowed disabled:opacity-40",
-              isMinimized ? "h-8 w-8" : "h-9 w-9",
-            )}
-          >
-            <Search
-              className={cn(isMinimized ? "h-4 w-4" : "h-5 w-5")}
-              strokeWidth={2}
-              aria-hidden
-            />
-          </button>
           <motion.button
             type="button"
             onClick={toggleAi}
