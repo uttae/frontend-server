@@ -240,7 +240,7 @@ export function PlanDaySection({
               }
               title={routeVisible ? "지도에서 경로 숨기기" : "지도에 경로 표시"}
               className={cn(
-                "shrink-0 cursor-pointer self-center rounded-lg p-2 transition-colors mobile:hidden",
+                "shrink-0 cursor-pointer self-center rounded-lg p-2 transition-colors",
                 routeVisible
                   ? "text-primary hover:bg-primary/10"
                   : "text-dark-gray hover:bg-bubble-gray/60",

@@ -12,7 +12,6 @@ import { MemoIcon } from "@/components/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { toast } from "sonner";
 
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
 import { useInViewport } from "@/hooks/useInViewport";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import {
@@ -72,7 +71,6 @@ export function PlanPlaceCard({
   onDragStart,
   onDragEnd,
 }: PlanPlaceCardProps) {
-  const { isReadOnly } = usePlanMobileReadOnly();
   const { setSelectedPlace } = useSelectedPlace();
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const blockCardDragRef = useRef(false);
@@ -137,10 +135,10 @@ export function PlanPlaceCard({
   const handlePointerDownCapture = useCallback(
     (e: React.PointerEvent) => {
       blockCardDragRef.current = isPlanPlaceCardInteractiveTarget(e.target);
-      if (isReadOnly || blockCardDragRef.current) return;
+      if (blockCardDragRef.current) return;
       pointerDownRef.current = { x: e.clientX, y: e.clientY };
     },
-    [isReadOnly],
+    [],
   );
 
   const handleDragStart = useCallback(
@@ -165,7 +163,6 @@ export function PlanPlaceCard({
 
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
-      if (isReadOnly) return;
       if (e.button !== 0) return;
       const start = pointerDownRef.current;
       pointerDownRef.current = null;
@@ -205,7 +202,6 @@ export function PlanPlaceCard({
       );
     },
     [
-      isReadOnly,
       place.googlePlaceId,
       place.location,
       place.subtitle,
@@ -217,10 +213,6 @@ export function PlanPlaceCard({
   const scheduleItemId =
     scheduleTimeEdit && typeof place.itemId === "number" ? place.itemId : null;
 
-  /**
-   * 시간·메모 편집은 모바일에서도 허용한다.
-   * `isReadOnly`(모바일)는 D&D 재정렬·카드 클릭 등 구조 편집만 잠근다.
-   */
   const canEditScheduleItem =
     scheduleTimeEdit != null && scheduleItemId !== null;
 
@@ -298,15 +290,15 @@ export function PlanPlaceCard({
   return (
     <div className="flex w-full flex-col gap-2">
       <article
-        draggable={!dragDisabled && !isReadOnly}
-        onPointerDownCapture={isReadOnly ? undefined : handlePointerDownCapture}
-        onDragStart={dragDisabled || isReadOnly ? undefined : handleDragStart}
-        onDragEnd={dragDisabled || isReadOnly ? undefined : handleDragEnd}
-        onClick={isReadOnly ? undefined : handleCardClick}
+        draggable={!dragDisabled}
+        onPointerDownCapture={handlePointerDownCapture}
+        onDragStart={dragDisabled ? undefined : handleDragStart}
+        onDragEnd={dragDisabled ? undefined : handleDragEnd}
+        onClick={handleCardClick}
         className={cn(
           "w-full select-none",
           PLAN_PLACE_CARD_TW.article,
-          dragDisabled || isReadOnly
+          dragDisabled
             ? "cursor-default"
             : "cursor-grab active:cursor-grabbing",
         )}

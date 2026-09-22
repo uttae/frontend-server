@@ -6,13 +6,11 @@ import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { useMainMobileRouteRedirect } from "@/hooks/useMobileRedirects";
 import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
 import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
 import { MobileMainTabs } from "@/components/mobile/MobileMainTabs";
-import { MobileReadOnlyNotice } from "@/components/mobile/MobileReadOnlyNotice";
 
 import HeaderBar from "./HeaderBar";
 import LeftSection from "./LeftSection";
@@ -24,7 +22,6 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const { isMobileDevice } = useMobileView();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  useMainMobileRouteRedirect();
   const { chatState, closeChat } = useChat();
   const previousRoute = useRef(pathname);
   useEffect(() => {
@@ -43,7 +40,6 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
 
   return (
     <main className="flex h-dvh flex-col">
-      <MobileReadOnlyNotice />
       <div className="relative mx-auto flex min-h-0 flex-1 w-full overflow-hidden rounded-none bg-white">
         <LeftSection>
           <HeaderBar />

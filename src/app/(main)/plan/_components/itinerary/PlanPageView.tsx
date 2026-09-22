@@ -25,7 +25,7 @@ import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 
 import { usePlanScheduleDayReorder } from "@/hooks/usePlanScheduleDayReorder";
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
+import { planCopy } from "@/lib/plan/planCopy";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import {
   bucketMemberCount,
@@ -36,7 +36,6 @@ import { PlanContainerRefProvider } from "../plan-container";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
-  const { isReadOnly, copy } = usePlanMobileReadOnly();
   const planContainerRef = useRef<HTMLDivElement>(null);
   
   //room id 가져와서 room detail, schedules 가져오기
@@ -86,7 +85,7 @@ export function PlanPageView() {
     usePlanScheduleDayReorder({
       roomId,
       schedules: sortedSchedules,
-      interactionLocked: isReadOnly || isCreatingSchedule || isDeletingSchedule,
+      interactionLocked: isCreatingSchedule || isDeletingSchedule,
     });
 
   const scheduleExpansionSyncKey = useMemo(
@@ -219,16 +218,14 @@ export function PlanPageView() {
               MAIN_CARD_INNER_PADDING_X_CLASS,
             )}
           >
-            {copy.scheduleEmpty}
+            {planCopy.scheduleEmpty}
           </p>
         ) : null}
 
         {planDays.length > 0 ? (
           <div className="space-y-2.5" {...listContainerProps}>
             {planDays.map((day, dayIndex) => {
-              const sectionProps = !isReadOnly
-                ? getSectionProps(dayIndex)
-                : {};
+              const sectionProps = getSectionProps(dayIndex);
 
               return (
                 <PlanScheduleDayBlock
@@ -238,21 +235,19 @@ export function PlanPageView() {
                   title={day.dayLabel}
                   subtitle={day.dateLabel}
                   onRequestDeleteSchedule={
-                    !isReadOnly && sortedSchedules[dayIndex]
+                    sortedSchedules[dayIndex]
                       ? () => handleDeleteScheduleDay(dayIndex)
                       : undefined
                   }
                   onRequestInsertScheduleAfter={
-                    !isReadOnly && sortedSchedules[dayIndex]
+                    sortedSchedules[dayIndex]
                       ? () => handleInsertScheduleAfter(dayIndex)
                       : undefined
                   }
                   isScheduleMenuDisabled={
                     isCreatingSchedule || isDeletingSchedule || isMovePending
                   }
-                  interactionLocked={
-                    isReadOnly || isCreatingSchedule || isDeletingSchedule
-                  }
+                  interactionLocked={isCreatingSchedule || isDeletingSchedule}
                   {...sectionProps}
                 />
               );

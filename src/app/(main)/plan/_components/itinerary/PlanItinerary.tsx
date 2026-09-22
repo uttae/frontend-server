@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 
 import type { PlanPlace } from "@/lib/plan/types";
 
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
+import { planCopy } from "@/lib/plan/planCopy";
 import { PlanTravelTime } from "../travel-time/PlanTravelTime";
 import { AddFromBookmarkModal } from "./AddFromBookmarkModal";
 import { PlanAddPlaceControls } from "./PlanAddPlaceControls";
@@ -42,7 +42,6 @@ export type PlanItineraryProps = {
 };
 
 export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
-  const { isReadOnly, copy } = usePlanMobileReadOnly();
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const visibleByScheduleId = usePlanScheduleRouteVisibilityStore(
     (s) => s.visibleByScheduleId,
@@ -117,11 +116,11 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
     scheduleId,
     places,
     interactionLocked:
-      isAdding || isReadOnly || activeInsertIndex !== null,
+      isAdding || activeInsertIndex !== null,
   });
 
   useEffect(() => {
-    if (activeInsertIndex === null || isReadOnly) return;
+    if (activeInsertIndex === null) return;
 
     const onPointerDown = (e: PointerEvent) => {
       const target = e.target;
@@ -135,7 +134,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
 
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [activeInsertIndex, isReadOnly]);
+  }, [activeInsertIndex]);
 
   const handlePickPrediction = useCallback(
     async (
@@ -168,7 +167,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
     [createItem, places, roomId, scheduleId],
   );
 
-  const addControlsDisabled = isAdding || isReadOnly;
+  const addControlsDisabled = isAdding;
 
   const crossDayItemDragActive = usePlanItemCrossDayDragStore(
     (s) => s.sourceScheduleId !== null,
@@ -200,7 +199,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
 
       {!isLoading && places.length === 0 ?
         <p className="py-4 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-          {copy.placesEmpty}
+          {planCopy.placesEmpty}
         </p>
       : null}
 
@@ -281,21 +280,19 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
         })}
       </div>
 
-      {!isReadOnly ?
-        <div className="mt-4 flex flex-col gap-2 border-t border-dashed border-gray-border pt-4">
-          <PlanAddPlaceControls
-            coords={mapCenter}
-            disabled={addControlsDisabled}
-            onPickPrediction={(p) => void handlePickPrediction(p)}
-            onOpenBookmark={() => setBookmarkModal({})}
-          />
-          {isAdding ?
-            <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">추가하는 중…</p>
-          : null}
-        </div>
-      : null}
+      <div className="mt-4 flex flex-col gap-2 border-t border-dashed border-gray-border pt-4">
+        <PlanAddPlaceControls
+          coords={mapCenter}
+          disabled={addControlsDisabled}
+          onPickPrediction={(p) => void handlePickPrediction(p)}
+          onOpenBookmark={() => setBookmarkModal({})}
+        />
+        {isAdding ?
+          <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">추가하는 중…</p>
+        : null}
+      </div>
 
-      {bookmarkModal && !isReadOnly ?
+      {bookmarkModal ?
         <AddFromBookmarkModal
           roomId={roomId}
           scheduleId={scheduleId}
