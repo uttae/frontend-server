@@ -19,6 +19,7 @@ import { AddToScheduleModal } from "./AddToScheduleModal";
 import { TABS, type Tab } from "./types";
 import { usePlaceDetailData } from "./usePlaceDetailData";
 import { HeroSkeleton, HeroImage } from "./HeroSection";
+import { PlaceDetailSkeleton } from "./PlaceDetailSkeleton";
 import { PlaceSummaryHeader } from "./PlaceSummaryHeader";
 import { HomeTab } from "./HomeTab";
 import { ReviewsTab } from "./ReviewsTab";
@@ -162,7 +163,10 @@ export function PlaceDetailPanel({
     </div>
   );
 
-  const body = (
+  /* 상세 정보가 오기 전에는 임시 이름("장소")·빈 탭 대신 스켈레톤 — 느린 네트워크에서도 동작 중임을 알 수 있게 */
+  const body = isDetailLoading && !detailData ? (
+    <PlaceDetailSkeleton />
+  ) : (
     <>
       <PlaceSummaryHeader
         name={displayName}

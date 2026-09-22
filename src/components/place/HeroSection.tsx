@@ -16,8 +16,12 @@ export function HeroImage({
   fallbackImage?: string;
   name: string;
 }) {
-  const { data: queriedPhotoUrl } = usePlacePhotoUrlQuery(googlePlaceId);
+  const { data: queriedPhotoUrl, isLoading } = usePlacePhotoUrlQuery(googlePlaceId);
   const photoUrl = queriedPhotoUrl || fallbackImage || null;
+
+  if (!photoUrl && isLoading) {
+    return <HeroSkeleton />;
+  }
 
   if (!photoUrl) {
     return <div className="h-full bg-light-gray" />;
