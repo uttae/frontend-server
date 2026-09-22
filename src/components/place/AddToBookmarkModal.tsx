@@ -2,6 +2,8 @@
 
 import { Check, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { toast } from "sonner";
 
 import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
@@ -136,6 +138,13 @@ export function AddToBookmarkModal({
       {
         onSuccess: (result) => {
           notifyResult(result);
+          if (result.firstHardError) {
+            toast.error("북마크에 추가하지 못했어요.");
+          } else if (result.added > 0) {
+            toast.success("북마크에 추가했어요.");
+          } else if (result.skippedDuplicate > 0) {
+            toast.error("이미 선택한 북마크에 추가된 장소예요.");
+          }
           if (result.added > 0) {
             trackAnalyticsEvent(AnalyticsEvents.addToBookmark, {
               place_category: placeCategory,
@@ -146,6 +155,9 @@ export function AddToBookmarkModal({
           if (!result.firstHardError && result.skippedDuplicate === 0) {
             onClose();
           }
+        },
+        onError: () => {
+          toast.error("북마크에 추가하지 못했어요.");
         },
       },
     );
@@ -191,33 +203,27 @@ export function AddToBookmarkModal({
     return null;
   }
 
-  return (
+  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
+  return createPortal(
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/40 md:justify-center md:px-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
       onMouseDown={(ev) => {
+        ev.stopPropagation();
         if (ev.target === ev.currentTarget) onClose();
       }}
+      onClick={(ev) => ev.stopPropagation()}
+      onPointerDown={(ev) => ev.stopPropagation()}
+      onTouchStart={(ev) => ev.stopPropagation()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-bookmark-modal-title"
         onMouseDown={(e) => e.stopPropagation()}
-        className={cn(
-          "flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden",
-          "border-t border-gray-border bg-white shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.12)] md:rounded-2xl md:border md:shadow-lg",
-          "rounded-t-[1.35rem]",
-          "mx-auto md:max-w-sm",
-          "pb-[max(env(safe-area-inset-bottom,0px),12px)]",
-        )}
+        className="flex max-h-[min(85vh,560px)] w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-border bg-white pb-3 shadow-lg"
       >
-        <div
-          aria-hidden
-          className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-black/15 md:hidden"
-        />
-
-        <div className="shrink-0 px-5 pb-2 pt-3">
+        <div className="shrink-0 px-5 pb-2 pt-4">
           <h2
             id="add-bookmark-modal-title"
             className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
@@ -371,6 +377,7 @@ export function AddToBookmarkModal({
           onSave={handleCreateFolderSave}
         />
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

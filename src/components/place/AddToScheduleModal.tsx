@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { useCreateScheduleItem, useRoomSchedules } from "@/hooks/useRooms";
@@ -87,13 +88,18 @@ export function AddToScheduleModal({
     }
   }
 
-  return (
+  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
       role="presentation"
       onMouseDown={(ev) => {
+        ev.stopPropagation();
         if (ev.target === ev.currentTarget) onClose();
       }}
+      onClick={(ev) => ev.stopPropagation()}
+      onPointerDown={(ev) => ev.stopPropagation()}
+      onTouchStart={(ev) => ev.stopPropagation()}
     >
       <div
         className="flex max-h-[min(80vh,520px)] w-full max-w-sm flex-col rounded-2xl border border-gray-border bg-white shadow-lg"
@@ -182,6 +188,7 @@ export function AddToScheduleModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
