@@ -617,7 +617,7 @@ vi.mock("@/app/(main)/plan/_components/itinerary/PlanScheduleDayBlock", () => ({
 import { PlanPageView } from "@/app/(main)/plan/_components/itinerary/PlanPageView";
 import { ExpenseEditor } from "./ExpenseEditor";
 
-it("mobile plan links to the shared cost list without another provider, while day/place entries keep their target", async () => {
+it("mobile plan shares the provider with the cost page while day/place entries keep their target", async () => {
   gateState.roomId = "r";
   useSessionStore.setState({ sessionReady: true, currentRoomId: "r" });
   mocks.members.mockResolvedValue({ members: [{ userId: 1, role: "HOST", status: "ACTIVE" }] });
@@ -625,7 +625,7 @@ it("mobile plan links to the shared cost list without another provider, while da
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await act(async () => { renderer = create(<QueryClientProvider client={client}><MainRoomGate><PlanPageView /><ExpenseEntryButton scheduleId={10} label="일차 비용" /><ExpenseEntryButton scheduleId={10} scheduleItemId={20} label="장소 비용" /></MainRoomGate></QueryClientProvider>); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(renderer.root.findAllByType("a").some(a => a.props.href === "/cost" && a.children.join("").includes("가계부"))).toBe(true);
+  expect(renderer.root.findAllByType("a").some(a => a.props.href === "/cost")).toBe(false);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   for (const [label, initial] of [["일차 비용", { scheduleId: 10 }], ["장소 비용", { scheduleId: 10, scheduleItemId: 20 }]] as const) {
     const button = renderer.root.findAllByType("button").find(b => b.children.join("").includes(label))!;
