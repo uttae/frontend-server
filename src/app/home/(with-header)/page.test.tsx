@@ -40,3 +40,12 @@ it("places the only create-trip link inside the mobile empty state", async () =>
   expect(host.querySelector("main")?.contains(links[0])).toBe(true);
   expect(host.textContent).toContain("아직 생성된 여행방이 없어요");
 });
+
+it("includes the room-list site footer in the mobile empty page", async () => {
+  await act(async () => root.render(<HomePage />));
+
+  const footer = host.querySelector("footer");
+  expect(footer).not.toBeNull();
+  expect(footer?.querySelector('nav[aria-label="정책 문서"]')).not.toBeNull();
+  expect(footer?.textContent).toContain("서비스명");
+});

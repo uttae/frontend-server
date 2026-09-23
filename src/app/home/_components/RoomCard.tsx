@@ -28,9 +28,9 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
       <Link
         href={planPath}
         onClick={handleNavigate}
-        className="group block rounded-[12px] text-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+        className="group block rounded-[8px] text-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
       >
-        <div className="relative aspect-video overflow-hidden rounded-[12px] bg-fill-strong mobile:aspect-[353/198]">
+        <div className="relative aspect-video overflow-hidden rounded-[8px] bg-fill-strong mobile:aspect-[353/198]">
           <Image
             src="/rooms/figma/trip-cover.png"
             alt=""
@@ -40,12 +40,12 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
             className="object-cover transition-opacity group-hover:opacity-90"
           />
         </div>
-        <div className="pb-5 pl-1 pr-16 pt-3 mobile:pb-4">
-          <h2 className="max-w-[280px] truncate text-title-s" title={room.title}>
+        <div className="pb-4 pl-1 pr-16 pt-3">
+          <h2 className="max-w-[280px] truncate text-title-m" title={room.title}>
             {room.title}
           </h2>
-          <div className="mt-2 space-y-0 text-body-s-emphasis text-text-subtle mobile:space-y-1 mobile:text-body-xs-emphasis">
-            <p className="flex min-h-5 gap-0.5 overflow-hidden mobile:min-h-4" title={room.destinations.join(" · ")}>
+          <div className="mt-[10px] space-y-0.5 text-body-s-regular text-text-subtle">
+            <p className="flex min-h-5 gap-0.5 overflow-hidden" title={room.destinations.join(" · ")}>
               {room.destinations.map((destination, index) => (
                 <span key={`${destination}-${index}`} className="inline-flex min-w-0 items-center gap-0.5">
                   {index > 0 && <span className="shrink-0">·</span>}
@@ -58,7 +58,7 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
         </div>
       </Link>
 
-      <div className="absolute bottom-[58px] right-0 z-10 mobile:bottom-[50px]">
+      <div className="absolute bottom-[60px] right-0 z-10">
         <RoomCardMenu room={room} onDelete={onDelete} onLeave={onLeave} />
       </div>
     </article>
