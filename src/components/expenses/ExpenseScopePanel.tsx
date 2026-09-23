@@ -63,10 +63,10 @@ export function ExpenseScopePanel({
         event.preventDefault();
         onClose();
       }}
-      className="fixed inset-auto left-1/2 top-1/2 m-0 max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl border border-gray-border bg-white p-0 text-text shadow-2xl backdrop:bg-black/40"
+      className="fixed inset-auto left-1/2 top-1/2 m-0 max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-gray-border bg-white p-0 text-text shadow-2xl backdrop:bg-black/40"
     >
-      <div className="flex flex-col">
-        <header className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-gray-border bg-white px-5 py-3">
+      <div className="flex max-h-[85dvh] min-h-0 flex-col">
+        <header className="flex items-start justify-between gap-3 border-b border-gray-border px-5 py-3">
           <div className="min-w-0">
             <h2 ref={title} id={titleId} tabIndex={-1} className="text-title-m mobile:text-title-s font-bold focus:outline-none">
               {scope.label} 비용
@@ -85,7 +85,7 @@ export function ExpenseScopePanel({
           </button>
         </header>
 
-        <div className="flex flex-col px-5 py-4">
+        <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
           <p className="text-body-s-regular text-dark-gray">총 비용 · {scoped.length}건</p>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-title-m mobile:text-title-s font-bold tabular-nums">
             {totals.length ? totals.map(({ currency, amount }) => (
@@ -114,7 +114,7 @@ export function ExpenseScopePanel({
               <button type="button" onClick={onRetry} className="text-primary-strong underline">다시 시도</button>
             </div>
           ) : scoped.length ? (
-            <ul className="mt-2 divide-y divide-gray-border">
+            <ul className="mt-2 min-h-0 overflow-y-auto overscroll-contain divide-y divide-gray-border">
               {scoped.map((expense) => (
                 <li key={expense.id}>
                   <button
