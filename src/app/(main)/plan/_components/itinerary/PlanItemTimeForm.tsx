@@ -148,7 +148,7 @@ export function PlanItemTimeEditor({
           </span>
           <h2
             id="plan-item-time-dialog-title"
-            className="flex-1 text-[17px] font-bold text-gray-900"
+            className="flex-1 text-title-s font-bold text-gray-900"
           >
             시간 설정
           </h2>
@@ -160,7 +160,7 @@ export function PlanItemTimeEditor({
               setEndHm("");
             }}
             disabled={isPending || (!startHm && !endHm)}
-            className="h-9 shrink-0 cursor-pointer rounded-lg px-2 text-xs font-medium text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            className="h-9 shrink-0 cursor-pointer rounded-lg px-2 text-label-xs-regular font-medium text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
           >
             초기화
           </button>
@@ -176,7 +176,7 @@ export function PlanItemTimeEditor({
         </div>
 
         <div className="flex flex-col gap-3 px-5 pb-4">
-          <p id="plan-item-time-help" className="text-center text-xs text-dark-gray">
+          <p id="plan-item-time-help" className="text-center text-body-xs-regular text-dark-gray">
             24시간 기준 · 시와 분을 직접 입력하세요
           </p>
           {([
@@ -197,12 +197,12 @@ export function PlanItemTimeEditor({
             </div>
           ))}
           {!validation.valid ? (
-            <p id="plan-item-time-error" role="alert" className="text-xs text-red-600">
+            <p id="plan-item-time-error" role="alert" className="text-body-xs-regular text-red-600">
               {validation.message} 시는 00–23, 분은 00–59로 입력해 주세요.
             </p>
           ) : null}
 
-          <div className="min-h-[16px] text-center text-xs">
+          <div className="min-h-[16px] text-center text-body-xs-regular">
             {startHm.length === 0 ? (
               <span className="text-dark-gray/70">
                 미설정
@@ -224,7 +224,7 @@ export function PlanItemTimeEditor({
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="h-10 shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-4 text-sm font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-10 shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-4 text-label-m-regular mobile:text-label-s-regular font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
               취소
             </button>
@@ -232,7 +232,7 @@ export function PlanItemTimeEditor({
               type="button"
               onClick={() => void handleSave()}
               disabled={!canSave}
-              className="h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-sm font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-label-m-regular mobile:text-label-s-regular font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {isPending ? "저장 중…" : "적용"}
             </button>

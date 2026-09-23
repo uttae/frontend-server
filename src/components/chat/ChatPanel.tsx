@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMainChromeLayoutWidth } from "@/contexts/MainChromeLayoutWidthContext";
 import { useChat } from "@/hooks/useChat";
@@ -33,7 +32,6 @@ export function ChatPanel({
   mobileInline?: boolean;
   inline?: boolean;
 }) {
-  const router = useRouter();
   const { chatState, openChat, minimizeChat, closeChat } = useChat();
   const { chatPanelDockWidthCss, chatPanelRevealReady } =
     useMainChromeLayoutWidth();
@@ -95,12 +93,6 @@ export function ChatPanel({
   const { size: minimizedSize, setSize, persistSize, clampSize } =
     useChatPanelMinimizedSize();
 
-  function handlePlusClick() {
-    if (!rid) return;
-    router.push("/search?share=chat");
-    minimizeChat();
-  }
-
   const panelBody = (
     <>
       {!isInline ? (
@@ -143,8 +135,6 @@ export function ChatPanel({
         isMinimized={isMinimized}
         onSendChat={sendChatMessage}
         onSendAi={sendAiMessage}
-        onPlusClick={handlePlusClick}
-        plusDisabled={!rid || mobileInline}
         sendDisabled={isSendBlocked}
       />
     </>

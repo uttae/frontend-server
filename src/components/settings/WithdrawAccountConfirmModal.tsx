@@ -46,17 +46,17 @@ export function WithdrawAccountConfirmModal({
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
             <UserX size={22} className="text-status-negative" aria-hidden />
           </div>
-          <h2 id="withdraw-account-title" className="text-[19px] font-bold">
+          <h2 id="withdraw-account-title" className="text-title-s font-bold">
             정말 탈퇴하시겠어요?
           </h2>
-          <p className="mt-3 text-left text-[17px] leading-relaxed text-dark-gray">
+          <p className="mt-3 text-left text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
             탈퇴 후에는 계정을 복구할 수 없습니다. 
             <br />
             이메일·닉네임·프로필 등
             
             개인정보는 익명화되며,<br /> 참여 중이던 여행 멤버십은 정리됩니다.
           </p>
-          <p className="mt-2 text-left text-[14px] leading-relaxed text-dark-gray">
+          <p className="mt-2 text-left text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
             방장인 여행에 다른 멤버가 남아 있으면, 탈퇴 전 방장을 위임해야
             합니다.
           </p>

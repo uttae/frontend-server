@@ -24,9 +24,9 @@ export function MainPageHeader({
       )}
     >
       <div className="min-w-0 flex-1">
-        <h1 className="truncate text-[22px] font-bold text-black">{title}</h1>
+        <h1 className="truncate text-title-l mobile:text-title-m font-bold text-black">{title}</h1>
         {description ? (
-          <p className="mt-1 text-[14px] leading-relaxed text-dark-gray">
+          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
             {description}
           </p>
         ) : null}

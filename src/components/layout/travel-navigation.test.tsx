@@ -7,7 +7,6 @@ const state = vi.hoisted(() => ({ pathname: "/plan/room", query: "", mobile: fal
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.query) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: React.ComponentProps<"a">) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: state.mobile }) }));
-vi.mock("@/hooks/useMobileRedirects", () => ({ useMainMobileRouteRedirect: () => {} }));
 vi.mock("@/hooks/useHostJoinRequestsBadgeCount", () => ({ useHostJoinRequestsBadgeCount: () => 2 }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRoomUnreadCount", () => ({ useRoomUnreadCount: () => ({ data: { unreadCount: state.unread } }) }));
@@ -15,13 +14,11 @@ vi.mock("@/hooks/useSessionPromptVisible", () => ({ useSessionPromptVisible: () 
 vi.mock("./HeaderBar", () => ({ default: () => <header /> }));
 vi.mock("./LeftSection", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock("./SidebarTutorial", () => ({ SidebarTutorial: () => null }));
-vi.mock("@/components/mobile/MobileReadOnlyNotice", () => ({ MobileReadOnlyNotice: () => null }));
 // External map/chat engines are boundaries; assertions exercise chrome selection and containment.
 vi.mock("@/components/map", () => ({ MapWithDetailPanel: () => <div data-map /> }));
 vi.mock("@/components/chat", () => ({ ChatPanel: () => <div data-chat /> }));
 import { MainLayoutChrome } from "./MainLayoutChrome";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
-import { isMainRouteBlockedOnMobile } from "@/lib/mobile-view/routes";
 
 let host: HTMLDivElement;
 let root: Root;
@@ -92,12 +89,6 @@ it("mobile has five bottom destinations and retains the existing map/schedule UR
   expect(host.querySelectorAll("[data-chat]")).toHaveLength(1);
   expect(host.querySelector("[data-map]")).toBeNull();
 });
-it("allows mobile search without widening blocked settings/contact routes", () => {
-  expect(isMainRouteBlockedOnMobile("/search")).toBe(false);
-  expect(isMainRouteBlockedOnMobile("/settings")).toBe(true);
-  expect(isMainRouteBlockedOnMobile("/contact")).toBe(true);
-});
-
 it.each([false, true])("keeps one selected destination while visiting all route tabs (mobile=%s)", async mobile => {
   state.mobile = mobile;
   for (const [pathname, index] of [["/plan/room", 0], ["/search", 1], ["/bookmark/folder", 2], ["/member-settings", 4]] as const) {
@@ -117,7 +108,6 @@ it("cost follows bookmarks, selects alone and closes chat", async () => {
   state.pathname = "/cost"; await render();
   expect(active()).toEqual([cost]);
   expect(host.querySelector("article")).not.toBeNull();
-  expect(isMainRouteBlockedOnMobile("/cost")).toBe(false);
 });
 
 it.each(["/plan/room", "/cost"])("colors every sidebar icon consistently on %s", async pathname => {

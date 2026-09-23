@@ -53,7 +53,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   if (isPending) {
     return (
       <div className="w-full rounded-xl border border-gray-border bg-bubble-gray/40 px-4 py-3 text-left">
-        <p className="text-[17px] text-dark-gray">약관을 불러오는 중…</p>
+        <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">약관을 불러오는 중…</p>
       </div>
     );
   }
@@ -61,10 +61,10 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   if (isError) {
     return (
       <div className="w-full rounded-xl border border-primary/35 bg-primary/[0.06] px-4 py-3 text-left">
-        <p className="text-[17px] font-medium text-primary">
+        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">
           약관을 불러오지 못했습니다
         </p>
-        <p className="mt-1 text-[17px] text-muted-brown">
+        <p className="mt-1 text-body-m-regular mobile:text-body-s-regular text-muted-brown">
           {error instanceof Error
             ? error.message
             : "잠시 후 다시 시도해 주세요."}
@@ -72,7 +72,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
         <button
           type="button"
           onClick={() => void refetch()}
-          className="mt-2 text-[17px] font-medium text-primary underline-offset-2 hover:underline"
+          className="mt-2 text-label-l-regular mobile:text-label-m-regular font-medium text-primary underline-offset-2 hover:underline"
         >
           다시 시도
         </button>
@@ -83,7 +83,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   if (items.length === 0) {
     return (
       <div className="w-full rounded-xl border border-gray-border bg-bubble-gray/30 px-4 py-3 text-left">
-        <p className="text-[17px] text-dark-gray">
+        <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">
           현재 동의할 약관 정보를 불러올 수 없습니다. 잠시 후 다시 시도해
           주세요.
         </p>
@@ -100,7 +100,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
           checked={allAccepted}
           onChange={(event) => toggleAll(event.target.checked)}
         />
-        <span className="text-[17px] font-semibold leading-snug text-neutral-900">
+        <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-neutral-900">
           필수 약관 전체 동의
         </span>
       </label>
@@ -120,10 +120,10 @@ export function AgreementConsentSection({ onStateChange }: Props) {
                   checked={acceptedIds.has(id)}
                   onChange={(event) => toggleItem(id, event.target.checked)}
                 />
-                <span className="inline-flex h-[18px] shrink-0 items-center rounded px-1 text-xs font-semibold leading-none text-primary">
+                <span className="inline-flex h-[18px] shrink-0 items-center rounded px-1 text-body-xs-emphasis font-semibold leading-none text-primary">
                   필수
                 </span>
-                <span className="truncate text-[17px] text-neutral-800">
+                <span className="truncate text-body-m-regular mobile:text-body-s-regular text-neutral-800">
                   {item.title}
                 </span>
               </label>
@@ -131,7 +131,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
                 href={agreementPathForType(item.type)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex shrink-0 items-center gap-0.5 text-[14px] font-medium text-dark-gray hover:text-neutral-900"
+                className="group flex shrink-0 items-center gap-0.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray hover:text-neutral-900"
               >
                 자세히 보기
                 <ChevronRight className="h-3.5 w-3.5" aria-hidden />

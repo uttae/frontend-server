@@ -6,7 +6,6 @@ import type { CSSProperties, Ref } from "react";
 
 import { usePlanDaySectionCrossDayDrop } from "@/hooks/usePlanDaySectionCrossDayDrop";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
 
 import {
   PlanDaySection,
@@ -41,7 +40,6 @@ export function PlanScheduleDayBlock({
   dragHandleProps,
   interactionLocked = false,
 }: PlanScheduleDayBlockProps) {
-  const { isReadOnly } = usePlanMobileReadOnly();
   const expenses = useExpenseContext();
   const { data: placesData } = useSchedulePlanPlaces(roomId, scheduleId);
   const placesCount = placesData?.length ?? 0;
@@ -50,7 +48,7 @@ export function PlanScheduleDayBlock({
     roomId,
     scheduleId,
     placesCount,
-    interactionLocked: interactionLocked || isReadOnly,
+    interactionLocked,
   });
 
   return (

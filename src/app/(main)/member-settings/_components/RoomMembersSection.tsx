@@ -174,7 +174,7 @@ export function RoomMembersSection() {
       {/* 나 */}
       {!isMembersLoading && me && (
         <section>
-          <p className="mb-1.5 text-[14px] font-semibold uppercase tracking-wide text-dark-gray">
+          <p className="mb-1.5 text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
             나
           </p>
           <div className="rounded-xl border border-gray-border bg-white">
@@ -191,7 +191,7 @@ export function RoomMembersSection() {
       {/* 다른 멤버 */}
       {!isMembersLoading && others.length > 0 && (
         <section>
-          <p className="mb-1.5 text-[14px] font-semibold uppercase tracking-wide text-dark-gray">
+          <p className="mb-1.5 text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
             멤버 · {others.length}
           </p>
           <div className="rounded-xl border border-gray-border bg-white">
@@ -226,17 +226,17 @@ export function RoomMembersSection() {
                       MAIN_CARD_INNER_PADDING_X_CLASS,
                     )}
                   >
-                    <p className="mb-2 text-[14px] font-medium text-gray-800">
+                    <p className="mb-2 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-gray-800">
                       <span className="font-semibold">{member.nickname}</span>님에게 방장을 위임하시겠어요?
                     </p>
-                    <p className="mb-3 text-[13px] text-dark-gray">
+                    <p className="mb-3 text-body-xs-regular text-dark-gray">
                       위임 후 당신은 일반 멤버가 됩니다.
                     </p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setTransferTargetId(null)}
                         disabled={isTransferring}
-                        className="flex-1 cursor-pointer rounded-lg border border-gray-border py-1.5 text-[14px] font-medium text-dark-gray transition-colors hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 cursor-pointer rounded-lg border border-gray-border py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray transition-colors hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         취소
                       </button>
@@ -249,7 +249,7 @@ export function RoomMembersSection() {
                           );
                         }}
                         disabled={isTransferring}
-                        className="flex-1 cursor-pointer rounded-lg bg-primary py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 cursor-pointer rounded-lg bg-primary py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {isTransferring ? "처리 중…" : "위임"}
                       </button>
@@ -265,14 +265,14 @@ export function RoomMembersSection() {
                       MAIN_CARD_INNER_PADDING_X_CLASS,
                     )}
                   >
-                    <p className="mb-2 text-[14px] font-medium text-gray-800">
+                    <p className="mb-2 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-gray-800">
                       <span className="font-semibold">{member.nickname}</span>님을 추방하시겠어요?
                     </p>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setKickTargetId(null)}
                         disabled={isKicking}
-                        className="flex-1 cursor-pointer rounded-lg border border-gray-border py-1.5 text-[14px] font-medium text-dark-gray transition-colors hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 cursor-pointer rounded-lg border border-gray-border py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray transition-colors hover:border-gray-400 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         취소
                       </button>
@@ -285,7 +285,7 @@ export function RoomMembersSection() {
                           );
                         }}
                         disabled={isKicking}
-                        className="flex-1 cursor-pointer rounded-lg bg-primary py-1.5 text-[14px] font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex-1 cursor-pointer rounded-lg bg-primary py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {isKicking ? "처리 중…" : "추방"}
                       </button>
@@ -301,7 +301,7 @@ export function RoomMembersSection() {
       {/* 이전 멤버 */}
       {!isMembersLoading && leftOthers.length > 0 && (
         <section>
-          <p className="mb-1.5 text-[14px] font-semibold uppercase tracking-wide text-dark-gray">
+          <p className="mb-1.5 text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
             이전 멤버 · {leftOthers.length}
           </p>
           <div className="rounded-xl border border-gray-border bg-white">
@@ -351,10 +351,10 @@ export function RoomMembersSection() {
           </SettingsActionButtonRow>
         ) : (
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <p className="mb-3 text-[17px] font-medium text-gray-800">
+            <p className="mb-3 text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-gray-800">
               정말 방에서 나가시겠어요?
             </p>
-            <p className="mb-4 text-[14px] leading-5 text-dark-gray">
+            <p className="mb-4 text-body-s-regular mobile:text-body-xs-regular leading-5 text-dark-gray">
               방을 나가면 현재 여행 플랜에 접근할 수 없게 됩니다.
               {isHost && hostCannotLeaveAlone && (
                 <span className="mt-1 block font-medium text-primary">
@@ -414,11 +414,11 @@ export function RoomMembersSection() {
           >
             <h3
               id="delegate-first-title"
-              className="text-[19px] font-semibold text-neutral-900"
+              className="text-title-s font-semibold text-neutral-900"
             >
               먼저 방장을 위임해주세요
             </h3>
-            <p className="mt-3 text-[17px] leading-relaxed text-dark-gray">
+            <p className="mt-3 text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
               멤버에게 방장을 넘긴 뒤 나가실 수 있어요.
             </p>
             <SettingsActionButton
