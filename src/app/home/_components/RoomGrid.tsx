@@ -49,17 +49,17 @@ export function RoomGrid({
 
   if (rooms.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-8 rounded-[12px] bg-fill px-5 py-20 text-center mobile:gap-0 mobile:rounded-none mobile:bg-transparent mobile:px-0 mobile:py-10">
-        <div className="flex flex-col items-center gap-3">
-          <div aria-hidden className="flex size-[100px] items-center justify-center mobile:size-20 mobile:[&_img]:size-20">
+      <div className="flex flex-col items-center justify-center gap-10 rounded-[12px] bg-fill px-5 py-20 text-center mobile:min-h-[410px] mobile:justify-start mobile:rounded-none mobile:bg-transparent mobile:px-0 mobile:pb-0 mobile:pt-[60px]">
+        <div className="flex flex-col items-center gap-5 mobile:gap-3">
+          <div aria-hidden className="flex size-10 items-center justify-center [&_img]:size-10 mobile:size-[30px] mobile:[&_img]:size-[30px]">
             <BrandLogo variant="symbol" size="L" alt="" />
           </div>
-          <p className="text-body-l-regular text-text-subtle mobile:text-body-s-regular">
+          <p className="text-body-m-emphasis text-text-subtle mobile:text-body-s-regular">
             아직 생성된 여행방이 없어요<br />
             우때와 함께 여행계획을 시작해보아요!
           </p>
         </div>
-        <NewTripLink className="mobile:hidden" />
+        <NewTripLink />
       </div>
     );
   }

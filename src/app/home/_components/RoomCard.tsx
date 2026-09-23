@@ -40,25 +40,25 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
             className="object-cover transition-opacity group-hover:opacity-90"
           />
         </div>
-        <div className="pb-5 pl-3 pr-14 pt-4 mobile:pb-4 mobile:pl-2 mobile:pt-3">
-          <h2 className="max-w-[260px] truncate text-title-m mobile:text-title-s font-bold tracking-[-0.02em]" title={room.title}>
+        <div className="pb-5 pl-1 pr-16 pt-3 mobile:pb-4">
+          <h2 className="max-w-[280px] truncate text-title-s" title={room.title}>
             {room.title}
           </h2>
-          <div className="mt-4 space-y-1 text-body-s-regular mobile:mt-3 mobile:text-body-xs-regular">
-            <p className="flex min-h-5 gap-1 overflow-hidden" title={room.destinations.join(" · ")}>
+          <div className="mt-2 space-y-0 text-body-s-emphasis text-text-subtle mobile:space-y-1 mobile:text-body-xs-emphasis">
+            <p className="flex min-h-5 gap-0.5 overflow-hidden mobile:min-h-4" title={room.destinations.join(" · ")}>
               {room.destinations.map((destination, index) => (
-                <span key={`${destination}-${index}`} className="inline-flex min-w-0 items-center gap-1">
+                <span key={`${destination}-${index}`} className="inline-flex min-w-0 items-center gap-0.5">
                   {index > 0 && <span className="shrink-0">·</span>}
                   <span className="truncate">{destination}</span>
                 </span>
               ))}
             </p>
-            <p className="flex gap-1"><span>{dates[0]}</span><span>-</span><span>{dates[1]}</span></p>
+            <p className="flex gap-0.5"><span>{dates[0]}</span><span>-</span><span>{dates[1]}</span></p>
           </div>
         </div>
       </Link>
 
-      <div className="absolute bottom-[72px] right-1 z-10 mobile:bottom-16 mobile:right-0">
+      <div className="absolute bottom-[58px] right-0 z-10 mobile:bottom-[50px]">
         <RoomCardMenu room={room} onDelete={onDelete} onLeave={onLeave} />
       </div>
     </article>
