@@ -65,23 +65,26 @@ export function chatAiBubbleBlockTitleClass(isMinimized: boolean): string {
 }
 
 export function chatAiBubbleSectionLabelClass(isMinimized: boolean): string {
+  void isMinimized;
   return cn(
     "font-semibold text-gray-900",
-    isMinimized ? "text-body-xs-regular" : "text-body-xs-regular",
+    "text-body-xs-regular",
   );
 }
 
 export function chatAiBubbleOverviewBodyClass(isMinimized: boolean): string {
+  void isMinimized;
   return cn(
     "leading-relaxed text-gray-700",
-    isMinimized ? "text-body-xs-regular" : "text-body-xs-regular",
+    "text-body-xs-regular",
   );
 }
 
 export function chatAiBubbleListTextClass(isMinimized: boolean): string {
+  void isMinimized;
   return cn(
     "text-gray-800",
-    isMinimized ? "text-body-xs-regular leading-snug" : "text-body-xs-regular leading-snug",
+    "text-body-xs-regular leading-snug",
   );
 }
 
@@ -113,8 +116,9 @@ export function chatAiBubblePlaceRecommendationHeadingSubtitleClass(
 export function chatAiBubblePlaceRecommendationReasonClass(
   isMinimized: boolean,
 ): string {
+  void isMinimized;
   return cn(
     "font-normal leading-relaxed text-[#1e293b]",
-    isMinimized ? "text-body-xs-regular" : "text-body-xs-regular",
+    "text-body-xs-regular",
   );
 }
