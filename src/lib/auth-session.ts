@@ -45,6 +45,7 @@ export function isProtectedAppPath(pathname: string): boolean {
   const prefixes = [
     "/home",
     "/plan",
+    "/packing",
     "/cost",
     "/bookmark",
     "/search",

@@ -60,11 +60,17 @@ it("opens the mobile menu with working destinations and closes it with Escape", 
   expect(document.activeElement).toBe(menuButton);
 });
 
-it.each(["/bookmark", "/cost", "/search"])("shows the menu without a map toggle on %s", async pathname => {
+it.each(["/bookmark", "/cost", "/packing/12345678-1234-1234-1234-123456789abc"])("shows the map shortcut on %s", async pathname => {
   state.pathname = pathname;
   await rerender();
-  expect(host.querySelector('a[aria-label="지도 보기"]')).toBeNull();
+  expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/plan?view=map");
   expect(host.querySelector('button[aria-label="메뉴 열기"]')).not.toBeNull();
+});
+
+it("keeps the map shortcut hidden on search", async () => {
+  state.pathname = "/search";
+  await rerender();
+  expect(host.querySelector('a[aria-label="지도 보기"]')).toBeNull();
 });
 
 it("closes the menu on an outside pointer event", async () => {

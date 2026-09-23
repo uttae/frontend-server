@@ -29,6 +29,7 @@ export const sidebarWireframeIcons = {
   plan: "/icons/sidebar/figma/calendar.svg",
   search: "/icons/sidebar/figma/search.svg",
   bookmark: "/icons/sidebar/figma/bookmark.svg",
+  packing: "/icons/sidebar/figma/packing.svg",
   chat: "/icons/sidebar/figma/chat.svg",
   memberSettings: "/icons/sidebar/figma/members.svg",
   feedback: "/icons/sidebar/figma/feedback.svg",

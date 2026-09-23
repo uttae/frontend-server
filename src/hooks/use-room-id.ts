@@ -4,7 +4,7 @@ import { useLayoutEffect } from "react";
 import { useClientReady } from "./useClientReady";
 import { usePathname } from "next/navigation";
 
-import { roomIdFromPlanPathname } from "@/lib/plan-room-path";
+import { parseRoomContextPath } from "@/lib/room-context-path";
 import {
   resolveCurrentRoomId,
   resolveRoomIdFromStoreAndUrl,
@@ -20,23 +20,27 @@ import {
  * hydration 이후 sessionStorage까지 반영합니다.
  */
 export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
+  const pathname = usePathname();
+  const route = parseRoomContextPath(pathname);
+  const explicitRoomId = route.roomId ?? urlRoomId;
   const currentRoomId = useSessionStore((s) => s.currentRoomId);
   const ssrSafeRoomId = resolveRoomIdFromStoreAndUrl(
     currentRoomId,
-    urlRoomId,
+    explicitRoomId,
   );
 
   const roomContextReady = useClientReady();
-  const effectiveRoomId = roomContextReady
-    ? resolveCurrentRoomId(currentRoomId, urlRoomId)
+  const effectiveRoomId = route.invalidPackingPath ? null : roomContextReady
+    ? resolveCurrentRoomId(currentRoomId, explicitRoomId)
     : ssrSafeRoomId;
 
   useLayoutEffect(() => {
-    bootstrapCurrentRoomFromSessionStorage();
+    if (route.invalidPackingPath) return;
+    bootstrapCurrentRoomFromSessionStorage(pathname);
     if (effectiveRoomId && useSessionStore.getState().currentRoomId !== effectiveRoomId) {
       useSessionStore.getState().setCurrentRoomId(effectiveRoomId);
     }
-  }, [effectiveRoomId]);
+  }, [effectiveRoomId, pathname, route.invalidPackingPath]);
 
   return { effectiveRoomId, roomContextReady };
 }
@@ -44,9 +48,9 @@ export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
 /** pathname·sessionStorage·Zustand를 통합한 현재 방 ID */
 export function useCurrentRoomId() {
   const pathname = usePathname();
-  const planRoomIdFromUrl = roomIdFromPlanPathname(pathname);
+  const { roomId: roomIdFromUrl } = parseRoomContextPath(pathname);
   const { effectiveRoomId, roomContextReady } =
-    useResolvedCurrentRoomId(planRoomIdFromUrl);
+    useResolvedCurrentRoomId(roomIdFromUrl);
 
   return {
     roomId: effectiveRoomId,

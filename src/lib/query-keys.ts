@@ -131,3 +131,7 @@ export const scheduleItemRouteQueryKey = (
     segmentSourceItemId,
     travelMode,
   ] as const;
+
+/** Private packing data is scoped to both the explicit room and session principal. */
+export const packingQueryKey = (roomId: string, userId: number) =>
+  ['packing', roomId, userId] as const;

@@ -27,7 +27,7 @@ export function MobileMainTabs() {
   const tabs = [
     { label: "일정", href: buildMobilePlanPanelHref(pathname, "schedule"), icon: tabIcons.schedule, active: isPlan && currentPanel !== "chat" },
     { label: "북마크", href: "/bookmark", icon: tabIcons.bookmark, active: pathname === "/bookmark" || pathname.startsWith("/bookmark/") },
-    { label: "여행 도구", href: "/cost", icon: tabIcons.tools, active: pathname === "/cost" || pathname.startsWith("/cost/") },
+    { label: "여행 도구", href: "/cost", icon: tabIcons.tools, active: pathname === "/cost" || pathname.startsWith("/cost/") || pathname.startsWith("/packing/") },
     { label: "채팅", href: buildMobilePlanPanelHref(pathname, "chat"), icon: tabIcons.chat, active: isPlan && currentPanel === "chat" },
   ];
   return (

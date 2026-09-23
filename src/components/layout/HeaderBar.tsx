@@ -12,6 +12,7 @@ import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
 import { FEEDBACK_FORM_URL } from "@/lib/contact";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 import { buildMobilePlanPanelHref, type MobilePlanPanel } from "@/lib/mobile-view";
+import { isPackingPath } from "@/lib/room-context-path";
 import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
@@ -59,6 +60,7 @@ const HeaderBar = ({
   const menuOpen = menuState.path === pathname && menuState.open;
   const closeMenu = () => setMenuState({ path: pathname, open: false });
   const isPlanRoute = pathname === "/plan" || Boolean(pathname?.startsWith("/plan/"));
+  const showMapShortcut = isPlanRoute || pathname === "/bookmark" || pathname === "/cost" || isPackingPath(pathname ?? "");
   const { dismiss: dismissFeedbackPrompt } = useSessionPromptVisible(FEEDBACK_FORM_CLICKED_KEY);
   const { roomId } = useCurrentRoomId();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -141,7 +143,7 @@ const HeaderBar = ({
             {mobileTitle}
           </div>
           {!mobileBackHref ? <div className="flex shrink-0 items-center">
-            {isPlanRoute ? <Link href={mapHref} aria-label={isMapPanel ? "일정 보기" : "지도 보기"} className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
+            {showMapShortcut ? <Link href={mapHref} aria-label={isMapPanel ? "일정 보기" : "지도 보기"} className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden className="block size-6 bg-icon" style={{ mask: `url('${isMapPanel ? mobileIcon.calendar : mobileIcon.map}') center / contain no-repeat` }} />
             </Link> : null}
             <div ref={menuRef} className="relative">
