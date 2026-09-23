@@ -23,6 +23,24 @@ it('renders only authoritative data and first-only expansion without fabricated 
 it('does not show a false empty list while loading', async () => { state.data = null; state.status = 'loading'; await mount(); expect(JSON.stringify(renderer.toJSON())).toContain('불러오는 중'); expect(renderer.root.findAllByType('input')).toHaveLength(0); });
 it('keeps drafts editable while writes are blocked, and preserves failed drafts', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'약'}})); state.status = 'writing'; await act(async () => renderer.update(<PackingPage />)); expect(input('새 준비물 이름').props.disabled).toBeUndefined(); expect(button('추가').props.disabled).toBe(true); state.status='ready'; coordinator.execute.mockResolvedValue({kind:'error'}); await act(async () => renderer.update(<PackingPage />)); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(input('새 준비물 이름').props.value).toBe('약'); });
 it('sends desired checkbox value with stable ID and delegates deletion', async () => { await mount(); await act(async () => renderer.root.findByProps({type:'checkbox'}).props.onChange({target:{checked:true}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:11,checked:true}); await act(async () => button('준비물 삭제: 여권').props.onClick({currentTarget:document.createElement('button')})); expect(coordinator.prepareDelete).toHaveBeenCalledWith('item',11); });
+it('renders the supplied gray empty square and blue checked square for packing items', async () => {
+  const square = 'M3 5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5Z';
+  await mount();
+  const checkbox = () => renderer.root.findByProps({type:'checkbox'});
+  const icon = () => checkbox().parent!.findByType('svg');
+  expect(checkbox().props.checked).toBe(false);
+  expect(icon().props).toMatchObject({width:24,height:24,viewBox:'0 0 24 24',fill:'none','aria-hidden':'true'});
+  expect(icon().findAllByType('path').map(path => path.props)).toEqual([
+    expect.objectContaining({d:square,stroke:'#D9DBE2',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'}),
+  ]);
+  state.data!.parts[0].items[0] = {...item,checked:true};
+  await act(async () => renderer.update(<PackingPage />));
+  expect(checkbox().props.checked).toBe(true);
+  expect(icon().findAllByType('path').map(path => path.props)).toEqual([
+    expect.objectContaining({d:square,stroke:'#0183FF',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'}),
+    expect.objectContaining({d:'M9 12L11 14L15 10',stroke:'#0183FF',strokeWidth:2,strokeLinecap:'round',strokeLinejoin:'round'}),
+  ]);
+});
 it('keeps expansion after refetch and does not auto-open after first deletion', async () => { await mount(); state.data = {...data,parts:[data.parts[1]]}; await act(async () => renderer.update(<PackingPage />)); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(0); });
 it('clears drafts on scope change', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'private'}})); mocks.context = {state,coordinator,scopeKey:'room:other'}; await act(async () => renderer.update(<PackingPage />)); expect(renderer.root.findAllByProps({'aria-label':'새 준비물 이름'})).toHaveLength(0); });
 it('shows a larger undo toast with the supplied arrow and retains the undo action', async () => {

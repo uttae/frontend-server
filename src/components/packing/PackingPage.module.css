@@ -36,14 +36,16 @@
 .addItem { flex-shrink: 0; width: 68px; min-height: 28px; font-size: 14px; line-height: 20px; }
 .iconButton { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 28px; color: var(--color-icon-subtle); border-radius: 4px; cursor: pointer; }
 .iconButton:hover { color: var(--color-primary-default); background: var(--color-fill-default); }
-.iconButton:disabled, .checkbox:disabled { cursor: not-allowed; opacity: 0.4; }
-.page button:focus-visible, .checkbox:focus-visible { outline: 2px solid var(--color-primary-default); outline-offset: 2px; }
+.iconButton:disabled { cursor: not-allowed; opacity: 0.4; }
+.page button:focus-visible, .checkboxInput:focus-visible + svg { outline: 2px solid var(--color-primary-default); outline-offset: 2px; }
 .collapse[aria-expanded="true"] svg { transform: rotate(180deg); }
 .body[data-expanded="false"] { display: none; }
 .itemRow { position: relative; display: flex; align-items: center; min-width: 0; height: 44px; gap: 8px; border-bottom: 1px solid var(--color-border-subtle); }
-.checkbox { appearance: none; position: relative; width: 18px; height: 18px; margin: 0 10px 0 0; flex-shrink: 0; border: 1px solid var(--color-icon-subtle); border-radius: 0; cursor: pointer; }
-.checkbox:checked { border-color: transparent; }
-.checkbox:checked::after { content: ''; position: absolute; left: 5px; top: 0; width: 7px; height: 14px; border: solid var(--color-primary-default); border-width: 0 1.5px 1.5px 0; transform: rotate(40deg); }
+.checkbox { position: relative; display: inline-flex; width: 24px; height: 24px; margin: 0 4px 0 0; flex-shrink: 0; }
+.checkboxInput { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.checkboxInput:disabled { cursor: not-allowed; }
+.checkboxInput:disabled + svg { opacity: 0.4; }
+.checkbox svg { pointer-events: none; }
 .itemName { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; }
 .itemRename { position: absolute; right: 88px; background: var(--color-background-default); opacity: 0; pointer-events: none; }
 .itemRow:hover .itemRename, .itemRow:focus-within .itemRename { opacity: 1; pointer-events: auto; }

@@ -85,7 +85,13 @@ function Item({item,coordinator,ready,prepareDelete}: {item:PackingItem;coordina
   }
   return <li className={styles.item}>
     <div className={styles.itemRow}>
-      <input id={checkedId} type="checkbox" checked={item.checked} disabled={!ready} aria-label={`${item.name} 준비 완료`} className={styles.checkbox} onChange={e => void coordinator.execute({type:"checkItem",id:item.id,checked:e.target.checked})} />
+      <span className={styles.checkbox}>
+        <input id={checkedId} type="checkbox" checked={item.checked} disabled={!ready} aria-label={`${item.name} 준비 완료`} className={styles.checkboxInput} onChange={e => void coordinator.execute({type:"checkItem",id:item.id,checked:e.target.checked})} />
+        <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M3 5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5Z" stroke={item.checked ? "#0183FF" : "#D9DBE2"} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          {item.checked && <path d="M9 12L11 14L15 10" stroke="#0183FF" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />}
+        </svg>
+      </span>
       <div className={styles.itemName} title={item.name}>{linked(item.name)}</div>
       <button type="button" className={`${styles.iconButton} ${styles.itemRename}`} aria-label={`준비물 이름 수정: ${item.name}`} title="준비물 이름 수정" onClick={() => setEditor("name")}><Pencil size={14} aria-hidden="true" /></button>
       <button ref={memoTrigger} type="button" className={styles.memoButton} aria-label={`${item.memo ? "메모" : "메모 추가"}: ${item.name}`} onClick={() => setEditor("memo")}>{item.memo ? "메모" : "+ 메모"}</button>
