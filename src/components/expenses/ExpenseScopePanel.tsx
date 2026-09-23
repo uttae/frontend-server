@@ -82,7 +82,7 @@ export function ExpenseScopePanel({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
           <p className="text-body-s-regular text-dark-gray">총 비용 · {scoped.length}건</p>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-title-m mobile:text-title-s font-bold tabular-nums">
             {totals.length ? totals.map(({ currency, amount }) => (
@@ -111,7 +111,7 @@ export function ExpenseScopePanel({
               <button type="button" onClick={onRetry} className="text-primary-strong underline">다시 시도</button>
             </div>
           ) : scoped.length ? (
-            <ul className="mt-2 divide-y divide-gray-border">
+            <ul className="mt-2 min-h-0 overflow-y-auto overscroll-contain divide-y divide-gray-border [scrollbar-width:thin]">
               {scoped.map((expense) => (
                 <li key={expense.id}>
                   <button
