@@ -11,9 +11,11 @@ import {
 } from "@/lib/expenses/expense-scope";
 
 import { formatExpenseAmount } from "./ExpenseViews";
+import { ExpensePlaceLabel } from "./ExpensePlaceLabel";
 
 export function ExpenseScopePanel({
   scope,
+  roomId,
   expenses,
   isPending,
   isError,
@@ -25,6 +27,7 @@ export function ExpenseScopePanel({
   onClose,
 }: Readonly<{
   scope: ExpenseScope;
+  roomId: string;
   expenses: readonly Expense[];
   isPending: boolean;
   isError: boolean;
@@ -121,7 +124,16 @@ export function ExpenseScopePanel({
                     onClick={() => onEdit(expense)}
                     className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left text-body-s-regular transition-colors enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
                   >
-                    <span className="min-w-0 truncate">{expense.memo || expenseCategoryLabel(expense.category)}</span>
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span className="truncate">{expense.memo || expenseCategoryLabel(expense.category)}</span>
+                      {expense.scheduleId !== null && expense.scheduleItemId !== null ? (
+                        <ExpensePlaceLabel
+                          roomId={roomId}
+                          scheduleId={expense.scheduleId}
+                          itemId={expense.scheduleItemId}
+                        />
+                      ) : null}
+                    </span>
                     <span className="flex shrink-0 items-center gap-1 font-medium tabular-nums">
                       {formatExpenseAmount(expense.totalAmount)} {expense.currency}
                       {canManage ? <ChevronRight size={15} aria-hidden="true" /> : null}

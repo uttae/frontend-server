@@ -299,6 +299,7 @@ function ExpenseProviderLifetime({
       {!state.revoked && scope && (
         <ExpenseScopePanel
           scope={scope}
+          roomId={state.roomId}
           expenses={state.list.data ?? []}
           isPending={state.list.isPending}
           isError={state.list.isError}

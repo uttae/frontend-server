@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { scheduleItemsQueryKey } from "@/lib/query-keys";
 beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const stomp = vi.hoisted(() => ({
   connected: true,
@@ -572,6 +573,7 @@ vi.mock("@/lib/rooms", () => ({ validateRoomAccess: async () => "ok" }));
 import { MainRoomGate } from "@/components/layout/MainRoomGate";
 import { ExpenseEntryButton } from "./ExpenseProvider";
 import { ExpenseScopePanel } from "./ExpenseScopePanel";
+import { ExpensePlaceLabel } from "./ExpensePlaceLabel";
 import { useSessionStore } from "@/stores/session-store";
 
 it("shares one room subscription across route children and resets it on selected-room changes", async () => {
@@ -722,12 +724,16 @@ it("opens a place cost list instead of editing only the latest linked expense", 
     { ...latest, id: 99, createdAt: "2026-09-15T02:00:00Z", updatedAt: "2026-09-17T02:00:00Z" },
     { ...latest, id: 100, scheduleItemId: 4, createdAt: "2026-09-18T02:00:00Z" },
   ]);
+  await act(async () => client.setQueryData(scheduleItemsQueryKey("r", 2), [{ itemId: 3, title: "경복궁" }]));
   const button = renderer.root.findByType("button");
   expect(button.children.join("")).toContain("비용 2건");
   expect(button.children.join("")).toContain("24,690 KRW");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
   expect(renderer.root.findAllByType("h2").some(heading => heading.children.join("") === "장소 비용")).toBe(true);
+  const panel = renderer.root.findByType(ExpenseScopePanel);
+  expect(panel.findAllByType(ExpensePlaceLabel)).toHaveLength(2);
+  expect(JSON.stringify(renderer.toJSON())).toContain("경복궁");
   const add = renderer.root.findByType(ExpenseScopePanel).findAllByType("button").find(b => b.children.join("").includes("비용 추가"))!;
   await act(async () => add.props.onClick());
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2, scheduleItemId: 3 });
