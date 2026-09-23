@@ -21,7 +21,7 @@ export function ExpenseBudgetSummary() {
   return (
     <div className="space-y-4">
       <div className="space-y-2 text-body-s-regular mobile:text-body-xs-regular">
-        <h3 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">여행 전체 지출</h3>
+        <h3 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">여행 전체 비용</h3>
         {krwSummary.isPending && (
           <output style={{ display: "block" }}>원화 참고 요약을 불러오는 중…</output>
         )}

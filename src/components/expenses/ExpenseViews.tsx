@@ -229,7 +229,7 @@ export function ExpenseList({
           className="mb-1 text-dark-gray"
           aria-hidden="true"
         />
-        <p className="font-semibold">아직 등록된 지출이 없어요.</p>
+        <p className="font-semibold">아직 등록된 비용이 없어요.</p>
         <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           여행 준비부터 오늘 쓴 비용까지 기록해 보세요.
         </p>
@@ -243,7 +243,7 @@ export function ExpenseList({
           {canManage && (
             <button
               type="button"
-              aria-label={`${e.memo || expenseCategoryLabel(e.category)} ${formatExpenseAmount(e.totalAmount)} ${e.currency} 지출 수정`}
+              aria-label={`${e.memo || expenseCategoryLabel(e.category)} ${formatExpenseAmount(e.totalAmount)} ${e.currency} 비용 수정`}
               aria-haspopup="dialog"
               disabled={busy}
               onClick={() => onEdit(e)}
@@ -311,8 +311,8 @@ export function ExpenseList({
                 <div className="absolute right-0 top-0 z-20">
                   <button
                     type="button"
-                    aria-label="지출 삭제"
-                    title="지출 삭제"
+                    aria-label="비용 삭제"
+                    title="비용 삭제"
                     disabled={busy}
                     onClick={() => onDelete(e)}
                     className="relative z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-dark-gray transition-colors hover:text-status-negative focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
@@ -365,7 +365,7 @@ function SettlementContent({ summary, members, memberStatus, currentUserId, scop
     return <output style={{ display: "block" }} className="py-4 text-body-s-regular mobile:text-body-xs-regular text-dark-gray">내 정산을 확인할 사용자 정보를 불러오는 중…</output>;
   }
   if (!summary.currencies.length) {
-    return <p className="py-6 text-center text-body-s-regular mobile:text-body-xs-regular text-dark-gray">정산할 지출이 없어요.</p>;
+    return <p className="py-6 text-center text-body-s-regular mobile:text-body-xs-regular text-dark-gray">정산할 비용이 없어요.</p>;
   }
   return summary.currencies.map((c) => {
     const transfers = scope === "mine" ? c.transfers.filter(t => t.fromUserId === currentUserId || t.toUserId === currentUserId) : c.transfers;
@@ -471,9 +471,9 @@ function ExpenseBarChart({ title, currency, rows }: Readonly<{
   const maximum = Math.max(0, ...values);
   const total = values.reduce((sum, value) => sum + value, 0);
   return (
-    <figure aria-label={`${currency} ${title} 지출 그래프`} className="min-w-0 rounded-2xl border border-gray-border p-4">
+    <figure aria-label={`${currency} ${title} 비용 그래프`} className="min-w-0 rounded-2xl border border-gray-border p-4">
       {!rows.length ? (
-        <p className="py-4 text-body-s-regular mobile:text-body-xs-regular text-dark-gray">표시할 지출이 없어요.</p>
+        <p className="py-4 text-body-s-regular mobile:text-body-xs-regular text-dark-gray">표시할 비용이 없어요.</p>
       ) : (
         <ul className="space-y-4">
           {rows.map((row, index) => {
@@ -509,7 +509,7 @@ export function ExpenseAnalysisView({ summary, schedules }: PeopleProps & { summ
   const [groupBy, setGroupBy] = useState<"category" | "day">("category");
   return (
     <div className="space-y-6">
-      <div className="flex gap-1 border-b border-gray-border" aria-label="지출 분석 기준">
+      <div className="flex gap-1 border-b border-gray-border" aria-label="비용 분석 기준">
         {([["category", "카테고리별"], ["day", "일차별"]] as const).map(([value, label]) => (
           <button
             key={value}
@@ -522,9 +522,9 @@ export function ExpenseAnalysisView({ summary, schedules }: PeopleProps & { summ
           </button>
         ))}
       </div>
-      {!summary.currencies.length && <p className="py-6 text-center text-body-s-regular mobile:text-body-xs-regular text-dark-gray">분석할 지출이 없어요.</p>}
+      {!summary.currencies.length && <p className="py-6 text-center text-body-s-regular mobile:text-body-xs-regular text-dark-gray">분석할 비용이 없어요.</p>}
       {summary.currencies.map(c => (
-        <section key={c.currency} aria-label={`${c.currency} 지출 분석`} className="space-y-3">
+        <section key={c.currency} aria-label={`${c.currency} 비용 분석`} className="space-y-3">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold">{c.currency}</h3>
             <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">합계 <span className="ml-1 text-body-l-emphasis mobile:text-body-m-emphasis font-bold tabular-nums text-text">{formatExpenseAmount(c.totalAmount)}</span> {c.currency}</p>

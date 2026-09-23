@@ -45,20 +45,21 @@ describe("wall-clock schedule times", () => {
   ])("calculates %s → %s as %i minutes", (start, end, minutes) => {
     expect(computeDurationMinutesFromRange(start, end)).toBe(minutes);
   });
-  it("displays missing, equal and next-day ends distinctly", () => {
+  it("displays card times in 24-hour format and marks next-day ends", () => {
     expect(formatScheduleStaySummary("", null)).toBe("");
     expect(formatScheduleStaySummary("09:00", null)).toBe("09:00");
     expect(formatScheduleStaySummary("23:00", "01:00")).toBe(
       "23:00 – 01:00 (+1일)",
     );
     expect(formatScheduleTimeRange("00:00", "00:00")).toBe(
-      "12:00 AM – 12:00 AM",
+      "00:00 – 00:00",
     );
     expect(formatScheduleTimeRange("23:00", "00:00")).toBe(
-      "11:00 PM – 12:00 AM (+1일)",
+      "23:00 – 00:00 (+1일)",
     );
     expect(formatScheduleTimeRange("00:00", "23:59")).toBe(
-      "12:00 AM – 11:59 PM",
+      "00:00 – 23:59",
     );
+    expect(formatScheduleTimeRange("13:05", null)).toBe("13:05");
   });
 });
