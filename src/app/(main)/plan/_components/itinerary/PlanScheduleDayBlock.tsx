@@ -62,7 +62,7 @@ export function PlanScheduleDayBlock({
           scheduleId={scheduleId}
           scopeLabel={title}
           scopeSubtitle={subtitle}
-          className="inline-flex min-h-10 max-w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray/85 transition-colors enabled:hover:bg-sky-50 enabled:hover:text-sky-600 focus-visible:outline-2 focus-visible:outline-primary"
+          className="inline-flex min-h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray/85 transition-colors enabled:hover:bg-sky-50 enabled:hover:text-sky-600 focus-visible:outline-2 focus-visible:outline-primary"
           icon={<ExpenseIcon className="size-4 shrink-0" />}
         />
       ) : undefined}
