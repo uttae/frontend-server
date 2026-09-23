@@ -39,22 +39,11 @@ export function formatScheduleStaySummary(
   return `${start} – ${end}${end < start ? " (+1일)" : ""}`;
 }
 
-function hmToTwelveHourWithPeriod(hm: string): string {
-  const [hour, minute] = hm.split(":");
-  const h = Number(hour);
-  return `${h % 12 || 12}:${minute} ${h >= 12 ? "PM" : "AM"}`;
-}
-
 export function formatScheduleTimeRange(
   startTime: string,
   endTime: string | null | undefined,
 ): string {
-  const start = normalizeStartTimeToHm(startTime);
-  const end = normalizeStartTimeToHm(endTime ?? "");
-  if (!start) return "";
-  const startLabel = hmToTwelveHourWithPeriod(start);
-  if (!end) return startLabel;
-  return `${startLabel} – ${hmToTwelveHourWithPeriod(end)}${end < start ? " (+1일)" : ""}`;
+  return formatScheduleStaySummary(startTime, endTime);
 }
 
 /**
