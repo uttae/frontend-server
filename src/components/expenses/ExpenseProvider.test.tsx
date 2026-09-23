@@ -724,7 +724,9 @@ it("opens a place cost list instead of editing only the latest linked expense", 
     { ...latest, id: 99, createdAt: "2026-09-15T02:00:00Z", updatedAt: "2026-09-17T02:00:00Z" },
     { ...latest, id: 100, scheduleItemId: 4, createdAt: "2026-09-18T02:00:00Z" },
   ]);
-  await act(async () => client.setQueryData(scheduleItemsQueryKey("r", 2), [{ itemId: 3, title: "경복궁" }]));
+  await act(async () => {
+    client.setQueryData(scheduleItemsQueryKey("r", 2), [{ itemId: 3, title: "경복궁" }]);
+  });
   const button = renderer.root.findByType("button");
   expect(button.children.join("")).toContain("비용 2건");
   expect(button.children.join("")).toContain("24,690 KRW");
