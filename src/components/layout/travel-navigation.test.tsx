@@ -76,13 +76,11 @@ it("shows labeled feedback and bug report links in the sidebar", async () => {
   expect(sidebar.querySelector('a[aria-label="피드백 설문"]')?.textContent).toContain("피드백");
   expect(sidebar.querySelector('a[aria-label="버그 제보"]')?.textContent).toContain("버그 제보");
 });
-it("mobile has five bottom destinations and retains the existing map/schedule URLs outside them", async () => {
+it("mobile uses the four Figma destinations, with travel tools opening expenses", async () => {
   state.mobile = true; await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "채팅", "멤버"]);
-  expect(items().map(x => x.getAttribute("href"))).toEqual(["/plan/room", "/search", "/bookmark", "/plan/room?view=chat", "/member-settings"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "북마크", "여행 도구", "채팅"]);
+  expect(items().map(x => x.getAttribute("href"))).toEqual(["/plan/room", "/bookmark", "/cost", "/plan/room?view=chat"]);
   expect(host.querySelector("article")!.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(nav().className).toContain("safe-area-inset-bottom");
-  expect(host.querySelector('a[href="/plan/room?view=map"]')).not.toBeNull();
   state.query = "view=map"; await render();
   expect(active()).toEqual([items()[0]]);
   expect(host.querySelector("article")).toBeNull();
@@ -100,12 +98,20 @@ it("allows mobile search without widening blocked settings/contact routes", () =
 
 it.each([false, true])("keeps one selected destination while visiting all route tabs (mobile=%s)", async mobile => {
   state.mobile = mobile;
-  for (const [pathname, index] of [["/plan/room", 0], ["/search", 1], ["/bookmark/folder", 2], ["/member-settings", 4]] as const) {
+  for (const [pathname, desktopIndex, mobileIndex] of [["/plan/room", 0, 0], ["/bookmark/folder", 2, 1], ["/cost", 3, 2]] as const) {
     state.pathname = pathname; await render();
-    expect(active()).toEqual([items()[!mobile && index === 4 ? 5 : index]]);
+    expect(active()).toEqual([items()[mobile ? mobileIndex : desktopIndex]]);
     expect(host.querySelector("[data-chat]")).toBeNull();
     expect(host.querySelector("article")).not.toBeNull();
   }
+});
+
+it.each(["/search", "/member-settings"])("keeps %s available outside the mobile tabs", async pathname => {
+  state.mobile = true;
+  state.pathname = pathname;
+  await render();
+  expect(active()).toHaveLength(0);
+  expect(items()).toHaveLength(4);
 });
 
 it("cost follows bookmarks, selects alone and closes chat", async () => {
