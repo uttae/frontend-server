@@ -36,7 +36,7 @@ export type PlanDaySectionProps = {
    */
   itineraryScheduleId?: number | null;
   children?: ReactNode;
-  footerAction?: ReactNode;
+  summaryAction?: ReactNode;
   /**
    * 일차(schedule) 단위 삭제 — schedule-item(장소) 삭제와 구분됩니다.
    * 지정 시 헤더 우측에 더보기 메뉴가 표시됩니다.
@@ -67,7 +67,7 @@ export function PlanDaySection({
   defaultExpanded = true,
   itineraryScheduleId,
   children,
-  footerAction,
+  summaryAction,
   onRequestAddExpense,
   isAddExpenseDisabled = false,
   onRequestDeleteSchedule,
@@ -313,29 +313,12 @@ export function PlanDaySection({
             </div>
           ) : null}
         </div>
-        <div
-          id={`${panelId}-panel`}
-          role="region"
-          aria-labelledby={`${panelId}-trigger`}
-          hidden={!expanded}
-        >
-          <div
-            className={cn(
-              cn(MAIN_CARD_INNER_PADDING_X_CLASS, "pb-4"),
-              expanded
-                ? "border-t border-dashed border-gray-border pt-3"
-                : "pt-1",
-            )}
-          >
-            {children}
-          </div>
-        </div>
-        {footerAction || trackedSid !== undefined ? (
+        {summaryAction || trackedSid !== undefined ? (
           <div className={cn(
-            "flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 py-2",
+            "flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-border py-2",
             MAIN_CARD_INNER_PADDING_X_CLASS,
           )}>
-            <div className="min-w-0 flex-1">{footerAction}</div>
+            <div className="min-w-0 flex-1">{summaryAction}</div>
             {trackedSid !== undefined ? (
               <button
                 type="button"
@@ -361,6 +344,25 @@ export function PlanDaySection({
             ) : null}
           </div>
         ) : null}
+        <div
+          id={`${panelId}-panel`}
+          role="region"
+          aria-labelledby={`${panelId}-trigger`}
+          hidden={!expanded}
+        >
+          <div
+            className={cn(
+              cn(MAIN_CARD_INNER_PADDING_X_CLASS, "pb-4"),
+              expanded
+                ? summaryAction || trackedSid !== undefined
+                  ? "pt-3"
+                  : "border-t border-dashed border-gray-border pt-3"
+                : "pt-1",
+            )}
+          >
+            {children}
+          </div>
+        </div>
       </div>
     </section>
   );

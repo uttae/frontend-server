@@ -30,18 +30,19 @@ describe("PlanDaySection", () => {
     expect(html).not.toContain("absolute left-1/2");
   });
 
-  it("keeps the cost summary and route switch visible in the day footer", () => {
+  it("shows the cost summary and route switch below the day heading, before places", () => {
     const html = renderToStaticMarkup(createElement(
       PlanDaySection,
       {
         title: "1일차",
         itineraryScheduleId: 10,
-        footerAction: createElement("button", null, "비용 3건 · 128,000 KRW"),
+        summaryAction: createElement("button", null, "비용 3건 · 128,000 KRW"),
       },
-      createElement("div", null, "일정"),
+      createElement("div", null, "장소 카드"),
     ));
 
     expect(html).toContain("비용 3건 · 128,000 KRW");
+    expect(html.indexOf("비용 3건 · 128,000 KRW")).toBeLessThan(html.indexOf("장소 카드"));
     expect(html).toMatch(/role="switch"[^>]*aria-checked="true"/);
     expect(html).toContain("지도에 경로 표시");
   });

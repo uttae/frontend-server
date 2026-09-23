@@ -57,7 +57,7 @@ export function PlanScheduleDayBlock({
       title={title}
       subtitle={subtitle}
       itineraryScheduleId={scheduleId}
-      footerAction={expenses.canManage ? (
+      summaryAction={expenses.canManage ? (
         <ExpenseEntryButton
           scheduleId={scheduleId}
           scopeLabel={title}

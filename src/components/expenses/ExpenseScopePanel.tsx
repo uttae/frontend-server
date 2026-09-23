@@ -60,10 +60,10 @@ export function ExpenseScopePanel({
         event.preventDefault();
         onClose();
       }}
-      className="fixed inset-y-0 right-0 m-0 ml-auto h-dvh max-h-dvh w-full max-w-none overflow-hidden border-0 bg-white p-0 text-text shadow-2xl backdrop:bg-black/40 sm:inset-y-4 sm:right-4 sm:h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-2rem)] sm:max-w-md sm:rounded-2xl sm:border sm:border-gray-border"
+      className="fixed inset-auto left-1/2 top-1/2 m-0 max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-gray-border bg-white p-0 text-text shadow-2xl backdrop:bg-black/40"
     >
-      <div className="flex h-full min-h-0 flex-col">
-        <header className="flex items-start justify-between gap-3 border-b border-gray-border px-5 py-4">
+      <div className="flex max-h-[85dvh] min-h-0 flex-col">
+        <header className="flex items-start justify-between gap-3 border-b border-gray-border px-5 py-3">
           <div className="min-w-0">
             <h2 ref={title} id={titleId} tabIndex={-1} className="text-title-m mobile:text-title-s font-bold focus:outline-none">
               {scope.label} 비용
@@ -82,7 +82,7 @@ export function ExpenseScopePanel({
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           <p className="text-body-s-regular text-dark-gray">총 비용 · {scoped.length}건</p>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-title-m mobile:text-title-s font-bold tabular-nums">
             {totals.length ? totals.map(({ currency, amount }) => (
@@ -95,14 +95,14 @@ export function ExpenseScopePanel({
               type="button"
               disabled={busy}
               onClick={onAdd}
-              className="mt-5 flex min-h-11 w-full cursor-pointer items-center justify-center gap-1 rounded-lg bg-primary px-4 py-2 text-label-m-emphasis font-semibold text-white transition-colors enabled:hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-4 flex min-h-10 w-full cursor-pointer items-center justify-center gap-1 rounded-lg bg-primary px-4 py-2 text-label-m-emphasis font-semibold text-white transition-colors enabled:hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Plus size={16} aria-hidden="true" />
               비용 추가
             </button>
           ) : null}
 
-          <h3 className="mt-6 text-body-s-emphasis font-semibold text-dark-gray">내역</h3>
+          <h3 className="mt-4 text-body-s-emphasis font-semibold text-dark-gray">내역</h3>
           {isPending && !scoped.length ? (
             <p role="status" className="py-5 text-body-s-regular text-dark-gray">비용을 불러오는 중…</p>
           ) : isError && !scoped.length ? (
@@ -119,7 +119,7 @@ export function ExpenseScopePanel({
                     disabled={!canManage || busy}
                     aria-label={`${expense.memo || expenseCategoryLabel(expense.category)} ${formatExpenseAmount(expense.totalAmount)} ${expense.currency} 비용 수정`}
                     onClick={() => onEdit(expense)}
-                    className="flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 py-3 text-left text-body-s-regular transition-colors enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
+                    className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left text-body-s-regular transition-colors enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
                   >
                     <span className="min-w-0 truncate">{expense.memo || expenseCategoryLabel(expense.category)}</span>
                     <span className="flex shrink-0 items-center gap-1 font-medium tabular-nums">
