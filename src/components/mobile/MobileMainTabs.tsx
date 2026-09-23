@@ -31,7 +31,7 @@ export function MobileMainTabs() {
     { label: "채팅", href: buildMobilePlanPanelHref(pathname, "chat"), icon: tabIcons.chat, active: isPlan && currentPanel === "chat" },
   ];
   return (
-    <nav aria-label="모바일 주요 메뉴" data-mobile-main-tabs className="shrink-0 bg-fill-subtle shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+    <nav aria-label="모바일 주요 메뉴" data-mobile-main-tabs className="shrink-0 bg-fill-subtle pb-[env(safe-area-inset-bottom)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
       <div className="grid grid-cols-4 px-3">
         {tabs.map(({ label, href, icon, active }) => (
           <Link key={label} href={href} aria-label={label} aria-current={active ? "page" : undefined}
@@ -41,9 +41,6 @@ export function MobileMainTabs() {
             {label === "채팅" ? <SidebarChatUnreadBadge /> : null}
           </Link>
         ))}
-      </div>
-      <div aria-hidden className="relative h-[max(34px,env(safe-area-inset-bottom))]">
-        <span className="absolute bottom-2 left-1/2 h-[5px] w-36 -translate-x-1/2 rounded-full bg-border-default" />
       </div>
     </nav>
   );
