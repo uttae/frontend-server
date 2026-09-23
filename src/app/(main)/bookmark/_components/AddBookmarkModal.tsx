@@ -91,12 +91,12 @@ export function AddBookmarkModal({
       >
         <h2
           id="bookmark-modal-title"
-          className="text-[22px] font-semibold text-neutral-900"
+          className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
         >
           {mode === "edit" ? "북마크 편집" : "새 북마크 생성"}
         </h2>
         {formError ? (
-          <p className="mt-3 text-[17px] text-primary" role="alert">
+          <p className="mt-3 text-body-m-regular mobile:text-body-s-regular text-primary" role="alert">
             {formError}
           </p>
         ) : null}
@@ -106,13 +106,13 @@ export function AddBookmarkModal({
             <div className="mb-1.5 flex items-baseline justify-between gap-2">
               <label
                 htmlFor="bookmark-title"
-                className="block text-[17px] font-medium text-neutral-900"
+                className="block text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900"
               >
                 제목
               </label>
               <span
                 id="bookmark-title-counter"
-                className="shrink-0 text-[14px] tabular-nums text-dark-gray"
+                className="shrink-0 text-body-s-regular mobile:text-body-xs-regular tabular-nums text-dark-gray"
                 aria-live="polite"
               >
                 {title.length}/{TITLE_MAX_LENGTH}
@@ -126,12 +126,12 @@ export function AddBookmarkModal({
               maxLength={TITLE_MAX_LENGTH}
               placeholder={untitledNameHint ?? UNTITLED_BOOKMARK_CATEGORY_LABEL}
               aria-describedby="bookmark-title-counter"
-              className="w-full rounded-xl border border-gray-border px-3 py-2.5 text-[17px] outline-none ring-primary/30 focus:border-primary focus:ring-2"
+              className="w-full rounded-xl border border-gray-border px-3 py-2.5 text-body-m-regular outline-none ring-primary/30 focus:border-primary focus:ring-2"
             />
           </div>
 
           <div>
-            <span className="mb-2 block text-[17px] font-medium text-neutral-900">
+            <span className="mb-2 block text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-neutral-900">
               색상
             </span>
             <div className="flex flex-wrap gap-2">
@@ -155,7 +155,7 @@ export function AddBookmarkModal({
             <div className="mt-3 flex items-center gap-3">
               <label
                 htmlFor="bookmark-color-custom"
-                className="text-[17px] text-dark-gray"
+                className="text-label-l-regular mobile:text-label-m-regular text-dark-gray"
               >
                 직접 선택
               </label>
@@ -166,7 +166,7 @@ export function AddBookmarkModal({
                 onChange={(e) => setColor(e.target.value)}
                 className="h-10 w-14 cursor-pointer rounded-md border border-gray-border bg-white p-0.5"
               />
-              <span className="font-mono text-[14px] text-dark-gray">{color}</span>
+              <span className="font-mono text-body-s-regular mobile:text-body-xs-regular text-dark-gray">{color}</span>
             </div>
           </div>
 
@@ -174,14 +174,14 @@ export function AddBookmarkModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 cursor-pointer rounded-xl border border-gray-border py-2.5 text-[17px] font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
+              className="flex-1 cursor-pointer rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
             >
               취소
             </button>
             <button
               type="submit"
               disabled={busy}
-              className="flex-1 cursor-pointer rounded-xl bg-primary py-2.5 text-[17px] font-semibold text-white shadow-md transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex-1 cursor-pointer rounded-xl bg-primary py-2.5 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white shadow-md transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {mode === "edit" ? "저장" : "추가"}
             </button>

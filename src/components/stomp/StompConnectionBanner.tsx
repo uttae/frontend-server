@@ -30,7 +30,7 @@ export function StompConnectionBanner({ onRetry }: StompConnectionBannerProps) {
     >
       <div className="mx-auto flex max-w-screen-xl items-center gap-2 px-4 py-2.5 text-primary">
         <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
-        <p className="min-w-0 flex-1 text-[14px] font-medium leading-snug sm:text-[17px]">
+        <p className="min-w-0 flex-1 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium leading-snug sm:text-body-m-emphasis">
           {connectionIssue}
         </p>
         <button
@@ -38,7 +38,7 @@ export function StompConnectionBanner({ onRetry }: StompConnectionBannerProps) {
           onClick={onRetry}
           className={cn(
             "shrink-0 rounded-md border border-primary/30 bg-white/80 px-2.5 py-1",
-            "text-[14px] font-semibold text-primary transition-colors",
+            "text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary transition-colors",
             "hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
           )}
         >

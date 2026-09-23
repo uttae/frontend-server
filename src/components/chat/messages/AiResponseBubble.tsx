@@ -89,8 +89,8 @@ export function AiResponseBubble({
             className={cn(
               "min-w-0 flex-1 truncate font-medium",
               isMinimized
-                ? "text-[11px] leading-snug"
-                : "text-xs leading-snug",
+                ? "text-caption-s-regular leading-snug"
+                : "text-body-xs-regular leading-snug",
             )}
           >
             {reply.quotePreview}

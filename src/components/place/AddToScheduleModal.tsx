@@ -2,6 +2,7 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
 import { useCreateScheduleItem, useRoomSchedules } from "@/hooks/useRooms";
@@ -87,13 +88,18 @@ export function AddToScheduleModal({
     }
   }
 
-  return (
+  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
+  return createPortal(
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
       role="presentation"
       onMouseDown={(ev) => {
+        ev.stopPropagation();
         if (ev.target === ev.currentTarget) onClose();
       }}
+      onClick={(ev) => ev.stopPropagation()}
+      onPointerDown={(ev) => ev.stopPropagation()}
+      onTouchStart={(ev) => ev.stopPropagation()}
     >
       <div
         className="flex max-h-[min(80vh,520px)] w-full max-w-sm flex-col rounded-2xl border border-gray-border bg-white shadow-lg"
@@ -105,29 +111,29 @@ export function AddToScheduleModal({
         <div className="shrink-0 border-b border-gray-border px-5 py-4">
           <h2
             id="add-schedule-modal-title"
-            className="text-[22px] font-semibold text-neutral-900"
+            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
           >
             일정에 추가
           </h2>
-          <p className="mt-1 text-[17px] text-dark-gray">
+          <p className="mt-1 text-body-m-regular mobile:text-body-s-regular text-dark-gray">
             담을 여행 일차를 선택하세요.
           </p>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {!rid ? (
-            <p className="text-center text-[17px] text-dark-gray">
+            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
               참여 중인 방이 없어요. 방에 입장한 뒤 다시 시도해 주세요.
             </p>
           ) : null}
 
           {rid && schedulesLoading ? (
-            <p className="text-center text-[17px] text-dark-gray">불러오는 중…</p>
+            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">불러오는 중…</p>
           ) : null}
 
           {rid && schedulesError ? (
             <div className="space-y-2 text-center">
-              <p className="text-[17px] text-primary">
+              <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
                 {schedulesErr instanceof Error
                   ? schedulesErr.message
                   : "일정을 불러오지 못했습니다."}
@@ -135,7 +141,7 @@ export function AddToScheduleModal({
               <button
                 type="button"
                 onClick={() => refetch()}
-                className="text-[17px] font-medium text-neutral-900 underline"
+                className="text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
               >
                 다시 시도
               </button>
@@ -143,7 +149,7 @@ export function AddToScheduleModal({
           ) : null}
 
           {rid && !schedulesLoading && !schedulesError && sorted.length === 0 ? (
-            <p className="text-center text-[17px] text-dark-gray">
+            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
               아직 생성된 일정이 없어요. 계획 탭에서 여행 기간을 적용한 뒤
               다시 시도해 주세요.
             </p>
@@ -159,10 +165,10 @@ export function AddToScheduleModal({
                     onClick={() => void pickDay(s.scheduleId)}
                     className="flex w-full flex-col gap-0.5 rounded-xl border border-gray-border px-3 py-3 text-left transition-colors hover:bg-bubble-gray disabled:opacity-60"
                   >
-                    <span className="text-[17px] font-medium text-neutral-900">
+                    <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-neutral-900">
                       {`${i + 1}일차`}
                     </span>
-                    <span className="text-[14px] text-dark-gray">
+                    <span className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
                       {formatKoreanDateLabel(parseLocalYmd(s.date))}
                     </span>
                   </button>
@@ -176,12 +182,13 @@ export function AddToScheduleModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full rounded-xl border border-gray-border py-2.5 text-[17px] font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
+            className="w-full rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
           >
             닫기
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

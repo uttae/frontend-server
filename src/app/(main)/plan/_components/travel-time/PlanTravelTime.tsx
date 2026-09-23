@@ -17,7 +17,7 @@ import {
   canonicalScheduleTravelMode,
   type ScheduleTravelModeValue,
 } from "@/lib/plan/scheduleTravelMode";
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { PLAN_ROUTE_CARD_WIDTH_PX } from "@/lib/layout-tokens";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/maps";
 import { cn } from "@/lib/utils";
@@ -72,7 +72,7 @@ export function PlanTravelTime({
   className,
   contentOnly = false,
 }: PlanTravelTimeProps) {
-  const { isReadOnly } = usePlanMobileReadOnly();
+  const { isMobileDevice } = useMobileView();
   const [menuOpen, setMenuOpen] = useState(false);
   const [directionsHidden, setDirectionsHidden] = useState(false);
 
@@ -307,11 +307,11 @@ export function PlanTravelTime({
       className={cn(
         "flex shrink-0 flex-col justify-center",
         !contentOnly && "py-0.5",
-        isReadOnly && "min-w-0 max-w-full flex-1",
+        isMobileDevice && "min-w-0 max-w-full flex-1",
         contentOnly && "w-full max-w-full",
       )}
       style={
-        isReadOnly || contentOnly ?
+        isMobileDevice || contentOnly ?
           undefined
         : { width: PLAN_ROUTE_CARD_WIDTH_PX }
       }

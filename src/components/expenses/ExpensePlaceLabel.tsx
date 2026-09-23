@@ -24,7 +24,7 @@ export function ExpensePlaceLabel({ roomId, scheduleId, itemId }: Readonly<{
   // Subscribe to existing cache only; no query observer or fetch is started here.
   const label = useSyncExternalStore(subscribe, readName, () => "확인되지 않음");
   return (
-    <span title={label} className="inline-flex min-w-0 max-w-full items-center gap-1 text-xs font-normal text-dark-gray">
+    <span title={label} className="inline-flex min-w-0 max-w-full items-center gap-1 text-body-xs-regular font-normal text-dark-gray">
       <MapPin size={14} className="shrink-0" aria-hidden="true" />
       <span className="truncate">{label}</span>
     </span>

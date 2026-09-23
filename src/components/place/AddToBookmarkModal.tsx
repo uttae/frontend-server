@@ -2,6 +2,8 @@
 
 import { Check, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
+import { toast } from "sonner";
 
 import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
@@ -136,6 +138,13 @@ export function AddToBookmarkModal({
       {
         onSuccess: (result) => {
           notifyResult(result);
+          if (result.firstHardError) {
+            toast.error("북마크에 추가하지 못했어요.");
+          } else if (result.added > 0) {
+            toast.success("북마크에 추가했어요.");
+          } else if (result.skippedDuplicate > 0) {
+            toast.error("이미 선택한 북마크에 추가된 장소예요.");
+          }
           if (result.added > 0) {
             trackAnalyticsEvent(AnalyticsEvents.addToBookmark, {
               place_category: placeCategory,
@@ -146,6 +155,9 @@ export function AddToBookmarkModal({
           if (!result.firstHardError && result.skippedDuplicate === 0) {
             onClose();
           }
+        },
+        onError: () => {
+          toast.error("북마크에 추가하지 못했어요.");
         },
       },
     );
@@ -191,40 +203,34 @@ export function AddToBookmarkModal({
     return null;
   }
 
-  return (
+  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
+  return createPortal(
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/40 md:justify-center md:px-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
       onMouseDown={(ev) => {
+        ev.stopPropagation();
         if (ev.target === ev.currentTarget) onClose();
       }}
+      onClick={(ev) => ev.stopPropagation()}
+      onPointerDown={(ev) => ev.stopPropagation()}
+      onTouchStart={(ev) => ev.stopPropagation()}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-bookmark-modal-title"
         onMouseDown={(e) => e.stopPropagation()}
-        className={cn(
-          "flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden",
-          "border-t border-gray-border bg-white shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.12)] md:rounded-2xl md:border md:shadow-lg",
-          "rounded-t-[1.35rem]",
-          "mx-auto md:max-w-sm",
-          "pb-[max(env(safe-area-inset-bottom,0px),12px)]",
-        )}
+        className="flex max-h-[min(85vh,560px)] w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-border bg-white pb-3 shadow-lg"
       >
-        <div
-          aria-hidden
-          className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-black/15 md:hidden"
-        />
-
-        <div className="shrink-0 px-5 pb-2 pt-3">
+        <div className="shrink-0 px-5 pb-2 pt-4">
           <h2
             id="add-bookmark-modal-title"
-            className="text-[22px] font-semibold text-neutral-900"
+            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
           >
             북마크에 추가
           </h2>
-          <p className="mt-1 text-[14px] leading-relaxed text-dark-gray break-keep text-pretty">
+          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
             북마크를 선택한 뒤 추가해 주세요.
           </p>
         </div>
@@ -235,7 +241,7 @@ export function AddToBookmarkModal({
             disabled={isCreatingCategory || isAddingBookmarks}
             onClick={openCreateFolderModal}
             className={cn(
-              "flex w-full items-center gap-2.5 border-b border-gray-border px-5 py-3.5 text-left text-[17px] font-medium text-neutral-900 transition-colors hover:bg-bubble-gray",
+              "flex w-full items-center gap-2.5 border-b border-gray-border px-5 py-3.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray",
               "disabled:opacity-55",
             )}
           >
@@ -244,14 +250,14 @@ export function AddToBookmarkModal({
           </button>
 
           {categoriesLoading && (
-            <p className="px-5 py-6 text-center text-[17px] text-dark-gray">
+            <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
               불러오는 중…
             </p>
           )}
 
           {categoriesError && (
             <div className="space-y-2 px-5 py-6 text-center">
-              <p className="text-[17px] text-primary">
+              <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
                 {categoriesErr instanceof Error
                   ? categoriesErr.message
                   : "카테고리를 불러오지 못했습니다."}
@@ -259,7 +265,7 @@ export function AddToBookmarkModal({
               <button
                 type="button"
                 onClick={() => refetch()}
-                className="text-[17px] font-medium text-neutral-900 underline"
+                className="text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
               >
                 다시 시도
               </button>
@@ -268,7 +274,7 @@ export function AddToBookmarkModal({
 
           {categories && categories.length === 0 && !categoriesLoading && (
             <div className="px-5 py-8 text-center">
-              <p className="text-[14px] leading-relaxed text-dark-gray break-keep text-pretty">
+              <p className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
                 아직 북마크가 없어요.
               </p>
             </div>
@@ -294,10 +300,10 @@ export function AddToBookmarkModal({
                       >
                         <FolderRibbonIcon color={c.colorCode} />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-lg font-medium text-neutral-900">
+                          <p className="truncate text-body-l-emphasis mobile:text-body-m-emphasis font-medium text-neutral-900">
                             {c.name}
                           </p>
-                          <p className="mt-0.5 text-[17px] text-dark-gray">
+                          <p className="mt-0.5 text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                             {c.placeCount ?? 0}개 장소
                           </p>
                         </div>
@@ -322,7 +328,7 @@ export function AddToBookmarkModal({
           {submitFeedback && (
             <p
               className={cn(
-                "border-t border-gray-border px-5 py-3 text-center text-[17px]",
+                "border-t border-gray-border px-5 py-3 text-center text-body-m-regular mobile:text-body-s-regular",
                 submitFeedback.variant === "error"
                   ? "text-primary"
                   : "text-dark-gray",
@@ -338,7 +344,7 @@ export function AddToBookmarkModal({
             type="button"
             onClick={onClose}
             disabled={isAddingBookmarks}
-            className="flex-1 rounded-xl border border-gray-border py-2.5 text-[17px] font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:opacity-60"
+            className="flex-1 rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:opacity-60"
           >
             닫기
           </button>
@@ -350,7 +356,7 @@ export function AddToBookmarkModal({
               selectedIds.size === 0 ||
               (categories?.length === 0 && !categoriesLoading)
             }
-            className="flex-1 rounded-xl bg-primary py-2.5 text-[17px] font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
+            className="flex-1 rounded-xl bg-primary py-2.5 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
           >
             {isAddingBookmarks ? "추가 중…" : "추가"}
           </button>
@@ -371,6 +377,7 @@ export function AddToBookmarkModal({
           onSave={handleCreateFolderSave}
         />
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }

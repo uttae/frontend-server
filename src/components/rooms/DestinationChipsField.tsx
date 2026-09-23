@@ -52,14 +52,14 @@ export function DestinationChipsField({
 
   if (readOnly) {
     if (!values.length) {
-      return <p className="text-[17px] text-dark-gray">—</p>;
+      return <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">—</p>;
     }
     return (
       <div className="flex flex-wrap gap-2">
         {values.map((v, i) => (
           <span
             key={`${v}-${i}`}
-            className="inline-flex items-center rounded-full bg-bubble-gray/60 px-3 py-1 text-[15px] text-dark-gray"
+            className="inline-flex items-center rounded-full bg-bubble-gray/60 px-3 py-1 text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
           >
             {v}
           </span>
@@ -75,7 +75,7 @@ export function DestinationChipsField({
           {values.map((v, i) => (
             <span
               key={`${v}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1.5 pl-3 pr-1.5 text-[15px] text-primary"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1.5 pl-3 pr-1.5 text-body-s-regular mobile:text-body-xs-regular text-primary"
             >
               {v}
               <button
@@ -91,7 +91,7 @@ export function DestinationChipsField({
         </div>
       ) : null}
       {atMax ? (
-        <p className="text-[14px] text-light-gray">
+        <p className="text-body-s-regular mobile:text-body-xs-regular text-light-gray">
           최대 {maxCount}개까지 추가할 수 있어요
         </p>
       ) : (
@@ -104,7 +104,7 @@ export function DestinationChipsField({
         />
       )}
       {inlineWarning ? (
-        <p className="text-[14px] text-primary">{inlineWarning}</p>
+        <p className="text-body-s-regular mobile:text-body-xs-regular text-primary">{inlineWarning}</p>
       ) : null}
     </div>
   );
