@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
@@ -23,6 +24,8 @@ import {
 import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 
 const mobileIcon = {
+  roomLogo: "/icons/mobile/room-logo.svg",
+  back: "/icons/mobile/back.svg",
   calendar: "/icons/mobile/calendar.svg",
   map: "/icons/mobile/map.svg",
   menu: "/icons/mobile/menu.svg",
@@ -36,7 +39,15 @@ function MobileMenuIcon({ src }: { src: string }) {
   return <span aria-hidden className="block size-5 shrink-0 bg-icon" style={{ mask: `url('${src}') center / contain no-repeat` }} />;
 }
 
-const HeaderBar = ({ mobilePlanPanel = "schedule" }: { mobilePlanPanel?: MobilePlanPanel }) => {
+const HeaderBar = ({
+  mobilePlanPanel = "schedule",
+  mobileBackHref,
+  mobileBackLabel = "뒤로 가기",
+}: {
+  mobilePlanPanel?: MobilePlanPanel;
+  mobileBackHref?: string;
+  mobileBackLabel?: string;
+}) => {
   const [editOpen, setEditOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -77,6 +88,16 @@ const HeaderBar = ({ mobilePlanPanel = "schedule" }: { mobilePlanPanel?: MobileP
 
   const isMapPanel = mobilePlanPanel === "map";
   const mapHref = buildMobilePlanPanelHref(pathname || "/plan", isMapPanel ? "schedule" : "map");
+  const mobileTitle = displayTitle ? (
+    <>
+      <div className="truncate text-[18px] font-bold leading-[26px] tracking-[-0.02em] text-text">{displayTitle}</div>
+      <div className="truncate text-[11px] leading-4 tracking-[-0.02em] text-text-subtle">{mobileDateStr}</div>
+    </>
+  ) : (
+    <span className="block truncate text-[18px] font-bold leading-[26px] text-text" aria-busy={isPending}>
+      {isPending ? "…" : "방 정보 없음"}
+    </span>
+  );
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -99,20 +120,23 @@ const HeaderBar = ({ mobilePlanPanel = "schedule" }: { mobilePlanPanel?: MobileP
   return (
     <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "h-14 shrink-0 border-b-2 border-primary"}>
       {isMobileDevice ? (
-        <div className="flex h-full min-w-0 items-center justify-between pl-4 pr-2">
+        <div className={mobileBackHref ? "flex h-full min-w-0 items-center gap-1 pl-0.5" : "flex h-full min-w-0 items-center gap-[14px] px-2"}>
+          {mobileBackHref ? (
+            <Link href={mobileBackHref} aria-label={mobileBackLabel} className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
+              <Image src={mobileIcon.back} alt="" width={24} height={24} />
+            </Link>
+          ) : (
+            <div className="flex shrink-0 items-center gap-0.5">
+              <Link href="/home" aria-label="홈으로 이동" className="flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
+                <Image src={mobileIcon.roomLogo} alt="" width={22} height={22} />
+              </Link>
+              <span aria-hidden className="h-9 w-px bg-border-subtle" />
+            </div>
+          )}
           <div className="min-w-0 flex-1">
-            {displayTitle ? (
-              <>
-                <div className="truncate text-[18px] font-bold leading-[26px] tracking-[-0.02em] text-text">{displayTitle}</div>
-                <div className="truncate text-[11px] leading-4 tracking-[-0.02em] text-text-subtle">{mobileDateStr}</div>
-              </>
-            ) : (
-              <span className="block truncate text-[18px] font-bold leading-[26px] text-text" aria-busy={isPending}>
-                {isPending ? "…" : "방 정보 없음"}
-              </span>
-            )}
+            {mobileTitle}
           </div>
-          <div className="flex shrink-0 items-center">
+          {!mobileBackHref ? <div className="flex shrink-0 items-center">
             <Link href={mapHref} aria-label={isMapPanel ? "일정 보기" : "지도 보기"} className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden className="block size-6 bg-icon" style={{ mask: `url('${isMapPanel ? mobileIcon.calendar : mobileIcon.map}') center / contain no-repeat` }} />
             </Link>
@@ -144,7 +168,7 @@ const HeaderBar = ({ mobilePlanPanel = "schedule" }: { mobilePlanPanel?: MobileP
                 </nav>
               ) : null}
             </div>
-          </div>
+          </div> : null}
         </div>
       ) : (
         <div className="flex h-full items-center">

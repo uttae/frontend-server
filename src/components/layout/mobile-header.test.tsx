@@ -30,7 +30,15 @@ it("shows the room details and map action in the mobile top navigation", () => {
   expect(host.querySelector("header")?.textContent).toContain("가을 여행");
   expect(host.querySelector("header")?.textContent).toContain("26/10/10 - 26/10/12");
   expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/plan/room?view=map");
+  expect(host.querySelector('a[aria-label="홈으로 이동"]')?.getAttribute("href")).toBe("/home");
+});
+
+it("uses the back top navigation for a nested bookmark screen", async () => {
+  await act(async () => root.render(<HeaderBar mobileBackHref="/bookmark" mobileBackLabel="북마크 목록으로 돌아가기" />));
+  expect(host.querySelector('a[aria-label="북마크 목록으로 돌아가기"]')?.getAttribute("href")).toBe("/bookmark");
   expect(host.querySelector('a[aria-label="홈으로 이동"]')).toBeNull();
+  expect(host.querySelector('a[aria-label="지도 보기"]')).toBeNull();
+  expect(host.querySelector('button[aria-label="메뉴 열기"]')).toBeNull();
 });
 
 it("opens the mobile menu with working destinations and closes it with Escape", async () => {

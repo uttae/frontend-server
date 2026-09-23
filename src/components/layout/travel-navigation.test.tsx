@@ -12,7 +12,7 @@ vi.mock("@/hooks/useHostJoinRequestsBadgeCount", () => ({ useHostJoinRequestsBad
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRoomUnreadCount", () => ({ useRoomUnreadCount: () => ({ data: { unreadCount: state.unread } }) }));
 vi.mock("@/hooks/useSessionPromptVisible", () => ({ useSessionPromptVisible: () => ({ visible: true, dismiss: vi.fn() }) }));
-vi.mock("./HeaderBar", () => ({ default: () => <header /> }));
+vi.mock("./HeaderBar", () => ({ default: ({ mobileBackHref }: { mobileBackHref?: string }) => <header data-mobile-back-href={mobileBackHref} /> }));
 vi.mock("./LeftSection", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock("./SidebarTutorial", () => ({ SidebarTutorial: () => null }));
 vi.mock("@/components/mobile/MobileReadOnlyNotice", () => ({ MobileReadOnlyNotice: () => null }));
@@ -112,6 +112,16 @@ it.each(["/search", "/member-settings"])("keeps %s available outside the mobile 
   await render();
   expect(active()).toHaveLength(0);
   expect(items()).toHaveLength(4);
+});
+
+it("uses the back header only within a bookmark folder", async () => {
+  state.mobile = true;
+  state.pathname = "/bookmark/folder";
+  await render();
+  expect(host.querySelector("header")?.getAttribute("data-mobile-back-href")).toBe("/bookmark");
+  state.pathname = "/bookmark";
+  await render();
+  expect(host.querySelector("header")?.hasAttribute("data-mobile-back-href")).toBe(false);
 });
 
 it("cost follows bookmarks, selects alone and closes chat", async () => {

@@ -39,13 +39,19 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
       : "schedule";
   const showMobilePlanSurface =
     isMobileDevice && isPlanRoute && mobilePlanPanel !== "schedule";
+  const mobileBackHref =
+    isMobileDevice && pathname.startsWith("/bookmark/") ? "/bookmark" : undefined;
 
   return (
     <main className="flex h-dvh flex-col">
       <MobileReadOnlyNotice />
       <div className="relative mx-auto flex min-h-0 flex-1 w-full overflow-hidden rounded-none bg-white">
         <LeftSection>
-          <HeaderBar mobilePlanPanel={mobilePlanPanel} />
+          <HeaderBar
+            mobilePlanPanel={mobilePlanPanel}
+            mobileBackHref={mobileBackHref}
+            mobileBackLabel="북마크 목록으로 돌아가기"
+          />
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
             <MainContentScrollArea fill={showMobilePlanSurface || showDesktopChat}>
