@@ -211,6 +211,31 @@ it("clears both links for preparation and clears place when changing day", async
     0,
   );
 });
+it("keeps the place selector visible but disabled for travel preparation", async () => {
+  await mount(null);
+  const placeSelect = () => renderer.root.findAllByType(ExpenseSelect)
+    .find((select) => select.props.label === "연결 장소 (선택)");
+  const placeLabel = () => renderer.root.findAllByType("p")
+    .find((paragraph) => paragraph.children.join("") === "연결 장소 (선택)");
+
+  expect(placeSelect()).toBeDefined();
+  expect(placeSelect()!.props.disabled).toBe(true);
+  expect(placeSelect()!.props.options).toEqual([{ value: "", label: "장소 연결 없음" }]);
+  expect(placeSelect()!.findByType("button").props.disabled).toBe(true);
+  expect(placeLabel()!.props.className).toContain("opacity-50");
+
+  const daySelect = renderer.root.findAllByType(ExpenseSelect)[0];
+  expect(daySelect.props.label).toBe("일차 구분");
+  await act(async () => daySelect.props.onChange("10"));
+  expect(placeSelect()!.props.disabled).toBe(false);
+  expect(placeSelect()!.props.options).toContainEqual({ value: "100", label: "경복궁" });
+  expect(placeLabel()!.props.className).not.toContain("opacity-50");
+
+  await act(async () => daySelect.props.onChange("PREPARATION"));
+  expect(placeSelect()!.props.disabled).toBe(true);
+  expect(placeSelect()!.props.options).toEqual([{ value: "", label: "장소 연결 없음" }]);
+  expect(placeLabel()!.props.className).toContain("opacity-50");
+});
 it("blocks wrong currency scale without truncating and guards rapid duplicate submit", async () => {
   await mount();
   const amount = renderer.root

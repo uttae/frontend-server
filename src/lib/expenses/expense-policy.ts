@@ -110,7 +110,7 @@ export function validateExpense(
         !day.items?.some((i) => i.itemId === body.scheduleItemId))
     )
       return "유효한 일차와 해당 일차의 장소를 선택해 주세요.";
-  } else return "비용 구분을 선택해 주세요.";
+  } else return "일차 구분을 선택해 주세요.";
   for (const role of ["payerUserIds", "participantUserIds"] as const) {
     const ids = body[role];
     if (!ids.length || new Set(ids).size !== ids.length)

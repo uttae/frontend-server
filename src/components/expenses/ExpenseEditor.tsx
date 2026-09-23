@@ -351,9 +351,9 @@ export function ExpenseEditor({
             </p>
           )}
           <div className="space-y-1">
-            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">비용 구분</p>
+            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">일차 구분</p>
             <ExpenseSelect
-              label="비용 구분"
+              label="일차 구분"
               disabled={pending}
               value={
                 body.expenseGroup === "PREPARATION"
@@ -379,36 +379,41 @@ export function ExpenseEditor({
               }}
             />
           </div>
-          {body.expenseGroup === "TRIP_DAY" && (
-            <div className="space-y-1">
-              <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">연결 장소 (선택)</p>
-              <ExpenseSelect
-                label="연결 장소 (선택)"
-                value={
-                  body.scheduleItemId === null
-                    ? ""
-                    : String(body.scheduleItemId)
-                }
-                disabled={pending || !places.isSuccess}
-                options={[
-                  { value: "", label: "장소 연결 없음" },
-                  ...(places.data ?? [])
-                    .filter((p) => p.itemId !== undefined)
-                    .map((p) => ({ value: String(p.itemId), label: p.title })),
-                ]}
-                onChange={(value) =>
-                  change("scheduleItemId", value ? Number(value) : null)
-                }
-              />
-              {!places.isSuccess && (
-                <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-                  {places.isError
-                    ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
-                    : "장소 확인 중…"}
-                </p>
+          <div className="space-y-1">
+            <p
+              className={cn(
+                "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold",
+                body.expenseGroup === "PREPARATION" && "opacity-50",
               )}
-            </div>
-          )}
+            >
+              연결 장소 (선택)
+            </p>
+            <ExpenseSelect
+              label="연결 장소 (선택)"
+              value={
+                body.scheduleItemId === null
+                  ? ""
+                  : String(body.scheduleItemId)
+              }
+              disabled={pending || body.expenseGroup === "PREPARATION" || !places.isSuccess}
+              options={[
+                { value: "", label: "장소 연결 없음" },
+                ...(body.expenseGroup === "TRIP_DAY" ? places.data ?? [] : [])
+                  .filter((p) => p.itemId !== undefined)
+                  .map((p) => ({ value: String(p.itemId), label: p.title })),
+              ]}
+              onChange={(value) =>
+                change("scheduleItemId", value ? Number(value) : null)
+              }
+            />
+            {body.expenseGroup === "TRIP_DAY" && !places.isSuccess && (
+              <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+                {places.isError
+                  ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
+                  : "장소 확인 중…"}
+              </p>
+            )}
+          </div>
           <div className="space-y-1">
             <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">카테고리</p>
             <ExpenseSelect
