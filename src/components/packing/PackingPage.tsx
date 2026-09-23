@@ -152,7 +152,28 @@ function PackingContent({context}: {context:Context}) {
     deleteTrigger.current = null;
   }, [state.confirmation]);
   const toasts = useRef(new Map<number,string|number>());
-  useEffect(() => { const active = new Set(state.undo.map(u=>u.id)); for(const [id,toastId] of toasts.current) if(!active.has(id)) {toast.dismiss(toastId);toasts.current.delete(id);} for(const undo of state.undo) if(!toasts.current.has(undo.id)) {const toastId=toast(`${undo.name} 삭제됨`,{duration:undo.remainingMs,action:{label:"실행 취소",onClick:()=>void coordinator?.restore(undo.id)}});toasts.current.set(undo.id,toastId);} },[state.undo,coordinator]);
+  useEffect(() => {
+    const active = new Set(state.undo.map(u => u.id));
+    for (const [id, toastId] of toasts.current) if (!active.has(id)) { toast.dismiss(toastId); toasts.current.delete(id); }
+    for (const undo of state.undo) if (!toasts.current.has(undo.id)) {
+      const toastId = toast(`${undo.name} 삭제됨`, {
+        duration: undo.remainingMs,
+        style: { minHeight: 76, padding: "18px 20px", fontSize: 14 },
+        actionButtonStyle: { height: 36, paddingInline: 10, background: "#F2F4F7", color: "#3B3F4E" },
+        action: {
+          label: <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B3F4E" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 14L5 10L9 6" />
+              <path d="M5 10H16C17.0609 10 18.0783 10.4214 18.8284 11.1716C19.5786 11.9217 20 12.9391 20 14C20 15.0609 19.5786 16.0783 18.8284 16.8284C18.0783 17.5786 17.0609 18 16 18H15" />
+            </svg>
+            실행 취소
+          </span>,
+          onClick: () => void coordinator?.restore(undo.id),
+        },
+      });
+      toasts.current.set(undo.id, toastId);
+    }
+  }, [state.undo, coordinator]);
   useEffect(() => {const owned = toasts.current;return () => {for(const id of owned.values()) toast.dismiss(id);owned.clear();};},[]);
   const data=state.data;
   const ready=state.status === "ready";

@@ -2,6 +2,7 @@
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 import { PackingPage } from './PackingPage';
+import { renderToStaticMarkup } from 'react-dom/server';
 import type { PackingItem } from '@/lib/packing/types';
 import type { ReactNode } from 'react';
 vi.mock('@/components/settings/SettingsDialog', () => ({SettingsDialog: ({title,onClose,children}: {title:string;onClose:()=>void;children:ReactNode}) => <dialog aria-label={title} onCancel={onClose}>{children}</dialog>}));
@@ -24,7 +25,29 @@ it('keeps drafts editable while writes are blocked, and preserves failed drafts'
 it('sends desired checkbox value with stable ID and delegates deletion', async () => { await mount(); await act(async () => renderer.root.findByProps({type:'checkbox'}).props.onChange({target:{checked:true}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:11,checked:true}); await act(async () => button('준비물 삭제: 여권').props.onClick({currentTarget:document.createElement('button')})); expect(coordinator.prepareDelete).toHaveBeenCalledWith('item',11); });
 it('keeps expansion after refetch and does not auto-open after first deletion', async () => { await mount(); state.data = {...data,parts:[data.parts[1]]}; await act(async () => renderer.update(<PackingPage />)); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(0); });
 it('clears drafts on scope change', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'private'}})); mocks.context = {state,coordinator,scopeKey:'room:other'}; await act(async () => renderer.update(<PackingPage />)); expect(renderer.root.findAllByProps({'aria-label':'새 준비물 이름'})).toHaveLength(0); });
-it('shows exact undo action and dismisses expired undo', async () => { state.undo=[{id:11,name:'여권',remainingMs:9000}]; await mount(); expect(mocks.toast).toHaveBeenCalledWith(expect.any(String),expect.objectContaining({duration:9000,action:expect.objectContaining({label:'실행 취소'})})); state.undo=[]; await act(async () => renderer.update(<PackingPage />)); expect(mocks.dismiss).toHaveBeenCalled(); });
+it('shows a larger undo toast with the supplied arrow and retains the undo action', async () => {
+  state.undo = [{id:11,name:'여권',remainingMs:9000}];
+  await mount();
+  expect(mocks.toast).toHaveBeenCalledWith('여권 삭제됨', expect.objectContaining({duration:9000}));
+  const options = mocks.toast.mock.calls[0][1];
+  expect(options.style.minHeight).toBeGreaterThanOrEqual(72);
+  expect(options.style.width).toBeUndefined();
+  expect(options.actionButtonStyle.height).toBeGreaterThanOrEqual(36);
+  const action = options.action;
+  const label = renderToStaticMarkup(action.label);
+  expect(label).toContain('실행 취소');
+  expect(label).toContain('width="24" height="24"');
+  expect(label).toContain('viewBox="0 0 24 24"');
+  expect(label).toContain('M9 14L5 10L9 6');
+  expect(label).toContain('M5 10H16C17.0609 10');
+  expect(label).toContain('stroke="#3B3F4E"');
+  expect(label).toContain('aria-hidden="true"');
+  await act(async () => action.onClick());
+  expect(coordinator.restore).toHaveBeenCalledWith(11);
+  state.undo = [];
+  await act(async () => renderer.update(<PackingPage />));
+  expect(mocks.dismiss).toHaveBeenCalled();
+});
 it('renders memo as plain text with safe links and saves blank memo without deleting item', async () => { state.data!.parts[0].items[0] = {...item,memo:{id:11,itemId:11,content:'<script>literal</script> https://example.com'}}; await mount(); const link=renderer.root.findByType('a'); expect(link.props.target).toBe('_blank'); expect(link.props.rel).toBe('noopener noreferrer'); const stop=vi.fn(); link.props.onClick({stopPropagation:stop}); expect(stop).toHaveBeenCalledOnce(); expect(renderer.root.findAllByType('script')).toHaveLength(0); await act(async () => button('메모').props.onClick()); const textarea=renderer.root.findByType('textarea'); await act(async () => textarea.props.onChange({target:{value:'   '}})); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'saveMemo',id:11,content:'   '}); expect(renderer.root.findAllByProps({type:'checkbox'})).toHaveLength(1); });
 it('prevents IME submission and allows Escape cancellation', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'약'}})); const form=renderer.root.findByType('form'); const preventDefault=vi.fn(); form.props.onKeyDown({key:'Enter',nativeEvent:{isComposing:true},preventDefault}); expect(preventDefault).toHaveBeenCalledOnce(); input('새 준비물 이름').props.onCompositionStart(); await act(async () => form.props.onSubmit({preventDefault(){}})); expect(coordinator.execute).not.toHaveBeenCalled(); await act(async () => form.props.onKeyDown({key:'Escape',stopPropagation(){},nativeEvent:{}})); expect(renderer.root.findAllByType('form')).toHaveLength(0); });
 it('validates raw length before submitting and permits duplicate names', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:' '.repeat(100)+'x'}})); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(coordinator.execute).not.toHaveBeenCalled(); expect(renderer.root.findAllByProps({role:'alert'})).toHaveLength(1); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'여권'}})); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'createItem',partId:1,name:'여권'}); });
