@@ -44,16 +44,16 @@ function ExpenseEditorConflict({
   onRecover: () => void;
 }>) {
   const context = useExpenseContext();
-  let message = "지출이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
-  if (pending) message = "최신 지출 확인 중…";
-  else if (conflict.failed) message = "최신 지출 조회에 실패했어요. 저장은 중단돼요.";
+  let message = "비용이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
+  if (pending) message = "최신 비용 확인 중…";
+  else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 저장은 중단돼요.";
   return (
     <div
       role="alert"
       className="space-y-3 rounded-xl border border-gray-border p-3"
     >
       <p>
-        지출이 변경되었어요. 입력 내용은 유지돼요. 최신 지출을 확인해
+        비용이 변경되었어요. 입력 내용은 유지돼요. 최신 비용을 확인해
         주세요.
       </p>
       {conflict.latest ? (
@@ -72,7 +72,7 @@ function ExpenseEditorConflict({
           {conflictMoved ? (
             <p>
               연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신
-              지출을 다시 열어 주세요.
+              비용을 다시 열어 주세요.
             </p>
           ) : (
             <button
@@ -81,7 +81,7 @@ function ExpenseEditorConflict({
               disabled={pending || targetChanged}
               onClick={onContinue}
             >
-              최신 지출 확인 후 수정 계속
+              최신 비용 확인 후 수정 계속
             </button>
           )}
         </>
@@ -95,7 +95,7 @@ function ExpenseEditorConflict({
           disabled={pending}
           onClick={onRecover}
         >
-          최신 지출 다시 조회
+          최신 비용 다시 조회
         </button>
       )}
     </div>
@@ -288,7 +288,7 @@ export function ExpenseEditor({
       ) {
         await recover();
       }
-      reportError(e instanceof Error ? e.message : "지출을 저장하지 못했어요.");
+      reportError(e instanceof Error ? e.message : "비용을 저장하지 못했어요.");
     } finally {
       submitLock.current = false;
       setSaving(false);
@@ -351,9 +351,9 @@ export function ExpenseEditor({
             </p>
           )}
           <div className="space-y-1">
-            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">지출 구분</p>
+            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">비용 구분</p>
             <ExpenseSelect
-              label="지출 구분"
+              label="비용 구분"
               disabled={pending}
               value={
                 body.expenseGroup === "PREPARATION"
@@ -465,13 +465,13 @@ export function ExpenseEditor({
         </fieldset>
         {!context.canManage && context.memberStatus === "success" && (
           <p role="alert">
-            현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.
+            현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.
           </p>
         )}
         {targetChanged && (
           <p role="alert">
-            지출이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤
-            최신 지출을 다시 열어 주세요.
+            비용이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤
+            최신 비용을 다시 열어 주세요.
           </p>
         )}
         {conflict && (

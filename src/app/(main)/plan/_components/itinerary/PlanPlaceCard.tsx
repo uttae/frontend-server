@@ -479,7 +479,7 @@ export function PlanPlaceCard({
       {confirmTarget === "item" ? (
         <ConfirmDialog
           title="일정에서 이 장소를 삭제할까요?"
-          description="이 장소와 연결된 모든 지출도 함께 삭제돼요."
+          description="이 장소와 연결된 모든 비용도 함께 삭제돼요."
           confirmLabel="삭제"
           isPending={isDeletingItem}
           onConfirm={() => void handleDeleteScheduleItem()}

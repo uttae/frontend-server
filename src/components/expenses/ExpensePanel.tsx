@@ -38,16 +38,16 @@ function ExpenseDeleteConflict({
   onCancel: () => void;
 }>) {
   const context = useExpenseContext();
-  let message = "이미 삭제된 지출이에요.";
-  if (deleting) message = "최신 지출 확인 중…";
-  else if (conflict.failed) message = "최신 지출 조회에 실패했어요. 삭제는 중단돼요.";
+  let message = "이미 삭제된 비용이에요.";
+  if (deleting) message = "최신 비용 확인 중…";
+  else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
   return (
     <div
       role="alert"
       className="space-y-3 rounded-xl border border-gray-border p-3"
     >
       <p>
-        삭제할 지출이 변경되었어요. 최신 지출을 확인한 뒤 삭제를 다시 확인해
+        삭제할 비용이 변경되었어요. 최신 비용을 확인한 뒤 삭제를 다시 확인해
         주세요.
       </p>
       {conflict.latest ? (
@@ -69,7 +69,7 @@ function ExpenseDeleteConflict({
             disabled={deleting || context.busy || !context.canManage}
             onClick={() => onRemove(conflict.latest!)}
           >
-            최신 지출 확인 후 삭제
+            최신 비용 확인 후 삭제
           </button>
         </>
       ) : (
@@ -82,7 +82,7 @@ function ExpenseDeleteConflict({
           disabled={deleting}
           onClick={() => onRecover(conflict.selected)}
         >
-          최신 지출 다시 조회
+          최신 비용 다시 조회
         </button>
       )}
       <button
@@ -98,9 +98,9 @@ function ExpenseDeleteConflict({
 }
 
 function syncStatusMessage(status: string) {
-  if (status === "disconnected") return "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 지출을 자동으로 확인해요.";
+  if (status === "disconnected") return "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 비용을 자동으로 확인해요.";
   if (status === "error") return "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요.";
-  return "최신 지출 확인 중… 이전 값은 최신 상태가 아닐 수 있어요.";
+  return "최신 비용 확인 중… 이전 값은 최신 상태가 아닐 수 있어요.";
 }
 
 export function ExpensePanel() {
@@ -164,14 +164,14 @@ export function ExpensePanel() {
     try {
       await context.remove(expense);
       setConflict(null);
-      toast.success("지출을 삭제했어요.");
+      toast.success("비용을 삭제했어요.");
     } catch (e) {
       if (
         e instanceof ExpenseApiError &&
         (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")
       )
         await recover(expense);
-      setError(e instanceof Error ? e.message : "지출 삭제에 실패했어요.");
+      setError(e instanceof Error ? e.message : "비용 삭제에 실패했어요.");
     } finally {
       lock.current = false;
       setDeleting(false);
@@ -200,7 +200,7 @@ export function ExpensePanel() {
   if (context.revoked) return null;
   return (
     <section
-      aria-label="지출 및 정산"
+      aria-label="비용 및 정산"
       className="@container/expenses min-w-0 space-y-5"
     >
       <MainPageHeader
@@ -286,12 +286,12 @@ export function ExpensePanel() {
           {context.memberStatus === "pending"
             ? "멤버 확인 중…"
             : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
-          지출의 사용자 ID와 금액은 유지돼요.
+          비용의 사용자 ID와 금액은 유지돼요.
         </p>
       )}
       {context.memberStatus === "success" && !context.canManage && (
         <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
-          현재 참여 중인 방장과 멤버만 지출에 접근할 수 있어요.
+          현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
         </p>
       )}
       {conflict && (
@@ -328,7 +328,7 @@ export function ExpensePanel() {
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h3 className="text-body-m-emphasis mobile:text-body-s-emphasis font-bold">
-              지출 내역{" "}
+              비용 내역{" "}
               <span className="ml-1 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
                 {context.list.isSuccess ? `${filtered.length}건` : ""}
               </span>
@@ -339,7 +339,7 @@ export function ExpensePanel() {
                 value={activeFilter}
                 onChange={setFilter}
                 options={[
-                  { value: "ALL", label: "전체 지출" },
+                  { value: "ALL", label: "전체 비용" },
                   { value: "PREPARATION", label: "여행 준비" },
                   ...context.schedules.map((s) => ({
                     value: String(s.scheduleId),
@@ -384,7 +384,7 @@ export function ExpensePanel() {
       )}
       {expenseToDelete ? (
         <ConfirmDialog
-          title="이 지출을 삭제할까요?"
+          title="이 비용을 삭제할까요?"
           description="정산 요약에도 반영돼요."
           confirmLabel="삭제"
           isPending={deleting}

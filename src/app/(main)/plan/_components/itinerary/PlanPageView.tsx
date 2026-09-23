@@ -260,8 +260,8 @@ export function PlanPageView() {
           title={dayToDelete.isLast ? "이 일차를 비울까요?" : "이 일차를 삭제할까요?"}
           description={
             dayToDelete.isLast
-              ? "마지막 일차는 남고, 이 일차의 모든 장소와 지출이 삭제돼요."
-              : "이 일차에 포함된 모든 장소와 지출도 함께 삭제돼요."
+              ? "마지막 일차는 남고, 이 일차의 모든 장소와 비용이 삭제돼요."
+              : "이 일차에 포함된 모든 장소와 비용도 함께 삭제돼요."
           }
           confirmLabel={dayToDelete.isLast ? "비우기" : "삭제"}
           isPending={isDeletingSchedule}

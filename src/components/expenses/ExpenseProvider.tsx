@@ -141,13 +141,13 @@ function useExpenses(roomId: string) {
     ) => {
       if (!canManage || recovery.getSnapshot() === "revoked")
         throw new Error(
-          "현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.",
+          "현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.",
         );
       if ("deleteId" in op)
         return deleteExpense(roomId, op.deleteId, op.expectedVersion);
       if (op.id === undefined) return createExpense(roomId, op.body);
       if (op.expectedVersion === undefined)
-        throw new Error("수정할 지출을 다시 열어 주세요.");
+        throw new Error("수정할 비용을 다시 열어 주세요.");
       return patchExpense(roomId, op.id, {
         ...op.body,
         expectedVersion: op.expectedVersion,

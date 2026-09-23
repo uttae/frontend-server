@@ -89,7 +89,7 @@ async function request<T>(
     throw new ExpenseApiError(
       res.status,
       body?.code ?? "UNKNOWN",
-      body?.message ?? "지출 요청에 실패했어요. 다시 시도해 주세요.",
+      body?.message ?? "비용 요청에 실패했어요. 다시 시도해 주세요.",
     );
   }
   return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);

@@ -590,7 +590,7 @@ it("retains the draft and requires explicit latest-record review before saving a
   await submitVersioned();
   expect(mocks.save).toHaveBeenCalledTimes(1);
   await act(async () =>
-    recoveryButton("최신 지출 확인 후 수정 계속")!.props.onClick(),
+    recoveryButton("최신 비용 확인 후 수정 계속")!.props.onClick(),
   );
   expect(mocks.save).toHaveBeenCalledTimes(1);
   await submitVersioned();
@@ -615,7 +615,7 @@ it.each([undefined, { ...base, version: 2, scheduleId: 11 }])(
     await submitVersioned();
     await submitVersioned();
     expect(mocks.save).toHaveBeenCalledTimes(1);
-    expect(recoveryButton("최신 지출 확인 후 수정 계속")).toBeUndefined();
+    expect(recoveryButton("최신 비용 확인 후 수정 계속")).toBeUndefined();
     expect(mocks.close).not.toHaveBeenCalled();
   },
 );
@@ -630,11 +630,11 @@ it("blocks save after failed conflict read until a fresh read and explicit revie
   expect(mocks.save).toHaveBeenCalledTimes(1);
   mocks.readLatest.mockResolvedValueOnce({ ...base, version: 3 });
   await act(async () =>
-    recoveryButton("최신 지출 다시 조회")!.props.onClick(),
+    recoveryButton("최신 비용 다시 조회")!.props.onClick(),
   );
   expect(mocks.save).toHaveBeenCalledTimes(1);
   await act(async () =>
-    recoveryButton("최신 지출 확인 후 수정 계속")!.props.onClick(),
+    recoveryButton("최신 비용 확인 후 수정 계속")!.props.onClick(),
   );
   await submitVersioned();
   expect(mocks.save).toHaveBeenLastCalledWith(expect.anything(), 10, 3);

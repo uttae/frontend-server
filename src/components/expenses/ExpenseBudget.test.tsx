@@ -247,9 +247,9 @@ it("summary opens shared modal for unset or zero budget", async () => {
 });
 it("shows one reference travel total without persistent exchange metadata", async () => {
   await summary();
-  expect(text()).toContain("여행 전체 지출");
+  expect(text()).toContain("여행 전체 비용");
   expect(text()).toContain("501 KRW");
-  expect(text()).not.toContain("원화 참고 지출");
+  expect(text()).not.toContain("원화 참고 비용");
   expect(host.innerHTML).not.toContain("원화로 환산한 참고 금액이에요");
   expect(text()).not.toContain("2026-09-11");
   expect(text()).not.toContain("출처");
@@ -281,7 +281,7 @@ it.each([
   mocks.state = state(budget, { ...reference, ...patch } as ExpenseKrwSummary);
   await summary();
   expect(host.querySelector("h3")?.parentElement?.textContent).toContain("—");
-  expect(host.querySelector("h3")?.parentElement?.textContent).not.toMatch(/501 KRW|0 KRW|환산 가능한 지출 합계|제외 통화/);
+  expect(host.querySelector("h3")?.parentElement?.textContent).not.toMatch(/501 KRW|0 KRW|환산 가능한 비용 합계|제외 통화/);
 });
 it.each(["pending", "error"])("shows a dash with no conversion data while %s", async (status) => {
   mocks.state = { ...state(), krwSummary: { data: undefined, isPending: status === "pending", isError: status === "error", isSuccess: false } };
@@ -305,7 +305,7 @@ it.each([
   mocks.state = state(budget, { ...reference, ...patch });
   await summary();
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
-  expect(text()).not.toContain("환산 가능한 지출 합계");
+  expect(text()).not.toContain("환산 가능한 비용 합계");
   if (patch.convertedTotalKrw === null)
     expect(text()).toContain("—");
   if (patch.stale && patch.rateDate !== null) {

@@ -101,7 +101,7 @@ export function validateExpense(
     return "메모는 1000자까지 입력할 수 있어요.";
   if (body.expenseGroup === "PREPARATION") {
     if (body.scheduleId !== null || body.scheduleItemId !== null)
-      return "준비 지출은 일차·장소에 연결할 수 없어요.";
+      return "준비 비용은 일차·장소에 연결할 수 없어요.";
   } else if (body.expenseGroup === "TRIP_DAY") {
     const day = days.find((d) => d.scheduleId === body.scheduleId);
     if (
@@ -110,7 +110,7 @@ export function validateExpense(
         !day.items?.some((i) => i.itemId === body.scheduleItemId))
     )
       return "유효한 일차와 해당 일차의 장소를 선택해 주세요.";
-  } else return "지출 구분을 선택해 주세요.";
+  } else return "비용 구분을 선택해 주세요.";
   for (const role of ["payerUserIds", "participantUserIds"] as const) {
     const ids = body[role];
     if (!ids.length || new Set(ids).size !== ids.length)

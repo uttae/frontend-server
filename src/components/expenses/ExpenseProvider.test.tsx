@@ -581,16 +581,16 @@ it("shares one room subscription across route children and resets it on selected
   mocks.list.mockResolvedValue([]);
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const tree = (label: string) => <QueryClientProvider client={client}><MainRoomGate><ExpenseEntryButton label={label} scheduleId={10} scheduleItemId={20} /></MainRoomGate></QueryClientProvider>;
-  await act(async () => { renderer = create(tree("장소 지출")); });
+  await act(async () => { renderer = create(tree("장소 비용")); });
   expect(renderer.toJSON()).toBeNull();
   expect(stomp.subscribe).not.toHaveBeenCalled();
   gateState.roomContextReady = true;
-  await act(async () => { renderer.update(tree("장소 지출")); });
+  await act(async () => { renderer.update(tree("장소 비용")); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(renderer.root.findAllByType("button").some(b => b.children.join("").includes("장소 지출"))).toBe(true);
+  expect(renderer.root.findAllByType("button").some(b => b.children.join("").includes("장소 비용"))).toBe(true);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   expect(stomp.subscribe.mock.calls[0][0]).toBe("/topic/rooms/r/expenses");
-  await act(async () => { renderer.update(tree("일차 지출")); });
+  await act(async () => { renderer.update(tree("일차 비용")); });
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   expect(stomp.unsubscribe).not.toHaveBeenCalled();
   await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation: () => {} }));
@@ -620,11 +620,11 @@ it("mobile plan links to the shared cost list without another provider, while da
   mocks.members.mockResolvedValue({ members: [{ userId: 1, role: "HOST", status: "ACTIVE" }] });
   mocks.list.mockResolvedValue([]);
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  await act(async () => { renderer = create(<QueryClientProvider client={client}><MainRoomGate><PlanPageView /><ExpenseEntryButton scheduleId={10} label="일차 지출" /><ExpenseEntryButton scheduleId={10} scheduleItemId={20} label="장소 지출" /></MainRoomGate></QueryClientProvider>); });
+  await act(async () => { renderer = create(<QueryClientProvider client={client}><MainRoomGate><PlanPageView /><ExpenseEntryButton scheduleId={10} label="일차 비용" /><ExpenseEntryButton scheduleId={10} scheduleItemId={20} label="장소 비용" /></MainRoomGate></QueryClientProvider>); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
   expect(renderer.root.findAllByType("a").some(a => a.props.href === "/cost" && a.children.join("").includes("가계부"))).toBe(true);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
-  for (const [label, initial] of [["일차 지출", { scheduleId: 10 }], ["장소 지출", { scheduleId: 10, scheduleItemId: 20 }]] as const) {
+  for (const [label, initial] of [["일차 비용", { scheduleId: 10 }], ["장소 비용", { scheduleId: 10, scheduleItemId: 20 }]] as const) {
     const button = renderer.root.findAllByType("button").find(b => b.children.join("").includes(label))!;
     await act(async () => button.props.onClick({ stopPropagation: () => {} }));
     expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(1);

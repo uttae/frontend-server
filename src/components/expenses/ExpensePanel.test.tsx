@@ -64,8 +64,8 @@ it("keeps a single reference travel total visible while filtering", async () => 
   expect(text).not.toContain("999,999,999,999,999.99");
   expect(text).not.toContain("12,300");
   expect(text).toContain("501");
-  expect(text.match(/여행 전체 지출/g)).toHaveLength(1);
-  expect(text).not.toContain("원화 참고 지출");
+  expect(text.match(/여행 전체 비용/g)).toHaveLength(1);
+  expect(text).not.toContain("원화 참고 비용");
 });
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => mocks.state,
@@ -163,7 +163,7 @@ it("filters preparation and trip day without altering server summary scope", asy
       .find((b) => b.children.includes("정산 요약"))!
       .props.onClick(),
   );
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("방 전체 지출을 기준으로 정산해요.");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("방 전체 비용을 기준으로 정산해요.");
 });
 it("requires confirmation and preserves list with visible deletion failure", async () => {
   await mount();
@@ -240,10 +240,10 @@ it("retains deletion selection and requires confirmation of the fetched version 
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
+  await act(async () => panelButton("최신 비용 확인 후 삭제")!.props.onClick());
   await answerConfirm(false);
   expect(mocks.remove).toHaveBeenCalledTimes(1);
-  await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
+  await act(async () => panelButton("최신 비용 확인 후 삭제")!.props.onClick());
   await answerConfirm(true);
   expect(mocks.remove).toHaveBeenLastCalledWith(latest);
 });
@@ -259,7 +259,7 @@ it.each(["missing", "offline"])(
     await act(async () => panelButton("삭제")!.props.onClick());
     await answerConfirm(true);
     expect(mocks.remove).toHaveBeenCalledTimes(1);
-    expect(panelButton("최신 지출 확인 후 삭제")).toBeUndefined();
+    expect(panelButton("최신 비용 확인 후 삭제")).toBeUndefined();
   },
 );
 
@@ -330,7 +330,7 @@ it.each(["ready", "pending", "disconnected"])(
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).not.toContain("새로고침");
     if (syncStatus === "disconnected") expect(rendered).toContain("연결 복구 안내");
-    if (syncStatus === "pending") expect(rendered).toContain("최신 지출 확인 중");
+    if (syncStatus === "pending") expect(rendered).toContain("최신 비용 확인 중");
   },
 );
 
@@ -372,18 +372,18 @@ it.each(["initial load", "change", "reconnect"])(
       };
       await act(async () => renderer.update(<ExpensePanel />));
       expect(JSON.stringify(renderer.toJSON())).toContain(
-        scenario === "reconnect" ? "연결 복구 안내" : "최신 지출 확인 중",
+        scenario === "reconnect" ? "연결 복구 안내" : "최신 비용 확인 중",
       );
       mocks.state = healthy;
       await act(async () => renderer.update(<ExpensePanel />));
     }
-    const section = renderer.root.findByProps({ "aria-label": "지출 및 정산" });
+    const section = renderer.root.findByProps({ "aria-label": "비용 및 정산" });
     const first = section.children[0];
     expect(typeof first).not.toBe("string");
     if (typeof first === "string") throw new Error("Expected panel heading");
     expect(first.findAllByType("h1").map((heading) => heading.children.join("")))
       .toEqual(["가계부"]);
-    expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 지출 조회 완료|30초 간격/);
+    expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 비용 조회 완료|30초 간격/);
   },
 );
 
@@ -415,7 +415,7 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
 it.each([
   ["disconnected", "실시간 연결이 끊겼어요."],
   ["error", "최신 상태 확인에 실패했어요."],
-  ["pending", "최신 지출 확인 중…"],
+  ["pending", "최신 비용 확인 중…"],
 ])("announces %s sync status with a native block output", async (syncStatus, message) => {
   await mount();
   mocks.state = { ...(mocks.state as object), syncStatus };
