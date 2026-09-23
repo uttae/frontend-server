@@ -355,7 +355,7 @@ export function PlanDaySection({
               cn(MAIN_CARD_INNER_PADDING_X_CLASS, "pb-4"),
               expanded
                 ? summaryAction || trackedSid !== undefined
-                  ? "pt-3"
+                  ? "pt-1"
                   : "border-t border-dashed border-gray-border pt-3"
                 : "pt-1",
             )}
