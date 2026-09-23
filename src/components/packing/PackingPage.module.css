@@ -37,6 +37,7 @@
 .iconButton { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 28px; color: var(--color-icon-subtle); border-radius: 4px; cursor: pointer; }
 .iconButton:hover { color: var(--color-primary-default); background: var(--color-fill-default); }
 .iconButton:disabled { cursor: not-allowed; opacity: 0.4; }
+.page[data-writing="true"] .iconButton:disabled { opacity: 1; }
 .page button:focus-visible, .checkboxInput:focus-visible + svg { outline: 2px solid var(--color-primary-default); outline-offset: 2px; }
 .collapse[aria-expanded="true"] svg { transform: rotate(180deg); }
 .body[data-expanded="false"] { display: none; }
@@ -45,6 +46,7 @@
 .checkboxInput { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
 .checkboxInput:disabled { cursor: not-allowed; }
 .checkboxInput:disabled + svg { opacity: 0.4; }
+.page[data-writing="true"] .checkboxInput:disabled + svg { opacity: 1; }
 .checkbox svg { pointer-events: none; }
 .itemName { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 20px; }
 .itemRename { position: absolute; right: 88px; background: var(--color-background-default); opacity: 0; pointer-events: none; }
@@ -56,7 +58,14 @@
 .memoText { min-width: 0; flex: 1; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 20px; }
 .memoEditor .draft { flex: 1; }
 .editor { padding: 12px 0; }
-.newPart { margin-bottom: 24px; max-width: 380px; }
+.newPart { min-height: 40px; }
+.newItem { display: flex; min-height: 44px; align-items: center; gap: 8px; border-bottom: 1px solid var(--color-border-subtle); }
+.checkboxPlaceholder { width: 20px; height: 20px; margin: 0 6px; flex-shrink: 0; border: 2px solid var(--color-border-subtle); border-radius: 4px; }
+.inlineDraft { flex: 1; min-width: 0; }
+.inlineField { width: 100%; min-width: 0; min-height: 40px; border: 0; border-bottom: 1px solid var(--color-border-hover); background: transparent; padding: 4px 0; color: var(--color-text-default); }
+.inlineField:focus-visible { outline: 2px solid var(--color-primary-default); outline-offset: 2px; }
+.inlinePart .inlineField { font-size: 16px; font-weight: 700; }
+.inlineItem .inlineField { font-size: 14px; }
 .draft .save { color: var(--color-text-inverse); background: var(--color-primary-default); }
 /* Lack of hover is not evidence of touch: pointer-less desktops still use disclosure. */
 @media (any-pointer: coarse) {
@@ -81,3 +90,22 @@
   .partHeader { gap: 4px; }
   .partActions .iconButton { width: 22px; }
 }
+
+:global(.is-mobile-device) .content { padding: 16px 16px 24px; }
+:global(.is-mobile-device) .pageHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 20px; }
+:global(.is-mobile-device) .pageHeader > div { flex-basis: 100%; }
+:global(.is-mobile-device) .progress { flex: 1; font-size: 14px; line-height: 20px; }
+:global(.is-mobile-device) .addPart { min-height: 44px; font-size: 14px; font-weight: 600; }
+:global(.is-mobile-device) .columns { gap: 12px; }
+:global(.is-mobile-device) .part { border: 1px solid var(--color-border-subtle); border-radius: 16px; padding: 12px; }
+:global(.is-mobile-device) .partHeader { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding-bottom: 0; }
+:global(.is-mobile-device) .partTitle { grid-column: 1; grid-row: 1; }
+:global(.is-mobile-device) .collapse { grid-column: 2; grid-row: 1; }
+:global(.is-mobile-device) .partActions { grid-column: 1; grid-row: 2; opacity: 1; pointer-events: auto; }
+:global(.is-mobile-device) .addItem { grid-column: 2; grid-row: 2; justify-self: end; min-height: 40px; }
+:global(.is-mobile-device) .iconButton { width: 36px; height: 40px; }
+:global(.is-mobile-device) .itemRow { height: 52px; gap: 4px; }
+:global(.is-mobile-device) .newItem { min-height: 52px; gap: 4px; }
+:global(.is-mobile-device) .checkbox { display: flex; width: 32px; height: 32px; align-items: center; justify-content: center; margin-right: 0; }
+:global(.is-mobile-device) .itemRename { position: static; opacity: 1; pointer-events: auto; }
+:global(.is-mobile-device) .memoButton { min-height: 40px; }

@@ -1,10 +1,6 @@
-import { Maximize2, Minimize2, Minus } from "lucide-react";
-
-import { cn } from "@/lib/utils";
+import { Maximize2, Minimize2, X } from "lucide-react";
 
 interface ChatPanelHeaderProps {
-  roomTitle: string;
-  onlineCount: number;
   isMinimized: boolean;
   onMaximize: () => void;
   onMinimize: () => void;
@@ -12,71 +8,35 @@ interface ChatPanelHeaderProps {
 }
 
 export function ChatPanelHeader({
-  roomTitle,
-  onlineCount,
   isMinimized,
   onMaximize,
   onMinimize,
   onClose,
 }: ChatPanelHeaderProps) {
   return (
-    <div
-      className={cn(
-        "flex shrink-0 items-center justify-between border-b border-gray-300 bg-primary px-3 py-2 text-white",
-        isMinimized ? "cursor-pointer" : "",
-      )}
-      onClick={isMinimized ? onMaximize : undefined}
-    >
-      <div className="min-w-0 flex-1">
-        <h2
-          className={cn(
-            "truncate font-semibold leading-tight text-white transition-all duration-300",
-            isMinimized ? "text-body-s-regular mobile:text-body-xs-regular" : "text-heading-s mobile:text-title-l",
-          )}
-        >
-          {roomTitle}
-        </h2>
-        <div className="flex items-center gap-1.5">
-          <span
-            className={cn(
-              "shrink-0 rounded-full bg-[#4ade80] transition-all duration-300",
-              isMinimized ? "h-1.5 w-1.5" : "h-2.5 w-2.5",
-            )}
-          />
-          <span
-            className={cn(
-              "font-semibold text-white/85 transition-all duration-300",
-              isMinimized ? "text-body-xs-regular leading-tight" : "text-body-s-regular mobile:text-body-xs-regular",
-            )}
-          >
-            {onlineCount}명 접속중
-          </span>
-        </div>
-      </div>
-
-      <div
-        className="flex shrink-0 items-center gap-1"
-        onClick={(e) => e.stopPropagation()}
+    <div className="flex h-12 shrink-0 items-center justify-end gap-2 border-b border-border-subtle bg-fill-subtle px-3">
+      <button
+        type="button"
+        onClick={isMinimized ? onMaximize : onMinimize}
+        className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border-subtle bg-white text-primary-strong transition-colors hover:bg-primary-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        aria-label={isMinimized ? "최대화" : "최소화"}
       >
+        {isMinimized ? (
+          <Maximize2 className="size-[18px]" strokeWidth={2} aria-hidden />
+        ) : (
+          <Minimize2 className="size-[18px]" strokeWidth={2} aria-hidden />
+        )}
+      </button>
+      {isMinimized ? (
         <button
-          onClick={isMinimized ? onMaximize : onMinimize}
-          className="cursor-pointer rounded-full p-1.5 text-white transition hover:bg-white/15"
-          aria-label={isMinimized ? "최대화" : "최소화"}
-        >
-          {isMinimized ? (
-            <Maximize2 className="h-4 w-4" strokeWidth={3} aria-hidden />
-          ) : (
-            <Minimize2 className="h-4 w-4" strokeWidth={3} aria-hidden />
-          )}
-        </button>
-        <button
+          type="button"
           onClick={onClose}
-          className="cursor-pointer rounded-full p-1.5 text-white transition hover:bg-white/15"
+          className="flex size-9 cursor-pointer items-center justify-center rounded-lg border border-border-subtle bg-white text-text-subtle transition-colors hover:bg-fill-default hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           aria-label="채팅 닫기"
         >
-          <Minus className="h-4 w-4" strokeWidth={3} aria-hidden />
+          <X className="size-[18px]" strokeWidth={2} aria-hidden />
         </button>
-      </div>
+      ) : null}
     </div>
   );
 }

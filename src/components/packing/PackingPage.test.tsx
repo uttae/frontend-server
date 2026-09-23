@@ -21,7 +21,7 @@ function button(label: string) { return renderer.root.findAllByType('button').fi
 function input(label: string) { return renderer.root.findAllByType('input').find(n => n.props['aria-label'] === label)!; }
 it('renders only authoritative data and first-only expansion without fabricated progress', async () => { await mount(); expect(renderer.root.findAllByProps({'aria-expanded':true})).toHaveLength(1); expect(renderer.root.findAllByProps({'aria-expanded':false})).toHaveLength(1); expect(renderer.root.findByProps({'aria-label':'전체 준비 현황'}).children.join('')).toBe('0 / 1개 준비 완료'); });
 it('does not show a false empty list while loading', async () => { state.data = null; state.status = 'loading'; await mount(); expect(JSON.stringify(renderer.toJSON())).toContain('불러오는 중'); expect(renderer.root.findAllByType('input')).toHaveLength(0); });
-it('keeps drafts editable while writes are blocked, and preserves failed drafts', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'약'}})); state.status = 'writing'; await act(async () => renderer.update(<PackingPage />)); expect(input('새 준비물 이름').props.disabled).toBeUndefined(); expect(button('추가').props.disabled).toBe(true); state.status='ready'; coordinator.execute.mockResolvedValue({kind:'error'}); await act(async () => renderer.update(<PackingPage />)); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(input('새 준비물 이름').props.value).toBe('약'); });
+it('keeps drafts editable while writes are blocked, and preserves failed drafts', async () => { await mount(); await act(async () => button('준비물 추가: 서류').props.onClick()); await act(async () => input('새 준비물 이름').props.onChange({target:{value:'약'}})); state.status = 'writing'; await act(async () => renderer.update(<PackingPage />)); expect(input('새 준비물 이름').props.disabled).toBeUndefined(); expect(renderer.root.findByType('form').findAllByType('button')).toHaveLength(0); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(coordinator.execute).not.toHaveBeenCalled(); state.status='ready'; coordinator.execute.mockResolvedValue({kind:'error'}); await act(async () => renderer.update(<PackingPage />)); await act(async () => renderer.root.findByType('form').props.onSubmit({preventDefault(){}})); expect(input('새 준비물 이름').props.value).toBe('약'); });
 it('sends desired checkbox value with stable ID and delegates deletion', async () => { await mount(); await act(async () => renderer.root.findByProps({type:'checkbox'}).props.onChange({target:{checked:true}})); expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:11,checked:true}); await act(async () => button('준비물 삭제: 여권').props.onClick({currentTarget:document.createElement('button')})); expect(coordinator.prepareDelete).toHaveBeenCalledWith('item',11); });
 it('renders the supplied gray empty square and blue checked square for packing items', async () => {
   const square = 'M3 5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5Z';
@@ -228,8 +228,27 @@ it('opens a collapsed part when its header add action starts an inline draft', a
   expect(button('가방 펼치기 또는 접기').props['aria-expanded']).toBe(true);
   expect(input('새 준비물 이름')).toBeDefined();
   expect(button('서류 펼치기 또는 접기').props['aria-expanded']).toBe(true);
-  await act(async () => button('취소').props.onClick());
+  await act(async () => renderer.root.findByType('form').props.onKeyDown({key:'Escape',stopPropagation(){},nativeEvent:{}}));
   expect(renderer.root.findAllByType('form')).toHaveLength(0);
+});
+
+it('places a new part name input in the final checklist column without a separate action form', async () => {
+  await mount();
+  await act(async () => button('+ 파트 추가').props.onClick());
+  const columns = renderer.root.findAllByProps({className:'min-w-0 space-y-6'});
+  const newPart = columns[2].findByType('section');
+  expect(newPart.findByProps({'aria-label':'새 파트 이름'})).toBeDefined();
+  expect(newPart.findAllByType('button')).toHaveLength(0);
+});
+
+it('places a new item name input after the existing items without a separate action form', async () => {
+  await mount();
+  await act(async () => button('준비물 추가: 서류').props.onClick());
+  const documentPart = renderer.root.findAllByType('section').find(section => section.findByType('h2').children.join('') === '서류')!;
+  const rows = documentPart.findByType('ul').findAllByType('li');
+  expect(rows).toHaveLength(2);
+  expect(rows[1].findByProps({'aria-label':'새 준비물 이름'})).toBeDefined();
+  expect(rows[1].findAllByType('button')).toHaveLength(0);
 });
 
 it('keeps compact rename and delete actions accessible without repeated text labels', async () => {

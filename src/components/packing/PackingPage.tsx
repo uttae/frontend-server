@@ -18,7 +18,7 @@ const control = "min-h-10 rounded-lg px-3 py-2 text-sm font-medium hover:bg-gray
 const field = "w-full min-w-0 rounded-lg border border-gray-300 bg-white p-2 text-sm focus-visible:outline-2 focus-visible:outline-primary";
 function linked(text: string) { return renderTextWithLinks(text, { linkClassName: "text-primary underline [overflow-wrap:anywhere]", onLinkClick: e => e.stopPropagation() }); }
 
-function DraftForm({ initial = "", label, kind, ready, onSave, onCancel, onDelete }: { initial?: string; label: string; kind: "part" | "item" | "memo"; ready: boolean; onSave: (value: string) => Promise<boolean>; onCancel: () => void; onDelete?: () => Promise<boolean> }) {
+function DraftForm({ initial = "", label, kind, ready, onSave, onCancel, onDelete, inlineCreate = false }: { initial?: string; label: string; kind: "part" | "item" | "memo"; ready: boolean; onSave: (value: string) => Promise<boolean>; onCancel: () => void; onDelete?: () => Promise<boolean>; inlineCreate?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   useLayoutEffect(() => {
     const form = formRef.current;
@@ -59,12 +59,12 @@ function DraftForm({ initial = "", label, kind, ready, onSave, onCancel, onDelet
       if (await onDelete() && mounted.current && latestValue.current === submittedValue) onCancel();
     } finally { lock.current = false; }
   }
-  const props = { "aria-label": label, "aria-describedby": error ? errorId : undefined, className: field, value, onChange: (e: {target:{value:string}}) => {latestValue.current = e.target.value;setValue(e.target.value);setError("");}, onCompositionStart: () => {composing.current=true;}, onCompositionEnd: () => {composing.current=false;} };
-  return <form ref={formRef} onSubmit={submit} className={`min-w-0 space-y-2 ${styles.draft}`} onKeyDown={e => { if(e.key === "Escape") {e.stopPropagation();onCancel();} if(e.key === "Enter" && (composing.current || e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault(); }}>
-    <label className="block text-sm font-medium"><span className={kind === "memo" ? "sr-only" : undefined}>{label}</span>{kind === "memo" ? <textarea {...props} rows={4} /> : <input {...props} />}</label>
+  const props = { "aria-label": label, "aria-describedby": error ? errorId : undefined, className: inlineCreate ? styles.inlineField : field, placeholder: inlineCreate ? `${label} 입력 후 Enter` : undefined, value, onChange: (e: {target:{value:string}}) => {latestValue.current = e.target.value;setValue(e.target.value);setError("");}, onCompositionStart: () => {composing.current=true;}, onCompositionEnd: () => {composing.current=false;} };
+  return <form ref={formRef} onSubmit={submit} className={inlineCreate ? `${styles.inlineDraft} ${kind === "part" ? styles.inlinePart : styles.inlineItem}` : `min-w-0 space-y-2 ${styles.draft}`} onKeyDown={e => { if(e.key === "Escape") {e.stopPropagation();onCancel();} if(e.key === "Enter" && (composing.current || e.nativeEvent.isComposing || e.keyCode === 229)) e.preventDefault(); }}>
+    {inlineCreate ? <input {...props} /> : <label className="block text-sm font-medium"><span className={kind === "memo" ? "sr-only" : undefined}>{label}</span>{kind === "memo" ? <textarea {...props} rows={4} /> : <input {...props} />}</label>}
     {kind === "memo" && <p className="text-xs text-gray-500">{value.length}/2000</p>}
     {error && <p id={errorId} role="alert" className="text-sm text-red-700">{error}</p>}
-    <div className="flex flex-wrap justify-end gap-1">{onDelete && <button type="button" className={control} disabled={!ready} onClick={removeMemo}>메모 삭제</button>}<button type="button" className={control} onClick={onCancel}>취소</button><button type="submit" className={`${control} ${styles.save}`} disabled={!ready}>{initial || kind === "memo" ? "저장" : "추가"}</button></div>
+    {!inlineCreate && <div className="flex flex-wrap justify-end gap-1">{onDelete && <button type="button" className={control} disabled={!ready} onClick={removeMemo}>메모 삭제</button>}<button type="button" className={control} onClick={onCancel}>취소</button><button type="submit" className={`${control} ${styles.save}`} disabled={!ready}>{initial || kind === "memo" ? "저장" : "추가"}</button></div>}
   </form>;
 }
 
@@ -118,9 +118,10 @@ function Part({part,open,toggle,coordinator,ready,prepareDelete}: {part:PackingP
     </div>
     {editing && <div className={styles.editor}><DraftForm initial={part.name} label="파트 이름" kind="part" ready={ready} onSave={async name => {const r=await coordinator.execute({type:"renamePart",id:part.id,name});return r.kind === "success" || r.kind === "missing";}} onCancel={() => setEditing(false)} /></div>}
     <div id={bodyId} className={styles.body} data-expanded={open}>
-      <ul>{[...part.items].sort((a,b) => a.position-b.position).map(item => <Item key={item.id} item={item} coordinator={coordinator} ready={ready} prepareDelete={prepareDelete} />)}</ul>
-      {part.items.length === 0 && <p className="py-4 text-sm text-gray-500">준비물을 추가해 주세요.</p>}
-      {adding && <div className={styles.editor}><DraftForm label="새 준비물 이름" kind="item" ready={ready} onSave={async name => {const r=await coordinator.execute({type:"createItem",partId:part.id,name});return r.kind === "success" || r.kind === "missing";}} onCancel={() => setAdding(false)} /></div>}
+      <ul>{[...part.items].sort((a,b) => a.position-b.position).map(item => <Item key={item.id} item={item} coordinator={coordinator} ready={ready} prepareDelete={prepareDelete} />)}
+        {adding && <li className={styles.newItem}><span className={styles.checkboxPlaceholder} aria-hidden="true" /><DraftForm inlineCreate label="새 준비물 이름" kind="item" ready={ready} onSave={async name => {const r=await coordinator.execute({type:"createItem",partId:part.id,name});return r.kind === "success" || r.kind === "missing";}} onCancel={() => setAdding(false)} /></li>}
+      </ul>
+      {part.items.length === 0 && !adding && <p className="py-4 text-sm text-gray-500">준비물을 추가해 주세요.</p>}
     </div>
   </section>;
 }
@@ -184,7 +185,7 @@ function PackingContent({context}: {context:Context}) {
   const data=state.data;
   const ready=state.status === "ready";
   const items=data?.parts.flatMap(p=>p.items) ?? [];
-  return <div className={styles.page}>
+  return <div className={styles.page} data-writing={state.status === "writing"}>
     <div className={styles.scroll}>
       <div className={styles.content}>
         <header className={styles.pageHeader}>
@@ -194,9 +195,8 @@ function PackingContent({context}: {context:Context}) {
         </header>
       {state.message && <div role="alert" className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm">{state.message}{["sync-error","uncertain","error"].includes(state.status) && <button type="button" className={control} onClick={() => void coordinator?.refresh(true)}>다시 확인</button>}</div>}
       {!data ? <p role="status">{state.status === "loading" ? "준비물을 불러오는 중…" : "준비물을 확인할 수 없어요."}</p> : coordinator && <>
-        {adding && <div className={styles.newPart}><DraftForm label="새 파트 이름" kind="part" ready={ready} onSave={async name => {const result=await coordinator.execute({type:"createPart",name});if(result.kind === "success" && result.createdPartId !== undefined) setExpanded(prev=>new Set([...prev,result.createdPartId!]));return result.kind === "success";}} onCancel={()=>setAdding(false)} /></div>}
-        {data.parts.length === 0 && <p className="mb-4 text-sm text-gray-500">아직 파트가 없어요. 새 파트를 추가해 주세요.</p>}
-        <div className={styles.columns}>{[0,1,2].map(column=><div key={column} className="min-w-0 space-y-6">{data.parts.filter(p=>p.column === column).sort((a,b)=>a.position-b.position).map(part=><Part key={part.id} part={part} open={expanded.has(part.id)} toggle={()=>setExpanded(prev=>{const next=new Set(prev);if(next.has(part.id))next.delete(part.id);else next.add(part.id);return next;})} coordinator={coordinator} ready={ready} prepareDelete={prepareDelete}/>)}</div>)}</div>
+        {data.parts.length === 0 && !adding && <p className="mb-4 text-sm text-gray-500">아직 파트가 없어요. 새 파트를 추가해 주세요.</p>}
+        <div className={styles.columns}>{[0,1,2].map(column=><div key={column} className="min-w-0 space-y-6">{data.parts.filter(p=>p.column === column).sort((a,b)=>a.position-b.position).map(part=><Part key={part.id} part={part} open={expanded.has(part.id)} toggle={()=>setExpanded(prev=>{const next=new Set(prev);if(next.has(part.id))next.delete(part.id);else next.add(part.id);return next;})} coordinator={coordinator} ready={ready} prepareDelete={prepareDelete}/>)}{adding && column === 2 && <section className={`${styles.part} ${styles.newPart}`}><DraftForm inlineCreate label="새 파트 이름" kind="part" ready={ready} onSave={async name => {const result=await coordinator.execute({type:"createPart",name});if(result.kind === "success" && result.createdPartId !== undefined) setExpanded(prev=>new Set([...prev,result.createdPartId!]));return result.kind === "success";}} onCancel={()=>setAdding(false)} /></section>}</div>)}</div>
       </>}
       </div>
     </div>
