@@ -2,6 +2,7 @@
 
 import { BookmarkPlus, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
@@ -14,6 +15,7 @@ import {
   pageToolbarButtonCompactTextClass,
 } from "@/components/layout/page-toolbar-button";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { pickUniqueUntitledBookmarkCategoryName } from "@/lib/bookmark-untitled-category-name";
 import {
@@ -43,6 +45,10 @@ export function BookmarkFoldersView() {
     isPending: isDeleting,
     variables: deleteVariables,
   } = useDeleteBookmarkCategory();
+  const [folderToDelete, setFolderToDelete] = useState<{
+    categoryId: number;
+    title: string;
+  } | null>(null);
   const {
     mutate: updateCategory,
     isPending: isUpdating,
@@ -150,13 +156,21 @@ export function BookmarkFoldersView() {
     const categoryId = Number.parseInt(folder.id, 10);
     if (!Number.isFinite(categoryId)) return;
 
-    const ok = window.confirm(
-      `「${folder.title}」 카테고리를 삭제할까요? 소속 북마크 항목도 함께 삭제됩니다.`,
-    );
-    if (!ok) return;
-
     closeMenu();
-    deleteCategory({ roomId, categoryId });
+    setFolderToDelete({ categoryId, title: folder.title });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!roomId || !folderToDelete) return;
+    deleteCategory(
+      { roomId, categoryId: folderToDelete.categoryId },
+      {
+        onSuccess: () => {
+          setFolderToDelete(null);
+          toast.success("북마크 목록을 삭제했어요.");
+        },
+      },
+    );
   };
 
   const isRowDeleting = (folderId: string) =>
@@ -178,7 +192,7 @@ export function BookmarkFoldersView() {
       onClick={openCreate}
       disabled={isCreating || isUpdating}
       className={cn(
-        "flex w-fit shrink-0 cursor-pointer items-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 mobile:hidden",
+        "flex w-fit shrink-0 cursor-pointer items-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
         pageToolbarButtonCompactGapClass,
         pageToolbarButtonCompactTextClass,
         pageToolbarButtonCompactPaddingClass,
@@ -200,7 +214,7 @@ export function BookmarkFoldersView() {
     return (
       <div className="space-y-2.5">
         <MainPageHeader title="북마크" />
-        <div className="py-10 text-center text-[17px] text-dark-gray">
+        <div className="py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
           불러오는 중…
         </div>
       </div>
@@ -212,7 +226,7 @@ export function BookmarkFoldersView() {
       <div className="space-y-2.5">
         <MainPageHeader title="북마크" />
         <div className="space-y-3 py-10 text-center">
-          <p className="text-[17px] text-primary">
+          <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
             {error instanceof Error
               ? error.message
               : "목록을 불러오지 못했습니다."}
@@ -220,7 +234,7 @@ export function BookmarkFoldersView() {
           <button
             type="button"
             onClick={() => refetch()}
-            className="cursor-pointer text-[17px] font-medium text-neutral-900 underline"
+            className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
           >
             다시 시도
           </button>
@@ -237,7 +251,7 @@ export function BookmarkFoldersView() {
         {folders.length === 0 ? (
           <p
             className={cn(
-              "py-10 text-center text-[17px] text-dark-gray",
+              "py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray",
               MAIN_CARD_INNER_PADDING_X_CLASS,
             )}
           >
@@ -259,10 +273,10 @@ export function BookmarkFoldersView() {
                   >
                     <FolderRibbonIcon color={folder.color} />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-lg font-medium text-neutral-900">
+                      <p className="truncate text-body-l-emphasis mobile:text-body-m-emphasis font-medium text-neutral-900">
                         {folder.title}
                       </p>
-                      <p className="mt-0.5 text-[17px] text-dark-gray">
+                      <p className="mt-0.5 text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                         {folder.placeCount ?? 0}개 장소
                       </p>
                     </div>
@@ -292,7 +306,7 @@ export function BookmarkFoldersView() {
                         <button
                           type="button"
                           role="menuitem"
-                          className="block w-full cursor-pointer px-4 py-2 text-left text-[17px] text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
+                          className="block w-full cursor-pointer px-4 py-2 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
                           disabled={
                             isRowDeleting(folder.id) || isRowUpdating(folder.id)
                           }
@@ -303,7 +317,7 @@ export function BookmarkFoldersView() {
                         <button
                           type="button"
                           role="menuitem"
-                          className="block w-full cursor-pointer px-4 py-2 text-left text-[17px] text-status-negative hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="block w-full cursor-pointer px-4 py-2 text-left text-label-l-regular mobile:text-label-m-regular text-status-negative hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                           disabled={
                             isRowDeleting(folder.id) || isRowUpdating(folder.id)
                           }
@@ -343,6 +357,16 @@ export function BookmarkFoldersView() {
           formError={folderFormError}
         />
       )}
+      {folderToDelete ? (
+        <ConfirmDialog
+          title={`「${folderToDelete.title}」 북마크 목록을 삭제할까요?`}
+          description="소속 북마크 항목도 함께 삭제됩니다."
+          confirmLabel="삭제"
+          isPending={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setFolderToDelete(null)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CookieSettingsButton } from "@/components/analytics/CookieSettingsProvider";
+import { BrandLogo } from "@/components/BrandLogo";
 
 import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -23,8 +24,59 @@ function FooterDot() {
   );
 }
 
-export function SiteFooter({ className, logo }: { className?: string; logo?: ReactNode }) {
+export function SiteFooter({ className, logo, variant = "default" }: {
+  className?: string;
+  logo?: ReactNode;
+  variant?: "default" | "room-list";
+}) {
   const year = new Date().getFullYear();
+
+  if (variant === "room-list") {
+    return (
+      <footer className={cn("bg-fill text-text mobile:hidden", className)}>
+        <div className="mx-auto flex max-w-[1184px] flex-col gap-5 px-6 pb-20 pt-[60px] mobile:p-8">
+          <Link href="/" aria-label="우때 홈" className="w-fit [&_img]:h-[22px] [&_img]:w-[73px]">
+            <BrandLogo variant="combination" size="S" />
+          </Link>
+          <nav aria-label="정책 문서" className="flex min-h-[60px] flex-wrap items-center gap-x-5 gap-y-3 text-label-l-emphasis mobile:hidden">
+            {POLICY_LINKS.map((item, index) => (
+              <span key={item.href} className="inline-flex items-center gap-5">
+                {index > 0 && <span aria-hidden className="h-9 w-px bg-border" />}
+                <Link href={item.href} className="flex h-10 items-center hover:underline">{item.label}</Link>
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-5">
+              <span aria-hidden className="h-9 w-px bg-border" />
+              <CookieSettingsButton className="h-10 cursor-pointer hover:underline">
+                쿠키 설정
+              </CookieSettingsButton>
+            </span>
+          </nav>
+          <nav aria-label="정책 문서" className="hidden mobile:flex mobile:flex-col mobile:text-label-s-emphasis">
+            <div className="flex h-10 items-center gap-[14px]">
+              {POLICY_LINKS.slice(0, 3).map((item, index) => (
+                <span key={item.href} className="inline-flex items-center gap-[14px]">
+                  {index > 0 && <span aria-hidden className="h-6 w-px bg-border" />}
+                  <Link href={item.href} className="flex h-10 items-center whitespace-nowrap hover:underline">{item.label}</Link>
+                </span>
+              ))}
+            </div>
+            <div className="flex h-10 items-center gap-[14px]">
+              <CookieSettingsButton className="h-10 cursor-pointer whitespace-nowrap hover:underline">쿠키설정</CookieSettingsButton>
+              <span aria-hidden className="h-6 w-px bg-border" />
+              <Link href={POLICY_LINKS[3].href} className="flex h-10 items-center whitespace-nowrap hover:underline">{POLICY_LINKS[3].label}</Link>
+            </div>
+          </nav>
+          <dl className="grid w-fit grid-cols-1 gap-x-[100px] gap-y-1.5 text-label-l-regular mobile:w-full mobile:gap-y-3 mobile:text-label-s-regular md:grid-cols-[max-content_max-content]">
+            <div className="flex gap-[25px] mobile:order-1"><dt className="w-[68px] shrink-0 text-text-subtle">서비스명</dt><dd>우때</dd></div>
+            <div className="flex gap-[25px] mobile:order-3"><dt className="w-[68px] shrink-0 text-text-subtle">운영자</dt><dd>팀 우때 (Team Uttae)</dd></div>
+            <div className="flex gap-[25px] mobile:order-2"><dt className="w-[68px] shrink-0 text-text-subtle">이메일</dt><dd><a href={`mailto:${SUPPORT_EMAIL}`} className="hover:underline">{SUPPORT_EMAIL}</a></dd></div>
+            <div className="flex gap-[25px] mobile:order-4"><dt className="w-[68px] shrink-0 text-text-subtle">호스팅</dt><dd>Amazon Web Services (AWS)</dd></div>
+          </dl>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer
@@ -35,7 +87,7 @@ export function SiteFooter({ className, logo }: { className?: string; logo?: Rea
           {logo ? <Link href="/" aria-label="우때 홈">{logo}</Link> : null}
           <nav
             aria-label="정책 문서"
-            className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-sm"
+            className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-body-s-regular mobile:text-body-xs-regular"
           >
             {POLICY_LINKS.map((item, index) => (
               <span
@@ -60,7 +112,7 @@ export function SiteFooter({ className, logo }: { className?: string; logo?: Rea
             aria-label="운영자 정보"
             className="mt-2.5 w-full border-t border-white/25 pt-2.5"
           >
-            <dl className="mx-auto grid w-fit grid-cols-1 gap-y-1 text-sm sm:grid-cols-2 sm:gap-x-10 sm:gap-y-1">
+            <dl className="mx-auto grid w-fit grid-cols-1 gap-y-1 text-body-s-regular mobile:text-body-xs-regular sm:grid-cols-2 sm:gap-x-10 sm:gap-y-1">
               <div className="flex min-w-0 gap-2">
                 <dt className="w-[3.25rem] shrink-0 text-white/50">서비스명</dt>
                 <dd className="min-w-0 text-white/85">우때</dd>
@@ -86,7 +138,7 @@ export function SiteFooter({ className, logo }: { className?: string; logo?: Rea
             </dl>
           </section>
 
-          <p className="mt-2.5 text-center text-sm text-white/45">
+          <p className="mt-2.5 text-center text-body-s-regular mobile:text-body-xs-regular text-white/45">
             © {year} 우때. All rights reserved.
           </p>
         </div>

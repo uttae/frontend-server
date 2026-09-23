@@ -7,21 +7,18 @@ const state = vi.hoisted(() => ({ pathname: "/plan/room", query: "", mobile: fal
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.query) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: React.ComponentProps<"a">) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: state.mobile }) }));
-vi.mock("@/hooks/useMobileRedirects", () => ({ useMainMobileRouteRedirect: () => {} }));
 vi.mock("@/hooks/useHostJoinRequestsBadgeCount", () => ({ useHostJoinRequestsBadgeCount: () => 2 }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRoomUnreadCount", () => ({ useRoomUnreadCount: () => ({ data: { unreadCount: state.unread } }) }));
 vi.mock("@/hooks/useSessionPromptVisible", () => ({ useSessionPromptVisible: () => ({ visible: true, dismiss: vi.fn() }) }));
-vi.mock("./HeaderBar", () => ({ default: () => <header /> }));
+vi.mock("./HeaderBar", () => ({ default: ({ mobileBackHref }: { mobileBackHref?: string }) => <header data-mobile-back-href={mobileBackHref} /> }));
 vi.mock("./LeftSection", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock("./SidebarTutorial", () => ({ SidebarTutorial: () => null }));
-vi.mock("@/components/mobile/MobileReadOnlyNotice", () => ({ MobileReadOnlyNotice: () => null }));
 // External map/chat engines are boundaries; assertions exercise chrome selection and containment.
 vi.mock("@/components/map", () => ({ MapWithDetailPanel: () => <div data-map /> }));
 vi.mock("@/components/chat", () => ({ ChatPanel: () => <div data-chat /> }));
 import { MainLayoutChrome } from "./MainLayoutChrome";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
-import { isMainRouteBlockedOnMobile } from "@/lib/mobile-view/routes";
 
 let host: HTMLDivElement;
 let root: Root;
@@ -41,7 +38,7 @@ function active() { return [...nav().querySelectorAll('[aria-current="page"], [a
 
 it("desktop selects chat alone in the content panel and route links restore route content", async () => {
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "지출", "채팅", "멤버"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "가계부", "채팅", "멤버"]);
   expect(active()).toHaveLength(1);
   await act(async () => items()[4].click());
   expect(active()).toEqual([items()[4]]);
@@ -76,13 +73,14 @@ it("shows labeled feedback and bug report links in the sidebar", async () => {
   expect(sidebar.querySelector('a[aria-label="피드백 설문"]')?.textContent).toContain("피드백");
   expect(sidebar.querySelector('a[aria-label="버그 제보"]')?.textContent).toContain("버그 제보");
 });
-it("mobile has five bottom destinations and retains the existing map/schedule URLs outside them", async () => {
+it("mobile uses the four Figma destinations, with travel tools opening expenses", async () => {
   state.mobile = true; await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "채팅", "멤버"]);
-  expect(items().map(x => x.getAttribute("href"))).toEqual(["/plan/room", "/search", "/bookmark", "/plan/room?view=chat", "/member-settings"]);
-  expect(host.querySelector("article")!.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "북마크", "여행 도구", "채팅"]);
+  expect(items().map(x => x.getAttribute("href"))).toEqual(["/plan/room", "/bookmark", "/cost", "/plan/room?view=chat"]);
   expect(nav().className).toContain("safe-area-inset-bottom");
-  expect(host.querySelector('a[href="/plan/room?view=map"]')).not.toBeNull();
+  expect(nav().querySelector('a[href="/search"]')).toBeNull();
+  expect(items().every(item => item.querySelector('[style*="mask"]'))).toBe(true);
+  expect(host.querySelector("article")!.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   state.query = "view=map"; await render();
   expect(active()).toEqual([items()[0]]);
   expect(host.querySelector("article")).toBeNull();
@@ -92,20 +90,39 @@ it("mobile has five bottom destinations and retains the existing map/schedule UR
   expect(host.querySelectorAll("[data-chat]")).toHaveLength(1);
   expect(host.querySelector("[data-map]")).toBeNull();
 });
-it("allows mobile search without widening blocked settings/contact routes", () => {
-  expect(isMainRouteBlockedOnMobile("/search")).toBe(false);
-  expect(isMainRouteBlockedOnMobile("/settings")).toBe(true);
-  expect(isMainRouteBlockedOnMobile("/contact")).toBe(true);
-});
 
+it("shows unread messages on the mobile chat tab", async () => {
+  state.mobile = true;
+  state.unread = 4;
+  await render();
+  expect(items()[3].textContent).toContain("4");
+});
 it.each([false, true])("keeps one selected destination while visiting all route tabs (mobile=%s)", async mobile => {
   state.mobile = mobile;
-  for (const [pathname, index] of [["/plan/room", 0], ["/search", 1], ["/bookmark/folder", 2], ["/member-settings", 4]] as const) {
+  for (const [pathname, desktopIndex, mobileIndex] of [["/plan/room", 0, 0], ["/bookmark/folder", 2, 1], ["/cost", 3, 2]] as const) {
     state.pathname = pathname; await render();
-    expect(active()).toEqual([items()[!mobile && index === 4 ? 5 : index]]);
+    expect(active()).toEqual([items()[mobile ? mobileIndex : desktopIndex]]);
     expect(host.querySelector("[data-chat]")).toBeNull();
     expect(host.querySelector("article")).not.toBeNull();
   }
+});
+
+it.each(["/search", "/member-settings"])("keeps %s available outside the mobile tabs", async pathname => {
+  state.mobile = true;
+  state.pathname = pathname;
+  await render();
+  expect(active()).toHaveLength(0);
+  expect(items()).toHaveLength(4);
+});
+
+it("uses the back header only within a bookmark folder", async () => {
+  state.mobile = true;
+  state.pathname = "/bookmark/folder";
+  await render();
+  expect(host.querySelector("header")?.getAttribute("data-mobile-back-href")).toBe("/bookmark");
+  state.pathname = "/bookmark";
+  await render();
+  expect(host.querySelector("header")?.hasAttribute("data-mobile-back-href")).toBe(false);
 });
 
 it("cost follows bookmarks, selects alone and closes chat", async () => {
@@ -117,7 +134,6 @@ it("cost follows bookmarks, selects alone and closes chat", async () => {
   state.pathname = "/cost"; await render();
   expect(active()).toEqual([cost]);
   expect(host.querySelector("article")).not.toBeNull();
-  expect(isMainRouteBlockedOnMobile("/cost")).toBe(false);
 });
 
 it.each(["/plan/room", "/cost"])("colors every sidebar icon consistently on %s", async pathname => {
@@ -139,7 +155,7 @@ it.each([false, true])("packing adds no destination or active state and retains 
   state.mobile = mobile;
   state.pathname = "/packing/12345678-1234-1234-1234-123456789abc";
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "검색", "북마크", "채팅", "멤버"] : ["일정", "검색", "북마크", "지출", "채팅", "멤버"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "북마크", "여행 도구", "채팅"] : ["일정", "검색", "북마크", "가계부", "채팅", "멤버"]);
   expect(active()).toHaveLength(0);
   expect(host.querySelector('[href^="/packing"]')).toBeNull();
   expect(host.querySelector("[data-map]")).toBeNull();

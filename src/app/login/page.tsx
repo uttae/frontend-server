@@ -60,7 +60,7 @@ function LoginShell({ children }: { children: ReactNode }) {
         <div className="flex flex-col items-center gap-6 text-center">
           <div className="flex flex-col items-center gap-3 [&>img]:h-[27px] [&>img]:w-[88.2px]">
             <BrandLogo variant="combination" size="M" alt="우때 로고" />
-            <p className="text-[17px] leading-relaxed text-dark-gray">
+            <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
               로그인하고 여행 계획을 이어가세요!
             </p>
           </div>
@@ -99,7 +99,7 @@ function LoginPageContent() {
       <button
         type="button"
         onClick={handleContinueWithGoogle}
-        className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-border bg-white px-4 py-3 text-lg font-medium text-[#1f1f1f] shadow-sm transition hover:bg-bubble-gray/60 hover:shadow disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-3 rounded-xl border border-gray-border bg-white px-4 py-3 text-label-xl-regular mobile:text-label-l-regular font-medium text-[#1f1f1f] shadow-sm transition hover:bg-bubble-gray/60 hover:shadow disabled:cursor-not-allowed disabled:opacity-50"
       >
         <GoogleMark className="h-5 w-5 shrink-0" />
         <span>Google로 계속하기</span>
@@ -115,7 +115,7 @@ export function LoginFallback() {
         type="button"
         disabled
         aria-disabled="true"
-        className="flex w-full cursor-wait items-center justify-center gap-3 rounded-xl border border-gray-border bg-white px-4 py-3 text-lg font-medium text-[#1f1f1f] opacity-70 shadow-sm"
+        className="flex w-full cursor-wait items-center justify-center gap-3 rounded-xl border border-gray-border bg-white px-4 py-3 text-label-xl-regular mobile:text-label-l-regular font-medium text-[#1f1f1f] opacity-70 shadow-sm"
       >
         <GoogleMark className="h-5 w-5 shrink-0" />
         <span>Google로 계속하기</span>

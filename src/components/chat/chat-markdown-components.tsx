@@ -92,7 +92,7 @@ export function createChatMarkdownComponents(
     },
     pre({ children }) {
       return (
-        <pre className="my-1 overflow-x-auto rounded-md bg-black/10 p-2 font-mono text-xs leading-relaxed break-words last:mb-0">
+        <pre className="my-1 overflow-x-auto rounded-md bg-black/10 p-2 font-mono text-body-xs-regular leading-relaxed break-words last:mb-0">
           {children}
         </pre>
       );
@@ -107,7 +107,7 @@ export function createChatMarkdownComponents(
     table({ children }) {
       return (
         <div className="my-1 overflow-x-auto last:mb-0">
-          <table className="w-full border-collapse text-xs">{children}</table>
+          <table className="w-full border-collapse text-body-xs-regular">{children}</table>
         </div>
       );
     },

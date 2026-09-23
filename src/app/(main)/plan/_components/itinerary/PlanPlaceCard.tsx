@@ -9,9 +9,9 @@ import Image from "next/image";
 import { Clock, Loader2, MapPin } from "lucide-react";
 
 import { MemoIcon } from "@/components/icons";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { toast } from "sonner";
 
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
 import { useInViewport } from "@/hooks/useInViewport";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import {
@@ -71,7 +71,6 @@ export function PlanPlaceCard({
   onDragStart,
   onDragEnd,
 }: PlanPlaceCardProps) {
-  const { isReadOnly } = usePlanMobileReadOnly();
   const { setSelectedPlace } = useSelectedPlace();
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const blockCardDragRef = useRef(false);
@@ -87,13 +86,15 @@ export function PlanPlaceCard({
     useDeleteScheduleItem();
   const { mutateAsync: updateScheduleItemMutate, isPending: isUpdatingItem } =
     useUpdateScheduleItem();
+  const [confirmTarget, setConfirmTarget] = useState<"item" | "memo" | null>(
+    null,
+  );
 
   const canManageServerItem =
     Boolean(scheduleTimeEdit) && typeof place.itemId === "number";
 
   const handleDeleteScheduleItem = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("이 장소와 연결된 모든 지출을 삭제할까요?")) return;
     try {
       await removeScheduleItemMutate({
         roomId: scheduleTimeEdit.roomId,
@@ -104,6 +105,7 @@ export function PlanPlaceCard({
         item_count_bucket: bucketItemCount(itineraryItemCount - 1),
       });
       toast.success("일정에서 삭제했어요.");
+      setConfirmTarget(null);
     } catch {
       toast.error("삭제하지 못했어요.");
     }
@@ -116,7 +118,6 @@ export function PlanPlaceCard({
 
   const handleDeleteMemo = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
-    if (!confirm("메모를 삭제하시겠습니까?")) return;
     try {
       await updateScheduleItemMutate({
         roomId: scheduleTimeEdit.roomId,
@@ -125,6 +126,7 @@ export function PlanPlaceCard({
         body: { memo: "" },
       });
       toast.success("메모를 삭제했어요.");
+      setConfirmTarget(null);
     } catch {
       toast.error("메모를 삭제하지 못했어요.");
     }
@@ -133,10 +135,10 @@ export function PlanPlaceCard({
   const handlePointerDownCapture = useCallback(
     (e: React.PointerEvent) => {
       blockCardDragRef.current = isPlanPlaceCardInteractiveTarget(e.target);
-      if (isReadOnly || blockCardDragRef.current) return;
+      if (blockCardDragRef.current) return;
       pointerDownRef.current = { x: e.clientX, y: e.clientY };
     },
-    [isReadOnly],
+    [],
   );
 
   const handleDragStart = useCallback(
@@ -161,7 +163,6 @@ export function PlanPlaceCard({
 
   const handleCardClick = useCallback(
     (e: React.MouseEvent) => {
-      if (isReadOnly) return;
       if (e.button !== 0) return;
       const start = pointerDownRef.current;
       pointerDownRef.current = null;
@@ -201,7 +202,6 @@ export function PlanPlaceCard({
       );
     },
     [
-      isReadOnly,
       place.googlePlaceId,
       place.location,
       place.subtitle,
@@ -213,10 +213,6 @@ export function PlanPlaceCard({
   const scheduleItemId =
     scheduleTimeEdit && typeof place.itemId === "number" ? place.itemId : null;
 
-  /**
-   * 시간·메모 편집은 모바일에서도 허용한다.
-   * `isReadOnly`(모바일)는 D&D 재정렬·카드 클릭 등 구조 편집만 잠근다.
-   */
   const canEditScheduleItem =
     scheduleTimeEdit != null && scheduleItemId !== null;
 
@@ -240,7 +236,7 @@ export function PlanPlaceCard({
   const deleteButton = canManageServerItem ? (
     <PlanScheduleItemDeleteButton
       disabled={isDeletingItem}
-      onDelete={() => void handleDeleteScheduleItem()}
+      onDelete={() => setConfirmTarget("item")}
     />
   ) : null;
 
@@ -294,15 +290,15 @@ export function PlanPlaceCard({
   return (
     <div className="flex w-full flex-col gap-2">
       <article
-        draggable={!dragDisabled && !isReadOnly}
-        onPointerDownCapture={isReadOnly ? undefined : handlePointerDownCapture}
-        onDragStart={dragDisabled || isReadOnly ? undefined : handleDragStart}
-        onDragEnd={dragDisabled || isReadOnly ? undefined : handleDragEnd}
-        onClick={isReadOnly ? undefined : handleCardClick}
+        draggable={!dragDisabled}
+        onPointerDownCapture={handlePointerDownCapture}
+        onDragStart={dragDisabled ? undefined : handleDragStart}
+        onDragEnd={dragDisabled ? undefined : handleDragEnd}
+        onClick={handleCardClick}
         className={cn(
           "w-full select-none",
           PLAN_PLACE_CARD_TW.article,
-          dragDisabled || isReadOnly
+          dragDisabled
             ? "cursor-default"
             : "cursor-grab active:cursor-grabbing",
         )}
@@ -382,7 +378,7 @@ export function PlanPlaceCard({
                     "min-w-0 flex-1",
                     PLAN_PLACE_CARD_TW.titleCompact,
                     PLAN_PLACE_CARD_TW.titleClamp,
-                    "mobile:text-lg",
+                    "mobile:text-title-s",
                   )}
                   title={place.title}
                 >
@@ -418,7 +414,7 @@ export function PlanPlaceCard({
               className={cn(
                 "mt-auto inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
                 PLAN_PLACE_CARD_TW.titleCompact,
-                "text-[14px] tabular-nums text-primary-strong",
+                "text-body-s-regular mobile:text-body-xs-regular tabular-nums text-primary-strong",
               )}
             >
               {timeRange}
@@ -439,7 +435,8 @@ export function PlanPlaceCard({
               <ExpenseEntryButton
                 scheduleId={scheduleTimeEdit.scheduleId}
                 scheduleItemId={scheduleItemId}
-                label="지출 추가"
+                scopeLabel={place.title}
+                label="비용 추가"
                 className={PLAN_PLACE_CARD_TW.triggerButton}
                 icon={<ExpenseIcon className={PLAN_PLACE_CARD_TW.triggerIcon} />}
               />
@@ -475,9 +472,28 @@ export function PlanPlaceCard({
         <PlanItemMemoReadOnly
           memo={memoText}
           onDelete={
-            canEditScheduleItem ? () => void handleDeleteMemo() : undefined
+            canEditScheduleItem ? () => setConfirmTarget("memo") : undefined
           }
           isDeleting={isUpdatingItem}
+        />
+      ) : null}
+      {confirmTarget === "item" ? (
+        <ConfirmDialog
+          title="일정에서 이 장소를 삭제할까요?"
+          description="이 장소와 연결된 모든 비용도 함께 삭제돼요."
+          confirmLabel="삭제"
+          isPending={isDeletingItem}
+          onConfirm={() => void handleDeleteScheduleItem()}
+          onCancel={() => setConfirmTarget(null)}
+        />
+      ) : null}
+      {confirmTarget === "memo" ? (
+        <ConfirmDialog
+          title="메모를 삭제할까요?"
+          confirmLabel="삭제"
+          isPending={isUpdatingItem}
+          onConfirm={() => void handleDeleteMemo()}
+          onCancel={() => setConfirmTarget(null)}
         />
       ) : null}
     </div>

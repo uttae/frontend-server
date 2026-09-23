@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
-import Link from "next/link";
 import { isPackingPath } from "@/lib/room-context-path";
 import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { useMainMobileRouteRedirect } from "@/hooks/useMobileRedirects";
-import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
+import { readMobilePlanPanel } from "@/lib/mobile-view";
 import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
 import { MobileMainTabs } from "@/components/mobile/MobileMainTabs";
-import { MobileReadOnlyNotice } from "@/components/mobile/MobileReadOnlyNotice";
 
 import HeaderBar from "./HeaderBar";
 import LeftSection from "./LeftSection";
@@ -25,7 +22,6 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const { isMobileDevice } = useMobileView();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  useMainMobileRouteRedirect();
   const { chatState, closeChat } = useChat();
   const previousRoute = useRef(pathname);
   useEffect(() => {
@@ -42,23 +38,18 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
       : "schedule";
   const showMobilePlanSurface =
     isMobileDevice && isPlanRoute && mobilePlanPanel !== "schedule";
+  const mobileBackHref =
+    isMobileDevice && pathname.startsWith("/bookmark/") ? "/bookmark" : undefined;
 
   return (
     <main className="flex h-dvh flex-col">
-      <MobileReadOnlyNotice />
       <div className="relative mx-auto flex min-h-0 flex-1 w-full overflow-hidden rounded-none bg-white">
         <LeftSection>
-          <HeaderBar />
-          {isMobileDevice && isPlanRoute && mobilePlanPanel !== "chat" ? (
-            <div className="flex shrink-0 justify-end border-b border-gray-border px-3 py-1">
-              <Link
-                href={buildMobilePlanPanelHref(pathname, mobilePlanPanel === "map" ? "schedule" : "map")}
-                className="flex min-h-11 items-center rounded-lg px-3 text-[14px] font-medium text-primary focus-visible:outline-2"
-              >
-                {mobilePlanPanel === "map" ? "일정 보기" : "지도 보기"}
-              </Link>
-            </div>
-          ) : null}
+          <HeaderBar
+            mobilePlanPanel={mobilePlanPanel}
+            mobileBackHref={mobileBackHref}
+            mobileBackLabel="북마크 목록으로 돌아가기"
+          />
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? (isPackingRoute ? <div className="hidden shrink-0 lg:flex"><SideBar /></div> : <SideBar />) : null}
             <MainContentScrollArea fill={isPackingRoute || showMobilePlanSurface || showDesktopChat}>

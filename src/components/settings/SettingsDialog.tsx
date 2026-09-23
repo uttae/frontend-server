@@ -1,8 +1,18 @@
 "use client";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode, type SyntheticEvent } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+
+// 포털의 이벤트가 React 트리의 카드 클릭·드래그 호스트로 전파되는 것만 막는다.
+// 사용자 동작은 내부 버튼이 담당하며, 키 입력은 document의 포커스·Escape 처리로 전달한다.
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+const portalEventBoundary = {
+  onClick: stopPropagation,
+  onMouseDown: stopPropagation,
+  onPointerDown: stopPropagation,
+  onTouchStart: stopPropagation,
+};
 
 function restoreDialogFocus(trigger: Element | null) {
   if (trigger instanceof HTMLElement && trigger !== document.body && trigger.isConnected) {
@@ -28,10 +38,14 @@ export function SettingsDialog({
   title,
   onClose,
   children,
+  size = "default",
+  stopPortalEventPropagation = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
+  size?: "default" | "compact";
+  stopPortalEventPropagation?: boolean;
 }) {
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -94,6 +108,7 @@ export function SettingsDialog({
   return createPortal(
     <div
       ref={overlayRef}
+      {...(stopPortalEventPropagation ? portalEventBoundary : {})}
       className="fixed inset-0 z-[210] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm"
     >
       <button
@@ -108,10 +123,10 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[640px] overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"
+        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6`}
       >
         <div className="mb-2 flex items-center justify-between gap-4">
-          <h2 id={titleId} className="text-[22px] font-bold">
+          <h2 id={titleId} className="text-title-l mobile:text-title-m font-bold">
             {title}
           </h2>
           <button

@@ -19,6 +19,7 @@ type Props = {
   isRoomDetailLoading: boolean;
   isRoomDetailError: boolean;
   onClose: () => void;
+  embedded?: boolean;
 };
 
 function normalizeInviteCode(inviteCode: string | null | undefined): string {
@@ -33,10 +34,15 @@ export function AddMemberPanel({
   isRoomDetailLoading,
   isRoomDetailError,
   onClose,
+  embedded = false,
 }: Props) {
   const roomIdTrim = roomId.trim();
   const detailInviteCode = normalizeInviteCode(inviteCode);
   const [copied, setCopied] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+  }, []);
   const [issuedCode, setIssuedCode] = useState<
     string | null | undefined
   >(undefined);
@@ -84,9 +90,10 @@ export function AddMemberPanel({
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${displayedCode}`
     : null;
 
-  function handleCopy() {
-    if (!inviteUrl) return;
-    navigator.clipboard.writeText(inviteUrl).then(() => {
+  async function handleCopy() {
+    if (!inviteUrl || isRegenerating) return false;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
       trackAnalyticsEvent(AnalyticsEvents.sharePlan, {
         member_count_bucket:
           memberCount === undefined
@@ -96,12 +103,17 @@ export function AddMemberPanel({
         role: toAnalyticsRoomRole(role),
       });
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
+      return true;
+    } catch {
+      toast.error("링크를 복사하지 못했어요. 초대 링크를 직접 선택해 복사해 주세요.");
+      return false;
+    }
   }
 
   async function handleShare() {
-    if (!inviteUrl) return;
+    if (!inviteUrl || isRegenerating) return;
     const canShare =
       typeof navigator !== "undefined" && typeof navigator.share === "function";
     if (canShare) {
@@ -123,13 +135,12 @@ export function AddMemberPanel({
         if ((err as Error | undefined)?.name === "AbortError") return;
       }
     }
-    handleCopy();
-    toast.info("공유 시트를 열 수 없어 링크를 복사했어요.");
+    if (await handleCopy()) toast.info("공유 시트를 열 수 없어 링크를 복사했어요.");
   }
 
   function handleRegenerate() {
     if (!roomIdTrim.length) return;
-    setIssuedCode(null);
+    setCopied(false);
     regenerate(roomIdTrim, {
       onSuccess: ({ inviteCode: newCode }) => {
         setIssuedCode(newCode);
@@ -141,9 +152,10 @@ export function AddMemberPanel({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-border bg-gray-50">
+    <div className={embedded ? "min-w-0" : "overflow-hidden rounded-xl border border-gray-border bg-gray-50"}>
+      {!embedded && (
       <div className="flex items-center justify-between border-b border-gray-border bg-white px-4 py-3">
-        <span className="text-[17px] font-semibold text-gray-800">멤버 초대</span>
+        <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-gray-800">멤버 초대</span>
         <button
           onClick={onClose}
           className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-dark-gray transition-colors hover:bg-gray-100"
@@ -162,20 +174,19 @@ export function AddMemberPanel({
           </svg>
         </button>
       </div>
+      )}
 
-      <div className="flex flex-col gap-3 p-4">
-        <p className="text-[14px] text-dark-gray">
+      <div className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-3 p-4"}>
+        <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           아래 초대 링크를 복사해 멤버를 초대하세요.
         </p>
 
         <div className="flex gap-2">
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-gray-border bg-white px-3 py-2">
             {inviteUrl ? (
-              <span className="truncate text-[14px] text-dark-gray">
-                {inviteUrl}
-              </span>
+              <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 bg-transparent text-body-s-regular text-dark-gray outline-none disabled:opacity-40" />
             ) : (
-              <span className="truncate text-[14px] text-light-gray">
+              <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-light-gray">
                 {isRoomDetailLoading
                   ? "방 정보를 불러오는 중…"
                   : isRegenerating
@@ -189,8 +200,8 @@ export function AddMemberPanel({
           <button
             type="button"
             onClick={handleCopy}
-            disabled={!inviteUrl}
-            className={`flex-shrink-0 cursor-pointer rounded-lg border px-3 py-2 text-[14px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+            disabled={!inviteUrl || isRegenerating}
+            className={`flex-shrink-0 cursor-pointer rounded-lg border px-3 py-2 text-label-m-regular mobile:text-label-s-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
               copied
                 ? "border-status-positive bg-status-positive/10 text-status-positive"
                 : "border-gray-border bg-white text-dark-gray hover:border-gray-400"
@@ -203,8 +214,8 @@ export function AddMemberPanel({
         <button
           type="button"
           onClick={() => void handleShare()}
-          disabled={!inviteUrl}
-          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-[14px] font-semibold text-white shadow-sm transition hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          disabled={!inviteUrl || isRegenerating}
+          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-white shadow-sm transition hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Share2 size={16} strokeWidth={2.2} aria-hidden />
           친구에게 공유
@@ -214,7 +225,7 @@ export function AddMemberPanel({
           type="button"
           onClick={handleRegenerate}
           disabled={isRegenerating}
-          className="flex cursor-pointer items-center gap-1.5 self-start text-[14px] text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex cursor-pointer items-center gap-1.5 self-start text-label-m-regular mobile:text-label-s-regular text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
         >
           <RefreshCw
             size={12}

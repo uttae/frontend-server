@@ -34,8 +34,8 @@ describe.each([
       const classes = mentions[0][1].split(/\s+/);
       expect(classes).toContain("text-secondary-default");
       expect(classes).not.toContain("text-white");
-      expect(classes).toContain(isMinimized ? "text-[13px]" : "text-[14px]");
-      expect(classes).not.toContain(isMinimized ? "text-[14px]" : "text-[13px]");
+      expect(classes).toContain(isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis");
+      expect(classes).not.toContain(isMinimized ? "text-body-s-emphasis" : "text-body-xs-emphasis");
       expect(html).toContain(message.text);
     });
 

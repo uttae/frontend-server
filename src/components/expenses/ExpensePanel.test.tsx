@@ -4,6 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { ExpensePanel } from "./ExpensePanel";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const mocks = vi.hoisted(() => ({
   state: null as unknown,
@@ -21,7 +22,7 @@ it("opens an expense in the selected trip day", async () => {
   );
   const add = renderer.root
     .findAllByType("button")
-    .find((b) => b.props["aria-label"] === "지출 추가");
+    .find((b) => b.props["aria-label"] === "비용 추가");
   expect(add).toBeDefined();
   await act(async () => add!.props.onClick());
   expect(mocks.open).toHaveBeenCalledWith({ scheduleId: 10 });
@@ -63,12 +64,15 @@ it("keeps a single reference travel total visible while filtering", async () => 
   expect(text).not.toContain("999,999,999,999,999.99");
   expect(text).not.toContain("12,300");
   expect(text).toContain("501");
-  expect(text.match(/여행 전체 지출/g)).toHaveLength(1);
-  expect(text).not.toContain("원화 참고 지출");
+  expect(text.match(/여행 전체 비용/g)).toHaveLength(1);
+  expect(text).not.toContain("원화 참고 비용");
 });
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => mocks.state,
-  ExpenseEntryButton: () => <button>준비 지출 추가</button>,
+  ExpenseEntryButton: () => <button>준비 비용 추가</button>,
+}));
+vi.mock("@/components/settings/ConfirmDialog", () => ({
+  ConfirmDialog: () => null,
 }));
 let renderer: ReactTestRenderer;
 afterEach(async () => {
@@ -159,25 +163,23 @@ it("filters preparation and trip day without altering server summary scope", asy
       .find((b) => b.children.includes("정산 요약"))!
       .props.onClick(),
   );
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("방 전체 지출을 기준으로 정산해요.");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("방 전체 비용을 기준으로 정산해요.");
 });
 it("requires confirmation and preserves list with visible deletion failure", async () => {
   await mount();
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => false),
-  );
   let button = renderer.root
     .findAllByType("button")
-    .find((b) => b.props["aria-label"] === "지출 삭제")!;
+    .find((b) => b.props["aria-label"] === "비용 삭제")!;
   await act(async () => button.props.onClick());
+  await answerConfirm(false);
   expect(mocks.remove).not.toHaveBeenCalled();
-  vi.stubGlobal("confirm", () => true);
+  expect(renderer.root.findAllByType(ConfirmDialog)).toHaveLength(0);
   mocks.remove.mockRejectedValue(new Error("삭제 실패"));
   button = renderer.root
     .findAllByType("button")
-    .find((b) => b.props["aria-label"] === "지출 삭제")!;
+    .find((b) => b.props["aria-label"] === "비용 삭제")!;
   await act(async () => button.props.onClick());
+  await answerConfirm(true);
   expect(JSON.stringify(renderer.toJSON())).toContain("삭제 실패");
   expect(renderer.root.findAllByType("li")).toHaveLength(2);
 });
@@ -202,17 +204,19 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
 });
 
+async function answerConfirm(confirmed: boolean) {
+  const dialog = renderer.root.findByType(ConfirmDialog);
+  await act(async () =>
+    confirmed ? dialog.props.onConfirm() : dialog.props.onCancel(),
+  );
+}
 function panelButton(label: string) {
   return renderer.root
     .findAllByType("button")
-    .find((b) => b.children.includes(label) || (label === "삭제" && b.props["aria-label"] === "지출 삭제"));
+    .find((b) => b.children.includes(label) || (label === "삭제" && b.props["aria-label"] === "비용 삭제"));
 }
 it("retains deletion selection and requires confirmation of the fetched version without automatic retry", async () => {
   await mount();
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => true),
-  );
   const state = mocks.state as { list: { data: Expense[] } };
   const latest = {
     ...state.list.data[0],
@@ -224,6 +228,7 @@ it("retains deletion selection and requires confirmation of the fetched version 
   );
   mocks.readLatest.mockResolvedValueOnce(latest);
   await act(async () => panelButton("삭제")!.props.onClick());
+  await answerConfirm(true);
   expect(mocks.readLatest).toHaveBeenCalledWith(1);
   expect(mocks.remove).toHaveBeenCalledTimes(1);
   expect(JSON.stringify(renderer.toJSON())).toContain("remote delete review");
@@ -235,32 +240,26 @@ it("retains deletion selection and requires confirmation of the fetched version 
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => false),
-  );
-  await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
+  await act(async () => panelButton("최신 비용 확인 후 삭제")!.props.onClick());
+  await answerConfirm(false);
   expect(mocks.remove).toHaveBeenCalledTimes(1);
-  vi.stubGlobal(
-    "confirm",
-    vi.fn(() => true),
-  );
-  await act(async () => panelButton("최신 지출 확인 후 삭제")!.props.onClick());
+  await act(async () => panelButton("최신 비용 확인 후 삭제")!.props.onClick());
+  await answerConfirm(true);
   expect(mocks.remove).toHaveBeenLastCalledWith(latest);
 });
 it.each(["missing", "offline"])(
   "does not retry delete when recovery is %s",
   async (mode) => {
     await mount();
-    vi.stubGlobal("confirm", () => true);
     mocks.remove.mockRejectedValueOnce(
       new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
     );
     if (mode === "missing") mocks.readLatest.mockResolvedValueOnce(undefined);
     else mocks.readLatest.mockRejectedValueOnce(new Error("offline"));
     await act(async () => panelButton("삭제")!.props.onClick());
+    await answerConfirm(true);
     expect(mocks.remove).toHaveBeenCalledTimes(1);
-    expect(panelButton("최신 지출 확인 후 삭제")).toBeUndefined();
+    expect(panelButton("최신 비용 확인 후 삭제")).toBeUndefined();
   },
 );
 
@@ -331,7 +330,7 @@ it.each(["ready", "pending", "disconnected"])(
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).not.toContain("새로고침");
     if (syncStatus === "disconnected") expect(rendered).toContain("연결 복구 안내");
-    if (syncStatus === "pending") expect(rendered).toContain("최신 지출 확인 중");
+    if (syncStatus === "pending") expect(rendered).toContain("최신 비용 확인 중");
   },
 );
 
@@ -373,18 +372,18 @@ it.each(["initial load", "change", "reconnect"])(
       };
       await act(async () => renderer.update(<ExpensePanel />));
       expect(JSON.stringify(renderer.toJSON())).toContain(
-        scenario === "reconnect" ? "연결 복구 안내" : "최신 지출 확인 중",
+        scenario === "reconnect" ? "연결 복구 안내" : "최신 비용 확인 중",
       );
       mocks.state = healthy;
       await act(async () => renderer.update(<ExpensePanel />));
     }
-    const section = renderer.root.findByProps({ "aria-label": "지출 및 정산" });
+    const section = renderer.root.findByProps({ "aria-label": "비용 및 정산" });
     const first = section.children[0];
     expect(typeof first).not.toBe("string");
     if (typeof first === "string") throw new Error("Expected panel heading");
     expect(first.findAllByType("h1").map((heading) => heading.children.join("")))
-      .toEqual(["지출"]);
-    expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 지출 조회 완료|30초 간격/);
+      .toEqual(["가계부"]);
+    expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 비용 조회 완료|30초 간격/);
   },
 );
 
@@ -408,7 +407,7 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
   await click("전체 정산");
   expect(JSON.stringify(renderer.toJSON())).toContain("12,345");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("카테고리별");
-  await click("지출 분석");
+  await click("비용 분석");
   expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
 });
@@ -416,7 +415,7 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
 it.each([
   ["disconnected", "실시간 연결이 끊겼어요."],
   ["error", "최신 상태 확인에 실패했어요."],
-  ["pending", "최신 지출 확인 중…"],
+  ["pending", "최신 비용 확인 중…"],
 ])("announces %s sync status with a native block output", async (syncStatus, message) => {
   await mount();
   mocks.state = { ...(mocks.state as object), syncStatus };

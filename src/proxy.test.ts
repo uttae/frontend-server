@@ -83,7 +83,6 @@ describe("protected route redirect indexing contract", () => {
     "/cost/detail",
     "/member-settings",
     "/room-settings",
-    "/contact",
     "/settings",
     "/waiting",
   ])("marks the unauthenticated %s redirect noindex, nofollow", async (path) => {

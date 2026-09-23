@@ -1,12 +1,12 @@
 "use client";
 
-import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
+import { ExpenseEntryButton, useExpenseContext } from "@/components/expenses/ExpenseProvider";
+import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 
 import type { CSSProperties, Ref } from "react";
 
 import { usePlanDaySectionCrossDayDrop } from "@/hooks/usePlanDaySectionCrossDayDrop";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
 
 import {
   PlanDaySection,
@@ -41,7 +41,6 @@ export function PlanScheduleDayBlock({
   dragHandleProps,
   interactionLocked = false,
 }: PlanScheduleDayBlockProps) {
-  const { isReadOnly } = usePlanMobileReadOnly();
   const expenses = useExpenseContext();
   const { data: placesData } = useSchedulePlanPlaces(roomId, scheduleId);
   const placesCount = placesData?.length ?? 0;
@@ -50,7 +49,7 @@ export function PlanScheduleDayBlock({
     roomId,
     scheduleId,
     placesCount,
-    interactionLocked: interactionLocked || isReadOnly,
+    interactionLocked,
   });
 
   return (
@@ -58,6 +57,15 @@ export function PlanScheduleDayBlock({
       title={title}
       subtitle={subtitle}
       itineraryScheduleId={scheduleId}
+      summaryAction={expenses.canManage ? (
+        <ExpenseEntryButton
+          scheduleId={scheduleId}
+          scopeLabel={title}
+          scopeSubtitle={subtitle}
+          className="inline-flex min-h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray/85 transition-colors enabled:hover:bg-sky-50 enabled:hover:text-sky-600 focus-visible:outline-2 focus-visible:outline-primary"
+          icon={<ExpenseIcon className="size-4 shrink-0" />}
+        />
+      ) : undefined}
       onRequestAddExpense={expenses.canManage ? () => expenses.open({ scheduleId }) : undefined}
       isAddExpenseDisabled={expenses.busy}
       onRequestDeleteSchedule={onRequestDeleteSchedule}

@@ -36,10 +36,6 @@ vi.mock("@/components/layout/MainPageHeader", () => ({
 vi.mock("@/contexts/SectionWidthContext", () => ({
   SetSectionMaxWidth: () => null,
 }));
-vi.mock("@/hooks/useChatActions", () => ({
-  useChatActions: () => ({ canSend: false }),
-}));
-vi.mock("@/hooks/useChat", () => ({ useChat: () => ({ openChat: vi.fn() }) }));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { search: "search" },
   trackAnalyticsEvent: state.track,

@@ -28,10 +28,12 @@ import {
 import { canManageExpenses } from "@/lib/expenses/expense-policy";
 import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
 import { expenseKeys } from "@/lib/expenses/expense-queries";
+import { expensesInScope, totalsByCurrency, type ExpenseScope } from "@/lib/expenses/expense-scope";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { useRoomSchedules } from "@/hooks/useRooms";
 import { useExpenseRecovery } from "@/hooks/useExpenseRecovery";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
+import { ExpenseScopePanel } from "./ExpenseScopePanel";
 import { formatExpenseAmount } from "./ExpenseViews";
 import { cn } from "@/lib/utils";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
@@ -141,13 +143,13 @@ function useExpenses(roomId: string) {
     ) => {
       if (!canManage || recovery.getSnapshot() === "revoked")
         throw new Error(
-          "현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.",
+          "현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.",
         );
       if ("deleteId" in op)
         return deleteExpense(roomId, op.deleteId, op.expectedVersion);
       if (op.id === undefined) return createExpense(roomId, op.body);
       if (op.expectedVersion === undefined)
-        throw new Error("수정할 지출을 다시 열어 주세요.");
+        throw new Error("수정할 비용을 다시 열어 주세요.");
       return patchExpense(roomId, op.id, {
         ...op.body,
         expectedVersion: op.expectedVersion,
@@ -273,6 +275,7 @@ function useExpenses(roomId: string) {
 }
 type ExpenseContextValue = ReturnType<typeof useExpenses> & {
   open: (entry: ExpenseEntry) => void;
+  openScope: (scope: ExpenseScope) => void;
 };
 const ExpenseContext = createContext<ExpenseContextValue | null>(null);
 export function useExpenseContext() {
@@ -289,9 +292,27 @@ function ExpenseProviderLifetime({
 }>) {
   const state = useExpenses(roomId);
   const [entry, setEntry] = useState<ExpenseEntry | null>(null);
+  const [scope, setScope] = useState<ExpenseScope | null>(null);
   return (
-    <ExpenseContext.Provider value={{ ...state, open: setEntry }}>
+    <ExpenseContext.Provider value={{ ...state, open: setEntry, openScope: setScope }}>
       {children}
+      {!state.revoked && scope && (
+        <ExpenseScopePanel
+          scope={scope}
+          roomId={state.roomId}
+          expenses={state.list.data ?? []}
+          isPending={state.list.isPending}
+          isError={state.list.isError}
+          canManage={state.canManage}
+          busy={state.busy}
+          onAdd={() => setEntry(scope.scheduleItemId === undefined
+            ? { scheduleId: scope.scheduleId }
+            : { scheduleId: scope.scheduleId, scheduleItemId: scope.scheduleItemId })}
+          onEdit={(expense) => setEntry({ expense })}
+          onRetry={() => void state.list.refetch()}
+          onClose={() => setScope(null)}
+        />
+      )}
       {!state.revoked && entry && (
         <ExpenseEditor initial={entry} onClose={() => setEntry(null)} />
       )}
@@ -311,41 +332,51 @@ export function ExpenseProvider(props: Readonly<{ roomId: string; children: Reac
 export function ExpenseEntryButton({
   scheduleId,
   scheduleItemId,
-  label = "지출 추가",
-  className = "min-h-10 rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
+  scopeLabel = scheduleItemId === undefined ? "일차" : "장소",
+  scopeSubtitle,
+  label = "비용 추가",
+  className = "min-h-10 rounded-xl px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
   icon = "+ ",
 }: Readonly<{
-  scheduleId?: number;
+  scheduleId: number;
   scheduleItemId?: number;
+  scopeLabel?: string;
+  scopeSubtitle?: string;
   label?: string;
   className?: string;
   icon?: ReactNode;
 }>) {
   const context = useContext(ExpenseContext);
   if (!context?.canManage) return null;
-  const latest = scheduleItemId === undefined ? undefined : context.list.data
-    ?.filter((expense) => expense.scheduleId === scheduleId && expense.scheduleItemId === scheduleItemId)
-    .reduce<Expense | undefined>((selected, expense) => {
-      if (!selected) return expense;
-      const difference = (Date.parse(expense.createdAt) || 0) - (Date.parse(selected.createdAt) || 0);
-      return difference > 0 || (difference === 0 && expense.id > selected.id) ? expense : selected;
-    }, undefined);
-  const amountLabel = latest ? `${formatExpenseAmount(latest.totalAmount)} ${latest.currency}` : null;
+  const scope = { scheduleId, scheduleItemId, label: scopeLabel, subtitle: scopeSubtitle };
+  const scoped = expensesInScope(context.list.data ?? [], scope);
+  const totals = totalsByCurrency(scoped);
+  const summaryLabel = !context.list.isSuccess
+    ? context.list.isPending ? "비용 확인 중…" : "비용 보기"
+    : scoped.length
+      ? `비용 ${scoped.length}건 · ${totals.map(({ currency, amount }) => `${formatExpenseAmount(amount)} ${currency}`).join(" · ")}`
+      : label;
   return (
     <button
       type="button"
       data-plan-card-no-drag
-      disabled={context.busy || (scheduleItemId !== undefined && !context.list.isSuccess)}
-      aria-label={amountLabel ? `${amountLabel} 지출 수정` : undefined}
+      disabled={context.busy}
+      aria-label={`${scopeLabel} ${context.list.isSuccess && !scoped.length ? "비용 추가" : "비용 목록 열기"}`}
       aria-haspopup="dialog"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
-        context.open(latest ? { expense: latest } : { scheduleId, scheduleItemId });
+        if (context.list.isSuccess && !scoped.length) {
+          context.open(scheduleItemId === undefined
+            ? { scheduleId }
+            : { scheduleId, scheduleItemId });
+        } else {
+          context.openScope(scope);
+        }
       }}
-      className={cn(className, latest && PLAN_PLACE_CARD_TW.triggerButtonActive, "disabled:cursor-not-allowed disabled:opacity-50")}
+      className={cn(className, "min-w-0 max-w-full whitespace-normal break-words text-left", scoped.length > 0 && PLAN_PLACE_CARD_TW.triggerButtonActive, "disabled:cursor-not-allowed disabled:opacity-50")}
     >
-      {latest && typeof icon === "string" ? null : icon}{amountLabel ?? label}
+      {icon}{summaryLabel}
     </button>
   );
 }

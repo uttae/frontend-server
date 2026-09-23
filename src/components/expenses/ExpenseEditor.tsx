@@ -44,16 +44,16 @@ function ExpenseEditorConflict({
   onRecover: () => void;
 }>) {
   const context = useExpenseContext();
-  let message = "지출이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
-  if (pending) message = "최신 지출 확인 중…";
-  else if (conflict.failed) message = "최신 지출 조회에 실패했어요. 저장은 중단돼요.";
+  let message = "비용이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
+  if (pending) message = "최신 비용 확인 중…";
+  else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 저장은 중단돼요.";
   return (
     <div
       role="alert"
       className="space-y-3 rounded-xl border border-gray-border p-3"
     >
       <p>
-        지출이 변경되었어요. 입력 내용은 유지돼요. 최신 지출을 확인해
+        비용이 변경되었어요. 입력 내용은 유지돼요. 최신 비용을 확인해
         주세요.
       </p>
       {conflict.latest ? (
@@ -72,7 +72,7 @@ function ExpenseEditorConflict({
           {conflictMoved ? (
             <p>
               연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신
-              지출을 다시 열어 주세요.
+              비용을 다시 열어 주세요.
             </p>
           ) : (
             <button
@@ -81,7 +81,7 @@ function ExpenseEditorConflict({
               disabled={pending || targetChanged}
               onClick={onContinue}
             >
-              최신 지출 확인 후 수정 계속
+              최신 비용 확인 후 수정 계속
             </button>
           )}
         </>
@@ -95,7 +95,7 @@ function ExpenseEditorConflict({
           disabled={pending}
           onClick={onRecover}
         >
-          최신 지출 다시 조회
+          최신 비용 다시 조회
         </button>
       )}
     </div>
@@ -288,7 +288,7 @@ export function ExpenseEditor({
       ) {
         await recover();
       }
-      reportError(e instanceof Error ? e.message : "지출을 저장하지 못했어요.");
+      reportError(e instanceof Error ? e.message : "비용을 저장하지 못했어요.");
     } finally {
       submitLock.current = false;
       setSaving(false);
@@ -311,8 +311,8 @@ export function ExpenseEditor({
         aria-describedby={error ? errorId : undefined}
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
-          <h2 id={titleId} className="text-xl font-bold">
-            {original ? "지출 수정" : "지출 추가"}
+          <h2 id={titleId} className="text-title-m mobile:text-title-s font-bold">
+            {original ? "비용 수정" : "비용 추가"}
           </h2>
           <button
             type="button"
@@ -333,8 +333,8 @@ export function ExpenseEditor({
               disabled={pending || !context.currencies.isSuccess}
               onChange={(value) => change("currency", value)}
             />
-            <label className="block min-w-0 text-sm font-semibold">
-              <span className="block text-sm leading-5">금액</span>
+            <label className="block min-w-0 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
+              <span className="block text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-5">금액</span>
               <ExpenseAmountInput
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
@@ -344,16 +344,16 @@ export function ExpenseEditor({
             </label>
           </div>
           {!context.currencies.isSuccess && (
-            <p role="status" className="text-sm text-dark-gray">
+            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
               {context.currencies.isError
                 ? "통화 목록 조회에 실패했어요."
                 : "통화 목록을 불러오는 중…"}
             </p>
           )}
           <div className="space-y-1">
-            <p className="text-sm font-semibold">지출 구분</p>
+            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">일차 구분</p>
             <ExpenseSelect
-              label="지출 구분"
+              label="일차 구분"
               disabled={pending}
               value={
                 body.expenseGroup === "PREPARATION"
@@ -379,38 +379,43 @@ export function ExpenseEditor({
               }}
             />
           </div>
-          {body.expenseGroup === "TRIP_DAY" && (
-            <div className="space-y-1">
-              <p className="text-sm font-semibold">연결 장소 (선택)</p>
-              <ExpenseSelect
-                label="연결 장소 (선택)"
-                value={
-                  body.scheduleItemId === null
-                    ? ""
-                    : String(body.scheduleItemId)
-                }
-                disabled={pending || !places.isSuccess}
-                options={[
-                  { value: "", label: "장소 연결 없음" },
-                  ...(places.data ?? [])
-                    .filter((p) => p.itemId !== undefined)
-                    .map((p) => ({ value: String(p.itemId), label: p.title })),
-                ]}
-                onChange={(value) =>
-                  change("scheduleItemId", value ? Number(value) : null)
-                }
-              />
-              {!places.isSuccess && (
-                <p className="text-sm text-dark-gray">
-                  {places.isError
-                    ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
-                    : "장소 확인 중…"}
-                </p>
-              )}
-            </div>
-          )}
           <div className="space-y-1">
-            <p className="text-sm font-semibold">카테고리</p>
+            <p
+              className={cn(
+                "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold",
+                body.expenseGroup === "PREPARATION" && "opacity-50",
+              )}
+            >
+              연결 장소 (선택)
+            </p>
+            <ExpenseSelect
+              label="연결 장소 (선택)"
+              value={
+                body.scheduleItemId === null
+                  ? ""
+                  : String(body.scheduleItemId)
+              }
+              disabled={pending || body.expenseGroup === "PREPARATION" || !places.isSuccess}
+              options={[
+                { value: "", label: "장소 연결 없음" },
+                ...(body.expenseGroup === "TRIP_DAY" ? places.data ?? [] : [])
+                  .filter((p) => p.itemId !== undefined)
+                  .map((p) => ({ value: String(p.itemId), label: p.title })),
+              ]}
+              onChange={(value) =>
+                change("scheduleItemId", value ? Number(value) : null)
+              }
+            />
+            {body.expenseGroup === "TRIP_DAY" && !places.isSuccess && (
+              <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+                {places.isError
+                  ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
+                  : "장소 확인 중…"}
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">카테고리</p>
             <ExpenseSelect
               name="category"
               label="카테고리"
@@ -443,13 +448,13 @@ export function ExpenseEditor({
               />
             </div>
           ) : (
-            <p role="status" className="text-sm text-dark-gray">
+            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
               {context.memberStatus === "error"
                 ? "멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요."
                 : "멤버 확인 중… 기존 선택은 유지돼요."}
             </p>
           )}
-          <label className="block text-sm font-semibold">
+          <label className="block text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
             메모 (선택)
             <textarea
               className={expenseInputClass}
@@ -458,20 +463,20 @@ export function ExpenseEditor({
               value={body.memo ?? ""}
               onChange={(e) => change("memo", e.target.value)}
             />
-            <span className="text-xs text-dark-gray">
+            <span className="text-body-xs-regular text-dark-gray">
               {body.memo?.length ?? 0}/1000
             </span>
           </label>
         </fieldset>
         {!context.canManage && context.memberStatus === "success" && (
           <p role="alert">
-            현재 참여 중인 방장과 멤버만 지출을 변경할 수 있어요.
+            현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.
           </p>
         )}
         {targetChanged && (
           <p role="alert">
-            지출이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤
-            최신 지출을 다시 열어 주세요.
+            비용이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤
+            최신 비용을 다시 열어 주세요.
           </p>
         )}
         {conflict && (
@@ -494,7 +499,7 @@ export function ExpenseEditor({
             ref={errorMessageRef}
             id={errorId}
             role="alert"
-            className="scroll-my-4 text-sm text-status-negative"
+            className="scroll-my-4 text-body-s-regular mobile:text-body-xs-regular text-status-negative"
           >
             {error}
           </p>

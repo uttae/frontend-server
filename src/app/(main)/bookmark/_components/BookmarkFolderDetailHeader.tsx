@@ -27,14 +27,14 @@ export function BookmarkFolderDetailHeader({
       <MainPageHeader
         className="items-center"
         title={
-          <span className="flex min-w-0 items-center gap-2 mobile:text-[17px]">
+          <span className="flex min-w-0 items-center gap-2 mobile:text-body-m-regular">
             <FolderRibbonIcon
               color={folder.color}
               variant="header"
               className="size-7 mobile:size-5"
             />
             <span className="min-w-0 truncate">{folder.title}</span>
-            <span className="shrink-0 text-[14px] font-normal text-dark-gray mobile:text-[12px]">
+            <span className="shrink-0 text-body-s-regular font-normal text-dark-gray mobile:text-body-xs-regular">
               {folder.placeCount ?? 0}개 장소
             </span>
           </span>
@@ -54,7 +54,7 @@ export function BookmarkFolderDetailHeader({
             <Link
               href={BOOKMARK_LIST_PATH}
               className={cn(
-                "flex w-fit shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90",
+                "flex w-fit shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 mobile:hidden",
                 pageToolbarButtonCompactGapClass,
                 pageToolbarButtonCompactTextClass,
                 pageToolbarButtonCompactPaddingClass,

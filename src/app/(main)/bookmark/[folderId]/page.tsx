@@ -56,7 +56,7 @@ export default function BookmarkFolderDetailPage() {
       <div className="flex h-full min-h-0 flex-col border-b border-gray-border">
         <SetSectionMaxWidth value="s1" />
         <div className="space-y-3 py-10 text-center">
-          <p className="text-[17px] text-primary">
+          <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
             {error instanceof Error
               ? error.message
               : "북마크 폴더를 불러오지 못했습니다."}
@@ -64,7 +64,7 @@ export default function BookmarkFolderDetailPage() {
           <button
             type="button"
             onClick={() => refetch()}
-            className="cursor-pointer text-[17px] font-medium text-neutral-900 underline"
+            className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
           >
             다시 시도
           </button>

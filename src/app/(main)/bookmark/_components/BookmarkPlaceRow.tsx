@@ -8,6 +8,9 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+
 import { BookmarkPlacePreviewCard } from "./BookmarkPlacePreviewCard";
 import {
   useBookmarkCategories,
@@ -59,6 +62,7 @@ export function BookmarkPlaceRow({
   const { mutate: moveBookmark, isPending: moving } = useMoveRoomBookmark();
   const { mutate: deleteItem, isPending: deleting } =
     useDeleteRoomBookmarkItem();
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const busy = moving || deleting;
   const otherCategories =
@@ -151,10 +155,20 @@ export function BookmarkPlaceRow({
 
   const handleDelete = () => {
     if (!Number.isFinite(bookmarkId) || busy) return;
-    const ok = window.confirm("이 장소를 북마크에서 삭제할까요?");
-    if (!ok) return;
     closeMenu();
-    deleteItem({ roomId, bookmarkId, categoryId: currentCategoryId });
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    deleteItem(
+      { roomId, bookmarkId, categoryId: currentCategoryId },
+      {
+        onSuccess: () => {
+          setConfirmOpen(false);
+          toast.success("북마크에서 삭제했어요.");
+        },
+      },
+    );
   };
 
   return (
@@ -215,7 +229,7 @@ export function BookmarkPlaceRow({
                   <button
                     type="button"
                     role="menuitem"
-                    className="block w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-[17px] font-medium text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
+                    className="block w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={busy}
                     onClick={() => setMenuPhase("pickCategory")}
                   >
@@ -224,7 +238,7 @@ export function BookmarkPlaceRow({
                   <button
                     type="button"
                     role="menuitem"
-                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-[17px] font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={busy}
                     onClick={handleDelete}
                   >
@@ -235,7 +249,7 @@ export function BookmarkPlaceRow({
                 <>
                   <button
                     type="button"
-                    className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-2.5 py-2 text-left text-[17px] font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
+                    className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-2.5 py-2 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
                     onClick={() => setMenuPhase("main")}
                   >
                     <ChevronLeft className="size-4 shrink-0" />
@@ -243,7 +257,7 @@ export function BookmarkPlaceRow({
                   </button>
                   <div className="mx-1 my-1 border-t border-gray-border" />
                   {otherCategories.length === 0 ? (
-                    <p className="rounded-lg bg-gray-50 px-3 py-3 text-center text-[14px] leading-relaxed text-dark-gray">
+                    <p className="rounded-lg bg-gray-50 px-3 py-3 text-center text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
                       이동할 다른 카테고리가 없습니다.
                     </p>
                   ) : (
@@ -252,7 +266,7 @@ export function BookmarkPlaceRow({
                         key={c.categoryId}
                         type="button"
                         role="menuitem"
-                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-[17px] text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={busy}
                         onClick={() => handleMoveTo(c.categoryId)}
                       >
@@ -271,6 +285,15 @@ export function BookmarkPlaceRow({
             document.body,
           )}
       </div>
+      {confirmOpen ? (
+        <ConfirmDialog
+          title="이 장소를 북마크에서 삭제할까요?"
+          confirmLabel="삭제"
+          isPending={deleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

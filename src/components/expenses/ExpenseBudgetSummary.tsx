@@ -20,8 +20,8 @@ export function ExpenseBudgetSummary() {
     converted != null;
   return (
     <div className="space-y-4">
-      <div className="space-y-2 text-sm">
-        <h3 className="text-sm font-medium text-dark-gray">여행 전체 지출</h3>
+      <div className="space-y-2 text-body-s-regular mobile:text-body-xs-regular">
+        <h3 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">여행 전체 비용</h3>
         {krwSummary.isPending && (
           <output style={{ display: "block" }}>원화 참고 요약을 불러오는 중…</output>
         )}
@@ -31,7 +31,7 @@ export function ExpenseBudgetSummary() {
             있어요. 조회 다시 시도 버튼을 눌러 주세요.
           </p>
         )}
-        <p className="break-all text-2xl font-bold tracking-tight tabular-nums">
+        <p className="break-all text-heading-s mobile:text-title-l font-bold tracking-tight tabular-nums">
           {hasCompleteTotal ? `${formatExpenseAmount(converted)} KRW` : "—"}
         </p>
         {reference && (
@@ -48,15 +48,15 @@ export function ExpenseBudgetSummary() {
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-3">
         <div className="min-w-0 max-w-full">
-          <h3 className="text-sm font-medium text-dark-gray">여행 전체 예산</h3>
+          <h3 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">여행 전체 예산</h3>
           {budget.isPending && <output style={{ display: "block" }}>예산을 불러오는 중…</output>}
           {budget.isError && (
-            <p role="alert" className="text-sm text-status-negative">
+            <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
               예산 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
           {budget.isSuccess && (
-            <p className="break-all text-xl font-bold tabular-nums">
+            <p className="break-all text-title-m mobile:text-title-s font-bold tabular-nums">
               {amount === null
                 ? "미설정"
                 : `${formatExpenseAmount(amount!)} KRW`}
