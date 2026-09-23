@@ -49,8 +49,8 @@ export function DeleteConfirmModal({ room, onClose, onDeleted }: Props) {
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
             <Trash2 size={22} className="text-status-negative" />
           </div>
-          <h2 className="text-[19px] font-bold">여행을 삭제할까요?</h2>
-          <p className="mt-1.5 text-[17px] text-dark-gray">
+          <h2 className="text-title-s font-bold">여행을 삭제할까요?</h2>
+          <p className="mt-1.5 text-body-m-regular text-dark-gray">
             <span className="font-semibold">{room.title}</span> 여행이 영구적으로
             삭제됩니다. 모든 일정과 지출도 함께 삭제돼요.
           </p>

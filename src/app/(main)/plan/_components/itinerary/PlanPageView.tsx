@@ -25,7 +25,7 @@ import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 
 import { usePlanScheduleDayReorder } from "@/hooks/usePlanScheduleDayReorder";
-import { usePlanMobileReadOnly } from "@/hooks/usePlanMobileReadOnly";
+import { planCopy } from "@/lib/plan/planCopy";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import {
   bucketMemberCount,
@@ -36,7 +36,6 @@ import { PlanContainerRefProvider } from "../plan-container";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
-  const { isReadOnly, copy } = usePlanMobileReadOnly();
   const planContainerRef = useRef<HTMLDivElement>(null);
   
   //room id 가져와서 room detail, schedules 가져오기
@@ -86,7 +85,7 @@ export function PlanPageView() {
     usePlanScheduleDayReorder({
       roomId,
       schedules: sortedSchedules,
-      interactionLocked: isReadOnly || isCreatingSchedule || isDeletingSchedule,
+      interactionLocked: isCreatingSchedule || isDeletingSchedule,
     });
 
   const scheduleExpansionSyncKey = useMemo(
@@ -169,7 +168,7 @@ export function PlanPageView() {
       action={
         <Link
           href="/cost"
-          className="flex min-h-10 items-center rounded-xl px-3 py-2 text-sm font-semibold text-primary-strong transition-colors hover:bg-primary/10 focus-visible:outline-2"
+          className="flex min-h-10 items-center rounded-xl px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary-strong transition-colors hover:bg-primary/10 focus-visible:outline-2"
         >
           지출 보기
         </Link>
@@ -185,7 +184,7 @@ export function PlanPageView() {
           className={pageContentClassName}
         >
           {pageHeader}
-          <p className="py-8 text-center text-[17px] text-dark-gray">
+          <p className="py-8 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
             일정을 불러오는 중…
           </p>
         </div>
@@ -204,7 +203,7 @@ export function PlanPageView() {
         {isError ? (
           <p
             className={cn(
-              "rounded-xl border border-gray-border bg-white py-3 text-[17px] text-primary",
+              "rounded-xl border border-gray-border bg-white py-3 text-body-m-regular mobile:text-body-s-regular text-primary",
               MAIN_CARD_INNER_PADDING_X_CLASS,
             )}
           >
@@ -215,20 +214,18 @@ export function PlanPageView() {
         {!isError && planDays.length === 0 ? (
           <p
             className={cn(
-              "rounded-xl border border-gray-border bg-white py-3 text-[17px] text-dark-gray",
+              "rounded-xl border border-gray-border bg-white py-3 text-body-m-regular mobile:text-body-s-regular text-dark-gray",
               MAIN_CARD_INNER_PADDING_X_CLASS,
             )}
           >
-            {copy.scheduleEmpty}
+            {planCopy.scheduleEmpty}
           </p>
         ) : null}
 
         {planDays.length > 0 ? (
           <div className="space-y-2.5" {...listContainerProps}>
             {planDays.map((day, dayIndex) => {
-              const sectionProps = !isReadOnly
-                ? getSectionProps(dayIndex)
-                : {};
+              const sectionProps = getSectionProps(dayIndex);
 
               return (
                 <PlanScheduleDayBlock
@@ -238,21 +235,19 @@ export function PlanPageView() {
                   title={day.dayLabel}
                   subtitle={day.dateLabel}
                   onRequestDeleteSchedule={
-                    !isReadOnly && sortedSchedules[dayIndex]
+                    sortedSchedules[dayIndex]
                       ? () => handleDeleteScheduleDay(dayIndex)
                       : undefined
                   }
                   onRequestInsertScheduleAfter={
-                    !isReadOnly && sortedSchedules[dayIndex]
+                    sortedSchedules[dayIndex]
                       ? () => handleInsertScheduleAfter(dayIndex)
                       : undefined
                   }
                   isScheduleMenuDisabled={
                     isCreatingSchedule || isDeletingSchedule || isMovePending
                   }
-                  interactionLocked={
-                    isReadOnly || isCreatingSchedule || isDeletingSchedule
-                  }
+                  interactionLocked={isCreatingSchedule || isDeletingSchedule}
                   {...sectionProps}
                 />
               );

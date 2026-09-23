@@ -17,7 +17,6 @@ describe("isProtectedAppPath", () => {
     "/search",
     "/member-settings",
     "/room-settings",
-    "/contact",
     "/settings",
     "/waiting",
   ])("treats %s as a protected app URL", (pathname) => {

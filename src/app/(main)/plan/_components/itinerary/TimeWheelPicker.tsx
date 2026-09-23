@@ -149,7 +149,7 @@ function WheelColumn({
               tabIndex={-1}
               onClick={() => commit(i)}
               className={cn(
-                "flex w-full snap-center items-center justify-center text-xl font-semibold tabular-nums transition-colors",
+                "flex w-full snap-center items-center justify-center text-title-m mobile:text-title-s font-semibold tabular-nums transition-colors",
                 isSelected ? "text-gray-900" : "text-dark-gray/50",
               )}
               style={{ height: ITEM_HEIGHT }}
@@ -199,7 +199,7 @@ export function TimeWheelPicker({
         />
         <span
           aria-hidden
-          className="pt-[2px] text-xl font-semibold text-gray-400"
+          className="pt-[2px] text-title-m mobile:text-title-s font-semibold text-gray-400"
         >
           :
         </span>

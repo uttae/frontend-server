@@ -102,6 +102,7 @@ html:has([data-mobile-main-tabs]) {
 :root {
   /* ---------- 1. PRIMITIVE ---------- */
   /* Gray */
+  --gray-0: #ffffff;
   --gray-50: #fdfdfd;
   --gray-100: #f6f6f8;
   --gray-200: #eaebef;
@@ -206,6 +207,7 @@ html:has([data-mobile-main-tabs]) {
   --color-fill-subtle: var(--gray-50);
   --color-fill-default: var(--gray-100);
   --color-fill-strong: var(--gray-200);
+  --color-fill-elevate: var(--gray-0);
 
   /* Border */
   --color-border-subtle: var(--gray-200);

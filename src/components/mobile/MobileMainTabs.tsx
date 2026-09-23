@@ -29,7 +29,7 @@ export function MobileMainTabs() {
     <nav aria-label="모바일 주요 메뉴" data-mobile-main-tabs className="grid shrink-0 grid-cols-5 border-t border-gray-border bg-white pb-[env(safe-area-inset-bottom)]">
       {tabs.map(({ label, href, icon: Icon, active }) => (
         <Link key={label} href={href} aria-label={label} aria-current={active ? "page" : undefined}
-          className={cn("relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 py-2 text-[12px] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary", active ? "text-primary" : "text-dark-gray hover:text-gray-900")}>
+          className={cn("relative flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 py-2 text-label-xs-regular font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary", active ? "text-primary" : "text-dark-gray hover:text-gray-900")}>
           <Icon size={20} aria-hidden />
           <span>{label}</span>
           {label === "채팅" ? <SidebarChatUnreadBadge /> : null}

@@ -46,9 +46,3 @@ export const chatAiLabelMotion = {
   exit: { opacity: 0, x: -6 },
   transition: { duration: 0.18, ease: [0.25, 0.1, 0.25, 1] } as Transition,
 };
-
-/** 검색 페이지 «채팅 전송» 배너 상단 불빛 스윕 주기(s) */
-export const chatPlaceShareBannerSweepDurationSec = 2.7 as const;
-
-/** 같은 배너 배경 레드 글로우(밝아졌다 어두워졌다) 펄스 주기(s) */
-export const chatPlaceShareBannerGlowDurationSec = 2.35 as const;

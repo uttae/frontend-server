@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
 import { useChatActions } from "@/hooks/useChatActions";
 import {
@@ -18,13 +19,22 @@ import { AddToScheduleModal } from "./AddToScheduleModal";
 import { TABS, type Tab } from "./types";
 import { usePlaceDetailData } from "./usePlaceDetailData";
 import { HeroSkeleton, HeroImage } from "./HeroSection";
+import { PlaceDetailSkeleton } from "./PlaceDetailSkeleton";
 import { PlaceSummaryHeader } from "./PlaceSummaryHeader";
 import { HomeTab } from "./HomeTab";
 import { ReviewsTab } from "./ReviewsTab";
 
 type PlaceDetailPanelProps = SearchResultCardProps & {
   onClose: () => void;
+  /**
+   * `panel`(데스크톱): 사진 고정, 아래 본문만 스크롤.
+   * `sheet`(모바일 바텀 시트): 사진과 본문이 한 덩어리로 스크롤.
+   */
+  layout?: "panel" | "sheet";
 };
+
+const SCROLL_AREA_CLASS =
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
 
 export function PlaceDetailPanel({
   name,
@@ -38,6 +48,7 @@ export function PlaceDetailPanel({
   location,
   googlePlaceId,
   onClose,
+  layout = "panel",
 }: PlaceDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("홈");
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false);
@@ -138,106 +149,125 @@ export function PlaceDetailPanel({
   const reviews = detailData?.reviews ?? [];
   const displayAddress = address ?? detailData?.formattedAddress;
 
-  return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-white">
-      {/* Hero */}
-      <div className="relative h-[185px] shrink-0">
-        {isDetailLoading && googlePlaceId ? (
-          <HeroSkeleton />
-        ) : (
-          <HeroImage
-            googlePlaceId={googlePlaceId}
-            fallbackImage={image}
-            name={displayName}
-          />
-        )}
+  const hero = (
+    <div className="relative h-[185px] shrink-0">
+      {isDetailLoading && googlePlaceId ? (
+        <HeroSkeleton />
+      ) : (
+        <HeroImage
+          googlePlaceId={googlePlaceId}
+          fallbackImage={image}
+          name={displayName}
+        />
+      )}
+    </div>
+  );
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          aria-label="뒤로가기"
-          className="absolute left-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          aria-label="닫기"
-          className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
-        >
-          <X className="h-4 w-4" />
-        </button>
+  /* 상세 정보가 오기 전에는 임시 이름("장소")·빈 탭 대신 스켈레톤 — 느린 네트워크에서도 동작 중임을 알 수 있게 */
+  const body = isDetailLoading && !detailData ? (
+    <PlaceDetailSkeleton />
+  ) : (
+    <>
+      <PlaceSummaryHeader
+        name={displayName}
+        category={displayCategory}
+        rating={displayRating}
+        userRatingCount={userRatingCount}
+        onSendToChat={googlePlaceId ? handleSendToChat : undefined}
+        sendToChatDisabled={
+          !googlePlaceId ||
+          (!location && !detailData?.location && isDetailLoading)
+        }
+        onAddToSchedule={
+          googlePlaceId
+            ? () => setScheduleModalOpen(true)
+            : undefined
+        }
+        addToScheduleDisabled={!googlePlaceId}
+        onAddBookmark={
+          googlePlaceId
+            ? () => setBookmarkModalOpen(true)
+            : undefined
+        }
+        addBookmarkDisabled={!googlePlaceId}
+      />
+
+      {/* Tab navigation */}
+      <div className="flex shrink-0 border-b border-gray-border">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex-1 py-2.5 text-label-s-regular mobile:text-label-xs-regular font-medium transition-colors ${
+              activeTab === tab
+                ? "border-b-2 border-primary text-primary"
+                : "text-dark-gray hover:text-[#364153]"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* Scrollable content */}
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent">
-        <PlaceSummaryHeader
-          name={displayName}
-          category={displayCategory}
+      {/* Tab content */}
+      {activeTab === "홈" && (
+        <HomeTab
+          isOpen={openNow}
+          address={displayAddress}
+          phone={phone}
+          hours={hours}
+          website={website}
+          googleMapsUrl={detailData?.placeUri ?? undefined}
+          reviewSummary={reviewSummary}
+        />
+      )}
+      {activeTab === "리뷰" && (
+        <ReviewsTab
           rating={displayRating}
           userRatingCount={userRatingCount}
-          onSendToChat={googlePlaceId ? handleSendToChat : undefined}
-          sendToChatDisabled={
-            !googlePlaceId ||
-            (!location && !detailData?.location && isDetailLoading)
-          }
-          onAddToSchedule={
-            googlePlaceId
-              ? () => setScheduleModalOpen(true)
-              : undefined
-          }
-          addToScheduleDisabled={!googlePlaceId}
-          onAddBookmark={
-            googlePlaceId
-              ? () => setBookmarkModalOpen(true)
-              : undefined
-          }
-          addBookmarkDisabled={!googlePlaceId}
+          reviews={reviews}
+          reviewsUri={detailData?.reviewsUri}
         />
+      )}
+    </>
+  );
 
-        {/* Tab navigation */}
-        <div className="flex shrink-0 border-b border-gray-border">
-          {TABS.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-2.5 text-[13px] font-medium transition-colors ${
-                activeTab === tab
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-dark-gray hover:text-[#364153]"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+  return (
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-white">
+      {layout === "sheet" ? (
+        /* 사진 ↔ 본문 경계에 스냅 — proximity라 긴 본문은 자유롭게 스크롤된다 */
+        <div className={cn(SCROLL_AREA_CLASS, "snap-y snap-proximity")}>
+          <div className="snap-start">{hero}</div>
+          <div className="snap-start">{body}</div>
         </div>
+      ) : (
+        <>
+          {hero}
+          <div className={SCROLL_AREA_CLASS}>{body}</div>
+        </>
+      )}
 
-        {/* Tab content */}
-        {activeTab === "홈" && (
-          <HomeTab
-            isOpen={openNow}
-            address={displayAddress}
-            phone={phone}
-            hours={hours}
-            website={website}
-            googleMapsUrl={detailData?.placeUri ?? undefined}
-            reviewSummary={reviewSummary}
-          />
-        )}
-        {activeTab === "리뷰" && (
-          <ReviewsTab
-            rating={displayRating}
-            userRatingCount={userRatingCount}
-            reviews={reviews}
-            reviewsUri={detailData?.reviewsUri}
-          />
-        )}
-      </div>
+      {/* 닫기 버튼 — 스크롤과 무관하게 시트/패널 상단에 고정 */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="뒤로가기"
+        className="absolute left-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="닫기"
+        className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
+      >
+        <X className="h-4 w-4" />
+      </button>
 
       {scheduleModalOpen && googlePlaceId && (
         <AddToScheduleModal

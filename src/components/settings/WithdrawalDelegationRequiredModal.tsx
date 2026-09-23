@@ -51,11 +51,11 @@ export function WithdrawalDelegationRequiredModal({ rooms, onClose }: Props) {
           </div>
           <h2
             id="withdrawal-delegation-title"
-            className="text-center text-[19px] font-bold"
+            className="text-center text-title-s font-bold"
           >
             방장 위임이 필요해요
           </h2>
-          <p className="mt-3 text-[17px] leading-relaxed text-dark-gray">
+          <p className="mt-3 text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
             아래 여행에서 방장을 다른 멤버에게 넘긴 뒤 탈퇴할 수 있어요. 여행
             이름을 누르면 멤버 설정으로 이동합니다.
           </p>
@@ -66,7 +66,7 @@ export function WithdrawalDelegationRequiredModal({ rooms, onClose }: Props) {
                   <button
                     type="button"
                     onClick={() => handleRoomClick(room.roomId)}
-                    className="w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-[17px] font-medium text-gray-800 transition hover:bg-white"
+                    className="w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-gray-800 transition hover:bg-white"
                   >
                     {room.title}
                   </button>
