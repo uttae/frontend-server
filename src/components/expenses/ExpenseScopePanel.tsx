@@ -114,7 +114,7 @@ export function ExpenseScopePanel({
               <button type="button" onClick={onRetry} className="text-primary-strong underline">다시 시도</button>
             </div>
           ) : scoped.length ? (
-            <ul className="mt-2 min-h-0 overflow-y-auto overscroll-contain divide-y divide-gray-border">
+            <ul className="mt-2 -mr-5 min-h-0 overflow-y-auto overscroll-contain pr-5 divide-y divide-gray-border [scrollbar-color:rgba(0,0,0,0.2)_transparent]">
               {scoped.map((expense) => (
                 <li key={expense.id}>
                   <button
