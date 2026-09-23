@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ import { tearDownClientSession } from "@/lib/client-storage";
 
 export function HomeHeader() {
   const router = useRouter();
+  const pathname = usePathname();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -49,7 +50,7 @@ export function HomeHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 h-16 shrink-0 border-b border-border-subtle bg-fill-subtle mobile:h-14 mobile:border-b-0">
+    <header className={`sticky top-0 z-40 h-16 shrink-0 border-b border-border-subtle bg-fill-subtle mobile:h-14 ${pathname === "/home" ? "mobile:border-b" : "mobile:border-b-0"}`}>
       <div className="mx-auto flex h-full max-w-[1184px] items-center justify-between gap-4 px-6 mobile:px-5">
         <div className="[&_img]:h-[22px] [&_img]:w-[75.5px]">
           <BrandLogo variant="combination" size="S" alt="로고" />

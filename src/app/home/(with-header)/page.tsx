@@ -10,6 +10,7 @@ import { RoomGrid } from "../_components/RoomGrid";
 import { DeleteConfirmModal } from "../_components/DeleteConfirmModal";
 import { LeaveConfirmModal } from "../_components/LeaveConfirmModal";
 import { NewTripLink } from "../_components/NewTripLink";
+import { SiteFooter } from "@/components/layout/SiteFooter";
 
 export default function HomePage() {
   const { isMobileDevice } = useMobileView();
@@ -22,9 +23,9 @@ export default function HomePage() {
 
   return (
     <>
-      <main className="mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 mobile:pb-28">
-        <div className={`flex items-center justify-between gap-3 ${isEmpty ? "min-h-[106px] py-8" : "min-h-[104px] py-6"} mobile:min-h-[70px] mobile:pb-4 mobile:pt-6`}>
-          <h1 className="text-heading-l text-text mobile:text-title-l mobile:leading-[30px]">
+      <main className={`mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 ${isEmpty ? "mobile:pb-0" : "mobile:pb-[60px]"}`}>
+        <div className="flex items-center justify-between gap-3 py-5 mobile:py-4">
+          <h1 className="text-heading-m text-text mobile:text-title-l">
             나의 여행
           </h1>
           {!isMobileDevice && (rooms.length > 0 || isLoading || isError) ? <NewTripLink /> : null}
@@ -42,9 +43,11 @@ export default function HomePage() {
         </div>
       </main>
 
-      {isMobileDevice ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(13px+env(safe-area-inset-bottom))] z-30 flex justify-center px-5">
-          <NewTripLink className="pointer-events-auto rounded-full px-3.5 py-[13px] text-label-l-emphasis shadow-[0_2px_5px_rgba(0,0,0,0.1)] [&_img]:size-5" />
+      <SiteFooter variant="room-list" className="hidden mobile:block" />
+
+      {isMobileDevice && !isEmpty ? (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(24px+env(safe-area-inset-bottom))] z-30 flex justify-center px-5">
+          <NewTripLink className="pointer-events-auto shadow-[0_2px_5px_rgba(0,0,0,0.1)]" />
         </div>
       ) : null}
 
