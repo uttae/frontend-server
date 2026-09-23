@@ -311,7 +311,7 @@ export function ExpenseProvider(props: Readonly<{ roomId: string; children: Reac
 export function ExpenseEntryButton({
   scheduleId,
   scheduleItemId,
-  label = "지출 추가",
+  label = "비용 추가",
   className = "min-h-10 rounded-xl px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary-strong cursor-pointer transition-colors enabled:hover:bg-primary/10",
   icon = "+ ",
 }: Readonly<{
@@ -336,7 +336,7 @@ export function ExpenseEntryButton({
       type="button"
       data-plan-card-no-drag
       disabled={context.busy || (scheduleItemId !== undefined && !context.list.isSuccess)}
-      aria-label={amountLabel ? `${amountLabel} 지출 수정` : undefined}
+      aria-label={amountLabel ? `${amountLabel} 비용 수정` : undefined}
       aria-haspopup="dialog"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => {

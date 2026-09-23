@@ -289,7 +289,7 @@ export function PlanDaySection({
                       }}
                     >
                       <ExpenseIcon className="size-4 shrink-0" />
-                      {title} 지출 추가
+                      {title} 비용 추가
                     </button>
                   ) : null}
                   {onRequestInsertScheduleAfter ? (

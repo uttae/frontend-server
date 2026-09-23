@@ -243,7 +243,7 @@ export function ExpenseList({
           {canManage && (
             <button
               type="button"
-              aria-label={`${e.memo || expenseCategoryLabel(e.category)} ${formatExpenseAmount(e.totalAmount)} ${e.currency} 지출 수정`}
+              aria-label={`${e.memo || expenseCategoryLabel(e.category)} ${formatExpenseAmount(e.totalAmount)} ${e.currency} 비용 수정`}
               aria-haspopup="dialog"
               disabled={busy}
               onClick={() => onEdit(e)}
@@ -311,8 +311,8 @@ export function ExpenseList({
                 <div className="absolute right-0 top-0 z-20">
                   <button
                     type="button"
-                    aria-label="지출 삭제"
-                    title="지출 삭제"
+                    aria-label="비용 삭제"
+                    title="비용 삭제"
                     disabled={busy}
                     onClick={() => onDelete(e)}
                     className="relative z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-dark-gray transition-colors hover:text-status-negative focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"

@@ -204,11 +204,11 @@ export function ExpensePanel() {
       className="@container/expenses min-w-0 space-y-5"
     >
       <MainPageHeader
-        title="지출"
+        title="가계부"
         action={context.canManage && (
           <button
             type="button"
-            aria-label="지출 추가"
+            aria-label="비용 추가"
             disabled={context.busy}
             onClick={() =>
               context.open(
@@ -220,7 +220,7 @@ export function ExpensePanel() {
             className={`inline-flex shrink-0 items-center rounded-full bg-primary text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 ${pageToolbarButtonCompactGapClass} ${pageToolbarButtonCompactPaddingClass} ${pageToolbarButtonCompactTextClass}`}
           >
             <Plus className={pageToolbarButtonCompactIconClass} strokeWidth={pageToolbarButtonCompactIconStroke} aria-hidden="true" />
-            지출 추가
+            비용 추가
           </button>
         )}
       />
@@ -251,7 +251,7 @@ export function ExpensePanel() {
             </button>
           )}
         </div>
-        <div className="mt-4 flex flex-wrap gap-2" aria-label="지출 보기">
+        <div className="mt-4 flex flex-wrap gap-2" aria-label="가계부 보기">
           <button
             type="button"
             aria-pressed={tab === "list"}
@@ -259,7 +259,7 @@ export function ExpensePanel() {
             onClick={() => setTab("list")}
           >
             <ReceiptText size={16} aria-hidden="true" />
-            지출 목록
+            비용 목록
           </button>
           <button
             type="button"
@@ -277,7 +277,7 @@ export function ExpensePanel() {
             onClick={() => setTab("analysis")}
           >
             <ChartNoAxesColumn size={16} aria-hidden="true" />
-            지출 분석
+            비용 분석
           </button>
         </div>
       </div>
@@ -313,7 +313,7 @@ export function ExpensePanel() {
       )}
       {query.isPending && (
         <p role="status" className="py-4 text-dark-gray">
-          {{ list: "지출", analysis: "지출 분석", summary: "정산" }[tab]}을 불러오는 중…
+          {{ list: "비용 목록", analysis: "비용 분석", summary: "정산" }[tab]}을 불러오는 중…
         </p>
       )}
       {query.isError && (

@@ -22,7 +22,7 @@ it("opens an expense in the selected trip day", async () => {
   );
   const add = renderer.root
     .findAllByType("button")
-    .find((b) => b.props["aria-label"] === "지출 추가");
+    .find((b) => b.props["aria-label"] === "비용 추가");
   expect(add).toBeDefined();
   await act(async () => add!.props.onClick());
   expect(mocks.open).toHaveBeenCalledWith({ scheduleId: 10 });
@@ -69,7 +69,7 @@ it("keeps a single reference travel total visible while filtering", async () => 
 });
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => mocks.state,
-  ExpenseEntryButton: () => <button>준비 지출 추가</button>,
+  ExpenseEntryButton: () => <button>준비 비용 추가</button>,
 }));
 vi.mock("@/components/settings/ConfirmDialog", () => ({
   ConfirmDialog: () => null,
@@ -169,7 +169,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
   await mount();
   let button = renderer.root
     .findAllByType("button")
-    .find((b) => b.props["aria-label"] === "지출 삭제")!;
+    .find((b) => b.props["aria-label"] === "비용 삭제")!;
   await act(async () => button.props.onClick());
   await answerConfirm(false);
   expect(mocks.remove).not.toHaveBeenCalled();
@@ -177,7 +177,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
   mocks.remove.mockRejectedValue(new Error("삭제 실패"));
   button = renderer.root
     .findAllByType("button")
-    .find((b) => b.props["aria-label"] === "지출 삭제")!;
+    .find((b) => b.props["aria-label"] === "비용 삭제")!;
   await act(async () => button.props.onClick());
   await answerConfirm(true);
   expect(JSON.stringify(renderer.toJSON())).toContain("삭제 실패");
@@ -213,7 +213,7 @@ async function answerConfirm(confirmed: boolean) {
 function panelButton(label: string) {
   return renderer.root
     .findAllByType("button")
-    .find((b) => b.children.includes(label) || (label === "삭제" && b.props["aria-label"] === "지출 삭제"));
+    .find((b) => b.children.includes(label) || (label === "삭제" && b.props["aria-label"] === "비용 삭제"));
 }
 it("retains deletion selection and requires confirmation of the fetched version without automatic retry", async () => {
   await mount();
@@ -382,7 +382,7 @@ it.each(["initial load", "change", "reconnect"])(
     expect(typeof first).not.toBe("string");
     if (typeof first === "string") throw new Error("Expected panel heading");
     expect(first.findAllByType("h1").map((heading) => heading.children.join("")))
-      .toEqual(["지출"]);
+      .toEqual(["가계부"]);
     expect(JSON.stringify(renderer.toJSON())).not.toMatch(/최근 지출 조회 완료|30초 간격/);
   },
 );
@@ -407,7 +407,7 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
   await click("전체 정산");
   expect(JSON.stringify(renderer.toJSON())).toContain("12,345");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("카테고리별");
-  await click("지출 분석");
+  await click("비용 분석");
   expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
 });

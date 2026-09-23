@@ -312,7 +312,7 @@ export function ExpenseEditor({
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
           <h2 id={titleId} className="text-title-m mobile:text-title-s font-bold">
-            {original ? "지출 수정" : "지출 추가"}
+            {original ? "비용 수정" : "비용 추가"}
           </h2>
           <button
             type="button"

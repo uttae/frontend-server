@@ -335,10 +335,10 @@ it("opens editing from the expense card and keeps deletion as a separate action"
     expect(JSON.stringify(renderer!.toJSON())).toContain("부담자");
     const buttons = renderer!.root.findAllByType("button");
     expect(buttons).toHaveLength(2);
-    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("지출 수정"))!.props.onClick());
+    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("비용 수정"))!.props.onClick());
     expect(onEdit).toHaveBeenCalledWith(expense);
     onEdit.mockClear();
-    await act(async () => buttons.find(b => b.props["aria-label"] === "지출 삭제")!.props.onClick());
+    await act(async () => buttons.find(b => b.props["aria-label"] === "비용 삭제")!.props.onClick());
     expect(onDelete).toHaveBeenCalledWith(expense);
     expect(onEdit).not.toHaveBeenCalled();
     await act(async () => renderer!.update(render(true, true)));

@@ -435,7 +435,7 @@ export function PlanPlaceCard({
               <ExpenseEntryButton
                 scheduleId={scheduleTimeEdit.scheduleId}
                 scheduleItemId={scheduleItemId}
-                label="지출 추가"
+                label="비용 추가"
                 className={PLAN_PLACE_CARD_TW.triggerButton}
                 icon={<ExpenseIcon className={PLAN_PLACE_CARD_TW.triggerIcon} />}
               />

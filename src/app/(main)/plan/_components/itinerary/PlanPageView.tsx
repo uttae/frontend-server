@@ -170,7 +170,7 @@ export function PlanPageView() {
           href="/cost"
           className="flex min-h-10 items-center rounded-xl px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary-strong transition-colors hover:bg-primary/10 focus-visible:outline-2"
         >
-          지출 보기
+          가계부 보기
         </Link>
       }
     />
