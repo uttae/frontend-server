@@ -86,7 +86,7 @@
 .devicesTitle { text-align: center; padding-top: 40px; }
 .devicesTitle .eyebrow { color: var(--color-secondary-default); }
 .devicesTitle h2 { margin-top: 8px; color: var(--color-text-inverse); }
-.deviceImages { position: absolute; top: 156px; left: 50%; transform: translateX(-50%); display: flex; align-items: flex-end; gap: min(9.811px, 2.496vw); }
+.deviceImages { position: absolute; top: 156px; left: 50%; transform: translateX(-50%); width: max-content; display: flex; align-items: flex-end; gap: min(9.811px, 2.496vw); }
 .deviceWeb { width: min(251px, 63.867vw); height: min(189.589px, 48.242vw); flex: none; }
 .devicePhone { width: min(71px, 18.066vw); height: min(148.556px, 37.8vw); flex: none; }
 .how { background: var(--color-primary-subtle); overflow: clip; scroll-margin-top: 24px; }
