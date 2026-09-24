@@ -15,51 +15,67 @@ type Props = {
   isFirst?: boolean;
 };
 
+const formatDate = (date: string) => date.slice(2).replaceAll("-", "/");
+
+function TripDate({ date }: { date: string | null }) {
+  if (!date) return <span>미정</span>;
+  return <time dateTime={date}>{formatDate(date)}</time>;
+}
+
+
 export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
   const setCurrentRoomId = useSessionStore((s) => s.setCurrentRoomId);
-  const dates = [room.startDate, room.endDate]
-    .map((date) => date ? date.slice(2).replaceAll("-", "/") : "미정");
   const planPath = planPathForRoom(room.id);
 
   const handleNavigate = () => setCurrentRoomId(room.id);
 
   return (
-    <article className="relative min-w-0">
-      <Link
-        href={planPath}
-        onClick={handleNavigate}
-        className="group block rounded-[12px] text-text focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-      >
-        <div className="relative aspect-video overflow-hidden rounded-[12px] bg-fill-strong mobile:aspect-[353/198]">
-          <Image
-            src="/rooms/figma/trip-cover.png"
-            alt=""
-            fill
-            loading={isFirst ? "eager" : "lazy"}
-            sizes="(max-width: 639px) calc(100vw - 40px), (max-width: 1023px) 50vw, 368px"
-            className="object-cover transition-opacity group-hover:opacity-90"
-          />
-        </div>
-        <div className="pb-5 pl-3 pr-14 pt-4 mobile:pb-4 mobile:pl-2 mobile:pt-3">
-          <h2 className="max-w-[260px] truncate text-title-m mobile:text-title-s font-bold tracking-[-0.02em]" title={room.title}>
-            {room.title}
+    <article className="group relative min-w-0">
+      <div className="relative aspect-video overflow-hidden rounded-[8px] bg-fill-strong">
+        <Image
+          src="/rooms/figma/trip-cover.png"
+          alt=""
+          fill
+          loading={isFirst ? "eager" : "lazy"}
+          sizes="(max-width: 639px) calc(100vw - 40px), (max-width: 1023px) 50vw, 368px"
+          className="object-cover transition-opacity group-hover:opacity-90"
+        />
+      </div>
+
+      <div className="flex items-start justify-between pb-4 pl-1 pt-1">
+        <div className="flex min-w-0 max-w-[280px] flex-col gap-2.5 pt-2">
+          <h2 className="truncate text-title-m text-text">
+            {/* 카드 전체를 링크 영역으로 넓히되, 링크의 접근성 이름은 방 제목으로 유지한다 */}
+            <Link
+              href={planPath}
+              onClick={handleNavigate}
+              title={room.title}
+              className="after:absolute after:inset-0 after:rounded-[8px] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+            >
+              {room.title}
+            </Link>
           </h2>
-          <div className="mt-4 space-y-1 text-body-s-regular mobile:mt-3 mobile:text-body-xs-regular">
-            <p className="flex min-h-5 gap-1 overflow-hidden" title={room.destinations.join(" · ")}>
+
+          <div className="space-y-0.5 text-body-s-regular text-text-subtle">
+            <ul className="flex min-h-5 gap-0.5 overflow-hidden" title={room.destinations.join(" · ")}>
               {room.destinations.map((destination, index) => (
-                <span key={`${destination}-${index}`} className="inline-flex min-w-0 items-center gap-1">
-                  {index > 0 && <span className="shrink-0">·</span>}
+                <li key={`${destination}-${index}`} className="inline-flex min-w-0 items-center gap-0.5">
+                  {index > 0 && <span aria-hidden className="shrink-0">·</span>}
                   <span className="truncate">{destination}</span>
-                </span>
+                </li>
               ))}
+            </ul>
+            <p className="flex gap-0.5">
+              <TripDate date={room.startDate} />
+              <span aria-hidden>-</span>
+              <TripDate date={room.endDate} />
             </p>
-            <p className="flex gap-1"><span>{dates[0]}</span><span>-</span><span>{dates[1]}</span></p>
           </div>
         </div>
-      </Link>
 
-      <div className="absolute bottom-[72px] right-1 z-10 mobile:bottom-16 mobile:right-0">
-        <RoomCardMenu room={room} onDelete={onDelete} onLeave={onLeave} />
+        <div className="relative z-10 shrink-0">
+          <RoomCardMenu room={room} onDelete={onDelete} onLeave={onLeave} />
+        </div>
       </div>
     </article>
   );

@@ -32,7 +32,7 @@ export function RoomGrid({
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-20 text-center">
+      <div role="alert" className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-20 text-center">
         <p className="text-body-m-emphasis font-medium text-dark-gray">
           여행 목록을 불러오지 못했어요
         </p>
@@ -49,32 +49,33 @@ export function RoomGrid({
 
   if (rooms.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-8 rounded-[12px] bg-fill px-5 py-20 text-center mobile:gap-0 mobile:rounded-none mobile:bg-transparent mobile:px-0 mobile:py-10">
-        <div className="flex flex-col items-center gap-3">
-          <div aria-hidden className="flex size-[100px] items-center justify-center mobile:size-20 mobile:[&_img]:size-20">
-            <BrandLogo variant="symbol" size="L" alt="" />
+      <div className="flex flex-col items-center justify-center gap-10 rounded-[8px] bg-fill px-5 py-20 text-center mobile:rounded-none mobile:bg-transparent mobile:px-0 mobile:pb-0 mobile:pt-[60px]">
+        <div className="flex flex-col items-center gap-5 mobile:gap-3">
+          <div aria-hidden className="flex items-center justify-center [&_img]:size-10 mobile:[&_img]:size-[30px]">
+            <BrandLogo variant="symbol" size="M" alt="" />
           </div>
-          <p className="text-body-l-regular text-text-subtle mobile:text-body-s-regular">
+          <p className="text-body-m-regular text-text-subtle mobile:text-body-s-regular">
             아직 생성된 여행방이 없어요<br />
             우때와 함께 여행계획을 시작해보아요!
           </p>
         </div>
-        <NewTripLink className="mobile:hidden" />
+        <NewTripLink />
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:grid-cols-1 mobile:gap-y-4">
+    <ul className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:grid-cols-1 mobile:gap-y-4">
       {rooms.map((room, index) => (
-        <RoomCard
-          key={room.id}
-          room={room}
-          isFirst={index === 0}
-          onDelete={onDelete}
-          onLeave={onLeave}
-        />
+        <li key={room.id} className="min-w-0">
+          <RoomCard
+            room={room}
+            isFirst={index === 0}
+            onDelete={onDelete}
+            onLeave={onLeave}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
