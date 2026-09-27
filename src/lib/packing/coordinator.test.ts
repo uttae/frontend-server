@@ -5,10 +5,10 @@ import { PackingApiError, packingApi } from '@/lib/api/rooms/packing';
 import type { PackingList } from './types';
 vi.mock('@/lib/api/rooms/packing', () => ({
   PackingApiError: class extends Error { constructor(public status:number,public code:string,message:string){super(message);} },
-  packingApi: { get:vi.fn(),initialize:vi.fn(),createPart:vi.fn(),renamePart:vi.fn(),deletePart:vi.fn(),createItem:vi.fn(),renameItem:vi.fn(),checkItem:vi.fn(),deleteItem:vi.fn(),restoreItem:vi.fn(),saveMemo:vi.fn(),deleteMemo:vi.fn() },
+  packingApi: { get:vi.fn(),initialize:vi.fn(),createPart:vi.fn(),renamePart:vi.fn(),deletePart:vi.fn(),createItem:vi.fn(),renameItem:vi.fn(),checkItem:vi.fn(),deleteItem:vi.fn(),saveMemo:vi.fn(),deleteMemo:vi.fn() },
 }));
 const room='11111111-1111-4111-8111-111111111111';
-function list(version=0):PackingList { return {id:1,roomId:room,ownerUserId:7,version,initializedAt:'2026-09-20T00:00:00Z',parts:[{id:2,name:'서류',position:0,column:0,items:[{id:3,partId:2,name:'여권',checked:false,position:0,memo:null}]}]}; }
+function list(version=0):PackingList { return {id:1,roomId:room,ownerUserId:7,version,initializedAt:'2026-09-20T00:00:00Z',parts:[{id:2,name:'서류',position:0,column:0,items:[{id:3,partId:2,name:'여권',checked:false,position:0,memo:null,tips:[]}]}]}; }
 function setup(){const client=new QueryClient({defaultOptions:{queries:{retry:false}}});const c=new PackingCoordinator(client,room,7);return {client,c};}
 function deferred<T>(){let resolve!:(x:T)=>void;let reject!:(x:unknown)=>void;const promise=new Promise<T>((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 afterEach(()=>{vi.resetAllMocks();vi.useRealTimers();});
@@ -34,7 +34,20 @@ describe('packing admission and recovery',()=>{
  it('rejects data for another principal and purges cached private content on access loss',async()=>{const {c,client}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();vi.mocked(packingApi.get).mockRejectedValue(new PackingApiError(403,'NOT_ROOM_MEMBER','gone'));await c.refresh();expect(c.getSnapshot().status).toBe('revoked');expect(c.getSnapshot().data).toBeNull();expect(client.getQueryData(['packing',room,7])).toBeUndefined();});
  it('does not lower committed version with a stale read',async()=>{const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list(4));await c.refresh();vi.mocked(packingApi.get).mockResolvedValue(list(2));await c.refresh();expect(c.getSnapshot().data?.version).toBe(4);expect(c.getSnapshot().status).toBe('sync-error');});
  it('refetches before nonempty delete confirmation; cancel sends no DELETE',async()=>{const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();await c.prepareDelete('part',2);expect(packingApi.get).toHaveBeenCalledTimes(2);expect(c.getSnapshot().confirmation).toMatchObject({kind:'part',id:2,version:0});c.cancelConfirmation();expect(packingApi.deletePart).not.toHaveBeenCalled();});
- it('memo-free delete stays visible until success; undo uses original ID and cannot recreate missing parent',async()=>{const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();const pending=deferred<Awaited<ReturnType<typeof packingApi.deleteItem>>>();vi.mocked(packingApi.deleteItem).mockReturnValue(pending.promise);const deletion=c.prepareDelete('item',3);await Promise.resolve();await Promise.resolve();expect(c.getSnapshot().data?.parts[0].items).toHaveLength(1);pending.resolve({version:1,deletedItemId:3,serverTime:'2026-09-20T00:00:00Z',undo:{token:'test-only-token',expiresAt:'2026-09-20T00:00:10Z'}});vi.mocked(packingApi.get).mockResolvedValue({...list(1),parts:[{...list().parts[0],items:[]}]});await deletion;expect(c.getSnapshot().undo).toHaveLength(1);vi.mocked(packingApi.get).mockResolvedValue({...list(2),parts:[]});await c.refresh();expect(c.getSnapshot().undo).toHaveLength(0);await c.restore(3);expect(packingApi.restoreItem).not.toHaveBeenCalled();c.dispose();});
+ it('requires confirmation for a memo-free item and deletes immediately after approval',async()=>{
+  const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();
+  await c.prepareDelete('item',3);
+  expect(c.getSnapshot().confirmation).toMatchObject({kind:'item',id:3,version:0});
+  expect(packingApi.deleteItem).not.toHaveBeenCalled();
+  const pending=deferred<Awaited<ReturnType<typeof packingApi.deleteItem>>>();vi.mocked(packingApi.deleteItem).mockReturnValue(pending.promise);
+  const deletion=c.confirmDelete();await Promise.resolve();await Promise.resolve();
+  expect(c.getSnapshot().data?.parts[0].items).toHaveLength(1);
+  pending.resolve({version:1,deletedItemId:3});
+  vi.mocked(packingApi.get).mockResolvedValue({...list(1),parts:[{...list().parts[0],items:[]}]});
+  await deletion;
+  expect(packingApi.deleteItem).toHaveBeenCalledExactlyOnceWith(room,3,0,true);
+  expect(c.getSnapshot().data?.parts[0].items).toEqual([]);
+ });
 });
 
 it('does not send a confirmation after a read advances its reviewed version while cancellation settles',async()=>{
@@ -52,17 +65,10 @@ it('rejects invalid local drafts without speculative display or recovery request
  const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();await c.execute({type:'renamePart',id:2,name:' '.repeat(51)});
  expect(packingApi.renamePart).not.toHaveBeenCalled();expect(packingApi.get).toHaveBeenCalledTimes(1);expect(c.getSnapshot().status).toBe('ready');expect(c.getSnapshot().data?.parts[0].name).toBe('서류');
 });
-it('expires undo by monotonic server-relative remaining time even if wall clock changes',async()=>{
- vi.useFakeTimers({toFake:['setTimeout','clearTimeout','performance']});const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();
- const response=deferred<Awaited<ReturnType<typeof packingApi.deleteItem>>>();vi.mocked(packingApi.deleteItem).mockReturnValue(response.promise);
- const deletion=c.prepareDelete('item',3);await Promise.resolve();await Promise.resolve();await vi.advanceTimersByTimeAsync(3000);
- response.resolve({version:1,deletedItemId:3,serverTime:'2026-09-20T00:00:00Z',undo:{token:'test-only-token',expiresAt:'2026-09-20T00:00:10Z'}});vi.mocked(packingApi.get).mockResolvedValue({...list(1),parts:[{...list().parts[0],items:[]}]});await deletion;
- expect(c.getSnapshot().undo[0].remainingMs).toBe(7000);vi.setSystemTime(new Date('2030-01-01'));await vi.advanceTimersByTimeAsync(7000);expect(c.getSnapshot().undo).toEqual([]);await c.restore(3);expect(packingApi.restoreItem).not.toHaveBeenCalled();c.dispose();
-});
 it('leaves final 401 navigation to existing session teardown',async()=>{const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();vi.mocked(packingApi.get).mockRejectedValue(new PackingApiError(401,'UNAUTHORIZED','expired'));await c.refresh();expect(c.getSnapshot().status).toBe('revoked');expect(c.getSnapshot().exitToHome).toBe(false);});
-it.each([[404,'PACKING_UNDO_NOT_FOUND'],[409,'PACKING_UNDO_USED'],[409,'PACKING_RESTORE_CONFLICT'],[410,'PACKING_UNDO_EXPIRED'],[409,'PACKING_CAPACITY_EXCEEDED']])('never resurrects locally when restore rejects %i %s',async(status,code)=>{
- const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();vi.mocked(packingApi.deleteItem).mockResolvedValue({version:1,deletedItemId:3,serverTime:'2026-09-20T00:00:00Z',undo:{token:'11111111-1111-4111-8111-111111111111',expiresAt:'2026-09-20T00:00:10Z'}});const deleted={...list(1),parts:[{...list().parts[0],items:[]}]};vi.mocked(packingApi.get).mockResolvedValue(deleted);await c.prepareDelete('item',3);
- const response=deferred<Awaited<ReturnType<typeof packingApi.restoreItem>>>();const started=deferred<void>();vi.mocked(packingApi.restoreItem).mockImplementation(()=>{started.resolve();return response.promise;});const restoring=c.restore(3);await started.promise;expect(c.getSnapshot().data?.parts[0].items[0]).toEqual(list().parts[0].items[0]);response.reject(new PackingApiError(status,code,'restore rejected'));await restoring;expect(c.getSnapshot().data?.parts[0].items).toEqual([]);expect(c.getSnapshot().undo).toEqual([]);expect(packingApi.restoreItem).toHaveBeenCalledTimes(1);c.dispose();
-});
 it('ignores late initialization after scope disposal',async()=>{const {c,client}=setup();vi.mocked(packingApi.get).mockRejectedValue(new PackingApiError(404,'PACKING_LIST_NOT_INITIALIZED','missing'));const init=deferred<PackingList>();vi.mocked(packingApi.initialize).mockReturnValue(init.promise);const admission=c.refresh();await Promise.resolve();await Promise.resolve();await Promise.resolve();c.dispose();init.resolve(list());await admission;expect(c.getSnapshot().data).toBeNull();expect(client.getQueryData(['packing',room,7])).toBeUndefined();});
-it('confirmation-required from server never automatically sends a confirmed delete',async()=>{const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();const latest=list(1);latest.parts[0].items[0].memo={id:3,itemId:3,content:'new memo'};vi.mocked(packingApi.deleteItem).mockRejectedValue(new PackingApiError(409,'PACKING_CONFIRMATION_REQUIRED','memo'));vi.mocked(packingApi.get).mockResolvedValue(latest);await c.prepareDelete('item',3);expect(packingApi.deleteItem).toHaveBeenCalledExactlyOnceWith(room,3,0,false);expect(c.getSnapshot().confirmation).toBeNull();await c.prepareDelete('item',3);expect(c.getSnapshot().confirmation).toMatchObject({id:3,version:1});expect(packingApi.deleteItem).toHaveBeenCalledTimes(1);c.dispose();});
+it('a changed version invalidates an open item delete confirmation',async()=>{
+ const {c}=setup();vi.mocked(packingApi.get).mockResolvedValue(list());await c.refresh();await c.prepareDelete('item',3);
+ vi.mocked(packingApi.get).mockResolvedValue(list(1));await c.refresh();
+ await c.confirmDelete();expect(packingApi.deleteItem).not.toHaveBeenCalled();expect(c.getSnapshot().confirmation).toBeNull();
+});

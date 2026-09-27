@@ -13,8 +13,7 @@ export type PackingCommand =
   | { type: 'saveMemo'; id: number; content: string }
   | { type: 'deleteMemo'; id: number };
 type DeleteCommand = { type: 'deletePart' | 'deleteItem'; id: number; confirmed: boolean };
-type RestoreCommand = { type: 'restoreItem'; id: number; undoToken: string; item: PackingItem };
-type Command = PackingCommand | DeleteCommand | RestoreCommand;
+type Command = PackingCommand | DeleteCommand;
 export type PackingOutcome = { kind: 'success' | 'error' | 'blocked' | 'missing' | 'confirmation'; createdPartId?: number };
 export type PackingConfirmation = { kind: 'part' | 'item'; id: number; version: number; name: string };
 export type PackingState = {
@@ -23,13 +22,11 @@ export type PackingState = {
   status: 'loading' | 'ready' | 'writing' | 'sync-error' | 'uncertain' | 'error' | 'revoked';
   message: string | null;
   confirmation: PackingConfirmation | null;
-  undo: { id: number; name: string; remainingMs: number }[];
 };
-type Undo = { item: PackingItem; token: string; deadline: number; timer: ReturnType<typeof setTimeout> };
 const findItem = (list: PackingList, id: number) => list.parts.flatMap(p => p.items).find(i => i.id === id);
 const uncertain = (e: unknown) => !(e instanceof PackingValidationError) && (!(e instanceof PackingApiError) || e.status >= 500);
 const accessLost = (e: unknown) => e instanceof PackingApiError && (e.status === 401 || e.status === 403 || e.code === 'ROOM_NOT_FOUND');
-const initialState = (): PackingState => ({ data: null, status: 'loading', message: null, confirmation: null, undo: [] });
+const initialState = (): PackingState => ({ data: null, status: 'loading', message: null, confirmation: null });
 
 /** One memory-only coordinator per exact room/principal query. No mutation retries. */
 export class PackingCoordinator {
@@ -40,7 +37,6 @@ export class PackingCoordinator {
   private busy = false;
   private reading: Promise<void> | null = null;
   private initAttempted = false;
-  private undos = new Map<number, Undo>();
   readonly key;
   constructor(private client: QueryClient, readonly roomId: string, readonly userId: number) {
     this.key = packingQueryKey(roomId, userId);
@@ -52,15 +48,12 @@ export class PackingCoordinator {
   private setData(data: PackingList) {
     this.client.setQueryData(this.key, data);
     this.publish({ data });
-    for (const [id, undo] of this.undos) if (!data.parts.some(p => p.id === undo.item.partId) || findItem(data, id)) this.dropUndo(id);
   }
   private purge() {
     this.generation++;
     void this.client.cancelQueries({ queryKey: this.key, exact: true });
     this.client.removeQueries({ queryKey: this.key, exact: true });
-    for (const undo of this.undos.values()) clearTimeout(undo.timer);
-    this.undos.clear();
-    this.publish({ data: null, confirmation: null, undo: [] });
+    this.publish({ data: null, confirmation: null });
   }
   dispose() { this.active = false; this.purge(); this.listeners.clear(); }
   private revoke(error?: unknown) { this.purge(); this.active = false; this.publish({ status: 'revoked', message: null, exitToHome: !(error instanceof PackingApiError && error.status === 401) }); }
@@ -112,7 +105,6 @@ export class PackingCoordinator {
   execute = (command: PackingCommand) => this.write(command);
   private optimistic(list: PackingList, command: Command): PackingList {
     if (command.type === 'renamePart') return { ...list, parts: list.parts.map(p => p.id === command.id ? { ...p, name: command.name.trim() } : p) };
-    if (command.type === 'restoreItem') return { ...list, parts: list.parts.map(p => p.id === command.item.partId ? { ...p, items: [...p.items, command.item].sort((a,b) => a.position-b.position) } : p) };
     if (command.type === 'checkItem' || command.type === 'renameItem' || command.type === 'saveMemo' || command.type === 'deleteMemo') {
       return { ...list, parts: list.parts.map(p => ({ ...p, items: p.items.map(item => {
         if (item.id !== command.id) return item;
@@ -136,7 +128,6 @@ export class PackingCoordinator {
       case 'renameItem': return packingApi.renameItem(r, command.id, version, command.name);
       case 'checkItem': return packingApi.checkItem(r, command.id, version, command.checked);
       case 'deleteItem': return packingApi.deleteItem(r, command.id, version, command.confirmed);
-      case 'restoreItem': return packingApi.restoreItem(r, command.id, version, command.undoToken);
       case 'saveMemo': return packingApi.saveMemo(r, command.id, version, command.content);
       case 'deleteMemo': return packingApi.deleteMemo(r, command.id, version);
     }
@@ -171,7 +162,6 @@ export class PackingCoordinator {
     }
     this.publish({ status: 'writing' });
     this.setData(this.optimistic(snapshot, command));
-    const started = performance.now();
     let outcome: PackingOutcome = { kind: 'error' };
     try {
       const result = await this.request(command, snapshot.version);
@@ -192,12 +182,6 @@ export class PackingCoordinator {
       if ('deletedItemId' in result) parts = parts.map(p => ({ ...p, items: p.items.filter(i => i.id !== result.deletedItemId) }));
       this.setData({ ...current, version: result.version, parts });
       this.publish({ confirmation: null });
-      if ('undo' in result && result.undo && command.type === 'deleteItem' && !command.confirmed) {
-        const item = findItem(snapshot, command.id);
-        const remaining = Math.max(0, Math.min(10_000, Date.parse(result.undo.expiresAt) - Date.parse(result.serverTime)) - (performance.now() - started));
-        if (item && remaining > 0) this.addUndo(item, result.undo.token, remaining);
-      }
-      if (command.type === 'restoreItem') this.dropUndo(command.id);
       outcome = { ...outcome, kind: 'success' };
       await this.read(generation, false);
       return outcome;
@@ -208,7 +192,6 @@ export class PackingCoordinator {
       const isUncertain = uncertain(error);
       const targetMissing = error instanceof PackingApiError && error.status === 404;
       const needsRead = isUncertain || targetMissing || (error instanceof PackingApiError && [409,410].includes(error.status));
-      if (command.type === 'restoreItem') this.dropUndo(command.id);
       this.publish({ status: isUncertain ? 'uncertain' : needsRead ? 'sync-error' : 'ready', confirmation: null,
         message: isUncertain ? '저장 결과를 확인할 수 없어요. 동기화 후 내용을 확인해 주세요.' : '저장하지 못했어요. 내용을 확인하고 다시 저장해 주세요.' });
       if (needsRead) await this.read(generation, false, true);
@@ -222,8 +205,6 @@ export class PackingCoordinator {
     if (this.busy || this.state.status !== 'ready' || !this.state.data) return { kind: 'blocked' };
     let target = kind === 'part' ? this.state.data.parts.find(p => p.id === id) : findItem(this.state.data, id);
     if (!target) return { kind: 'missing' };
-    const needsConfirmation = kind === 'part' ? (target as PackingPart).items.length > 0 : !!(target as PackingItem).memo;
-    if (!needsConfirmation) return this.write({ type: kind === 'part' ? 'deletePart' : 'deleteItem', id, confirmed: false });
     // Hold the same coordinator lock while reading the exact confirmation snapshot.
     this.busy = true;
     this.publish({ status: 'writing', confirmation: null });
@@ -241,20 +222,7 @@ export class PackingCoordinator {
     if (!c) return { kind: 'blocked' };
     return this.write({ type: c.kind === 'part' ? 'deletePart' : 'deleteItem', id: c.id, confirmed: true }, c.version);
   };
-  private publishUndo() {
-    this.publish({ undo: [...this.undos].map(([id,u]) => ({ id, name: u.item.name, remainingMs: Math.max(0,u.deadline-performance.now()) })) });
-  }
-  private addUndo(item: PackingItem, token: string, remaining: number) {
-    this.dropUndo(item.id);
-    this.undos.set(item.id, { item, token, deadline: performance.now()+remaining, timer: setTimeout(() => this.dropUndo(item.id), remaining) });
-    this.publishUndo();
-  }
-  private dropUndo(id: number) { const u=this.undos.get(id);if(u){clearTimeout(u.timer);this.undos.delete(id);this.publishUndo();} }
-  restore = async (id: number): Promise<PackingOutcome> => {
-    const undo = this.undos.get(id);
-    if (!undo || performance.now() >= undo.deadline || !this.state.data?.parts.some(p => p.id === undo.item.partId)) { this.dropUndo(id); return { kind:'blocked' }; }
-    return this.write({type:'restoreItem',id,undoToken:undo.token,item:undo.item});
-  };
+
 }
 
 const coordinators = new WeakMap<QueryClient, Map<string, PackingCoordinator>>();

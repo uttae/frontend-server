@@ -8,7 +8,7 @@ import { useSessionStore } from '@/stores/session-store';
 import { isPackingPath, parseRoomContextPath } from '@/lib/room-context-path';
 import { getPackingCoordinator, releasePackingCoordinator, type PackingCoordinator, type PackingState } from '@/lib/packing/coordinator';
 
-const empty: PackingState = {data:null,status:'loading',message:null,confirmation:null,undo:[]};
+const empty: PackingState = {data:null,status:'loading',message:null,confirmation:null};
 const emptySnapshot = () => empty;
 const emptySubscribe = () => () => {};
 const leases = new WeakMap<PackingCoordinator, number>();

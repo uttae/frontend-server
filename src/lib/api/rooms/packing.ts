@@ -33,11 +33,11 @@ function item(value: unknown): PackingItem {
     if (integer(m.id, 1) !== id || integer(m.itemId, 1) !== id) return malformed();
     memo = { id, itemId: id, content: text(m.content) };
   }
-  return { id, partId: integer(o.partId, 1), name: text(o.name), checked: o.checked, position: integer(o.position), memo };
+  return { id, partId: integer(o.partId, 1), name: text(o.name), checked: o.checked, position: integer(o.position), memo, tips: o.tips === undefined ? [] : array(o.tips, text) };
 }
 function part(value: unknown): PackingPart {
   const o = record(value), id = integer(o.id, 1), column = integer(o.column);
-  if (column > 2) return malformed();
+  if (column > 3) return malformed();
   const items = array(o.items, item);
   if (items.some(entry => entry.partId !== id)) return malformed();
   return { id, name: text(o.name), position: integer(o.position), column, items };
@@ -50,12 +50,7 @@ function list(value: unknown): PackingList {
 function partWrite(value: unknown): PackingPartWrite { const o = record(value); return { version: integer(o.version), part: part(o.part) }; }
 function itemWrite(value: unknown): PackingItemWrite { const o = record(value); return { version: integer(o.version), item: item(o.item) }; }
 function partDelete(value: unknown): PackingPartDelete { const o = record(value); return { version: integer(o.version), deletedPartId: integer(o.deletedPartId, 1) }; }
-function itemDelete(value: unknown): PackingItemDelete {
-  const o = record(value);
-  let undo = null;
-  if (o.undo !== null) { const u = record(o.undo); const token = text(u.token); if (!uuid.test(token)) return malformed(); undo = { token, expiresAt: timestamp(u.expiresAt) }; }
-  return { version: integer(o.version), deletedItemId: integer(o.deletedItemId, 1), serverTime: timestamp(o.serverTime), undo };
-}
+function itemDelete(value: unknown): PackingItemDelete { const o = record(value); return { version: integer(o.version), deletedItemId: integer(o.deletedItemId, 1) }; }
 async function request<T>(roomId: string, suffix: string, parse: (value: unknown) => T, init: RequestInit = {}): Promise<T> {
   if (!uuid.test(roomId)) throw new PackingApiError(400, "BAD_REQUEST", "여행방 주소를 확인해 주세요.");
   const response = await apiFetch(apiUrl(`/rooms/${roomId}/packing${suffix}`), { ...init, cache: "no-store" });
@@ -78,7 +73,6 @@ export const packingApi = {
   renameItem: (roomId: string, id: number, version: number, name: string) => { guard(id, version); return request(roomId, `/items/${id}`, itemWrite, { method: "PATCH", ...nameBody(version, name, "item") }); },
   checkItem: (roomId: string, id: number, version: number, checked: boolean) => { guard(id, version); assertPackingChecked(checked); return request(roomId, `/items/${id}/checked`, itemWrite, { method: "PATCH", ...jsonBody({ expectedVersion: version, checked }) }); },
   deleteItem: (roomId: string, id: number, version: number, confirmed: boolean) => { guard(id, version); assertPackingChecked(confirmed); return request(roomId, `/items/${id}?expectedVersion=${version}&confirmed=${confirmed}`, itemDelete, { method: "DELETE" }); },
-  restoreItem: (roomId: string, id: number, version: number, undoToken: string) => { guard(id, version); if (!uuid.test(undoToken)) throw new PackingApiError(400, "BAD_REQUEST", "실행 취소 정보를 확인해 주세요."); return request(roomId, `/items/${id}/restore`, itemWrite, { method: "POST", ...jsonBody({ expectedVersion: version, undoToken }) }); },
   saveMemo: (roomId: string, id: number, version: number, content: string) => { guard(id, version); return request(roomId, `/items/${id}/memo`, itemWrite, { method: "PUT", ...jsonBody({ expectedVersion: version, content: normalizePackingMemo(content) ?? "" }) }); },
   deleteMemo: (roomId: string, id: number, version: number) => { guard(id, version); return request(roomId, `/items/${id}/memo?expectedVersion=${version}`, itemWrite, { method: "DELETE" }); },
 };
