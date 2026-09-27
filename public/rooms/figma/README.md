@@ -9,7 +9,7 @@
 - `user.svg`, `logout.svg`: 프로필 오버레이 원본 아이콘 (`3456:5418`).
 - `invite.svg`, `trash.svg`: 방 더보기 오버레이 원본 아이콘 (`3449:3613`).
 
-광고 배너 영역에는 [마케팅 시안](https://www.figma.com/design/asf1pKmEosGS4xUx1qn3MV/%EB%A7%88%EC%BC%80%ED%8C%85?node-id=0-1)의 피드백 이벤트 배너를 사용한다. 에셋은 만료되는 Figma 다운로드 URL 대신 로컬 파일을 참조한다.
+광고 배너 영역에는 [마케팅 시안](https://www.figma.com/design/asf1pKmEosGS4xUx1qn3MV/%EB%A7%88%EC%BC%80%ED%8C%85?node-id=0-1)의 데스크톱·모바일 완성 배너 이미지를 각각 그대로 사용한다. 에셋은 만료되는 Figma 다운로드 URL 대신 로컬 파일을 참조한다.
 
 ## 상태별 기준 프레임
 

@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it } from "vitest";
 
-import { HOME_BANNERS, HomeBannerCarousel, type HomeBanner } from "./HomeBannerCarousel";
+import { HomeBannerCarousel, type HomeBanner } from "./HomeBannerCarousel";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -46,10 +46,4 @@ it("switches between banners when more than one is registered", async () => {
 
   await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="다음 배너"]')?.click());
   expect(host.querySelector<HTMLAnchorElement>("a")?.href).toBe("https://example.com/first");
-});
-
-it("loads each feedback artwork asset only once", async () => {
-  await act(async () => root.render(<HomeBannerCarousel banners={HOME_BANNERS} />));
-
-  expect(host.querySelectorAll("img")).toHaveLength(2);
 });

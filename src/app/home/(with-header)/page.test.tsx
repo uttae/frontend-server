@@ -57,6 +57,6 @@ it("places the feedback banner before the room list and links it to the form", a
   const heading = host.querySelector("h1");
   expect(banner).not.toBeNull();
   expect(heading).not.toBeNull();
-  expect(banner?.textContent).toContain("피드백 남기고");
+  expect(banner?.getAttribute("aria-label")).toContain("피드백 이벤트");
   expect(banner?.compareDocumentPosition(heading!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 });
