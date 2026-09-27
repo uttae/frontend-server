@@ -6,6 +6,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
+import { ExpenseCurrencyPicker } from "./ExpenseCurrencyPicker";
 import { ExpenseRolePicker } from "./ExpenseViews";
 beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const mocks = vi.hoisted(() => ({
@@ -29,6 +30,124 @@ const currencies = [
   { currency: "USD", fractionDigits: 2, maximumAmount: "999999999999999.99" },
   { currency: "KRW", fractionDigits: 0, maximumAmount: "999999999999999" },
 ];
+
+function stubLocalStorage() {
+  const entries = new Map<string, string>();
+  const storage = {
+    get length() { return entries.size; },
+    key(index: number) { return [...entries.keys()][index] ?? null; },
+    getItem(key: string) { return entries.get(key) ?? null; },
+    setItem(key: string, value: string) { entries.set(key, value); },
+    removeItem(key: string) { entries.delete(key); },
+    clear() { entries.clear(); },
+  };
+  vi.stubGlobal("window", { localStorage: storage, matchMedia: () => ({ matches: true }) });
+  return entries;
+}
+
+async function completeNewExpense() {
+  const amount = renderer.root.findAllByType("input")
+    .find((input) => input.props.inputMode === "decimal")!;
+  const currency = renderer.root.findByType(ExpenseCurrencyPicker).props.value;
+  await act(async () => amount.props.onChange({ target: { value: currency === "USD" ? "100.00" : "100" } }));
+  await act(async () => categorySelect().props.onChange("OTHER"));
+  await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
+}
+
+async function rerenderNewEditor() {
+  await act(async () => renderer.unmount());
+  await act(async () => { renderer = create(<ExpenseEditor initial={{}} onClose={mocks.close} />); });
+}
+
+it("remembers currency only after a successful new expense save", async () => {
+  const entries = stubLocalStorage();
+  await mount(null);
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+  await act(async () => renderer.root.findByType(ExpenseCurrencyPicker).props.onChange("USD"));
+  expect(entries.size).toBe(0);
+  await completeNewExpense();
+  expect(mocks.save).toHaveBeenCalledOnce();
+  expect([...entries.values()]).toEqual(["USD"]);
+  await mount(null);
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("USD");
+});
+
+it("does not remember cancelled, failed, or edited expense currency", async () => {
+  const entries = stubLocalStorage();
+  await mount(null);
+  await act(async () => renderer.root.findByType(ExpenseCurrencyPicker).props.onChange("USD"));
+  await act(async () => renderer.root.findByProps({ "aria-label": "닫기" }).props.onClick());
+  expect(entries.size).toBe(0);
+  mocks.save.mockRejectedValueOnce(new Error("저장 실패"));
+  await completeNewExpense();
+  expect(entries.size).toBe(0);
+  await mount();
+  await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
+  expect(entries.size).toBe(0);
+});
+
+it("scopes the remembered currency to the authenticated user and room", async () => {
+  stubLocalStorage();
+  await mount(null);
+  await act(async () => renderer.root.findByType(ExpenseCurrencyPicker).props.onChange("USD"));
+  await completeNewExpense();
+  mocks.state = { ...(mocks.state as object), currentUserId: 2 };
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+  mocks.state = { ...(mocks.state as object), currentUserId: 1, roomId: "another-room" };
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+  mocks.state = { ...(mocks.state as object), roomId: "r" };
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("USD");
+});
+
+it("uses the current list for stale preference and reads tab changes on the next open", async () => {
+  const entries = stubLocalStorage();
+  await mount(null);
+  await act(async () => renderer.root.findByType(ExpenseCurrencyPicker).props.onChange("USD"));
+  await completeNewExpense();
+  const key = [...entries.keys()][0];
+  entries.set(key, "BAD");
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+  entries.set(key, "USD");
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("USD");
+  mocks.state = { ...(mocks.state as object), currencies: { data: [currencies[0]], isSuccess: true } };
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("USD");
+  entries.set(key, "KRW");
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("USD");
+});
+
+it("applies preference after currencies load without replacing a later manual choice", async () => {
+  const entries = stubLocalStorage();
+  await mount(null);
+  await act(async () => renderer.root.findByType(ExpenseCurrencyPicker).props.onChange("USD"));
+  await completeNewExpense();
+  mocks.state = { ...(mocks.state as object), currencies: { data: undefined, isSuccess: false } };
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("");
+  mocks.state = { ...(mocks.state as object), currencies: { data: currencies, isSuccess: true } };
+  await act(async () => renderer.update(<ExpenseEditor initial={{}} onClose={mocks.close} />));
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("USD");
+  await act(async () => renderer.root.findByType(ExpenseCurrencyPicker).props.onChange("KRW"));
+  entries.set([...entries.keys()][0], "USD");
+  mocks.state = { ...(mocks.state as object), currencies: { data: [...currencies], isSuccess: true } };
+  await act(async () => renderer.update(<ExpenseEditor initial={{}} onClose={mocks.close} />));
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+});
+
+it("keeps the normal default when storage is unavailable or identity is missing", async () => {
+  vi.stubGlobal("window", { get localStorage() { throw new Error("blocked"); } });
+  await mount(null);
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+  mocks.state = { ...(mocks.state as object), currentUserId: undefined };
+  await rerenderNewEditor();
+  expect(renderer.root.findByType(ExpenseCurrencyPicker).props.value).toBe("KRW");
+});
 
 it("preselects self in both roles for new expenses and keeps self first", async () => {
   await mount(null);

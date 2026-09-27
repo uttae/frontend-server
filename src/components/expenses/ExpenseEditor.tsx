@@ -14,6 +14,7 @@ import {
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
 import { validateExpense } from "@/lib/expenses/expense-policy";
+import { preferredExpenseCurrency, rememberExpenseCurrency } from "@/lib/expenses/expense-currency-preference";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
@@ -151,6 +152,19 @@ export function ExpenseEditor({
           participantUserIds: self === undefined ? [] : [self],
         },
   );
+  const manuallySelectedCurrency = useRef<string | null>(null);
+  const preferenceScope = `${context.currentUserId ?? ""}:${context.roomId}`;
+  useEffect(() => {
+    if (original || !context.currencies.isSuccess || manuallySelectedCurrency.current === preferenceScope)
+      return;
+    const selected = preferredExpenseCurrency(
+      context.currentUserId,
+      context.roomId,
+      context.currencies.data ?? [],
+    );
+    setBody((previous) => previous.currency === selected
+      ? previous : { ...previous, currency: selected });
+  }, [original, context.currentUserId, context.roomId, context.currencies.data, context.currencies.isSuccess, preferenceScope]);
   const [error, setError] = useState("");
   const [errorOccurrence, setErrorOccurrence] = useState(0);
   const errorMessageRef = useRef<HTMLParagraphElement>(null);
@@ -280,6 +294,7 @@ export function ExpenseEditor({
     };
     try {
       await context.save(payload, original?.id, original?.version);
+      if (!original) rememberExpenseCurrency(context.currentUserId, context.roomId, payload.currency);
       onClose();
     } catch (e) {
       if (
@@ -331,7 +346,10 @@ export function ExpenseEditor({
               value={body.currency}
               currencies={context.currencies.data ?? []}
               disabled={pending || !context.currencies.isSuccess}
-              onChange={(value) => change("currency", value)}
+              onChange={(value) => {
+                manuallySelectedCurrency.current = preferenceScope;
+                change("currency", value);
+              }}
             />
             <label className="block min-w-0 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
               <span className="block text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-5">금액</span>
