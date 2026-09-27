@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -162,19 +160,7 @@ export function PlanPageView() {
   const pageContentClassName =
     "@container/plan space-y-2.5 overflow-x-auto pb-8";
 
-  const pageHeader = (
-    <MainPageHeader
-      title="일정"
-      action={
-        <Link
-          href="/cost"
-          className="flex min-h-10 items-center rounded-xl px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-primary-strong transition-colors hover:bg-primary/10 focus-visible:outline-2"
-        >
-          지출 보기
-        </Link>
-      }
-    />
-  );
+  const pageHeader = <MainPageHeader title="일정" />;
 
   if (showInitialLoading) {
     return (
@@ -260,8 +246,8 @@ export function PlanPageView() {
           title={dayToDelete.isLast ? "이 일차를 비울까요?" : "이 일차를 삭제할까요?"}
           description={
             dayToDelete.isLast
-              ? "마지막 일차는 남고, 이 일차의 모든 장소와 지출이 삭제돼요."
-              : "이 일차에 포함된 모든 장소와 지출도 함께 삭제돼요."
+              ? "마지막 일차는 남고, 이 일차의 모든 장소와 비용이 삭제돼요."
+              : "이 일차에 포함된 모든 장소와 비용도 함께 삭제돼요."
           }
           confirmLabel={dayToDelete.isLast ? "비우기" : "삭제"}
           isPending={isDeletingSchedule}

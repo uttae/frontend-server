@@ -262,7 +262,7 @@ it("defaults to my settlement, showing only my counterparties and separate curre
   expect(html).toContain("계산 내역");
   expect(html).toContain("내가 낸 금액");
   expect(html).toContain("내 몫");
-  expect(html).not.toContain("지출 분석");
+  expect(html).not.toContain("비용 분석");
 });
 it("does not claim settlement completion when there are no personal transfers", () => {
   const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="success" currentUserId={5} />);
@@ -289,7 +289,7 @@ it("scales analysis bars against the largest amount and handles zero totals", ()
   expect(opacities[0]).toBeGreaterThan(opacities[1]);
   const equal = [...render(["50", "50"]).matchAll(/opacity:([0-9.]+)/g)].map(match => Number(match[1]));
   expect(equal[0]).toBe(equal[1]);
-  expect(html).toContain('aria-label="USD 카테고리별 지출 그래프"');
+  expect(html).toContain('aria-label="USD 카테고리별 비용 그래프"');
   const zero = render(["0.00", "0.00"]);
   expect(zero).not.toMatch(/NaN|Infinity/);
   expect(zero).toContain('width:0%');
@@ -308,14 +308,14 @@ it("shows only the selected analysis graph and preserves exact daily amounts", a
     });
     const graphs = () => renderer!.root.findAllByType("figure");
     expect(graphs()).toHaveLength(1);
-    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 지출 그래프");
+    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 비용 그래프");
     await act(async () => renderer!.root.findAllByType("button").find(b => b.children.includes("일차별"))!.props.onClick());
     expect(graphs()).toHaveLength(1);
-    expect(graphs()[0].props["aria-label"]).toBe("USD 준비·일차별 지출 그래프");
+    expect(graphs()[0].props["aria-label"]).toBe("USD 준비·일차별 비용 그래프");
     expect(JSON.stringify(renderer!.toJSON())).toContain("여행 준비 · 1,234,567.00 USD");
     await act(async () => renderer!.root.findAllByType("button").find(b => b.children.includes("카테고리별"))!.props.onClick());
     expect(graphs()).toHaveLength(1);
-    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 지출 그래프");
+    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 비용 그래프");
   } finally {
     await act(async () => renderer?.unmount());
     vi.unstubAllGlobals();
@@ -335,10 +335,10 @@ it("opens editing from the expense card and keeps deletion as a separate action"
     expect(JSON.stringify(renderer!.toJSON())).toContain("부담자");
     const buttons = renderer!.root.findAllByType("button");
     expect(buttons).toHaveLength(2);
-    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("지출 수정"))!.props.onClick());
+    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("비용 수정"))!.props.onClick());
     expect(onEdit).toHaveBeenCalledWith(expense);
     onEdit.mockClear();
-    await act(async () => buttons.find(b => b.props["aria-label"] === "지출 삭제")!.props.onClick());
+    await act(async () => buttons.find(b => b.props["aria-label"] === "비용 삭제")!.props.onClick());
     expect(onDelete).toHaveBeenCalledWith(expense);
     expect(onEdit).not.toHaveBeenCalled();
     await act(async () => renderer!.update(render(true, true)));
@@ -355,5 +355,5 @@ it("announces unavailable identity before an empty personal settlement", () => {
   const html = renderToStaticMarkup(<ExpenseSummaryView summary={{ currencies: [] }} members={[]} memberStatus="pending" />);
   expect(html).toContain('<output');
   expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중…");
-  expect(html).not.toContain("정산할 지출이 없어요.");
+  expect(html).not.toContain("정산할 비용이 없어요.");
 });

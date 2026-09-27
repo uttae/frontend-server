@@ -33,9 +33,9 @@
   min-height: 100% !important;
 }
 
-/* 모바일 하단 탭바(MobileMainTabs: min-h-14 + border-top 1px + safe-area)가 있을 때만 토스트를 그 위로 올림 */
+/* 모바일 하단 탭바(메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */
 html:has([data-mobile-main-tabs]) {
-  --toast-bottom-inset: calc(3.5rem + 1px + env(safe-area-inset-bottom));
+  --toast-bottom-inset: calc(52px + env(safe-area-inset-bottom));
 }
 
 /* Sonner 기본 [data-icon]는 16×16(상태 SVG용). 아바타 등은 24×24로 맞춤 */

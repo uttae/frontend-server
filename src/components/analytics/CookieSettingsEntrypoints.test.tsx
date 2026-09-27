@@ -85,7 +85,7 @@ it("retains landing and room footers and removes only the requested navigation e
   expect(profile).toContain("/home/my-info");
   const mobile = source("components/mobile/MobileMainTabs.tsx");
   expect(mobile).not.toMatch(/privacy-settings|쿠키 설정/);
-  for (const entry of ["북마크", "멤버", "검색", "채팅", "일정"])
+  for (const entry of ["일정", "북마크", "여행 도구", "채팅"])
     expect(mobile).toContain(entry);
   expect(source("components/layout/MainLayoutChrome.tsx")).not.toContain(
     "SiteFooter",
