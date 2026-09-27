@@ -1,0 +1,11 @@
+.banner {
+  width: 100%;
+  aspect-ratio: 1136 / 237;
+  border-radius: 8px;
+  background: url("/rooms/banners/feedback/desktop.png") center / 100% 100% no-repeat;
+}
+
+:global(.is-mobile-device) .banner {
+  aspect-ratio: 353 / 113;
+  background-image: url("/rooms/banners/feedback/mobile.png");
+}

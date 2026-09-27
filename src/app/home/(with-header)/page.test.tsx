@@ -49,3 +49,14 @@ it("includes the room-list site footer in the mobile empty page", async () => {
   expect(footer?.querySelector('nav[aria-label="정책 문서"]')).not.toBeNull();
   expect(footer?.textContent).toContain("서비스명");
 });
+
+it("places the feedback banner before the room list and links it to the form", async () => {
+  await act(async () => root.render(<HomePage />));
+
+  const banner = host.querySelector<HTMLAnchorElement>('a[href="https://forms.gle/giYqRzrhCYF9Hz1M9"]');
+  const heading = host.querySelector("h1");
+  expect(banner).not.toBeNull();
+  expect(heading).not.toBeNull();
+  expect(banner?.getAttribute("aria-label")).toContain("피드백 이벤트");
+  expect(banner?.compareDocumentPosition(heading!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+});

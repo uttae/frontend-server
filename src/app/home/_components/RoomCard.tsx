@@ -5,6 +5,7 @@ import Image from "next/image";
 
 import { RoomListItem } from "@/lib/api/rooms";
 import { planPathForRoom } from "@/lib/join-room-workflow";
+import { roomCoverForId } from "@/lib/room-cover";
 import { useSessionStore } from "@/stores/session-store";
 import { RoomCardMenu } from "./RoomCardMenu";
 
@@ -35,7 +36,7 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
       >
         <div className="relative aspect-video overflow-hidden rounded-[8px] bg-fill-strong mobile:aspect-[353/198]">
           <Image
-            src="/rooms/figma/trip-cover.png"
+            src={roomCoverForId(room.id)}
             alt=""
             fill
             loading={isFirst ? "eager" : "lazy"}
