@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Fragment, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { CookieSettingsButton } from "@/components/analytics/CookieSettingsProvider";
 import { BrandLogo } from "@/components/BrandLogo";
 
@@ -16,19 +16,9 @@ const POLICY_LINKS = [
 
 const linkClassName = "text-white/85 transition-colors hover:text-white";
 
-/**
- * Figma 푸터 메뉴는 좁은 화면에서 3개 + 2개 두 줄로 끊긴다.
- * flex 컨테이너 안의 전폭 아이템이 줄바꿈을 강제하고, 넓은 화면에서는 숨겨 한 줄로 둔다.
- */
-const MENU_WRAP_INDEX = 3;
-
-function MenuLineBreak() {
-  return <li aria-hidden className="w-full sm:hidden" />;
-}
-
-function FooterDot({ className }: { className?: string }) {
+function FooterDot() {
   return (
-    <span className={cn("text-white/35", className)} aria-hidden>
+    <span className="text-white/35" aria-hidden>
       ·
     </span>
   );
@@ -43,42 +33,45 @@ export function SiteFooter({ className, logo, variant = "default" }: {
 
   if (variant === "room-list") {
     return (
-      <footer className={cn("bg-fill text-text", className)}>
-        {/* Figma 모바일 푸터(135:620)는 사방 32px 패딩에 블록 간격 20px */}
-        <div className="mx-auto flex max-w-[1272px] flex-col gap-10 px-6 pb-20 pt-[60px] mobile:gap-5 mobile:p-8">
+      <footer className={cn("bg-fill text-text mobile:hidden", className)}>
+        <div className="mx-auto flex max-w-[1184px] flex-col gap-5 px-6 pb-20 pt-[60px] mobile:p-8">
           <Link href="/" aria-label="우때 홈" className="w-fit [&_img]:h-[22px] [&_img]:w-[73px]">
             <BrandLogo variant="combination" size="S" />
           </Link>
-          <nav aria-label="정책 문서">
-            <ul className="flex min-h-[60px] flex-wrap items-center gap-x-5 gap-y-0 text-label-l-regular sm:gap-y-3 mobile:min-h-0 mobile:gap-x-[14px] mobile:text-label-s-emphasis">
-              {POLICY_LINKS.map((item, index) => (
-                <Fragment key={item.href}>
-                  {index === MENU_WRAP_INDEX && <MenuLineBreak />}
-                  <li className="inline-flex items-center gap-5 mobile:gap-[14px]">
-                    {index > 0 && (
-                      <span
-                        aria-hidden
-                        className={cn("h-9 w-px bg-border mobile:h-6", index === MENU_WRAP_INDEX && "hidden sm:block")}
-                      />
-                    )}
-                    <Link href={item.href} className="flex h-12 items-center hover:underline">{item.label}</Link>
-                  </li>
-                </Fragment>
-              ))}
-              <li className="inline-flex items-center gap-5 mobile:gap-[14px]">
-                <span aria-hidden className="h-9 w-px bg-border mobile:h-6" />
-                <CookieSettingsButton className="h-12 cursor-pointer hover:underline">
-                  쿠키 설정
-                </CookieSettingsButton>
-              </li>
-            </ul>
+          <nav aria-label="정책 문서" className="flex min-h-[60px] flex-wrap items-center gap-x-5 gap-y-3 text-label-l-emphasis mobile:hidden">
+            {POLICY_LINKS.map((item, index) => (
+              <span key={item.href} className="inline-flex items-center gap-5">
+                {index > 0 && <span aria-hidden className="h-9 w-px bg-border" />}
+                <Link href={item.href} className="flex h-10 items-center hover:underline">{item.label}</Link>
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-5">
+              <span aria-hidden className="h-9 w-px bg-border" />
+              <CookieSettingsButton className="h-10 cursor-pointer hover:underline">
+                쿠키 설정
+              </CookieSettingsButton>
+            </span>
           </nav>
-          {/* 데스크톱은 열 우선 2열(서비스명·이메일 / 운영자·호스팅), 모바일은 한 열로 Figma 순서를 그대로 따른다 */}
-          <dl className="grid w-fit grid-cols-1 gap-x-[100px] gap-y-1.5 text-label-l-regular mobile:gap-y-3 mobile:text-label-s-regular md:grid-flow-col md:grid-rows-2">
-            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">서비스명</dt><dd>우때</dd></div>
-            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">이메일</dt><dd><a href={`mailto:${SUPPORT_EMAIL}`} className="hover:underline">{SUPPORT_EMAIL}</a></dd></div>
-            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">운영자</dt><dd>팀 우때 (Team Uttae)</dd></div>
-            <div className="flex gap-[25px]"><dt className="w-[68px] shrink-0 text-text-subtle">호스팅</dt><dd>Amazon Web Services (AWS)</dd></div>
+          <nav aria-label="정책 문서" className="hidden mobile:flex mobile:flex-col mobile:text-label-s-emphasis">
+            <div className="flex h-10 items-center gap-[14px]">
+              {POLICY_LINKS.slice(0, 3).map((item, index) => (
+                <span key={item.href} className="inline-flex items-center gap-[14px]">
+                  {index > 0 && <span aria-hidden className="h-6 w-px bg-border" />}
+                  <Link href={item.href} className="flex h-10 items-center whitespace-nowrap hover:underline">{item.label}</Link>
+                </span>
+              ))}
+            </div>
+            <div className="flex h-10 items-center gap-[14px]">
+              <CookieSettingsButton className="h-10 cursor-pointer whitespace-nowrap hover:underline">쿠키설정</CookieSettingsButton>
+              <span aria-hidden className="h-6 w-px bg-border" />
+              <Link href={POLICY_LINKS[3].href} className="flex h-10 items-center whitespace-nowrap hover:underline">{POLICY_LINKS[3].label}</Link>
+            </div>
+          </nav>
+          <dl className="grid w-fit grid-cols-1 gap-x-[100px] gap-y-1.5 text-label-l-regular mobile:w-full mobile:gap-y-3 mobile:text-label-s-regular md:grid-cols-[max-content_max-content]">
+            <div className="flex gap-[25px] mobile:order-1"><dt className="w-[68px] shrink-0 text-text-subtle">서비스명</dt><dd>우때</dd></div>
+            <div className="flex gap-[25px] mobile:order-3"><dt className="w-[68px] shrink-0 text-text-subtle">운영자</dt><dd>팀 우때 (Team Uttae)</dd></div>
+            <div className="flex gap-[25px] mobile:order-2"><dt className="w-[68px] shrink-0 text-text-subtle">이메일</dt><dd><a href={`mailto:${SUPPORT_EMAIL}`} className="hover:underline">{SUPPORT_EMAIL}</a></dd></div>
+            <div className="flex gap-[25px] mobile:order-4"><dt className="w-[68px] shrink-0 text-text-subtle">호스팅</dt><dd>Amazon Web Services (AWS)</dd></div>
           </dl>
         </div>
       </footer>
@@ -92,28 +85,27 @@ export function SiteFooter({ className, logo, variant = "default" }: {
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
         <div className="flex flex-col items-center">
           {logo ? <Link href="/" aria-label="우때 홈">{logo}</Link> : null}
-          <nav aria-label="정책 문서">
-            <ul className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-body-s-regular mobile:text-body-xs-regular">
-              {POLICY_LINKS.map((item, index) => (
-                <Fragment key={item.href}>
-                  {index === MENU_WRAP_INDEX && <MenuLineBreak />}
-                  <li className="inline-flex items-center gap-1.5">
-                    {index > 0 ? (
-                      <FooterDot className={index === MENU_WRAP_INDEX ? "hidden sm:inline" : undefined} />
-                    ) : null}
-                    <Link href={item.href} className={linkClassName}>
-                      {item.label}
-                    </Link>
-                  </li>
-                </Fragment>
-              ))}
-              <li className="inline-flex items-center gap-1.5">
-                <FooterDot />
-                <CookieSettingsButton className={`${linkClassName} cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}>
-                  쿠키 설정
-                </CookieSettingsButton>
-              </li>
-            </ul>
+          <nav
+            aria-label="정책 문서"
+            className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-body-s-regular mobile:text-body-xs-regular"
+          >
+            {POLICY_LINKS.map((item, index) => (
+              <span
+                key={item.href}
+                className="inline-flex items-center gap-1.5"
+              >
+                {index > 0 ? <FooterDot /> : null}
+                <Link href={item.href} className={linkClassName}>
+                  {item.label}
+                </Link>
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-1.5">
+              <FooterDot />
+              <CookieSettingsButton className={`${linkClassName} cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}>
+                쿠키 설정
+              </CookieSettingsButton>
+            </span>
           </nav>
 
           <section

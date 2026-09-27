@@ -211,6 +211,31 @@ it("clears both links for preparation and clears place when changing day", async
     0,
   );
 });
+it("keeps the place selector visible but disabled for travel preparation", async () => {
+  await mount(null);
+  const placeSelect = () => renderer.root.findAllByType(ExpenseSelect)
+    .find((select) => select.props.label === "연결 장소 (선택)");
+  const placeLabel = () => renderer.root.findAllByType("p")
+    .find((paragraph) => paragraph.children.join("") === "연결 장소 (선택)");
+
+  expect(placeSelect()).toBeDefined();
+  expect(placeSelect()!.props.disabled).toBe(true);
+  expect(placeSelect()!.props.options).toEqual([{ value: "", label: "장소 연결 없음" }]);
+  expect(placeSelect()!.findByType("button").props.disabled).toBe(true);
+  expect(placeLabel()!.props.className).toContain("opacity-50");
+
+  const daySelect = renderer.root.findAllByType(ExpenseSelect)[0];
+  expect(daySelect.props.label).toBe("일차 구분");
+  await act(async () => daySelect.props.onChange("10"));
+  expect(placeSelect()!.props.disabled).toBe(false);
+  expect(placeSelect()!.props.options).toContainEqual({ value: "100", label: "경복궁" });
+  expect(placeLabel()!.props.className).not.toContain("opacity-50");
+
+  await act(async () => daySelect.props.onChange("PREPARATION"));
+  expect(placeSelect()!.props.disabled).toBe(true);
+  expect(placeSelect()!.props.options).toEqual([{ value: "", label: "장소 연결 없음" }]);
+  expect(placeLabel()!.props.className).toContain("opacity-50");
+});
 it("blocks wrong currency scale without truncating and guards rapid duplicate submit", async () => {
   await mount();
   const amount = renderer.root
@@ -590,7 +615,7 @@ it("retains the draft and requires explicit latest-record review before saving a
   await submitVersioned();
   expect(mocks.save).toHaveBeenCalledTimes(1);
   await act(async () =>
-    recoveryButton("최신 지출 확인 후 수정 계속")!.props.onClick(),
+    recoveryButton("최신 비용 확인 후 수정 계속")!.props.onClick(),
   );
   expect(mocks.save).toHaveBeenCalledTimes(1);
   await submitVersioned();
@@ -615,7 +640,7 @@ it.each([undefined, { ...base, version: 2, scheduleId: 11 }])(
     await submitVersioned();
     await submitVersioned();
     expect(mocks.save).toHaveBeenCalledTimes(1);
-    expect(recoveryButton("최신 지출 확인 후 수정 계속")).toBeUndefined();
+    expect(recoveryButton("최신 비용 확인 후 수정 계속")).toBeUndefined();
     expect(mocks.close).not.toHaveBeenCalled();
   },
 );
@@ -630,11 +655,11 @@ it("blocks save after failed conflict read until a fresh read and explicit revie
   expect(mocks.save).toHaveBeenCalledTimes(1);
   mocks.readLatest.mockResolvedValueOnce({ ...base, version: 3 });
   await act(async () =>
-    recoveryButton("최신 지출 다시 조회")!.props.onClick(),
+    recoveryButton("최신 비용 다시 조회")!.props.onClick(),
   );
   expect(mocks.save).toHaveBeenCalledTimes(1);
   await act(async () =>
-    recoveryButton("최신 지출 확인 후 수정 계속")!.props.onClick(),
+    recoveryButton("최신 비용 확인 후 수정 계속")!.props.onClick(),
   );
   await submitVersioned();
   expect(mocks.save).toHaveBeenLastCalledWith(expect.anything(), 10, 3);

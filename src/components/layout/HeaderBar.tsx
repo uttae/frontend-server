@@ -177,7 +177,7 @@ const HeaderBar = ({
       ) : (
         <div className="flex h-full items-center">
           <div className="relative flex h-full shrink-0 flex-col items-center justify-center" style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}>
-            <Link href="/home" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-gray transition-colors hover:bg-light-gray" aria-label="홈으로 이동">
+            <Link href="/home" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-gray" aria-label="홈으로 이동">
               <BrandLogo variant="symbol" size="S" alt="" />
             </Link>
             <div className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border" aria-hidden />

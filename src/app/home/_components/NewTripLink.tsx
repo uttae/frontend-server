@@ -7,7 +7,7 @@ export function NewTripLink({ className }: { className?: string }) {
     <Link
       href="/home/new"
       className={cn(
-        "inline-flex shrink-0 items-center justify-center rounded-full bg-primary px-3.5 py-[13px] text-label-l-emphasis text-text-inverse transition-colors hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
+        "inline-flex h-12 w-[135px] shrink-0 items-center justify-center rounded-[999px] bg-primary px-[14px] py-[13px] text-label-l-emphasis text-text-inverse transition-colors hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary",
         className,
       )}
     >

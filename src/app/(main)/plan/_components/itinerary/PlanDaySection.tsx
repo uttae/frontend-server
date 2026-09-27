@@ -1,6 +1,5 @@
 "use client";
 
-import { RouteVisibilityIcon } from "@/components/icons/RouteVisibilityIcon";
 import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
@@ -37,6 +36,7 @@ export type PlanDaySectionProps = {
    */
   itineraryScheduleId?: number | null;
   children?: ReactNode;
+  summaryAction?: ReactNode;
   /**
    * 일차(schedule) 단위 삭제 — schedule-item(장소) 삭제와 구분됩니다.
    * 지정 시 헤더 우측에 더보기 메뉴가 표시됩니다.
@@ -67,6 +67,7 @@ export function PlanDaySection({
   defaultExpanded = true,
   itineraryScheduleId,
   children,
+  summaryAction,
   onRequestAddExpense,
   isAddExpenseDisabled = false,
   onRequestDeleteSchedule,
@@ -227,28 +228,6 @@ export function PlanDaySection({
               </div>
             </div>
           </button>
-          {trackedSid !== undefined ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleRouteVisible();
-              }}
-              aria-pressed={routeVisible}
-              aria-label={
-                routeVisible ? "지도에서 경로 숨기기" : "지도에 경로 표시"
-              }
-              title={routeVisible ? "지도에서 경로 숨기기" : "지도에 경로 표시"}
-              className={cn(
-                "shrink-0 cursor-pointer self-center rounded-lg p-2 transition-colors",
-                routeVisible
-                  ? "text-primary hover:bg-primary/10"
-                  : "text-dark-gray hover:bg-bubble-gray/60",
-              )}
-            >
-              <RouteVisibilityIcon visible={routeVisible} />
-            </button>
-          ) : null}
           {showScheduleMenu ? (
             <div ref={menuRef} className="relative shrink-0 self-center">
               <button
@@ -289,7 +268,7 @@ export function PlanDaySection({
                       }}
                     >
                       <ExpenseIcon className="size-4 shrink-0" />
-                      {title} 지출 추가
+                      {title} 비용 추가
                     </button>
                   ) : null}
                   {onRequestInsertScheduleAfter ? (
@@ -334,6 +313,37 @@ export function PlanDaySection({
             </div>
           ) : null}
         </div>
+        {summaryAction || trackedSid !== undefined ? (
+          <div className={cn(
+            "flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-border py-2",
+            MAIN_CARD_INNER_PADDING_X_CLASS,
+          )}>
+            <div className="min-w-0 flex-1">{summaryAction}</div>
+            {trackedSid !== undefined ? (
+              <button
+                type="button"
+                role="switch"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  toggleRouteVisible();
+                }}
+                aria-checked={routeVisible}
+                className="flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-s-regular text-dark-gray transition-colors hover:bg-bubble-gray/60 focus-visible:outline-2 focus-visible:outline-primary"
+              >
+                지도에 경로 표시
+                <span aria-hidden="true" className={cn(
+                  "relative h-5 w-9 rounded-full transition-colors",
+                  routeVisible ? "bg-primary" : "bg-gray-300",
+                )}>
+                  <span className={cn(
+                    "absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm transition-transform",
+                    routeVisible && "translate-x-4",
+                  )} />
+                </span>
+              </button>
+            ) : null}
+          </div>
+        ) : null}
         <div
           id={`${panelId}-panel`}
           role="region"
@@ -344,7 +354,9 @@ export function PlanDaySection({
             className={cn(
               cn(MAIN_CARD_INNER_PADDING_X_CLASS, "pb-4"),
               expanded
-                ? "border-t border-dashed border-gray-border pt-3"
+                ? summaryAction || trackedSid !== undefined
+                  ? "pt-1"
+                  : "border-t border-dashed border-gray-border pt-3"
                 : "pt-1",
             )}
           >
