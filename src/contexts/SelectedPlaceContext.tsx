@@ -30,6 +30,11 @@ export type SetSelectedPlaceOptions = {
   analyticsRankBucket?: SearchRankBucket;
   /** `view_place`의 `interaction_source` */
   analyticsSource?: AnalyticsSource;
+  /**
+   * 장소 상세의 뒤로가기(←) 동작 — 상세를 닫은 뒤 호출된다.
+   * 예: 지도 검색 화면에서 연 경우 검색 화면을 다시 연다. 없으면 상세만 닫는다(지도 클릭 상태로 복귀).
+   */
+  onBack?: () => void;
 };
 
 type SelectedPlaceContextType = {
@@ -42,6 +47,7 @@ type SelectedPlaceContextType = {
   itinerarySource: ItinerarySource | null;
   analyticsRankBucket: SearchRankBucket | null;
   analyticsSource: AnalyticsSource | null;
+  onBack: (() => void) | null;
 };
 
 const SelectedPlaceContext = createContext<SelectedPlaceContextType>({
@@ -51,6 +57,7 @@ const SelectedPlaceContext = createContext<SelectedPlaceContextType>({
   itinerarySource: null,
   analyticsRankBucket: null,
   analyticsSource: null,
+  onBack: null,
 });
 
 export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
@@ -61,13 +68,14 @@ export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
     itinerarySource: ItinerarySource | null;
     analyticsRankBucket: SearchRankBucket | null;
     analyticsSource: AnalyticsSource | null;
-  }>({ itinerarySource: null, analyticsRankBucket: null, analyticsSource: null });
+    onBack: (() => void) | null;
+  }>({ itinerarySource: null, analyticsRankBucket: null, analyticsSource: null, onBack: null });
 
   const setSelectedPlace = useCallback(
     (place: SearchResultCardProps | null, options?: SetSelectedPlaceOptions) => {
       if (place === null) {
         placeSelectionCameraRef.current = "full";
-        setEntry({ itinerarySource: null, analyticsRankBucket: null, analyticsSource: null });
+        setEntry({ itinerarySource: null, analyticsRankBucket: null, analyticsSource: null, onBack: null });
         setSelectedPlaceState(null);
         return;
       }
@@ -75,6 +83,7 @@ export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
         itinerarySource: options?.itinerarySource ?? options?.analyticsSource ?? null,
         analyticsRankBucket: options?.analyticsRankBucket ?? null,
         analyticsSource: options?.analyticsSource ?? options?.itinerarySource ?? null,
+        onBack: options?.onBack ?? null,
       });
       if (options?.skipMapRecenter === true) {
         placeSelectionCameraRef.current = "none";
