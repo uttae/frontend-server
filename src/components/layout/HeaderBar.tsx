@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 
+import { ChevronLeftIcon } from "@/assets/icons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
@@ -25,7 +26,6 @@ import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 
 const mobileIcon = {
   roomLogo: "/icons/mobile/room-logo.svg",
-  back: "/icons/mobile/back.svg",
   calendar: "/icons/mobile/calendar.svg",
   map: "/icons/mobile/map.svg",
   menu: "/icons/mobile/menu.svg",
@@ -124,10 +124,10 @@ const HeaderBar = ({
   return (
     <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "h-14 shrink-0 border-b-2 border-primary"}>
       {isMobileDevice ? (
-        <div className={mobileBackHref ? "flex h-full min-w-0 items-center gap-1 pl-0.5" : "flex h-full min-w-0 items-center gap-[14px] px-2"}>
+        <div className={mobileBackHref ? "flex h-full min-w-0 items-center gap-2 pl-1 pr-5" : "flex h-full min-w-0 items-center gap-[14px] px-2"}>
           {mobileBackHref ? (
             <Link href={mobileBackHref} aria-label={mobileBackLabel} className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
-              <Image src={mobileIcon.back} alt="" width={24} height={24} />
+              <ChevronLeftIcon className="text-icon" />
             </Link>
           ) : (
             <div className="flex shrink-0 items-center gap-0.5">

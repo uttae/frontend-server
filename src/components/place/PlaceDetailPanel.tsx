@@ -1,18 +1,9 @@
 "use client";
 
 import { ArrowLeft, X } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type TouchEvent,
-  type WheelEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { ChevronLeftIcon, CloseIcon } from "@/assets/icons";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
@@ -29,6 +20,7 @@ import { TABS, type Tab } from "./types";
 import { usePlaceDetailData } from "./usePlaceDetailData";
 import { HeroSkeleton, HeroImage } from "./HeroSection";
 import { PlaceDetailSkeleton, PlaceSheetSummarySkeleton } from "./PlaceDetailSkeleton";
+import { PlaceDetailSheet } from "./PlaceDetailSheet";
 import { PlaceSheetSummary } from "./PlaceSheetSummary";
 import { PlaceSummaryHeader } from "./PlaceSummaryHeader";
 import { HomeTab } from "./HomeTab";
@@ -45,15 +37,8 @@ type PlaceDetailPanelProps = SearchResultCardProps & {
   layout?: "panel" | "sheet";
 };
 
-const SCROLL_AREA_BASE_CLASS =
-  "min-h-0 flex-1 overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
-const SCROLL_AREA_CLASS = cn(SCROLL_AREA_BASE_CLASS, "overflow-y-auto");
-
-/** Figma 기준 peek 높이(핸들~사진) — 실측 전 초기값 */
-const SHEET_PEEK_FALLBACK_PX = 412;
-/** 이 거리(px) 이상 밀어야 펼침/접힘으로 전환 */
-const SHEET_EXPAND_SWIPE_PX = 24;
-const SHEET_COLLAPSE_SWIPE_PX = 48;
+const SCROLL_AREA_CLASS =
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
 
 export function PlaceDetailPanel({
   name,
@@ -359,139 +344,6 @@ export function PlaceDetailPanel({
       </button>
 
       {modals}
-    </div>
-  );
-}
-
-type PlaceDetailSheetProps = {
-  /** 바뀌면 다시 peek 상태로 시작한다 */
-  placeKey: string;
-  onBack: () => void;
-  onClose: () => void;
-  /** 처음 보이는 영역 — 장소 정보·버튼·사진 */
-  peek: ReactNode;
-  children: ReactNode;
-};
-
-/**
- * 모바일 바텀 시트 — 처음엔 `peek`(사진)까지만 보이고, 위로 밀면 컨테이너 끝까지 펼쳐진다.
- * 펼쳐진 상태에서 본문 맨 위에서 아래로 밀거나 핸들을 누르면 다시 접힌다.
- */
-function PlaceDetailSheet({
-  placeKey,
-  onBack,
-  onClose,
-  peek,
-  children,
-}: PlaceDetailSheetProps) {
-  const [expanded, setExpanded] = useState(false);
-  const [peekHeight, setPeekHeight] = useState(SHEET_PEEK_FALLBACK_PX);
-  const headerRef = useRef<HTMLDivElement>(null);
-  const peekRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const touchStartRef = useRef<{ y: number; atTop: boolean } | null>(null);
-
-  const [previousPlaceKey, setPreviousPlaceKey] = useState(placeKey);
-  if (previousPlaceKey !== placeKey) {
-    setPreviousPlaceKey(placeKey);
-    setExpanded(false);
-  }
-
-  useEffect(() => {
-    const header = headerRef.current;
-    const peekEl = peekRef.current;
-    if (!header || !peekEl) return;
-    const measure = () => setPeekHeight(header.offsetHeight + peekEl.offsetHeight);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(header);
-    observer.observe(peekEl);
-    return () => observer.disconnect();
-  }, []);
-
-  const collapse = useCallback(() => {
-    scrollRef.current?.scrollTo({ top: 0 });
-    setExpanded(false);
-  }, []);
-
-  function handleTouchStart(e: TouchEvent<HTMLDivElement>) {
-    // 헤더에서 시작했거나 본문이 맨 위일 때만 아래로 밀어 접을 수 있다
-    const fromHeader = headerRef.current?.contains(e.target as Node) ?? false;
-    touchStartRef.current = {
-      y: e.touches[0].clientY,
-      atTop: fromHeader || (scrollRef.current?.scrollTop ?? 0) <= 0,
-    };
-  }
-
-  function handleTouchEnd(e: TouchEvent<HTMLDivElement>) {
-    const start = touchStartRef.current;
-    touchStartRef.current = null;
-    if (!start) return;
-    const dy = e.changedTouches[0].clientY - start.y;
-    if (!expanded && dy < -SHEET_EXPAND_SWIPE_PX) setExpanded(true);
-    else if (expanded && start.atTop && dy > SHEET_COLLAPSE_SWIPE_PX) collapse();
-  }
-
-  function handleWheel(e: WheelEvent<HTMLDivElement>) {
-    if (!expanded && e.deltaY > 0) setExpanded(true);
-    else if (expanded && e.deltaY < 0 && (scrollRef.current?.scrollTop ?? 0) <= 0) collapse();
-  }
-
-  return (
-    <div
-      className={cn(
-        "pointer-events-auto absolute inset-x-0 bottom-0 flex h-full flex-col overflow-hidden rounded-t-[20px] bg-white shadow-[0_-6px_24px_-4px_rgba(0,0,0,0.12)] transition-transform duration-300 ease-out",
-        !expanded && "touch-none",
-      )}
-      style={
-        expanded
-          ? undefined
-          : { transform: `translateY(max(0px, calc(100% - ${peekHeight}px)))` }
-      }
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}
-    >
-      <div ref={headerRef} className="shrink-0">
-        <button
-          type="button"
-          onClick={() => (expanded ? collapse() : setExpanded(true))}
-          aria-label={expanded ? "장소 정보 접기" : "장소 정보 펼치기"}
-          aria-expanded={expanded}
-          className="flex h-3 w-full items-end justify-center"
-        >
-          <span className="h-[3px] w-10 rounded-full bg-icon-disabled" />
-        </button>
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={onBack}
-            aria-label="뒤로가기"
-            className="flex size-12 items-center justify-center"
-          >
-            <ChevronLeftIcon className="text-icon" />
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="닫기"
-            className="flex size-12 items-center justify-center"
-          >
-            <CloseIcon className="text-icon" />
-          </button>
-        </div>
-      </div>
-
-      <div
-        ref={scrollRef}
-        className={cn(
-          SCROLL_AREA_BASE_CLASS,
-          expanded ? "overflow-y-auto" : "overflow-hidden",
-        )}
-      >
-        <div ref={peekRef}>{peek}</div>
-        {children}
-      </div>
     </div>
   );
 }

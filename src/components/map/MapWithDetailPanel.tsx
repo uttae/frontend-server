@@ -9,6 +9,7 @@ import { useMapDiscoverToolbarOffset } from "@/hooks/useMapDiscoverToolbarOffset
 import { cn } from "@/lib/utils";
 
 import Map from "./Map";
+import { MobileMapSearch } from "./MobileMapSearch";
 
 export function MapWithDetailPanel({
   mobileInline = false,
@@ -66,6 +67,8 @@ export function MapWithDetailPanel({
           />
         )}
       </div>
+
+      {mobileInline ? <MobileMapSearch /> : null}
     </section>
   );
 }

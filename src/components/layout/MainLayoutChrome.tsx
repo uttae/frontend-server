@@ -5,7 +5,7 @@ import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { readMobilePlanPanel } from "@/lib/mobile-view";
+import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
 import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
@@ -36,8 +36,13 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
       : "schedule";
   const showMobilePlanSurface =
     isMobileDevice && isPlanRoute && mobilePlanPanel !== "schedule";
-  const mobileBackHref =
-    isMobileDevice && pathname.startsWith("/bookmark/") ? "/bookmark" : undefined;
+  // 뒤로가기 헤더(Figma Default / Type=Back): 북마크 상세 → 목록, 지도 → 일정
+  const mobileBack =
+    isMobileDevice && pathname.startsWith("/bookmark/")
+      ? { href: "/bookmark", label: "북마크 목록으로 돌아가기" }
+      : showMobilePlanSurface && mobilePlanPanel === "map"
+        ? { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" }
+        : undefined;
 
   return (
     <main className="flex h-dvh flex-col">
@@ -45,8 +50,8 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
         <LeftSection>
           <HeaderBar
             mobilePlanPanel={mobilePlanPanel}
-            mobileBackHref={mobileBackHref}
-            mobileBackLabel="북마크 목록으로 돌아가기"
+            mobileBackHref={mobileBack?.href}
+            mobileBackLabel={mobileBack?.label}
           />
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
