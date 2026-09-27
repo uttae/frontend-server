@@ -32,7 +32,7 @@ export function RoomGrid({
 
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-20 text-center">
+      <div role="alert" className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-20 text-center">
         <p className="text-body-m-emphasis font-medium text-dark-gray">
           여행 목록을 불러오지 못했어요
         </p>
@@ -66,16 +66,17 @@ export function RoomGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:grid-cols-1 mobile:gap-y-4">
+    <ul className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:grid-cols-1 mobile:gap-y-4">
       {rooms.map((room, index) => (
-        <RoomCard
-          key={room.id}
-          room={room}
-          isFirst={index === 0}
-          onDelete={onDelete}
-          onLeave={onLeave}
-        />
+        <li key={room.id} className="min-w-0">
+          <RoomCard
+            room={room}
+            isFirst={index === 0}
+            onDelete={onDelete}
+            onLeave={onLeave}
+          />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

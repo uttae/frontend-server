@@ -24,7 +24,7 @@ export default function HomePage() {
   return (
     <>
       <main className={`mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 ${isEmpty ? "mobile:pb-0" : "mobile:pb-[60px]"}`}>
-        <div className="flex items-center justify-between gap-3 py-5 mobile:py-4">
+        <div className={`flex items-center justify-between gap-3 py-5 mobile:min-h-[62px] mobile:py-4 ${isEmpty ? "min-h-[78px]" : "min-h-[88px]"}`}>
           <h1 className="text-heading-m text-text mobile:text-title-l">
             나의 여행
           </h1>

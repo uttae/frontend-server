@@ -15,10 +15,13 @@ type Props = {
   isFirst?: boolean;
 };
 
+function TripDate({ date }: { date: string | null }) {
+  if (!date) return <span>미정</span>;
+  return <time dateTime={date}>{date.slice(2).replaceAll("-", "/")}</time>;
+}
+
 export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
   const setCurrentRoomId = useSessionStore((s) => s.setCurrentRoomId);
-  const dates = [room.startDate, room.endDate]
-    .map((date) => date ? date.slice(2).replaceAll("-", "/") : "미정");
   const planPath = planPathForRoom(room.id);
 
   const handleNavigate = () => setCurrentRoomId(room.id);
@@ -53,7 +56,7 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
                 </span>
               ))}
             </p>
-            <p className="flex gap-0.5"><span>{dates[0]}</span><span>-</span><span>{dates[1]}</span></p>
+            <p className="flex gap-0.5"><TripDate date={room.startDate} /><span aria-hidden>-</span><TripDate date={room.endDate} /></p>
           </div>
         </div>
       </Link>
