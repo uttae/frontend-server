@@ -3,7 +3,7 @@
 - 원본: https://www.figma.com/design/3JnrQOfRePmycccIBfiPnZ?node-id=3456-6861
 - 모바일: https://www.figma.com/design/3JnrQOfRePmycccIBfiPnZ?node-id=3314-5275
 - 추출일: 2026-09-20
-- `trip-cover.png`: 원본 카드 사진. 방 목록 API에 사진 필드가 없어 공통 기본 이미지로 사용한다.
+- `trip-cover.png`: Figma 원본 카드 사진. 현재 방 목록에서는 `public/rooms/covers/`의 사진 9장 중 방 ID로 선택한 이미지를 사용한다.
 - `menu.svg`, `plus.svg`: Figma에서 내려받은 원본 아이콘.
 - `plus-mobile.svg`: 모바일 생성 버튼의 20px 원본 아이콘.
 - `user.svg`, `logout.svg`: 프로필 오버레이 원본 아이콘 (`3456:5418`).
