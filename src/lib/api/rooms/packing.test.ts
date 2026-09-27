@@ -53,6 +53,7 @@ it.each([
   { ...list, parts: [{ ...part, items: [{ ...item, memo: undefined }] }] },
   { ...list, parts: [{ ...part, items: [{ ...item, checked: "false" }] }] },
   { ...list, parts: [{ ...part, items: [{ ...item, tips: ["valid", 2] }] }] },
+  { ...list, parts: [{ ...part, column: 3 }] },
   { ...list, parts: [{ ...part, items: [{ ...item, memo: { id: 4, itemId: 3, content: "memo" } }] }] },
 ])("rejects malformed DTO instead of fabricating defaults", async payload => {
   fetcher.mockResolvedValueOnce(Response.json(payload));
@@ -67,7 +68,7 @@ it("validates unsafe and temporary IDs/versions/inputs before transport", async 
 });
 it("preserves server column/position ordering, repeated names, safe IDs and nullable memo", async () => {
   const payload = { ...list, version: Number.MAX_SAFE_INTEGER, parts: [
-    { ...part, id: Number.MAX_SAFE_INTEGER, column: 3, position: 8, items: [] },
+    { ...part, id: Number.MAX_SAFE_INTEGER, column: 2, position: 8, items: [] },
     { ...part, items: [{ ...item, memo: { id: 3, itemId: 3, content: "https://example.com\n<script>plain text</script>" } }, { ...item, id: 5, position: 3 }] },
   ] };
   fetcher.mockResolvedValueOnce(Response.json(payload));
@@ -84,6 +85,20 @@ it("confirmed item deletion returns only its new version and id and saves normal
 it("uses empty tips for responses from an older server", async () => {
   fetcher.mockResolvedValueOnce(Response.json({ ...list, parts: [{ ...part, items: [{ ...item, tips: undefined }] }] }));
   expect((await packingApi.get(room)).parts[0].items[0].tips).toEqual([]);
+});
+it("accepts added categories in the backend's final column after a create/read roundtrip", async () => {
+  const second = { ...part, id: 3, name: "통신·전자기기", position: 1, column: 0, items: [] };
+  const third = { ...part, id: 4, name: "옷·가방", position: 2, column: 1, items: [] };
+  const fourth = { ...part, id: 7, name: "세면·건강", position: 3, column: 2, items: [] };
+  const fifth = { ...part, id: 5, name: "추가 준비 1", position: 8, column: 2, items: [] };
+  const sixth = { ...part, id: 6, name: "추가 준비 2", position: 9, column: 2, items: [] };
+  fetcher.mockResolvedValueOnce(Response.json({ version: 1, part: fifth }));
+  expect(await packingApi.createPart(room, 0, fifth.name)).toEqual({ version: 1, part: fifth });
+  fetcher.mockResolvedValueOnce(Response.json({ ...list, version: 2, parts: [part, second, third, fourth, fifth, sixth] }));
+  expect((await packingApi.get(room)).parts.map(({ name, column, position }) => [name, column, position])).toEqual([
+    ["서류", 0, 0], ["통신·전자기기", 0, 1], ["옷·가방", 1, 2],
+    ["세면·건강", 2, 3], ["추가 준비 1", 2, 8], ["추가 준비 2", 2, 9],
+  ]);
 });
 it("keeps status of malformed error responses and rejects missing successful bodies", async () => {
   fetcher.mockResolvedValueOnce(new Response("unavailable", { status: 503 }));

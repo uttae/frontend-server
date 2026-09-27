@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { ChevronLeft, Ellipsis, Lightbulb, Pencil, Plus, Trash2 } from "lucide-react";
 import { usePackingList } from "@/hooks/usePackingList";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
@@ -17,6 +17,10 @@ const linked = (value:string) => renderTextWithLinks(value,{linkClassName:"text-
 
 function NameDialog({editor,context,onClose}: {editor:Editor;context:Context;onClose:()=>void}) {
   const [value,setValue]=useState("name" in editor ? editor.name : "");
+  const latestValue=useRef(value);
+  const mounted=useRef(true);
+  const composing=useRef(false);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
   const kind=editor.kind.includes("Part") ? "part" : "item";
@@ -24,26 +28,30 @@ function NameDialog({editor,context,onClose}: {editor:Editor;context:Context;onC
   const title=`${noun} ${editor.kind.startsWith("create") ? "추가" : "이름 수정"}`;
   async function submit(event:FormEvent) {
     event.preventDefault();
-    if(saving || context.state.status!=="ready" || !context.coordinator) return;
+    if(saving || composing.current || context.state.status!=="ready" || !context.coordinator) return;
     try {normalizePackingName(value,kind);} catch(error) {setError(error instanceof Error ? error.message : "이름을 확인해 주세요.");return;}
     setSaving(true);
     const command=editor.kind==="createPart" ? {type:"createPart" as const,name:value} : editor.kind==="renamePart" ? {type:"renamePart" as const,id:editor.id,name:value} : editor.kind==="createItem" ? {type:"createItem" as const,partId:editor.id,name:value} : {type:"renameItem" as const,id:editor.id,name:value};
-    try {const result=await context.coordinator.execute(command);if(result.kind==="success") onClose();} finally {setSaving(false);}
+    try {const result=await context.coordinator.execute(command);if(mounted.current && (result.kind==="missing" || (result.kind==="success" && latestValue.current===value))) onClose();} finally {if(mounted.current)setSaving(false);}
   }
   return <SettingsDialog title={title} onClose={onClose} size="compact"><form onSubmit={submit}>
-    <label className={styles.fieldLabel}>{noun} 이름<input aria-label={`${noun} 이름`} value={value} onChange={event=>{setValue(event.target.value);setError("");}} onKeyDown={event=>{if(event.key==="Enter" && event.nativeEvent.isComposing) event.preventDefault();}} className={styles.field}/></label>
+    <label className={styles.fieldLabel}>{noun} 이름<input aria-label={`${noun} 이름`} value={value} onChange={event=>{latestValue.current=event.target.value;setValue(event.target.value);setError("");}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={event=>{if(event.key==="Enter" && (composing.current || event.nativeEvent.isComposing || event.keyCode===229)) event.preventDefault();}} className={styles.field}/></label>
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <div className={styles.dialogActions}><button type="button" className={actionButton} onClick={onClose}>취소</button><button type="submit" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"}>{editor.kind.startsWith("create") ? "추가" : "저장"}</button></div>
   </form></SettingsDialog>;
 }
 
 function DeleteDialog({context,onClose}: {context:Context;onClose:()=>void}) {
+  const pending=useRef(false);
+  const [deleting,setDeleting]=useState(false);
+  const close=useCallback(()=>{if(!pending.current)onClose();},[onClose]);
   const confirmation=context.state.confirmation;
   if(!confirmation) return null;
   const part=confirmation.kind==="part";
-  return <SettingsDialog title={`${part ? "카테고리" : "준비물"} 삭제`} onClose={onClose} size="compact">
+  async function confirm(){if(pending.current || context.state.status!=="ready" || !context.coordinator)return;pending.current=true;setDeleting(true);try{await context.coordinator.confirmDelete();}finally{pending.current=false;setDeleting(false);}}
+  return <SettingsDialog title={`${part ? "카테고리" : "준비물"} 삭제`} onClose={close} size="compact">
     <p className={styles.deleteCopy}>‘{confirmation.name}’{part ? " 카테고리와 포함된 준비물을" : " 준비물을"} 삭제할까요? 삭제한 내용은 복구할 수 없어요.</p>
-    <div className={styles.dialogActions}><button type="button" className={actionButton} onClick={onClose}>취소</button><button type="button" className={`${actionButton} ${styles.danger}`} disabled={context.state.status!=="ready"} onClick={()=>void context.coordinator?.confirmDelete()}>삭제</button></div>
+    <div className={styles.dialogActions}><button type="button" className={actionButton} disabled={deleting} onClick={close}>취소</button><button type="button" className={`${actionButton} ${styles.danger}`} disabled={deleting || context.state.status!=="ready"} onClick={()=>void confirm()}>삭제</button></div>
   </SettingsDialog>;
 }
 
@@ -52,21 +60,23 @@ function MemoPanel({item,context}: {item:PackingItem;context:Context}) {
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
   const source=useRef(item.memo?.content ?? "");
-  useEffect(()=>{const next=item.memo?.content ?? "";if(source.current!==next){source.current=next;setValue(next);}},[item.memo?.content]);
+  const submitted=useRef<string|null>(null);
+  useEffect(()=>{const next=item.memo?.content ?? "";if(source.current!==next){const previous=source.current;source.current=next;setValue(current=>current===previous || current===submitted.current ? next : current);}},[item.memo?.content]);
   async function save() {
     if(saving || context.state.status!=="ready") return;
     try {normalizePackingMemo(value);} catch(e) {setError(e instanceof Error ? e.message : "메모를 확인해 주세요.");return;}
     setSaving(true);
-    try {const result=await context.coordinator?.execute({type:"saveMemo",id:item.id,content:value});if(result?.kind==="success") source.current=value;} finally {setSaving(false);}
+    submitted.current=value;
+    try {await context.coordinator?.execute({type:"saveMemo",id:item.id,content:value});} finally {submitted.current=null;setSaving(false);}
   }
   async function remove() {if(saving || context.state.status!=="ready")return;setSaving(true);try{await context.coordinator?.execute({type:"deleteMemo",id:item.id});}finally{setSaving(false);}}
   return <section className={styles.memoPanel} aria-label="내용 메모"><label htmlFor={`packing-memo-${item.id}`} className={styles.sectionTitle}>내용 메모</label><textarea id={`packing-memo-${item.id}`} aria-label="준비물 메모" value={value} onChange={event=>{setValue(event.target.value);setError("");}} placeholder="여권 사본은 휴대폰에도 저장해 두었어요." maxLength={2000} rows={5} className={styles.memoField}/><div className={styles.memoFooter}><span>{value.length}/2000</span>{item.memo && <button type="button" aria-label={`메모 삭제: ${item.name}`} className={iconButton} disabled={saving} onClick={()=>void remove()}><Trash2 size={16}/></button>}</div>{error && <p role="alert" className={styles.error}>{error}</p>}<div className={styles.dialogActions}><button type="button" className={actionButton} onClick={()=>setValue(item.memo?.content ?? "")}>취소</button><button type="button" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} onClick={()=>void save()}>저장</button></div></section>;
 }
 
 function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem|null;context:Context;onClose:()=>void;onRename:()=>void;onDelete:()=>void;open:boolean}) {
-  return <aside className={styles.detail} data-open={open} aria-label="준비물 상세">
+  return <>{open && <button type="button" className={styles.detailBackdrop} aria-label="준비물 상세 닫기" onClick={onClose}/>}<aside className={styles.detail} data-open={open} aria-label="준비물 상세">
     {item ? <><div className={styles.detailHeader}><button type="button" className={`${iconButton} ${styles.mobileBack}`} aria-label="준비물 목록으로" onClick={onClose}><ChevronLeft size={20}/></button><h2 aria-label="선택한 준비물 이름">{item.name}</h2><div className={styles.detailActions}><button type="button" className={iconButton} aria-label={`준비물 이름 수정: ${item.name}`} onClick={onRename}><Pencil size={17}/></button><button type="button" className={iconButton} aria-label={`준비물 삭제: ${item.name}`} onClick={onDelete}><Trash2 size={17}/></button></div></div><MemoPanel key={item.id} item={item} context={context}/>{item.tips.length>0 && <section className={styles.tips}><h3 className={styles.sectionTitle}>여행에 유용한 팁 <Lightbulb size={15} aria-hidden="true"/></h3><ul>{item.tips.map((tip,index)=><li key={`${index}:${tip}`}>{linked(tip)}</li>)}</ul></section>}</> : <p className={styles.detailEmpty}>준비물을 선택하면 내용을 볼 수 있어요.</p>}
-  </aside>;
+  </aside></>;
 }
 
 function PackingContent({context}: {context:Context}) {

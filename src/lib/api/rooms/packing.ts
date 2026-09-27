@@ -37,7 +37,7 @@ function item(value: unknown): PackingItem {
 }
 function part(value: unknown): PackingPart {
   const o = record(value), id = integer(o.id, 1), column = integer(o.column);
-  if (column > 3) return malformed();
+  if (column > 2) return malformed();
   const items = array(o.items, item);
   if (items.some(entry => entry.partId !== id)) return malformed();
   return { id, name: text(o.name), position: integer(o.position), column, items };

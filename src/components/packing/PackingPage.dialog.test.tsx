@@ -36,10 +36,34 @@ it('returns focus to the category menu trigger after closing a menu dialog',asyn
     await act(async()=>root.render(<PackingPage/>));
     const trigger=main.querySelector<HTMLButtonElement>('[aria-label="카테고리 메뉴: 여권·예약·결제"]')!;
     await act(async()=>trigger.click());
-    const rename=main.querySelector<HTMLButtonElement>('[role="menuitem"]:nth-child(2)')!;
+    let rename=main.querySelector<HTMLButtonElement>('[role="menuitem"]:nth-child(2)')!;
+    rename.focus();await act(async()=>rename.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
+    expect(main.querySelector('[role="menu"]')).toBeNull();expect(document.activeElement).toBe(trigger);
+    await act(async()=>trigger.click());
+    rename=main.querySelector<HTMLButtonElement>('[role="menuitem"]:nth-child(2)')!;
     rename.focus();await act(async()=>rename.click());
     expect(document.querySelector('dialog')).not.toBeNull();
     await act(async()=>document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
     expect(document.activeElement).toBe(trigger);
+  }finally{await act(async()=>root.unmount());}
+});
+it('does not cancel a delete confirmation after its request has started',async()=>{
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
+  let finish!:(value:{kind:string})=>void;
+  const confirmDelete=vi.fn(()=>new Promise<{kind:string}>(resolve=>{finish=resolve;}));
+  const cancelConfirmation=vi.fn();
+  const state={data:{id:1,roomId:'room',ownerUserId:1,version:1,initializedAt:'2026-01-01T00:00:00Z',parts:[{id:1,name:'여권·예약·결제',column:0,position:0,items:[{id:11,partId:1,name:'여권',checked:false,position:0,memo:null,tips:[]}]}]},status:'ready',message:null,confirmation:{kind:'item',id:11,version:1,name:'여권'} as {kind:'item';id:number;version:number;name:string}|null};
+  mocks.context={scopeKey:'room:user',state,coordinator:{execute:vi.fn(),prepareDelete:vi.fn(),confirmDelete,cancelConfirmation,refresh:vi.fn()}};
+  const main=document.createElement('main');document.body.append(main);const root=createRoot(main);
+  try{
+    await act(async()=>root.render(<PackingPage/>));
+    const dialog=document.querySelector('dialog')!;
+    const action=Array.from(dialog.querySelectorAll('button')).find(button=>button.textContent==='삭제')!;
+    await act(async()=>action.click());
+    const cancel=Array.from(dialog.querySelectorAll('button')).find(button=>button.textContent==='취소')!;
+    expect(cancel.disabled).toBe(true);
+    await act(async()=>document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true})));
+    expect(cancelConfirmation).not.toHaveBeenCalled();
+    await act(async()=>{finish({kind:'success'});state.confirmation=null;root.render(<PackingPage/>);});
   }finally{await act(async()=>root.unmount());}
 });
