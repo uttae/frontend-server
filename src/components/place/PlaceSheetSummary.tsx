@@ -3,7 +3,6 @@ import {
   ChatIcon,
   ReactionStarIcon,
   SavedIcon,
-  ShareIcon,
 } from "@/assets/icons";
 
 type Props = {
@@ -11,7 +10,6 @@ type Props = {
   category: string;
   rating: number | null;
   userRatingCount?: number | null;
-  onShare?: () => void;
   onAddBookmark?: () => void;
   onSendToChat?: () => void;
   sendToChatDisabled?: boolean;
@@ -21,13 +19,12 @@ type Props = {
 const ICON_BUTTON_CLASS =
   "flex size-11 shrink-0 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50";
 
-/** 모바일 바텀 시트용 장소 요약 — 이름·태그·평점, 공유/북마크, 채팅/일정 버튼 */
+/** 모바일 바텀 시트용 장소 요약 — 이름·태그·평점, 북마크, 채팅/일정 버튼 */
 export function PlaceSheetSummary({
   name,
   category,
   rating,
   userRatingCount,
-  onShare,
   onAddBookmark,
   onSendToChat,
   sendToChatDisabled = false,
@@ -59,17 +56,6 @@ export function PlaceSheetSummary({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              onClick={onShare}
-              disabled={!onShare}
-              aria-label="공유하기"
-              className={ICON_BUTTON_CLASS}
-            >
-              <span className="flex size-9 items-center justify-center rounded-full bg-primary-subtle">
-                <ShareIcon size={20} className="text-primary" />
-              </span>
-            </button>
             <button
               type="button"
               onClick={onAddBookmark}

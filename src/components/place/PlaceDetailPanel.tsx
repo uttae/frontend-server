@@ -149,25 +149,6 @@ export function PlaceDetailPanel({
     sendPlaceMessage,
   ]);
 
-  const shareUrl = detailData?.placeUri ?? null;
-  const handleShare = useCallback(async () => {
-    if (!shareUrl) return;
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: displayName, url: shareUrl });
-        return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      toast.success("장소 링크를 복사했어요");
-    } catch {
-      toast.error("장소 링크를 복사하지 못했어요.");
-    }
-  }, [displayName, shareUrl]);
-
   const phone = detailData?.phone;
   const website = detailData?.websiteUri;
   const hours = detailData?.weekdayDescriptions?.join("\n");
@@ -283,7 +264,6 @@ export function PlaceDetailPanel({
                 category={displayCategory}
                 rating={displayRating}
                 userRatingCount={userRatingCount}
-                onShare={shareUrl ? () => void handleShare() : undefined}
                 onAddBookmark={openBookmarkModal}
                 onSendToChat={googlePlaceId ? handleSendToChat : undefined}
                 sendToChatDisabled={sendToChatDisabled}
