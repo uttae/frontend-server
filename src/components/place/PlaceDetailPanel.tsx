@@ -37,6 +37,10 @@ type PlaceDetailPanelProps = SearchResultCardProps & {
   layout?: "panel" | "sheet";
 };
 
+/** 모바일 시트 사진 높이(Figma) — 중간 상태에서 이 중 3/5를 가린다 */
+const SHEET_PHOTO_HEIGHT_PX = 200;
+const SHEET_PHOTO_HIDDEN_RATIO = 3 / 5;
+
 const SCROLL_AREA_CLASS =
   "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
 
@@ -268,6 +272,7 @@ export function PlaceDetailPanel({
         placeKey={googlePlaceId ?? displayName}
         onBack={onBack}
         onClose={onClose}
+        peekHiddenBottomPx={SHEET_PHOTO_HEIGHT_PX * SHEET_PHOTO_HIDDEN_RATIO}
         peek={
           <>
             {isBodyLoading ? (
@@ -285,7 +290,7 @@ export function PlaceDetailPanel({
                 onAddToSchedule={openScheduleModal}
               />
             )}
-            {renderHero("h-[200px]")}
+            <div style={{ height: SHEET_PHOTO_HEIGHT_PX }}>{renderHero("h-full")}</div>
           </>
         }
       >

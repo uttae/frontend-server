@@ -13,13 +13,13 @@ import {
 import { ChevronLeftIcon, CloseIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
-/** Figma 기준 peek 높이(핸들~사진) — 실측 전 초기값 */
+/** Figma 기준 peek 영역 높이(핸들~사진 끝) — 실측 전 초기값 */
 const PEEK_FALLBACK_PX = 412;
 /** 이 거리(px) 이상 움직여야 시트 드래그로 판단 — 그 전엔 탭(버튼 클릭)으로 둔다 */
 const DRAG_START_THRESHOLD_PX = 6;
-/** 손을 뗄 때 이 속도(px/ms) 이상이면 방향대로 스냅, 아니면 가까운 위치로 스냅 */
-const FLING_VELOCITY = 0.4;
-const SNAP_TRANSITION = "transform 320ms cubic-bezier(0.22, 1, 0.36, 1)";
+/** 손을 뗄 때 이 속도(px/ms) 이상으로 튕긴 경우만 방향대로, 아니면 가까운 위치(최대화/중간)로 이동 */
+const FLING_VELOCITY = 0.6;
+const SETTLE_TRANSITION = "transform 380ms cubic-bezier(0.25, 0.8, 0.25, 1)";
 
 const SCROLL_AREA_CLASS =
   "min-h-0 flex-1 overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
@@ -43,18 +43,22 @@ type PlaceDetailSheetProps = {
   onClose: () => void;
   /** 처음 보이는 영역 — 장소 정보·버튼·사진 */
   peek: ReactNode;
+  /** 중간 상태에서 `peek` 아래쪽을 가릴 높이(px) — 예: 사진의 3/5 */
+  peekHiddenBottomPx?: number;
   children: ReactNode;
 };
 
 /**
- * 모바일 바텀 시트 — 처음엔 `peek`(사진)까지만 보이고, 손가락을 따라 끌어올리면 컨테이너 끝까지 펼쳐진다.
- * 펼쳐진 상태에서는 헤더를 잡거나 본문이 맨 위일 때 아래로 끌어 접는다. 그 외에는 본문이 스크롤된다.
+ * 모바일 바텀 시트 — 상태는 최대화 / 중간 두 가지.
+ * 처음엔 중간(`peek`에서 `peekHiddenBottomPx`만큼 가린 위치)으로 열리고, 손가락을 따라 끌어올리면 컨테이너 끝까지 펼쳐진다.
+ * 최대화 상태에서는 헤더를 잡거나 본문이 맨 위일 때 아래로 끌어 중간으로 내린다. 그 외에는 본문이 스크롤된다.
  */
 export function PlaceDetailSheet({
   placeKey,
   onBack,
   onClose,
   peek,
+  peekHiddenBottomPx = 0,
   children,
 }: PlaceDetailSheetProps) {
   const [expanded, setExpanded] = useState(false);
@@ -67,8 +71,8 @@ export function PlaceDetailSheet({
   const expandedRef = useRef(expanded);
   const offsetRef = useRef(0);
 
-  /** 접힌 상태의 translateY — 시트 높이에서 peek 높이를 뺀 만큼 내려간다 */
-  const collapsedOffset = Math.max(0, sizes.sheet - sizes.peek);
+  /** 중간 상태의 translateY — 시트 높이에서 보이는 peek 높이를 뺀 만큼 내려간다 */
+  const collapsedOffset = Math.max(0, sizes.sheet - (sizes.peek - peekHiddenBottomPx));
   const collapsedOffsetRef = useRef(collapsedOffset);
 
   const [previousPlaceKey, setPreviousPlaceKey] = useState(placeKey);
@@ -81,7 +85,7 @@ export function PlaceDetailSheet({
     const el = sheetRef.current;
     if (!el) return;
     offsetRef.current = offset;
-    el.style.transition = animate ? SNAP_TRANSITION : "none";
+    el.style.transition = animate ? SETTLE_TRANSITION : "none";
     el.style.transform = `translateY(${offset}px)`;
   }, []);
 
