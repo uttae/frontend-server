@@ -143,3 +143,66 @@ it('opens a dismissible mobile detail sheet above the board',async()=>{
   await act(async()=>button('준비물 상세 닫기').props.onClick());
   expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props['data-open']).toBe(false);
 });
+
+it('cancels memo edits and closes the detail on desktop and mobile',async()=>{
+  await mount();await selectFirstItem();
+  await act(async()=>renderer.root.findByType('textarea').props.onChange({target:{value:'취소할 초안'}}));
+  await act(async()=>button('취소').props.onClick());
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(true);
+  expect(coordinator.execute).not.toHaveBeenCalled();
+  await selectFirstItem();
+  expect(renderer.root.findByType('textarea').props.value).toBe('기존 메모');
+});
+
+it('closes detail only after the memo save succeeds',async()=>{
+  let finish!:(value:{kind:string})=>void;
+  coordinator.execute.mockReturnValue(new Promise(resolve=>{finish=resolve;}));
+  await mount();await selectFirstItem();
+  await act(async()=>button('저장').props.onClick());
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(false);
+  await act(async()=>finish({kind:'success'}));
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(true);
+});
+
+it.each(['error','blocked'])('keeps the memo draft open when saving returns %s',async(kind)=>{
+  coordinator.execute.mockResolvedValue({kind});
+  await mount();await selectFirstItem();
+  await act(async()=>renderer.root.findByType('textarea').props.onChange({target:{value:'보존할 초안'}}));
+  await act(async()=>button('저장').props.onClick());
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(false);
+  expect(renderer.root.findByType('textarea').props.value).toBe('보존할 초안');
+});
+
+it('keeps detail open for edits typed after the memo save started',async()=>{
+  let finish!:(value:{kind:string})=>void;
+  coordinator.execute.mockReturnValue(new Promise(resolve=>{finish=resolve;}));
+  await mount();await selectFirstItem();
+  await act(async()=>button('저장').props.onClick());
+  await act(async()=>renderer.root.findByType('textarea').props.onChange({target:{value:'나중에 입력한 메모'}}));
+  await act(async()=>finish({kind:'success'}));
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(false);
+  expect(renderer.root.findByType('textarea').props.value).toBe('나중에 입력한 메모');
+});
+
+it('does not close another item when the previous item memo save finishes',async()=>{
+  let finish!:(value:{kind:string})=>void;
+  coordinator.execute.mockReturnValue(new Promise(resolve=>{finish=resolve;}));
+  await mount();await selectFirstItem();
+  await act(async()=>button('저장').props.onClick());
+  await act(async()=>button('준비물 선택: 항공권 예약 내역').props.onClick());
+  await act(async()=>finish({kind:'success'}));
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(false);
+  expect(renderer.root.findByProps({'aria-label':'선택한 준비물 이름'}).children.join('')).toBe('항공권 예약 내역');
+});
+
+it.each(['취소','준비물 상세 닫기'])('does not close a reopened detail when a save finishes after %s',async(close)=>{
+  let finish!:(value:{kind:string})=>void;
+  coordinator.execute.mockReturnValue(new Promise(resolve=>{finish=resolve;}));
+  await mount();await selectFirstItem();
+  await act(async()=>button('저장').props.onClick());
+  await act(async()=>button(close).props.onClick());
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(true);
+  await selectFirstItem();
+  await act(async()=>finish({kind:'success'}));
+  expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(false);
+});

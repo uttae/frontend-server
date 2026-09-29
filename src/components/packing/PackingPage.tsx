@@ -73,29 +73,48 @@ function DeleteDialog({context,onClose}: {context:Context;onClose:()=>void}) {
   </SettingsDialog>;
 }
 
-function MemoPanel({item,context}: {item:PackingItem;context:Context}) {
+function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Context;open:boolean;onComplete:()=>void}) {
   const [value,setValue]=useState(item.memo?.content ?? "");
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
+  const latestValue=useRef(value);
+  const mounted=useRef(true);
+  const completionVersion=useRef(0);
   const source=useRef(item.memo?.content ?? "");
   const submitted=useRef<string|null>(null);
+  useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
+  useEffect(()=>{if(!open)completionVersion.current+=1;},[open]);
   useEffect(()=>{const next=item.memo?.content ?? "";if(source.current!==next){const previous=source.current;source.current=next;setValue(current=>current===previous || current===submitted.current ? next : current);}},[item.memo?.content]);
+  function cancel() {
+    completionVersion.current+=1;
+    latestValue.current=item.memo?.content ?? "";
+    setValue(latestValue.current);
+    setError("");
+    onComplete();
+  }
   async function save() {
     if(saving || context.state.status!=="ready") return;
     try {normalizePackingMemo(value);} catch(e) {setError(e instanceof Error ? e.message : "메모를 확인해 주세요.");return;}
     setSaving(true);
     submitted.current=value;
-    try {await context.coordinator?.execute({type:"saveMemo",id:item.id,content:value});} finally {submitted.current=null;setSaving(false);}
+    const version=completionVersion.current;
+    try {
+      const result=await context.coordinator?.execute({type:"saveMemo",id:item.id,content:value});
+      if(result?.kind==="success" && mounted.current && version===completionVersion.current && latestValue.current===value) onComplete();
+    } finally {
+      submitted.current=null;
+      if(mounted.current)setSaving(false);
+    }
   }
   return <section className={styles.memoPanel} aria-label="내 메모">
     <label htmlFor={`packing-memo-${item.id}`} className={styles.sectionTitle}>내 메모</label>
     <textarea id={`packing-memo-${item.id}`} aria-label="준비물 메모" value={value}
-      onChange={event=>{setValue(event.target.value);setError("");}}
+      onChange={event=>{latestValue.current=event.target.value;setValue(event.target.value);setError("");}}
       placeholder="준비물에 대한 메모를 남겨 주세요." maxLength={2000} rows={3} className={styles.memoField}/>
     <div className={styles.memoFooter}>({value.length}/2000)</div>
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <div className={`${styles.dialogActions} ${styles.memoActions}`}>
-      <button type="button" className={actionButton} onClick={()=>setValue(item.memo?.content ?? "")}>취소</button>
+      <button type="button" className={actionButton} onClick={cancel}>취소</button>
       <button type="button" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} data-waiting={!saving && context.state.status==="writing"} onClick={()=>void save()}>저장</button>
     </div>
   </section>;
@@ -126,7 +145,7 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
               <button type="button" className={styles.iconButton} aria-label={`준비물 삭제: ${item.name}`} onClick={onDelete}><PackingIcon name="delete" size={20}/></button>
             </div>
           </div>
-          <MemoPanel key={item.id} item={item} context={context}/>
+          <MemoPanel key={item.id} item={item} context={context} open={open} onComplete={onClose}/>
           {item.tips.length>0 && <section className={styles.tips}>
             <h3 className={styles.sectionTitle}>우때의 여행 팁 <span aria-hidden="true">💡</span></h3>
             <div className={styles.tipCard}>
