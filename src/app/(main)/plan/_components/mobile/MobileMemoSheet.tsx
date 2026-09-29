@@ -70,7 +70,7 @@ export function MobileMemoSheet({
           disabled={isPending}
           rows={5}
           placeholder="메모를 입력하세요"
-          className="h-36 w-full resize-none rounded-xl bg-fill-default p-3 text-body-s-regular text-text outline-none placeholder:text-text-subtle focus:ring-2 focus:ring-primary/30"
+          className="h-36 w-full resize-none rounded-xl bg-fill p-3 text-body-s-regular text-text outline-none placeholder:text-text-subtle focus:ring-2 focus:ring-primary/30"
         />
       </label>
       <p className="text-caption-l-regular text-text-subtle">

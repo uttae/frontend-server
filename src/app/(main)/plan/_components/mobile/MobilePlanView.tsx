@@ -125,7 +125,7 @@ export function MobilePlanView({
 
   return (
     <MobilePlanDragProvider value={dragController}>
-      <div className="flex min-h-0 flex-1 flex-col bg-fill-default">
+      <div className="flex min-h-0 flex-1 flex-col bg-fill">
         <nav
           aria-label="일차 선택"
           className="flex shrink-0 gap-2.5 overflow-x-auto bg-fill-subtle p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

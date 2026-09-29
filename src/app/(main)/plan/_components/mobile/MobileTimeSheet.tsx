@@ -113,7 +113,7 @@ export function MobileTimeSheet({
               disabled={isPending || (key === "end" && !start)}
               aria-expanded={activeField === key}
               className={cn(
-                "rounded-xl bg-fill-default p-3 text-left text-body-l-regular font-medium tabular-nums disabled:opacity-40",
+                "rounded-xl bg-fill p-3 text-left text-body-l-regular font-medium tabular-nums disabled:opacity-40",
                 value ? "text-text" : "text-text-subtle",
                 activeField === key && "ring-2 ring-primary",
               )}
