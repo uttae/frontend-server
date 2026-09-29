@@ -160,17 +160,7 @@ export function MobilePlanItinerary({
 
   return (
     <div className="flex flex-col">
-      {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-text-subtle">
-          <Loader2 className="size-5 animate-spin text-primary-strong" />
-          <span className="text-body-s-regular">장소 목록을 불러오는 중…</span>
-        </div>
-      ) : null}
-      {isError ? (
-        <p className="py-4 text-center text-body-s-regular text-status-negative">
-          장소 목록을 불러오지 못했어요.
-        </p>
-      ) : null}
+      <PlanPlaceStatus isLoading={isLoading} isError={isError} />
 
       <div
         ref={(el) => drag.registerList(scheduleId, el)}
@@ -390,6 +380,24 @@ function MobilePlanActionSheet({
         </>
       )}
     </MobileBottomSheet>
+  );
+}
+
+function PlanPlaceStatus({ isLoading, isError }: Readonly<{ isLoading: boolean; isError: boolean }>) {
+  return (
+    <>
+      {isLoading ? (
+        <div className="flex items-center justify-center gap-2 py-8 text-text-subtle">
+          <Loader2 className="size-5 animate-spin text-primary-strong" />
+          <span className="text-body-s-regular">장소 목록을 불러오는 중…</span>
+        </div>
+      ) : null}
+      {isError ? (
+        <p className="py-4 text-center text-body-s-regular text-status-negative">
+          장소 목록을 불러오지 못했어요.
+        </p>
+      ) : null}
+    </>
   );
 }
 

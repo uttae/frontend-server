@@ -17,6 +17,21 @@ import { MainContentScrollArea } from "./MainContentScrollArea";
 import SideBar from "./SideBar";
 import { SidebarTutorial } from "./SidebarTutorial";
 
+function getMobileBackLink(
+  pathname: string,
+  isMobileDevice: boolean,
+  showMobilePlanSurface: boolean,
+  mobilePlanPanel: string,
+): { href: string; label: string } | undefined {
+  if (isMobileDevice && pathname.startsWith("/bookmark/")) {
+    return { href: "/bookmark", label: "북마크 목록으로 돌아가기" };
+  }
+  if (showMobilePlanSurface && mobilePlanPanel === "map") {
+    return { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" };
+  }
+  return undefined;
+}
+
 export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const { isMobileDevice } = useMobileView();
   const pathname = usePathname();
@@ -40,12 +55,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const showMobileSchedule =
     isMobileDevice && isPlanRoute && mobilePlanPanel === "schedule";
   // 뒤로가기 헤더(Figma Default / Type=Back): 북마크 상세 → 목록, 지도 → 일정
-  let mobileBack: { href: string; label: string } | undefined;
-  if (isMobileDevice && pathname.startsWith("/bookmark/")) {
-    mobileBack = { href: "/bookmark", label: "북마크 목록으로 돌아가기" };
-  } else if (showMobilePlanSurface && mobilePlanPanel === "map") {
-    mobileBack = { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" };
-  }
+  const mobileBack = getMobileBackLink(pathname, isMobileDevice, showMobilePlanSurface, mobilePlanPanel);
 
   let mainContent: ReactNode = children;
   if (showDesktopChat) mainContent = <ChatPanel inline />;

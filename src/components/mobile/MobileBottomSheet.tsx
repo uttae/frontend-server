@@ -93,7 +93,7 @@ export function MobileBottomSheet({
   );
 }
 
-type MobileSheetMenuItemProps = {
+type MobileSheetMenuItemProps = Readonly<{
   icon: (props: IconProps) => ReactNode;
   label: string;
   onClick: () => void;
@@ -102,7 +102,7 @@ type MobileSheetMenuItemProps = {
   disabled?: boolean;
   /** 오른쪽에 붙는 보조 내용 — 예: 비용 합계 */
   trailing?: ReactNode;
-};
+}>;
 
 /** 바텀시트 메뉴 한 줄 — 아이콘 20px + 라벨 */
 export function MobileSheetMenuItem({
