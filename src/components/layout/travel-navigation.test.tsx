@@ -115,12 +115,19 @@ it.each(["/search", "/member-settings"])("keeps %s available outside the mobile 
   expect(items()).toHaveLength(4);
 });
 
-it("uses the back header only within a bookmark folder", async () => {
+it("uses the back header only within a bookmark folder and on the map", async () => {
   state.mobile = true;
   state.pathname = "/bookmark/folder";
   await render();
   expect(host.querySelector("header")?.getAttribute("data-mobile-back-href")).toBe("/bookmark");
   state.pathname = "/bookmark";
+  await render();
+  expect(host.querySelector("header")?.hasAttribute("data-mobile-back-href")).toBe(false);
+  state.pathname = "/plan/room";
+  state.query = "view=map";
+  await render();
+  expect(host.querySelector("header")?.getAttribute("data-mobile-back-href")).toBe("/plan/room");
+  state.query = "view=chat";
   await render();
   expect(host.querySelector("header")?.hasAttribute("data-mobile-back-href")).toBe(false);
 });

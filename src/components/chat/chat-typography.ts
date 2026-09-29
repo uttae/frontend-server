@@ -9,12 +9,12 @@ const chatTypographyMessage = {
   systemBody: "text-body-s-regular mobile:text-body-xs-regular leading-relaxed",
   metaMuted: "text-caption-s-regular leading-relaxed text-dark-gray",
   wooriSenderLabel: "text-caption-s-regular font-medium leading-relaxed text-primary",
-  aiRequestBubblePrefix: "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-relaxed text-secondary-default",
+  aiRequestBubblePrefix: "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-relaxed text-secondary",
   placeTitle: "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-snug text-primary-strong",
   placeRating: "text-body-xs-emphasis font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-body-xs-regular leading-relaxed text-[#99A1AF]",
   input: "text-body-s-regular leading-relaxed",
-  inputAiLabel: "text-body-s-emphasis leading-relaxed text-secondary-default font-semibold",
+  inputAiLabel: "text-body-s-emphasis leading-relaxed text-secondary font-semibold",
 } as const;
 
 /** 패널 최소화(좁은 폭) */
@@ -23,12 +23,12 @@ const chatTypographyMinimized = {
   systemBody: "text-body-xs-regular leading-relaxed",
   metaMuted: "text-[10px] leading-relaxed text-dark-gray",
   wooriSenderLabel: "text-[10px] font-medium leading-relaxed text-primary",
-  aiRequestBubblePrefix: "text-body-xs-emphasis font-semibold leading-relaxed text-secondary-default",
+  aiRequestBubblePrefix: "text-body-xs-emphasis font-semibold leading-relaxed text-secondary",
   placeTitle: "text-body-xs-emphasis font-semibold leading-snug text-primary-strong",
   placeRating: "text-caption-s-regular font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-caption-s-regular leading-relaxed text-[#99A1AF]",
   input: "text-body-xs-regular leading-relaxed",
-  inputAiLabel: "text-body-xs-emphasis leading-relaxed text-secondary-default font-semibold",
+  inputAiLabel: "text-body-xs-emphasis leading-relaxed text-secondary font-semibold",
 } as const;
 
 export type ChatMessageTextTypography =

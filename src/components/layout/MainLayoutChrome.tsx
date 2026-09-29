@@ -5,7 +5,7 @@ import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { readMobilePlanPanel } from "@/lib/mobile-view";
+import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
 import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
@@ -16,6 +16,21 @@ import LeftSection from "./LeftSection";
 import { MainContentScrollArea } from "./MainContentScrollArea";
 import SideBar from "./SideBar";
 import { SidebarTutorial } from "./SidebarTutorial";
+
+function getMobileBackLink(
+  pathname: string,
+  isMobileDevice: boolean,
+  showMobilePlanSurface: boolean,
+  mobilePlanPanel: string,
+): { href: string; label: string } | undefined {
+  if (isMobileDevice && pathname.startsWith("/bookmark/")) {
+    return { href: "/bookmark", label: "북마크 목록으로 돌아가기" };
+  }
+  if (showMobilePlanSurface && mobilePlanPanel === "map") {
+    return { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" };
+  }
+  return undefined;
+}
 
 export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const { isMobileDevice } = useMobileView();
@@ -36,8 +51,17 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
       : "schedule";
   const showMobilePlanSurface =
     isMobileDevice && isPlanRoute && mobilePlanPanel !== "schedule";
-  const mobileBackHref =
-    isMobileDevice && pathname.startsWith("/bookmark/") ? "/bookmark" : undefined;
+  // 모바일 일정은 탭 고정 + 목록만 스크롤하도록 화면이 직접 스크롤을 관리한다
+  const showMobileSchedule =
+    isMobileDevice && isPlanRoute && mobilePlanPanel === "schedule";
+  // 뒤로가기 헤더(Figma Default / Type=Back): 북마크 상세 → 목록, 지도 → 일정
+  const mobileBack = getMobileBackLink(pathname, isMobileDevice, showMobilePlanSurface, mobilePlanPanel);
+
+  let mainContent: ReactNode = children;
+  if (showDesktopChat) mainContent = <ChatPanel inline />;
+  else if (showMobilePlanSurface) {
+    mainContent = mobilePlanPanel === "map" ? <MapWithDetailPanel mobileInline /> : <ChatPanel mobileInline />;
+  }
 
   return (
     <main className="flex h-dvh flex-col">
@@ -45,21 +69,13 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
         <LeftSection>
           <HeaderBar
             mobilePlanPanel={mobilePlanPanel}
-            mobileBackHref={mobileBackHref}
-            mobileBackLabel="북마크 목록으로 돌아가기"
+            mobileBackHref={mobileBack?.href}
+            mobileBackLabel={mobileBack?.label}
           />
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
-            <MainContentScrollArea fill={showMobilePlanSurface || showDesktopChat}>
-              {showDesktopChat ? <ChatPanel inline /> : showMobilePlanSurface ? (
-                mobilePlanPanel === "map" ? (
-                  <MapWithDetailPanel mobileInline />
-                ) : (
-                  <ChatPanel mobileInline />
-                )
-              ) : (
-                children
-              )}
+            <MainContentScrollArea fill={showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
+              {mainContent}
             </MainContentScrollArea>
           </section>
           <MobileMainTabs />

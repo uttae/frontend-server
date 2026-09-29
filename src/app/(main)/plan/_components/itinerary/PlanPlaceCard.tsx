@@ -13,7 +13,7 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { toast } from "sonner";
 
 import { useInViewport } from "@/hooks/useInViewport";
-import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import {
   useDeleteScheduleItem,
   useUpdateScheduleItem,
@@ -71,7 +71,7 @@ export function PlanPlaceCard({
   onDragStart,
   onDragEnd,
 }: PlanPlaceCardProps) {
-  const { setSelectedPlace } = useSelectedPlace();
+  const openPlaceOnMap = useOpenPlaceOnMap();
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const blockCardDragRef = useRef(false);
   const [thumbnailRef, thumbnailInViewport] = useInViewport<HTMLElement>();
@@ -189,7 +189,7 @@ export function PlanPlaceCard({
       const gid =
         rawId.length > 0 ? normalizeGooglePlaceResourceId(rawId) : undefined;
 
-      setSelectedPlace(
+      openPlaceOnMap(
         {
           name: place.title,
           category: "",
@@ -202,11 +202,11 @@ export function PlanPlaceCard({
       );
     },
     [
+      openPlaceOnMap,
       place.googlePlaceId,
       place.location,
       place.subtitle,
       place.title,
-      setSelectedPlace,
     ],
   );
 

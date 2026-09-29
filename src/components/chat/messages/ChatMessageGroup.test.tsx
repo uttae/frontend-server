@@ -32,7 +32,7 @@ describe.each([
 
       expect(mentions).toHaveLength(1);
       const classes = mentions[0][1].split(/\s+/);
-      expect(classes).toContain("text-secondary-default");
+      expect(classes).toContain("text-secondary");
       expect(classes).not.toContain("text-white");
       expect(classes).toContain(isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis");
       expect(classes).not.toContain(isMinimized ? "text-body-s-emphasis" : "text-body-xs-emphasis");

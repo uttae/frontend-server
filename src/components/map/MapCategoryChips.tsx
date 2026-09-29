@@ -29,6 +29,8 @@ export function MapCategoryChips({
     <div
       className={cn(
         "pointer-events-auto -mx-1 flex min-w-0 max-w-full flex-wrap gap-2 pb-0.5",
+        "mobile:-mx-5 mobile:max-w-none mobile:flex-nowrap mobile:gap-1 mobile:overflow-x-auto mobile:px-5 mobile:py-1",
+        "mobile:[scrollbar-width:none] mobile:[&::-webkit-scrollbar]:hidden",
         className,
       )}
     >

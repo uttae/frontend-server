@@ -34,3 +34,20 @@ export function PlaceDetailSkeleton() {
     </div>
   );
 }
+
+/** 모바일 바텀 시트 요약(`PlaceSheetSummary`) 로딩 스켈레톤 — 이름·태그·평점·버튼 배치를 따른다 */
+export function PlaceSheetSummarySkeleton() {
+  return (
+    <div aria-busy="true" aria-label="장소 정보를 불러오는 중">
+      <div className="py-1 pl-5 pr-4">
+        <Bar className="mt-0.5 h-6 w-3/5" />
+        <Bar className="mt-2.5 h-4 w-1/4" />
+        <Bar className="mt-3 h-4 w-1/3" />
+      </div>
+      <div className="flex gap-1 px-5 py-4">
+        <Bar className="h-9 flex-1 rounded-lg" />
+        <Bar className="h-9 flex-1 rounded-lg" />
+      </div>
+    </div>
+  );
+}

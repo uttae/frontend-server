@@ -1,7 +1,7 @@
 "use client";
 
 import { OgPlacePreviewCard } from "@/components/chat/messages/OgPlacePreviewCard";
-import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { placePhotoUrlQueryKey } from "@/lib/place-photo-query";
@@ -23,7 +23,7 @@ export function PlaceShareCard({
   const place = message.place;
   const { data: sessionUser } = useSessionUser();
   const myId = sessionUser?.id;
-  const { setSelectedPlace } = useSelectedPlace();
+  const openPlaceOnMap = useOpenPlaceOnMap();
   const setMapCenter = useMapCenterStore((s) => s.setMapCenter);
 
   const senderUserId = message.senderUserId;
@@ -40,7 +40,7 @@ export function PlaceShareCard({
 
   function handleClick() {
     setMapCenter({ lat: p.latitude, lng: p.longitude });
-    setSelectedPlace(
+    openPlaceOnMap(
       {
         name: p.name,
         category: "",

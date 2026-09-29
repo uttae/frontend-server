@@ -12,7 +12,7 @@ import { AlertCircle, Loader2, Search } from "lucide-react";
 import { SearchResultCard } from "@/components/place";
 import { SetSectionMaxWidth } from "@/contexts/SectionWidthContext";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
-import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
 import type { SearchMapSnapshot } from "@/stores/search-recenter-store";
 import {
@@ -41,7 +41,7 @@ export default function SearchPage() {
   const searchParams = useSearchParams();
   const qParam = searchParams.get("q")?.trim() ?? "";
 
-  const { setSelectedPlace } = useSelectedPlace();
+  const openPlaceOnMap = useOpenPlaceOnMap();
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const searchRecenterRequestId = useSearchRecenterStore(
     (s) => s.searchRecenterRequestId,
@@ -199,7 +199,7 @@ export default function SearchPage() {
   );
 
   function handleCardClick(result: PlaceSearchResult, index: number) {
-    setSelectedPlace(result, {
+    openPlaceOnMap(result, {
       analyticsRankBucket: bucketSearchRank(
         pageIndex * PLACES_SEARCH_PAGE_SIZE + index,
       ),
