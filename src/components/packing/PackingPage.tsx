@@ -54,7 +54,7 @@ function NameDialog({editor,context,onClose}: {editor:Editor;context:Context;onC
   return <SettingsDialog title={title} onClose={onClose} size="compact" className={styles.dialog} overlayClassName={styles.dialogOverlay} showCloseButton={false}><form onSubmit={submit}>
     <label className={styles.fieldLabel}>{noun} 이름<input aria-label={`${noun} 이름`} value={value} onChange={event=>{latestValue.current=event.target.value;setValue(event.target.value);setError("");}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={event=>{if(event.key==="Enter" && (composing.current || event.nativeEvent.isComposing || event.keyCode===229)) event.preventDefault();}} className={styles.field}/></label>
     {error && <p role="alert" className={styles.error}>{error}</p>}
-    <div className={styles.dialogActions}><button type="button" className={actionButton} onClick={onClose}>취소</button><button type="submit" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"}>{editor.kind.startsWith("create") ? "추가" : "저장"}</button></div>
+    <div className={styles.dialogActions}><button type="button" className={actionButton} onClick={onClose}>취소</button><button type="submit" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} data-waiting={!saving && context.state.status==="writing"}>{editor.kind.startsWith("create") ? "추가" : "저장"}</button></div>
   </form></SettingsDialog>;
 }
 
@@ -69,7 +69,7 @@ function DeleteDialog({context,onClose}: {context:Context;onClose:()=>void}) {
   const count=context.state.data?.parts.find(value=>value.id===confirmation.id)?.items.length ?? 0;
   return <SettingsDialog title={part ? "카테고리를 삭제할까요?" : "준비물을 삭제할까요?"} onClose={close} size="compact" className={styles.dialog} overlayClassName={styles.dialogOverlay} showCloseButton={false}>
     <p className={styles.deleteCopy}>‘{confirmation.name}’{part ? `의 준비물 ${count}개와` : " 준비물과"}<br/>작성한 메모가 함께 삭제됩니다.</p>
-    <div className={styles.dialogActions}><button type="button" className={actionButton} disabled={deleting} onClick={close}>취소</button><button type="button" className={`${actionButton} ${styles.danger}`} disabled={deleting || context.state.status!=="ready"} onClick={()=>void confirm()}>삭제</button></div>
+    <div className={styles.dialogActions}><button type="button" className={actionButton} disabled={deleting} onClick={close}>취소</button><button type="button" className={`${actionButton} ${styles.danger}`} disabled={deleting || context.state.status!=="ready"} data-waiting={!deleting && context.state.status==="writing"} onClick={()=>void confirm()}>삭제</button></div>
   </SettingsDialog>;
 }
 
@@ -96,7 +96,7 @@ function MemoPanel({item,context}: {item:PackingItem;context:Context}) {
     {error && <p role="alert" className={styles.error}>{error}</p>}
     <div className={`${styles.dialogActions} ${styles.memoActions}`}>
       <button type="button" className={actionButton} onClick={()=>setValue(item.memo?.content ?? "")}>취소</button>
-      <button type="button" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} onClick={()=>void save()}>저장</button>
+      <button type="button" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} data-waiting={!saving && context.state.status==="writing"} onClick={()=>void save()}>저장</button>
     </div>
   </section>;
 }
