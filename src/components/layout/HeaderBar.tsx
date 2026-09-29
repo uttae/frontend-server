@@ -157,16 +157,16 @@ const HeaderBar = ({
               </button>
               {menuOpen ? (
                 <nav aria-label="여행방 메뉴" className="absolute right-0 top-[38px] z-50 min-w-40 overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-                  <button type="button" onClick={() => { closeMenu(); setEditOpen(true); }} className="flex min-h-12 w-full items-center gap-2 border-b border-border-subtle px-4 text-left text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <button type="button" onClick={() => { closeMenu(); setEditOpen(true); }} className="flex min-h-12 w-full items-center gap-2 border-b border-border-subtle px-4 text-left text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
                   </button>
-                  <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.members} />멤버 관리
                   </Link>
-                  <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.feedback} />피드백
                   </a>
-                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header" target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="flex min-h-12 items-center gap-2 px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header" target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="flex min-h-12 items-center gap-2 px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.bug} />버그 제보
                   </a>
                 </nav>
