@@ -8,14 +8,14 @@ import { useUpdateScheduleItem } from "@/hooks/useRooms";
 
 const MEMO_MAX_LENGTH = 2000;
 
-type MobileMemoSheetProps = {
+type MobileMemoSheetProps = Readonly<{
   roomId: string;
   scheduleId: number;
   itemId: number;
   placeName: string;
   memo: string;
   onClose: () => void;
-};
+}>;
 
 /** 장소 메모 추가·수정 시트 — 메모가 있으면 삭제 | 저장 두 버튼 */
 export function MobileMemoSheet({

@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 import { CloseIcon, type IconProps } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
-type MobileBottomSheetProps = {
+type MobileBottomSheetProps = Readonly<{
   open: boolean;
   onClose: () => void;
   title: string;
@@ -17,7 +17,7 @@ type MobileBottomSheetProps = {
   /** 저장 중 등 닫기를 막아야 할 때 */
   closeDisabled?: boolean;
   children: ReactNode;
-};
+}>;
 
 /** 모바일 하단 시트 — 딤 배경, 핸들, 제목·닫기 줄로 구성된다 */
 export function MobileBottomSheet({
@@ -51,12 +51,12 @@ export function MobileBottomSheet({
           if (!closeDisabled) onClose();
         }}
       />
-      <div
-        role="dialog"
+      <dialog
+        open
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative flex max-h-[90dvh] flex-col overflow-y-auto overscroll-contain rounded-t-[20px] bg-fill-elevate p-5 pb-[max(20px,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200",
+          "relative m-0 flex w-full max-h-[90dvh] max-w-none flex-col overflow-y-auto overscroll-contain rounded-t-[20px] border-0 bg-fill-elevate p-5 pb-[max(20px,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200",
           variant === "menu" ? "gap-2" : "gap-4",
         )}
       >
@@ -87,7 +87,7 @@ export function MobileBottomSheet({
           <p className="shrink-0 truncate text-caption-l-regular text-text-subtle">{subtitle}</p>
         ) : null}
         {children}
-      </div>
+      </dialog>
     </div>,
     document.body,
   );

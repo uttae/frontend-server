@@ -15,7 +15,7 @@ import { TimeWheelPicker, type TimeWheelValue } from "../itinerary/TimeWheelPick
 
 type Field = "start" | "end";
 
-type MobileTimeSheetProps = {
+type MobileTimeSheetProps = Readonly<{
   roomId: string;
   scheduleId: number;
   itemId: number;
@@ -23,7 +23,7 @@ type MobileTimeSheetProps = {
   startTime: string | null | undefined;
   endTime: string | null | undefined;
   onClose: () => void;
-};
+}>;
 
 function toWheel(hm: string, fallback: TimeWheelValue): TimeWheelValue {
   if (!hm) return fallback;

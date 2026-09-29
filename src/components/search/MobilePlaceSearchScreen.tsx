@@ -57,7 +57,7 @@ function predictionToEntry(
   };
 }
 
-type MobilePlaceSearchScreenProps = {
+type MobilePlaceSearchScreenProps = Readonly<{
   open: boolean;
   onClose: () => void;
   /** 입력창 ref — 탭 제스처 안에서 focus해야 iOS 키보드가 뜬다 */
@@ -76,7 +76,7 @@ type MobilePlaceSearchScreenProps = {
   onSubmitQuery?: (query: string) => void;
   /** 바뀌면 입력·자동완성을 비운다 */
   resetKey?: number;
-};
+}>;
 
 /**
  * 모바일 전체 화면 장소 검색 — 입력하는 동안 자동완성 결과를 보여주고, 입력이 비면 검색 기록을 보여준다.
@@ -217,12 +217,12 @@ export function MobilePlaceSearchScreen({
 
   // 헤더·하단 탭 위를 덮는 전체 화면 — 부모의 overflow/stacking에 묶이지 않도록 body로 portal
   return createPortal(
-    <div
-      role="dialog"
+    <dialog
+      open={open}
       aria-modal="true"
       aria-label="장소 검색"
       className={cn(
-        "fixed inset-0 z-50 flex flex-col bg-fill-subtle pt-[env(safe-area-inset-top)]",
+        "fixed inset-0 z-50 m-0 flex h-dvh w-full max-h-none max-w-none flex-col border-0 bg-fill-subtle p-0 pt-[env(safe-area-inset-top)]",
         !open && "hidden",
       )}
     >
@@ -313,7 +313,7 @@ export function MobilePlaceSearchScreen({
           </ul>
         )}
       </div>
-    </div>,
+    </dialog>,
     document.body,
   );
 }
@@ -328,14 +328,14 @@ function SearchRow({
   pending = false,
   onSelect,
   onRemove,
-}: {
+}: Readonly<{
   icon: (props: IconProps) => ReactNode;
   title: string;
   subtitle?: string;
   pending?: boolean;
   onSelect: () => void;
   onRemove?: () => void;
-}) {
+}>) {
   return (
     <li className={ROW_CLASS}>
       <button
@@ -367,7 +367,7 @@ function SearchRow({
   );
 }
 
-function MessageRow({ text }: { text: string }) {
+function MessageRow({ text }: Readonly<{ text: string }>) {
   return (
     <li className={ROW_CLASS}>
       <LocationErrorIcon size={20} className="text-icon-subtle" />

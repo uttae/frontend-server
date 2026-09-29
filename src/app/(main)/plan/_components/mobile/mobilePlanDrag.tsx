@@ -105,6 +105,41 @@ export function applyPendingPlanMove(
   return places;
 }
 
+type RowOffsetInput = Pick<
+  ActiveDrag,
+  "sourceScheduleId" | "sourceIndex" | "targetScheduleId" | "targetIndex"
+> & { scheduleId: number; index: number; shift: number };
+
+export function mobilePlanRowOffset({
+  sourceScheduleId,
+  sourceIndex,
+  targetScheduleId,
+  targetIndex,
+  scheduleId,
+  index,
+  shift,
+}: RowOffsetInput): number {
+  if (targetScheduleId === sourceScheduleId) {
+    if (scheduleId !== sourceScheduleId) return 0;
+    if (sourceIndex < targetIndex && index > sourceIndex && index <= targetIndex) return -shift;
+    if (sourceIndex > targetIndex && index >= targetIndex && index < sourceIndex) return shift;
+    return 0;
+  }
+  if (scheduleId === sourceScheduleId && index > sourceIndex) return -shift;
+  if (scheduleId === targetScheduleId && index >= targetIndex) return shift;
+  return 0;
+}
+
+function autoScrollSpeed(y: number, top: number, bottom: number): number {
+  if (y < top + AUTO_SCROLL_EDGE_PX) {
+    return -AUTO_SCROLL_MAX_SPEED_PX * (1 - Math.max(0, y - top) / AUTO_SCROLL_EDGE_PX);
+  }
+  if (y > bottom - AUTO_SCROLL_EDGE_PX) {
+    return AUTO_SCROLL_MAX_SPEED_PX * (1 - Math.max(0, bottom - y) / AUTO_SCROLL_EDGE_PX);
+  }
+  return 0;
+}
+
 /**
  * 모바일 일정 순서 편집 드래그 — 모든 일차의 카드를 한 번에 다루고, 다른 일차로도 옮길 수 있다.
  * 같은 일차는 순서 변경, 다른 일차는 일차 간 이동 API로 저장한다.
@@ -122,7 +157,7 @@ export function useMobilePlanDragController({
   const rows = useRef(new Map<number, Map<number, HTMLElement>>());
   const placesBySchedule = useRef(new Map<number, PlanPlace[]>());
   const activeRef = useRef<ActiveDrag | null>(null);
-  const [active, setActiveState] = useState<ActiveDrag | null>(null);
+  const [active, setActive] = useState<ActiveDrag | null>(null);
   const [pending, setPending] = useState<PendingPlanMove | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -130,9 +165,9 @@ export function useMobilePlanDragController({
   const { mutateAsync: moveMutate, isPending: isMovePending } = useMoveScheduleItemToSchedule();
   const dragDisabled = isReorderSettling || isMovePending || pending !== null;
 
-  const setActive = useCallback((next: ActiveDrag | null) => {
+  const updateActive = useCallback((next: ActiveDrag | null) => {
     activeRef.current = next;
-    setActiveState(next);
+    setActive(next);
   }, []);
 
   const registerList = useCallback((scheduleId: number, el: HTMLElement | null) => {
@@ -187,15 +222,15 @@ export function useMobilePlanDragController({
         if (sameDay && i === drag.sourceIndex) return;
         if (row.center < center) targetIndex += 1;
       });
-      setActive({ ...drag, lastClientY: clientY, dy, targetScheduleId: hit.scheduleId, targetIndex });
+      updateActive({ ...drag, lastClientY: clientY, dy, targetScheduleId: hit.scheduleId, targetIndex });
     },
-    [setActive, toContentY],
+    [toContentY, updateActive],
   );
 
   const finishDrag = useCallback(async () => {
     const drag = activeRef.current;
     if (!drag) return;
-    setActive(null);
+    updateActive(null);
     const { sourceScheduleId, sourceIndex, targetScheduleId, targetIndex, place } = drag;
     const itemId = place.itemId;
     if (typeof itemId !== "number") return;
@@ -244,7 +279,7 @@ export function useMobilePlanDragController({
     } finally {
       setPending(null);
     }
-  }, [moveMutate, reorderMutate, roomId, setActive]);
+  }, [moveMutate, reorderMutate, roomId, updateActive]);
 
   const startDrag = useCallback(
     (scheduleId: number, index: number, e: ReactPointerEvent<HTMLElement>) => {
@@ -267,7 +302,7 @@ export function useMobilePlanDragController({
         })
         .sort((a, b) => a.top - b.top);
 
-      setActive({
+      updateActive({
         pointerId: e.pointerId,
         sourceScheduleId: scheduleId,
         sourceIndex: index,
@@ -280,7 +315,7 @@ export function useMobilePlanDragController({
         targetIndex: index,
       });
     },
-    [dragDisabled, editing, setActive, toContentY],
+    [dragDisabled, editing, toContentY, updateActive],
   );
 
   // 드래그 중에는 창 전체에서 포인터를 받고, 화면 끝 근처면 자동 스크롤한다
@@ -302,12 +337,7 @@ export function useMobilePlanDragController({
       if (drag && scroll) {
         const rect = scroll.getBoundingClientRect();
         const y = drag.lastClientY;
-        const speed =
-          y < rect.top + AUTO_SCROLL_EDGE_PX
-            ? -AUTO_SCROLL_MAX_SPEED_PX * (1 - Math.max(0, y - rect.top) / AUTO_SCROLL_EDGE_PX)
-            : y > rect.bottom - AUTO_SCROLL_EDGE_PX
-              ? AUTO_SCROLL_MAX_SPEED_PX * (1 - Math.max(0, rect.bottom - y) / AUTO_SCROLL_EDGE_PX)
-              : 0;
+        const speed = autoScrollSpeed(y, rect.top, rect.bottom);
         if (speed !== 0) {
           const before = scroll.scrollTop;
           scroll.scrollTop += speed;
@@ -337,16 +367,15 @@ export function useMobilePlanDragController({
       }
       const height = days.find((d) => d.scheduleId === sourceScheduleId)?.rows[sourceIndex]?.height ?? 0;
       const shift = height + MOBILE_EDIT_ROW_GAP_PX;
-      let offset = 0;
-      if (targetScheduleId === sourceScheduleId) {
-        if (scheduleId === sourceScheduleId) {
-          if (sourceIndex < targetIndex && index > sourceIndex && index <= targetIndex) offset = -shift;
-          if (sourceIndex > targetIndex && index >= targetIndex && index < sourceIndex) offset = shift;
-        }
-      } else {
-        if (scheduleId === sourceScheduleId && index > sourceIndex) offset = -shift;
-        if (scheduleId === targetScheduleId && index >= targetIndex) offset = shift;
-      }
+      const offset = mobilePlanRowOffset({
+        sourceScheduleId,
+        sourceIndex,
+        targetScheduleId,
+        targetIndex,
+        scheduleId,
+        index,
+        shift,
+      });
       return { transform: `translateY(${offset}px)`, transition: "transform 150ms ease-out", position: "relative" };
     },
     [active],

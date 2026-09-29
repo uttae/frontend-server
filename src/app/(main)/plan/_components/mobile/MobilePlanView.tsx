@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
 
@@ -23,7 +23,7 @@ import {
 import { MobilePlanDaySection } from "./MobilePlanDaySection";
 import { MobilePlanDragProvider, useMobilePlanDragController } from "./mobilePlanDrag";
 
-type MobilePlanViewProps = {
+type MobilePlanViewProps = Readonly<{
   roomId: string;
   /** dayNumber 순으로 정렬된 일차 */
   schedules: RoomSchedule[];
@@ -33,7 +33,7 @@ type MobilePlanViewProps = {
   menuDisabled: boolean;
   /** 일차 삭제 확인 다이얼로그를 연다 — 마지막 일차면 비우기 */
   onRequestDeleteDay: (dayIndex: number) => void;
-};
+}>;
 
 /** 모바일 일정 화면 — 상단 일차 탭(전체/Day N 필터)과 일차별 장소 목록 */
 export function MobilePlanView({
@@ -128,6 +128,43 @@ export function MobilePlanView({
     ...schedules.map((s, i) => ({ key: s.scheduleId, label: `Day ${i + 1}` })),
   ];
 
+  let scheduleContent: ReactNode;
+  if (isLoading) {
+    scheduleContent = <p className="py-8 text-center text-body-s-regular text-text-subtle">일정을 불러오는 중…</p>;
+  } else if (isError) {
+    scheduleContent = (
+      <p className="px-4 py-6 text-center text-body-s-regular text-status-negative">
+        일정 목록을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.
+      </p>
+    );
+  } else if (schedules.length === 0) {
+    scheduleContent = (
+      <p className="px-4 py-6 text-center text-body-s-regular text-text-subtle">
+        {planCopy.scheduleEmpty}
+      </p>
+    );
+  } else {
+    scheduleContent = visibleSchedules.map((schedule) => {
+      const dayIndex = schedules.indexOf(schedule);
+      return (
+        <MobilePlanDaySection
+          key={schedule.scheduleId}
+          roomId={roomId}
+          scheduleId={schedule.scheduleId}
+          dayLabel={`${dayIndex + 1}일차`}
+          dateLabel={formatMobileDayDate(schedule.date)}
+          menuDisabled={menuDisabled || isCreatingDay}
+          editing={editing}
+          onStartEditing={() => setEditing(true)}
+          onFinishEditing={finishEditing}
+          onRequestInsertDayAfter={() => void insertDayAfter(dayIndex)}
+          onRequestDeleteDay={() => onRequestDeleteDay(dayIndex)}
+          onRequestAddPlace={openAddPlace}
+        />
+      );
+    });
+  }
+
   return (
     <MobilePlanDragProvider value={dragController}>
       <div className="flex min-h-0 flex-1 flex-col bg-fill">
@@ -155,37 +192,7 @@ export function MobilePlanView({
         </nav>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {isLoading ? (
-            <p className="py-8 text-center text-body-s-regular text-text-subtle">일정을 불러오는 중…</p>
-          ) : isError ? (
-            <p className="px-4 py-6 text-center text-body-s-regular text-status-negative">
-              일정 목록을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.
-            </p>
-          ) : schedules.length === 0 ? (
-            <p className="px-4 py-6 text-center text-body-s-regular text-text-subtle">
-              {planCopy.scheduleEmpty}
-            </p>
-          ) : (
-            visibleSchedules.map((schedule) => {
-              const dayIndex = schedules.indexOf(schedule);
-              return (
-                <MobilePlanDaySection
-                  key={schedule.scheduleId}
-                  roomId={roomId}
-                  scheduleId={schedule.scheduleId}
-                  dayLabel={`${dayIndex + 1}일차`}
-                  dateLabel={formatMobileDayDate(schedule.date)}
-                  menuDisabled={menuDisabled || isCreatingDay}
-                  editing={editing}
-                  onStartEditing={() => setEditing(true)}
-                  onFinishEditing={finishEditing}
-                  onRequestInsertDayAfter={() => void insertDayAfter(dayIndex)}
-                  onRequestDeleteDay={() => onRequestDeleteDay(dayIndex)}
-                  onRequestAddPlace={openAddPlace}
-                />
-              );
-            })
-          )}
+          {scheduleContent}
         </div>
 
         <MobilePlaceSearchScreen

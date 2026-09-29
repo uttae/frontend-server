@@ -8,7 +8,7 @@ vi.mock("@/hooks/useRooms", () => ({
 }));
 vi.mock("@/lib/analytics/track", () => ({ AnalyticsEvents: {}, trackAnalyticsEvent: vi.fn() }));
 
-const { applyPendingPlanMove } = await import("./mobilePlanDrag");
+const { applyPendingPlanMove, mobilePlanRowOffset } = await import("./mobilePlanDrag");
 
 function place(itemId: number): PlanPlace {
   return { id: `item-${itemId}`, itemId, title: `장소 ${itemId}` };
@@ -50,5 +50,24 @@ describe("applyPendingPlanMove", () => {
       toIndex: 0,
     };
     expect(ids(applyPendingPlanMove(2, [place(2), place(10)], pending))).toEqual([2, 10]);
+  });
+});
+
+describe("mobilePlanRowOffset", () => {
+  const base = { sourceScheduleId: 1, sourceIndex: 1, scheduleId: 1, shift: 72 };
+
+  it("같은 일차에서 뒤로 옮기면 사이 행을 위로 당긴다", () => {
+    expect(mobilePlanRowOffset({ ...base, targetScheduleId: 1, targetIndex: 3, index: 2 })).toBe(-72);
+    expect(mobilePlanRowOffset({ ...base, targetScheduleId: 1, targetIndex: 3, index: 0 })).toBe(0);
+  });
+
+  it("같은 일차에서 앞으로 옮기면 사이 행을 아래로 민다", () => {
+    expect(mobilePlanRowOffset({ ...base, sourceIndex: 3, targetScheduleId: 1, targetIndex: 1, index: 2 })).toBe(72);
+  });
+
+  it("다른 일차로 옮기면 출발지와 도착지 행을 각각 이동한다", () => {
+    expect(mobilePlanRowOffset({ ...base, targetScheduleId: 2, targetIndex: 0, index: 2 })).toBe(-72);
+    expect(mobilePlanRowOffset({ ...base, targetScheduleId: 2, targetIndex: 0, scheduleId: 2, index: 0 })).toBe(72);
+    expect(mobilePlanRowOffset({ ...base, targetScheduleId: 2, targetIndex: 0, scheduleId: 3, index: 0 })).toBe(0);
   });
 });

@@ -5,7 +5,7 @@ import {
   SavedIcon,
 } from "@/assets/icons";
 
-type Props = {
+type Props = Readonly<{
   name: string;
   category: string;
   rating: number | null;
@@ -14,7 +14,7 @@ type Props = {
   onSendToChat?: () => void;
   sendToChatDisabled?: boolean;
   onAddToSchedule?: () => void;
-};
+}>;
 
 const ICON_BUTTON_CLASS =
   "flex size-11 shrink-0 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50";

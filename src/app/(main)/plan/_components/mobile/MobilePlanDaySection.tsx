@@ -20,7 +20,7 @@ import type { PlanPlace } from "@/lib/plan/types";
 
 import { MobilePlanItinerary } from "./MobilePlanItinerary";
 
-type MobilePlanDaySectionProps = {
+type MobilePlanDaySectionProps = Readonly<{
   roomId: string;
   scheduleId: number;
   /** `1일차` */
@@ -35,7 +35,7 @@ type MobilePlanDaySectionProps = {
   onRequestInsertDayAfter: () => void;
   onRequestDeleteDay: () => void;
   onRequestAddPlace: (scheduleId: number, places: PlanPlace[]) => void;
-};
+}>;
 
 /** 모바일 일차 한 개 — 헤더(순서 편집 ↑↓ / ⚙ 일정 관리)와 장소 목록 */
 export function MobilePlanDaySection({

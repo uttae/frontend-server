@@ -15,7 +15,7 @@ import type { PlanPlace } from "@/lib/plan/types";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { cn } from "@/lib/utils";
 
-type MobilePlanPlaceCardProps = {
+type MobilePlanPlaceCardProps = Readonly<{
   place: PlanPlace;
   orderNumber: number;
   /** 지도 핀과 같은 일차 색 */
@@ -33,7 +33,7 @@ type MobilePlanPlaceCardProps = {
   editing: boolean;
   dragDisabled?: boolean;
   onHandlePointerDown?: (e: ReactPointerEvent<HTMLButtonElement>) => void;
-};
+}>;
 
 function stop(e: { stopPropagation: () => void }) {
   e.stopPropagation();
@@ -62,19 +62,15 @@ export function MobilePlanPlaceCard({
   return (
     <div className="flex items-stretch gap-2">
       <article
-        role="button"
-        tabIndex={0}
-        onClick={onOpen}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onOpen();
-          }
-        }}
-        aria-label={`${orderNumber}번째 장소 ${place.title} 지도에서 보기`}
-        className="min-w-0 flex-1 cursor-pointer rounded-md border border-border-subtle bg-fill-subtle text-left"
+        className="relative min-w-0 flex-1 rounded-md border border-border-subtle bg-fill-subtle text-left"
       >
-        <div className="flex gap-3 pb-4 pl-3.5 pr-2 pt-3">
+        <button
+          type="button"
+          onClick={onOpen}
+          aria-label={`${orderNumber}번째 장소 ${place.title} 지도에서 보기`}
+          className="absolute inset-0 cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-primary-strong"
+        />
+        <div className="pointer-events-none relative flex gap-3 pb-4 pl-3.5 pr-2 pt-3">
           <span
             aria-hidden
             className="mt-px flex size-6 shrink-0 items-center justify-center rounded-[5.5px] text-body-s-emphasis text-text-inverse"
@@ -95,7 +91,7 @@ export function MobilePlanPlaceCard({
                       onEditTime();
                     }}
                     aria-label={`${place.title} 방문 시간 수정`}
-                    className="flex items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    className="pointer-events-auto flex items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
                   >
                     <TimeClockIcon size={18} className="text-icon-subtle" />
                     {timeRange}
@@ -109,7 +105,7 @@ export function MobilePlanPlaceCard({
                       onOpenExpenses();
                     }}
                     aria-label={`${place.title} 비용 보기`}
-                    className="flex min-w-0 items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    className="pointer-events-auto flex min-w-0 items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
                   >
                     <CoinIcon size={18} className="text-icon-subtle" />
                     <span className="truncate">{expenseSummary}</span>
@@ -125,14 +121,14 @@ export function MobilePlanPlaceCard({
               onOpenActions();
             }}
             aria-label={`${place.title} 일정 편집`}
-            className="-mt-1 flex size-8 shrink-0 items-center justify-center"
+            className="pointer-events-auto -mt-1 flex size-8 shrink-0 items-center justify-center"
           >
             <MenuDotVerticalIcon size={20} className="text-icon-subtle" />
           </button>
         </div>
 
         {memo ? (
-          <div className="mx-3.5 flex items-start gap-3.5 border-t border-border-subtle py-3">
+          <div className="pointer-events-none relative mx-3.5 flex items-start gap-3.5 border-t border-border-subtle py-3">
             <button
               type="button"
               onClick={(e) => {
@@ -140,7 +136,7 @@ export function MobilePlanPlaceCard({
                 onEditMemo();
               }}
               aria-label={`${place.title} 메모 수정`}
-              className="-m-1 shrink-0 p-1"
+              className="pointer-events-auto -m-1 shrink-0 p-1"
             >
               <WriteIcon size={20} className="text-icon-subtle" />
             </button>
@@ -152,7 +148,7 @@ export function MobilePlanPlaceCard({
               }}
               aria-expanded={memoExpanded}
               aria-label={memoExpanded ? "메모 접기" : "메모 펼치기"}
-              className="flex min-w-0 flex-1 items-start gap-3.5 text-left"
+              className="pointer-events-auto flex min-w-0 flex-1 items-start gap-3.5 text-left"
             >
               <span
                 className={cn(

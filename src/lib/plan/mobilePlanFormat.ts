@@ -25,11 +25,14 @@ export function summarizeExpensesForMobile(expenses: readonly Expense[]): string
     countByCurrency.set(expense.currency, (countByCurrency.get(expense.currency) ?? 0) + 1);
   }
   const totals = totalsByCurrency(expenses);
+  const [first, ...rest] = totals;
+  if (!first) return null;
   // 건수가 같으면 먼저 나온 통화를 쓴다(totalsByCurrency는 등장 순서를 유지)
-  const primary = totals.reduce((best, current) =>
+  const primary = rest.reduce((best, current) =>
     (countByCurrency.get(current.currency) ?? 0) > (countByCurrency.get(best.currency) ?? 0)
       ? current
       : best,
+    first,
   );
   const others = expenses.length - (countByCurrency.get(primary.currency) ?? 0);
   const label = `${formatExpenseAmount(primary.amount)} ${primary.currency}`;

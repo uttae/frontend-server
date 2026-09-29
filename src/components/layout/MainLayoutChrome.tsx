@@ -40,12 +40,18 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const showMobileSchedule =
     isMobileDevice && isPlanRoute && mobilePlanPanel === "schedule";
   // 뒤로가기 헤더(Figma Default / Type=Back): 북마크 상세 → 목록, 지도 → 일정
-  const mobileBack =
-    isMobileDevice && pathname.startsWith("/bookmark/")
-      ? { href: "/bookmark", label: "북마크 목록으로 돌아가기" }
-      : showMobilePlanSurface && mobilePlanPanel === "map"
-        ? { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" }
-        : undefined;
+  let mobileBack: { href: string; label: string } | undefined;
+  if (isMobileDevice && pathname.startsWith("/bookmark/")) {
+    mobileBack = { href: "/bookmark", label: "북마크 목록으로 돌아가기" };
+  } else if (showMobilePlanSurface && mobilePlanPanel === "map") {
+    mobileBack = { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" };
+  }
+
+  let mainContent: ReactNode = children;
+  if (showDesktopChat) mainContent = <ChatPanel inline />;
+  else if (showMobilePlanSurface) {
+    mainContent = mobilePlanPanel === "map" ? <MapWithDetailPanel mobileInline /> : <ChatPanel mobileInline />;
+  }
 
   return (
     <main className="flex h-dvh flex-col">
@@ -59,15 +65,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
             <MainContentScrollArea fill={showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
-              {showDesktopChat ? <ChatPanel inline /> : showMobilePlanSurface ? (
-                mobilePlanPanel === "map" ? (
-                  <MapWithDetailPanel mobileInline />
-                ) : (
-                  <ChatPanel mobileInline />
-                )
-              ) : (
-                children
-              )}
+              {mainContent}
             </MainContentScrollArea>
           </section>
           <MobileMainTabs />

@@ -51,12 +51,12 @@ type SheetState =
   | { kind: "time"; place: PlanPlace }
   | { kind: "delete"; place: PlanPlace };
 
-type MobilePlanItineraryProps = {
+type MobilePlanItineraryProps = Readonly<{
   roomId: string;
   scheduleId: number;
   /** 전체 화면 검색으로 이 일차에 장소 추가 — 탭 제스처 안에서 호출해야 한다 */
   onRequestAddPlace: (places: PlanPlace[]) => void;
-};
+}>;
 
 /** 모바일 일차별 장소 목록 — 카드·이동 요약·추가 버튼, 편집 모드에서는 핸들로 순서를 바꾼다(다른 일차로도) */
 export function MobilePlanItinerary({
@@ -181,11 +181,6 @@ export function MobilePlanItinerary({
         ) : null}
         {places.map((place, index) => {
           const next = places[index + 1];
-          const showSegment =
-            !editing &&
-            next !== undefined &&
-            typeof place.itemId === "number" &&
-            typeof next.itemId === "number";
           return (
             <div
               key={place.id}
@@ -206,30 +201,16 @@ export function MobilePlanItinerary({
                 dragDisabled={drag.dragDisabled || typeof place.itemId !== "number"}
                 onHandlePointerDown={(e) => drag.startDrag(scheduleId, index, e)}
               />
-              {showSegment ? (
-                <PlanTravelTime
-                  contentOnly
-                  className="py-1"
-                  roomId={roomId}
-                  scheduleId={scheduleId}
-                  segmentSourceItemId={place.itemId!}
-                  scheduleFingerprint={scheduleFingerprint}
-                  travelMode={place.travelMode}
-                  originGooglePlaceId={place.googlePlaceId}
-                  originPlaceName={place.title}
-                  destinationGooglePlaceId={next.googlePlaceId}
-                  destinationPlaceName={next.title}
-                  routeQueryEnabled={
-                    data !== undefined &&
-                    !isFetching &&
-                    routesBatchSettled &&
-                    existingItemIds.has(place.itemId!) &&
-                    existingItemIds.has(next.itemId!)
-                  }
-                />
-              ) : !editing && next !== undefined ? (
-                <div className="h-2" />
-              ) : null}
+              <PlaceTravelSegment
+                place={place}
+                next={next}
+                editing={editing}
+                roomId={roomId}
+                scheduleId={scheduleId}
+                scheduleFingerprint={scheduleFingerprint}
+                routesReady={data !== undefined && !isFetching && routesBatchSettled}
+                existingItemIds={existingItemIds}
+              />
             </div>
           );
         })}
@@ -254,43 +235,18 @@ export function MobilePlanItinerary({
       </div>
 
       {sheet?.kind === "actions" && sheetPlace ? (
-        <MobileBottomSheet open onClose={() => setSheet(null)} title={sheetPlace.title}>
-          {sheetItemId !== null ? (
-            <>
-              <MobileSheetMenuItem
-                icon={sheetPlace.memo?.trim() ? WriteIcon : WriteAddIcon}
-                label={sheetPlace.memo?.trim() ? "메모 수정" : "메모 추가"}
-                onClick={() => setSheet({ kind: "memo", place: sheetPlace })}
-              />
-              <MobileSheetMenuItem
-                icon={TimeClockIcon}
-                label="시간 설정"
-                onClick={() => setSheet({ kind: "time", place: sheetPlace })}
-              />
-              {expenses.canManage ? (
-                <MobileSheetMenuItem
-                  icon={CoinIcon}
-                  label="비용 추가"
-                  disabled={expenses.busy}
-                  onClick={() => {
-                    setSheet(null);
-                    expenses.open({ scheduleId, scheduleItemId: sheetItemId });
-                  }}
-                />
-              ) : null}
-              <MobileSheetMenuItem
-                icon={TrashIcon}
-                label="일정 삭제"
-                danger
-                onClick={() => setSheet({ kind: "delete", place: sheetPlace })}
-              />
-            </>
-          ) : (
-            <p className="py-2 text-body-s-regular text-text-subtle">
-              아직 저장 중인 장소예요. 잠시 후 다시 시도해 주세요.
-            </p>
-          )}
-        </MobileBottomSheet>
+        <MobilePlanActionSheet
+          place={sheetPlace}
+          itemId={sheetItemId}
+          canManageExpenses={expenses.canManage}
+          expensesBusy={expenses.busy}
+          onClose={() => setSheet(null)}
+          onChangeSheet={setSheet}
+          onAddExpense={(itemId) => {
+            setSheet(null);
+            expenses.open({ scheduleId, scheduleItemId: itemId });
+          }}
+        />
       ) : null}
 
       {sheet?.kind === "memo" && sheetPlace && sheetItemId !== null ? (
@@ -339,11 +295,109 @@ export function MobilePlanItinerary({
   );
 }
 
+function PlaceTravelSegment({
+  place,
+  next,
+  editing,
+  roomId,
+  scheduleId,
+  scheduleFingerprint,
+  routesReady,
+  existingItemIds,
+}: Readonly<{
+  place: PlanPlace;
+  next?: PlanPlace;
+  editing: boolean;
+  roomId: string;
+  scheduleId: number;
+  scheduleFingerprint: string;
+  routesReady: boolean;
+  existingItemIds: ReadonlySet<number>;
+}>) {
+  if (editing || !next) return null;
+  if (typeof place.itemId !== "number" || typeof next.itemId !== "number") {
+    return <div className="h-2" />;
+  }
+  return (
+    <PlanTravelTime
+      contentOnly
+      className="py-1"
+      roomId={roomId}
+      scheduleId={scheduleId}
+      segmentSourceItemId={place.itemId}
+      scheduleFingerprint={scheduleFingerprint}
+      travelMode={place.travelMode}
+      originGooglePlaceId={place.googlePlaceId}
+      originPlaceName={place.title}
+      destinationGooglePlaceId={next.googlePlaceId}
+      destinationPlaceName={next.title}
+      routeQueryEnabled={
+        routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)
+      }
+    />
+  );
+}
+
+function MobilePlanActionSheet({
+  place,
+  itemId,
+  canManageExpenses,
+  expensesBusy,
+  onClose,
+  onChangeSheet,
+  onAddExpense,
+}: Readonly<{
+  place: PlanPlace;
+  itemId: number | null;
+  canManageExpenses: boolean;
+  expensesBusy: boolean;
+  onClose: () => void;
+  onChangeSheet: (sheet: SheetState) => void;
+  onAddExpense: (itemId: number) => void;
+}>) {
+  return (
+    <MobileBottomSheet open onClose={onClose} title={place.title}>
+      {itemId === null ? (
+        <p className="py-2 text-body-s-regular text-text-subtle">
+          아직 저장 중인 장소예요. 잠시 후 다시 시도해 주세요.
+        </p>
+      ) : (
+        <>
+          <MobileSheetMenuItem
+            icon={place.memo?.trim() ? WriteIcon : WriteAddIcon}
+            label={place.memo?.trim() ? "메모 수정" : "메모 추가"}
+            onClick={() => onChangeSheet({ kind: "memo", place })}
+          />
+          <MobileSheetMenuItem
+            icon={TimeClockIcon}
+            label="시간 설정"
+            onClick={() => onChangeSheet({ kind: "time", place })}
+          />
+          {canManageExpenses ? (
+            <MobileSheetMenuItem
+              icon={CoinIcon}
+              label="비용 추가"
+              disabled={expensesBusy}
+              onClick={() => onAddExpense(itemId)}
+            />
+          ) : null}
+          <MobileSheetMenuItem
+            icon={TrashIcon}
+            label="일정 삭제"
+            danger
+            onClick={() => onChangeSheet({ kind: "delete", place })}
+          />
+        </>
+      )}
+    </MobileBottomSheet>
+  );
+}
+
 /**
  * 빈 일차 표시 — 평소에도 점선 박스이고, 순서 편집 중 카드가 올라오면 놓을 자리로 강조한다.
  * CSS 점선은 점 길이를 못 바꿔서 SVG로 긴 점선 테두리를 그린다.
  */
-function EmptyDayDropZone({ active }: { active: boolean }) {
+function EmptyDayDropZone({ active }: Readonly<{ active: boolean }>) {
   return (
     <div
       className={cn(

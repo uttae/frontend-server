@@ -36,7 +36,7 @@ type DragState = {
   velocity: number;
 };
 
-type PlaceDetailSheetProps = {
+type PlaceDetailSheetProps = Readonly<{
   /** 바뀌면 다시 peek 상태로 시작한다 */
   placeKey: string;
   onBack: () => void;
@@ -46,7 +46,7 @@ type PlaceDetailSheetProps = {
   /** 중간 상태에서 `peek` 아래쪽을 가릴 높이(px) — 예: 사진의 3/5 */
   peekHiddenBottomPx?: number;
   children: ReactNode;
-};
+}>;
 
 /**
  * 모바일 바텀 시트 — 상태는 최대화 / 중간 두 가지.
@@ -178,8 +178,9 @@ export function PlaceDetailSheet({
       const max = collapsedOffsetRef.current;
       const next = drag.baseOffset + dy;
       // 범위를 넘으면 저항을 줘서 끝에 닿았음을 느끼게 한다
-      const resisted =
-        next < 0 ? next / 4 : next > max ? max + (next - max) / 4 : next;
+      let resisted = next;
+      if (next < 0) resisted = next / 4;
+      else if (next > max) resisted = max + (next - max) / 4;
       applyOffset(resisted, false);
     }
 
@@ -188,12 +189,9 @@ export function PlaceDetailSheet({
       dragRef.current = null;
       if (!drag?.dragging) return;
       const max = collapsedOffsetRef.current;
-      const nextExpanded =
-        drag.velocity < -FLING_VELOCITY
-          ? true
-          : drag.velocity > FLING_VELOCITY
-            ? false
-            : offsetRef.current < max / 2;
+      let nextExpanded = offsetRef.current < max / 2;
+      if (drag.velocity < -FLING_VELOCITY) nextExpanded = true;
+      else if (drag.velocity > FLING_VELOCITY) nextExpanded = false;
       snapTo(nextExpanded);
     }
 
