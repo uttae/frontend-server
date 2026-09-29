@@ -14,6 +14,7 @@ import {
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
 import { validateExpense } from "@/lib/expenses/expense-policy";
+import { preferredExpenseCurrency, rememberExpenseCurrency } from "@/lib/expenses/expense-currency-preference";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
@@ -151,6 +152,19 @@ export function ExpenseEditor({
           participantUserIds: self === undefined ? [] : [self],
         },
   );
+  const manuallySelectedCurrency = useRef<string | null>(null);
+  const preferenceScope = `${context.currentUserId ?? ""}:${context.roomId}`;
+  useEffect(() => {
+    if (original || !context.currencies.isSuccess || manuallySelectedCurrency.current === preferenceScope)
+      return;
+    const selected = preferredExpenseCurrency(
+      context.currentUserId,
+      context.roomId,
+      context.currencies.data ?? [],
+    );
+    setBody((previous) => previous.currency === selected
+      ? previous : { ...previous, currency: selected });
+  }, [original, context.currentUserId, context.roomId, context.currencies.data, context.currencies.isSuccess, preferenceScope]);
   const [error, setError] = useState("");
   const [errorOccurrence, setErrorOccurrence] = useState(0);
   const errorMessageRef = useRef<HTMLParagraphElement>(null);
@@ -280,6 +294,7 @@ export function ExpenseEditor({
     };
     try {
       await context.save(payload, original?.id, original?.version);
+      if (!original) rememberExpenseCurrency(context.currentUserId, context.roomId, payload.currency);
       onClose();
     } catch (e) {
       if (
@@ -302,12 +317,12 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:mb-0 mobile:max-h-[60dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden"
+        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden mobile:max-h-[60dvh]"
         aria-describedby={error ? errorId : undefined}
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
@@ -331,7 +346,10 @@ export function ExpenseEditor({
               value={body.currency}
               currencies={context.currencies.data ?? []}
               disabled={pending || !context.currencies.isSuccess}
-              onChange={(value) => change("currency", value)}
+              onChange={(value) => {
+                manuallySelectedCurrency.current = preferenceScope;
+                change("currency", value);
+              }}
             />
             <label className="block min-w-0 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
               <span className="block text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-5">금액</span>

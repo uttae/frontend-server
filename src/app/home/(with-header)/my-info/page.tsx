@@ -17,6 +17,7 @@ import { WithdrawalDelegationRequiredModal } from "@/components/settings/Withdra
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { logout } from "@/lib/api/auth";
 import { tearDownClientSession } from "@/lib/client-storage";
+import { clearExpenseCurrencyPreferencesForUser } from "@/lib/expenses/expense-currency-preference";
 import {
   withdrawAccount,
   type RoomRequiringDelegation,
@@ -62,6 +63,7 @@ export default function MyInfoPage() {
       const result = await withdrawAccount();
       if (result.ok) {
         setShowWithdrawConfirm(false);
+        clearExpenseCurrencyPreferencesForUser(user?.id);
         queryClient.clear();
         tearDownClientSession({ queryClient });
         router.replace("/");

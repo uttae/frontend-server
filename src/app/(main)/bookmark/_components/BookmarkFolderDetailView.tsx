@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
 
 import { placePreviewQueryOptions } from "@/lib/places/place-queries";
-import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { useAllRoomBookmarks, useRoomBookmarks } from "@/hooks/useRooms";
 import { useSessionStore } from "@/stores/session-store";
 import type { RoomBookmark } from "@/lib/api/rooms";
@@ -24,7 +24,7 @@ function normalizeBookmarkRows(data: unknown): RoomBookmark[] {
 }
 
 export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder }) {
-  const { setSelectedPlace } = useSelectedPlace();
+  const openPlaceOnMap = useOpenPlaceOnMap();
   const roomId = useSessionStore((s) => s.currentRoomId);
   const categoryId = Number.parseInt(folder.id, 10);
   const categoryIdOk = Number.isFinite(categoryId) ? categoryId : null;
@@ -191,7 +191,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
               roomId={roomId}
               currentCategoryId={categoryIdOk}
               onOpenDetail={() => {
-                setSelectedPlace(
+                openPlaceOnMap(
                   {
                     name: row.name,
                     category: "",

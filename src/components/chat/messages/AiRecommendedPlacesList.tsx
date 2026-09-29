@@ -7,7 +7,7 @@ import {
   chatAiBubblePlaceRecommendationHeadingTitleClass,
   chatAiBubblePlaceRecommendationReasonClass,
 } from "@/components/chat/chat-typography";
-import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { stripRecommendedPlaceReasonPrefix } from "@/lib/recommended-place-reason";
 import type {
@@ -23,7 +23,7 @@ function AiRecommendedPlaceRow({
   place: AiRecommendedPlace;
   isMinimized: boolean;
 }) {
-  const { setSelectedPlace } = useSelectedPlace();
+  const openPlaceOnMap = useOpenPlaceOnMap();
   const setMapCenter = useMapCenterStore((s) => s.setMapCenter);
 
   const displayRating = place.rating ?? null;
@@ -35,7 +35,7 @@ function AiRecommendedPlaceRow({
 
   function handleClick() {
     setMapCenter({ lat: place.lat, lng: place.lng });
-    setSelectedPlace(
+    openPlaceOnMap(
       {
         name: place.name,
         category: place.primaryType ?? "",

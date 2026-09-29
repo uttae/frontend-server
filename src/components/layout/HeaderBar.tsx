@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pencil } from "lucide-react";
 
+import { ChevronLeftIcon } from "@/assets/icons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
@@ -26,7 +27,6 @@ import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 
 const mobileIcon = {
   roomLogo: "/icons/mobile/room-logo.svg",
-  back: "/icons/mobile/back.svg",
   calendar: "/icons/mobile/calendar.svg",
   map: "/icons/mobile/map.svg",
   menu: "/icons/mobile/menu.svg",
@@ -126,10 +126,10 @@ const HeaderBar = ({
   return (
     <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "h-14 shrink-0 border-b-2 border-primary"}>
       {isMobileDevice ? (
-        <div className={mobileBackHref ? "flex h-full min-w-0 items-center gap-1 pl-0.5" : "flex h-full min-w-0 items-center gap-[14px] px-2"}>
+        <div className={mobileBackHref ? "flex h-full min-w-0 items-center gap-2 pl-1 pr-5" : "flex h-full min-w-0 items-center gap-[14px] px-2"}>
           {mobileBackHref ? (
             <Link href={mobileBackHref} aria-label={mobileBackLabel} className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
-              <Image src={mobileIcon.back} alt="" width={24} height={24} />
+              <ChevronLeftIcon className="text-icon" />
             </Link>
           ) : (
             <div className="flex shrink-0 items-center gap-0.5">
@@ -159,16 +159,16 @@ const HeaderBar = ({
               </button>
               {menuOpen ? (
                 <nav aria-label="여행방 메뉴" className="absolute right-0 top-[38px] z-50 min-w-40 overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-                  <button type="button" onClick={() => { closeMenu(); setEditOpen(true); }} className="flex min-h-12 w-full items-center gap-2 border-b border-border-subtle px-4 text-left text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <button type="button" onClick={() => { closeMenu(); setEditOpen(true); }} className="flex min-h-12 w-full items-center gap-2 border-b border-border-subtle px-4 text-left text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
                   </button>
-                  <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.members} />멤버 관리
                   </Link>
-                  <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.feedback} />피드백
                   </a>
-                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header" target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="flex min-h-12 items-center gap-2 px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill-default">
+                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header" target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="flex min-h-12 items-center gap-2 px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.bug} />버그 제보
                   </a>
                 </nav>
