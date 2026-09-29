@@ -30,6 +30,8 @@ vi.mock("@/components/search/PlacesSearchInput", () => ({
   },
 }));
 vi.mock("@/components/place", () => ({ SearchResultCard: () => null }));
+// 카드 클릭(장소 열기)은 이 테스트 범위 밖 — 지도 이동 훅의 라우터·세션 의존성을 끊는다
+vi.mock("@/hooks/useOpenPlaceOnMap", () => ({ useOpenPlaceOnMap: () => () => {} }));
 vi.mock("@/components/layout/MainPageHeader", () => ({
   MainPageHeader: () => null,
 }));

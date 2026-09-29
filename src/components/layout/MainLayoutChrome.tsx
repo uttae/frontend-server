@@ -36,6 +36,9 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
       : "schedule";
   const showMobilePlanSurface =
     isMobileDevice && isPlanRoute && mobilePlanPanel !== "schedule";
+  // 모바일 일정은 탭 고정 + 목록만 스크롤하도록 화면이 직접 스크롤을 관리한다
+  const showMobileSchedule =
+    isMobileDevice && isPlanRoute && mobilePlanPanel === "schedule";
   // 뒤로가기 헤더(Figma Default / Type=Back): 북마크 상세 → 목록, 지도 → 일정
   const mobileBack =
     isMobileDevice && pathname.startsWith("/bookmark/")
@@ -55,7 +58,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           />
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
-            <MainContentScrollArea fill={showMobilePlanSurface || showDesktopChat}>
+            <MainContentScrollArea fill={showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
               {showDesktopChat ? <ChatPanel inline /> : showMobilePlanSurface ? (
                 mobilePlanPanel === "map" ? (
                   <MapWithDetailPanel mobileInline />
