@@ -1,4 +1,4 @@
-import { ArrowDown, Plus } from "lucide-react";
+import { ArrowDown, Minus, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,7 @@ export function TravelRouteRail({
         {showAddControl ?
           <button
             type="button"
-            aria-label="이 위치에 장소 추가"
+            aria-label="장소 추가 닫기"
             disabled={addDisabled}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => {
@@ -60,7 +60,7 @@ export function TravelRouteRail({
               cn("m-auto", addDisabled && "pointer-events-none opacity-40"),
             )}
           >
-            <Plus className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
+            <Minus className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
           </button>
         : null}
       </div>

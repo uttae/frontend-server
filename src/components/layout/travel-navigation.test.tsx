@@ -13,7 +13,6 @@ vi.mock("@/hooks/useRoomUnreadCount", () => ({ useRoomUnreadCount: () => ({ data
 vi.mock("@/hooks/useSessionPromptVisible", () => ({ useSessionPromptVisible: () => ({ visible: true, dismiss: vi.fn() }) }));
 vi.mock("./HeaderBar", () => ({ default: ({ mobileBackHref }: { mobileBackHref?: string }) => <header data-mobile-back-href={mobileBackHref} /> }));
 vi.mock("./LeftSection", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
-vi.mock("./SidebarTutorial", () => ({ SidebarTutorial: () => null }));
 // External map/chat engines are boundaries; assertions exercise chrome selection and containment.
 vi.mock("@/components/map", () => ({ MapWithDetailPanel: () => <div data-map /> }));
 vi.mock("@/components/chat", () => ({ ChatPanel: () => <div data-chat /> }));
