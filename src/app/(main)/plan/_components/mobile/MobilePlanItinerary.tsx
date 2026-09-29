@@ -171,15 +171,12 @@ export function MobilePlanItinerary({
           장소 목록을 불러오지 못했어요.
         </p>
       ) : null}
-      {!editing && !isLoading && !isError && places.length === 0 ? (
-        <p className="py-4 text-center text-body-s-regular text-text-subtle">{planCopy.placesEmpty}</p>
-      ) : null}
 
       <div
         ref={(el) => drag.registerList(scheduleId, el)}
         className={editing ? "flex flex-col gap-2" : "flex flex-col"}
       >
-        {editing && places.length === 0 && !isLoading && !isError ? (
+        {places.length === 0 && !isLoading && !isError ? (
           <EmptyDayDropZone active={drag.dropTargetScheduleId === scheduleId} />
         ) : null}
         {places.map((place, index) => {
@@ -343,7 +340,7 @@ export function MobilePlanItinerary({
 }
 
 /**
- * 편집 모드의 빈 일차 — 빈 상태 문구가 놓을 자리로 바뀐다. 카드가 올라오면 강조한다.
+ * 빈 일차 표시 — 평소에도 점선 박스이고, 순서 편집 중 카드가 올라오면 놓을 자리로 강조한다.
  * CSS 점선은 점 길이를 못 바꿔서 SVG로 긴 점선 테두리를 그린다.
  */
 function EmptyDayDropZone({ active }: { active: boolean }) {
