@@ -15,11 +15,13 @@ import { dayNumberForInsertAfterDayIndex } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
 import { useCreateRoomSchedule, useCreateScheduleItem } from "@/hooks/useRooms";
 import { cn } from "@/lib/utils";
+import {
+  useMobilePlanDayFilterStore,
+  type MobilePlanDayFilter,
+} from "@/stores/mobile-plan-day-filter-store";
 
 import { MobilePlanDaySection } from "./MobilePlanDaySection";
 import { MobilePlanDragProvider, useMobilePlanDragController } from "./mobilePlanDrag";
-
-type DayFilter = "all" | number;
 
 type MobilePlanViewProps = {
   roomId: string;
@@ -42,7 +44,10 @@ export function MobilePlanView({
   menuDisabled,
   onRequestDeleteDay,
 }: MobilePlanViewProps) {
-  const [filter, setFilter] = useState<DayFilter>("all");
+  // 선택한 탭은 방별 스토어에 둬서 지도·채팅 등을 다녀와도 유지한다
+  const filter = useMobilePlanDayFilterStore((s) => s.filterByRoomId[roomId] ?? "all");
+  const setRoomFilter = useMobilePlanDayFilterStore((s) => s.setFilter);
+  const setFilter = (next: MobilePlanDayFilter) => setRoomFilter(roomId, next);
   // 선택한 일차가 삭제되면 전체로 돌아간다
   const activeFilter =
     filter !== "all" && !schedules.some((s) => s.scheduleId === filter) ? "all" : filter;
@@ -118,7 +123,7 @@ export function MobilePlanView({
     }
   }
 
-  const tabs: { key: DayFilter; label: string }[] = [
+  const tabs: { key: MobilePlanDayFilter; label: string }[] = [
     { key: "all", label: "전체" },
     ...schedules.map((s, i) => ({ key: s.scheduleId, label: `Day ${i + 1}` })),
   ];
