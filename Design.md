@@ -68,6 +68,7 @@ import { MapPinIcon } from "@/assets/icons";
 - 크기는 `size`(기본 24), 색은 `text-*` 토큰으로 준다 (`currentColor`)
 - 장식용이라 기본으로 `aria-hidden`이다. 아이콘만 있는 버튼은 버튼에 `aria-label`을 단다
 - SVGR 설정은 `next.config.ts`의 `turbopack.rules`에 있고, `src/assets/icons/` 안의 SVG에만 적용된다
+- 테스트(Vitest)에서는 `vitest.config.ts`의 `vite-plugin-svgr`가 같은 폴더를 같은 방식으로 변환한다
 
 
 ---
