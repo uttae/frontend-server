@@ -242,7 +242,8 @@ it("member access loss prevents submit", async () => {
 it("summary opens shared modal for unset or zero budget", async () => {
   mocks.state = state({ ...budget, budgetKrw: null });
   await summary();
-  expect(text()).toContain("미설정");
+  expect(text()).not.toContain("미설정");
+  expect([...host.querySelectorAll("h3")].find(h => h.textContent === "전체 예산")?.parentElement?.querySelector("p")?.textContent).toBe("—");
   await click("예산 설정");
   expect(document.querySelector("dialog")).not.toBeNull();
   expect(input().value).toBe("");
@@ -352,7 +353,8 @@ it("partial zero is labelled and unset never becomes a zero budget", async () =>
   expect(text()).toContain("—");
   expect(text()).toContain("0원");
   expect(host.querySelector('button[aria-label="원화 합계 안내"]')).not.toBeNull();
-  expect(text()).toContain("미설정");
+  expect(text()).not.toContain("미설정");
+  expect([...host.querySelectorAll("h3")].find(h => h.textContent === "전체 예산")?.parentElement?.querySelector("p")?.textContent).toBe("—");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
 });
 it.each(["disconnected", "pending", "error"])(

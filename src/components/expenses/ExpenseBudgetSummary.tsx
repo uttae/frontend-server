@@ -71,7 +71,7 @@ export function ExpenseBudgetSummary() {
           )}
           {budget.isSuccess && (
             <p className="ml-auto break-all text-[16px] leading-5 font-medium tabular-nums mobile:order-3 mobile:text-[18px] mobile:font-bold mobile:text-text-subtle max-sm:order-3 max-sm:text-[18px] max-sm:font-bold max-sm:text-text-subtle">
-              {amount === null ? "미설정" : `${formatExpenseAmount(amount!)}원`}
+              {amount === null ? "—" : `${formatExpenseAmount(amount!)}원`}
             </p>
           )}
         </div>
