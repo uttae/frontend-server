@@ -72,3 +72,30 @@ it('a changed version invalidates an open item delete confirmation',async()=>{
  vi.mocked(packingApi.get).mockResolvedValue(list(1));await c.refresh();
  await c.confirmDelete();expect(packingApi.deleteItem).not.toHaveBeenCalled();expect(c.getSnapshot().confirmation).toBeNull();
 });
+
+it('does not publish a sync failure when a write cancels an in-flight refresh', async () => {
+ const {c,client}=setup();
+ vi.mocked(packingApi.get).mockResolvedValue(list());
+ await c.refresh();
+ const read=deferred<PackingList>();
+ vi.mocked(packingApi.get).mockReturnValueOnce(read.promise);
+ const refresh=c.refresh();
+ const pending=deferred<Awaited<ReturnType<typeof packingApi.checkItem>>>();
+ vi.mocked(packingApi.checkItem).mockReturnValueOnce(pending.promise);
+ const failures:string[]=[];
+ const unsubscribe=c.subscribe(()=>{const state=c.getSnapshot();if(state.message)failures.push(state.message);});
+ const write=c.execute({type:'checkItem',id:3,checked:true});
+ await refresh;
+ await vi.waitFor(()=>expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(true));
+ expect(c.getSnapshot().status).toBe('writing');
+ expect(c.getSnapshot().message).toBeNull();
+ expect(failures).toEqual([]);
+ read.resolve(list());
+ const updated={...list(1),parts:[{...list().parts[0],items:[{...list().parts[0].items[0],checked:true}]}]};
+ vi.mocked(packingApi.get).mockResolvedValue(updated);
+ pending.resolve({version:1,item:updated.parts[0].items[0]});
+ await write;
+ expect(c.getSnapshot().status).toBe('ready');
+ expect(c.getSnapshot().message).toBeNull();
+ unsubscribe();c.dispose();client.clear();
+});
