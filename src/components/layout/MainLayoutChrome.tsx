@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { isPackingPath } from "@/lib/room-context-path";
 import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -39,7 +39,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const { chatState, closeChat } = useChat();
   const previousRoute = useRef(pathname);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousRoute.current !== pathname) closeChat();
     previousRoute.current = pathname;
   }, [pathname, closeChat]);

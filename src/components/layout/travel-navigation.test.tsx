@@ -219,3 +219,25 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
     expect(host.querySelector("[data-chat]")).toBeNull();
   }
 });
+
+it('keeps chat visible until another route commits, without revealing the old packing page', async () => {
+ state.pathname=`/packing/${state.roomId}`;
+ await render();
+ await act(async()=>items()[5].click());
+ await act(async()=>items()[6].click());
+ expect(host.querySelector('article')).toBeNull();
+ expect(host.querySelector('[data-chat]')).not.toBeNull();
+ state.pathname='/member-settings';
+ await render();
+ expect(host.querySelector('[data-chat]')).toBeNull();
+ expect(host.querySelector('article')).not.toBeNull();
+ expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['멤버']);
+});
+it('immediately restores packing when selecting the original tab from chat', async () => {
+ state.pathname=`/packing/${state.roomId}`;
+ await render();
+ await act(async()=>items()[5].click());
+ await act(async()=>items()[4].click());
+ expect(host.querySelector('[data-chat]')).toBeNull();
+ expect(host.querySelector('article')).not.toBeNull();
+});

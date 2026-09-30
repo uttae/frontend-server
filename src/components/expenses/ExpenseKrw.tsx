@@ -86,7 +86,7 @@ function ExpenseConversionNote({ explanation }: { explanation: string }) {
   );
 }
 
-export function ExpenseKrwAmount({ total, original }: { total?: Amount; original?: OriginalAmount }) {
+export function ExpenseKrwAmount({ total, original, showNote = false }: { total?: Amount; original?: OriginalAmount; showNote?: boolean }) {
   if (!total || total.convertedTotalKrw === undefined) {
     return <span className="block text-text-subtle" aria-label="원화 금액 확인 중">—</span>;
   }
@@ -104,7 +104,7 @@ export function ExpenseKrwAmount({ total, original }: { total?: Amount; original
   return (
     <span className="inline-flex max-w-full items-center gap-1 align-middle tabular-nums">
       <span className="min-w-0 break-all">{amount}</span>
-      {needsNote && (
+      {showNote && needsNote && (
         <ExpenseConversionNote explanation={explanation} />
       )}
     </span>

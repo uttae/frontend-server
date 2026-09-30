@@ -39,7 +39,7 @@ export function ExpenseBudgetSummary() {
           </p>
         )}
         <p aria-busy={krwSummary.isPending} className="break-all text-[32px] leading-[42px] font-bold text-primary tabular-nums">
-          <ExpenseKrwAmount total={reference} />
+          <ExpenseKrwAmount total={reference} showNote />
         </p>
         {reference && (
           <>
