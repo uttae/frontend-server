@@ -1,10 +1,13 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { useSheetDrag } from "@/components/mobile/useSheetDrag";
+import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 
 import { cn } from "@/lib/utils";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { ExpenseCurrencyPicker } from "./ExpenseCurrencyPicker";
 import { ExpenseAmountInput } from "./ExpenseAmountInput";
-import { X } from "lucide-react";
+import { CloseIcon } from "@/assets/icons";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ExpenseApiError,
@@ -13,6 +16,7 @@ import {
   type Expense,
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
+import { expenseTitle, normalizeExpenseName, expenseNameError } from "@/lib/expenses/expense-name";
 import { validateExpense } from "@/lib/expenses/expense-policy";
 import { preferredExpenseCurrency, rememberExpenseCurrency } from "@/lib/expenses/expense-currency-preference";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
@@ -48,6 +52,7 @@ function ExpenseEditorConflict({
   let message = "비용이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
   if (pending) message = "최신 비용 확인 중…";
   else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 저장은 중단돼요.";
+  const unavailable = pending ? <LoadingIndicator label={message} /> : <p>{message}</p>;
   return (
     <div
       role="alert"
@@ -87,7 +92,7 @@ function ExpenseEditorConflict({
           )}
         </>
       ) : (
-        <p>{message}</p>
+        unavailable
       )}
       {conflict.failed && (
         <button
@@ -185,12 +190,14 @@ export function ExpenseEditor({
   const submitLock = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const heading = useRef<HTMLHeadingElement>(null);
   const errorId = useId();
   const places = useSchedulePlanPlaces(context.roomId, body.scheduleId);
   useEffect(() => {
     const element = dialog.current;
     const opener = element?.ownerDocument.activeElement;
     element?.showModal();
+    heading.current?.focus({ preventScroll: true });
     return () => {
       element?.close();
       if (opener && opener instanceof HTMLElement && opener.isConnected)
@@ -198,6 +205,7 @@ export function ExpenseEditor({
     };
   }, []);
   const pending = saving || context.busy;
+  const sheetDrag = useSheetDrag(onClose, pending);
   const currentTarget = context.list?.data?.find(
     (e) => e.id === original?.id,
   );
@@ -252,6 +260,8 @@ export function ExpenseEditor({
       reportError("멤버·통화·일차 정보를 확인한 뒤 다시 시도해 주세요.");
       return;
     }
+    const nameError = expenseNameError(body.name);
+    if (nameError) { reportError(nameError); return; }
     const category = body.category;
     if (!isExpenseCategory(category)) {
       reportError("카테고리를 선택해 주세요.");
@@ -288,6 +298,7 @@ export function ExpenseEditor({
       totalAmount: body.totalAmount,
       currency: body.currency,
       category,
+      ...(original && body.name === original.name ? {} : { name: normalizeExpenseName(body.name) }),
       memo: body.memo,
       payerUserIds: body.payerUserIds,
       participantUserIds: body.participantUserIds,
@@ -309,39 +320,55 @@ export function ExpenseEditor({
       setSaving(false);
     }
   }
+  const memberFallback = context.memberStatus === "error"
+              ? <output className="block text-body-s-regular mobile:text-body-xs-regular text-dark-gray">멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.</output>
+              : <LoadingIndicator label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />;
   return (
     <dialog
       ref={dialog}
+      style={sheetDrag.surfaceStyle}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:mb-0 mobile:max-h-[60dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden mobile:max-h-[60dvh]"
+        className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]"
         aria-describedby={error ? errorId : undefined}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
-          <h2 id={titleId} className="text-title-m mobile:text-title-s font-bold">
+        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-5 mobile:pt-5">
+        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-3 max-sm:pb-3">
+          <div>
+          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-6 max-sm:text-[20px] max-sm:leading-6 font-bold">
             {original ? "비용 수정" : "비용 추가"}
           </h2>
+          <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "이름과 결제 정보를 입력해주세요."}</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
             disabled={pending}
             aria-label="닫기"
-            className="flex size-10 items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex size-10 mobile:hidden max-sm:hidden items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <X size={18} aria-hidden="true" />
+            <CloseIcon size={24} aria-hidden="true" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 [scrollbar-gutter:stable] sm:p-6">
-        <fieldset disabled={pending} className="min-w-0 space-y-4">
-          <div className="grid min-w-0 grid-cols-1 @min-[440px]/expense-editor:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-2xl bg-gray-50 p-4">
+        </BottomSheetDragHandle>
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
+        <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
+          <label className="block text-[12px] leading-4">
+            <span>이름 (선택)</span>
+            <input name="name" aria-label="이름 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
+              placeholder="이름 없음"
+              value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
+          </label>
+          <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3 max-sm:grid-cols-[116px_minmax(0,1fr)] max-sm:gap-3 max-sm:p-3">
             <ExpenseCurrencyPicker
               value={body.currency}
               currencies={context.currencies.data ?? []}
@@ -351,8 +378,8 @@ export function ExpenseEditor({
                 change("currency", value);
               }}
             />
-            <label className="block min-w-0 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
-              <span className="block text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-5">금액</span>
+            <label className="block min-w-0 text-[12px] leading-4 font-medium">
+              <span className="block text-[12px] leading-4 font-medium">금액</span>
               <ExpenseAmountInput
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
@@ -362,14 +389,14 @@ export function ExpenseEditor({
             </label>
           </div>
           {!context.currencies.isSuccess && (
-            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+            <output className={context.currencies.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
               {context.currencies.isError
                 ? "통화 목록 조회에 실패했어요."
                 : "통화 목록을 불러오는 중…"}
-            </p>
+            </output>
           )}
           <div className="space-y-1">
-            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">일차 구분</p>
+            <p className="text-[12px] leading-4 font-medium">일차 구분</p>
             <ExpenseSelect
               label="일차 구분"
               disabled={pending}
@@ -400,7 +427,7 @@ export function ExpenseEditor({
           <div className="space-y-1">
             <p
               className={cn(
-                "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold",
+                "text-[12px] leading-4 font-medium",
                 body.expenseGroup === "PREPARATION" && "opacity-50",
               )}
             >
@@ -425,7 +452,7 @@ export function ExpenseEditor({
               }
             />
             {body.expenseGroup === "TRIP_DAY" && !places.isSuccess && (
-              <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+              <p className={places.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
                 {places.isError
                   ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
                   : "장소 확인 중…"}
@@ -433,7 +460,7 @@ export function ExpenseEditor({
             )}
           </div>
           <div className="space-y-1">
-            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">카테고리</p>
+            <p className="text-[12px] leading-4 font-medium">카테고리</p>
             <ExpenseSelect
               name="category"
               label="카테고리"
@@ -447,7 +474,7 @@ export function ExpenseEditor({
             />
           </div>
           {context.memberStatus === "success" ? (
-            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-2 gap-4 mobile:gap-3 max-sm:gap-3">
               <ExpenseRolePicker
                 title="결제자"
                 members={context.members}
@@ -466,22 +493,18 @@ export function ExpenseEditor({
               />
             </div>
           ) : (
-            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-              {context.memberStatus === "error"
-                ? "멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요."
-                : "멤버 확인 중… 기존 선택은 유지돼요."}
-            </p>
+            memberFallback
           )}
-          <label className="block text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
+          <label className="block text-[12px] leading-4 font-medium">
             메모 (선택)
             <textarea
-              className={expenseInputClass}
+              className={`${expenseInputClass} min-h-24 resize-none text-[16px]`}
               rows={3}
               maxLength={1000}
               value={body.memo ?? ""}
               onChange={(e) => change("memo", e.target.value)}
             />
-            <span className="text-body-xs-regular text-dark-gray">
+            <span className="block text-right text-body-xs-regular text-dark-gray">
               {body.memo?.length ?? 0}/1000
             </span>
           </label>
@@ -523,7 +546,7 @@ export function ExpenseEditor({
           </p>
         )}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 sm:px-6">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:h-12 [&>button]:text-[16px] [&>button]:leading-[22px] [&>button]:font-bold mobile:border-0 mobile:pt-3 mobile:pb-5 max-sm:border-0 max-sm:pt-3 max-sm:pb-5 [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
           <button
             type="button"
             className={expenseButtonClass}

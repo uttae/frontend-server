@@ -255,3 +255,49 @@ it.each(["members", "currencies"])(
     }
   },
 );
+
+it("revalidates a ready room in the background and coalesces overlapping tab-return events", async () => {
+ const client = new QueryClient();
+ const recovery = getExpenseRecovery(client, "r");
+ await recovery.refresh("all");
+ api.read.mockClear();
+ let finish!: (value: never[]) => void;
+ api.read.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const first = recovery.refresh("visible");
+ try {
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+  expect(recovery.getSnapshot()).toBe("refreshing");
+  const second = recovery.refresh("visible");
+  expect(second).toBe(first);
+  finish([]);
+  await Promise.all([first, second]);
+  expect(api.read).toHaveBeenCalledTimes(6);
+  expect(recovery.getSnapshot()).toBe("ready");
+ } finally {
+  finish?.([]);
+  await first.catch(() => {});
+  client.clear();
+ }
+});
+
+it("promotes background revalidation to pending for a real expense change", async () => {
+ const client = new QueryClient();
+ const recovery = getExpenseRecovery(client, "r");
+ await recovery.refresh("all");
+ let finish!: (value: never[]) => void;
+ api.read.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const first = recovery.refresh("visible");
+ try {
+  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+  expect(recovery.getSnapshot()).toBe("refreshing");
+  const change = recovery.message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }));
+  expect(recovery.getSnapshot()).toBe("pending");
+  finish([]);
+  await Promise.all([first, change]);
+  expect(recovery.getSnapshot()).toBe("ready");
+ } finally {
+  finish?.([]);
+  await first.catch(() => {});
+  client.clear();
+ }
+});

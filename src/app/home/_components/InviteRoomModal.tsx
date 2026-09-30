@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import { AddMemberPanel } from "@/app/(main)/member-settings/_components/AddMemberPanel";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
@@ -16,7 +18,7 @@ export function InviteRoomModal({ room, onClose }: {
     <SettingsDialog title="여행 초대" onClose={onClose}>
       <p className="mb-5 break-words text-body-m-emphasis text-text-subtle">{room.title}</p>
       {isLoading ? (
-        <p role="status" className="py-8 text-center text-body-m-regular text-text-subtle">초대 링크를 불러오는 중…</p>
+        <LoadingIndicator label="초대 링크 불러오는 중" className="w-full py-8" />
       ) : isError || !data ? (
         <div role="alert" className="space-y-4 py-6 text-center">
           <p className="text-body-m-regular text-text-subtle">방 정보를 불러오지 못했어요.</p>

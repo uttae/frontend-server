@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { isPackingPath } from "@/lib/room-context-path";
+import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -39,7 +40,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const { chatState, closeChat } = useChat();
   const previousRoute = useRef(pathname);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (previousRoute.current !== pathname) closeChat();
     previousRoute.current = pathname;
   }, [pathname, closeChat]);
@@ -47,6 +48,14 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
 
   const isPackingRoute = isPackingPath(pathname);
   const showFullWidthPacking = isPackingRoute && !showDesktopChat;
+  const { roomId } = useCurrentRoomId();
+  const showDesktopMap = !isMobileDevice && (pathname !== "/cost" || showDesktopChat) && !showFullWidthPacking;
+  const [mapMountedRoom, setMapMountedRoom] = useState<string | null>(null);
+  if (showDesktopMap && roomId && mapMountedRoom !== roomId) {
+    setMapMountedRoom(roomId);
+  }
+  // Full-width tabs hide an existing map; direct entry does not create one.
+  const keepDesktopMap = !isMobileDevice && roomId && (showDesktopMap || mapMountedRoom === roomId);
   const isPlanRoute = pathname === "/plan" || pathname.startsWith("/plan/");
   const mobilePlanPanel =
     isMobileDevice && isPlanRoute
@@ -85,7 +94,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           <MobileMainTabs />
         </LeftSection>
 
-        {!isMobileDevice && !showFullWidthPacking ? <MapWithDetailPanel /> : null}
+        {keepDesktopMap ? <MapWithDetailPanel key={roomId} hidden={!showDesktopMap} /> : null}
         {!isMobileDevice && chatState === "minimized" ? <ChatPanel /> : null}
       </div>
     </main>

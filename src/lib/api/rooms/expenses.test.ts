@@ -243,3 +243,18 @@ it("PUTs only integer KRW string and reviewed version, preserving BUDGET_CONFLIC
     }),
   ).rejects.toMatchObject({ status: 409, code: "BUDGET_CONFLICT" });
 });
+
+it("preserves name omission, explicit null, raw name and independent memo in PATCH", async () => {
+  fetcher.mockImplementation(() => Promise.resolve(new Response("{}")));
+  for (const fields of [{ memo: "" }, { name: null }, { name: "  점심  ", memo: "메모" }]) {
+    await patchExpense("r", 1, { ...fields, expectedVersion: 3 });
+    expect(JSON.parse(fetcher.mock.lastCall![1].body)).toEqual({ ...fields, expectedVersion: 3 });
+  }
+});
+it("sends AND filters without changing the returned whole-room and filtered totals", async () => {
+  const { getExpenseKrwSummary } = await import("./expenses");
+  const response = { convertedTotalKrw: "508", filtered: { convertedTotalKrw: "501" } };
+  fetcher.mockResolvedValue(new Response(JSON.stringify(response)));
+  expect(await getExpenseKrwSummary("r", { expenseGroup: "TRIP_DAY", scheduleId: 10, category: "FOOD", payerUserId: 2 })).toEqual(response);
+  expect(fetcher.mock.lastCall![0]).toBe("http://fixture/rooms/r/expenses/summary/krw?expenseGroup=TRIP_DAY&scheduleId=10&category=FOOD&payerUserId=2");
+});

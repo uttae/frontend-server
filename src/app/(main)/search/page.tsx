@@ -9,6 +9,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { SearchResultCard } from "@/components/place";
 import { SetSectionMaxWidth } from "@/contexts/SectionWidthContext";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
@@ -227,10 +228,7 @@ export default function SearchPage() {
       {/* 결과 */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {showSearchLoading && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 text-dark-gray">
-            <Loader2 className="h-6 w-6 animate-spin text-primary-strong" />
-            <span className="text-body-m-regular mobile:text-body-s-regular">장소를 검색하는 중...</span>
-          </div>
+          <LoadingIndicator label="장소 검색 중" size={24} className="flex flex-1 text-primary-strong" />
         )}
 
         {hasActiveSearch && isError && (

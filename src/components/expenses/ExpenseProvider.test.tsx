@@ -28,7 +28,9 @@ const mocks = vi.hoisted(() => ({
     currency: "KRW",
     version: 0,
   })),
-  krw: vi.fn(async () => ({
+  krw: vi.fn<(...args: unknown[]) => Promise<ExpenseKrwSummary>>(async () => ({
+    expenses: [], categories: [], days: [], payers: [],
+    filtered: { originalTotals: [], convertedTotalKrw: "0", isComplete: true, missingCurrencies: [] },
     originalTotals: [],
     convertedTotalKrw: "0",
     rateDate: null,
@@ -103,7 +105,7 @@ it("does not treat partial STOMP member cache as a successful full member query"
   expect(renderer.root.findByType("p").children.join("")).toBe("pending:false");
 });
 
-import type { Expense } from "@/lib/api/rooms/expenses";
+import type { Expense, ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { expenseKeys } from "@/lib/expenses/expense-queries";
 let context: ReturnType<typeof useExpenseContext>;
 function MutationProbe() {
@@ -125,7 +127,7 @@ const record: Expense = {
   memo: "old",
   payerUserIds: [1],
   participantUserIds: [1],
-  createdAt: "",
+  name: null, createdAt: "",
   updatedAt: "",
 };
 async function mountMutations() {
@@ -659,10 +661,16 @@ it("cost page hides healthy refresh and retries failed reads through the same pr
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
   expect(JSON.stringify(renderer.toJSON())).toContain("list offline");
   mocks.list.mockResolvedValue([{ ...record, memo: "recovered expense" }]);
+  const previousKrw = mocks.krw.getMockImplementation()!;
+  mocks.krw.mockImplementation(async () => ({
+    ...await previousKrw(),
+    expenses: [{ expense: { ...record, memo: "recovered expense" }, convertedAmountKrw: "100", missingCurrencies: [], isComplete: true }],
+  }));
   const retry = renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "조회 다시 시도");
   expect(retry).toBeDefined();
   await act(async () => { retry!.props.onClick(); await new Promise(resolve => setTimeout(resolve, 20)); });
   expect(JSON.stringify(renderer.toJSON())).toContain("recovered expense");
+  mocks.krw.mockImplementation(previousKrw);
   expect(renderer.root.findAllByType("button").filter(b => /새로고침|조회 다시 시도/.test(b.props["aria-label"] ?? ""))).toHaveLength(0);
 });
 
@@ -718,11 +726,11 @@ async function mountPlaceExpenseButton(records: Expense[]) {
 }
 
 it("opens a place cost list instead of editing only the latest linked expense", async () => {
-  const latest = { ...record, id: 12, scheduleId: 2, scheduleItemId: 3, totalAmount: "12345", createdAt: "2026-09-16T02:00:00Z" };
+  const latest = { ...record, id: 12, scheduleId: 2, scheduleItemId: 3, totalAmount: "12345", name: null, createdAt: "2026-09-16T02:00:00Z" };
   await mountPlaceExpenseButton([
     latest,
-    { ...latest, id: 99, createdAt: "2026-09-15T02:00:00Z", updatedAt: "2026-09-17T02:00:00Z" },
-    { ...latest, id: 100, scheduleItemId: 4, createdAt: "2026-09-18T02:00:00Z" },
+    { ...latest, id: 99, name: null, createdAt: "2026-09-15T02:00:00Z", updatedAt: "2026-09-17T02:00:00Z" },
+    { ...latest, id: 100, scheduleItemId: 4, name: null, createdAt: "2026-09-18T02:00:00Z" },
   ]);
   await act(async () => {
     client.setQueryData(scheduleItemsQueryKey("r", 2), [{ itemId: 3, title: "경복궁" }]);
@@ -781,4 +789,88 @@ it("returns to add mode after the last linked expense is deleted", async () => {
   expect(button.children.join("")).toContain("비용 추가");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2, scheduleItemId: 3 });
+});
+
+it("isolates AND-filtered KRW snapshots and refreshes them on expense invalidation without replacing the whole room", async () => {
+  await mountMutations();
+  const filters = { expenseGroup: "TRIP_DAY" as const, scheduleId: 10, category: "FOOD" as const };
+  await act(async () => context.setKrwFilters(filters));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(mocks.krw).toHaveBeenCalledWith("r", filters);
+  expect(client.getQueryData(expenseKeys.krwSummary("r"))).toBeDefined();
+  expect(client.getQueryData([...expenseKeys.krwSummary("r"), filters])).toBeDefined();
+  mocks.krw.mockClear();
+  const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
+  await act(async () => getExpenseRecovery(client, "r").message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" })));
+  expect(mocks.krw).toHaveBeenCalledWith("r", filters);
+  expect(mocks.krw).toHaveBeenCalledWith("r");
+});
+
+it("keeps whole-room state ready while a new filter snapshot loads", async () => {
+ await mountMutations();
+ const whole = context.krwSummary.data!;
+ let finish!: (value: ExpenseKrwSummary) => void;
+ mocks.krw.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const listReads = mocks.list.mock.calls.length;
+ const budgetReads = mocks.budget.mock.calls.length;
+ const summaryReads = mocks.summary.mock.calls.length;
+ try {
+  await act(async () => context.setKrwFilters({ expenseGroup: "TRIP_DAY", scheduleId: 10 }));
+  expect(context.filteredKrwSummary.isFetching).toBe(true);
+  expect(context.syncStatus).toBe("ready");
+  expect(context.krwSummary.data).toBe(whole);
+  expect(mocks.list).toHaveBeenCalledTimes(listReads);
+  expect(mocks.budget).toHaveBeenCalledTimes(budgetReads);
+  expect(mocks.summary).toHaveBeenCalledTimes(summaryReads);
+ } finally {
+  await act(async () => finish(whole));
+ }
+});
+
+it("returns to all expenses without refetching or blanking the whole-room summary", async () => {
+ await mountMutations();
+ await act(async () => { context.setKrwFilters({ expenseGroup: "TRIP_DAY", scheduleId: 10 }); });
+ await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+ const whole = context.krwSummary.data!;
+ const previous = mocks.krw.getMockImplementation()!;
+ let finish: ((value: ExpenseKrwSummary) => void) | undefined;
+ mocks.krw.mockImplementation((...args) => args.length === 1 ? new Promise(resolve => { finish = resolve; }) : previous(...args));
+ try {
+  await act(async () => context.setKrwFilters({}));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(finish).toBeUndefined();
+  expect(context.krwSummary.isFetching).toBe(false);
+  expect(context.syncStatus).toBe("ready");
+  expect(context.krwSummary.data).toBe(whole);
+ } finally {
+  mocks.krw.mockImplementation(previous);
+  if (finish) await act(async () => finish!(whole));
+ }
+});
+
+it("never reports a foreground load during successful tab-return revalidation", async () => {
+ await mountMutations();
+ const statuses: string[] = [];
+ function StatusProbe() {
+  const value = useExpenseContext();
+  useEffect(() => { statuses.push(value.syncStatus); }, [value.syncStatus]);
+  return null;
+ }
+ await act(async () => renderer.update(<QueryClientProvider client={client}><ExpenseProvider roomId="r"><MutationProbe /><StatusProbe /></ExpenseProvider></QueryClientProvider>));
+ const previous = context.krwSummary.data!;
+ let finish!: (value: ExpenseKrwSummary) => void;
+ mocks.krw.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
+ let work!: Promise<void>;
+ await act(async () => { work = getExpenseRecovery(client, "r").refresh("visible"); });
+ try {
+  expect(context.syncStatus).toBe("refreshing");
+  expect(context.krwSummary.data).toBe(previous);
+ } finally {
+  await act(async () => { finish(previous); await work; });
+ }
+ await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+ expect(statuses).toContain("refreshing");
+ expect(statuses).not.toContain("pending");
+ expect(context.syncStatus).toBe("ready");
 });

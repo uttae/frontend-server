@@ -226,7 +226,7 @@ const base = {
   participantUserIds: [1],
   id: 10,
   version: 0,
-  createdAt: "",
+  name: null, createdAt: "",
   updatedAt: "",
 };
 let renderer: ReactTestRenderer;
@@ -440,6 +440,7 @@ it.each([
         totalAmount: "100",
         currency: "KRW",
         category: "OTHER",
+        name: null,
         memo: "",
         payerUserIds: [1],
         participantUserIds: [1],
@@ -479,7 +480,7 @@ it("cannot re-add an unknown payer after deselection and keeps input on server r
 const categories = [
   ["FLIGHT", "항공"],
   ["ACCOMMODATION", "숙박"],
-  ["FOOD", "식사"],
+  ["FOOD", "식비"],
   ["TRANSPORT", "교통"],
   ["SHOPPING", "쇼핑"],
   ["SIGHTSEEING", "관광"],
@@ -824,5 +825,35 @@ it("reveals repeated validation errors without smooth scrolling when reduced mot
   }
   expect(scrollIntoView).toHaveBeenCalledTimes(2);
   expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest", behavior: "instant" });
+  expect(mocks.save).not.toHaveBeenCalled();
+});
+
+it("edits an optional independent name, uses the design name prompt, and explicitly clears it", async () => {
+  await mount(null);
+  await act(async () => categorySelect().props.onChange("FOOD"));
+  let name = renderer.root.findByProps({ name: "name" });
+  expect(name.props.placeholder).toBe("이름 없음");
+  expect(name.props.maxLength).toBe(100);
+  await act(async () => name.props.onChange({ target: { value: "점심" } }));
+  await completeNewExpense();
+  expect(mocks.save.mock.lastCall?.[0]).toMatchObject({ name: "점심", memo: "" });
+  await mount(null);
+  name = renderer.root.findByProps({ name: "name" });
+  await act(async () => name.props.onChange({ target: { value: " \u3000" } }));
+  await completeNewExpense();
+  expect(mocks.save.mock.lastCall?.[0].name).toBeNull();
+});
+
+it("omits an unchanged name on PATCH, clears explicitly, and rejects raw overlength before saving", async () => {
+  await mount({ ...base, name: "기존 이름" });
+  const submit = async () => act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
+  await submit();
+  expect(mocks.save.mock.lastCall?.[0]).not.toHaveProperty("name");
+  await act(async () => renderer.root.findByProps({ name: "name" }).props.onChange({ target: { value: "" } }));
+  await submit();
+  expect(mocks.save.mock.lastCall?.[0]).toMatchObject({ name: null, memo: base.memo });
+  mocks.save.mockClear();
+  await act(async () => renderer.root.findByProps({ name: "name" }).props.onChange({ target: { value: "😀".repeat(50) + " " } }));
+  await submit();
   expect(mocks.save).not.toHaveBeenCalled();
 });

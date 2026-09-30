@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { BrandLogo } from "@/components/BrandLogo";
 
 import { checkClientAuthenticated, setPendingInviteCode } from "@/lib/auth";
@@ -102,8 +103,7 @@ export default function JoinPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4">
       <BrandLogo variant="combination" size="M" alt="우때 로고" />
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
-      <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">입장 요청 중…</p>
+      <LoadingIndicator label="입장 요청 중" size={40} />
     </div>
   );
 }

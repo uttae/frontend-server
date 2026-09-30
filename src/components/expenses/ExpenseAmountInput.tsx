@@ -40,7 +40,7 @@ export function ExpenseAmountInput({
       ref={input}
       className={cn(
         expenseInputClass,
-        "block h-14 font-bold tabular-nums",
+        "block h-12 text-[16px] font-normal tabular-nums placeholder:text-text-subtle",
         inputProps.className,
       )}
       inputMode={inputProps.inputMode ?? "decimal"}

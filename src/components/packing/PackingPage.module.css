@@ -54,7 +54,8 @@
 .addItem:hover {color:var(--color-primary-default)}
 .detail {position:relative;display:flex;flex:0 0 440px;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--color-border-subtle);background:var(--color-fill-default)}
 .detail[hidden] {display:none}
-.detailScroll {display:flex;flex:1;flex-direction:column;gap:24px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:32px;scrollbar-width:thin}
+.detailScroll {display:flex;flex:1;flex-direction:column;gap:24px;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 32px 32px;scrollbar-width:thin}
+.detailDragHeader {padding:32px 32px 24px}
 .detailBackdrop,.sheetHandle {display:none}
 .detailHeader {display:flex;align-items:center;gap:12px;min-height:40px}
 .detailHeader h2 {min-width:0;flex:1;overflow-wrap:anywhere;font-size:24px;line-height:34px;font-weight:700}
@@ -114,6 +115,7 @@
   .detailBackdrop {position:fixed;z-index:190;inset:0;display:block;background:#00000059}
   .detail {position:fixed;z-index:200;right:0;bottom:0;left:0;width:100%;height:76.53dvh;max-height:calc(100dvh - 80px);border:0;border-radius:20px 20px 0 0;background:var(--color-fill-elevate, #fff)}
   .sheetHandle {display:block;flex:none;width:36px;height:4px;margin:20px auto 8px;border-radius:2px;background:var(--color-border-subtle)}
+  .detailDragHeader {padding:0 20px 20px;touch-action:none;user-select:none}
   .detailScroll {gap:20px;padding:0 20px 20px}
   .detailHeader {gap:8px;min-height:44px}
   .detailHeader .checkbox,.iconButton {width:44px;height:44px}
@@ -151,6 +153,7 @@
 :global(.is-mobile-device) .detailBackdrop {position:fixed;z-index:190;inset:0;display:block;background:#00000059}
 :global(.is-mobile-device) .detail {position:fixed;z-index:200;right:0;bottom:0;left:0;width:100%;height:76.53dvh;max-height:calc(100dvh - 80px);border:0;border-radius:20px 20px 0 0;background:var(--color-fill-elevate, #fff)}
 :global(.is-mobile-device) .sheetHandle {display:block;flex:none;width:36px;height:4px;margin:20px auto 8px;border-radius:2px;background:var(--color-border-subtle)}
+:global(.is-mobile-device) .detailDragHeader {padding:0 20px 20px;touch-action:none;user-select:none}
 :global(.is-mobile-device) .detailScroll {gap:20px;padding:0 20px 20px}
 :global(.is-mobile-device) .detailHeader {gap:8px;min-height:44px}
 :global(.is-mobile-device) .detailHeader .checkbox,:global(.is-mobile-device) .iconButton {width:44px;height:44px}
@@ -166,3 +169,12 @@
 :global(.is-mobile-device) .dialog {max-width:353px;padding:24px}
 :global(.is-mobile-device) .dialog h2 {font-size:20px;line-height:28px}
 :global(.is-mobile-device) .deleteCopy {font-size:14px;line-height:20px}
+
+/* Keep the initial loading layout aligned with the populated board. */
+.loadingAction {background:var(--color-fill-strong)}
+.loadingProgress {display:block;width:140px;height:20px;border-radius:4px;background:var(--color-fill-strong)}
+.loadingTitle {display:block;width:144px;height:20px;border-radius:4px;background:var(--color-fill-strong)}
+.loadingItem {display:flex;align-items:center;gap:12px;min-height:62px;padding:16px}
+.loadingCheck {flex:none;width:24px;height:24px;border-radius:4px;background:var(--color-fill-strong)}
+.loadingLine {width:55%;height:16px;border-radius:4px;background:var(--color-fill-strong)}
+.loadingAdd {height:40px}

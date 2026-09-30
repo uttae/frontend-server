@@ -14,6 +14,8 @@ type Props = {
   confirmLabel?: string;
   cancelLabel?: string;
   isPending?: boolean;
+  destructive?: boolean;
+  appearance?: "default" | "ledger";
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -24,6 +26,8 @@ export function ConfirmDialog({
   confirmLabel = "확인",
   cancelLabel = "취소",
   isPending = false,
+  destructive = false,
+  appearance = "default",
   onConfirm,
   onCancel,
 }: Props) {
@@ -41,16 +45,18 @@ export function ConfirmDialog({
       title={title}
       onClose={handleClose}
       size="compact"
+      appearance={appearance}
       stopPortalEventPropagation
     >
       {description ? (
-        <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
+        <p className={appearance === "ledger" ? "text-[14px] leading-5 text-text-subtle" : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"}>
           {description}
         </p>
       ) : null}
       <SettingsActionButtonRow className="mt-6">
         <SettingsActionButton
           variant="secondary"
+          className={appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : undefined}
           onClick={handleClose}
           disabled={isPending}
         >
@@ -58,6 +64,7 @@ export function ConfirmDialog({
         </SettingsActionButton>
         <SettingsActionButton
           variant="primary"
+          className={`${appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : ""} ${destructive ? "bg-status-negative" : ""}`}
           onClick={onConfirm}
           disabled={isPending}
         >

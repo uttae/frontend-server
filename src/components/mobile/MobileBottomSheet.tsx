@@ -4,6 +4,8 @@ import { useEffect, useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { CloseIcon, type IconProps } from "@/assets/icons";
+import { useSheetDrag } from "./useSheetDrag";
+import { BottomSheetDragHandle } from "./BottomSheetDragHandle";
 import { cn } from "@/lib/utils";
 
 type MobileBottomSheetProps = Readonly<{
@@ -20,7 +22,12 @@ type MobileBottomSheetProps = Readonly<{
 }>;
 
 /** 모바일 하단 시트 — 딤 배경, 핸들, 제목·닫기 줄로 구성된다 */
-export function MobileBottomSheet({
+export function MobileBottomSheet(props: MobileBottomSheetProps) {
+  if (!props.open || typeof document === "undefined") return null;
+  return <MobileBottomSheetContent {...props} />;
+}
+
+function MobileBottomSheetContent({
   open,
   onClose,
   title,
@@ -30,6 +37,7 @@ export function MobileBottomSheet({
   children,
 }: MobileBottomSheetProps) {
   const titleId = useId();
+  const drag = useSheetDrag(onClose, closeDisabled, null);
 
   useEffect(() => {
     if (!open) return;
@@ -53,13 +61,15 @@ export function MobileBottomSheet({
       />
       <dialog
         open
+        style={drag.surfaceStyle}
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative m-0 flex w-full max-h-[90dvh] max-w-none flex-col overflow-y-auto overscroll-contain rounded-t-[20px] border-0 bg-fill-elevate p-5 pb-[max(20px,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200",
+          "relative m-0 flex w-full max-h-[90dvh] max-w-none flex-col overflow-hidden rounded-t-[20px] border-0 bg-fill-elevate p-5 pb-[max(20px,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200",
           variant === "menu" ? "gap-2" : "gap-4",
         )}
       >
+        <BottomSheetDragHandle drag={drag} className={cn("touch-none select-none cursor-grab", variant === "menu" ? "space-y-2" : "space-y-4")}>
         <div aria-hidden className="flex shrink-0 justify-center">
           <span className="h-1 w-9 rounded-[2px] bg-border-subtle" />
         </div>
@@ -86,7 +96,8 @@ export function MobileBottomSheet({
         {subtitle ? (
           <p className="shrink-0 truncate text-caption-l-regular text-text-subtle">{subtitle}</p>
         ) : null}
-        {children}
+        </BottomSheetDragHandle>
+        <div className={cn("flex min-h-0 flex-col overflow-y-auto overscroll-contain", variant === "menu" ? "gap-2" : "gap-4")}>{children}</div>
       </dialog>
     </div>,
     document.body,

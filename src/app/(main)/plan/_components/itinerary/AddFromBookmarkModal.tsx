@@ -1,4 +1,8 @@
 "use client";
+import { useSheetDrag } from "@/components/mobile/useSheetDrag";
+import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
 import { useQueries } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -139,6 +143,7 @@ export function AddFromBookmarkModal({
     useCreateScheduleItem();
 
   const busy = isCreatingItem || addingGooglePlaceId != null;
+  const sheetDrag = useSheetDrag(onClose, busy, "(max-width: 767px)");
 
   const handleAddPlace = useCallback(
     async (googlePlaceId: string) => {
@@ -193,6 +198,7 @@ export function AddFromBookmarkModal({
       }}
     >
       <div
+        style={sheetDrag.surfaceStyle}
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-from-bookmark-modal-title"
@@ -205,6 +211,7 @@ export function AddFromBookmarkModal({
           "pb-[max(env(safe-area-inset-bottom,0px),12px)]",
         )}
       >
+        <BottomSheetDragHandle drag={sheetDrag} className="max-md:touch-none max-md:select-none max-md:cursor-grab">
         <div
           aria-hidden
           className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-black/15 md:hidden"
@@ -222,10 +229,9 @@ export function AddFromBookmarkModal({
           </p>
         </div>
 
+        </BottomSheetDragHandle>
         {categoriesLoading ? (
-          <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-            불러오는 중…
-          </p>
+          <div className="px-5 py-6 text-center"><LoadingIndicator label="북마크 불러오는 중" /></div>
         ) : categoriesError ? (
           <div className="space-y-2 px-5 py-6 text-center">
             <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
@@ -280,9 +286,7 @@ export function AddFromBookmarkModal({
 
             <div className="min-h-0 flex-1 overflow-y-auto border-t border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent]">
               {bookmarksLoading ? (
-                <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-                  장소 목록을 불러오는 중…
-                </p>
+                <PlanLoadingSkeleton places className="px-5" />
               ) : bookmarksError ? (
                 <div className="space-y-2 px-5 py-6 text-center">
                   <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
@@ -299,9 +303,7 @@ export function AddFromBookmarkModal({
                   </button>
                 </div>
               ) : cardsLoading && bookmarkPlaces.length === 0 ? (
-                <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-                  장소 정보를 불러오는 중…
-                </p>
+                <PlanLoadingSkeleton places className="px-5" />
               ) : bookmarkPlaces.length === 0 ? (
                 <p className="px-5 py-8 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
                   담긴 장소가 없습니다.

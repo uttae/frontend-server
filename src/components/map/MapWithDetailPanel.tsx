@@ -13,8 +13,10 @@ import { MobileMapSearch } from "./MobileMapSearch";
 
 export function MapWithDetailPanel({
   mobileInline = false,
+  hidden = false,
 }: {
   mobileInline?: boolean;
+  hidden?: boolean;
 }) {
   const { selectedPlace, setSelectedPlace, onBack } = useSelectedPlace();
 
@@ -29,6 +31,10 @@ export function MapWithDetailPanel({
   return (
     <section
       ref={setMapSectionRef}
+      hidden={hidden}
+      inert={hidden}
+      aria-hidden={hidden || undefined}
+      style={hidden ? { display: "none" } : undefined}
       className={cn(
         "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden",
         mobileInline

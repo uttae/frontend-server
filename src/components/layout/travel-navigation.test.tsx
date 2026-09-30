@@ -14,7 +14,7 @@ vi.mock("@/hooks/useSessionPromptVisible", () => ({ useSessionPromptVisible: () 
 vi.mock("./HeaderBar", () => ({ default: ({ mobileBackHref }: { mobileBackHref?: string }) => <header data-mobile-back-href={mobileBackHref} /> }));
 vi.mock("./LeftSection", () => ({ default: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 // External map/chat engines are boundaries; assertions exercise chrome selection and containment.
-vi.mock("@/components/map", () => ({ MapWithDetailPanel: () => <div data-map /> }));
+vi.mock("@/components/map", () => ({ MapWithDetailPanel: ({ hidden }: { hidden?: boolean }) => <div data-map hidden={hidden} /> }));
 vi.mock("@/components/chat", () => ({ ChatPanel: ({ inline }: { inline?: boolean }) => <div data-chat data-inline={inline ? "true" : "false"} /> }));
 import { MainLayoutChrome } from "./MainLayoutChrome";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
@@ -42,7 +42,7 @@ it("opens the current room packing list from the desktop sidebar", async () => {
   state.pathname = `/packing/${state.roomId}`;
   await render();
   expect(active().map((item) => item.getAttribute("aria-label"))).toEqual(["준비물"]);
-  expect(host.querySelector("[data-map]")).toBeNull();
+  expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
 });
 
 it("switches between expenses and packing inside the mobile travel tools tab", async () => {
@@ -120,7 +120,7 @@ it("mobile uses the four Figma destinations, with travel tools opening expenses"
   state.query = "view=chat"; await render();
   expect(active()).toEqual([items()[3]]);
   expect(host.querySelectorAll("[data-chat]")).toHaveLength(1);
-  expect(host.querySelector("[data-map]")).toBeNull();
+  expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
 });
 
 it("shows unread messages on the mobile chat tab", async () => {
@@ -197,7 +197,7 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
   expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "북마크", "여행 도구", "채팅"] : ["일정", "검색", "북마크", "가계부", "준비물", "채팅", "멤버"]);
   expect(active().map(item => item.getAttribute("aria-label"))).toEqual([mobile ? "여행 도구" : "준비물"]);
   expect(host.querySelector(`a[href="/packing/${state.roomId}"]`)).not.toBeNull();
-  expect(host.querySelector("[data-map]")).toBeNull();
+  expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
   expect(host.querySelector("[data-main-content-scroll]")?.className).toContain("overflow-hidden");
   expect(host.querySelector("[data-main-content-scroll]")?.className).not.toContain("overflow-y-auto");
   if (!mobile) {
@@ -209,13 +209,52 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
     await act(async () => useChatPanelStore.getState().minimizeChat());
     expect(host.querySelector("article")).not.toBeNull();
     expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
-    expect(host.querySelector("[data-map]")).toBeNull();
+    expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
     await act(async () => useChatPanelStore.getState().closeChat());
     expect(host.querySelector("article")).not.toBeNull();
-    expect(host.querySelector("[data-map]")).toBeNull();
+    expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
     expect(active().map(item => item.getAttribute("aria-label"))).toEqual(["준비물"]);
   } else {
     expect(host.querySelector("aside")).toBeNull();
     expect(host.querySelector("[data-chat]")).toBeNull();
   }
+});
+
+it('keeps chat visible until another route commits, without revealing the old packing page', async () => {
+ state.pathname=`/packing/${state.roomId}`;
+ await render();
+ await act(async()=>items()[5].click());
+ await act(async()=>items()[6].click());
+ expect(host.querySelector('article')).toBeNull();
+ expect(host.querySelector('[data-chat]')).not.toBeNull();
+ state.pathname='/member-settings';
+ await render();
+ expect(host.querySelector('[data-chat]')).toBeNull();
+ expect(host.querySelector('article')).not.toBeNull();
+ expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['멤버']);
+});
+it('immediately restores packing when selecting the original tab from chat', async () => {
+ state.pathname=`/packing/${state.roomId}`;
+ await render();
+ await act(async()=>items()[5].click());
+ await act(async()=>items()[4].click());
+ expect(host.querySelector('[data-chat]')).toBeNull();
+ expect(host.querySelector('article')).not.toBeNull();
+});
+
+it('creates the desktop map lazily and preserves the same map through full-width tabs', async () => {
+ state.pathname='/cost'; await render();
+ expect(host.querySelector('[data-map]')).toBeNull();
+ state.pathname=`/packing/${state.roomId}`; await render();
+ expect(host.querySelector('[data-map]')).toBeNull();
+ state.pathname='/plan/room'; await render();
+ const map=host.querySelector<HTMLElement>('[data-map]')!;
+ expect(map).not.toBeNull();
+ for(const pathname of ['/cost',`/packing/${state.roomId}`,'/plan/room']) {
+  state.pathname=pathname; await render();
+  expect(host.querySelector('[data-map]')).toBe(map);
+  expect(map.hidden).toBe(pathname!=='/plan/room');
+ }
+ state.roomId='another-room'; await render();
+ expect(host.querySelector('[data-map]')).not.toBe(map);
 });

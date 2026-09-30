@@ -31,6 +31,7 @@ import type { BookmarkFolder } from "@/types/bookmark";
 import { useBookmarkFolders } from "../context";
 import { bookmarkFolderPath } from "../routes";
 import { AddBookmarkModal } from "./AddBookmarkModal";
+import { BookmarkListSkeleton } from "./BookmarkListSkeleton";
 import { FolderRibbonIcon } from "./FolderRibbonIcon";
 
 export function BookmarkFoldersView() {
@@ -190,7 +191,7 @@ export function BookmarkFoldersView() {
     <button
       type="button"
       onClick={openCreate}
-      disabled={isCreating || isUpdating}
+      disabled={isPending || isCreating || isUpdating}
       className={cn(
         "flex w-fit shrink-0 cursor-pointer items-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
         pageToolbarButtonCompactGapClass,
@@ -213,10 +214,8 @@ export function BookmarkFoldersView() {
   if (isPending) {
     return (
       <div className="space-y-2.5">
-        <MainPageHeader title="북마크" />
-        <div className="py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-          불러오는 중…
-        </div>
+        <MainPageHeader title="북마크" action={createAction} />
+        <BookmarkListSkeleton />
       </div>
     );
   }

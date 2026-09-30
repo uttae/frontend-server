@@ -5,10 +5,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import type { PlanPlace } from "@/lib/plan/types";
 
-export function ExpensePlaceLabel({ roomId, scheduleId, itemId }: Readonly<{
+export function ExpensePlaceLabel({ roomId, scheduleId, itemId, showIcon = true }: Readonly<{
   roomId: string;
   scheduleId: number;
   itemId: number;
+  showIcon?: boolean;
 }>) {
   const client = useQueryClient();
   const subscribe = useCallback(
@@ -25,7 +26,7 @@ export function ExpensePlaceLabel({ roomId, scheduleId, itemId }: Readonly<{
   const label = useSyncExternalStore(subscribe, readName, () => "확인되지 않음");
   return (
     <span title={label} className="inline-flex min-w-0 max-w-full items-center gap-1 text-body-xs-regular font-normal text-dark-gray">
-      <MapPin size={14} className="shrink-0" aria-hidden="true" />
+      {showIcon && <MapPin size={14} className="shrink-0" aria-hidden="true" />}
       <span className="truncate">{label}</span>
     </span>
   );

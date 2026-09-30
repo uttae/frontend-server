@@ -29,6 +29,7 @@ export function MainContentScrollArea({
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchPage = isSearchPath(pathname);
+  const ledgerPage = pathname === "/cost" && !fill;
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
@@ -40,7 +41,8 @@ export function MainContentScrollArea({
       data-main-content-scroll
       className={cn(
         "min-h-0 min-w-0 flex-1",
-        !fill && "pt-2.5",
+        !fill && !ledgerPage && "pt-2.5",
+        ledgerPage && "bg-fill-subtle mobile:bg-fill max-sm:bg-fill",
         fill
           ? "flex flex-col overflow-hidden"
           : searchPage
@@ -55,7 +57,8 @@ export function MainContentScrollArea({
         className={cn(
           "min-w-0",
           (fill || searchPage) && "flex min-h-0 flex-1 flex-col",
-          !fill && !searchPage && MAIN_PAGE_INLINE_PADDING_CLASS,
+          !fill && !searchPage && !ledgerPage && MAIN_PAGE_INLINE_PADDING_CLASS,
+          ledgerPage && "p-8 mobile:p-5 max-sm:p-5",
         )}
       >
         {children}
