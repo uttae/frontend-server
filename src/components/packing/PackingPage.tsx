@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { usePackingList } from "@/hooks/usePackingList";
+import { useSheetDrag } from "@/components/mobile/useSheetDrag";
+import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { normalizePackingMemo, normalizePackingName } from "@/lib/packing/validation";
@@ -121,6 +123,7 @@ function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Con
 }
 
 function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem|null;context:Context;onClose:()=>void;onRename:()=>void;onDelete:()=>void;open:boolean}) {
+  const sheetDrag = useSheetDrag(onClose, !open || context.state.status === "writing", "(max-width: 700px)");
   useEffect(()=>{
     if(!open) return;
     function handleEscape(event:KeyboardEvent) {
@@ -133,18 +136,20 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
   },[open,onClose]);
   return <>
     {open && <button type="button" tabIndex={-1} className={styles.detailBackdrop} aria-label="준비물 상세 닫기" onClick={onClose}/>}
-    <aside className={styles.detail} hidden={!open} data-open={open} aria-label="준비물 상세">
-      <div className={styles.sheetHandle} aria-hidden="true"/>
-      <div className={styles.detailScroll}>
-        {item && <>
-          <div className={styles.detailHeader}>
+    <aside className={styles.detail} style={sheetDrag.surfaceStyle} hidden={!open} data-open={open} aria-label="준비물 상세">
+      <BottomSheetDragHandle drag={sheetDrag} className={styles.detailDragHeader}>
+        <div className={styles.sheetHandle} aria-hidden="true"/>
+        {item && <div className={styles.detailHeader}>
             <PackingCheckbox item={item} context={context} detail/>
             <h2 aria-label="선택한 준비물 이름">{item.name}</h2>
             <div className={styles.detailActions}>
               <button type="button" className={styles.iconButton} aria-label={`준비물 이름 수정: ${item.name}`} onClick={onRename}><PackingIcon name="edit" size={20}/></button>
               <button type="button" className={styles.iconButton} aria-label={`준비물 삭제: ${item.name}`} onClick={onDelete}><PackingIcon name="delete" size={20}/></button>
             </div>
-          </div>
+        </div>}
+      </BottomSheetDragHandle>
+      <div className={styles.detailScroll}>
+        {item && <>
           <MemoPanel key={item.id} item={item} context={context} open={open} onComplete={onClose}/>
           {item.tips.length>0 && <section className={styles.tips}>
             <h3 className={styles.sectionTitle}>우때의 여행 팁 <span aria-hidden="true">💡</span></h3>
