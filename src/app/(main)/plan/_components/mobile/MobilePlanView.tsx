@@ -1,4 +1,5 @@
 "use client";
+import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
 import { useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
@@ -130,7 +131,7 @@ export function MobilePlanView({
 
   let scheduleContent: ReactNode;
   if (isLoading) {
-    scheduleContent = <p className="py-8 text-center text-body-s-regular text-text-subtle">일정을 불러오는 중…</p>;
+    scheduleContent = <PlanLoadingSkeleton />;
   } else if (isError) {
     scheduleContent = (
       <p className="px-4 py-6 text-center text-body-s-regular text-status-negative">

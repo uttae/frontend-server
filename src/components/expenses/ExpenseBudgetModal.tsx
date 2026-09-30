@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import { useCallback, useId, useRef, useState } from "react";
 import {
@@ -176,7 +177,7 @@ export function ExpenseBudgetModal({
               <p>
                 {conflict.failed
                   ? "최신 예산 조회에 실패했어요. 다시 조회한 뒤 확인해 주세요."
-                  : "최신 예산 확인 중…"}
+                  : <LoadingIndicator label="최신 예산 확인 중" />}
               </p>
             )}
             {conflict.failed && (

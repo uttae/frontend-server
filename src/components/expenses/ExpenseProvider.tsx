@@ -367,7 +367,7 @@ export function ExpenseEntryButton({
   const scoped = expensesInScope(context.list.data ?? [], scope);
   const totals = totalsByCurrency(scoped);
   const summaryLabel = !context.list.isSuccess
-    ? context.list.isPending ? "비용 확인 중…" : "비용 보기"
+    ? "비용 보기"
     : scoped.length
       ? `비용 ${scoped.length}건 · ${totals.map(({ currency, amount }) => `${formatExpenseAmount(amount)} ${currency}`).join(" · ")}`
       : label;

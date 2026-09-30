@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -114,7 +115,7 @@ export function ExpenseScopePanel({
 
           <h3 className="mt-4 text-body-s-emphasis font-semibold text-dark-gray">내역</h3>
           {isPending && !scoped.length ? (
-            <p role="status" className="py-5 text-body-s-regular text-dark-gray">비용을 불러오는 중…</p>
+            <LoadingIndicator label="비용 불러오는 중" className="flex w-full py-5" />
           ) : isError && !scoped.length ? (
             <div className="space-y-3 py-5 text-body-s-regular text-dark-gray">
               <p role="alert">비용 조회에 실패했어요.</p>

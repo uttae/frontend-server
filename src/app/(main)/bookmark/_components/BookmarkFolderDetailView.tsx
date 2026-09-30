@@ -10,6 +10,7 @@ import { useSessionStore } from "@/stores/session-store";
 import type { RoomBookmark } from "@/lib/api/rooms";
 import type { BookmarkFolder, BookmarkedPlace } from "@/types/bookmark";
 import { BookmarkFolderDetailHeader } from "./BookmarkFolderDetailHeader";
+import { BookmarkListSkeleton } from "./BookmarkListSkeleton";
 import { BookmarkPlaceRow } from "./BookmarkPlaceRow";
 
 const SCROLLBAR =
@@ -85,7 +86,8 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
   const cardsLoading =
     bookmarkListReady &&
     bookmarkRows.length > 0 &&
-    placeQueries.some((q) => q.isPending || q.isFetching);
+    places.length === 0 &&
+    placeQueries.some((q) => q.isPending && q.data === undefined);
 
   const cardsError =
     bookmarkListReady &&
@@ -123,8 +125,8 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
     return (
       <>
         <BookmarkFolderDetailHeader folder={folder} />
-        <div className={`${SCROLLBAR} py-10`}>
-          <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">불러오는 중…</p>
+        <div className={SCROLLBAR}>
+          <BookmarkListSkeleton />
         </div>
       </>
     );
@@ -159,9 +161,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
       <BookmarkFolderDetailHeader folder={folder} />
       <div className={SCROLLBAR}>
         {cardsLoading ? (
-          <p className="py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-            장소 정보를 불러오는 중…
-          </p>
+          <BookmarkListSkeleton />
         ) : cardsError ? (
           <div className="space-y-3 py-10">
             <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import { Check, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -250,9 +252,9 @@ export function AddToBookmarkModal({
           </button>
 
           {categoriesLoading && (
-            <p className="px-5 py-6 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-              불러오는 중…
-            </p>
+            <div className="flex justify-center py-6">
+              <LoadingIndicator label="북마크 불러오는 중" />
+            </div>
           )}
 
           {categoriesError && (

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -53,7 +55,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   if (isPending) {
     return (
       <div className="w-full rounded-xl border border-gray-border bg-bubble-gray/40 px-4 py-3 text-left">
-        <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">약관을 불러오는 중…</p>
+        <LoadingIndicator label="약관 불러오는 중" />
       </div>
     );
   }

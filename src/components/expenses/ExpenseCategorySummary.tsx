@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { ExpenseKrwAmount } from "./ExpenseKrw";
 import { useId, useState } from "react";
 import { ChevronDownIcon } from "@/assets/icons";
@@ -47,12 +48,7 @@ export function ExpenseCategorySummary() {
         className={`${expanded ? "block" : "hidden"} @min-[800px]/expenses:block`}
       >
         {list.isPending && (
-          <p
-            role="status"
-            className="py-3 text-body-xs-regular text-text-subtle"
-          >
-            비용 요약을 불러오는 중…
-          </p>
+          <LoadingIndicator label="비용 요약 불러오는 중" className="flex w-full py-3" />
         )}
         {list.isSuccess && !rows.length && (
           <p className="py-3 text-body-xs-regular text-text-subtle">

@@ -28,7 +28,7 @@ export function ExpenseBudgetSummary() {
           여행 전체 비용
         </h3>
         {krwSummary.isPending && (
-          <output style={{ display: "block" }}>
+          <output style={{ display: "block" }} className="sr-only">
             원화 참고 요약을 불러오는 중…
           </output>
         )}
@@ -38,7 +38,7 @@ export function ExpenseBudgetSummary() {
             있어요. 조회 다시 시도 버튼을 눌러 주세요.
           </p>
         )}
-        <p className="break-all text-[32px] leading-[42px] font-bold text-primary tabular-nums">
+        <p aria-busy={krwSummary.isPending} className="break-all text-[32px] leading-[42px] font-bold text-primary tabular-nums">
           <ExpenseKrwAmount total={reference} />
         </p>
         {reference && (
@@ -59,7 +59,10 @@ export function ExpenseBudgetSummary() {
             전체 예산
           </h3>
           {budget.isPending && (
-            <output style={{ display: "block" }}>예산을 불러오는 중…</output>
+            <>
+              <output style={{ display: "block" }} className="sr-only">예산을 불러오는 중…</output>
+              <span aria-hidden="true" className="ml-auto text-text-subtle">—</span>
+            </>
           )}
           {budget.isError && (
             <p

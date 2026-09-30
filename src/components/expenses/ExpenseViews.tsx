@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import type { ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { expenseTitle } from "@/lib/expenses/expense-name";
@@ -76,13 +77,14 @@ export function ExpensePerson({
         reduceMotion={true}
       /> : <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-white bg-primary-subtle text-[12px] leading-4 text-primary">{person.label.slice(0, 1)}</span>}
       <span
-        className={compact ? "sr-only" : "min-w-0 [overflow-wrap:anywhere]"}
+        className={compact || memberStatus === "pending" ? "sr-only" : "min-w-0 [overflow-wrap:anywhere]"}
       >
         {person.label}{" "}
         {(person.unknown || memberStatus !== "success") && (
           <span className="text-body-xs-regular text-dark-gray">#{userId}</span>
         )}
       </span>
+      {memberStatus === "pending" && !compact && <span aria-hidden="true" className="inline-block h-3 w-10 rounded bg-fill-strong" />}
     </span>
   );
 }
@@ -523,12 +525,7 @@ function SettlementContent({
 }: Readonly<SettlementProps>) {
   if (scope === "mine" && currentUserId === undefined) {
     return (
-      <output
-        style={{ display: "block" }}
-        className="py-4 text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
-      >
-        내 정산을 확인할 사용자 정보를 불러오는 중…
-      </output>
+      <LoadingIndicator label="내 정산 사용자 정보 불러오는 중" className="flex w-full py-4" />
     );
   }
   if (!summary.currencies.length) {

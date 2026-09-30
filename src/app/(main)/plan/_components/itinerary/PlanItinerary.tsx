@@ -1,8 +1,9 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { Loader2 } from "lucide-react";
+import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 import { toast } from "sonner";
 
 import {
@@ -185,10 +186,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
       )}
     >
       {isLoading ?
-        <div className="flex items-center justify-center gap-2 py-8 text-dark-gray">
-          <Loader2 className="h-5 w-5 animate-spin text-primary-strong" />
-          <span className="text-body-m-regular mobile:text-body-s-regular">장소 목록을 불러오는 중…</span>
-        </div>
+        <PlanLoadingSkeleton places />
       : null}
 
       {isError ?
@@ -292,7 +290,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
           onOpenBookmark={() => setBookmarkModal({})}
         />
         {isAdding ?
-          <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">추가하는 중…</p>
+          <LoadingIndicator label="장소 추가 중" />
         : null}
       </div>
 

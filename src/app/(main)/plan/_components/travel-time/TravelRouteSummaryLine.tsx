@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
 import { formatRouteDistance, formatRouteDuration } from "@/lib/plan/routeFormat";
@@ -6,7 +6,7 @@ import { formatRouteDistance, formatRouteDuration } from "@/lib/plan/routeFormat
 type TravelRouteSummaryLineProps = {
   route: ScheduleItemRouteResponse | null | undefined;
   isPending: boolean;
-  /** 재검증·무효화 후 재요청 중 — 이전 캐시 값 대신 로딩 표시 */
+  /** 표시 가능한 경로가 없는 동안에만 조회 상태를 표시한다. */
   isFetching: boolean;
   isError: boolean;
   routeUnavailable: boolean;
@@ -37,19 +37,13 @@ export function TravelRouteSummaryLine({
 
   if (isFetching) {
     return (
-      <span className="inline-flex items-center gap-1.5">
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-        불러오는 중…
-      </span>
+      <LoadingIndicator label="이동 시간 불러오는 중" size={14} />
     );
   }
 
   if (isPending) {
     return (
-      <span className="inline-flex items-center gap-1.5">
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-        불러오는 중…
-      </span>
+      <LoadingIndicator label="이동 시간 불러오는 중" size={14} />
     );
   }
   if (isError) return "이동 시간을 불러오지 못했어요";

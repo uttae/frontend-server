@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw, Share2 } from "lucide-react";
 import { toast } from "sonner";
@@ -185,13 +187,11 @@ export function AddMemberPanel({
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-gray-border bg-white px-3 py-2">
             {inviteUrl ? (
               <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 bg-transparent text-body-s-regular text-dark-gray outline-none disabled:opacity-40" />
+            ) : isRoomDetailLoading || isRegenerating ? (
+              <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />
             ) : (
               <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-light-gray">
-                {isRoomDetailLoading
-                  ? "방 정보를 불러오는 중…"
-                  : isRegenerating
-                    ? "초대 링크를 발급하는 중…"
-                    : isRoomDetailError || inviteCode === undefined
+                {isRoomDetailError || inviteCode === undefined
                       ? "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요."
                       : "발급에 실패했어요. 아래에서 재발급을 눌러 주세요."}
               </span>

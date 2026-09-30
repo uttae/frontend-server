@@ -1,4 +1,5 @@
 "use client";
+import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -204,9 +205,7 @@ export function PlanPageView() {
           className={pageContentClassName}
         >
           {pageHeader}
-          <p className="py-8 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-            일정을 불러오는 중…
-          </p>
+          <PlanLoadingSkeleton />
         </div>
       </PlanContainerRefProvider>
     );

@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import {
   useCallback,
   useEffect,
@@ -411,9 +413,8 @@ export function ChatMessageList({
                 "mb-2 flex min-h-[1.25rem] items-center justify-center text-center text-body-s-regular mobile:text-body-xs-regular text-black/45",
                 isMinimized && "mb-1.5 min-h-4 text-body-xs-regular",
               )}
-              aria-live="polite"
             >
-              이전 메시지 불러오는 중…
+              <LoadingIndicator label="이전 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
             </div>
           ) : null}
           {readMarkerMessageId != null &&
@@ -480,9 +481,8 @@ export function ChatMessageList({
                 "mt-2 flex min-h-[1.25rem] items-center justify-center text-center text-body-s-regular mobile:text-body-xs-regular text-black/45",
                 isMinimized && "mt-1.5 min-h-4 text-body-xs-regular",
               )}
-              aria-live="polite"
             >
-              다음 메시지 불러오는 중…
+              <LoadingIndicator label="다음 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
             </div>
           ) : null}
           <div

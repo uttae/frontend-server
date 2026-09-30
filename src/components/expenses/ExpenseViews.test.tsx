@@ -271,7 +271,7 @@ it("does not claim settlement completion when there are no personal transfers", 
 });
 it("does not show other people's transfers while the current user is unavailable", () => {
   const html = renderToStaticMarkup(<ExpenseSummaryView summary={personalSummary} members={[]} memberStatus="pending" />);
-  expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중");
+  expect(html).toContain('aria-label="내 정산 사용자 정보 불러오는 중"');
   expect(html).not.toContain("30,000 KRW");
 });
 
@@ -354,8 +354,8 @@ it("opens editing from the expense card and keeps deletion as a separate action"
 
 it("announces unavailable identity before an empty personal settlement", () => {
   const html = renderToStaticMarkup(<ExpenseSummaryView summary={{ currencies: [] }} members={[]} memberStatus="pending" />);
-  expect(html).toContain('<output');
-  expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중…");
+  expect(html).toContain('role="status"');
+  expect(html).toContain('aria-label="내 정산 사용자 정보 불러오는 중"');
   expect(html).not.toContain("정산할 비용이 없어요.");
 });
 

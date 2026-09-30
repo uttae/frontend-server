@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { cn } from "@/lib/utils";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -79,7 +80,7 @@ function ExpenseDeleteConflict({
           </button>
         </>
       ) : (
-        <p>{message}</p>
+        deleting ? <LoadingIndicator label={message} /> : <p>{message}</p>
       )}
       {conflict.failed && (
         <button
@@ -282,7 +283,7 @@ export function ExpensePanel() {
       {context.syncStatus !== "ready" && !backgroundRefresh && (
         <output
           style={{ display: "block" }}
-          className="mb-4 text-body-xs-regular text-dark-gray"
+          className={context.syncStatus === "pending" ? "sr-only" : "mb-4 text-body-xs-regular text-dark-gray"}
         >
           {syncStatusMessage(context.syncStatus)}
         </output>
@@ -318,7 +319,7 @@ export function ExpensePanel() {
           {context.memberStatus !== "success" && (
             <p
               role="status"
-              className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
+              className={context.memberStatus === "pending" ? "sr-only" : "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"}
             >
               {context.memberStatus === "pending"
                 ? "멤버 확인 중…"
@@ -352,11 +353,6 @@ export function ExpensePanel() {
               className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
             >
               {error}
-            </p>
-          )}
-          {query.isPending && (
-            <p role="status" className="py-4 text-dark-gray">
-              비용 목록을 불러오는 중…
             </p>
           )}
           {query.isError && (
@@ -418,7 +414,7 @@ export function ExpensePanel() {
             )}
           </div>
           {context.filteredKrwSummary?.isError && <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>}
-          {context.list.isSuccess && (
+          {context.list.isPending ? <LoadingIndicator label="비용 목록 불러오는 중" className="flex min-h-40 w-full" /> : context.list.isSuccess && (
             <>
               <ExpenseList
                 roomId={context.roomId}
@@ -474,7 +470,7 @@ export function ExpensePanel() {
           }
         >
           {context.summary.isPending && (
-            <p role="status">정산을 불러오는 중…</p>
+            <LoadingIndicator label="정산 불러오는 중" className="flex min-h-32 w-full" />
           )}
           {context.summary.isError && (
             <div className="space-y-3">

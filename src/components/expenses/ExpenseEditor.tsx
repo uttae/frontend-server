@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -90,7 +91,7 @@ function ExpenseEditorConflict({
           )}
         </>
       ) : (
-        <p>{message}</p>
+        pending ? <LoadingIndicator label={message} /> : <p>{message}</p>
       )}
       {conflict.failed && (
         <button
@@ -385,7 +386,7 @@ export function ExpenseEditor({
             </label>
           </div>
           {!context.currencies.isSuccess && (
-            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+            <p role="status" className={context.currencies.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
               {context.currencies.isError
                 ? "통화 목록 조회에 실패했어요."
                 : "통화 목록을 불러오는 중…"}
@@ -448,7 +449,7 @@ export function ExpenseEditor({
               }
             />
             {body.expenseGroup === "TRIP_DAY" && !places.isSuccess && (
-              <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+              <p className={places.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
                 {places.isError
                   ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
                   : "장소 확인 중…"}
@@ -489,11 +490,9 @@ export function ExpenseEditor({
               />
             </div>
           ) : (
-            <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-              {context.memberStatus === "error"
-                ? "멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요."
-                : "멤버 확인 중… 기존 선택은 유지돼요."}
-            </p>
+            context.memberStatus === "error"
+              ? <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.</p>
+              : <LoadingIndicator label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />
           )}
           <label className="block text-[12px] leading-4 font-medium">
             메모 (선택)
