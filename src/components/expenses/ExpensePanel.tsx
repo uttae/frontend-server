@@ -2,25 +2,27 @@
 
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import {
-  pageToolbarButtonCompactGapClass,
-  pageToolbarButtonCompactIconClass,
-  pageToolbarButtonCompactIconStroke,
-  pageToolbarButtonCompactPaddingClass,
-  pageToolbarButtonCompactTextClass,
-} from "@/components/layout/page-toolbar-button";
 import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
-import { Plus, RefreshCw, ReceiptText, Users, ChartNoAxesColumn } from "lucide-react";
+import { RefreshCw } from "lucide-react";
+import { PlusIcon } from "@/assets/icons";
+import { ExpenseDialog } from "./ExpenseDialog";
+import { ExpenseCategorySummary } from "./ExpenseCategorySummary";
+import { totalsByCurrency } from "@/lib/expenses/expense-scope";
+import {
+  expenseCategories,
+  expenseCategoryLabel,
+} from "@/lib/api/rooms/expenses";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
   ExpenseList,
   ExpenseSummaryView,
   ExpenseAnalysisView,
   expenseButtonClass,
+  formatExpenseAmount,
 } from "./ExpenseViews";
 type DeleteConflict = { selected: Expense; latest?: Expense; failed?: boolean };
 
@@ -40,7 +42,8 @@ function ExpenseDeleteConflict({
   const context = useExpenseContext();
   let message = "이미 삭제된 비용이에요.";
   if (deleting) message = "최신 비용 확인 중…";
-  else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
+  else if (conflict.failed)
+    message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
   return (
     <div
       role="alert"
@@ -98,15 +101,18 @@ function ExpenseDeleteConflict({
 }
 
 function syncStatusMessage(status: string) {
-  if (status === "disconnected") return "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 비용을 자동으로 확인해요.";
-  if (status === "error") return "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요.";
+  if (status === "disconnected")
+    return "실시간 연결이 끊겼어요. 네트워크를 확인하고 연결 복구 안내에서 다시 시도해 주세요. 연결되면 최신 비용을 자동으로 확인해요.";
+  if (status === "error")
+    return "최신 상태 확인에 실패했어요. 이전 값은 최신 상태가 아닐 수 있어요. 조회 다시 시도 버튼을 눌러 주세요.";
   return "최신 비용 확인 중… 이전 값은 최신 상태가 아닐 수 있어요.";
 }
 
 export function ExpensePanel() {
   const context = useExpenseContext();
   const [tab, setTab] = useState<"list" | "summary" | "analysis">("list");
-  const [settlementScope, setSettlementScope] = useState<"mine" | "all">("mine");
+  const [settlementScope, setSettlementScope] = useState<"mine" | "all">("all");
+  const [category, setCategory] = useState("ALL");
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -137,11 +143,12 @@ export function ExpensePanel() {
   const filtered =
     context.list.data?.filter(
       (e) =>
-        activeFilter === "ALL" ||
-        (activeFilter === "PREPARATION"
-          ? e.expenseGroup === "PREPARATION"
-          : e.expenseGroup === "TRIP_DAY" &&
-            String(e.scheduleId) === activeFilter),
+        (category === "ALL" || e.category === category) &&
+        (activeFilter === "ALL" ||
+          (activeFilter === "PREPARATION"
+            ? e.expenseGroup === "PREPARATION"
+            : e.expenseGroup === "TRIP_DAY" &&
+              String(e.scheduleId) === activeFilter)),
     ) ?? [];
   function remove(expense: Expense, reviewed = false) {
     if (
@@ -196,196 +203,299 @@ export function ExpensePanel() {
     [context.list, context.summary, context.budget, context.krwSummary].some(
       (query) => query.isError,
     );
-  const query = tab === "list" ? context.list : context.summary;
+  const query = context.list;
+  const dayOptions = [
+    { value: "ALL", label: "전체" },
+    { value: "PREPARATION", label: "여행 준비" },
+    ...context.schedules.map((s) => ({
+      value: String(s.scheduleId),
+      label: `Day ${s.dayNumber}`,
+    })),
+  ];
+  const addButton = (
+    <button
+      type="button"
+      aria-label="비용 추가"
+      disabled={context.busy}
+      onClick={() =>
+        context.open(
+          activeFilter !== "ALL" && activeFilter !== "PREPARATION"
+            ? { scheduleId: Number(activeFilter) }
+            : {},
+        )
+      }
+      className={`${expenseButtonClass} inline-flex items-center justify-center gap-1 bg-primary text-white enabled:hover:bg-primary-strong`}
+    >
+      <PlusIcon size={16} />
+      비용 추가
+    </button>
+  );
   if (context.revoked) return null;
   return (
     <section
       aria-label="비용 및 정산"
-      className="@container/expenses min-w-0 space-y-5"
+      className="@container/expenses min-w-0 text-body-s-regular"
     >
       <MainPageHeader
         title="가계부"
-        action={context.canManage && (
-          <button
-            type="button"
-            aria-label="비용 추가"
-            disabled={context.busy}
-            onClick={() =>
-              context.open(
-                activeFilter !== "ALL" && activeFilter !== "PREPARATION"
-                  ? { scheduleId: Number(activeFilter) }
-                  : {},
-              )
-            }
-            className={`inline-flex shrink-0 items-center rounded-full bg-primary text-white cursor-pointer transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 ${pageToolbarButtonCompactGapClass} ${pageToolbarButtonCompactPaddingClass} ${pageToolbarButtonCompactTextClass}`}
-          >
-            <Plus className={pageToolbarButtonCompactIconClass} strokeWidth={pageToolbarButtonCompactIconStroke} aria-hidden="true" />
-            비용 추가
-          </button>
-        )}
+        description="여행 비용과 정산을 한눈에 확인해요."
+        className="mb-6 mobile:hidden max-sm:hidden"
+        action={
+          <div className="flex gap-2 [&>button]:rounded-full">
+            <button
+              type="button"
+              className={expenseButtonClass}
+              onClick={() => setTab("summary")}
+            >
+              정산 요약
+            </button>
+            {context.canManage && addButton}
+          </div>
+        }
       />
+      <h2 className="mb-4 hidden border-b-2 border-primary pb-3 text-center text-body-s-emphasis text-primary mobile:block max-sm:block">
+        지출
+      </h2>
       {context.syncStatus !== "ready" && (
-        <output style={{ display: "block" }} className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+        <output
+          style={{ display: "block" }}
+          className="mb-4 text-body-xs-regular text-dark-gray"
+        >
           {syncStatusMessage(context.syncStatus)}
         </output>
       )}
-      <div className="rounded-2xl bg-gray-50 p-4 @min-[480px]/expenses:p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <ExpenseBudgetSummary />
-          </div>
+      <div className="grid min-w-0 gap-5 @min-[800px]/expenses:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="min-w-0 self-stretch @min-[800px]/expenses:min-h-[65dvh] rounded-xl border border-border-subtle bg-white p-5">
+          <ExpenseBudgetSummary />
+          <ExpenseCategorySummary />
           {readFailed && (
             <button
               type="button"
               aria-label={refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
-              className={`${expenseButtonClass} inline-flex shrink-0 items-center gap-1.5`}
+              className={`${expenseButtonClass} mt-4 inline-flex items-center gap-1`}
               disabled={refreshing || context.busy}
               onClick={() => void refresh()}
             >
-              <RefreshCw
-                size={17}
-                aria-hidden="true"
-                className={refreshing ? "motion-safe:animate-spin" : ""}
-              />
+              <RefreshCw size={16} aria-hidden />
               {refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
             </button>
           )}
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2" aria-label="가계부 보기">
-          <button
-            type="button"
-            aria-pressed={tab === "list"}
-            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "list" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
-            onClick={() => setTab("list")}
-          >
-            <ReceiptText size={16} aria-hidden="true" />
-            비용 목록
-          </button>
-          <button
-            type="button"
-            aria-pressed={tab === "summary"}
-            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "summary" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
-            onClick={() => setTab("summary")}
-          >
-            <Users size={16} aria-hidden="true" />
-            정산 요약
-          </button>
-          <button
-            type="button"
-            aria-pressed={tab === "analysis"}
-            className={`${expenseButtonClass} inline-flex items-center gap-2 ${tab === "analysis" ? "bg-white text-primary-strong shadow-sm" : "border-transparent text-dark-gray"}`}
-            onClick={() => setTab("analysis")}
-          >
-            <ChartNoAxesColumn size={16} aria-hidden="true" />
-            비용 분석
-          </button>
-        </div>
-      </div>
-      {context.memberStatus !== "success" && (
-        <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-          {context.memberStatus === "pending"
-            ? "멤버 확인 중…"
-            : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
-          비용의 사용자 ID와 금액은 유지돼요.
-        </p>
-      )}
-      {context.memberStatus === "success" && !context.canManage && (
-        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
-          현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
-        </p>
-      )}
-      {conflict && (
-        <ExpenseDeleteConflict
-          conflict={conflict}
-          deleting={deleting}
-          onRemove={expense => void remove(expense, true)}
-          onRecover={expense => void recover(expense)}
-          onCancel={() => {
-            setConflict(null);
-            setError("");
-          }}
-        />
-      )}
-      {error && (
-        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
-          {error}
-        </p>
-      )}
-      {query.isPending && (
-        <p role="status" className="py-4 text-dark-gray">
-          {{ list: "비용 목록", analysis: "비용 분석", summary: "정산" }[tab]}을 불러오는 중…
-        </p>
-      )}
-      {query.isError && (
-        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
-          {query.error instanceof Error
-            ? query.error.message
-            : "조회에 실패했어요."}{" "}
-          조회 다시 시도 버튼을 눌러 주세요.
-        </p>
-      )}
-      {tab === "list" && (
-        <>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-body-m-emphasis mobile:text-body-s-emphasis font-bold">
-              비용 내역{" "}
-              <span className="ml-1 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
-                {context.list.isSuccess ? `${filtered.length}건` : ""}
-              </span>
-            </h3>
-            <div className="w-36 max-w-full">
+        </aside>
+        <div className="min-w-0 space-y-4">
+          <div className="hidden grid-cols-2 gap-3 mobile:grid max-sm:grid">
+            {context.canManage && addButton}
+            <button
+              type="button"
+              className={expenseButtonClass}
+              onClick={() => setTab("summary")}
+            >
+              정산 요약
+            </button>
+          </div>
+          {context.memberStatus !== "success" && (
+            <p
+              role="status"
+              className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
+            >
+              {context.memberStatus === "pending"
+                ? "멤버 확인 중…"
+                : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
+              비용의 사용자 ID와 금액은 유지돼요.
+            </p>
+          )}
+          {context.memberStatus === "success" && !context.canManage && (
+            <p
+              role="alert"
+              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
+            >
+              현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
+            </p>
+          )}
+          {conflict && (
+            <ExpenseDeleteConflict
+              conflict={conflict}
+              deleting={deleting}
+              onRemove={(expense) => void remove(expense, true)}
+              onRecover={(expense) => void recover(expense)}
+              onCancel={() => {
+                setConflict(null);
+                setError("");
+              }}
+            />
+          )}
+          {error && (
+            <p
+              role="alert"
+              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
+            >
+              {error}
+            </p>
+          )}
+          {query.isPending && (
+            <p role="status" className="py-4 text-dark-gray">
+              비용 목록을 불러오는 중…
+            </p>
+          )}
+          {query.isError && (
+            <p
+              role="alert"
+              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
+            >
+              {query.error instanceof Error
+                ? query.error.message
+                : "조회에 실패했어요."}{" "}
+              조회 다시 시도 버튼을 눌러 주세요.
+            </p>
+          )}
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-center gap-3">
+            <div
+              aria-label="준비·일차 필터"
+              className="col-span-2 flex min-w-0 max-w-full gap-1.5 overflow-x-auto pb-1 @min-[800px]/expenses:col-span-1"
+            >
+              {dayOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-label={`${option.label} 비용`}
+                  aria-pressed={activeFilter === option.value}
+                  onClick={() => setFilter(option.value)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-body-xs-regular focus-visible:outline-2 focus-visible:outline-primary ${activeFilter === option.value ? "border-primary/20 bg-primary/5 text-primary" : "border-border-subtle text-text-subtle hover:bg-fill"}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div className="col-start-2 row-start-2 w-36 @min-[800px]/expenses:row-start-1">
               <ExpenseSelect
-                label="준비·일차 필터"
-                value={activeFilter}
-                onChange={setFilter}
+                label="카테고리 필터"
+                value={category}
+                onChange={setCategory}
+                mobileSheet
                 options={[
-                  { value: "ALL", label: "전체 비용" },
-                  { value: "PREPARATION", label: "여행 준비" },
-                  ...context.schedules.map((s) => ({
-                    value: String(s.scheduleId),
-                    label: `${s.dayNumber}일차`,
-                  })),
+                  { value: "ALL", label: "전체 카테고리" },
+                  ...expenseCategories,
                 ]}
               />
             </div>
+            {context.list.isSuccess && (
+              <div
+                className="col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-2 text-body-s-emphasis @min-[800px]/expenses:hidden"
+                aria-label="선택한 비용 합계"
+              >
+                {totalsByCurrency(filtered).map((total) => (
+                  <span key={total.currency} className="break-all">
+                    {formatExpenseAmount(total.amount)} {total.currency}
+                  </span>
+                ))}
+                <span className="text-body-xs-regular text-text-subtle">
+                  {filtered.length}건
+                </span>
+              </div>
+            )}
           </div>
           {context.list.isSuccess && (
-            <ExpenseList
+            <>
+              <ExpenseList
                 roomId={context.roomId}
-              expenses={filtered}
-              members={context.members}
-              memberStatus={context.memberStatus}
-              schedules={context.schedules}
-              canManage={context.canManage}
-              onEdit={(expense) => context.open({ expense })}
-              onDelete={(expense) => void remove(expense)}
-              busy={context.busy || deleting || Boolean(conflict)}
-            />
+                expenses={filtered}
+                members={context.members}
+                memberStatus={context.memberStatus}
+                schedules={context.schedules}
+                canManage={context.canManage}
+                onEdit={(expense) => context.open({ expense })}
+                onDelete={(expense) => void remove(expense)}
+                busy={context.busy || deleting || Boolean(conflict)}
+                grouped
+              />
+              {(activeFilter !== "ALL" || category !== "ALL") && (
+                <p className="text-body-xs-regular text-text-subtle">
+                  {dayOptions.find((o) => o.value === activeFilter)?.label} ·{" "}
+                  {category === "ALL"
+                    ? "전체 카테고리"
+                    : expenseCategoryLabel(
+                        category as Expense["category"],
+                      )}{" "}
+                  지출만 표시해요. 여행 전체 예산과 정산은 전체 기준이에요.
+                </p>
+              )}
+            </>
           )}
-        </>
-      )}
-      {tab === "summary" && context.summary.isSuccess && (
-        <ExpenseSummaryView
-          currentUserId={context.currentUserId}
-          scope={settlementScope}
-          onScopeChange={setSettlementScope}
-          summary={context.summary.data}
-          members={context.members}
-          memberStatus={context.memberStatus}
-        />
-      )}
-      {tab === "analysis" && context.summary.isSuccess && (
-        <ExpenseAnalysisView
-          summary={context.summary.data}
-          members={context.members}
-          memberStatus={context.memberStatus}
-          schedules={context.schedules}
-        />
+        </div>
+      </div>
+      {tab !== "list" && (
+        <ExpenseDialog
+          title={tab === "summary" ? "정산 요약" : "비용 분석"}
+          onClose={() => setTab("list")}
+          footer={
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className={`${expenseButtonClass} min-w-24 bg-primary text-white mobile:w-full max-sm:w-full`}
+                onClick={() => setTab("list")}
+              >
+                확인
+              </button>
+            </div>
+          }
+        >
+          <div className="mb-4 flex gap-3 text-body-xs-regular">
+            <button
+              type="button"
+              aria-pressed={tab === "summary"}
+              onClick={() => setTab("summary")}
+            >
+              정산 요약
+            </button>
+            <button
+              type="button"
+              aria-pressed={tab === "analysis"}
+              onClick={() => setTab("analysis")}
+            >
+              비용 분석
+            </button>
+          </div>
+          {context.summary.isPending && (
+            <p role="status">정산을 불러오는 중…</p>
+          )}
+          {context.summary.isError && (
+            <div className="space-y-3">
+              <p role="alert">정산 조회에 실패했어요.</p>
+              <button
+                type="button"
+                className={expenseButtonClass}
+                disabled={refreshing || context.busy}
+                onClick={() => void refresh()}
+              >
+                {refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
+              </button>
+            </div>
+          )}
+          {context.summary.isSuccess &&
+            (tab === "summary" ? (
+              <ExpenseSummaryView
+                currentUserId={context.currentUserId}
+                scope={settlementScope}
+                onScopeChange={setSettlementScope}
+                summary={context.summary.data}
+                members={context.members}
+                memberStatus={context.memberStatus}
+              />
+            ) : (
+              <ExpenseAnalysisView
+                summary={context.summary.data}
+                members={context.members}
+                memberStatus={context.memberStatus}
+                schedules={context.schedules}
+              />
+            ))}
+        </ExpenseDialog>
       )}
       {expenseToDelete ? (
         <ConfirmDialog
-          title="이 비용을 삭제할까요?"
-          description="정산 요약에도 반영돼요."
+          title="비용을 삭제할까요?"
+          appearance="ledger"
+          destructive
+          description={`${expenseCategoryLabel(expenseToDelete.category)} 내역을 삭제해요. 삭제한 내역은 복구할 수 없어요.`}
           confirmLabel="삭제"
           isPending={deleting}
           onConfirm={() => void confirmRemove()}

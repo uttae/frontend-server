@@ -248,7 +248,7 @@ it("summary opens shared modal for unset or zero budget", async () => {
 it("shows one reference travel total without persistent exchange metadata", async () => {
   await summary();
   expect(text()).toContain("여행 전체 비용");
-  expect(text()).toContain("501 KRW");
+  expect(text()).toContain("501원");
   expect(text()).not.toContain("원화 참고 비용");
   expect(host.innerHTML).not.toContain("원화로 환산한 참고 금액이에요");
   expect(text()).not.toContain("2026-09-11");
@@ -258,10 +258,10 @@ it("shows one reference travel total without persistent exchange metadata", asyn
   expect(text()).not.toContain("참고 잔여 예산");
 });
 it.each([
-  ["0", "0", "0 KRW"],
-  ["1000", "1001", "1,001 KRW"],
-  ["999999999999999", "9007199254740993", "9,007,199,254,740,993 KRW"],
-])("omits budget comparison for budget %s and total %s", async (b, total, expected) => {
+  ["0", "0", "0원", "0원"],
+  ["1000", "1001", "1,001원", "-1원"],
+  ["999999999999999", "9007199254740993", "9,007,199,254,740,993원", "-8,007,199,254,740,994원"],
+])("preserves exact budget and remaining amounts for budget %s and total %s", async (b, total, expected, remaining) => {
   mocks.state = state(
     { ...budget, budgetKrw: b },
     { ...reference, convertedTotalKrw: total },
@@ -270,6 +270,7 @@ it.each([
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
   expect(text()).not.toMatch(/참고 잔여 예산|참고 예산 초과|예산과 최신/);
   expect(host.querySelector("h3")?.parentElement?.textContent).toContain(expected);
+  expect(document.querySelector('[aria-label="남은 예산"]')?.textContent).toContain(remaining);
 });
 it.each([
   { isComplete: false, convertedTotalKrw: "501" },
@@ -281,7 +282,7 @@ it.each([
   mocks.state = state(budget, { ...reference, ...patch } as ExpenseKrwSummary);
   await summary();
   expect(host.querySelector("h3")?.parentElement?.textContent).toContain("—");
-  expect(host.querySelector("h3")?.parentElement?.textContent).not.toMatch(/501 KRW|0 KRW|환산 가능한 비용 합계|제외 통화/);
+  expect(host.querySelector("h3")?.parentElement?.textContent).not.toMatch(/501원|0원|환산 가능한 비용 합계|제외 통화/);
 });
 it.each(["pending", "error"])("shows a dash with no conversion data while %s", async (status) => {
   mocks.state = { ...state(), krwSummary: { data: undefined, isPending: status === "pending", isError: status === "error", isSuccess: false } };
@@ -310,7 +311,7 @@ it.each([
     expect(text()).toContain("—");
   if (patch.stale && patch.rateDate !== null) {
     expect(text()).toContain("환율 갱신에 실패하여 이전 성공 환율을 사용한 참고값이에요.");
-    expect(text()).toContain("501 KRW");
+    expect(text()).toContain("501원");
   }
   if (patch.rateDate === null) {
     expect(text()).toContain("성공한 환율 정보가 없어");
@@ -346,7 +347,7 @@ it("partial zero is withheld and unset never becomes a zero budget", async () =>
   );
   await summary();
   expect(text()).toContain("—");
-  expect(text()).not.toContain("0 KRW");
+  expect(text()).not.toContain("0원");
   expect(text()).toContain("미설정");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
 });
@@ -355,7 +356,7 @@ it.each(["disconnected", "pending", "error"])(
   async (syncStatus) => {
     mocks.state = { ...state(), syncStatus };
     await summary();
-    expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
+    expect(document.querySelector('[aria-label="남은 예산"]')?.textContent).toContain("—");
   },
 );
 
@@ -395,7 +396,7 @@ it("keeps the trip total one scale step smaller with long-number wrapping", asyn
   mocks.state = state(budget, { ...reference, convertedTotalKrw: "9007199254740993" });
   await summary();
   const total = [...host.querySelectorAll("p")].find(
-    (p) => p.textContent === "9,007,199,254,740,993 KRW",
+    (p) => p.textContent === "9,007,199,254,740,993원",
   )!;
   expect(total.classList.contains("text-heading-s")).toBe(true);
   expect(total.classList.contains("break-all")).toBe(true);
@@ -409,11 +410,11 @@ it("groups budget and edit control on a white card with wrapping space for large
   )!;
   const content = title.parentElement!;
   const card = content.parentElement!;
-  for (const token of ["rounded-xl", "bg-white", "p-3", "flex-wrap"])
+  for (const token of ["bg-white", "flex-wrap"])
     expect(card.classList.contains(token), token).toBe(true);
   for (const token of ["min-w-0", "max-w-full"])
     expect(content.classList.contains(token), token).toBe(true);
-  expect(content.querySelector("p")?.textContent).toBe("999,999,999,999,999 KRW");
+  expect(content.querySelector("p")?.textContent).toBe("999,999,999,999,999원");
   expect(content.querySelector("p")?.classList.contains("break-all")).toBe(true);
   expect(card.contains(button("예산 수정"))).toBe(true);
   expect(button("예산 수정").classList.contains("shrink-0")).toBe(true);
@@ -437,4 +438,12 @@ it("announces both pending budget reads with native status outputs", async () =>
     "원화 참고 요약을 불러오는 중…", "예산을 불러오는 중…",
   ]);
   expect(outputs.every(output => output.style.display === "block")).toBe(true);
+});
+
+it("shows an exact remaining budget only with complete synchronized values", async () => {
+  await summary();
+  expect(document.querySelector('[aria-label="남은 예산"]')?.textContent).toContain("499원");
+  mocks.state = { ...state(), syncStatus: "disconnected" };
+  await summary();
+  expect(document.querySelector('[aria-label="남은 예산"]')?.textContent).toContain("—");
 });

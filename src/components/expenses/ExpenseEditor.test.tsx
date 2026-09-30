@@ -479,7 +479,7 @@ it("cannot re-add an unknown payer after deselection and keeps input on server r
 const categories = [
   ["FLIGHT", "항공"],
   ["ACCOMMODATION", "숙박"],
-  ["FOOD", "식사"],
+  ["FOOD", "식비"],
   ["TRANSPORT", "교통"],
   ["SHOPPING", "쇼핑"],
   ["SIGHTSEEING", "관광"],

@@ -95,7 +95,7 @@ export function ExpenseBudgetModal({
   }
   const busy = pending || context.budgetBusy;
   return (
-    <SettingsDialog
+    <SettingsDialog appearance="ledger"
       title={opened.budgetKrw === null ? "예산 설정" : "예산 수정"}
       onClose={close}
     >
@@ -193,14 +193,14 @@ export function ExpenseBudgetModal({
         )}
         <SettingsActionButtonRow>
           <SettingsActionButton
-            variant="secondary"
+            variant="secondary" className="rounded-lg"
             disabled={busy}
             onClick={close}
           >
             취소
           </SettingsActionButton>
           <SettingsActionButton
-            variant="primary"
+            variant="primary" className="rounded-lg"
             type="submit"
             disabled={busy || !context.canManage || Boolean(conflict)}
           >

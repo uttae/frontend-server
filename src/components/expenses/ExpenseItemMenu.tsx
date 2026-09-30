@@ -1,0 +1,91 @@
+"use client";
+import { useEffect, useId, useRef, useState } from "react";
+import { MenuDotVerticalIcon, TrashIcon, WriteIcon } from "@/assets/icons";
+
+export function ExpenseItemMenu({
+  label,
+  busy,
+  onEdit,
+  onDelete,
+}: {
+  label: string;
+  busy: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  useEffect(() => {
+    if (!open || !root.current) return;
+    const element = root.current;
+    const outside = (event: PointerEvent) => {
+      if (!element.contains(event.target as Node)) setOpen(false);
+    };
+    element.ownerDocument.addEventListener("pointerdown", outside);
+    return () =>
+      element.ownerDocument.removeEventListener("pointerdown", outside);
+  }, [open]);
+  function choose(action: () => void) {
+    if (busy) return;
+    trigger.current?.focus();
+    setOpen(false);
+    action();
+  }
+  return (
+    <div
+      ref={root}
+      className="relative z-20 self-start"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open) {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen(false);
+          trigger.current?.focus();
+        }
+      }}
+    >
+      <button
+        ref={trigger}
+        type="button"
+        aria-label={`${label} 비용 더보기`}
+        aria-expanded={open && !busy}
+        aria-controls={open && !busy ? id : undefined}
+        disabled={busy}
+        onClick={() => setOpen(!open)}
+        className="flex size-8 cursor-pointer items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
+      >
+        <MenuDotVerticalIcon size={20} className="rotate-90" />
+      </button>
+      {open && !busy && (
+        <div
+          id={id}
+          className="absolute right-0 top-8 z-30 w-36 rounded-lg border border-border-subtle bg-white py-1 shadow-lg"
+        >
+          <button
+            type="button"
+            aria-label="비용 수정"
+            onClick={() => choose(onEdit)}
+            className="flex min-h-11 w-full items-center gap-2 px-4 text-body-s-regular hover:bg-fill focus-visible:outline-primary"
+          >
+            <WriteIcon size={16} />
+            수정
+          </button>
+          <button
+            type="button"
+            aria-label="비용 삭제"
+            onClick={() => choose(onDelete)}
+            className="flex min-h-11 w-full items-center gap-2 px-4 text-body-s-regular text-status-negative hover:bg-fill focus-visible:outline-primary"
+          >
+            <TrashIcon size={16} />
+            삭제
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -87,14 +87,15 @@ export type ResolveLeftSectionTargetMaxWidthParams = {
 };
 
 /**
- * 협업 공간은 탭·채팅 상태와 무관하게 일정 기준의 전체 폭(사이드바 포함)을 사용.
+ * 가계부는 지도 없이 전체 폭, 나머지 협업 공간은 일정 기준 폭(사이드바 포함)을 사용.
  * 모바일은 호출측에서 `"100%"` 처리.
  */
 export function resolveLeftSectionTargetMaxWidthPx({
+  pathname,
   isMobile,
   rootFontPx = DEFAULT_ROOT_FONT_PX,
 }: ResolveLeftSectionTargetMaxWidthParams): number | null {
-  if (isMobile) return null;
+  if (isMobile || pathname === "/cost") return null;
 
   return parseLayoutLengthToPx(width.s2, rootFontPx);
 }

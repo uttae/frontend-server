@@ -317,14 +317,15 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-xl overflow-hidden rounded-3xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:mb-0 mobile:max-h-[60dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-[600px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:max-h-[90dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden mobile:max-h-[60dvh]"
+        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden mobile:max-h-[90dvh]"
         aria-describedby={error ? errorId : undefined}
       >
+        <div aria-hidden className="mx-auto mt-3 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
           <h2 id={titleId} className="text-title-m mobile:text-title-s font-bold">
             {original ? "비용 수정" : "비용 추가"}
@@ -341,7 +342,7 @@ export function ExpenseEditor({
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 [scrollbar-gutter:stable] sm:p-6">
         <fieldset disabled={pending} className="min-w-0 space-y-4">
-          <div className="grid min-w-0 grid-cols-1 @min-[440px]/expense-editor:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-2xl bg-gray-50 p-4">
+          <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-xl bg-fill p-3">
             <ExpenseCurrencyPicker
               value={body.currency}
               currencies={context.currencies.data ?? []}
@@ -447,7 +448,7 @@ export function ExpenseEditor({
             />
           </div>
           {context.memberStatus === "success" ? (
-            <div className="grid min-w-0 gap-3 sm:grid-cols-2">
+            <div className="grid min-w-0 grid-cols-2 gap-3">
               <ExpenseRolePicker
                 title="결제자"
                 members={context.members}
@@ -481,7 +482,7 @@ export function ExpenseEditor({
               value={body.memo ?? ""}
               onChange={(e) => change("memo", e.target.value)}
             />
-            <span className="text-body-xs-regular text-dark-gray">
+            <span className="block text-right text-body-xs-regular text-dark-gray">
               {body.memo?.length ?? 0}/1000
             </span>
           </label>
@@ -523,7 +524,7 @@ export function ExpenseEditor({
           </p>
         )}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 sm:px-6">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:min-w-20 max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
           <button
             type="button"
             className={expenseButtonClass}

@@ -80,7 +80,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           <MobileMainTabs />
         </LeftSection>
 
-        {!isMobileDevice ? <MapWithDetailPanel /> : null}
+        {!isMobileDevice && pathname !== "/cost" ? <MapWithDetailPanel /> : null}
       </div>
     </main>
   );

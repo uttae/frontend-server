@@ -26,7 +26,7 @@ function addAmounts(left: string, right: string) {
   return `${total / base}.${(total % base).toString().padStart(scale, "0")}`;
 }
 
-export function totalsByCurrency(expenses: readonly Expense[]) {
+export function totalsByCurrency(expenses: readonly Pick<Expense, "currency" | "totalAmount">[]) {
   const totals = new Map<string, string>();
   for (const expense of expenses) {
     totals.set(

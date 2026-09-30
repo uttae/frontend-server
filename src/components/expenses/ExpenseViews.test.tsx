@@ -173,7 +173,7 @@ it("offers only selected original unknown in role and labels LEFT", () => {
 const categories = [
   ["FLIGHT", "항공"],
   ["ACCOMMODATION", "숙박"],
-  ["FOOD", "식사"],
+  ["FOOD", "식비"],
   ["TRANSPORT", "교통"],
   ["SHOPPING", "쇼핑"],
   ["SIGHTSEEING", "관광"],
@@ -230,7 +230,7 @@ it("renders the server category order and exact amounts, omitting unused categor
     previous = position;
   }
   const subset = render([categories[2], categories[6]]);
-  expect(subset).toContain("식사 · 10.01 USD");
+  expect(subset).toContain("식비 · 10.01 USD");
   expect(subset).toContain("기타 · 20.01 USD");
   for (const index of [0, 1, 3, 4, 5])
     expect(subset).not.toContain(categories[index][1]);
@@ -330,15 +330,16 @@ it("opens editing from the expense card and keeps deletion as a separate action"
   const render = (canManage: boolean, busy = false) => <ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage={canManage} busy={busy} onEdit={onEdit} onDelete={onDelete} />;
   try {
     await act(async () => { renderer = create(render(true)); });
-    expect(renderer!.root.findAllByType("details")).toHaveLength(1);
+    expect(renderer!.root.findAllByType("details")).toHaveLength(0);
     expect(JSON.stringify(renderer!.toJSON())).toContain("결제자");
     expect(JSON.stringify(renderer!.toJSON())).toContain("부담자");
-    const buttons = renderer!.root.findAllByType("button");
-    expect(buttons).toHaveLength(2);
-    await act(async () => buttons.find(b => b.props["aria-label"].endsWith("비용 수정"))!.props.onClick());
+    const more = () => renderer!.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 더보기"))!;
+    await act(async () => more().props.onClick());
+    await act(async () => renderer!.root.findByProps({ "aria-label": "비용 수정" }).props.onClick());
     expect(onEdit).toHaveBeenCalledWith(expense);
     onEdit.mockClear();
-    await act(async () => buttons.find(b => b.props["aria-label"] === "비용 삭제")!.props.onClick());
+    await act(async () => more().props.onClick());
+    await act(async () => renderer!.root.findByProps({ "aria-label": "비용 삭제" }).props.onClick());
     expect(onDelete).toHaveBeenCalledWith(expense);
     expect(onEdit).not.toHaveBeenCalled();
     await act(async () => renderer!.update(render(true, true)));
@@ -356,4 +357,21 @@ it("announces unavailable identity before an empty personal settlement", () => {
   expect(html).toContain('<output');
   expect(html).toContain("내 정산을 확인할 사용자 정보를 불러오는 중…");
   expect(html).not.toContain("정산할 비용이 없어요.");
+});
+
+it("opens a more disclosure before delete and uses category instead of memo as the name", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let renderer: ReactTestRenderer | undefined;
+  const onDelete = vi.fn();
+  try {
+    await act(async () => { renderer = create(<ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage busy={false} onEdit={vi.fn()} onDelete={onDelete} />); });
+    const buttons = () => renderer!.root.findAllByType("button");
+    expect(buttons().find(b => b.props["aria-label"] === "비용 삭제")).toBeUndefined();
+    const more = buttons().find(b => b.props["aria-label"] === "기타 비용 더보기");
+    expect(more).toBeDefined();
+    await act(async () => more!.props.onClick());
+    await act(async () => buttons().find(b => b.props["aria-label"] === "비용 삭제")!.props.onClick());
+    expect(onDelete).toHaveBeenCalledWith(expense);
+    expect(buttons().find(b => b.props["aria-label"] === "비용 삭제")).toBeUndefined();
+  } finally { await act(async () => renderer?.unmount()); vi.unstubAllGlobals(); }
 });

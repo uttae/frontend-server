@@ -6,7 +6,7 @@ export type ExpenseGroup = "PREPARATION" | "TRIP_DAY";
 export const expenseCategories = [
   { value: "FLIGHT", label: "항공" },
   { value: "ACCOMMODATION", label: "숙박" },
-  { value: "FOOD", label: "식사" },
+  { value: "FOOD", label: "식비" },
   { value: "TRANSPORT", label: "교통" },
   { value: "SHOPPING", label: "쇼핑" },
   { value: "SIGHTSEEING", label: "관광" },

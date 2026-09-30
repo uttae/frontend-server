@@ -18,7 +18,7 @@ it("opens an expense in the selected trip day", async () => {
   await mount();
   mocks.open.mockClear();
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("10"),
+    renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick(),
   );
   const add = renderer.root
     .findAllByType("button")
@@ -58,7 +58,7 @@ it("keeps a single reference travel total visible while filtering", async () => 
   };
   await act(async () => renderer.update(<ExpensePanel />));
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
+    renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "여행 준비 비용")!.props.onClick(),
   );
   const text = JSON.stringify(renderer.toJSON());
   expect(text).not.toContain("999,999,999,999,999.99");
@@ -152,7 +152,7 @@ async function mount() {
 it("filters preparation and trip day without altering server summary scope", async () => {
   await mount();
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
+    renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "여행 준비 비용")!.props.onClick(),
   );
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
   expect(JSON.stringify(renderer.toJSON())).toContain("준비");
@@ -167,6 +167,7 @@ it("filters preparation and trip day without altering server summary scope", asy
 });
 it("requires confirmation and preserves list with visible deletion failure", async () => {
   await mount();
+  await openFirstMenu();
   let button = renderer.root
     .findAllByType("button")
     .find((b) => b.props["aria-label"] === "비용 삭제")!;
@@ -175,6 +176,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
   expect(mocks.remove).not.toHaveBeenCalled();
   expect(renderer.root.findAllByType(ConfirmDialog)).toHaveLength(0);
   mocks.remove.mockRejectedValue(new Error("삭제 실패"));
+  await openFirstMenu();
   button = renderer.root
     .findAllByType("button")
     .find((b) => b.props["aria-label"] === "비용 삭제")!;
@@ -187,7 +189,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
 it("returns to all expenses when the selected day is deleted remotely", async () => {
   await mount();
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("10"),
+    renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick(),
   );
   const state = mocks.state as { list: { data: { id: number }[] } };
   mocks.state = {
@@ -200,10 +202,13 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  expect(renderer.root.findByType(ExpenseSelect).props.value).toBe("ALL");
+  expect(renderer.root.findByProps({ "aria-label": "전체 비용" }).props["aria-pressed"]).toBe(true);
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
 });
 
+async function openFirstMenu() {
+  await act(async () => renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 더보기"))!.props.onClick());
+}
 async function answerConfirm(confirmed: boolean) {
   const dialog = renderer.root.findByType(ConfirmDialog);
   await act(async () =>
@@ -227,6 +232,7 @@ it("retains deletion selection and requires confirmation of the fetched version 
     new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
   );
   mocks.readLatest.mockResolvedValueOnce(latest);
+  await openFirstMenu();
   await act(async () => panelButton("삭제")!.props.onClick());
   await answerConfirm(true);
   expect(mocks.readLatest).toHaveBeenCalledWith(1);
@@ -256,6 +262,7 @@ it.each(["missing", "offline"])(
     );
     if (mode === "missing") mocks.readLatest.mockResolvedValueOnce(undefined);
     else mocks.readLatest.mockRejectedValueOnce(new Error("offline"));
+    await openFirstMenu();
     await act(async () => panelButton("삭제")!.props.onClick());
     await answerConfirm(true);
     expect(mocks.remove).toHaveBeenCalledTimes(1);
@@ -402,11 +409,12 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
     renderer.root.findAllByType("button").find(b => b.children.includes(label))!.props.onClick();
   });
   await click("정산 요약");
+  await click("내 정산");
   expect(JSON.stringify(renderer.toJSON())).toContain("주고받을 금액이 없어요");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("12,345");
   await click("전체 정산");
   expect(JSON.stringify(renderer.toJSON())).toContain("12,345");
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("카테고리별");
+  expect(renderer.root.findAllByProps({ "aria-label": "비용 분석 기준" })).toHaveLength(0);
   await click("비용 분석");
   expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
   expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
@@ -423,4 +431,35 @@ it.each([
   const output = renderer.root.findAllByType("output").find(node => node.children.join("").startsWith(message));
   expect(output).toBeDefined();
   expect(output!.props.style).toEqual({ display: "block" });
+});
+
+it("intersects day and category filters while keeping the trip budget visible", async () => {
+  await mount();
+  const state = mocks.state as { list: { data: Expense[] } };
+  mocks.state = { ...state, list: { ...state.list, data: [
+    { ...state.list.data[0], category: "FOOD" },
+    { ...state.list.data[1], category: "OTHER" },
+  ] } };
+  await act(async () => renderer.update(<ExpensePanel />));
+  const category = () => renderer.root.findAllByType(ExpenseSelect).find(s => s.props.label === "카테고리 필터")!;
+  expect(category()).toBeDefined();
+  await act(async () => category().props.onChange("FOOD"));
+  expect(renderer.root.findAllByProps({ "data-expense-id": 1 })).toHaveLength(1);
+  expect(renderer.root.findAllByProps({ "data-expense-id": 2 })).toHaveLength(0);
+  await act(async () => renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick());
+  expect(renderer.root.findAllByProps({ "data-expense-id": 1 })).toHaveLength(0);
+  expect(JSON.stringify(renderer.toJSON())).toContain("501");
+});
+
+it("can retry a failed summary from inside its modal", async () => {
+  await mount();
+  mocks.refresh.mockClear();
+  mocks.state = { ...(mocks.state as object), summary: { isError: true, isSuccess: false } };
+  await act(async () => renderer.update(<ExpensePanel />));
+  await act(async () => panelButton("정산 요약")!.props.onClick());
+  const dialog = renderer.root.findByType("dialog");
+  const retry = dialog.findAllByType("button").find(b => b.children.includes("조회 다시 시도"));
+  expect(retry).toBeDefined();
+  await act(async () => retry!.props.onClick());
+  expect(mocks.refresh).toHaveBeenCalledOnce();
 });

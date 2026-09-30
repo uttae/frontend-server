@@ -39,12 +39,14 @@ export function SettingsDialog({
   onClose,
   children,
   size = "default",
+  appearance = "default",
   stopPortalEventPropagation = false,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   size?: "default" | "compact";
+  appearance?: "default" | "ledger";
   stopPortalEventPropagation?: boolean;
 }) {
   const titleId = useId();
@@ -123,7 +125,7 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6`}
+        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6`}
       >
         <div className="mb-2 flex items-center justify-between gap-4">
           <h2 id={titleId} className="text-title-l mobile:text-title-m font-bold">
