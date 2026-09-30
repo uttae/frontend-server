@@ -1,5 +1,5 @@
 "use client";
-import { ExpenseKrwAmount, ExpenseRateNote, ExpenseRowAmount } from "./ExpenseKrw";
+import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import type { ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -502,9 +502,8 @@ function AllSettlement({ summary, members, memberStatus, krwSummary, showDetails
         ))}
       </section>
       {showDetails && <details className="text-body-xs-regular text-text-subtle">
-        <summary className="cursor-pointer">계산 내역·환율 정보</summary>
+        <summary className="cursor-pointer">계산 내역</summary>
         {summary.currencies.map((currency) => <div key={currency.currency} className="mt-3 space-y-2">{currency.individuals.map((person) => <div key={person.userId} className="flex justify-between gap-3"><ExpensePerson userId={person.userId} members={members} memberStatus={memberStatus} /><span>부담할 몫 {currency.currency} {formatExpenseAmount(person.owedAmount)}</span></div>)}</div>)}
-        <ExpenseRateNote summary={krwSummary} />
       </details>}
     </div>
   );
@@ -699,7 +698,6 @@ export function ExpenseSummaryView({
           <ExpensePerson userId={payer.userId} members={members} memberStatus={memberStatus} />
           <ExpenseKrwAmount total={payer.total} />
         </div>)}
-        <ExpenseRateNote summary={krwSummary} />
       </section>}
       <SettlementContent
         summary={summary}
