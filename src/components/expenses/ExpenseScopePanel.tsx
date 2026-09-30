@@ -120,12 +120,13 @@ export function ExpenseScopePanel({
                   <button
                     type="button"
                     disabled={!canManage || busy}
-                    aria-label={`${expense.memo || expenseCategoryLabel(expense.category)} ${formatExpenseAmount(expense.totalAmount)} ${expense.currency} 비용 수정`}
+                    aria-label={`${expenseCategoryLabel(expense.category)} ${formatExpenseAmount(expense.totalAmount)} ${expense.currency} 비용 수정`}
                     onClick={() => onEdit(expense)}
                     className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left text-body-s-regular transition-colors enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
                   >
                     <span className="flex min-w-0 flex-col gap-0.5">
-                      <span className="truncate">{expense.memo || expenseCategoryLabel(expense.category)}</span>
+                      <span className="truncate">{expenseCategoryLabel(expense.category)}</span>
+                      {expense.memo && <span className="truncate text-body-xs-regular text-dark-gray">{expense.memo}</span>}
                       {expense.scheduleId !== null && expense.scheduleItemId !== null ? (
                         <ExpensePlaceLabel
                           roomId={roomId}

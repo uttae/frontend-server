@@ -3,7 +3,6 @@
 import { useId, useState } from "react";
 import { ExpenseItemMenu } from "./ExpenseItemMenu";
 import { totalsByCurrency } from "@/lib/expenses/expense-scope";
-import { ExpensePlaceLabel } from "./ExpensePlaceLabel";
 import {
   ArrowRight,
   BedDouble,
@@ -327,16 +326,6 @@ export function ExpenseList({
               <CategoryIcon category={e.category} />
               <div className="min-w-0">
                 <p className="flex flex-wrap items-baseline gap-x-1 text-body-s-emphasis">
-                  {roomId &&
-                    e.scheduleId !== null &&
-                    e.scheduleItemId !== null && (
-                      <ExpensePlaceLabel
-                        roomId={roomId}
-                        scheduleId={e.scheduleId}
-                        itemId={e.scheduleItemId}
-                        titleOnly
-                      />
-                    )}
                   {expenseCategoryLabel(e.category)}
                 </p>
                 <p className="mt-1 text-body-xs-regular text-text-subtle">

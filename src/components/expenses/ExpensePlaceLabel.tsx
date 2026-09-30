@@ -5,11 +5,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import type { PlanPlace } from "@/lib/plan/types";
 
-export function ExpensePlaceLabel({ roomId, scheduleId, itemId, titleOnly = false }: Readonly<{
+export function ExpensePlaceLabel({ roomId, scheduleId, itemId }: Readonly<{
   roomId: string;
   scheduleId: number;
   itemId: number;
-  titleOnly?: boolean;
 }>) {
   const client = useQueryClient();
   const subscribe = useCallback(
@@ -24,7 +23,6 @@ export function ExpensePlaceLabel({ roomId, scheduleId, itemId, titleOnly = fals
   }, [client, roomId, scheduleId, itemId]);
   // Subscribe to existing cache only; no query observer or fetch is started here.
   const label = useSyncExternalStore(subscribe, readName, () => "확인되지 않음");
-  if (titleOnly) return label === "확인되지 않음" ? null : <span className="break-words">{label}</span>;
   return (
     <span title={label} className="inline-flex min-w-0 max-w-full items-center gap-1 text-body-xs-regular font-normal text-dark-gray">
       <MapPin size={14} className="shrink-0" aria-hidden="true" />
