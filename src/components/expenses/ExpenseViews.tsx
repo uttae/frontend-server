@@ -234,7 +234,7 @@ export function ExpenseList({
   if (!expenses.length)
     return (
       <div className="rounded-xl border border-border-subtle bg-white px-4 py-9 text-center">
-        <p className="font-semibold">아직 등록된 비용이 없어요.</p>
+        <p className="text-[16px] leading-6 font-semibold">아직 등록된 비용이 없어요.</p>
         <p className="mt-2 text-body-xs-regular text-text-subtle">
           여행 준비부터 오늘 쓴 비용까지 기록해 보세요.
         </p>
