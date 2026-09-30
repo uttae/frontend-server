@@ -89,3 +89,39 @@ it("distinguishes unavailable totals from known zero without visible loading cop
  expect(zero.textContent).toBe("0원");
  expect(zero.querySelector('button')).toBeNull();
 });
+
+import { act } from "react";
+import { createRoot } from "react-dom/client";
+it("anchors the disclosure below its trigger, follows scrolling and flips above at the viewport edge", async () => {
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+ vi.stubGlobal("innerWidth", 393);
+ vi.stubGlobal("innerHeight", 852);
+ const host = document.createElement("div");
+ document.body.append(host);
+ const root = createRoot(host);
+ try {
+  await act(async () => root.render(<ExpenseKrwAmount total={{ convertedTotalKrw: null, isComplete: false, missingCurrencies: ["AED"] }} original={{ currency: "AED", amount: "50.00" }} />));
+  const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="원화 합계 안내"]')!;
+  const note = host.querySelector<HTMLElement>('[popover]')!;
+  let anchor = new DOMRect(100, 200, 24, 24);
+  trigger.getBoundingClientRect = () => anchor;
+  note.getBoundingClientRect = () => new DOMRect(0, 0, 320, 100);
+  let open = true;
+  note.matches = (selector) => selector === ':popover-open' && open;
+  await act(async () => note.dispatchEvent(new Event('toggle')));
+  expect(note.style.left).toBe('12px');
+  expect(note.style.top).toBe('232px');
+  expect(note.style.visibility).toBe('visible');
+  anchor = new DOMRect(349, 800, 24, 24);
+  await act(async () => window.dispatchEvent(new Event('scroll')));
+  expect(note.style.left).toBe('53px');
+  expect(note.style.top).toBe('692px');
+  open = false;
+  await act(async () => note.dispatchEvent(new Event('toggle')));
+  expect(note.style.visibility).toBe('hidden');
+ } finally {
+  await act(async () => root.unmount());
+  host.remove();
+  vi.unstubAllGlobals();
+ }
+});

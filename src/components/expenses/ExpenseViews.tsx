@@ -324,7 +324,7 @@ export function ExpenseList({
         <li
           key={e.id}
           data-expense-id={e.id}
-          className="relative min-h-[154px] min-w-0 rounded-xl border border-border-subtle bg-white p-3 @min-[800px]/expenses:min-h-0 @min-[800px]/expenses:rounded-none @min-[800px]/expenses:border-0 @min-[800px]/expenses:bg-transparent @min-[800px]/expenses:px-4 @min-[800px]/expenses:py-0"
+          className="relative min-w-0 rounded-xl border border-border-subtle bg-white p-3 @min-[800px]/expenses:min-h-0 @min-[800px]/expenses:rounded-none @min-[800px]/expenses:border-0 @min-[800px]/expenses:bg-transparent @min-[800px]/expenses:px-4 @min-[800px]/expenses:py-0"
         >
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:gap-x-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_minmax(100px,200px)_minmax(120px,180px)_minmax(100px,200px)_24px] @min-[800px]/expenses:items-center">
             <div className="col-span-2 flex min-w-0 items-center gap-3 pr-10 @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:gap-4 @min-[800px]/expenses:pr-0">
