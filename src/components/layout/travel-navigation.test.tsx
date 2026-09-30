@@ -51,8 +51,8 @@ it("switches between expenses and packing inside the mobile travel tools tab", a
   await render();
   const tools = host.querySelector<HTMLElement>('nav[aria-label="여행 도구 선택"]');
   expect([...tools!.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")]))
-    .toEqual([["지출", "/cost"], ["준비물", `/packing/${state.roomId}`]]);
-  expect(tools!.querySelector('[aria-current="page"]')?.textContent).toBe("지출");
+    .toEqual([["가계부", "/cost"], ["준비물", `/packing/${state.roomId}`]]);
+  expect(tools!.querySelector('[aria-current="page"]')?.textContent).toBe("가계부");
   state.pathname = `/packing/${state.roomId}`;
   await render();
   expect(host.querySelector('nav[aria-label="여행 도구 선택"] [aria-current="page"]')?.textContent).toBe("준비물");
