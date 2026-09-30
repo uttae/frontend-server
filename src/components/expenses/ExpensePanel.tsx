@@ -290,7 +290,7 @@ export function ExpensePanel() {
             : {},
         )
       }
-      className={`${expenseButtonClass} inline-flex items-center justify-center gap-1 bg-primary text-white enabled:hover:bg-primary-strong`}
+      className={cn(expenseButtonClass, "inline-flex items-center justify-center gap-1 bg-primary text-white enabled:hover:bg-primary-strong")}
     >
       <PlusIcon size={16} />
       비용 추가
@@ -387,7 +387,7 @@ export function ExpensePanel() {
               조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_152px] items-center gap-x-3 gap-y-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_180px]">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-center gap-x-3 gap-y-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_160px]">
             <div
               aria-label="준비·일차 필터"
               className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] @min-[800px]/expenses:col-span-1"
@@ -408,6 +408,7 @@ export function ExpensePanel() {
             <div className="col-start-2 row-start-2 w-full @min-[800px]/expenses:row-start-1">
               <ExpenseSelect
                 label="카테고리 필터"
+                compact
                 value={category}
                 onChange={setCategory}
                 mobileSheet

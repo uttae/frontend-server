@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { cn } from "@/lib/utils";
 import { ExpenseDialog } from "./ExpenseDialog";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { Check } from "lucide-react";
@@ -15,6 +16,7 @@ export function ExpenseSelect({
   placeholder = "선택",
   disabled = false,
   mobileSheet = false,
+  compact = false,
 }: {
   label: string;
   name?: string;
@@ -24,6 +26,7 @@ export function ExpenseSelect({
   placeholder?: string;
   disabled?: boolean;
   mobileSheet?: boolean;
+  compact?: boolean;
 }) {
   const { isMobileDevice } = useMobileView();
   const [sheet, setSheet] = useState(false);
@@ -128,13 +131,13 @@ export function ExpenseSelect({
             if (options[activeIndex]) choose(options[activeIndex].value);
           }
         }}
-        className="flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className={cn("flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50", compact && "min-h-10 gap-2 px-3 text-[14px] leading-5 mobile:min-h-11 max-sm:min-h-11")}
       >
         <span className={`min-w-0 break-words ${selected ? "" : "text-text-subtle"}`}>
           {selected?.label ?? placeholder}
         </span>
         <ChevronDownIcon
-          size={20}
+          size={compact ? 16 : 20}
           aria-hidden="true"
           className={`shrink-0 text-icon-subtle transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
