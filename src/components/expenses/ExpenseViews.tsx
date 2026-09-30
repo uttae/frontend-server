@@ -4,18 +4,12 @@ import type { ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { useId, useState } from "react";
+import { ExpensePlaceLabel } from "./ExpensePlaceLabel";
 import { ExpenseItemMenu } from "./ExpenseItemMenu";
 import { totalsByCurrency } from "@/lib/expenses/expense-scope";
 import {
   ArrowRight,
-  BedDouble,
-  Camera,
   ChevronDown,
-  Plane,
-  ReceiptText,
-  ShoppingBag,
-  TrainFront,
-  Utensils,
 } from "lucide-react";
 import {
   expenseCategoryLabel,
@@ -35,25 +29,29 @@ import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvata
 export const expenseButtonClass =
   "min-h-10 rounded-lg border border-gray-border px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 export const expenseInputClass =
-  "mt-1 min-h-11 w-full min-w-0 rounded-lg border border-border bg-background px-3 py-2 text-body-s-regular focus:outline-primary";
+  "mt-1 min-h-12 w-full min-w-0 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-body-s-regular focus:outline-primary";
 // Group the integer string directly so large amounts and trailing decimals stay exact.
 import { formatExpenseAmount } from "@/lib/expenses/format-expense-amount";
 
 export { formatExpenseAmount };
 const categoryIcons = {
-  FLIGHT: Plane,
-  ACCOMMODATION: BedDouble,
-  FOOD: Utensils,
-  TRANSPORT: TrainFront,
-  SHOPPING: ShoppingBag,
-  SIGHTSEEING: Camera,
-  OTHER: ReceiptText,
+  FLIGHT: "flight",
+  ACCOMMODATION: "lodging",
+  FOOD: "food",
+  TRANSPORT: "transport",
+  SHOPPING: "shopping",
+  SIGHTSEEING: "sightseeing",
+  OTHER: "other",
 };
-export function CategoryIcon({ category }: { category: ExpenseCategory }) {
-  const Icon = categoryIcons[category] ?? ReceiptText;
+export function CategoryIcon({ category, summary = false }: { category: ExpenseCategory; summary?: boolean }) {
+  const asset = categoryIcons[category] ?? "other";
   return (
-    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-fill text-dark-gray">
-      <Icon size={20} aria-hidden="true" />
+    <span className={`flex shrink-0 items-center justify-center rounded-full bg-fill text-icon ${summary ? "size-9" : "size-8 @min-[800px]/expenses:size-10"}`}>
+      <span className="flex size-5 items-center justify-center">
+        {/* Figma exports are 24px except lodging (20px); preserve their root dimensions. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- local Figma vector asset */}
+        <img src={`/expenses/${asset}.svg`} alt="" className={`max-w-none shrink-0 ${asset === "lodging" ? "" : "scale-[0.833333]"}`} />
+      </span>
     </span>
   );
 }
@@ -71,12 +69,12 @@ export function ExpensePerson({
       title={person.label}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 align-middle"
     >
-      <ChatMemberAvatarRing
+      {person.imageUrl ? <ChatMemberAvatarRing
         avatarUrl={person.imageUrl ?? undefined}
         alt=""
-        chromeAvatarClassName="h-5 w-5 shrink-0 overflow-hidden rounded-full"
+        chromeAvatarClassName="h-6 w-6 shrink-0 overflow-hidden rounded-full border-[1.5px] border-white"
         reduceMotion={true}
-      />
+      /> : <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-white bg-primary-subtle text-[12px] leading-4 text-primary">{person.label.slice(0, 1)}</span>}
       <span
         className={compact ? "sr-only" : "min-w-0 [overflow-wrap:anywhere]"}
       >
@@ -126,7 +124,7 @@ export function ExpenseRolePicker({
   return (
     <fieldset
       aria-labelledby={titleId}
-      className="min-w-0 space-y-2 rounded-xl bg-fill p-3"
+      className="min-w-0 space-y-2 rounded-2xl bg-fill p-4 mobile:p-3 max-sm:p-3"
     >
       <div
         id={titleId}
@@ -140,7 +138,7 @@ export function ExpenseRolePicker({
       {options.map((option) => (
         <label
           key={option.userId}
-          className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-m-regular mobile:text-label-s-regular transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed focus-within:ring-2 focus-within:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30"
+          className="flex min-h-11 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-2 text-label-m-regular mobile:text-label-s-regular transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed focus-within:ring-2 focus-within:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30"
         >
           <input
             type="checkbox"
@@ -254,7 +252,7 @@ export function ExpenseList({
   });
   if (grouped)
     return (
-      <div className="space-y-5">
+      <div className="space-y-4 @min-[800px]/expenses:space-y-2">
         {groupKeys.map((key) => {
           const rows = expenses.filter(
             (e) =>
@@ -282,8 +280,8 @@ export function ExpenseList({
                   : `${day?.dayNumber ?? ""}일차 비용`
               }
             >
-              <div className="mb-2 flex flex-wrap items-center gap-2 px-1">
-                <h3 className="text-body-m-emphasis">
+              <div className="mb-4 flex min-h-8 flex-wrap items-center gap-2 @min-[800px]/expenses:mb-2 @min-[800px]/expenses:min-h-7 @min-[800px]/expenses:gap-3 @min-[800px]/expenses:px-4">
+                <h3 className="text-[16px] leading-6 font-bold @min-[800px]/expenses:text-[20px]">
                   {key === "PREPARATION"
                     ? "여행 준비"
                     : (dateLabel ??
@@ -294,14 +292,14 @@ export function ExpenseList({
                     {day.dayNumber}일차
                   </span>
                 )}
-                <ExpenseKrwAmount total={krwSummary?.days?.find((d) => key === "PREPARATION" ? d.expenseGroup === "PREPARATION" : d.expenseGroup === "TRIP_DAY" && String(d.scheduleId) === key)?.total} />
-                <span className="text-body-xs-regular text-text-subtle">
+                <span className="text-[14px] leading-5 text-text-subtle"><ExpenseKrwAmount total={krwSummary?.days?.find((d) => key === "PREPARATION" ? d.expenseGroup === "PREPARATION" : d.expenseGroup === "TRIP_DAY" && String(d.scheduleId) === key)?.total} /></span>
+                {!krwSummary && <span className="text-body-xs-regular text-text-subtle">
                   {totalsByCurrency(rows)
                     .map(
                       (t) => `${formatExpenseAmount(t.amount)} ${t.currency}`,
                     )
                     .join(" · ")}
-                </span>
+                </span>}
               </div>
               <ExpenseList
                 roomId={roomId}
@@ -321,27 +319,29 @@ export function ExpenseList({
       </div>
     );
   return (
-    <ul className="space-y-3 @min-[800px]/expenses:space-y-0 @min-[800px]/expenses:rounded-xl @min-[800px]/expenses:border @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:bg-white">
+    <ul className="space-y-4 @min-[800px]/expenses:space-y-0 @min-[800px]/expenses:rounded-xl @min-[800px]/expenses:border @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:bg-white">
       {expenses.map((e) => (
         <li
           key={e.id}
           data-expense-id={e.id}
-          className="relative min-w-0 rounded-xl border border-border-subtle bg-white p-4 @min-[800px]/expenses:rounded-none @min-[800px]/expenses:border-0 @min-[800px]/expenses:p-3"
+          className="relative min-h-[154px] min-w-0 rounded-xl border border-border-subtle bg-white p-3 @min-[800px]/expenses:min-h-0 @min-[800px]/expenses:rounded-none @min-[800px]/expenses:border-0 @min-[800px]/expenses:bg-transparent @min-[800px]/expenses:px-4 @min-[800px]/expenses:py-0"
         >
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-3 @min-[800px]/expenses:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_32px] @min-[800px]/expenses:items-center">
-            <div className="flex min-w-0 items-start gap-2">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:gap-x-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_minmax(100px,200px)_minmax(120px,180px)_minmax(100px,200px)_24px] @min-[800px]/expenses:items-center">
+            <div className="col-span-2 flex min-w-0 items-center gap-3 pr-10 @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:gap-4 @min-[800px]/expenses:pr-0">
               <CategoryIcon category={e.category} />
               <div className="min-w-0">
-                <p className="flex flex-wrap items-baseline gap-x-1 text-body-s-emphasis">
+                <p className="text-[14px] leading-5 font-medium @min-[800px]/expenses:text-[16px] @min-[800px]/expenses:leading-6">
                   {expenseTitle(e)}
                 </p>
-                <p className="mt-1 text-body-xs-regular text-text-subtle">
+                <p className="mt-1 text-[12px] leading-5 text-text-subtle @min-[800px]/expenses:text-[13px] @min-[800px]/expenses:leading-[18px]">
                   {expenseCategoryLabel(e.category)} ·{" "}
-                  {e.scheduleItemId === null ? "장소 연결 없음" : "연결 장소"}
+                  {roomId && e.scheduleId !== null && e.scheduleItemId !== null ? (
+                    <ExpensePlaceLabel roomId={roomId} scheduleId={e.scheduleId} itemId={e.scheduleItemId} showIcon={false} />
+                  ) : "장소 연결 없음"}
                 </p>
               </div>
             </div>
-            <div className="col-start-2 row-start-1 @min-[800px]/expenses:col-start-5">
+            <div className="absolute right-3 top-3 @min-[800px]/expenses:static @min-[800px]/expenses:col-start-5 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:justify-self-end">
               {canManage && (
                 <ExpenseItemMenu
                   label={expenseTitle(e)}
@@ -351,26 +351,26 @@ export function ExpenseList({
                 />
               )}
             </div>
-            <p className="min-w-0 whitespace-pre-wrap break-words text-body-xs-regular text-text-subtle @min-[800px]/expenses:col-start-2 @min-[800px]/expenses:row-start-1">
+            <p className="min-w-0 self-center whitespace-pre-wrap break-words text-[12px] leading-4 text-text-subtle @min-[800px]/expenses:text-[14px] @min-[800px]/expenses:leading-5 @min-[800px]/expenses:col-start-2 @min-[800px]/expenses:row-start-1">
               {e.memo || "메모 없음"}
             </p>
-            <p className="break-all text-right text-body-s-emphasis tabular-nums @min-[800px]/expenses:col-start-4 @min-[800px]/expenses:row-start-1">
+            <p className="break-all text-right text-[16px] leading-6 font-medium tabular-nums @min-[800px]/expenses:col-start-4 @min-[800px]/expenses:row-start-1">
               <ExpenseKrwAmount total={expenseRowKrw(krwSummary, e.id, e.version)} />
-              <span className="text-body-xs-regular text-text-subtle">{formatExpenseAmount(e.totalAmount)} {e.currency}</span>
+              <span className="mt-1 block text-[12px] leading-4 font-normal text-text-subtle @min-[800px]/expenses:text-[13px] @min-[800px]/expenses:leading-[18px]">{e.currency} {formatExpenseAmount(e.totalAmount)}</span>
             </p>
-            <div className="col-span-2 flex flex-wrap gap-x-4 gap-y-2 border-t border-border-subtle pt-2 @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:col-start-3 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:flex-col @min-[800px]/expenses:border-0 @min-[800px]/expenses:pt-0">
+            <div className="col-span-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-text-subtle @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:col-start-3 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:flex-col @min-[800px]/expenses:justify-center @min-[800px]/expenses:border-x @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:px-2 @min-[800px]/expenses:py-2">
               {(
                 [
-                  ["결제자", e.payerUserIds],
-                  ["부담자", e.participantUserIds],
+                  ["결제", e.payerUserIds],
+                  ["분담", e.participantUserIds],
                 ] as const
               ).map(([title, ids]) => (
                 <div
                   key={title}
-                  className="flex min-w-0 flex-wrap items-center gap-1 text-body-xs-regular"
+                  className="flex min-w-0 flex-wrap items-center gap-2 text-[12px] leading-4"
                 >
                   <span className="mr-1 text-text-subtle">{title}</span>
-                  {ids.map((id) => (
+                  <span className={ids.length > 1 ? "flex min-w-0 max-w-full flex-wrap gap-y-1 pr-1.5 [&>*]:-mr-1.5 [&>*]:shrink-0" : "flex shrink-0 max-w-full"}>{ids.map((id) => (
                     <ExpensePerson
                       key={id}
                       userId={id}
@@ -382,7 +382,7 @@ export function ExpenseList({
                         members.some((member) => member.userId === id)
                       }
                     />
-                  ))}
+                  ))}</span>
                   {ids.length > 1 && (
                     <span className="text-text-subtle">{ids.length}명</span>
                   )}
@@ -444,139 +444,66 @@ function SettlementCalculation({
   );
 }
 
-function AllSettlement({ summary, members, memberStatus }: SettlementProps) {
-  const ids = [
-    ...new Set(
-      summary.currencies.flatMap((c) => c.individuals.map((p) => p.userId)),
-    ),
-  ];
+function AllSettlement({ summary, members, memberStatus, krwSummary }: SettlementProps) {
+  const ids = [...new Set(summary.currencies.flatMap((c) => c.individuals.map((p) => p.userId)))];
+  function amounts(id: number, field: "paidAmount" | "receive" | "send") {
+    const rows = summary.currencies.flatMap((currency) => {
+      const person = currency.individuals.find((p) => p.userId === id);
+      if (!person) return [];
+      const net = settlementBalance(person.netAmount);
+      if (field !== "paidAmount" && net.label !== (field === "receive" ? "받을 금액" : "보낼 금액")) return [];
+      return [{ currency: currency.currency, amount: field === "paidAmount" ? person.paidAmount : net.amount }];
+    });
+    return rows.length ? rows.map((row) => <span key={row.currency} className="block break-words tabular-nums">{row.currency} {formatExpenseAmount(row.amount)}</span>) : "—";
+  }
   return (
-    <div className="space-y-5">
-      <p className="text-body-xs-regular text-text-subtle">
-        전체 여행 · {ids.length}명
-      </p>
-      <div className="space-y-3 sm:space-y-0 sm:rounded-xl sm:border sm:border-border-subtle">
-        <div className="hidden grid-cols-[1fr_1.2fr_1.2fr_1fr_1fr] gap-3 bg-background px-4 py-3 text-body-xs-regular text-text-subtle sm:grid mobile:hidden">
-          <span>멤버</span>
-          <span className="text-right">결제한 금액</span>
-          <span className="text-right">부담할 몫</span>
-          <span className="text-right">받을 금액</span>
-          <span className="text-right">보낼 금액</span>
+    <div className="space-y-6 mobile:space-y-4 max-sm:space-y-4">
+      <div className="space-y-1">
+        <p className="text-[16px] leading-6 font-medium mobile:text-[12px] mobile:text-text-subtle max-sm:text-[12px] max-sm:text-text-subtle">전체 여행 · {ids.length}명</p>
+        <p className="text-[14px] leading-5 text-text-subtle mobile:hidden max-sm:hidden">결제 통화와 원화 환산 금액을 함께 확인해요.</p>
+      </div>
+      <div className="space-y-3 sm:space-y-0 sm:rounded-xl sm:border sm:border-border-subtle sm:bg-fill-subtle sm:px-4 mobile:space-y-3 mobile:border-0 mobile:bg-white mobile:px-0">
+        <div className="hidden min-h-12 grid-cols-[.8fr_1.1fr_1.2fr_1.1fr_1.1fr] items-center gap-2 text-[12px] leading-[18px] text-text-subtle sm:grid mobile:hidden">
+          <span>멤버</span><span className="text-right">결제한 금액</span><span className="text-right">원화 환산 합계</span><span className="text-right">받을 금액</span><span className="text-right">보낼 금액</span>
         </div>
         {ids.map((id) => (
-          <div
-            key={id}
-            className="grid min-w-0 grid-cols-2 gap-3 rounded-xl border border-border-subtle p-4 text-body-xs-regular sm:grid-cols-[1fr_1.2fr_1.2fr_1fr_1fr] sm:items-center sm:rounded-none sm:border-0 sm:border-t mobile:grid-cols-2 mobile:rounded-xl mobile:border"
-          >
-            <div className="col-span-2 sm:col-span-1 mobile:col-span-2">
-              <ExpensePerson
-                userId={id}
-                members={members}
-                memberStatus={memberStatus}
-              />
+          <div key={id} data-settlement-user-id={id} className="grid min-w-0 grid-cols-2 items-center gap-x-3 gap-y-2 rounded-xl border border-border-subtle bg-fill-subtle p-3 text-[12px] leading-5 sm:min-h-[88px] sm:grid-cols-[.8fr_1.1fr_1.2fr_1.1fr_1.1fr] sm:gap-2 sm:rounded-none sm:border-0 sm:border-t sm:px-0 sm:text-[14px] sm:leading-[26px] mobile:min-h-0 mobile:grid-cols-2 mobile:gap-x-3 mobile:gap-y-2 mobile:rounded-xl mobile:border mobile:p-3 mobile:text-[12px] mobile:leading-5">
+            <div className="col-start-1 row-start-1"><ExpensePerson userId={id} members={members} memberStatus={memberStatus} /></div>
+            <div className="col-span-2 col-start-1 row-start-2 text-text-subtle sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:text-right sm:text-text mobile:col-span-2 mobile:col-start-1 mobile:row-start-2 mobile:text-left mobile:text-text-subtle">
+              <span className="mr-1 sm:hidden mobile:inline">결제</span><span className="inline [&>span]:inline [&>span+span]:before:content-['·_'] sm:block sm:[&>span]:block sm:[&>span+span]:before:content-none mobile:inline mobile:[&>span]:inline mobile:[&>span+span]:before:content-['·_']">{amounts(id, "paidAmount")}</span>
             </div>
-            {(["paidAmount", "owedAmount", "receive", "send"] as const).map(
-              (field, index) => (
-                <div key={field} className="min-w-0 text-right">
-                  <p className="mb-1 text-left text-text-subtle sm:hidden mobile:block">
-                    {
-                      ["결제한 금액", "부담할 몫", "받을 금액", "보낼 금액"][
-                        index
-                      ]
-                    }
-                  </p>
-                  {(field === "receive" || field === "send") &&
-                    !summary.currencies.some((c) => {
-                      const p = c.individuals.find(
-                        (person) => person.userId === id,
-                      );
-                      return (
-                        p &&
-                        settlementBalance(p.netAmount).label ===
-                          (field === "receive" ? "받을 금액" : "보낼 금액")
-                      );
-                    }) && <span>—</span>}
-                  {summary.currencies.map((c) => {
-                    const person = c.individuals.find((p) => p.userId === id);
-                    if (!person) return null;
-                    const net = settlementBalance(person.netAmount);
-                    const amount =
-                      field === "receive"
-                        ? net.label === "받을 금액"
-                          ? net.amount
-                          : null
-                        : field === "send"
-                          ? net.label === "보낼 금액"
-                            ? net.amount
-                            : null
-                          : person[field];
-                    return amount === null ? null : (
-                      <p
-                        key={c.currency}
-                        className={`break-all tabular-nums ${field === "receive" ? "text-primary" : ""}`}
-                      >
-                        {c.currency} {formatExpenseAmount(amount)}
-                      </p>
-                    );
-                  })}
-                </div>
-              ),
-            )}
+            <div aria-label="원화 환산 합계" className="col-start-2 row-start-1 text-right font-semibold sm:col-start-3 mobile:col-start-2">
+              <span className="block text-[10px] leading-4 font-normal text-text-subtle sm:hidden mobile:block">원화 환산 합계</span>
+              <ExpenseKrwAmount total={krwSummary?.payers?.find((payer) => payer.userId === id)?.total} />
+            </div>
+            <div className="text-primary sm:text-right mobile:text-left"><span className="block text-[10px] leading-4 text-text-subtle sm:hidden mobile:block">받을 금액</span>{amounts(id, "receive")}</div>
+            <div className="text-right"><span className="block text-[10px] leading-4 text-text-subtle sm:hidden mobile:block">보낼 금액</span>{amounts(id, "send")}</div>
           </div>
         ))}
       </div>
-      <section className="space-y-3">
-        <h3 className="text-body-s-emphasis">송금 안내</h3>
-        <p className="text-body-xs-regular text-text-subtle">
-          원래 결제 통화 기준으로 송금해요.
-        </p>
+      <section className="space-y-2">
+        <h3 className="text-[18px] leading-[26px] font-bold mobile:text-[16px] max-sm:text-[16px]">송금 안내</h3>
+        <p className="text-[12px] leading-4 text-text-subtle">원래 결제 통화 기준으로 송금해요.</p>
         {summary.currencies.map((c) => (
-          <section
-            key={c.currency}
-            aria-label={`${c.currency} 정산`}
-            className="space-y-3"
-          >
-            {!c.transfers.length && (
-              <p className="text-body-xs-regular text-text-subtle">
-                {c.currency} · 주고받을 금액이 없어요.
-              </p>
-            )}
+          <section key={c.currency} aria-label={`${c.currency} 정산`}>
+            {!c.transfers.length && <p className="py-3 text-body-xs-regular text-text-subtle">{c.currency} · 주고받을 금액이 없어요.</p>}
             {c.transfers.map((t, index) => (
-              <div
-                key={index}
-                className="flex flex-wrap items-center gap-2 text-body-xs-regular"
-              >
-                <ExpensePerson
-                  userId={t.fromUserId}
-                  members={members}
-                  memberStatus={memberStatus}
-                />
-                <ArrowRight
-                  size={16}
-                  aria-label="받는 사람"
-                  className="text-text-subtle"
-                />
-                <ExpensePerson
-                  userId={t.toUserId}
-                  members={members}
-                  memberStatus={memberStatus}
-                />
-                <span className="ml-auto break-all font-semibold text-primary">
-                  {c.currency} {formatExpenseAmount(t.amount)}
-                </span>
-                {[t.fromUserId, t.toUserId].some(
-                  (id) => expensePerson(id, members, memberStatus).unknown,
-                ) && (
-                  <p className="w-full text-text-subtle">
-                    사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어
-                    있어요.
-                  </p>
-                )}
+              <div key={index} className="flex min-h-[52px] flex-wrap items-center gap-2 text-[12px] leading-4">
+                <ExpensePerson userId={t.fromUserId} members={members} memberStatus={memberStatus} />
+                <ArrowRight size={16} aria-label="받는 사람" className="text-text-subtle" />
+                <ExpensePerson userId={t.toUserId} members={members} memberStatus={memberStatus} />
+                <span className="ml-auto break-all text-[16px] leading-6 font-medium text-primary mobile:text-[14px] max-sm:text-[14px]">{c.currency} {formatExpenseAmount(t.amount)}</span>
+                {[t.fromUserId, t.toUserId].some((id) => expensePerson(id, members, memberStatus).unknown) && <p className="w-full text-text-subtle">사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어 있어요.</p>}
               </div>
             ))}
           </section>
         ))}
       </section>
+      <details className="text-body-xs-regular text-text-subtle">
+        <summary className="cursor-pointer">계산 내역·환율 정보</summary>
+        {summary.currencies.map((currency) => <div key={currency.currency} className="mt-3 space-y-2">{currency.individuals.map((person) => <div key={person.userId} className="flex justify-between gap-3"><ExpensePerson userId={person.userId} members={members} memberStatus={memberStatus} /><span>부담할 몫 {currency.currency} {formatExpenseAmount(person.owedAmount)}</span></div>)}</div>)}
+        <ExpenseRateNote summary={krwSummary} />
+      </details>
     </div>
   );
 }
@@ -587,6 +514,7 @@ function SettlementContent({
   memberStatus,
   currentUserId,
   scope,
+  krwSummary,
 }: Readonly<SettlementProps>) {
   if (scope === "mine" && currentUserId === undefined) {
     return (
@@ -611,6 +539,7 @@ function SettlementContent({
         summary={summary}
         members={members}
         memberStatus={memberStatus}
+        krwSummary={krwSummary}
       />
     );
   return summary.currencies.map((c) => {
@@ -734,7 +663,9 @@ export function ExpenseSummaryView({
   krwSummary,
 }: SettlementProps) {
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-6 mobile:gap-4 max-sm:gap-4">
+      <details className="order-last text-body-xs-regular text-text-subtle">
+        <summary className="cursor-pointer">정산 범위</summary>
       <div
         className="flex gap-1 border-b border-gray-border"
         aria-label="정산 범위"
@@ -756,7 +687,8 @@ export function ExpenseSummaryView({
           </button>
         ))}
       </div>
-      {krwSummary && <section aria-label="결제자별 원화 합계" className="space-y-3">
+      </details>
+      {krwSummary && (scope !== "all" || !summary.currencies.length) && <section aria-label="결제자별 원화 합계" className="space-y-3">
         <h3>원화 환산 결제 합계</h3>
         {krwSummary.payers?.filter((payer) => scope === "all" || payer.userId === currentUserId).map((payer) => <div key={payer.userId} className="flex justify-between gap-3">
           <ExpensePerson userId={payer.userId} members={members} memberStatus={memberStatus} />
@@ -770,6 +702,7 @@ export function ExpenseSummaryView({
         memberStatus={memberStatus}
         currentUserId={currentUserId}
         scope={scope}
+        krwSummary={krwSummary}
       />
     </div>
   );

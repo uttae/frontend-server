@@ -331,8 +331,8 @@ it("opens editing from the expense card and keeps deletion as a separate action"
   try {
     await act(async () => { renderer = create(render(true)); });
     expect(renderer!.root.findAllByType("details")).toHaveLength(0);
-    expect(JSON.stringify(renderer!.toJSON())).toContain("결제자");
-    expect(JSON.stringify(renderer!.toJSON())).toContain("부담자");
+    expect(JSON.stringify(renderer!.toJSON())).toContain("결제");
+    expect(JSON.stringify(renderer!.toJSON())).toContain("분담");
     const more = () => renderer!.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 더보기"))!;
     await act(async () => more().props.onClick());
     await act(async () => renderer!.root.findByProps({ "aria-label": "비용 수정" }).props.onClick());

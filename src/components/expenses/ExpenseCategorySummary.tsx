@@ -14,7 +14,8 @@ export function ExpenseCategorySummary() {
   const { list, krwSummary } = useExpenseContext();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
-  const rows = expenseCategories
+  const order = ["ACCOMMODATION", "FLIGHT", "FOOD", "SIGHTSEEING", "TRANSPORT", "SHOPPING", "OTHER"];
+  const rows = [...expenseCategories].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value))
     .map(({ value }) => ({
       category: value,
       expenses: (list.data ?? []).filter((e) => e.category === value),
@@ -35,7 +36,7 @@ export function ExpenseCategorySummary() {
           <ChevronDownIcon size={16} className={expanded ? "rotate-180" : ""} />
         </span>
       </button>
-      <h3 className="hidden items-center justify-between text-body-s-emphasis @min-[800px]/expenses:flex">
+      <h3 className="hidden items-center justify-between text-[18px] leading-[26px] font-bold @min-[800px]/expenses:flex">
         카테고리별 지출{" "}
         <span className="text-body-xs-regular text-text-subtle">
           전체 {list.data?.length ?? 0}건
@@ -58,23 +59,23 @@ export function ExpenseCategorySummary() {
             등록된 비용이 없어요.
           </p>
         )}
-        <dl className="mt-3 space-y-4">
+        <dl className="mt-2 space-y-1">
           {rows.map(({ category, expenses }) => (
-            <div key={category} className="flex items-center gap-2">
-              <dt className="flex min-w-0 flex-1 items-center gap-2 text-body-xs-regular">
-                <CategoryIcon category={category} />
+            <div key={category} className="flex min-h-12 items-center gap-3 @min-[800px]/expenses:min-h-[52px]">
+              <dt className="flex min-w-0 flex-1 items-center gap-3 text-[14px] leading-5 font-medium">
+                <CategoryIcon category={category} summary />
                 <span>
                   {expenseCategoryLabel(category)}
-                  <span className="block text-text-subtle">
+                  <span className="block text-[12px] leading-4 font-normal text-text-subtle">
                     {expenses.length}건
                   </span>
                 </span>
               </dt>
-              <dd className="min-w-0 max-w-[60%] text-right text-body-xs-emphasis tabular-nums">
+              <dd className="min-w-0 max-w-[60%] text-right text-[14px] leading-5 font-medium tabular-nums">
                 <ExpenseKrwAmount total={krwSummary?.isSuccess && !krwSummary.isFetching ? krwSummary.data?.categories?.find((row) => row.category === category)?.total : undefined} />
                 {totalsByCurrency(expenses).map((total) => (
-                  <p key={total.currency} className="break-all">
-                    {formatExpenseAmount(total.amount)} {total.currency}
+                  <p key={total.currency} className="break-all text-[12px] leading-4 font-normal text-text-subtle">
+                    {total.currency} {formatExpenseAmount(total.amount)}
                   </p>
                 ))}
               </dd>

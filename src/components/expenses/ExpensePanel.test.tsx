@@ -300,7 +300,7 @@ it("keeps budget and original-currency settlement without comparison or explanat
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  expect(JSON.stringify(renderer.toJSON())).toContain("여행 전체 예산");
+  expect(JSON.stringify(renderer.toJSON())).toContain("전체 예산");
   expect(renderer.root.findAllByProps({ "aria-label": "예산 비교" })).toHaveLength(0);
   await act(async () =>
     renderer.root

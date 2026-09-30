@@ -74,6 +74,16 @@ it("chooses a mobile category and restores its trigger, while cancel leaves sele
   );
   expect(host.querySelector("dialog")).toBeNull();
   expect(trigger.textContent).toContain("식비");
+  await act(async () => trigger.click());
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="카테고리 닫기"]')!.click());
+  expect(host.querySelector("dialog")).toBeNull();
+  expect(trigger.textContent).toContain("식비");
+  expect(document.activeElement).toBe(trigger);
+  await act(async () => trigger.click());
+  await act(async () => host.querySelector("dialog")!.click());
+  expect(host.querySelector("dialog")).toBeNull();
+  expect(trigger.textContent).toContain("식비");
+  expect(document.activeElement).toBe(trigger);
 });
 
 it("closes the item disclosure on Escape, outside pointer and focus departure without acting", async () => {
@@ -128,7 +138,7 @@ it("expands the category breakdown without adding different currencies together"
   const breakdown = document.getElementById(
     trigger.getAttribute("aria-controls")!,
   )!;
-  expect(breakdown.textContent).toContain("0.30 USD");
-  expect(breakdown.textContent).toContain("100 KRW");
+  expect(breakdown.textContent).toContain("USD 0.30");
+  expect(breakdown.textContent).toContain("KRW 100");
   expect(breakdown.textContent).not.toContain("100.30");
 });

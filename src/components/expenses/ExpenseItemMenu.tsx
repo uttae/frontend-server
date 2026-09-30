@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import { MenuDotVerticalIcon, TrashIcon, WriteIcon } from "@/assets/icons";
+import { TrashIcon, WriteIcon } from "@/assets/icons";
 
 export function ExpenseItemMenu({
   label,
@@ -57,14 +57,15 @@ export function ExpenseItemMenu({
         aria-controls={open && !busy ? id : undefined}
         disabled={busy}
         onClick={() => setOpen(!open)}
-        className="flex size-8 cursor-pointer items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
+        className="flex size-8 @min-[800px]/expenses:w-6 cursor-pointer items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
       >
-        <MenuDotVerticalIcon size={20} className="rotate-90" />
+        {/* eslint-disable-next-line @next/next/no-img-element -- local Figma vector asset */}
+        <img src="/expenses/more.svg" alt="" className="max-w-none" />
       </button>
       {open && !busy && (
         <div
           id={id}
-          className="absolute right-0 top-8 z-30 w-36 rounded-lg border border-border-subtle bg-white py-1 shadow-lg"
+          className="absolute right-0 top-8 z-30 w-40 rounded-lg border border-border-subtle bg-white py-1 shadow-lg"
         >
           <button
             type="button"

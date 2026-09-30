@@ -1,6 +1,6 @@
 "use client";
 
-import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
+import { ExpenseKrwAmount } from "./ExpenseKrw";
 import { useCallback, useState } from "react";
 import type { ExpenseBudget } from "@/lib/api/rooms/expenses";
 import { useExpenseContext } from "./ExpenseProvider";
@@ -22,9 +22,9 @@ export function ExpenseBudgetSummary() {
     reference.missingCurrencies.length === 0 &&
     converted != null;
   return (
-    <div className="space-y-4">
-      <div className="space-y-2 text-body-s-regular mobile:text-body-xs-regular">
-        <h3 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
+    <div className="space-y-3">
+      <div className="space-y-3 text-body-s-regular mobile:text-body-xs-regular">
+        <h3 className="text-[16px] leading-6 font-medium text-text mobile:text-[14px] mobile:text-text-subtle max-sm:text-[14px] max-sm:text-text-subtle">
           여행 전체 비용
         </h3>
         {krwSummary.isPending && (
@@ -38,7 +38,7 @@ export function ExpenseBudgetSummary() {
             있어요. 조회 다시 시도 버튼을 눌러 주세요.
           </p>
         )}
-        <p className="break-all text-heading-s mobile:text-heading-m font-bold text-primary tracking-tight tabular-nums">
+        <p className="break-all text-[32px] leading-[42px] font-bold text-primary tabular-nums">
           <ExpenseKrwAmount total={reference} />
         </p>
         {reference && (
@@ -53,10 +53,10 @@ export function ExpenseBudgetSummary() {
           </>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white">
-        <div className="flex min-w-0 max-w-full flex-1 flex-wrap items-center justify-between gap-2">
-          <h3 className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
-            여행 전체 예산
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-white mobile:pt-3 max-sm:pt-3">
+        <div className="contents">
+          <h3 className="text-[14px] leading-5 text-text-subtle">
+            전체 예산
           </h3>
           {budget.isPending && (
             <output style={{ display: "block" }}>예산을 불러오는 중…</output>
@@ -70,7 +70,7 @@ export function ExpenseBudgetSummary() {
             </p>
           )}
           {budget.isSuccess && (
-            <p className="break-all text-body-s-emphasis font-bold tabular-nums">
+            <p className="ml-auto break-all text-[16px] leading-5 font-medium tabular-nums mobile:order-3 mobile:text-[18px] mobile:font-bold mobile:text-text-subtle max-sm:order-3 max-sm:text-[18px] max-sm:font-bold max-sm:text-text-subtle">
               {amount === null ? "미설정" : `${formatExpenseAmount(amount!)}원`}
             </p>
           )}
@@ -79,7 +79,7 @@ export function ExpenseBudgetSummary() {
           <button
             type="button"
             aria-label={amount === null ? "예산 설정" : "예산 수정"}
-            className="flex size-7 shrink-0 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
+            className="flex h-5 w-4 shrink-0 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
             disabled={budgetBusy}
             onClick={() => setOpened(budget.data)}
           >
@@ -89,10 +89,10 @@ export function ExpenseBudgetSummary() {
       </div>
       <div
         aria-label="남은 예산"
-        className="flex items-center justify-between gap-2 text-body-s-regular text-primary"
+        className="flex items-center justify-between gap-2 text-[14px] leading-5 text-text-subtle mobile:text-primary max-sm:text-primary"
       >
         <span>남은 예산</span>
-        <p className="break-all text-right font-bold tabular-nums">
+        <p className="break-all text-right text-[18px] leading-[26px] font-bold text-text tabular-nums mobile:text-primary max-sm:text-primary">
           {syncStatus === "ready" &&
           budget.isSuccess &&
           !budget.isError &&
@@ -105,7 +105,6 @@ export function ExpenseBudgetSummary() {
             : "—"}
         </p>
       </div>
-      <ExpenseRateNote summary={reference} />
       {opened && <ExpenseBudgetModal initial={opened} onClose={close} />}
     </div>
   );

@@ -49,14 +49,14 @@ export function ConfirmDialog({
       stopPortalEventPropagation
     >
       {description ? (
-        <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
+        <p className={appearance === "ledger" ? "text-[14px] leading-5 text-text-subtle" : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"}>
           {description}
         </p>
       ) : null}
       <SettingsActionButtonRow className="mt-6">
         <SettingsActionButton
           variant="secondary"
-          className={appearance === "ledger" ? "rounded-lg" : undefined}
+          className={appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : undefined}
           onClick={handleClose}
           disabled={isPending}
         >
@@ -64,7 +64,7 @@ export function ConfirmDialog({
         </SettingsActionButton>
         <SettingsActionButton
           variant="primary"
-          className={`${appearance === "ledger" ? "rounded-lg" : ""} ${destructive ? "bg-status-negative" : ""}`}
+          className={`${appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : ""} ${destructive ? "bg-status-negative" : ""}`}
           onClick={onConfirm}
           disabled={isPending}
         >

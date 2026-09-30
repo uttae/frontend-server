@@ -828,11 +828,11 @@ it("reveals repeated validation errors without smooth scrolling when reduced mot
   expect(mocks.save).not.toHaveBeenCalled();
 });
 
-it("edits an optional independent name, uses only category placeholder, and explicitly clears it", async () => {
+it("edits an optional independent name, uses the design name prompt, and explicitly clears it", async () => {
   await mount(null);
   await act(async () => categorySelect().props.onChange("FOOD"));
   let name = renderer.root.findByProps({ name: "name" });
-  expect(name.props.placeholder).toBe("식비");
+  expect(name.props.placeholder).toBe("비용 이름을 입력해 주세요");
   expect(name.props.maxLength).toBe(100);
   await act(async () => name.props.onChange({ target: { value: "점심" } }));
   await completeNewExpense();

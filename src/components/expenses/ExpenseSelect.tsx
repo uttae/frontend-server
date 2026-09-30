@@ -3,7 +3,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { ExpenseDialog } from "./ExpenseDialog";
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
+import { ChevronDownIcon } from "@/assets/icons";
 
 export function ExpenseSelect({
   label,
@@ -127,15 +128,15 @@ export function ExpenseSelect({
             if (options[activeIndex]) choose(options[activeIndex].value);
           }
         }}
-        className="flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular font-medium cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="min-w-0 break-words">
           {selected?.label ?? placeholder}
         </span>
-        <ChevronDown
-          size={16}
+        <ChevronDownIcon
+          size={20}
           aria-hidden="true"
-          className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`shrink-0 text-icon-subtle transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
       {isOpen && sheet && (
@@ -181,7 +182,7 @@ export function ExpenseSelect({
               tabIndex={-1}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(option.value)}
-              className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular font-medium cursor-pointer transition-colors hover:bg-primary/10 ${index === activeIndex ? "bg-primary/5" : ""}`}
+              className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors hover:bg-primary/10 ${index === activeIndex ? "bg-primary/5" : ""}`}
             >
               <span className="min-w-0 break-words">{option.label}</span>
               {value === option.value && (

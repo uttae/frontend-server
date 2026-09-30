@@ -100,15 +100,15 @@ export function ExpenseBudgetModal({
       onClose={close}
     >
       <form
-        className="space-y-5"
+        className="space-y-6"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
         }}
       >
-        <p className="text-dark-gray">여행 전체의 예산을 설정해 주세요.</p>
+        <p className="sr-only">여행 전체의 예산을 설정해 주세요.</p>
         <div>
-          <label htmlFor={inputId} className="font-semibold">
+          <label htmlFor={inputId} className="text-[12px] leading-4 font-medium">
             예산 (KRW)
           </label>
           <ExpenseAmountInput
@@ -120,7 +120,7 @@ export function ExpenseBudgetModal({
             disabled={busy}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : undefined}
-            className={expenseInputClass}
+            className={`${expenseInputClass} h-12 text-[20px] font-normal`}
             onChange={(value) => {
               setDraft(value);
               setError("");
@@ -193,14 +193,14 @@ export function ExpenseBudgetModal({
         )}
         <SettingsActionButtonRow>
           <SettingsActionButton
-            variant="secondary" className="rounded-lg"
+            variant="secondary" className="h-12 rounded-lg text-[16px]"
             disabled={busy}
             onClick={close}
           >
             취소
           </SettingsActionButton>
           <SettingsActionButton
-            variant="primary" className="rounded-lg"
+            variant="primary" className="h-12 rounded-lg text-[16px]"
             type="submit"
             disabled={busy || !context.canManage || Boolean(conflict)}
           >

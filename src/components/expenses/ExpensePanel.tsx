@@ -1,4 +1,5 @@
 "use client";
+import { cn } from "@/lib/utils";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
@@ -254,9 +255,9 @@ export function ExpensePanel() {
       <MainPageHeader
         title="가계부"
         description="여행 비용과 정산을 한눈에 확인해요."
-        className="mb-6 mobile:hidden max-sm:hidden"
+        className="mb-6 min-h-[72px] items-center mobile:hidden max-sm:hidden [&_h1]:text-[32px] [&_h1]:leading-[42px]"
         action={
-          <div className="flex gap-2 [&>button]:rounded-full">
+          <div className="flex gap-3 [&>button]:h-9 [&>button]:min-h-9 [&>button]:min-w-[111px] [&>button]:rounded-full [&>button]:py-0 [&>button]:text-[14px]">
             <button
               type="button"
               className={expenseButtonClass}
@@ -276,8 +277,8 @@ export function ExpensePanel() {
           {syncStatusMessage(context.syncStatus)}
         </output>
       )}
-      <div className="grid min-w-0 gap-5 @min-[800px]/expenses:grid-cols-[280px_minmax(0,1fr)]">
-        <aside className="min-w-0 self-stretch @min-[800px]/expenses:min-h-[65dvh] rounded-xl border border-border-subtle bg-white p-5">
+      <div className="grid min-w-0 gap-4 @min-[800px]/expenses:gap-6 @min-[800px]/expenses:grid-cols-[minmax(260px,26%)_minmax(0,1fr)]">
+        <aside className="min-w-0 self-stretch rounded-xl border border-border-subtle bg-white p-4 @min-[800px]/expenses:min-h-[calc(100dvh-216px)] @min-[800px]/expenses:p-6">
           <ExpenseBudgetSummary />
           <ExpenseCategorySummary />
           {readFailed && (
@@ -294,7 +295,7 @@ export function ExpensePanel() {
           )}
         </aside>
         <div className="min-w-0 space-y-4">
-          <div className="hidden grid-cols-2 gap-3 mobile:grid max-sm:grid">
+          <div className="hidden grid-cols-2 gap-4 mobile:grid max-sm:grid [&>button]:h-11 [&>button]:bg-fill-subtle [&>button:first-child]:bg-primary [&_svg]:hidden">
             {context.canManage && addButton}
             <button
               type="button"
@@ -359,10 +360,10 @@ export function ExpensePanel() {
               조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-center gap-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_152px] items-center gap-x-3 gap-y-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_180px]">
             <div
               aria-label="준비·일차 필터"
-              className="col-span-2 flex min-w-0 max-w-full gap-1.5 overflow-x-auto pb-1 @min-[800px]/expenses:col-span-1"
+              className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] @min-[800px]/expenses:col-span-1"
             >
               {dayOptions.map((option) => (
                 <button
@@ -371,13 +372,13 @@ export function ExpensePanel() {
                   aria-label={`${option.label} 비용`}
                   aria-pressed={activeFilter === option.value}
                   onClick={() => setFilter(option.value)}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-body-xs-regular focus-visible:outline-2 focus-visible:outline-primary ${activeFilter === option.value ? "border-primary/20 bg-primary/5 text-primary" : "border-border-subtle text-text-subtle hover:bg-fill"}`}
+                  className={`h-9 shrink-0 rounded-full border px-4 text-[14px] font-medium leading-5 focus-visible:outline-2 focus-visible:outline-primary ${activeFilter === option.value ? "border-border text-primary" : "border-border text-text-disabled hover:bg-fill"}`}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
-            <div className="col-start-2 row-start-2 w-36 @min-[800px]/expenses:row-start-1">
+            <div className="col-start-2 row-start-2 w-full @min-[800px]/expenses:row-start-1">
               <ExpenseSelect
                 label="카테고리 필터"
                 value={category}
@@ -395,7 +396,7 @@ export function ExpensePanel() {
                 aria-label="선택한 비용 합계"
               >
                 <ExpenseKrwAmount total={detailed?.filtered} />
-                {(detailed ? detailed.filtered.originalTotals.map((total) => ({ currency: total.currency, amount: total.totalAmount })) : totalsByCurrency(filtered)).map((total) => (
+                {!detailed && totalsByCurrency(filtered).map((total) => (
                   <span key={total.currency} className="break-all">
                     {formatExpenseAmount(total.amount)} {total.currency}
                   </span>
@@ -407,7 +408,6 @@ export function ExpensePanel() {
             )}
           </div>
           {context.filteredKrwSummary?.isError && <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>}
-          <ExpenseRateNote summary={detailed} />
           {context.list.isSuccess && (
             <>
               <ExpenseList
@@ -438,15 +438,20 @@ export function ExpensePanel() {
           )}
         </div>
       </div>
+      <details className="mt-6 text-body-xs-regular text-text-subtle">
+        <summary className="cursor-pointer">환율 정보</summary>
+        <ExpenseRateNote summary={context.krwSummary.data} />
+      </details>
       {tab !== "list" && (
         <ExpenseDialog
           title={tab === "summary" ? "정산 요약" : "비용 분석"}
           onClose={() => setTab("list")}
+          settlement
           footer={
             <div className="flex justify-end">
               <button
                 type="button"
-                className={`${expenseButtonClass} min-w-24 bg-primary text-white mobile:w-full max-sm:w-full`}
+                className={cn(expenseButtonClass, "min-h-9 min-w-[111px] rounded-full bg-primary py-1 text-white mobile:min-h-11 mobile:w-full mobile:rounded-lg max-sm:min-h-11 max-sm:w-full max-sm:rounded-lg")}
                 onClick={() => setTab("list")}
               >
                 확인
@@ -454,7 +459,9 @@ export function ExpensePanel() {
             </div>
           }
         >
-          <div className="mb-4 flex gap-3 text-body-xs-regular">
+          <details className="order-last mt-4 text-body-xs-regular text-text-subtle">
+            <summary className="cursor-pointer">정산 보기 옵션</summary>
+            <div className="mt-2 flex gap-3">
             <button
               type="button"
               aria-pressed={tab === "summary"}
@@ -469,7 +476,8 @@ export function ExpensePanel() {
             >
               비용 분석
             </button>
-          </div>
+            </div>
+          </details>
           {context.summary.isPending && (
             <p role="status">정산을 불러오는 중…</p>
           )}

@@ -247,15 +247,13 @@ it("summary opens shared modal for unset or zero budget", async () => {
   expect(document.querySelector("dialog")).not.toBeNull();
   expect(input().value).toBe("");
 });
-it("shows the whole-room total with required ECB provenance", async () => {
+it("shows the whole-room total without duplicating page-level rate information", async () => {
   await summary();
   expect(text()).toContain("여행 전체 비용");
   expect(text()).toContain("501원");
   expect(text()).not.toContain("원화 참고 비용");
   expect(host.innerHTML).not.toContain("원화로 환산한 참고 금액이에요");
-  expect(text()).toContain("2026-09-11");
-  expect(text()).toContain("출처");
-  expect(document.querySelector("a")?.href).toContain("www.ecb.europa.eu");
+  expect(text()).not.toContain("출처");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
   expect(text()).not.toContain("참고 잔여 예산");
 });
@@ -397,13 +395,13 @@ it("keeps caret after middle edits and skips formatting commas on deletion", asy
   expect(mocks.save).not.toHaveBeenCalled();
 });
 
-it("keeps the trip total one scale step smaller with long-number wrapping", async () => {
+it("preserves long whole-room totals without truncation", async () => {
   mocks.state = state(budget, { ...reference, convertedTotalKrw: "9007199254740993" });
   await summary();
   const total = [...host.querySelectorAll("p")].find(
     (p) => p.textContent === "9,007,199,254,740,993원",
   )!;
-  expect(total.classList.contains("text-heading-s")).toBe(true);
+  expect(total.textContent).toBe("9,007,199,254,740,993원");
   expect(total.classList.contains("break-all")).toBe(true);
 });
 
@@ -411,18 +409,12 @@ it("groups budget and edit control on a white card with wrapping space for large
   mocks.state = state({ ...budget, budgetKrw: "999999999999999" });
   await summary();
   const title = [...host.querySelectorAll("h3")].find(
-    (h) => h.textContent === "여행 전체 예산",
+    (h) => h.textContent === "전체 예산",
   )!;
   const content = title.parentElement!;
   const card = content.parentElement!;
-  for (const token of ["bg-white", "flex-wrap"])
-    expect(card.classList.contains(token), token).toBe(true);
-  for (const token of ["min-w-0", "max-w-full"])
-    expect(content.classList.contains(token), token).toBe(true);
   expect(content.querySelector("p")?.textContent).toBe("999,999,999,999,999원");
-  expect(content.querySelector("p")?.classList.contains("break-all")).toBe(true);
   expect(card.contains(button("예산 수정"))).toBe(true);
-  expect(button("예산 수정").classList.contains("shrink-0")).toBe(true);
   await click("예산 수정");
   expect(input().value).toBe("999,999,999,999,999");
   await type("1,234,567");

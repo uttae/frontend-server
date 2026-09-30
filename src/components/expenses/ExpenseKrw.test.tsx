@@ -43,3 +43,12 @@ it.each([
  const html = renderToStaticMarkup(<ExpenseSummaryView summary={{ currencies: [] }} krwSummary={summary} members={[]} memberStatus="success" scope="all" />);
  expect(html).toContain(expected);
 });
+it("keeps each server payer total in that member's settlement row beside original-currency balances", () => {
+ const html = renderToStaticMarkup(<ExpenseSummaryView scope="all" members={[]} memberStatus="success" krwSummary={response} summary={{ currencies: [{ currency: "USD", totalAmount: "2.00", categories: [], days: [], individuals: [{ userId: 1, paidAmount: "2.00", owedAmount: "1.00", netAmount: "1.00" }], transfers: [] }] }} />);
+ const row = html.split('data-settlement-user-id="1"')[1]?.split('</div></div>')[0];
+ expect(row).toBeDefined();
+ expect(row).toContain("1,001원");
+ expect(row).toContain("USD 2.00");
+ expect(row).toContain("USD 1.00");
+ expect(html).not.toContain('aria-label="결제자별 원화 합계"');
+});

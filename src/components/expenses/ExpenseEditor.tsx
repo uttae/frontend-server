@@ -1,4 +1,5 @@
 "use client";
+import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { cn } from "@/lib/utils";
 import { ExpenseSelect } from "./ExpenseSelect";
@@ -9,7 +10,6 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ExpenseApiError,
   expenseCategories,
-  expenseCategoryLabel,
   isExpenseCategory,
   type Expense,
   type ExpenseInput,
@@ -322,7 +322,7 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-[600px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:max-h-[90dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
+      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:max-h-[90dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
@@ -331,8 +331,8 @@ export function ExpenseEditor({
         aria-describedby={error ? errorId : undefined}
       >
         <div aria-hidden className="mx-auto mt-3 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-border px-5 py-4 sm:px-6">
-          <h2 id={titleId} className="text-title-m mobile:text-title-s font-bold">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-4 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-4 max-sm:pb-3">
+          <h2 id={titleId} className="text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-7 max-sm:text-[20px] max-sm:leading-7 font-bold">
             {original ? "비용 수정" : "비용 추가"}
           </h2>
           <button
@@ -340,20 +340,21 @@ export function ExpenseEditor({
             onClick={onClose}
             disabled={pending}
             aria-label="닫기"
-            className="flex size-10 items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex size-10 mobile:hidden max-sm:hidden items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 [scrollbar-gutter:stable] sm:p-6">
-        <fieldset disabled={pending} className="min-w-0 space-y-4">
-          <label className="block text-label-m-emphasis">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
+        <p className="mb-4 hidden text-[12px] leading-4 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "이름과 결제 정보를 입력해주세요."}</p>
+        <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
+          <label className="block text-[12px] leading-4">
             이름 (선택)
-            <input name="name" className={expenseInputClass} maxLength={100}
-              placeholder={isExpenseCategory(body.category) ? expenseCategoryLabel(body.category) : "카테고리 선택"}
+            <input name="name" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
+              placeholder="비용 이름을 입력해 주세요"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
           </label>
-          <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-xl bg-fill p-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3 max-sm:grid-cols-[116px_minmax(0,1fr)] max-sm:gap-3 max-sm:p-3">
             <ExpenseCurrencyPicker
               value={body.currency}
               currencies={context.currencies.data ?? []}
@@ -363,9 +364,10 @@ export function ExpenseEditor({
                 change("currency", value);
               }}
             />
-            <label className="block min-w-0 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
-              <span className="block text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-5">금액</span>
+            <label className="block min-w-0 text-[12px] leading-4 font-medium">
+              <span className="block text-[12px] leading-4 font-medium leading-5">금액</span>
               <ExpenseAmountInput
+                className="h-12 text-[20px] font-normal"
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
                 onChange={(value) => change("totalAmount", value)}
@@ -381,7 +383,7 @@ export function ExpenseEditor({
             </p>
           )}
           <div className="space-y-1">
-            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">일차 구분</p>
+            <p className="text-[12px] leading-4 font-medium">일차 구분</p>
             <ExpenseSelect
               label="일차 구분"
               disabled={pending}
@@ -412,7 +414,7 @@ export function ExpenseEditor({
           <div className="space-y-1">
             <p
               className={cn(
-                "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold",
+                "text-[12px] leading-4 font-medium",
                 body.expenseGroup === "PREPARATION" && "opacity-50",
               )}
             >
@@ -445,7 +447,7 @@ export function ExpenseEditor({
             )}
           </div>
           <div className="space-y-1">
-            <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold">카테고리</p>
+            <p className="text-[12px] leading-4 font-medium">카테고리</p>
             <ExpenseSelect
               name="category"
               label="카테고리"
@@ -459,7 +461,7 @@ export function ExpenseEditor({
             />
           </div>
           {context.memberStatus === "success" ? (
-            <div className="grid min-w-0 grid-cols-2 gap-3">
+            <div className="grid min-w-0 grid-cols-2 gap-4 mobile:gap-3 max-sm:gap-3">
               <ExpenseRolePicker
                 title="결제자"
                 members={context.members}
@@ -484,10 +486,10 @@ export function ExpenseEditor({
                 : "멤버 확인 중… 기존 선택은 유지돼요."}
             </p>
           )}
-          <label className="block text-label-m-emphasis mobile:text-label-s-emphasis font-semibold">
+          <label className="block text-[12px] leading-4 font-medium">
             메모 (선택)
             <textarea
-              className={expenseInputClass}
+              className={`${expenseInputClass} min-h-24`}
               rows={3}
               maxLength={1000}
               value={body.memo ?? ""}
@@ -535,7 +537,7 @@ export function ExpenseEditor({
           </p>
         )}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:min-w-20 max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
           <button
             type="button"
             className={expenseButtonClass}
