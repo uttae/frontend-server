@@ -12,14 +12,14 @@ export function ExpenseDialog({
   footer,
   settlement = false,
   description,
-}: {
+}: Readonly<{
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
   settlement?: boolean;
   description?: ReactNode;
-}) {
+}>) {
   const sheetDrag = useExpenseSheetDrag(onClose);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -35,14 +35,19 @@ export function ExpenseDialog({
         trigger.focus();
     };
   }, []);
+  useEffect(() => {
+    const element = ref.current;
+    const dismissBackdrop = (event: MouseEvent) => {
+      if (event.target === element) onClose();
+    };
+    element?.addEventListener("click", dismissBackdrop);
+    return () => element?.removeEventListener("click", dismissBackdrop);
+  }, [onClose]);
   return (
     <dialog
       ref={ref}
       style={sheetDrag.surfaceStyle}
       aria-labelledby={titleId}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
       onCancel={(event) => {
         event.preventDefault();
         onClose();

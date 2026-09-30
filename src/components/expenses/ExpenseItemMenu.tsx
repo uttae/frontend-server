@@ -7,12 +7,12 @@ export function ExpenseItemMenu({
   busy,
   onEdit,
   onDelete,
-}: {
+}: Readonly<{
   label: string;
   busy: boolean;
   onEdit: () => void;
   onDelete: () => void;
-}) {
+}>) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -36,6 +36,8 @@ export function ExpenseItemMenu({
   return (
     <div
       ref={root}
+      role="group"
+      aria-label={`${label} 비용 작업`}
       className="relative z-20 self-start"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);

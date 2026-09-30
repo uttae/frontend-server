@@ -162,7 +162,7 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
 
 function PackingLoadingBoard() {
   return <>
-    <p role="status" className="sr-only">준비물을 불러오는 중…</p>
+    <output className="block sr-only">준비물을 불러오는 중…</output>
     <div className={styles.columns} aria-hidden="true">
       {Array.from({length:4},(_,column)=><div className={styles.part} key={column}>
         <div className={styles.partHeader}><span className={styles.loadingTitle}/></div>
@@ -180,6 +180,7 @@ function PackingLoadingBoard() {
 function PackingContent({context}: {context:Context}) {
   const {state,coordinator}=context;
   const loading = !state.data && state.status === "loading";
+  const emptyBoard = loading ? <PackingLoadingBoard/> : <output>준비물을 확인할 수 없어요.</output>;
   const [selectedId,setSelectedId]=useState<number|null>(null);
   const [detailOpen,setDetailOpen]=useState(false);
   const [menuId,setMenuId]=useState<number|null>(null);
@@ -214,7 +215,7 @@ function PackingContent({context}: {context:Context}) {
           {state.message}
           {["sync-error","uncertain","error"].includes(state.status) && <button type="button" onClick={()=>void coordinator?.refresh(true)}>다시 확인</button>}
         </div>}
-        {!state.data ? (loading ? <PackingLoadingBoard/> : <p role="status">준비물을 확인할 수 없어요.</p>) : (
+        {!state.data ? emptyBoard : (
           <div className={styles.columns} aria-label="준비물 카테고리">
             {parts.map((part:PackingPart)=><section className={styles.part} key={part.id} aria-label={part.name}>
               <div className={styles.partHeader}>

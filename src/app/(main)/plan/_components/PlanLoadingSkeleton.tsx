@@ -2,12 +2,13 @@
 export function PlanLoadingSkeleton({
   places = false,
   className = "",
-}: {
+}: Readonly<{
   places?: boolean;
   className?: string;
-}) {
+}>) {
   return (
-    <div role="status" aria-label={places ? "장소 목록 불러오는 중" : "일정 불러오는 중"} className={`space-y-4 py-4 ${className}`}>
+    <div className={`space-y-4 py-4 ${className}`}>
+      <output className="sr-only">{places ? "장소 목록 불러오는 중" : "일정 불러오는 중"}</output>
       <div aria-hidden="true" className="space-y-4 animate-pulse motion-reduce:animate-none">
         {!places && (
           <div className="flex items-center justify-between py-2">

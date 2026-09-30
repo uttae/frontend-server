@@ -162,5 +162,6 @@ export const getExpenseKrwSummary = (roomId: string, filters: ExpenseKrwFilters 
     const value = filters[key];
     if (value !== undefined) query.set(key, String(value));
   }
-  return request<ExpenseKrwSummary>(roomId, `/summary/krw${query.size ? `?${query}` : ""}`);
+  const suffix = query.size ? "?" + query.toString() : "";
+  return request<ExpenseKrwSummary>(roomId, `/summary/krw${suffix}`);
 };

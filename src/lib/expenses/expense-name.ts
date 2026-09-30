@@ -1,8 +1,13 @@
 import { expenseCategoryLabel, type Expense } from "@/lib/api/rooms/expenses";
 // Java Character.isWhitespace, deliberately excluding NBSP, figure space and narrow NBSP.
-const edgeWhitespace = /^[\u0009-\u000d\u001c-\u0020\u1680\u2000-\u2006\u2008-\u200a\u2028\u2029\u205f\u3000]+|[\u0009-\u000d\u001c-\u0020\u1680\u2000-\u2006\u2008-\u200a\u2028\u2029\u205f\u3000]+$/g;
+const whitespace = /[\u0009-\u000d\u001c-\u0020\u1680\u2000-\u2006\u2008-\u200a\u2028\u2029\u205f\u3000]/;
 export function normalizeExpenseName(name: string | null | undefined): string | null {
-  return name?.replace(edgeWhitespace, "") || null;
+  if (!name) return null;
+  let start = 0;
+  let end = name.length;
+  while (start < end && whitespace.test(name[start])) start++;
+  while (end > start && whitespace.test(name[end - 1])) end--;
+  return name.slice(start, end) || null;
 }
 export function expenseNameError(name: string | null | undefined): string | null {
   return name && name.length > 100 ? "이름은 공백을 포함해 100자 이내로 입력해 주세요." : null;

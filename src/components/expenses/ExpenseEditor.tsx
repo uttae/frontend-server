@@ -1,7 +1,6 @@
 "use client";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
-import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { cn } from "@/lib/utils";
 import { ExpenseSelect } from "./ExpenseSelect";
@@ -16,7 +15,7 @@ import {
   type Expense,
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
-import { normalizeExpenseName, expenseNameError } from "@/lib/expenses/expense-name";
+import { expenseTitle, normalizeExpenseName, expenseNameError } from "@/lib/expenses/expense-name";
 import { validateExpense } from "@/lib/expenses/expense-policy";
 import { preferredExpenseCurrency, rememberExpenseCurrency } from "@/lib/expenses/expense-currency-preference";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
@@ -52,6 +51,7 @@ function ExpenseEditorConflict({
   let message = "비용이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
   if (pending) message = "최신 비용 확인 중…";
   else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 저장은 중단돼요.";
+  const unavailable = pending ? <LoadingIndicator label={message} /> : <p>{message}</p>;
   return (
     <div
       role="alert"
@@ -91,7 +91,7 @@ function ExpenseEditorConflict({
           )}
         </>
       ) : (
-        pending ? <LoadingIndicator label={message} /> : <p>{message}</p>
+        unavailable
       )}
       {conflict.failed && (
         <button
@@ -319,6 +319,9 @@ export function ExpenseEditor({
       setSaving(false);
     }
   }
+  const memberFallback = context.memberStatus === "error"
+              ? <output className="block text-body-s-regular mobile:text-body-xs-regular text-dark-gray">멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.</output>
+              : <LoadingIndicator label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />;
   return (
     <dialog
       ref={dialog}
@@ -359,7 +362,7 @@ export function ExpenseEditor({
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
         <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
           <label className="block text-[12px] leading-4">
-            이름
+            <span>이름</span>
             <input name="name" aria-label="이름 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
               placeholder="비용 이름을 입력해 주세요"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
@@ -386,11 +389,11 @@ export function ExpenseEditor({
             </label>
           </div>
           {!context.currencies.isSuccess && (
-            <p role="status" className={context.currencies.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
+            <output className={context.currencies.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
               {context.currencies.isError
                 ? "통화 목록 조회에 실패했어요."
                 : "통화 목록을 불러오는 중…"}
-            </p>
+            </output>
           )}
           <div className="space-y-1">
             <p className="text-[12px] leading-4 font-medium">일차 구분</p>
@@ -490,9 +493,7 @@ export function ExpenseEditor({
               />
             </div>
           ) : (
-            context.memberStatus === "error"
-              ? <p role="status" className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.</p>
-              : <LoadingIndicator label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />
+            memberFallback
           )}
           <label className="block text-[12px] leading-4 font-medium">
             메모 (선택)

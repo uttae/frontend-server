@@ -9,15 +9,17 @@ import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
-import type { ExpenseKrwFilters } from "@/lib/api/rooms/expenses";
 import { RefreshCw } from "lucide-react";
 import { PlusIcon } from "@/assets/icons";
 import { ExpenseDialog } from "./ExpenseDialog";
 import { ExpenseCategorySummary } from "./ExpenseCategorySummary";
 import { totalsByCurrency } from "@/lib/expenses/expense-scope";
 import {
+  ExpenseApiError,
+  type Expense,
+  type ExpenseKrwFilters,
+  type ExpenseKrwSummary,
   expenseCategories,
   expenseCategoryLabel,
 } from "@/lib/api/rooms/expenses";
@@ -48,6 +50,7 @@ function ExpenseDeleteConflict({
   if (deleting) message = "최신 비용 확인 중…";
   else if (conflict.failed)
     message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
+  const unavailable = deleting ? <LoadingIndicator label={message} /> : <p>{message}</p>;
   return (
     <div
       role="alert"
@@ -80,7 +83,7 @@ function ExpenseDeleteConflict({
           </button>
         </>
       ) : (
-        deleting ? <LoadingIndicator label={message} /> : <p>{message}</p>
+        unavailable
       )}
       {conflict.failed && (
         <button
@@ -112,6 +115,58 @@ function syncStatusMessage(status: string) {
   return "최신 비용 확인 중… 이전 값은 최신 상태가 아닐 수 있어요.";
 }
 
+function matchesDay(expense: Pick<Expense, "expenseGroup" | "scheduleId">, filter: string) {
+  if (filter === "ALL") return true;
+  if (filter === "PREPARATION") return expense.expenseGroup === "PREPARATION";
+  return expense.expenseGroup === "TRIP_DAY" && String(expense.scheduleId) === filter;
+}
+function matchesExpenseFilter(expense: Expense, category: string, filter: string) {
+  return (category === "ALL" || expense.category === category) && matchesDay(expense, filter);
+}
+function makeKrwFilters(category: string, filter: string): ExpenseKrwFilters {
+  const result: ExpenseKrwFilters = {};
+  if (category !== "ALL") result.category = category as Expense["category"];
+  if (filter === "PREPARATION") result.expenseGroup = "PREPARATION";
+  else if (filter !== "ALL") {
+    result.expenseGroup = "TRIP_DAY";
+    result.scheduleId = Number(filter);
+  }
+  return result;
+}
+function selectFallbackTotal(summary: ExpenseKrwSummary | undefined, category: string, filter: string) {
+  if (filter === "ALL") {
+    if (category === "ALL") return summary;
+    return summary?.categories?.find(row => row.category === category)?.total;
+  }
+  if (category !== "ALL") return undefined;
+  return summary?.days?.find(day => matchesDay(day, filter))?.total;
+}
+function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, category: string, filter: string) {
+  const activeFilter =
+    filter === "ALL" ||
+    filter === "PREPARATION" ||
+    context.schedules.some((s) => String(s.scheduleId) === filter)
+      ? filter
+      : "ALL";
+  const filtered = context.list.data?.filter(e => matchesExpenseFilter(e, category, activeFilter)) ?? [];
+  const krwFilters = useMemo(() => makeKrwFilters(category, activeFilter), [category, activeFilter]);
+  const { setKrwFilters } = context;
+  useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
+  const backgroundRefresh = context.syncStatus === "refreshing";
+  const displayReady = context.syncStatus === "ready" || backgroundRefresh;
+  const detailed = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters)
+    && displayReady && context.filteredKrwSummary?.isSuccess && (!context.filteredKrwSummary.isFetching || backgroundRefresh)
+    ? context.filteredKrwSummary.data : undefined;
+  const wholeKrw = displayReady && context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh)
+    ? context.krwSummary.data : undefined;
+  // Reuse authoritative totals for a single dimension; never sum rounded row amounts
+  // or show the previous day/category total while a new intersection is loading.
+  const fallbackTotal = selectFallbackTotal(wholeKrw, category, activeFilter);
+  const selectedTotal = detailed?.filtered ?? fallbackTotal;
+  const visibleExpenses = detailed?.expenses?.map((row) => row.expense) ?? filtered;
+  return { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses };
+}
+
 export function ExpensePanel() {
   const context = useExpenseContext();
   const [tab, setTab] = useState<"list" | "summary">("list");
@@ -137,46 +192,7 @@ export function ExpensePanel() {
   const lock = useRef(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const activeFilter =
-    filter === "ALL" ||
-    filter === "PREPARATION" ||
-    context.schedules.some((s) => String(s.scheduleId) === filter)
-      ? filter
-      : "ALL";
-  const filtered =
-    context.list.data?.filter(
-      (e) =>
-        (category === "ALL" || e.category === category) &&
-        (activeFilter === "ALL" ||
-          (activeFilter === "PREPARATION"
-            ? e.expenseGroup === "PREPARATION"
-            : e.expenseGroup === "TRIP_DAY" &&
-              String(e.scheduleId) === activeFilter)),
-    ) ?? [];
-  const krwFilters = useMemo<ExpenseKrwFilters>(() => ({
-    ...(category === "ALL" ? {} : { category: category as Expense["category"] }),
-    ...(activeFilter === "ALL" ? {} : activeFilter === "PREPARATION"
-      ? { expenseGroup: "PREPARATION" as const }
-      : { expenseGroup: "TRIP_DAY" as const, scheduleId: Number(activeFilter) }),
-  }), [category, activeFilter]);
-  const { setKrwFilters } = context;
-  useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
-  const backgroundRefresh = context.syncStatus === "refreshing";
-  const displayReady = context.syncStatus === "ready" || backgroundRefresh;
-  const detailed = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters)
-    && displayReady && context.filteredKrwSummary?.isSuccess && (!context.filteredKrwSummary.isFetching || backgroundRefresh)
-    ? context.filteredKrwSummary.data : undefined;
-  const wholeKrw = displayReady && context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh)
-    ? context.krwSummary.data : undefined;
-  // Reuse authoritative totals for a single dimension; never sum rounded row amounts
-  // or show the previous day/category total while a new intersection is loading.
-  const fallbackTotal = activeFilter === "ALL"
-    ? category === "ALL" ? wholeKrw : wholeKrw?.categories?.find(row => row.category === category)?.total
-    : category === "ALL" ? wholeKrw?.days?.find(day => activeFilter === "PREPARATION"
-      ? day.expenseGroup === "PREPARATION"
-      : day.expenseGroup === "TRIP_DAY" && String(day.scheduleId) === activeFilter)?.total : undefined;
-  const selectedTotal = detailed?.filtered ?? fallbackTotal;
-  const visibleExpenses = detailed?.expenses?.map((row) => row.expense) ?? filtered;
+  const { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses } = useExpenseDisplay(context, category, filter);
   function remove(expense: Expense, reviewed = false) {
     if (
       lock.current ||
@@ -317,15 +333,14 @@ export function ExpensePanel() {
             </button>
           </div>
           {context.memberStatus !== "success" && (
-            <p
-              role="status"
+            <output
               className={context.memberStatus === "pending" ? "sr-only" : "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"}
             >
               {context.memberStatus === "pending"
                 ? "멤버 확인 중…"
                 : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
               비용의 사용자 ID와 금액은 유지돼요.
-            </p>
+            </output>
           )}
           {context.memberStatus === "success" && !context.canManage && (
             <p
@@ -339,7 +354,7 @@ export function ExpensePanel() {
             <ExpenseDeleteConflict
               conflict={conflict}
               deleting={deleting}
-              onRemove={(expense) => void remove(expense, true)}
+              onRemove={(expense) => remove(expense, true)}
               onRecover={(expense) => void recover(expense)}
               onCancel={() => {
                 setConflict(null);

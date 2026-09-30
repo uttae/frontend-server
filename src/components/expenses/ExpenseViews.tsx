@@ -1,7 +1,6 @@
 "use client";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
-import type { ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { useId, useState } from "react";
@@ -15,6 +14,7 @@ import {
 import {
   expenseCategoryLabel,
   type ExpenseCategory,
+  type ExpenseKrwSummary,
   type Expense,
   type ExpenseSummary,
 } from "@/lib/api/rooms/expenses";
@@ -44,7 +44,7 @@ const categoryIcons = {
   SIGHTSEEING: "sightseeing",
   OTHER: "other",
 };
-export function CategoryIcon({ category, summary = false }: { category: ExpenseCategory; summary?: boolean }) {
+export function CategoryIcon({ category, summary = false }: Readonly<{ category: ExpenseCategory; summary?: boolean }>) {
   const asset = categoryIcons[category] ?? "other";
   return (
     <span className={`flex shrink-0 items-center justify-center rounded-full bg-fill text-icon ${summary ? "size-9" : "size-8 @min-[800px]/expenses:size-10"}`}>
@@ -104,14 +104,14 @@ export function ExpenseRolePicker({
   selected,
   original,
   onChange,
-}: {
+}: Readonly<{
   title: string;
   members: RoomMember[];
   currentUserId?: number;
   selected: number[];
   original: number[];
   onChange: (ids: number[]) => void;
-}) {
+}>) {
   const titleId = useId();
   const options = roleOptions(members, original, selected).sort(
     (a, b) =>
@@ -494,8 +494,8 @@ function AllSettlement({ summary, members, memberStatus, krwSummary, showDetails
         {summary.currencies.map((c) => (
           <section key={c.currency} aria-label={`${c.currency} 정산`} className="space-y-3">
             {!c.transfers.length && <p className="py-3 text-body-xs-regular text-text-subtle">{c.currency} · 주고받을 금액이 없어요.</p>}
-            {c.transfers.map((t, index) => (
-              <div key={index} className="flex min-h-10 flex-wrap items-center gap-2 text-[14px] leading-5">
+            {c.transfers.map((t) => (
+              <div key={`${t.fromUserId}:${t.toUserId}`} className="flex min-h-10 flex-wrap items-center gap-2 text-[14px] leading-5">
                 <ExpensePerson userId={t.fromUserId} members={members} memberStatus={memberStatus} />
                 <ArrowRight size={16} aria-label="받는 사람" className="text-text-subtle" />
                 <ExpensePerson userId={t.toUserId} members={members} memberStatus={memberStatus} />
