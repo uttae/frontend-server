@@ -94,7 +94,7 @@ export function ExpenseCurrencyPicker({
           setActive(0);
           setOpen(!isOpen);
         }}
-        className="mt-1 flex h-12 w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-left text-[16px] leading-6 font-medium cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-1 flex h-12 w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-left text-[14px] leading-5 font-medium cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="min-w-0 flex-1">
           <span className="block font-medium">{value || "통화 선택"}</span>
