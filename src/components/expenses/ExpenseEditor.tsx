@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { ExpenseSelect } from "./ExpenseSelect";
 import { ExpenseCurrencyPicker } from "./ExpenseCurrencyPicker";
 import { ExpenseAmountInput } from "./ExpenseAmountInput";
-import { X } from "lucide-react";
+import { CloseIcon } from "@/assets/icons";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ExpenseApiError,
@@ -187,12 +187,14 @@ export function ExpenseEditor({
   const submitLock = useRef(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const heading = useRef<HTMLHeadingElement>(null);
   const errorId = useId();
   const places = useSchedulePlanPlaces(context.roomId, body.scheduleId);
   useEffect(() => {
     const element = dialog.current;
     const opener = element?.ownerDocument.activeElement;
     element?.showModal();
+    heading.current?.focus({ preventScroll: true });
     return () => {
       element?.close();
       if (opener && opener instanceof HTMLElement && opener.isConnected)
@@ -322,19 +324,22 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[92dvh] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:max-h-[90dvh] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="@container/expense-editor flex max-h-[92dvh] min-h-0 flex-col overflow-hidden mobile:max-h-[90dvh]"
+        className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]"
         aria-describedby={error ? errorId : undefined}
       >
-        <div aria-hidden className="mx-auto mt-3 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-4 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-4 max-sm:pb-3">
-          <h2 id={titleId} className="text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-7 max-sm:text-[20px] max-sm:leading-7 font-bold">
+        <div aria-hidden className="mx-auto mt-5 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-3 max-sm:pb-3">
+          <div>
+          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-6 max-sm:text-[20px] max-sm:leading-6 font-bold">
             {original ? "비용 수정" : "비용 추가"}
           </h2>
+          <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "이름과 결제 정보를 입력해주세요."}</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -342,15 +347,14 @@ export function ExpenseEditor({
             aria-label="닫기"
             className="flex size-10 mobile:hidden max-sm:hidden items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <X size={18} aria-hidden="true" />
+            <CloseIcon size={24} aria-hidden="true" />
           </button>
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
-        <p className="mb-4 hidden text-[12px] leading-4 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "이름과 결제 정보를 입력해주세요."}</p>
         <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
           <label className="block text-[12px] leading-4">
-            이름 (선택)
-            <input name="name" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
+            이름
+            <input name="name" aria-label="이름 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
               placeholder="비용 이름을 입력해 주세요"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
           </label>
@@ -365,9 +369,9 @@ export function ExpenseEditor({
               }}
             />
             <label className="block min-w-0 text-[12px] leading-4 font-medium">
-              <span className="block text-[12px] leading-4 font-medium leading-5">금액</span>
+              <span className="block text-[12px] leading-4 font-medium">금액</span>
               <ExpenseAmountInput
-                className="h-12 text-[20px] font-normal"
+                className="h-12 text-[20px] font-normal placeholder:text-text-subtle"
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
                 onChange={(value) => change("totalAmount", value)}
@@ -489,7 +493,7 @@ export function ExpenseEditor({
           <label className="block text-[12px] leading-4 font-medium">
             메모 (선택)
             <textarea
-              className={`${expenseInputClass} min-h-24`}
+              className={`${expenseInputClass} min-h-24 resize-none text-[16px]`}
               rows={3}
               maxLength={1000}
               value={body.memo ?? ""}
@@ -537,7 +541,7 @@ export function ExpenseEditor({
           </p>
         )}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:h-12 [&>button]:text-[16px] [&>button]:leading-[22px] [&>button]:font-bold mobile:border-0 mobile:pt-3 mobile:pb-5 max-sm:border-0 max-sm:pt-3 max-sm:pb-5 [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
           <button
             type="button"
             className={expenseButtonClass}

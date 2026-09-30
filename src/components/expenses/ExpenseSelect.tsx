@@ -130,7 +130,7 @@ export function ExpenseSelect({
         }}
         className="flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
-        <span className="min-w-0 break-words">
+        <span className={`min-w-0 break-words ${selected ? "" : "text-text-subtle"}`}>
           {selected?.label ?? placeholder}
         </span>
         <ChevronDownIcon

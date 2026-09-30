@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { ChevronDownIcon } from "@/assets/icons";
+import { Check, Search } from "lucide-react";
 import type { ExpenseCurrency } from "@/lib/api/rooms/expenses";
 
 const currencyNames = new Intl.DisplayNames(["ko"], { type: "currency" });
@@ -93,17 +94,17 @@ export function ExpenseCurrencyPicker({
           setActive(0);
           setOpen(!isOpen);
         }}
-        className="mt-1 flex h-12 w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="mt-1 flex h-12 w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-left text-[16px] leading-6 font-medium cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="min-w-0 flex-1">
-          <span className="block font-semibold">{value || "통화 선택"}</span>
+          <span className="block font-medium">{value || "통화 선택"}</span>
           {value && (
             <span className="block truncate text-body-xs-regular text-dark-gray mobile:hidden max-sm:hidden">
               {currencyName(value)}
             </span>
           )}
         </span>
-        <ChevronDown size={16} aria-hidden="true" className="shrink-0" />
+        <ChevronDownIcon size={20} aria-hidden="true" className="shrink-0 text-icon-subtle" />
       </button>
       {isOpen && (
         <div

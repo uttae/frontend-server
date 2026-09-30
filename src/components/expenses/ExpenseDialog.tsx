@@ -10,19 +10,23 @@ export function ExpenseDialog({
   children,
   footer,
   settlement = false,
+  description,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
   settlement?: boolean;
+  description?: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     const element = ref.current;
     const trigger = element?.ownerDocument.activeElement;
     element?.showModal();
+    heading.current?.focus({ preventScroll: true });
     return () => {
       element?.close();
       if (trigger && trigger instanceof HTMLElement && trigger.isConnected)
@@ -40,31 +44,34 @@ export function ExpenseDialog({
         event.preventDefault();
         onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]"
+      className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]" : ""} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]`}
     >
-      <div className="flex max-h-[90dvh] flex-col">
+      <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full max-sm:h-full max-sm:max-h-full">
         <div
           aria-hidden
-          className="mx-auto mt-3 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block"
+          className="mx-auto mt-5 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block"
         />
-        <header className="flex shrink-0 items-center justify-between px-8 pt-8 pb-6 max-sm:px-5 max-sm:pt-4 max-sm:pb-2 mobile:px-5 mobile:pt-4 mobile:pb-2">
-          <h2 id={titleId} className="text-[24px] leading-[34px] font-bold mobile:text-[20px] mobile:leading-7 max-sm:text-[20px] max-sm:leading-7">
+        <header className="flex shrink-0 items-center justify-between px-8 pt-8 pb-6 max-sm:px-5 max-sm:pt-3 max-sm:pb-3 mobile:px-5 mobile:pt-3 mobile:pb-3">
+          <div>
+          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] font-bold mobile:text-[20px] mobile:leading-6 max-sm:text-[20px] max-sm:leading-6">
             {title}
           </h2>
+          {description && <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{description}</p>}
+          </div>
           <button
             type="button"
             aria-label={`${title} 닫기`}
             onClick={onClose}
-            className={`flex size-9 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "max-sm:hidden mobile:hidden" : ""}`}
+            className={`flex size-6 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "max-sm:hidden mobile:hidden" : ""}`}
           >
-            <CloseIcon size={20} />
+            <CloseIcon size={24} />
           </button>
         </header>
-        <div className="flex min-h-0 flex-col overflow-y-auto overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] max-sm:px-5 mobile:px-5">
+        <div className="flex min-h-0 flex-col overflow-y-auto mobile:flex-1 max-sm:flex-1 overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] max-sm:px-5 mobile:px-5">
           {children}
         </div>
         {footer && (
-          <footer className={`shrink-0 px-8 pb-8 mobile:px-5 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] max-sm:px-5 max-sm:pb-5 ${settlement ? "" : "border-t border-border-subtle pt-4"}`}>
+          <footer className={`shrink-0 px-8 pb-8 mobile:px-5 mobile:pt-3 max-sm:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] max-sm:px-5 max-sm:pb-5 ${settlement ? "" : "border-t border-border-subtle pt-4"}`}>
             {footer}
           </footer>
         )}

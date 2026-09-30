@@ -394,7 +394,7 @@ it.each(["initial load", "change", "reconnect"])(
   },
 );
 
-it("switches from my settlement to all transfers and keeps analysis in a separate view", async () => {
+it("opens the whole-trip settlement without extra analysis or scope menus", async () => {
   await mount();
   mocks.state = {
     ...(mocks.state as object), currentUserId: 1,
@@ -409,15 +409,12 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
     renderer.root.findAllByType("button").find(b => b.children.includes(label))!.props.onClick();
   });
   await click("정산 요약");
-  await click("내 정산");
-  expect(JSON.stringify(renderer.toJSON())).toContain("주고받을 금액이 없어요");
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("12,345");
-  await click("전체 정산");
   expect(JSON.stringify(renderer.toJSON())).toContain("12,345");
-  expect(renderer.root.findAllByProps({ "aria-label": "비용 분석 기준" })).toHaveLength(0);
-  await click("비용 분석");
-  expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
+  const labels = renderer.root.findAllByType("button").map(button => button.children.filter(child => typeof child === "string").join(""));
+  expect(labels).not.toContain("비용 분석");
+  expect(labels).not.toContain("내 정산");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 보기 옵션");
+
 });
 
 it.each([

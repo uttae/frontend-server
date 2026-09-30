@@ -24,7 +24,6 @@ import { useExpenseContext } from "./ExpenseProvider";
 import {
   ExpenseList,
   ExpenseSummaryView,
-  ExpenseAnalysisView,
   expenseButtonClass,
   formatExpenseAmount,
 } from "./ExpenseViews";
@@ -114,8 +113,7 @@ function syncStatusMessage(status: string) {
 
 export function ExpensePanel() {
   const context = useExpenseContext();
-  const [tab, setTab] = useState<"list" | "summary" | "analysis">("list");
-  const [settlementScope, setSettlementScope] = useState<"mine" | "all">("all");
+  const [tab, setTab] = useState<"list" | "summary">("list");
   const [category, setCategory] = useState("ALL");
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");
@@ -444,14 +442,15 @@ export function ExpensePanel() {
       </details>
       {tab !== "list" && (
         <ExpenseDialog
-          title={tab === "summary" ? "정산 요약" : "비용 분석"}
+          title="정산 요약"
+          description={context.summary.data ? `전체 여행 · ${new Set(context.summary.data.currencies.flatMap(currency => currency.individuals.map(person => person.userId))).size}명` : undefined}
           onClose={() => setTab("list")}
           settlement
           footer={
             <div className="flex justify-end">
               <button
                 type="button"
-                className={cn(expenseButtonClass, "min-h-9 min-w-[111px] rounded-full bg-primary py-1 text-white mobile:min-h-11 mobile:w-full mobile:rounded-lg max-sm:min-h-11 max-sm:w-full max-sm:rounded-lg")}
+                className={cn(expenseButtonClass, "min-h-9 min-w-[111px] rounded-full bg-primary py-1 text-white mobile:h-12 mobile:min-h-12 mobile:w-full mobile:rounded-lg mobile:text-[16px] mobile:font-bold max-sm:h-12 max-sm:min-h-12 max-sm:w-full max-sm:rounded-lg max-sm:text-[16px] max-sm:font-bold")}
                 onClick={() => setTab("list")}
               >
                 확인
@@ -459,25 +458,6 @@ export function ExpensePanel() {
             </div>
           }
         >
-          <details className="order-last mt-4 text-body-xs-regular text-text-subtle">
-            <summary className="cursor-pointer">정산 보기 옵션</summary>
-            <div className="mt-2 flex gap-3">
-            <button
-              type="button"
-              aria-pressed={tab === "summary"}
-              onClick={() => setTab("summary")}
-            >
-              정산 요약
-            </button>
-            <button
-              type="button"
-              aria-pressed={tab === "analysis"}
-              onClick={() => setTab("analysis")}
-            >
-              비용 분석
-            </button>
-            </div>
-          </details>
           {context.summary.isPending && (
             <p role="status">정산을 불러오는 중…</p>
           )}
@@ -495,24 +475,17 @@ export function ExpensePanel() {
             </div>
           )}
           {context.summary.isSuccess &&
-            (tab === "summary" ? (
+            (
               <ExpenseSummaryView
                 currentUserId={context.currentUserId}
                 krwSummary={context.krwSummary.isSuccess && !context.krwSummary.isFetching ? context.krwSummary.data : undefined}
-                scope={settlementScope}
-                onScopeChange={setSettlementScope}
+                scope="all"
+                showDetails={false}
                 summary={context.summary.data}
                 members={context.members}
                 memberStatus={context.memberStatus}
               />
-            ) : (
-              <ExpenseAnalysisView
-                summary={context.summary.data}
-                members={context.members}
-                memberStatus={context.memberStatus}
-                schedules={context.schedules}
-              />
-            ))}
+            )}
         </ExpenseDialog>
       )}
       {expenseToDelete ? (

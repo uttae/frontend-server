@@ -60,6 +60,7 @@ it("chooses a mobile category and restores its trigger, while cancel leaves sele
   trigger.focus();
   await act(async () => trigger.click());
   expect(host.querySelector("dialog[open]")).not.toBeNull();
+  expect(document.activeElement).toBe(host.querySelector("dialog h2"));
   await act(async () =>
     host.querySelector<HTMLInputElement>('input[value="FOOD"]')!.click(),
   );
