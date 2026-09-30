@@ -73,7 +73,7 @@ export function MainChromeLayoutWidthProvider({
         targetMaxWidthPx,
         isMobile: isMobileDevice,
       }),
-      leftSectionAnimateMinWidth: resolveLeftSectionMinWidthPx(isMobileDevice, pathname),
+      leftSectionAnimateMinWidth: resolveLeftSectionMinWidthPx(isMobileDevice, pathname, chatState),
       layoutTransition: MAIN_LAYOUT_WIDTH_TRANSITION,
       chatPanelDockWidthCss: resolveChatPanelDockWidthCss({
         pathname,

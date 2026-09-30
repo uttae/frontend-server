@@ -46,6 +46,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const showDesktopChat = !isMobileDevice && chatState === "maximized";
 
   const isPackingRoute = isPackingPath(pathname);
+  const showFullWidthPacking = isPackingRoute && !showDesktopChat;
   const isPlanRoute = pathname === "/plan" || pathname.startsWith("/plan/");
   const mobilePlanPanel =
     isMobileDevice && isPlanRoute
@@ -76,7 +77,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           />
           {isMobileDevice && (pathname === "/cost" || isPackingRoute) ? <TravelToolsSwitcher /> : null}
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
-            {!isMobileDevice ? (isPackingRoute ? <div className="hidden shrink-0 lg:flex"><SideBar /></div> : <SideBar />) : null}
+            {!isMobileDevice ? <SideBar /> : null}
             <MainContentScrollArea fill={isPackingRoute || showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
               {mainContent}
             </MainContentScrollArea>
@@ -84,7 +85,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
           <MobileMainTabs />
         </LeftSection>
 
-        {!isMobileDevice && !isPackingRoute ? <MapWithDetailPanel /> : null}
+        {!isMobileDevice && !showFullWidthPacking ? <MapWithDetailPanel /> : null}
         {!isMobileDevice && chatState === "minimized" ? <ChatPanel /> : null}
       </div>
     </main>

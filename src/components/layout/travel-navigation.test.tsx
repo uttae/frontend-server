@@ -201,12 +201,21 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
   expect(host.querySelector("[data-main-content-scroll]")?.className).toContain("overflow-hidden");
   expect(host.querySelector("[data-main-content-scroll]")?.className).not.toContain("overflow-y-auto");
   if (!mobile) {
-    expect(host.querySelector("aside")?.parentElement?.className).toBe("hidden shrink-0 lg:flex");
     await act(async () => items()[5].click());
     expect(active()).toEqual([items()[5]]);
     expect(host.querySelector("[data-chat]")).not.toBeNull();
+    expect(host.querySelector("article")).toBeNull();
+    expect(host.querySelector("[data-map]")).not.toBeNull();
+    await act(async () => useChatPanelStore.getState().minimizeChat());
+    expect(host.querySelector("article")).not.toBeNull();
+    expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
+    expect(host.querySelector("[data-map]")).toBeNull();
     await act(async () => useChatPanelStore.getState().closeChat());
     expect(host.querySelector("article")).not.toBeNull();
+    expect(host.querySelector("[data-map]")).toBeNull();
     expect(active().map(item => item.getAttribute("aria-label"))).toEqual(["준비물"]);
+  } else {
+    expect(host.querySelector("aside")).toBeNull();
+    expect(host.querySelector("[data-chat]")).toBeNull();
   }
 });
