@@ -327,7 +327,7 @@ export function ExpensePanel() {
           {syncStatusMessage(context.syncStatus)}
         </output>
       )}
-      <div className="grid min-w-0 gap-4 @min-[800px]/expenses:gap-6 @min-[800px]/expenses:grid-cols-[minmax(260px,26%)_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-4 @min-[800px]/expenses:gap-6 @min-[800px]/expenses:grid-cols-[minmax(300px,26%)_minmax(0,1fr)]">
         <aside className="min-w-0 self-stretch rounded-xl border border-border-subtle bg-white p-4 @min-[800px]/expenses:min-h-[calc(100dvh-216px)] @min-[800px]/expenses:p-6">
           <ExpenseBudgetSummary />
           <ExpenseCategorySummary />

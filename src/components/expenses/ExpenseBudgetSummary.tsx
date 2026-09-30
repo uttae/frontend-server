@@ -22,7 +22,7 @@ export function ExpenseBudgetSummary() {
     reference.missingCurrencies.length === 0 &&
     converted != null;
   return (
-    <div className="space-y-3">
+    <div className="@container/expense-budget space-y-3">
       <div className="space-y-3 text-body-s-regular mobile:text-body-xs-regular">
         <h3 className="text-[16px] leading-6 font-medium text-text mobile:text-[14px] mobile:text-text-subtle max-sm:text-[14px] max-sm:text-text-subtle">
           여행 전체 비용
@@ -38,7 +38,7 @@ export function ExpenseBudgetSummary() {
             있어요. 조회 다시 시도 버튼을 눌러 주세요.
           </p>
         )}
-        <p aria-busy={krwSummary.isPending} className="break-all text-[32px] leading-[42px] font-bold text-primary tabular-nums">
+        <p aria-busy={krwSummary.isPending} className="overflow-x-auto whitespace-nowrap text-[clamp(20px,9cqi,32px)] leading-[1.3] font-bold text-primary tabular-nums">
           <ExpenseKrwAmount total={reference} showNote />
         </p>
         {reference && (

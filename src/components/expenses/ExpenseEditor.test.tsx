@@ -832,7 +832,7 @@ it("edits an optional independent name, uses the design name prompt, and explici
   await mount(null);
   await act(async () => categorySelect().props.onChange("FOOD"));
   let name = renderer.root.findByProps({ name: "name" });
-  expect(name.props.placeholder).toBe("비용 이름을 입력해 주세요");
+  expect(name.props.placeholder).toBe("이름 없음");
   expect(name.props.maxLength).toBe(100);
   await act(async () => name.props.onChange({ target: { value: "점심" } }));
   await completeNewExpense();

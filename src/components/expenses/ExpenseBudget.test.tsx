@@ -405,7 +405,6 @@ it("preserves long whole-room totals without truncation", async () => {
     (p) => p.textContent === "9,007,199,254,740,993원",
   )!;
   expect(total.textContent).toBe("9,007,199,254,740,993원");
-  expect(total.classList.contains("break-all")).toBe(true);
 });
 
 it("groups budget and edit control on a white card with wrapping space for large amounts", async () => {

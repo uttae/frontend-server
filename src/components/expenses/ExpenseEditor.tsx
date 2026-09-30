@@ -1,6 +1,7 @@
 "use client";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
-import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
+import { useSheetDrag } from "@/components/mobile/useSheetDrag";
+import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 
 import { cn } from "@/lib/utils";
 import { ExpenseSelect } from "./ExpenseSelect";
@@ -204,7 +205,7 @@ export function ExpenseEditor({
     };
   }, []);
   const pending = saving || context.busy;
-  const sheetDrag = useExpenseSheetDrag(onClose, pending);
+  const sheetDrag = useSheetDrag(onClose, pending);
   const currentTarget = context.list?.data?.find(
     (e) => e.id === original?.id,
   );
@@ -339,7 +340,7 @@ export function ExpenseEditor({
         className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]"
         aria-describedby={error ? errorId : undefined}
       >
-        <div {...sheetDrag.handleProps} className={sheetDrag.handleClassName}>
+        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-5 mobile:pt-5">
         <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-3 max-sm:pb-3">
           <div>
@@ -358,13 +359,13 @@ export function ExpenseEditor({
             <CloseIcon size={24} aria-hidden="true" />
           </button>
         </div>
-        </div>
+        </BottomSheetDragHandle>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
         <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
           <label className="block text-[12px] leading-4">
-            <span>이름</span>
+            <span>이름 (선택)</span>
             <input name="name" aria-label="이름 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
-              placeholder="비용 이름을 입력해 주세요"
+              placeholder="이름 없음"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
           </label>
           <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3 max-sm:grid-cols-[116px_minmax(0,1fr)] max-sm:gap-3 max-sm:p-3">
@@ -380,7 +381,7 @@ export function ExpenseEditor({
             <label className="block min-w-0 text-[12px] leading-4 font-medium">
               <span className="block text-[12px] leading-4 font-medium">금액</span>
               <ExpenseAmountInput
-                className="h-12 text-[20px] font-normal placeholder:text-text-subtle"
+                className="h-12 text-[20px] font-normal placeholder:text-[16px] placeholder:text-text-subtle"
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
                 onChange={(value) => change("totalAmount", value)}

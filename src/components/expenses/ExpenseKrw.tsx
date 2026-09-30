@@ -114,7 +114,7 @@ export function ExpenseRowAmount({ expense, summary }: Readonly<{ expense: Expen
   return <>
     <ExpenseKrwAmount total={total} original={{ currency: expense.currency, amount: expense.totalAmount }} />
     {total?.convertedTotalKrw !== null && (
-      <span className="mt-1 block text-[12px] leading-4 font-normal text-text-subtle @min-[800px]/expenses:text-[13px] @min-[800px]/expenses:leading-[18px]">
+      <span className="mt-1 block text-[12px] leading-4 font-normal text-text-subtle @min-[800px]/expense-list:text-[13px] @min-[800px]/expense-list:leading-[18px]">
         {expense.currency} {formatExpenseAmount(expense.totalAmount)}
       </span>
     )}

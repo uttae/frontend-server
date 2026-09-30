@@ -1,9 +1,10 @@
 "use client";
 
+import { SHEET_DISMISS_DISTANCE } from "./sheet-gesture";
 import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
 /** Keep dragging on the fixed header so scrolling and form controls remain native. */
-export function useExpenseSheetDrag(onClose: () => void, disabled = false) {
+export function useSheetDrag(onClose: () => void, disabled = false, mediaQuery: string | null = "(max-width: 639px)") {
   const gesture = useRef<{ id: number; x: number; y: number; distance: number } | null>(null);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -17,7 +18,7 @@ export function useExpenseSheetDrag(onClose: () => void, disabled = false) {
     setDragging(false);
     if (event.currentTarget.hasPointerCapture?.(event.pointerId))
       event.currentTarget.releasePointerCapture(event.pointerId);
-    if (!cancelled && !disabled && current.distance >= 80) onClose();
+    if (!cancelled && !disabled && current.distance >= SHEET_DISMISS_DISTANCE) onClose();
   }
   return {
     surfaceStyle: {
@@ -28,7 +29,7 @@ export function useExpenseSheetDrag(onClose: () => void, disabled = false) {
     handleProps: {
       onPointerDown(event: PointerEvent<HTMLElement>) {
         if (disabled || !event.isPrimary || event.button !== 0 || gesture.current) return;
-        if (!window.matchMedia?.("(max-width: 639px)").matches &&
+        if (mediaQuery && !window.matchMedia?.(mediaQuery).matches &&
           !document.documentElement.classList.contains("is-mobile-device")) return;
         if ((event.target as Element).closest("button, input, textarea, select, a, [role='button'], [contenteditable='true']")) return;
         gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, distance: 0 };
@@ -53,6 +54,6 @@ export function useExpenseSheetDrag(onClose: () => void, disabled = false) {
       onPointerCancel(event: PointerEvent<HTMLElement>) { finish(event, true); },
       onLostPointerCapture(event: PointerEvent<HTMLElement>) { finish(event, true); },
     },
-    handleClassName: `shrink-0 max-sm:pt-5 mobile:pt-5 max-sm:touch-none mobile:touch-none max-sm:select-none mobile:select-none ${dragging ? "max-sm:cursor-grabbing mobile:cursor-grabbing" : "max-sm:cursor-grab mobile:cursor-grab"}`,
+    handleClassName: `shrink-0 max-sm:touch-none mobile:touch-none max-sm:select-none mobile:select-none ${dragging ? "max-sm:cursor-grabbing mobile:cursor-grabbing" : "max-sm:cursor-grab mobile:cursor-grab"}`,
   };
 }

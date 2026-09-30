@@ -47,7 +47,7 @@ const categoryIcons = {
 export function CategoryIcon({ category, summary = false }: Readonly<{ category: ExpenseCategory; summary?: boolean }>) {
   const asset = categoryIcons[category] ?? "other";
   return (
-    <span className={`flex shrink-0 items-center justify-center rounded-full bg-fill text-icon ${summary ? "size-9" : "size-8 @min-[800px]/expenses:size-10"}`}>
+    <span className={`flex shrink-0 items-center justify-center rounded-full bg-fill text-icon ${summary ? "size-9" : "size-8 @min-[800px]/expense-list:size-10"}`}>
       <span className="flex size-5 items-center justify-center">
         {/* Figma exports are 24px except lodging (20px); preserve their root dimensions. */}
         {/* eslint-disable-next-line @next/next/no-img-element -- local Figma vector asset */}
@@ -256,7 +256,7 @@ export function ExpenseList({
   });
   if (grouped)
     return (
-      <div className="space-y-4 @min-[800px]/expenses:space-y-2">
+      <div className="@container/expense-list space-y-4">
         {groupKeys.map((key) => {
           const rows = expenses.filter(
             (e) =>
@@ -284,8 +284,8 @@ export function ExpenseList({
                   : `${day?.dayNumber ?? ""}일차 비용`
               }
             >
-              <div className="mb-4 flex min-h-8 flex-wrap items-center gap-2 @min-[800px]/expenses:mb-2 @min-[800px]/expenses:min-h-7 @min-[800px]/expenses:gap-3 @min-[800px]/expenses:px-4">
-                <h3 className="text-[16px] leading-6 font-bold @min-[800px]/expenses:text-[20px]">
+              <div className="mb-4 flex min-h-8 flex-wrap items-center gap-2 @min-[800px]/expense-list:mb-2 @min-[800px]/expense-list:min-h-7 @min-[800px]/expense-list:gap-3 @min-[800px]/expense-list:px-4">
+                <h3 className="text-[16px] leading-6 font-bold @min-[800px]/expense-list:text-[20px]">
                   {key === "PREPARATION"
                     ? "여행 준비"
                     : (dateLabel ??
@@ -324,21 +324,22 @@ export function ExpenseList({
       </div>
     );
   return (
-    <ul className="space-y-4 @min-[800px]/expenses:space-y-0 @min-[800px]/expenses:rounded-xl @min-[800px]/expenses:border @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:bg-white">
+    <div className="@container/expense-list min-w-0">
+    <ul className="space-y-4 @min-[800px]/expense-list:space-y-0 @min-[800px]/expense-list:rounded-xl @min-[800px]/expense-list:border @min-[800px]/expense-list:border-border-subtle @min-[800px]/expense-list:bg-white">
       {expenses.map((e) => (
         <li
           key={e.id}
           data-expense-id={e.id}
-          className="relative min-w-0 rounded-xl border border-border-subtle bg-white p-3 @min-[800px]/expenses:min-h-0 @min-[800px]/expenses:rounded-none @min-[800px]/expenses:border-0 @min-[800px]/expenses:bg-transparent @min-[800px]/expenses:px-4 @min-[800px]/expenses:py-0"
+          className="relative min-w-0 rounded-xl border border-border-subtle bg-white p-3 @min-[800px]/expense-list:min-h-0 @min-[800px]/expense-list:rounded-none @min-[800px]/expense-list:border-0 @min-[800px]/expense-list:bg-transparent @min-[800px]/expense-list:px-4 @min-[800px]/expense-list:py-0"
         >
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:gap-x-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_minmax(100px,200px)_minmax(120px,180px)_minmax(100px,200px)_24px] @min-[800px]/expenses:items-center">
-            <div className="col-span-2 flex min-w-0 items-center gap-3 pr-10 @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:gap-4 @min-[800px]/expenses:pr-0">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 gap-y-2 @min-[800px]/expense-list:min-h-[68px] @min-[800px]/expense-list:gap-x-4 @min-[800px]/expense-list:grid-cols-[minmax(180px,1.4fr)_minmax(100px,1fr)_minmax(120px,1fr)_minmax(140px,1fr)_24px] @min-[800px]/expense-list:items-center">
+            <div className="col-span-2 flex min-w-0 items-center gap-3 pr-10 @min-[800px]/expense-list:col-span-1 @min-[800px]/expense-list:gap-4 @min-[800px]/expense-list:pr-0">
               <CategoryIcon category={e.category} />
               <div className="min-w-0">
-                <p className="text-[14px] leading-5 font-medium @min-[800px]/expenses:text-[16px] @min-[800px]/expenses:leading-6">
+                <p className="text-[14px] leading-5 font-medium @min-[800px]/expense-list:text-[16px] @min-[800px]/expense-list:leading-6">
                   {expenseTitle(e)}
                 </p>
-                <p className="mt-1 text-[12px] leading-5 text-text-subtle @min-[800px]/expenses:text-[13px] @min-[800px]/expenses:leading-[18px]">
+                <p className="mt-1 text-[12px] leading-5 text-text-subtle @min-[800px]/expense-list:text-[13px] @min-[800px]/expense-list:leading-[18px]">
                   {expenseCategoryLabel(e.category)} ·{" "}
                   {roomId && e.scheduleId !== null && e.scheduleItemId !== null ? (
                     <ExpensePlaceLabel roomId={roomId} scheduleId={e.scheduleId} itemId={e.scheduleItemId} showIcon={false} />
@@ -346,7 +347,7 @@ export function ExpenseList({
                 </p>
               </div>
             </div>
-            <div className="absolute right-3 top-3 @min-[800px]/expenses:static @min-[800px]/expenses:col-start-5 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:justify-self-end">
+            <div className="absolute right-3 top-3 @min-[800px]/expense-list:static @min-[800px]/expense-list:col-start-5 @min-[800px]/expense-list:row-start-1 @min-[800px]/expense-list:justify-self-end">
               {canManage && (
                 <ExpenseItemMenu
                   label={expenseTitle(e)}
@@ -356,13 +357,13 @@ export function ExpenseList({
                 />
               )}
             </div>
-            <p className="min-w-0 self-center whitespace-pre-wrap break-words text-[12px] leading-4 text-text-subtle @min-[800px]/expenses:text-[14px] @min-[800px]/expenses:leading-5 @min-[800px]/expenses:col-start-2 @min-[800px]/expenses:row-start-1">
+            <p className="min-w-0 self-center whitespace-pre-wrap break-words text-[12px] leading-4 text-text-subtle @min-[800px]/expense-list:text-[14px] @min-[800px]/expense-list:leading-5 @min-[800px]/expense-list:col-start-2 @min-[800px]/expense-list:row-start-1">
               {e.memo || "메모 없음"}
             </p>
-            <p className="break-all text-right text-[16px] leading-6 font-medium tabular-nums @min-[800px]/expenses:col-start-4 @min-[800px]/expenses:row-start-1">
+            <p className="break-all text-right text-[16px] leading-6 font-medium tabular-nums @min-[800px]/expense-list:col-start-4 @min-[800px]/expense-list:row-start-1">
               <ExpenseRowAmount expense={e} summary={rowKrwSummary ?? krwSummary} />
             </p>
-            <div className="col-span-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-text-subtle @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:col-start-3 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:flex-col @min-[800px]/expenses:justify-center @min-[800px]/expenses:border-x @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:px-2 @min-[800px]/expenses:py-2">
+            <div className="col-span-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-text-subtle @min-[800px]/expense-list:col-span-1 @min-[800px]/expense-list:col-start-3 @min-[800px]/expense-list:row-start-1 @min-[800px]/expense-list:min-h-[68px] @min-[800px]/expense-list:flex-col @min-[800px]/expense-list:justify-center @min-[800px]/expense-list:border-x @min-[800px]/expense-list:border-border-subtle @min-[800px]/expense-list:px-2 @min-[800px]/expense-list:py-2">
               {(
                 [
                   ["결제", e.payerUserIds],
@@ -397,6 +398,7 @@ export function ExpenseList({
         </li>
       ))}
     </ul>
+    </div>
   );
 }
 type SettlementProps = PeopleProps & {

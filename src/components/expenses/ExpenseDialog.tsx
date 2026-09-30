@@ -1,5 +1,6 @@
 "use client";
-import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
+import { useSheetDrag } from "@/components/mobile/useSheetDrag";
+import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { CloseIcon } from "@/assets/icons";
@@ -20,7 +21,7 @@ export function ExpenseDialog({
   settlement?: boolean;
   description?: ReactNode;
 }>) {
-  const sheetDrag = useExpenseSheetDrag(onClose);
+  const sheetDrag = useSheetDrag(onClose);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -55,7 +56,7 @@ export function ExpenseDialog({
       className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]" : ""} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]`}
     >
       <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full max-sm:h-full max-sm:max-h-full">
-        <div {...sheetDrag.handleProps} className={sheetDrag.handleClassName}>
+        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-5 mobile:pt-5">
         <div
           aria-hidden
           className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block"
@@ -76,7 +77,7 @@ export function ExpenseDialog({
             <CloseIcon size={24} />
           </button>
         </header>
-        </div>
+        </BottomSheetDragHandle>
         <div className="flex min-h-0 flex-col overflow-y-auto mobile:flex-1 max-sm:flex-1 overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] max-sm:px-5 mobile:px-5">
           {children}
         </div>
