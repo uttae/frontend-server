@@ -732,7 +732,10 @@ export function useBookmarkCategories(
     queryKey: bookmarkCategoriesQueryKey(roomId),
     queryFn: () => getBookmarkCategories(roomId!),
     enabled: !!roomId && queryEnabled,
-    staleTime: 0,
+    staleTime: Infinity,
+    // Broadcasts/mutations invalidate folders; plain tab reentry reuses the cache.
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 }
 

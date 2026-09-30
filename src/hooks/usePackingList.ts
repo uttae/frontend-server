@@ -57,12 +57,15 @@ export function usePackingList() {
   },[client,coordinator,roomId,userId]);
   useEffect(()=>{
     if(!coordinator) return;
-    void coordinator.refresh();
-    const refresh=()=>{if(document.visibilityState==='visible') void coordinator.refresh();};
-    window.addEventListener('focus',refresh);
-    window.addEventListener('online',refresh);
-    document.addEventListener('visibilitychange',refresh);
-    return ()=>{window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',refresh);};
+    const recoverIfNeeded=()=>{
+      const {status}=coordinator.getSnapshot();
+      if(status!=='ready' && status!=='writing') void coordinator.refresh();
+    };
+    recoverIfNeeded();
+    // A personal list has no room broadcast stream. Reuse successful local state;
+    // reconnect only retries failed reads. Writes and explicit retries own refreshes.
+    window.addEventListener('online',recoverIfNeeded);
+    return ()=>window.removeEventListener('online',recoverIfNeeded);
   },[coordinator]);
   useEffect(()=>{
     if(state.status!=='revoked' || state.exitToHome === false) return;
