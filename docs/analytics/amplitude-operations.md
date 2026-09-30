@@ -64,6 +64,17 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 
 일부 실제 사용자의 차단으로 인한 누락이 사업 지표에 중요해지면, 개인정보·인프라 검토 후 퍼스트파티 프록시를 별도 도입한다.
 
+## 전송 실패 진단
+
+개발 서버에 `[browser] Amplitude Logger`가 출력되면 브라우저 SDK의 로그가 터미널로 전달된 것이다. Next.js 페이지의 `GET ... 200`은 페이지 응답이며 Amplitude 이벤트 수집 성공을 뜻하지 않는다.
+
+- `Failed to fetch`와 `Status 'failed'`의 `code: 0`이 함께 나오면 SDK 전송 중 예외가 발생한 것이다. `0`은 실제 HTTP 응답 상태가 아니다. DNS, 광고 차단, 연결 실패, CORS 등을 브라우저 Network에서 구분한다.
+- `Event rejected due to exceeded retry count`는 전송 실패가 반복돼 재시도 한도를 초과한 이벤트가 폐기됐다는 뜻이다. 로그를 숨기거나 재시도 횟수만 늘려도 수집 문제는 해결되지 않는다.
+- `net::ERR_NAME_NOT_RESOLVED`라면 API 키나 이벤트 내용을 바꾸기 전에 로컬 DNS, VPN의 DNS 경로, 도메인 차단 설정을 확인한다. 시스템의 DNS 조회 결과와 공유기 또는 공용 DNS의 조회 결과를 비교한다.
+- Network에서 실제 HTTP 응답이 확인되면 그 응답 본문을 기준으로 API 키, 프로젝트 리전, 이벤트 형식 등을 진단한다.
+
+직접 전송하는 현재 구성에서는 `https://api2.amplitude.com/2/httpapi`의 호스트가 브라우저에서 해석되고 연결되어야 한다. 도메인 해석을 복구한 뒤 페이지를 새로고침하고 새 이벤트의 전송 성공 및 Development 프로젝트 수신을 다시 확인한다. 재시도 한도를 넘겨 이미 폐기된 이벤트는 해당 재시도에서 더 이상 전송되지 않는다.
+
 ## 대시보드 시작점
 
 - 활성화 퍼널: `sign_up` 또는 `login` → `create_plan` → `add_to_itinerary`
