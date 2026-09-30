@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { TrashIcon, WriteIcon } from "@/assets/icons";
 
 export function ExpenseItemMenu({
@@ -24,7 +24,7 @@ export function ExpenseItemMenu({
       if (!element.contains(event.target as Node)) setOpen(false);
     };
     element.ownerDocument.addEventListener("pointerdown", outside);
-    return () =>
+  return () =>
       element.ownerDocument.removeEventListener("pointerdown", outside);
   }, [open]);
   function choose(action: () => void) {
@@ -33,27 +33,26 @@ export function ExpenseItemMenu({
     setOpen(false);
     action();
   }
+  function handleEscape(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key !== "Escape" || !open) return;
+    event.preventDefault();
+    event.stopPropagation();
+    setOpen(false);
+    trigger.current?.focus();
+  }
   return (
     <div
       ref={root}
-      role="group"
-      aria-label={`${label} 비용 작업`}
       className="relative z-20 self-start"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape" && open) {
-          event.preventDefault();
-          event.stopPropagation();
-          setOpen(false);
-          trigger.current?.focus();
-        }
-      }}
+
     >
       <button
         ref={trigger}
         type="button"
+        onKeyDown={handleEscape}
         aria-label={`${label} 비용 더보기`}
         aria-expanded={open && !busy}
         aria-controls={open && !busy ? id : undefined}
@@ -71,6 +70,7 @@ export function ExpenseItemMenu({
         >
           <button
             type="button"
+        onKeyDown={handleEscape}
             aria-label="비용 수정"
             onClick={() => choose(onEdit)}
             className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 text-body-s-regular hover:bg-fill focus-visible:outline-primary"
@@ -80,6 +80,7 @@ export function ExpenseItemMenu({
           </button>
           <button
             type="button"
+        onKeyDown={handleEscape}
             aria-label="비용 삭제"
             onClick={() => choose(onDelete)}
             className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 text-body-s-regular text-status-negative hover:bg-fill focus-visible:outline-primary"

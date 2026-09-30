@@ -167,6 +167,29 @@ function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, catego
   return { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses };
 }
 
+function ExpenseMemberNotice({ context }: Readonly<{ context: ReturnType<typeof useExpenseContext> }>) {
+  return <>
+          {context.memberStatus !== "success" && (
+            <output
+              className={context.memberStatus === "pending" ? "sr-only" : "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"}
+            >
+              {context.memberStatus === "pending"
+                ? "멤버 확인 중…"
+                : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
+              비용의 사용자 ID와 금액은 유지돼요.
+            </output>
+          )}
+          {context.memberStatus === "success" && !context.canManage && (
+            <p
+              role="alert"
+              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
+            >
+              현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
+            </p>
+          )}
+  </>;
+}
+
 export function ExpensePanel() {
   const context = useExpenseContext();
   const [tab, setTab] = useState<"list" | "summary">("list");
@@ -332,24 +355,7 @@ export function ExpensePanel() {
               정산 요약
             </button>
           </div>
-          {context.memberStatus !== "success" && (
-            <output
-              className={context.memberStatus === "pending" ? "sr-only" : "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"}
-            >
-              {context.memberStatus === "pending"
-                ? "멤버 확인 중…"
-                : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
-              비용의 사용자 ID와 금액은 유지돼요.
-            </output>
-          )}
-          {context.memberStatus === "success" && !context.canManage && (
-            <p
-              role="alert"
-              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
-            >
-              현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
-            </p>
-          )}
+          <ExpenseMemberNotice context={context} />
           {conflict && (
             <ExpenseDeleteConflict
               conflict={conflict}
