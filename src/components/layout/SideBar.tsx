@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
+import { useCurrentRoomId } from "@/hooks/use-room-id";
 import {
   sidebarWireframeIcons as sidebarIcons,
   sidebarIcons as sharedSidebarIcons,
@@ -22,6 +23,7 @@ const SIDEBAR_ITEMS = [
   { key: "search", href: "/search", label: "검색", icon: sidebarIcons.search },
   { key: "bookmark", href: "/bookmark", label: "북마크", icon: sidebarIcons.bookmark },
   { key: "cost", href: "/cost", label: "가계부", icon: sharedSidebarIcons.cost },
+  { key: "packing", href: "/packing", label: "준비물", icon: sidebarIcons.packing },
 ] as const;
 
 function isSidebarItemActive(pathname: string, key: string, href: string) {
@@ -35,6 +37,7 @@ function SideBar() {
   const pathname = usePathname();
   const { chatState, openChat, closeChat } = useChat();
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
+  const { roomId } = useCurrentRoomId();
 
   const isChatActive = chatState !== "closed";
   const isOnMemberSettings = pathname.startsWith("/member-settings");
@@ -49,18 +52,21 @@ function SideBar() {
       style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}
     >
       <nav aria-label="여행 주요 메뉴" className="flex w-full shrink-0 flex-col items-center">
-        {SIDEBAR_ITEMS.map((item) => (
-          <SidebarNavItem
-            key={item.href}
-            href={item.href}
-            icon={item.icon}
-            label={item.label}
-            tutorialTarget={item.key}
-            isActive={!isChatActive && isSidebarItemActive(pathname, item.key, item.href)}
-            onClick={closeChat}
-            showDividerBelow={item.key === "cost"}
-          />
-        ))}
+        {SIDEBAR_ITEMS.map((item) => {
+          const href = item.key === "packing" ? (roomId ? `/packing/${roomId}` : null) : item.href;
+          return href ? (
+            <SidebarNavItem
+              key={item.key}
+              href={href}
+              icon={item.icon}
+              label={item.label}
+              tutorialTarget={item.key}
+              isActive={!isChatActive && isSidebarItemActive(pathname, item.key, href)}
+              onClick={closeChat}
+              showDividerBelow={item.key === "packing"}
+            />
+          ) : null;
+        })}
         <button
           type="button"
           onClick={openChat}

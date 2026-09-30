@@ -1,3 +1,4 @@
+import { isPackingPath } from "@/lib/room-context-path";
 import type { ChatState } from "@/stores/chat-panel-store";
 import {
   CHAT_PANEL_DOCKED_WIDTH,
@@ -91,10 +92,11 @@ export type ResolveLeftSectionTargetMaxWidthParams = {
  * 모바일은 호출측에서 `"100%"` 처리.
  */
 export function resolveLeftSectionTargetMaxWidthPx({
+  pathname,
   isMobile,
   rootFontPx = DEFAULT_ROOT_FONT_PX,
 }: ResolveLeftSectionTargetMaxWidthParams): number | null {
-  if (isMobile) return null;
+  if (isMobile || isPackingPath(pathname)) return null;
 
   return parseLayoutLengthToPx(width.s2, rootFontPx);
 }
@@ -111,8 +113,8 @@ export function resolveLeftSectionAnimateMaxWidth({
   return "none";
 }
 
-export function resolveLeftSectionMinWidthPx(isMobile: boolean): number | string {
-  return isMobile ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
+export function resolveLeftSectionMinWidthPx(isMobile: boolean, pathname = ""): number | string {
+  return isMobile || isPackingPath(pathname) ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
 }
 
 /** 플랜 maximized: LeftSection이 아직 넓으면 채팅 표시를 지연 */
