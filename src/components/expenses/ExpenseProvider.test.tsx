@@ -805,3 +805,45 @@ it("isolates AND-filtered KRW snapshots and refreshes them on expense invalidati
   expect(mocks.krw).toHaveBeenCalledWith("r", filters);
   expect(mocks.krw).toHaveBeenCalledWith("r");
 });
+
+it("keeps whole-room state ready while a new filter snapshot loads", async () => {
+ await mountMutations();
+ const whole = context.krwSummary.data!;
+ let finish!: (value: ExpenseKrwSummary) => void;
+ mocks.krw.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const listReads = mocks.list.mock.calls.length;
+ const budgetReads = mocks.budget.mock.calls.length;
+ const summaryReads = mocks.summary.mock.calls.length;
+ try {
+  await act(async () => context.setKrwFilters({ expenseGroup: "TRIP_DAY", scheduleId: 10 }));
+  expect(context.filteredKrwSummary.isFetching).toBe(true);
+  expect(context.syncStatus).toBe("ready");
+  expect(context.krwSummary.data).toBe(whole);
+  expect(mocks.list).toHaveBeenCalledTimes(listReads);
+  expect(mocks.budget).toHaveBeenCalledTimes(budgetReads);
+  expect(mocks.summary).toHaveBeenCalledTimes(summaryReads);
+ } finally {
+  await act(async () => finish(whole));
+ }
+});
+
+it("returns to all expenses without refetching or blanking the whole-room summary", async () => {
+ await mountMutations();
+ await act(async () => { context.setKrwFilters({ expenseGroup: "TRIP_DAY", scheduleId: 10 }); });
+ await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+ const whole = context.krwSummary.data!;
+ const previous = mocks.krw.getMockImplementation()!;
+ let finish: ((value: ExpenseKrwSummary) => void) | undefined;
+ mocks.krw.mockImplementation((...args) => args.length === 1 ? new Promise(resolve => { finish = resolve; }) : previous(...args));
+ try {
+  await act(async () => context.setKrwFilters({}));
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(finish).toBeUndefined();
+  expect(context.krwSummary.isFetching).toBe(false);
+  expect(context.syncStatus).toBe("ready");
+  expect(context.krwSummary.data).toBe(whole);
+ } finally {
+  mocks.krw.mockImplementation(previous);
+  if (finish) await act(async () => finish!(whole));
+ }
+});

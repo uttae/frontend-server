@@ -79,7 +79,7 @@ export function ExpenseBudgetSummary() {
           <button
             type="button"
             aria-label={amount === null ? "예산 설정" : "예산 수정"}
-            className="flex h-5 w-4 shrink-0 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
+            className="flex h-5 w-4 shrink-0 cursor-pointer disabled:cursor-not-allowed items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
             disabled={budgetBusy}
             onClick={() => setOpened(budget.data)}
           >

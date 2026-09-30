@@ -28,7 +28,7 @@ export function ExpenseCategorySummary() {
         aria-expanded={expanded}
         aria-controls={id}
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between gap-2 text-body-s-emphasis @min-[800px]/expenses:pointer-events-none @min-[800px]/expenses:hidden"
+        className="flex w-full cursor-pointer items-center justify-between gap-2 text-body-s-emphasis @min-[800px]/expenses:pointer-events-none @min-[800px]/expenses:hidden"
       >
         카테고리별 비용 요약{" "}
         <span className="flex items-center gap-1 text-body-xs-regular text-text-subtle">

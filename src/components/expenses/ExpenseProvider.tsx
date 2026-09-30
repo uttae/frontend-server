@@ -93,8 +93,11 @@ function useExpenses(roomId: string) {
   const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
   const filteredKrwSummary = useQuery({
     ...options,
-    queryKey: Object.keys(krwFilters).length ? [...expenseKeys.krwSummary(roomId), krwFilters] : expenseKeys.krwSummary(roomId),
-    queryFn: () => Object.keys(krwFilters).length ? getExpenseKrwSummary(roomId, krwFilters) : getExpenseKrwSummary(roomId),
+    // The unfiltered view already has krwSummary; do not mount another observer
+    // onto that stale query when returning to All and trigger a whole-room refetch.
+    enabled: enabled && Object.keys(krwFilters).length > 0,
+    queryKey: [...expenseKeys.krwSummary(roomId), krwFilters],
+    queryFn: () => getExpenseKrwSummary(roomId, krwFilters),
   });
   const budgetMutation = useMutation({
     mutationFn: (body: ExpenseBudgetInput) => {
@@ -210,7 +213,8 @@ function useExpenses(roomId: string) {
       lock.current = false;
     }
   }
-  const reads = [list, summary, budget, krwSummary, filteredKrwSummary, currencies, memberQuery];
+  // A filter request updates only the selected list, not whole-trip synchronization.
+  const reads = [list, summary, budget, krwSummary, currencies, memberQuery];
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
     if (reads.some(query => query.isError)) resolvedSyncStatus = "error";

@@ -1,4 +1,5 @@
 "use client";
+import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { CloseIcon } from "@/assets/icons";
@@ -19,6 +20,7 @@ export function ExpenseDialog({
   settlement?: boolean;
   description?: ReactNode;
 }) {
+  const sheetDrag = useExpenseSheetDrag(onClose);
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
@@ -36,6 +38,7 @@ export function ExpenseDialog({
   return (
     <dialog
       ref={ref}
+      style={sheetDrag.surfaceStyle}
       aria-labelledby={titleId}
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -47,9 +50,10 @@ export function ExpenseDialog({
       className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]" : ""} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]`}
     >
       <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full max-sm:h-full max-sm:max-h-full">
+        <div {...sheetDrag.handleProps} className={sheetDrag.handleClassName}>
         <div
           aria-hidden
-          className="mx-auto mt-5 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block"
+          className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block"
         />
         <header className="flex shrink-0 items-center justify-between px-8 pt-8 pb-6 max-sm:px-5 max-sm:pt-3 max-sm:pb-3 mobile:px-5 mobile:pt-3 mobile:pb-3">
           <div>
@@ -62,11 +66,12 @@ export function ExpenseDialog({
             type="button"
             aria-label={`${title} 닫기`}
             onClick={onClose}
-            className={`flex size-6 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "max-sm:hidden mobile:hidden" : ""}`}
+            className={`cursor-pointer flex size-6 items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "max-sm:hidden mobile:hidden" : ""}`}
           >
             <CloseIcon size={24} />
           </button>
         </header>
+        </div>
         <div className="flex min-h-0 flex-col overflow-y-auto mobile:flex-1 max-sm:flex-1 overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] max-sm:px-5 mobile:px-5">
           {children}
         </div>

@@ -1,4 +1,5 @@
 "use client";
+import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { cn } from "@/lib/utils";
@@ -202,6 +203,7 @@ export function ExpenseEditor({
     };
   }, []);
   const pending = saving || context.busy;
+  const sheetDrag = useExpenseSheetDrag(onClose, pending);
   const currentTarget = context.list?.data?.find(
     (e) => e.id === original?.id,
   );
@@ -319,6 +321,7 @@ export function ExpenseEditor({
   return (
     <dialog
       ref={dialog}
+      style={sheetDrag.surfaceStyle}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
@@ -332,7 +335,8 @@ export function ExpenseEditor({
         className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]"
         aria-describedby={error ? errorId : undefined}
       >
-        <div aria-hidden className="mx-auto mt-5 hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
+        <div {...sheetDrag.handleProps} className={sheetDrag.handleClassName}>
+        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-3 max-sm:pb-3">
           <div>
           <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-6 max-sm:text-[20px] max-sm:leading-6 font-bold">
@@ -349,6 +353,7 @@ export function ExpenseEditor({
           >
             <CloseIcon size={24} aria-hidden="true" />
           </button>
+        </div>
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
         <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">

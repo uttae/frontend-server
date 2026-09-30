@@ -163,6 +163,16 @@ export function ExpensePanel() {
   const detailed = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters)
     && context.syncStatus === "ready" && context.filteredKrwSummary?.isSuccess && !context.filteredKrwSummary.isFetching
     ? context.filteredKrwSummary.data : undefined;
+  const wholeKrw = context.syncStatus === "ready" && context.krwSummary.isSuccess && !context.krwSummary.isFetching
+    ? context.krwSummary.data : undefined;
+  // Reuse authoritative totals for a single dimension; never sum rounded row amounts
+  // or show the previous day/category total while a new intersection is loading.
+  const fallbackTotal = activeFilter === "ALL"
+    ? category === "ALL" ? wholeKrw : wholeKrw?.categories?.find(row => row.category === category)?.total
+    : category === "ALL" ? wholeKrw?.days?.find(day => activeFilter === "PREPARATION"
+      ? day.expenseGroup === "PREPARATION"
+      : day.expenseGroup === "TRIP_DAY" && String(day.scheduleId) === activeFilter)?.total : undefined;
+  const selectedTotal = detailed?.filtered ?? fallbackTotal;
   const visibleExpenses = detailed?.expenses?.map((row) => row.expense) ?? filtered;
   function remove(expense: Expense, reviewed = false) {
     if (
@@ -370,7 +380,7 @@ export function ExpensePanel() {
                   aria-label={`${option.label} 비용`}
                   aria-pressed={activeFilter === option.value}
                   onClick={() => setFilter(option.value)}
-                  className={`h-9 shrink-0 rounded-full border px-4 text-[14px] font-medium leading-5 focus-visible:outline-2 focus-visible:outline-primary ${activeFilter === option.value ? "border-border text-primary" : "border-border text-text-disabled hover:bg-fill"}`}
+                  className={`h-9 shrink-0 cursor-pointer rounded-full border px-4 text-[14px] font-medium leading-5 focus-visible:outline-2 focus-visible:outline-primary ${activeFilter === option.value ? "border-border text-primary" : "border-border text-text-disabled hover:bg-fill"}`}
                 >
                   {option.label}
                 </button>
@@ -393,8 +403,8 @@ export function ExpensePanel() {
                 className="col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-2 text-body-s-emphasis @min-[800px]/expenses:hidden"
                 aria-label="선택한 비용 합계"
               >
-                <ExpenseKrwAmount total={detailed?.filtered} />
-                {!detailed && totalsByCurrency(filtered).map((total) => (
+                <ExpenseKrwAmount total={selectedTotal} />
+                {!selectedTotal && totalsByCurrency(filtered).map((total) => (
                   <span key={total.currency} className="break-all">
                     {formatExpenseAmount(total.amount)} {total.currency}
                   </span>
@@ -411,7 +421,8 @@ export function ExpensePanel() {
               <ExpenseList
                 roomId={context.roomId}
                 expenses={visibleExpenses}
-                krwSummary={detailed}
+                krwSummary={detailed ?? (category === "ALL" ? wholeKrw : undefined)}
+                rowKrwSummary={detailed ?? wholeKrw}
                 members={context.members}
                 memberStatus={context.memberStatus}
                 schedules={context.schedules}
@@ -422,15 +433,17 @@ export function ExpensePanel() {
                 grouped
               />
               {(activeFilter !== "ALL" || category !== "ALL") && (
-                <p className="text-body-xs-regular text-text-subtle">
-                  {dayOptions.find((o) => o.value === activeFilter)?.label} ·{" "}
-                  {category === "ALL"
-                    ? "전체 카테고리"
-                    : expenseCategoryLabel(
-                        category as Expense["category"],
-                      )}{" "}
-                  지출만 표시해요. 여행 전체 예산과 정산은 전체 기준이에요.
-                </p>
+                <div className="text-body-xs-regular text-text-subtle">
+                  <p className="hidden @min-[800px]/expenses:block">
+                    선택한 일정의 지출만 표시해요. 여행 전체 예산과 정산은 전체 기준이에요.
+                  </p>
+                  <p className="@min-[800px]/expenses:hidden">
+                    {activeFilter !== "ALL" && dayOptions.find(option => option.value === activeFilter)?.label}
+                    {activeFilter !== "ALL" && category !== "ALL" && " · "}
+                    {category !== "ALL" && expenseCategoryLabel(category as Expense["category"])}{" "}
+                    지출만 표시해요.
+                  </p>
+                </div>
               )}
             </>
           )}

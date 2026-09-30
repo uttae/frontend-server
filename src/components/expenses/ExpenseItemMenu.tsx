@@ -71,7 +71,7 @@ export function ExpenseItemMenu({
             type="button"
             aria-label="비용 수정"
             onClick={() => choose(onEdit)}
-            className="flex min-h-11 w-full items-center gap-2 px-4 text-body-s-regular hover:bg-fill focus-visible:outline-primary"
+            className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 text-body-s-regular hover:bg-fill focus-visible:outline-primary"
           >
             <WriteIcon size={16} />
             수정
@@ -80,7 +80,7 @@ export function ExpenseItemMenu({
             type="button"
             aria-label="비용 삭제"
             onClick={() => choose(onDelete)}
-            className="flex min-h-11 w-full items-center gap-2 px-4 text-body-s-regular text-status-negative hover:bg-fill focus-visible:outline-primary"
+            className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 text-body-s-regular text-status-negative hover:bg-fill focus-visible:outline-primary"
           >
             <TrashIcon size={16} />
             삭제

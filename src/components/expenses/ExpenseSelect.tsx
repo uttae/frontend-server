@@ -157,7 +157,7 @@ export function ExpenseSelect({
                   value={option.value}
                   checked={value === option.value}
                   onChange={() => choose(option.value)}
-                  className="size-4 accent-primary"
+                  className="size-4 cursor-pointer accent-primary"
                 />
               </label>
             ))}

@@ -1,4 +1,5 @@
 "use client";
+import { useExpenseSheetDrag } from "./useExpenseSheetDrag";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { ChevronRight, Plus, X } from "lucide-react";
@@ -39,6 +40,7 @@ export function ExpenseScopePanel({
   onRetry: () => void;
   onClose: () => void;
 }>) {
+  const sheetDrag = useExpenseSheetDrag(onClose);
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
@@ -59,14 +61,17 @@ export function ExpenseScopePanel({
   return (
     <dialog
       ref={dialog}
+      style={sheetDrag.surfaceStyle}
       aria-labelledby={titleId}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
       }}
-      className="fixed inset-auto left-1/2 top-1/2 m-0 max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-gray-border bg-white p-0 text-text shadow-2xl backdrop:bg-black/40 mobile:bottom-0 mobile:left-0 mobile:max-h-[60dvh] mobile:top-auto mobile:w-full mobile:max-w-none mobile:translate-x-0 mobile:translate-y-0 mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200 mobile:border-x-0 mobile:border-b-0"
+      className="fixed inset-auto left-1/2 top-1/2 m-0 max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-gray-border bg-white p-0 text-text shadow-2xl backdrop:bg-black/40 mobile:bottom-0 mobile:left-0 mobile:max-h-[60dvh] mobile:top-auto mobile:w-full mobile:max-w-none mobile:translate-x-0 mobile:translate-y-0 mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200 mobile:border-x-0 mobile:border-b-0 max-sm:bottom-0 max-sm:left-0 max-sm:top-auto max-sm:w-full max-sm:max-w-none max-sm:max-h-[60dvh] max-sm:translate-x-0 max-sm:translate-y-0 max-sm:rounded-b-none max-sm:rounded-t-[20px] max-sm:border-x-0 max-sm:border-b-0"
     >
-      <div className="flex max-h-[85dvh] min-h-0 flex-col mobile:max-h-[60dvh]">
+      <div className="flex max-h-[85dvh] min-h-0 flex-col mobile:max-h-[60dvh] max-sm:max-h-[60dvh]">
+        <div {...sheetDrag.handleProps} className={sheetDrag.handleClassName}>
+        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
         <header className="flex items-start justify-between gap-3 border-b border-gray-border px-5 py-3">
           <div className="min-w-0">
             <h2 ref={title} id={titleId} tabIndex={-1} className="text-title-m mobile:text-title-s font-bold focus:outline-none">
@@ -85,6 +90,7 @@ export function ExpenseScopePanel({
             <X size={18} aria-hidden="true" />
           </button>
         </header>
+        </div>
 
         <div className="flex min-h-0 flex-1 flex-col px-5 py-4">
           <p className="text-body-s-regular text-dark-gray">총 비용 · {scoped.length}건</p>
@@ -112,7 +118,7 @@ export function ExpenseScopePanel({
           ) : isError && !scoped.length ? (
             <div className="space-y-3 py-5 text-body-s-regular text-dark-gray">
               <p role="alert">비용 조회에 실패했어요.</p>
-              <button type="button" onClick={onRetry} className="text-primary-strong underline">다시 시도</button>
+              <button type="button" onClick={onRetry} className="cursor-pointer text-primary-strong underline">다시 시도</button>
             </div>
           ) : scoped.length ? (
             <ul className="mt-2 -mr-5 min-h-0 overflow-y-auto overscroll-contain pr-5 divide-y divide-gray-border [scrollbar-color:rgba(0,0,0,0.2)_transparent]">

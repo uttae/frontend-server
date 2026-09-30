@@ -216,6 +216,7 @@ export function ExpenseList({
   busy,
   grouped = false,
   krwSummary,
+  rowKrwSummary,
 }: PeopleProps & {
   roomId?: string;
   expenses: Expense[];
@@ -226,6 +227,7 @@ export function ExpenseList({
   busy: boolean;
   grouped?: boolean;
   krwSummary?: ExpenseKrwSummary;
+  rowKrwSummary?: ExpenseKrwSummary;
 }) {
   if (!expenses.length)
     return (
@@ -305,6 +307,7 @@ export function ExpenseList({
                 roomId={roomId}
                 expenses={rows}
                 krwSummary={krwSummary}
+                rowKrwSummary={rowKrwSummary}
                 members={members}
                 memberStatus={memberStatus}
                 schedules={schedules}
@@ -355,7 +358,7 @@ export function ExpenseList({
               {e.memo || "메모 없음"}
             </p>
             <p className="break-all text-right text-[16px] leading-6 font-medium tabular-nums @min-[800px]/expenses:col-start-4 @min-[800px]/expenses:row-start-1">
-              <ExpenseRowAmount expense={e} summary={krwSummary} />
+              <ExpenseRowAmount expense={e} summary={rowKrwSummary ?? krwSummary} />
             </p>
             <div className="col-span-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-text-subtle @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:col-start-3 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:flex-col @min-[800px]/expenses:justify-center @min-[800px]/expenses:border-x @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:px-2 @min-[800px]/expenses:py-2">
               {(

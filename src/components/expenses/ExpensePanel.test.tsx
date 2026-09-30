@@ -479,3 +479,20 @@ it("renders a complete filtered snapshot independently of a partial whole room a
   expect(setKrwFilters).toHaveBeenLastCalledWith({ expenseGroup: "TRIP_DAY", scheduleId: 10 });
   expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toBeUndefined();
 });
+
+it("keeps known row and day KRW amounts while a new filtered total loads without mixing category scopes", async () => {
+ await mount();
+ const current = mocks.state as { list: { data: Expense[] }; krwSummary: { data: typeof contractFixture.response } };
+ const row = { ...current.list.data[1], category: "FOOD" as const };
+ const dayTotal = { convertedTotalKrw: "13500", isComplete: true, missingCurrencies: [], originalTotals: [] };
+ const whole = { ...current.krwSummary.data, expenses: [{ expense: row, convertedAmountKrw: "13500", isComplete: true, missingCurrencies: [] }], days: [{ expenseGroup: "TRIP_DAY", scheduleId: 10, total: dayTotal }] };
+ mocks.state = { ...(mocks.state as object), list: { isSuccess: true, data: [row] }, krwSummary: { isSuccess: true, data: whole }, filteredKrwSummary: { isPending: true, isFetching: true }, krwFilters: {} };
+ await act(async () => renderer.update(<ExpensePanel />));
+ await act(async () => renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick());
+ expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toEqual(dayTotal);
+ expect(JSON.stringify(renderer.toJSON())).toContain("13,500원");
+ expect(JSON.stringify(renderer.toJSON())).not.toContain("최신 비용 확인 중");
+ await act(async () => renderer.root.findByType(ExpenseSelect).props.onChange("FOOD"));
+ expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toBeUndefined();
+ expect(JSON.stringify(renderer.toJSON())).toContain("13,500원");
+});
