@@ -1,5 +1,5 @@
 "use client";
-import { ExpenseKrwAmount, ExpenseRateNote, expenseRowKrw } from "./ExpenseKrw";
+import { ExpenseKrwAmount, ExpenseRateNote, ExpenseRowAmount } from "./ExpenseKrw";
 import type { ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -355,8 +355,7 @@ export function ExpenseList({
               {e.memo || "메모 없음"}
             </p>
             <p className="break-all text-right text-[16px] leading-6 font-medium tabular-nums @min-[800px]/expenses:col-start-4 @min-[800px]/expenses:row-start-1">
-              <ExpenseKrwAmount total={expenseRowKrw(krwSummary, e.id, e.version)} />
-              <span className="mt-1 block text-[12px] leading-4 font-normal text-text-subtle @min-[800px]/expenses:text-[13px] @min-[800px]/expenses:leading-[18px]">{e.currency} {formatExpenseAmount(e.totalAmount)}</span>
+              <ExpenseRowAmount expense={e} summary={krwSummary} />
             </p>
             <div className="col-span-2 flex flex-wrap justify-between gap-x-4 gap-y-1 text-text-subtle @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:col-start-3 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:min-h-[68px] @min-[800px]/expenses:flex-col @min-[800px]/expenses:justify-center @min-[800px]/expenses:border-x @min-[800px]/expenses:border-border-subtle @min-[800px]/expenses:px-2 @min-[800px]/expenses:py-2">
               {(

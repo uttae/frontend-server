@@ -282,9 +282,9 @@ it.each([
   mocks.state = state(budget, { ...reference, ...patch } as ExpenseKrwSummary);
   await summary();
   const totalText = host.querySelector("h3")?.parentElement?.textContent;
-  if (patch.convertedTotalKrw === null) expect(totalText).toContain("환산 불가");
+  if (patch.convertedTotalKrw === null) expect(totalText).toContain("—");
   else if ("convertedTotalKrw" in patch && patch.convertedTotalKrw === undefined) expect(totalText).toContain("—");
-  else expect(totalText).toContain("부분 합계");
+  else expect(host.querySelector('button[aria-label="원화 합계 안내"]')).not.toBeNull();
   expect(host.querySelector('[aria-label="남은 예산"]')?.textContent).toContain("—");
 });
 it.each(["pending", "error"])("shows a dash with no conversion data while %s", async (status) => {
@@ -350,7 +350,8 @@ it("partial zero is labelled and unset never becomes a zero budget", async () =>
   );
   await summary();
   expect(text()).toContain("—");
-  expect(text()).toContain("부분 합계 0원");
+  expect(text()).toContain("0원");
+  expect(host.querySelector('button[aria-label="원화 합계 안내"]')).not.toBeNull();
   expect(text()).toContain("미설정");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
 });

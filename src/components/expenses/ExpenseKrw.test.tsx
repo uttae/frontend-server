@@ -1,11 +1,12 @@
+// @vitest-environment jsdom
 import { expect, it, vi } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 vi.mock("@/lib/api/config", () => ({ API_BASE: "http://fixture" }));
 import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
 it("distinguishes missing, partial zero, complete zero and preserves exact server integers", () => {
  const html = (amount: string | null, complete: boolean) => renderToStaticMarkup(<ExpenseKrwAmount total={{ convertedTotalKrw: amount, isComplete: complete, missingCurrencies: complete ? [] : ["KWD"] }} />);
- expect(html(null, false)).toContain("환산 불가");
- expect(html("0", false)).toContain("부분 합계");
+ expect(html(null, false)).toContain("—");
+ expect(html("0", false)).toContain("원화 합계 안내");
  expect(html("0", false)).toContain("0원");
  expect(html("0", true)).not.toContain("부분 합계");
  expect(html("501", true)).toContain("501원");
@@ -37,7 +38,7 @@ it("renders authoritative row 501 + 501 and day/payer 1001 without summing round
 });
 it.each([
  ["5", true, [], "5원"], ["0", true, [], "0원"],
- [null, false, ["KWD"], "환산 불가"], ["0", false, ["KWD"], "부분 합계"],
+ [null, false, ["KWD"], "—"], ["0", false, ["KWD"], "0원"],
 ] as const)("renders server payer allocation %s without recomputing shares", (amount, complete, missing, expected) => {
  const summary: ExpenseKrwSummary = { ...response, payers: [{ userId: 1, total: { originalTotals: [], convertedTotalKrw: amount, isComplete: complete, missingCurrencies: [...missing] } }] };
  const html = renderToStaticMarkup(<ExpenseSummaryView summary={{ currencies: [] }} krwSummary={summary} members={[]} memberStatus="success" scope="all" />);
@@ -51,4 +52,40 @@ it("keeps each server payer total in that member's settlement row beside origina
  expect(row).toContain("USD 2.00");
  expect(row).toContain("USD 1.00");
  expect(html).not.toContain('aria-label="결제자별 원화 합계"');
+});
+
+function amountMarkup(total?: Parameters<typeof ExpenseKrwAmount>[0]["total"], original?: Parameters<typeof ExpenseKrwAmount>[0]["original"]) {
+ const host = document.createElement("div");
+ host.innerHTML = renderToStaticMarkup(<ExpenseKrwAmount total={total} original={original} />);
+ return host;
+}
+it("keeps an incomplete total numeric and puts excluded currencies behind an accessible disclosure", () => {
+ const host = amountMarkup({ convertedTotalKrw: "1234567", isComplete: false, missingCurrencies: ["AED"] });
+ const trigger = host.querySelector('button[aria-label="원화 합계 안내"]');
+ const note = host.querySelector('[popover]');
+ expect(trigger).not.toBeNull();
+ expect(note?.id).toBe(trigger?.getAttribute("popovertarget"));
+ expect(note?.textContent).toContain("AED");
+ expect(note?.textContent).toContain("포함되지 않았어요");
+ note?.remove();
+ expect(host.textContent).toBe("1,234,567원");
+});
+it("uses the original currency once for a non-convertible row instead of an error stack", () => {
+ const broken = { ...response, expenses: [{ ...response.expenses[0], expense: { ...response.expenses[0].expense, currency: "AED", totalAmount: "50.00" }, convertedAmountKrw: null, isComplete: false, missingCurrencies: ["AED"] }] };
+ const host = document.createElement("div");
+ host.innerHTML = renderToStaticMarkup(<ExpenseList expenses={[broken.expenses[0].expense]} krwSummary={broken} schedules={[]} members={[]} memberStatus="success" canManage={false} busy={false} onEdit={() => {}} onDelete={() => {}} />);
+ host.querySelectorAll('[popover]').forEach(node => node.remove());
+ expect(host.textContent?.match(/AED 50.00/g)).toHaveLength(1);
+ expect(host.textContent).not.toMatch(/환산 불가|환율 없음|부분 합계/);
+});
+it("distinguishes unavailable totals from known zero without visible loading copy", () => {
+ const pending = amountMarkup();
+ expect(pending.textContent).toBe("—");
+ expect(pending.querySelector('button')).toBeNull();
+ const missing = amountMarkup({ convertedTotalKrw: null, isComplete: false, missingCurrencies: ["AED"] });
+ missing.querySelector('[popover]')?.remove();
+ expect(missing.textContent).toBe("—");
+ const zero = amountMarkup({ convertedTotalKrw: "0", isComplete: true, missingCurrencies: [] });
+ expect(zero.textContent).toBe("0원");
+ expect(zero.querySelector('button')).toBeNull();
 });
