@@ -1,12 +1,15 @@
 "use client";
+import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 import { ExpenseSelect } from "./ExpenseSelect";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
+import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
+import type { ExpenseKrwFilters } from "@/lib/api/rooms/expenses";
 import { RefreshCw } from "lucide-react";
 import { PlusIcon } from "@/assets/icons";
 import { ExpenseDialog } from "./ExpenseDialog";
@@ -150,6 +153,18 @@ export function ExpensePanel() {
             : e.expenseGroup === "TRIP_DAY" &&
               String(e.scheduleId) === activeFilter)),
     ) ?? [];
+  const krwFilters = useMemo<ExpenseKrwFilters>(() => ({
+    ...(category === "ALL" ? {} : { category: category as Expense["category"] }),
+    ...(activeFilter === "ALL" ? {} : activeFilter === "PREPARATION"
+      ? { expenseGroup: "PREPARATION" as const }
+      : { expenseGroup: "TRIP_DAY" as const, scheduleId: Number(activeFilter) }),
+  }), [category, activeFilter]);
+  const { setKrwFilters } = context;
+  useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
+  const detailed = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters)
+    && context.syncStatus === "ready" && context.filteredKrwSummary?.isSuccess && !context.filteredKrwSummary.isFetching
+    ? context.filteredKrwSummary.data : undefined;
+  const visibleExpenses = detailed?.expenses?.map((row) => row.expense) ?? filtered;
   function remove(expense: Expense, reviewed = false) {
     if (
       lock.current ||
@@ -200,8 +215,8 @@ export function ExpensePanel() {
   const readFailed =
     context.syncStatus === "error" ||
     context.memberStatus === "error" ||
-    [context.list, context.summary, context.budget, context.krwSummary].some(
-      (query) => query.isError,
+    [context.list, context.summary, context.budget, context.krwSummary, context.filteredKrwSummary].filter(Boolean).some(
+      (query) => query?.isError,
     );
   const query = context.list;
   const dayOptions = [
@@ -253,9 +268,6 @@ export function ExpensePanel() {
           </div>
         }
       />
-      <h2 className="mb-4 hidden border-b-2 border-primary pb-3 text-center text-body-s-emphasis text-primary mobile:block max-sm:block">
-        지출
-      </h2>
       {context.syncStatus !== "ready" && (
         <output
           style={{ display: "block" }}
@@ -382,22 +394,26 @@ export function ExpensePanel() {
                 className="col-start-1 row-start-2 flex min-w-0 flex-wrap items-baseline gap-2 text-body-s-emphasis @min-[800px]/expenses:hidden"
                 aria-label="선택한 비용 합계"
               >
-                {totalsByCurrency(filtered).map((total) => (
+                <ExpenseKrwAmount total={detailed?.filtered} />
+                {(detailed ? detailed.filtered.originalTotals.map((total) => ({ currency: total.currency, amount: total.totalAmount })) : totalsByCurrency(filtered)).map((total) => (
                   <span key={total.currency} className="break-all">
                     {formatExpenseAmount(total.amount)} {total.currency}
                   </span>
                 ))}
                 <span className="text-body-xs-regular text-text-subtle">
-                  {filtered.length}건
+                  {visibleExpenses.length}건
                 </span>
               </div>
             )}
           </div>
+          {context.filteredKrwSummary?.isError && <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>}
+          <ExpenseRateNote summary={detailed} />
           {context.list.isSuccess && (
             <>
               <ExpenseList
                 roomId={context.roomId}
-                expenses={filtered}
+                expenses={visibleExpenses}
+                krwSummary={detailed}
                 members={context.members}
                 memberStatus={context.memberStatus}
                 schedules={context.schedules}
@@ -474,6 +490,7 @@ export function ExpensePanel() {
             (tab === "summary" ? (
               <ExpenseSummaryView
                 currentUserId={context.currentUserId}
+                krwSummary={context.krwSummary.isSuccess && !context.krwSummary.isFetching ? context.krwSummary.data : undefined}
                 scope={settlementScope}
                 onScopeChange={setSettlementScope}
                 summary={context.summary.data}
@@ -495,7 +512,7 @@ export function ExpensePanel() {
           title="비용을 삭제할까요?"
           appearance="ledger"
           destructive
-          description={`${expenseCategoryLabel(expenseToDelete.category)} 내역을 삭제해요. 삭제한 내역은 복구할 수 없어요.`}
+          description={`${expenseTitle(expenseToDelete)} 내역을 삭제해요. 삭제한 내역은 복구할 수 없어요.`}
           confirmLabel="삭제"
           isPending={deleting}
           onConfirm={() => void confirmRemove()}

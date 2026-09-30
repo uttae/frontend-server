@@ -178,6 +178,13 @@ class ExpenseRecovery {
               staleTime: 0,
               retry: false,
             });
+            if (key === "summary-krw" && this.getSnapshot() !== "revoked") {
+              // Invalidate all filter snapshots; refresh active ones through their own queryFn.
+              await this.client.invalidateQueries({
+                queryKey,
+                predicate: (query) => query.queryKey.length > 3,
+              }, { throwOnError: true });
+            }
             this.failed.delete(key);
           } catch (error) {
             this.failed.add(key);

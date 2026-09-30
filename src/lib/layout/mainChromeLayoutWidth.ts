@@ -1,3 +1,4 @@
+import { isPackingPath } from "@/lib/room-context-path";
 import type { ChatState } from "@/stores/chat-panel-store";
 import {
   CHAT_PANEL_DOCKED_WIDTH,
@@ -92,10 +93,11 @@ export type ResolveLeftSectionTargetMaxWidthParams = {
  */
 export function resolveLeftSectionTargetMaxWidthPx({
   pathname,
+  chatState,
   isMobile,
   rootFontPx = DEFAULT_ROOT_FONT_PX,
 }: ResolveLeftSectionTargetMaxWidthParams): number | null {
-  if (isMobile || pathname === "/cost") return null;
+  if (isMobile || ((pathname === "/cost" || isPackingPath(pathname)) && chatState !== "maximized")) return null;
 
   return parseLayoutLengthToPx(width.s2, rootFontPx);
 }
@@ -112,8 +114,8 @@ export function resolveLeftSectionAnimateMaxWidth({
   return "none";
 }
 
-export function resolveLeftSectionMinWidthPx(isMobile: boolean): number | string {
-  return isMobile ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
+export function resolveLeftSectionMinWidthPx(isMobile: boolean, pathname = "", chatState: ChatState = "closed"): number | string {
+  return isMobile || (isPackingPath(pathname) && chatState !== "maximized") ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
 }
 
 /** 플랜 maximized: LeftSection이 아직 넓으면 채팅 표시를 지연 */

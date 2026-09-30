@@ -19,7 +19,7 @@ const expense = {
   payerUserIds: [1, 2],
   participantUserIds: [1, 2, 3],
   version: 0,
-  createdAt: "",
+  name: null, createdAt: "",
   updatedAt: "",
 };
 

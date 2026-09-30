@@ -1,4 +1,5 @@
 "use client";
+import { ExpenseKrwAmount } from "./ExpenseKrw";
 import { useId, useState } from "react";
 import { ChevronDownIcon } from "@/assets/icons";
 import {
@@ -10,7 +11,7 @@ import { useExpenseContext } from "./ExpenseProvider";
 import { CategoryIcon, formatExpenseAmount } from "./ExpenseViews";
 
 export function ExpenseCategorySummary() {
-  const { list } = useExpenseContext();
+  const { list, krwSummary } = useExpenseContext();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const rows = expenseCategories
@@ -70,6 +71,7 @@ export function ExpenseCategorySummary() {
                 </span>
               </dt>
               <dd className="min-w-0 max-w-[60%] text-right text-body-xs-emphasis tabular-nums">
+                <ExpenseKrwAmount total={krwSummary?.isSuccess && !krwSummary.isFetching ? krwSummary.data?.categories?.find((row) => row.category === category)?.total : undefined} />
                 {totalsByCurrency(expenses).map((total) => (
                   <p key={total.currency} className="break-all">
                     {formatExpenseAmount(total.amount)} {total.currency}

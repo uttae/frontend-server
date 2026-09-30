@@ -64,8 +64,8 @@ export function StompProvider({ children }: { children: ReactNode }) {
   const queryClientRef = useRef(queryClient);
 
   useLayoutEffect(() => {
-    bootstrapCurrentRoomFromSessionStorage();
-  }, []);
+    bootstrapCurrentRoomFromSessionStorage(pathname);
+  }, [pathname]);
 
   useLayoutEffect(() => {
     queryClientRef.current = queryClient;

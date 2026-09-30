@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { isPackingPath } from "@/lib/room-context-path";
 import { useChat } from "@/hooks/useChat";
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -10,6 +11,7 @@ import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
 import { MobileMainTabs } from "@/components/mobile/MobileMainTabs";
+import { TravelToolsSwitcher } from "@/components/mobile/TravelToolsSwitcher";
 
 import HeaderBar from "./HeaderBar";
 import LeftSection from "./LeftSection";
@@ -41,8 +43,10 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
     if (previousRoute.current !== pathname) closeChat();
     previousRoute.current = pathname;
   }, [pathname, closeChat]);
-  const showDesktopChat = !isMobileDevice && chatState !== "closed";
+  const showDesktopChat = !isMobileDevice && chatState === "maximized";
 
+  const isPackingRoute = isPackingPath(pathname);
+  const showFullWidthPacking = isPackingRoute && !showDesktopChat;
   const isPlanRoute = pathname === "/plan" || pathname.startsWith("/plan/");
   const mobilePlanPanel =
     isMobileDevice && isPlanRoute
@@ -71,16 +75,18 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
             mobileBackHref={mobileBack?.href}
             mobileBackLabel={mobileBack?.label}
           />
+          {isMobileDevice && (pathname === "/cost" || isPackingRoute) ? <TravelToolsSwitcher /> : null}
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
-            <MainContentScrollArea fill={showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
+            <MainContentScrollArea fill={isPackingRoute || showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
               {mainContent}
             </MainContentScrollArea>
           </section>
           <MobileMainTabs />
         </LeftSection>
 
-        {!isMobileDevice && pathname !== "/cost" ? <MapWithDetailPanel /> : null}
+        {!isMobileDevice && (pathname !== "/cost" || showDesktopChat) && !showFullWidthPacking ? <MapWithDetailPanel /> : null}
+        {!isMobileDevice && chatState === "minimized" ? <ChatPanel /> : null}
       </div>
     </main>
   );

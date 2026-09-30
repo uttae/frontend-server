@@ -1,4 +1,7 @@
 "use client";
+import { ExpenseKrwAmount, ExpenseRateNote, expenseRowKrw } from "./ExpenseKrw";
+import type { ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
+import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { useId, useState } from "react";
 import { ExpenseItemMenu } from "./ExpenseItemMenu";
@@ -214,6 +217,7 @@ export function ExpenseList({
   onDelete,
   busy,
   grouped = false,
+  krwSummary,
 }: PeopleProps & {
   roomId?: string;
   expenses: Expense[];
@@ -223,6 +227,7 @@ export function ExpenseList({
   onDelete: (e: Expense) => void;
   busy: boolean;
   grouped?: boolean;
+  krwSummary?: ExpenseKrwSummary;
 }) {
   if (!expenses.length)
     return (
@@ -289,6 +294,7 @@ export function ExpenseList({
                     {day.dayNumber}일차
                   </span>
                 )}
+                <ExpenseKrwAmount total={krwSummary?.days?.find((d) => key === "PREPARATION" ? d.expenseGroup === "PREPARATION" : d.expenseGroup === "TRIP_DAY" && String(d.scheduleId) === key)?.total} />
                 <span className="text-body-xs-regular text-text-subtle">
                   {totalsByCurrency(rows)
                     .map(
@@ -300,6 +306,7 @@ export function ExpenseList({
               <ExpenseList
                 roomId={roomId}
                 expenses={rows}
+                krwSummary={krwSummary}
                 members={members}
                 memberStatus={memberStatus}
                 schedules={schedules}
@@ -326,7 +333,7 @@ export function ExpenseList({
               <CategoryIcon category={e.category} />
               <div className="min-w-0">
                 <p className="flex flex-wrap items-baseline gap-x-1 text-body-s-emphasis">
-                  {expenseCategoryLabel(e.category)}
+                  {expenseTitle(e)}
                 </p>
                 <p className="mt-1 text-body-xs-regular text-text-subtle">
                   {expenseCategoryLabel(e.category)} ·{" "}
@@ -337,7 +344,7 @@ export function ExpenseList({
             <div className="col-start-2 row-start-1 @min-[800px]/expenses:col-start-5">
               {canManage && (
                 <ExpenseItemMenu
-                  label={expenseCategoryLabel(e.category)}
+                  label={expenseTitle(e)}
                   busy={busy}
                   onEdit={() => onEdit(e)}
                   onDelete={() => onDelete(e)}
@@ -348,7 +355,8 @@ export function ExpenseList({
               {e.memo || "메모 없음"}
             </p>
             <p className="break-all text-right text-body-s-emphasis tabular-nums @min-[800px]/expenses:col-start-4 @min-[800px]/expenses:row-start-1">
-              {formatExpenseAmount(e.totalAmount)} {e.currency}
+              <ExpenseKrwAmount total={expenseRowKrw(krwSummary, e.id, e.version)} />
+              <span className="text-body-xs-regular text-text-subtle">{formatExpenseAmount(e.totalAmount)} {e.currency}</span>
             </p>
             <div className="col-span-2 flex flex-wrap gap-x-4 gap-y-2 border-t border-border-subtle pt-2 @min-[800px]/expenses:col-span-1 @min-[800px]/expenses:col-start-3 @min-[800px]/expenses:row-start-1 @min-[800px]/expenses:flex-col @min-[800px]/expenses:border-0 @min-[800px]/expenses:pt-0">
               {(
@@ -388,6 +396,7 @@ export function ExpenseList({
   );
 }
 type SettlementProps = PeopleProps & {
+  krwSummary?: ExpenseKrwSummary;
   summary: ExpenseSummary;
   currentUserId?: number;
   scope?: "mine" | "all";
@@ -722,6 +731,7 @@ export function ExpenseSummaryView({
   currentUserId,
   scope = "mine",
   onScopeChange,
+  krwSummary,
 }: SettlementProps) {
   return (
     <div className="space-y-5">
@@ -746,6 +756,14 @@ export function ExpenseSummaryView({
           </button>
         ))}
       </div>
+      {krwSummary && <section aria-label="결제자별 원화 합계" className="space-y-3">
+        <h3>원화 환산 결제 합계</h3>
+        {krwSummary.payers?.filter((payer) => scope === "all" || payer.userId === currentUserId).map((payer) => <div key={payer.userId} className="flex justify-between gap-3">
+          <ExpensePerson userId={payer.userId} members={members} memberStatus={memberStatus} />
+          <ExpenseKrwAmount total={payer.total} />
+        </div>)}
+        <ExpenseRateNote summary={krwSummary} />
+      </section>}
       <SettlementContent
         summary={summary}
         members={members}

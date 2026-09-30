@@ -9,10 +9,12 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ExpenseApiError,
   expenseCategories,
+  expenseCategoryLabel,
   isExpenseCategory,
   type Expense,
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
+import { normalizeExpenseName, expenseNameError } from "@/lib/expenses/expense-name";
 import { validateExpense } from "@/lib/expenses/expense-policy";
 import { preferredExpenseCurrency, rememberExpenseCurrency } from "@/lib/expenses/expense-currency-preference";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
@@ -252,6 +254,8 @@ export function ExpenseEditor({
       reportError("멤버·통화·일차 정보를 확인한 뒤 다시 시도해 주세요.");
       return;
     }
+    const nameError = expenseNameError(body.name);
+    if (nameError) { reportError(nameError); return; }
     const category = body.category;
     if (!isExpenseCategory(category)) {
       reportError("카테고리를 선택해 주세요.");
@@ -288,6 +292,7 @@ export function ExpenseEditor({
       totalAmount: body.totalAmount,
       currency: body.currency,
       category,
+      ...(original && body.name === original.name ? {} : { name: normalizeExpenseName(body.name) }),
       memo: body.memo,
       payerUserIds: body.payerUserIds,
       participantUserIds: body.participantUserIds,
@@ -342,6 +347,12 @@ export function ExpenseEditor({
         </div>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-5 [scrollbar-gutter:stable] sm:p-6">
         <fieldset disabled={pending} className="min-w-0 space-y-4">
+          <label className="block text-label-m-emphasis">
+            이름 (선택)
+            <input name="name" className={expenseInputClass} maxLength={100}
+              placeholder={isExpenseCategory(body.category) ? expenseCategoryLabel(body.category) : "카테고리 선택"}
+              value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
+          </label>
           <div className="grid min-w-0 grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 rounded-xl bg-fill p-3">
             <ExpenseCurrencyPicker
               value={body.currency}

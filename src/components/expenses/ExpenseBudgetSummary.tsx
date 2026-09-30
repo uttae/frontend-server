@@ -1,5 +1,6 @@
 "use client";
 
+import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
 import { useCallback, useState } from "react";
 import type { ExpenseBudget } from "@/lib/api/rooms/expenses";
 import { useExpenseContext } from "./ExpenseProvider";
@@ -38,7 +39,7 @@ export function ExpenseBudgetSummary() {
           </p>
         )}
         <p className="break-all text-heading-s mobile:text-heading-m font-bold text-primary tracking-tight tabular-nums">
-          {hasCompleteTotal ? `${formatExpenseAmount(converted)}원` : "—"}
+          <ExpenseKrwAmount total={reference} />
         </p>
         {reference && (
           <>
@@ -104,6 +105,7 @@ export function ExpenseBudgetSummary() {
             : "—"}
         </p>
       </div>
+      <ExpenseRateNote summary={reference} />
       {opened && <ExpenseBudgetModal initial={opened} onClose={close} />}
     </div>
   );

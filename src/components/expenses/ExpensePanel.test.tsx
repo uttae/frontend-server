@@ -463,3 +463,22 @@ it("can retry a failed summary from inside its modal", async () => {
   await act(async () => retry!.props.onClick());
   expect(mocks.refresh).toHaveBeenCalledOnce();
 });
+
+import contractFixture from "./krw-contract.fixture.json";
+import { ExpenseKrwAmount } from "./ExpenseKrw";
+it("renders a complete filtered snapshot independently of a partial whole room and hides it on filter transition", async () => {
+  await mount();
+  const whole = { ...contractFixture.response, convertedTotalKrw: "508", isComplete: false, missingCurrencies: ["KWD"], stale: true };
+  const selected = { ...whole, filtered: { ...contractFixture.response.filtered, convertedTotalKrw: "501" }, expenses: [contractFixture.response.expenses[0]] };
+  const setKrwFilters = vi.fn();
+  mocks.state = { ...(mocks.state as object), krwSummary: { data: whole, isSuccess: true },
+    krwFilters: {}, setKrwFilters, filteredKrwSummary: { data: selected, isSuccess: true } };
+  await act(async () => renderer.update(<ExpensePanel />));
+  const selectedTotal = renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount);
+  expect(selectedTotal.props.total).toEqual(selected.filtered);
+  const allAmounts = renderer.root.findAllByType(ExpenseKrwAmount);
+  expect(allAmounts.some(node => node.props.total?.convertedTotalKrw === "508" && !node.props.total.isComplete)).toBe(true);
+  await act(async () => renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick());
+  expect(setKrwFilters).toHaveBeenLastCalledWith({ expenseGroup: "TRIP_DAY", scheduleId: 10 });
+  expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toBeUndefined();
+});

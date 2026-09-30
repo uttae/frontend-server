@@ -9,7 +9,7 @@ import type { Expense } from "@/lib/api/rooms/expenses";
 const expense: Expense = {
   id: 1, expenseGroup: "TRIP_DAY", scheduleId: 2, scheduleItemId: 26,
   category: "FOOD", memo: "별도 메모", currency: "KRW", totalAmount: "1000",
-  payerUserIds: [], participantUserIds: [], version: 0, createdAt: "", updatedAt: "",
+  payerUserIds: [], participantUserIds: [], version: 0, name: null, createdAt: "", updatedAt: "",
 };
 let renderer: ReactTestRenderer;
 let client: QueryClient;
@@ -34,4 +34,12 @@ it("keeps scoped expense titles and edit labels category-only, with memo and pla
   expect(edit.findAllByType("span")[1].children).toEqual(["식비"]);
   expect(JSON.stringify(renderer.toJSON())).toContain("별도 메모");
   expect(JSON.stringify(renderer.toJSON())).toContain("경복궁");
+});
+
+it("uses persisted names for ledger titles while keeping category and memo separate", async () => {
+  await act(async () => { renderer = create(<ExpenseList expenses={[{ ...expense, name: "점심 식사" }]} members={[]} memberStatus="success" schedules={[]} canManage={false} busy={false} onEdit={vi.fn()} onDelete={vi.fn()} />); });
+  expect(renderer.root.findByProps({ "data-expense-id": 1 }).findAllByType("p")[0].children).toEqual(["점심 식사"]);
+  const text = JSON.stringify(renderer.toJSON());
+  expect(text).toContain("별도 메모");
+  expect(text).toContain("식비");
 });

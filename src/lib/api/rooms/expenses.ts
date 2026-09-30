@@ -29,11 +29,13 @@ export type ExpenseInput = {
   totalAmount: string;
   currency: string;
   category: ExpenseCategory;
+  name?: string | null;
   memo: string | null;
   payerUserIds: number[];
   participantUserIds: number[];
 };
 export type Expense = ExpenseInput & {
+  name: string | null;
   id: number;
   version: number;
   createdAt: string;
@@ -125,14 +127,27 @@ export type ExpenseBudgetInput = {
   budgetKrw: string;
   expectedVersion: number;
 };
-export type ExpenseKrwSummary = {
+export type ExpenseKrwTotal = {
   originalTotals: { currency: string; totalAmount: string }[];
   convertedTotalKrw: string | null;
+  missingCurrencies: string[];
+  isComplete: boolean;
+};
+export type ExpenseKrwSummary = ExpenseKrwTotal & {
   rateDate: string | null;
   rateSource: "ECB";
   stale: boolean;
-  missingCurrencies: string[];
-  isComplete: boolean;
+  expenses: { expense: Expense; convertedAmountKrw: string | null; missingCurrencies: string[]; isComplete: boolean }[];
+  filtered: ExpenseKrwTotal;
+  categories: { category: ExpenseCategory; total: ExpenseKrwTotal }[];
+  days: { expenseGroup: ExpenseGroup; scheduleId: number | null; total: ExpenseKrwTotal }[];
+  payers: { userId: number; total: ExpenseKrwTotal }[];
+};
+export type ExpenseKrwFilters = {
+  expenseGroup?: ExpenseGroup;
+  scheduleId?: number;
+  category?: ExpenseCategory;
+  payerUserId?: number;
 };
 export const getExpenseBudget = (roomId: string) =>
   request<ExpenseBudget>(roomId, "/budget");
@@ -141,5 +156,11 @@ export const putExpenseBudget = (roomId: string, body: ExpenseBudgetInput) =>
     method: "PUT",
     ...jsonBody(body),
   });
-export const getExpenseKrwSummary = (roomId: string) =>
-  request<ExpenseKrwSummary>(roomId, "/summary/krw");
+export const getExpenseKrwSummary = (roomId: string, filters: ExpenseKrwFilters = {}) => {
+  const query = new URLSearchParams();
+  for (const key of ["expenseGroup", "scheduleId", "category", "payerUserId"] as const) {
+    const value = filters[key];
+    if (value !== undefined) query.set(key, String(value));
+  }
+  return request<ExpenseKrwSummary>(roomId, `/summary/krw${query.size ? `?${query}` : ""}`);
+};

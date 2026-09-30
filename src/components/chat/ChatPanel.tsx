@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMainChromeLayoutWidth } from "@/contexts/MainChromeLayoutWidthContext";
 import { useChat } from "@/hooks/useChat";
-import { useCurrentRoomTitle } from "@/hooks/useCurrentRoomTitle";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
-import { useRoomMembers } from "@/hooks/useRooms";
 import { ChatPanelHeader } from "./ChatPanelHeader";
 import { ChatMessageList } from "./messages/ChatMessageList";
 import { ChatInputBar } from "./ChatInputBar";
@@ -64,10 +62,6 @@ export function ChatPanel({
   const mobileHistoryReady =
     mobileHistoryReadyState.ready && mobileHistoryReadyState.rid === rid;
 
-  const title = useCurrentRoomTitle(roomId);
-  const { data: membersData } = useRoomMembers(roomId);
-  const onlineCount =
-    membersData?.members.filter((m) => m.isOnline).length ?? 0;
   const {
     messages,
     sendChatMessage,
@@ -95,10 +89,8 @@ export function ChatPanel({
 
   const panelBody = (
     <>
-      {!isInline ? (
+      {!mobileInline ? (
         <ChatPanelHeader
-          roomTitle={title}
-          onlineCount={onlineCount}
           isMinimized={isMinimized}
           onMaximize={openChat}
           onMinimize={minimizeChat}

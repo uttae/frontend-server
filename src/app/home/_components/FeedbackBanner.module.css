@@ -1,11 +1,146 @@
 .banner {
   width: 100%;
-  aspect-ratio: 1136 / 237;
+  container-type: inline-size;
+  overflow: hidden;
   border-radius: 8px;
-  background: url("/rooms/banners/feedback/desktop.png") center / 100% 100% no-repeat;
+  background: #d6f2ff;
+  color: #000;
 }
 
-:global(.is-mobile-device) .banner {
+/* Scale the Figma canvas with its container, keeping text sharp at any DPR. */
+.canvas {
+  --unit: calc(100cqw / 1136);
+  position: relative;
+  aspect-ratio: 1136 / 237;
+}
+
+.canvas p {
+  position: absolute;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.subtitle {
+  left: calc(49 * var(--unit));
+  top: calc(29 * var(--unit));
+  font-size: calc(16 * var(--unit));
+  line-height: calc(24 * var(--unit));
+  letter-spacing: calc(-0.32 * var(--unit));
+}
+
+.subtitle strong {
+  font-weight: 700;
+}
+
+.title {
+  left: calc(49 * var(--unit));
+  top: calc(64 * var(--unit));
+  font-size: calc(36 * var(--unit));
+  font-weight: 700;
+  line-height: normal;
+}
+
+.feedback {
+  color: #0183ff;
+}
+
+.reward {
+  color: #ff5521;
+}
+
+.period {
+  left: calc(367 * var(--unit));
+  top: calc(124 * var(--unit));
+  font-size: calc(13 * var(--unit));
+  line-height: calc(24 * var(--unit));
+  letter-spacing: calc(-0.26 * var(--unit));
+}
+
+.cta {
+  position: absolute;
+  inset: auto 0 0;
+  height: calc(62 * var(--unit));
+  padding: calc(19 * var(--unit)) calc(49 * var(--unit));
+  background: linear-gradient(to right, #0183ff, #a6d3ff);
+  color: #fff;
+  font-size: calc(16 * var(--unit));
+  font-weight: 700;
+  line-height: calc(24 * var(--unit));
+  letter-spacing: calc(-0.32 * var(--unit));
+}
+
+.appPreview {
+  position: absolute;
+  left: calc(846 * var(--unit));
+  top: calc(29 * var(--unit));
+  width: calc(260 * var(--unit));
+  height: calc(177 * var(--unit));
+  background: url("/rooms/banners/feedback/app-preview.webp") left top / 122.65% 100% no-repeat;
+  box-shadow: 0 calc(10 * var(--unit)) calc(10 * var(--unit)) rgb(0 0 0 / 25%);
+}
+
+.burger {
+  position: absolute;
+  left: calc(690 * var(--unit));
+  top: calc(55 * var(--unit));
+  width: calc(224 * var(--unit));
+  height: calc(179 * var(--unit));
+  background: url("/rooms/banners/feedback/burger.webp") center / cover no-repeat;
+}
+
+.badge {
+  display: none;
+}
+
+:global(.is-mobile-device) .canvas {
+  --unit: calc(100cqw / 353);
   aspect-ratio: 353 / 113;
-  background-image: url("/rooms/banners/feedback/mobile.png");
+}
+
+:global(.is-mobile-device) .subtitle {
+  left: calc(55 * var(--unit));
+  top: calc(6 * var(--unit));
+  font-size: calc(12 * var(--unit));
+  letter-spacing: calc(-0.24 * var(--unit));
+}
+
+:global(.is-mobile-device) .title {
+  left: calc(13 * var(--unit));
+  top: calc(27 * var(--unit));
+  font-size: calc(28 * var(--unit));
+  line-height: calc(32 * var(--unit));
+}
+
+:global(.is-mobile-device) .period {
+  left: calc(10 * var(--unit));
+  top: calc(89 * var(--unit));
+  font-size: calc(11 * var(--unit));
+  letter-spacing: calc(-0.22 * var(--unit));
+}
+
+:global(.is-mobile-device) .burger {
+  left: calc(246 * var(--unit));
+  top: calc(15 * var(--unit));
+  width: calc(147 * var(--unit));
+  height: calc(117 * var(--unit));
+}
+
+:global(.is-mobile-device) .badge {
+  display: block;
+  position: absolute;
+  left: calc(10 * var(--unit));
+  top: calc(10 * var(--unit));
+  width: calc(42 * var(--unit));
+  height: calc(14 * var(--unit));
+  border-radius: 14px;
+  background: #beff0c;
+  font-size: calc(10 * var(--unit));
+  line-height: calc(14 * var(--unit));
+  letter-spacing: calc(-0.2 * var(--unit));
+  text-align: center;
+}
+
+:global(.is-mobile-device) .cta,
+:global(.is-mobile-device) .appPreview {
+  display: none;
 }

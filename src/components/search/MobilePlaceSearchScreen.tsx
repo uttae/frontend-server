@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useEffectEvent,
   useRef,
   useState,
   type FormEvent,
@@ -169,6 +170,16 @@ export function MobilePlaceSearchScreen({
     setInputValue(value);
     scheduleFetch(value);
   }
+
+  const retryPendingSearch = useEffectEvent(() => {
+    if (open && inputValue.trim() && suggest.status === "loading") {
+      scheduleFetch(inputValue);
+    }
+  });
+
+  useEffect(() => {
+    if (placesLib) retryPendingSearch();
+  }, [placesLib, open]);
 
   function handleClose() {
     inputRef.current?.blur();

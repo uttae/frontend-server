@@ -24,6 +24,7 @@ import {
   patchExpense,
   type Expense,
   type ExpenseInput,
+  type ExpenseKrwFilters,
 } from "@/lib/api/rooms/expenses";
 import { canManageExpenses } from "@/lib/expenses/expense-policy";
 import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
@@ -88,6 +89,12 @@ function useExpenses(roomId: string) {
     ...options,
     queryKey: expenseKeys.krwSummary(roomId),
     queryFn: () => getExpenseKrwSummary(roomId),
+  });
+  const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
+  const filteredKrwSummary = useQuery({
+    ...options,
+    queryKey: Object.keys(krwFilters).length ? [...expenseKeys.krwSummary(roomId), krwFilters] : expenseKeys.krwSummary(roomId),
+    queryFn: () => Object.keys(krwFilters).length ? getExpenseKrwSummary(roomId, krwFilters) : getExpenseKrwSummary(roomId),
   });
   const budgetMutation = useMutation({
     mutationFn: (body: ExpenseBudgetInput) => {
@@ -203,7 +210,7 @@ function useExpenses(roomId: string) {
       lock.current = false;
     }
   }
-  const reads = [list, summary, budget, krwSummary, currencies, memberQuery];
+  const reads = [list, summary, budget, krwSummary, filteredKrwSummary, currencies, memberQuery];
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
     if (reads.some(query => query.isError)) resolvedSyncStatus = "error";
@@ -224,6 +231,9 @@ function useExpenses(roomId: string) {
     currencies,
     budget,
     krwSummary,
+    filteredKrwSummary,
+    krwFilters,
+    setKrwFilters,
     saveBudget,
     budgetBusy: budgetMutation.isPending,
     readLatestBudget: async () => {
