@@ -15,7 +15,6 @@ import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
   expenseButtonClass,
-  expenseInputClass,
   formatExpenseAmount,
 } from "./ExpenseViews";
 
@@ -121,7 +120,6 @@ export function ExpenseBudgetModal({
             disabled={busy}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : undefined}
-            className={`${expenseInputClass} h-12 text-[20px] font-normal`}
             onChange={(value) => {
               setDraft(value);
               setError("");

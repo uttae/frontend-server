@@ -381,7 +381,6 @@ export function ExpenseEditor({
             <label className="block min-w-0 text-[12px] leading-4 font-medium">
               <span className="block text-[12px] leading-4 font-medium">금액</span>
               <ExpenseAmountInput
-                className="h-12 text-[16px] font-normal placeholder:text-text-subtle"
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
                 onChange={(value) => change("totalAmount", value)}
