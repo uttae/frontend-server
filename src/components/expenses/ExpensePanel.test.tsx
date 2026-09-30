@@ -496,3 +496,14 @@ it("keeps known row and day KRW amounts while a new filtered total loads without
  expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toBeUndefined();
  expect(JSON.stringify(renderer.toJSON())).toContain("13,500원");
 });
+
+it("keeps the visible ledger unchanged during background tab-return reads", async () => {
+ await mount();
+ const healthy = { ...(mocks.state as Record<string, unknown>), list: { isSuccess: true, data: contractFixture.response.expenses.map(row => row.expense) }, krwSummary: { data: contractFixture.response, isSuccess: true }, krwFilters: {}, filteredKrwSummary: { data: contractFixture.response, isSuccess: true } };
+ mocks.state = healthy;
+ await act(async () => renderer.update(<ExpensePanel />));
+ const before = JSON.stringify(renderer.toJSON());
+ mocks.state = { ...healthy, syncStatus: "refreshing", list: { ...healthy.list, isFetching: true }, krwSummary: { ...healthy.krwSummary, isFetching: true }, filteredKrwSummary: { ...healthy.filteredKrwSummary, isFetching: true } };
+ await act(async () => renderer.update(<ExpensePanel />));
+ expect(JSON.stringify(renderer.toJSON())).toBe(before);
+});

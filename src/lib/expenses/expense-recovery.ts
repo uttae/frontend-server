@@ -10,7 +10,7 @@ import { getRoomMembers } from "@/lib/api/rooms/members";
 import { expenseKeys } from "./expense-queries";
 
 type Scope = "all" | "expenses" | "budget" | "visible";
-type Status = "pending" | "ready" | "error" | "revoked";
+type Status = "pending" | "refreshing" | "ready" | "error" | "revoked";
 let generation = 0;
 let revocation = 0;
 const controllers = new WeakMap<
@@ -141,11 +141,15 @@ class ExpenseRecovery {
   };
   refresh = (scope: Scope): Promise<void> => {
     if (this.status === "revoked") return Promise.resolve();
+    // A tab return revalidates cached data without clearing the visible ledger.
+    // focus and visibilitychange can describe the same return.
+    if (scope === "visible" && this.status === "refreshing" && this.running) return this.running;
+    const background = scope === "visible" && this.status === "ready";
     let keys = ["list", "summary", "summary-krw", "budget", "currencies", "members"];
     if (scope === "budget") keys = ["budget"];
     else if (scope === "expenses") keys = ["list", "summary", "summary-krw"];
     keys.forEach((key) => this.pending.add(key));
-    this.setStatus("pending");
+    this.setStatus(background ? "refreshing" : "pending");
     this.running ??= Promise.resolve()
       .then(() => this.drain())
       .finally(() => {

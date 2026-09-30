@@ -847,3 +847,30 @@ it("returns to all expenses without refetching or blanking the whole-room summar
   if (finish) await act(async () => finish!(whole));
  }
 });
+
+it("never reports a foreground load during successful tab-return revalidation", async () => {
+ await mountMutations();
+ const statuses: string[] = [];
+ function StatusProbe() {
+  const value = useExpenseContext();
+  useEffect(() => { statuses.push(value.syncStatus); }, [value.syncStatus]);
+  return null;
+ }
+ await act(async () => renderer.update(<QueryClientProvider client={client}><ExpenseProvider roomId="r"><MutationProbe /><StatusProbe /></ExpenseProvider></QueryClientProvider>));
+ const previous = context.krwSummary.data!;
+ let finish!: (value: ExpenseKrwSummary) => void;
+ mocks.krw.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+ const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
+ let work!: Promise<void>;
+ await act(async () => { work = getExpenseRecovery(client, "r").refresh("visible"); });
+ try {
+  expect(context.syncStatus).toBe("refreshing");
+  expect(context.krwSummary.data).toBe(previous);
+ } finally {
+  await act(async () => { finish(previous); await work; });
+ }
+ await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+ expect(statuses).toContain("refreshing");
+ expect(statuses).not.toContain("pending");
+ expect(context.syncStatus).toBe("ready");
+});

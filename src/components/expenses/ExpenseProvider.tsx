@@ -56,7 +56,8 @@ function useExpenses(roomId: string) {
     retry: false,
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    // Visibility recovery already refreshes members with the other room data.
+    refetchOnWindowFocus: false,
   });
   const members = memberQuery.data?.members ?? [];
   const canManage =

@@ -93,7 +93,7 @@ export function ExpenseBudgetSummary() {
       >
         <span>남은 예산</span>
         <p className="break-all text-right text-[18px] leading-[26px] font-bold text-text tabular-nums mobile:text-primary max-sm:text-primary">
-          {syncStatus === "ready" &&
+          {(syncStatus === "ready" || syncStatus === "refreshing") &&
           budget.isSuccess &&
           !budget.isError &&
           krwSummary.isSuccess &&

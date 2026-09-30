@@ -11,7 +11,7 @@ import { useExpenseContext } from "./ExpenseProvider";
 import { CategoryIcon, formatExpenseAmount } from "./ExpenseViews";
 
 export function ExpenseCategorySummary() {
-  const { list, krwSummary } = useExpenseContext();
+  const { list, krwSummary, syncStatus } = useExpenseContext();
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const order = ["ACCOMMODATION", "FLIGHT", "FOOD", "SIGHTSEEING", "TRANSPORT", "SHOPPING", "OTHER"];
@@ -72,7 +72,7 @@ export function ExpenseCategorySummary() {
                 </span>
               </dt>
               <dd className="min-w-0 max-w-[60%] text-right text-[14px] leading-5 font-medium tabular-nums">
-                <ExpenseKrwAmount total={krwSummary?.isSuccess && !krwSummary.isFetching ? krwSummary.data?.categories?.find((row) => row.category === category)?.total : undefined} />
+                <ExpenseKrwAmount total={krwSummary?.isSuccess && (!krwSummary.isFetching || syncStatus === "refreshing") ? krwSummary.data?.categories?.find((row) => row.category === category)?.total : undefined} />
                 {totalsByCurrency(expenses).map((total) => (
                   <p key={total.currency} className="break-all text-[12px] leading-4 font-normal text-text-subtle">
                     {total.currency} {formatExpenseAmount(total.amount)}

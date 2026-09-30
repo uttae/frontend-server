@@ -160,10 +160,12 @@ export function ExpensePanel() {
   }), [category, activeFilter]);
   const { setKrwFilters } = context;
   useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
+  const backgroundRefresh = context.syncStatus === "refreshing";
+  const displayReady = context.syncStatus === "ready" || backgroundRefresh;
   const detailed = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters)
-    && context.syncStatus === "ready" && context.filteredKrwSummary?.isSuccess && !context.filteredKrwSummary.isFetching
+    && displayReady && context.filteredKrwSummary?.isSuccess && (!context.filteredKrwSummary.isFetching || backgroundRefresh)
     ? context.filteredKrwSummary.data : undefined;
-  const wholeKrw = context.syncStatus === "ready" && context.krwSummary.isSuccess && !context.krwSummary.isFetching
+  const wholeKrw = displayReady && context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh)
     ? context.krwSummary.data : undefined;
   // Reuse authoritative totals for a single dimension; never sum rounded row amounts
   // or show the previous day/category total while a new intersection is loading.
@@ -277,7 +279,7 @@ export function ExpensePanel() {
           </div>
         }
       />
-      {context.syncStatus !== "ready" && (
+      {context.syncStatus !== "ready" && !backgroundRefresh && (
         <output
           style={{ display: "block" }}
           className="mb-4 text-body-xs-regular text-dark-gray"
@@ -491,7 +493,7 @@ export function ExpensePanel() {
             (
               <ExpenseSummaryView
                 currentUserId={context.currentUserId}
-                krwSummary={context.krwSummary.isSuccess && !context.krwSummary.isFetching ? context.krwSummary.data : undefined}
+                krwSummary={context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh) ? context.krwSummary.data : undefined}
                 scope="all"
                 showDetails={false}
                 summary={context.summary.data}
