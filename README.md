@@ -26,3 +26,8 @@ npm run build
 ## 기여하기
 
 커밋, 브랜치 생성, PR 및 병합 절차는 [CONTRIBUTING.md](./CONTRIBUTING.md)를 따릅니다.
+
+## API Documentation - 8080포트
+
+- **REST API**: Springdoc OpenAPI — `/swagger-ui/index.html` (dev 환경 전용)
+- **WebSocket**: Springwolf — `/springwolf/asyncapi-ui.html` (dev 환경 전용)

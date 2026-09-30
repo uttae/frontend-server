@@ -317,7 +317,7 @@ export function ChatInputBar({
                 isMinimized ? "text-label-s-regular mobile:text-label-xs-regular" : "text-label-m-regular mobile:text-label-s-regular",
               )}
             >
-              <span className="font-medium text-secondary-default">
+              <span className="font-medium text-secondary">
                 {CHAT_AI_MENTION_LABEL}
               </span>
               <span className="ml-2 text-dark-gray">AI에게 질문하기</span>

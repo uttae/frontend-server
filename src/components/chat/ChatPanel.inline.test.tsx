@@ -36,7 +36,11 @@ it("keeps messages and the working AI composer inside one inline panel", async (
     await act(async () => root.render(<ChatPanel inline />));
     expect(host.querySelectorAll("textarea")).toHaveLength(1);
     expect(host.textContent).toContain("여행 대화를 시작합니다");
-    expect(host.querySelector('[aria-label="최소화"]')).toBeNull();
+    const minimize = host.querySelector<HTMLButtonElement>('[aria-label="최소화"]');
+    expect(minimize).not.toBeNull();
+    expect(host.textContent).not.toContain("제주 여행");
+    expect(host.textContent).not.toContain("0명 접속중");
+    expect(host.querySelector('[aria-label="채팅 닫기"]')).toBeNull();
     expect(host.firstElementChild?.className).not.toContain("absolute");
     const ai = [...host.querySelectorAll("button")].find(button => button.textContent === "@ai")!;
     await act(async () => ai.click());
@@ -49,6 +53,14 @@ it("keeps messages and the working AI composer inside one inline panel", async (
     expect(boundary.sendAi).toHaveBeenCalledWith(text);
     expect(boundary.sendChat).not.toHaveBeenCalled();
     expect(host.querySelectorAll("textarea")).toHaveLength(1);
+    await act(async () => minimize!.click());
+    expect(useChatPanelStore.getState().chatState).toBe("minimized");
+    await act(async () => root.render(<ChatPanel />));
+    expect(host.querySelector('[aria-label="최대화"]')).not.toBeNull();
+    expect(host.querySelector('[aria-label="채팅 닫기"]')).not.toBeNull();
+    expect(host.textContent).not.toContain("제주 여행");
+    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="채팅 닫기"]')!.click());
+    expect(useChatPanelStore.getState().chatState).toBe("closed");
   } finally {
     await act(async () => root.unmount()); host.remove();
     useChatPanelStore.getState().closeChat(); vi.unstubAllGlobals();

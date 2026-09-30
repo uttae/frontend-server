@@ -238,7 +238,11 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
               typeof places[index + 1]?.itemId === "number" ?
                 <PlanTravelSegment
                   isActive={segmentActive}
-                  onActivate={() => setActiveInsertIndex(insertIndex)}
+                  onActivate={() =>
+                    setActiveInsertIndex((current) =>
+                      current === insertIndex ? null : insertIndex,
+                    )
+                  }
                   addDisabled={addControlsDisabled}
                   showAddControls={segmentActive}
                   addControls={

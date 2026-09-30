@@ -34,14 +34,9 @@ export const expenseButtonClass =
 export const expenseInputClass =
   "mt-1 min-h-11 w-full min-w-0 rounded-xl border border-gray-border bg-white px-3 py-2 text-body-m-regular focus:outline-primary";
 // Group the integer string directly so large amounts and trailing decimals stay exact.
-export function formatExpenseAmount(amount: string) {
-  if (!/^-?\d*(?:\.\d*)?$/.test(amount)) return amount;
-  const [integer, fraction] = amount.split(".");
-  return (
-    integer.replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
-    (fraction === undefined ? "" : `.${fraction}`)
-  );
-}
+import { formatExpenseAmount } from "@/lib/expenses/format-expense-amount";
+
+export { formatExpenseAmount };
 const categoryIcons = {
   FLIGHT: Plane,
   ACCOMMODATION: BedDouble,

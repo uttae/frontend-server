@@ -30,11 +30,14 @@ import {
   toAnalyticsRoomRole,
 } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { PlanContainerRefProvider } from "../plan-container";
+import { MobilePlanView } from "../mobile/MobilePlanView";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
   const planContainerRef = useRef<HTMLDivElement>(null);
+  const { isMobileDevice } = useMobileView();
   
   //room id 가져와서 room detail, schedules 가져오기
   const storedId = useSessionStore((s) => s.currentRoomId);
@@ -162,6 +165,37 @@ export function PlanPageView() {
 
   const pageHeader = <MainPageHeader title="일정" />;
 
+  const deleteDayDialog = dayToDelete ? (
+    <ConfirmDialog
+      title={dayToDelete.isLast ? "이 일차를 비울까요?" : "이 일차를 삭제할까요?"}
+      description={
+        dayToDelete.isLast
+          ? "마지막 일차는 남고, 이 일차의 모든 장소와 비용이 삭제돼요."
+          : "이 일차에 포함된 모든 장소와 비용도 함께 삭제돼요."
+      }
+      confirmLabel={dayToDelete.isLast ? "비우기" : "삭제"}
+      isPending={isDeletingSchedule}
+      onConfirm={handleConfirmDeleteScheduleDay}
+      onCancel={() => setDayToDelete(null)}
+    />
+  ) : null;
+
+  if (isMobileDevice) {
+    return (
+      <>
+        <MobilePlanView
+          roomId={roomId}
+          schedules={sortedSchedules}
+          isLoading={showInitialLoading}
+          isError={isError}
+          menuDisabled={isCreatingSchedule || isDeletingSchedule || isMovePending}
+          onRequestDeleteDay={handleDeleteScheduleDay}
+        />
+        {deleteDayDialog}
+      </>
+    );
+  }
+
   if (showInitialLoading) {
     return (
       <PlanContainerRefProvider containerRef={planContainerRef}>
@@ -241,20 +275,7 @@ export function PlanPageView() {
           </div>
         ) : null}
       </div>
-      {dayToDelete ? (
-        <ConfirmDialog
-          title={dayToDelete.isLast ? "이 일차를 비울까요?" : "이 일차를 삭제할까요?"}
-          description={
-            dayToDelete.isLast
-              ? "마지막 일차는 남고, 이 일차의 모든 장소와 비용이 삭제돼요."
-              : "이 일차에 포함된 모든 장소와 비용도 함께 삭제돼요."
-          }
-          confirmLabel={dayToDelete.isLast ? "비우기" : "삭제"}
-          isPending={isDeletingSchedule}
-          onConfirm={handleConfirmDeleteScheduleDay}
-          onCancel={() => setDayToDelete(null)}
-        />
-      ) : null}
+      {deleteDayDialog}
     </PlanContainerRefProvider>
   );
 }

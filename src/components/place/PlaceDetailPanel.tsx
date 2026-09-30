@@ -19,19 +19,27 @@ import { AddToScheduleModal } from "./AddToScheduleModal";
 import { TABS, type Tab } from "./types";
 import { usePlaceDetailData } from "./usePlaceDetailData";
 import { HeroSkeleton, HeroImage } from "./HeroSection";
-import { PlaceDetailSkeleton } from "./PlaceDetailSkeleton";
+import { PlaceDetailSkeleton, PlaceSheetSummarySkeleton } from "./PlaceDetailSkeleton";
+import { PlaceDetailSheet } from "./PlaceDetailSheet";
+import { PlaceSheetSummary } from "./PlaceSheetSummary";
 import { PlaceSummaryHeader } from "./PlaceSummaryHeader";
 import { HomeTab } from "./HomeTab";
 import { ReviewsTab } from "./ReviewsTab";
 
 type PlaceDetailPanelProps = SearchResultCardProps & {
   onClose: () => void;
+  /** 뒤로가기(←) — 없으면 `onClose`와 같다 */
+  onBack?: () => void;
   /**
    * `panel`(데스크톱): 사진 고정, 아래 본문만 스크롤.
-   * `sheet`(모바일 바텀 시트): 사진과 본문이 한 덩어리로 스크롤.
+   * `sheet`(모바일 바텀 시트): 처음엔 사진까지만 보이고(peek), 위로 밀면 끝까지 펼쳐져 본문이 스크롤된다.
    */
   layout?: "panel" | "sheet";
 };
+
+/** 모바일 시트 사진 높이(Figma) — 중간 상태에서 이 중 3/5를 가린다 */
+const SHEET_PHOTO_HEIGHT_PX = 200;
+const SHEET_PHOTO_HIDDEN_RATIO = 3 / 5;
 
 const SCROLL_AREA_CLASS =
   "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
@@ -48,6 +56,7 @@ export function PlaceDetailPanel({
   location,
   googlePlaceId,
   onClose,
+  onBack = onClose,
   layout = "panel",
 }: PlaceDetailPanelProps) {
   const [activeTab, setActiveTab] = useState<Tab>("홈");
@@ -149,8 +158,10 @@ export function PlaceDetailPanel({
   const reviews = detailData?.reviews ?? [];
   const displayAddress = address ?? detailData?.formattedAddress;
 
-  const hero = (
-    <div className="relative h-[185px] shrink-0">
+  const isBodyLoading = isDetailLoading && !detailData;
+
+  const renderHero = (heightClass: string) => (
+    <div className={cn("relative shrink-0", heightClass)}>
       {isDetailLoading && googlePlaceId ? (
         <HeroSkeleton />
       ) : (
@@ -163,35 +174,17 @@ export function PlaceDetailPanel({
     </div>
   );
 
-  /* 상세 정보가 오기 전에는 임시 이름("장소")·빈 탭 대신 스켈레톤 — 느린 네트워크에서도 동작 중임을 알 수 있게 */
-  const body = isDetailLoading && !detailData ? (
-    <PlaceDetailSkeleton />
-  ) : (
-    <>
-      <PlaceSummaryHeader
-        name={displayName}
-        category={displayCategory}
-        rating={displayRating}
-        userRatingCount={userRatingCount}
-        onSendToChat={googlePlaceId ? handleSendToChat : undefined}
-        sendToChatDisabled={
-          !googlePlaceId ||
-          (!location && !detailData?.location && isDetailLoading)
-        }
-        onAddToSchedule={
-          googlePlaceId
-            ? () => setScheduleModalOpen(true)
-            : undefined
-        }
-        addToScheduleDisabled={!googlePlaceId}
-        onAddBookmark={
-          googlePlaceId
-            ? () => setBookmarkModalOpen(true)
-            : undefined
-        }
-        addBookmarkDisabled={!googlePlaceId}
-      />
+  const sendToChatDisabled =
+    !googlePlaceId || (!location && !detailData?.location && isDetailLoading);
+  const openScheduleModal = googlePlaceId
+    ? () => setScheduleModalOpen(true)
+    : undefined;
+  const openBookmarkModal = googlePlaceId
+    ? () => setBookmarkModalOpen(true)
+    : undefined;
 
+  const tabs = (
+    <>
       {/* Tab navigation */}
       <div className="flex shrink-0 border-b border-gray-border">
         {TABS.map((tab) => (
@@ -232,43 +225,8 @@ export function PlaceDetailPanel({
     </>
   );
 
-  return (
-    <div className="relative flex flex-1 flex-col overflow-hidden bg-white">
-      {layout === "sheet" ? (
-        /* 사진 ↔ 본문 경계에 스냅 — proximity라 긴 본문은 자유롭게 스크롤된다 */
-        <div className={cn(SCROLL_AREA_CLASS, "snap-y snap-proximity")}>
-          <div className="snap-start">{hero}</div>
-          <div className="snap-start">{body}</div>
-        </div>
-      ) : (
-        <>
-          {hero}
-          <div className={SCROLL_AREA_CLASS}>{body}</div>
-        </>
-      )}
-
-      {/* 닫기 버튼 — 스크롤과 무관하게 시트/패널 상단에 고정 */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        aria-label="뒤로가기"
-        className="absolute left-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </button>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onClose();
-        }}
-        aria-label="닫기"
-        className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
-      >
-        <X className="h-4 w-4" />
-      </button>
-
+  const modals = (
+    <>
       {scheduleModalOpen && googlePlaceId && (
         <AddToScheduleModal
           googlePlaceId={googlePlaceId}
@@ -286,6 +244,91 @@ export function PlaceDetailPanel({
           onClose={() => setBookmarkModalOpen(false)}
         />
       )}
+    </>
+  );
+
+  if (layout === "sheet") {
+    return (
+      <PlaceDetailSheet
+        placeKey={googlePlaceId ?? displayName}
+        onBack={onBack}
+        onClose={onClose}
+        peekHiddenBottomPx={SHEET_PHOTO_HEIGHT_PX * SHEET_PHOTO_HIDDEN_RATIO}
+        peek={
+          <>
+            {isBodyLoading ? (
+              <PlaceSheetSummarySkeleton />
+            ) : (
+              <PlaceSheetSummary
+                name={displayName}
+                category={displayCategory}
+                rating={displayRating}
+                userRatingCount={userRatingCount}
+                onAddBookmark={openBookmarkModal}
+                onSendToChat={googlePlaceId ? handleSendToChat : undefined}
+                sendToChatDisabled={sendToChatDisabled}
+                onAddToSchedule={openScheduleModal}
+              />
+            )}
+            <div style={{ height: SHEET_PHOTO_HEIGHT_PX }}>{renderHero("h-full")}</div>
+          </>
+        }
+      >
+        {isBodyLoading ? null : tabs}
+        {modals}
+      </PlaceDetailSheet>
+    );
+  }
+
+  /* 상세 정보가 오기 전에는 임시 이름("장소")·빈 탭 대신 스켈레톤 — 느린 네트워크에서도 동작 중임을 알 수 있게 */
+  const body = isBodyLoading ? (
+    <PlaceDetailSkeleton />
+  ) : (
+    <>
+      <PlaceSummaryHeader
+        name={displayName}
+        category={displayCategory}
+        rating={displayRating}
+        userRatingCount={userRatingCount}
+        onSendToChat={googlePlaceId ? handleSendToChat : undefined}
+        sendToChatDisabled={sendToChatDisabled}
+        onAddToSchedule={openScheduleModal}
+        addToScheduleDisabled={!googlePlaceId}
+        onAddBookmark={openBookmarkModal}
+        addBookmarkDisabled={!googlePlaceId}
+      />
+      {tabs}
+    </>
+  );
+
+  return (
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-white">
+      {renderHero("h-[185px]")}
+      <div className={SCROLL_AREA_CLASS}>{body}</div>
+
+      {/* 닫기 버튼 — 스크롤과 무관하게 패널 상단에 고정 */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onBack();
+        }}
+        aria-label="뒤로가기"
+        className="absolute left-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </button>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        aria-label="닫기"
+        className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
+      >
+        <X className="h-4 w-4" />
+      </button>
+
+      {modals}
     </div>
   );
 }
