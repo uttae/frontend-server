@@ -258,3 +258,21 @@ it('creates the desktop map lazily and preserves the same map through full-width
  state.roomId='another-room'; await render();
  expect(host.querySelector('[data-map]')).not.toBe(map);
 });
+
+it.each([
+  ['/plan/room', '일정'],
+  ['/bookmark', '북마크'],
+  ['/cost', '가계부'],
+  ['/packing/12345678-1234-1234-1234-123456789abc', '준비물'],
+  ['/member-settings', '멤버'],
+])('selects the visible route after minimizing chat on %s', async (pathname, label) => {
+  state.pathname = pathname;
+  await render();
+  await act(async () => useChatPanelStore.getState().openChat());
+  expect(active().map(item => item.getAttribute('aria-label'))).toEqual(['채팅']);
+  await act(async () => useChatPanelStore.getState().minimizeChat());
+  expect(active().map(item => item.getAttribute('aria-label'))).toEqual([label]);
+  expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
+  await act(async () => items()[5].click());
+  expect(active().map(item => item.getAttribute('aria-label'))).toEqual(['채팅']);
+});

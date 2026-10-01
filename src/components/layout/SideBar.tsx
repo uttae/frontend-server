@@ -39,7 +39,7 @@ function SideBar() {
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const { roomId } = useCurrentRoomId();
 
-  const isChatActive = chatState !== "closed";
+  const isChatActive = chatState === "maximized";
   const isOnMemberSettings = pathname.startsWith("/member-settings");
   const isOnRoomSettings = pathname.startsWith("/room-settings");
   const isOnSettingsArea = isOnMemberSettings || isOnRoomSettings;
