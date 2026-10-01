@@ -14,7 +14,7 @@ export function ChatPanelHeader({
   onClose,
 }: ChatPanelHeaderProps) {
   return (
-    <div className="flex h-10 shrink-0 items-center gap-1 bg-white px-3">
+    <div className="flex h-10 shrink-0 items-center gap-1 border-b border-border-subtle bg-white px-3">
       <h2 className="mr-auto text-[16px] font-semibold leading-6 text-text">채팅</h2>
       <button
         type="button"
