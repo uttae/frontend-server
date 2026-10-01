@@ -339,6 +339,7 @@ export function useChatMessages(
           bridged.slice,
           lastReadMessageId,
           bridged.placementBeforeSlice,
+          hasMoreNewerByRoomRef.current.get(targetRoomId) === true,
         );
         applySessionReadBoundary(rid, lastReadMessageId, placement);
 
@@ -462,6 +463,7 @@ export function useChatMessages(
               slice,
               out.lastReadMessageId,
               placementBeforeSlice,
+              hasMoreNewer,
             )
           : EMPTY_READ_DIVIDER_PLACEMENT;
         applySessionReadBoundary(ridTrim, out.lastReadMessageId, placement);
