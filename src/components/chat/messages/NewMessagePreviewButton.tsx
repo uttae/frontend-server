@@ -11,16 +11,22 @@ export function NewMessagePreviewButton({
   message,
   onClick,
   isMinimized = false,
+  scrollbarWidth = 0,
 }: {
   message: ChatMessage;
   onClick: () => void;
   isMinimized?: boolean;
+  /** 메시지 목록 스크롤바 폭 — 스크롤바를 뺀 영역 기준으로 가운데 정렬 */
+  scrollbarWidth?: number;
 }) {
   const text =
     message.type === "place" ? PLACE_SHARE_PREVIEW_TEXT : message.text;
 
   return (
-    <div className="pointer-events-none absolute inset-x-3 bottom-3 z-10 flex justify-center">
+    <div
+      className="pointer-events-none absolute bottom-3 left-3 z-10 flex justify-center"
+      style={{ right: 12 + scrollbarWidth }}
+    >
       <button
         type="button"
         onClick={onClick}

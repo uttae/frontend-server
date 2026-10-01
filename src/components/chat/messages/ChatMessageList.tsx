@@ -119,6 +119,8 @@ export function ChatMessageList({
   /** 위로 스크롤한 동안 도착한 다른 멤버의 최신 메시지 */
   const [newMessagePreview, setNewMessagePreview] =
     useState<ChatMessage | null>(null);
+  /** 스크롤바 폭(px) — 하단 버튼이 스크롤바에 가리지 않게 그만큼 오른쪽을 비운다 */
+  const [scrollbarWidth, setScrollbarWidth] = useState(0);
 
   const scrollToBottomSmooth = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -409,6 +411,9 @@ export function ChatMessageList({
     const lastClientHeightRef = { current: root.clientHeight };
 
     const ro = new ResizeObserver(() => {
+      const sbw = root.offsetWidth - root.clientWidth;
+      setScrollbarWidth((prev) => (prev === sbw ? prev : sbw));
+
       const ch = root.clientHeight;
       if (ch === lastClientHeightRef.current) return;
       lastClientHeightRef.current = ch;
@@ -534,13 +539,18 @@ export function ChatMessageList({
       </div>
       {!isAtBottom && newMessagePreview ? (
         <NewMessagePreviewButton
+          scrollbarWidth={scrollbarWidth}
           message={newMessagePreview}
           isMinimized={isMinimized}
           onClick={handleJumpClick}
         />
       ) : null}
       {!isAtBottom && !newMessagePreview ? (
-        <JumpToBottomButton isMinimized={isMinimized} onClick={handleJumpClick} />
+        <JumpToBottomButton
+          isMinimized={isMinimized}
+          scrollbarWidth={scrollbarWidth}
+          onClick={handleJumpClick}
+        />
       ) : null}
     </div>
   );
