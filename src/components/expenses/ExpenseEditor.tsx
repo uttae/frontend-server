@@ -347,7 +347,7 @@ export function ExpenseEditor({
           <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-6 max-sm:text-[20px] max-sm:leading-6 font-bold">
             {original ? "비용 수정" : "비용 추가"}
           </h2>
-          <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "이름과 결제 정보를 입력해주세요."}</p>
+          <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "제목과 결제 정보를 입력해주세요."}</p>
           </div>
           <button
             type="button"
@@ -363,9 +363,9 @@ export function ExpenseEditor({
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
         <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
           <label className="block text-[12px] leading-4">
-            <span>이름 (선택)</span>
-            <input name="name" aria-label="이름 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
-              placeholder="이름 없음"
+            <span>제목 (선택)</span>
+            <input name="expense-title" aria-label="제목 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
+              placeholder="제목 없음"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
           </label>
           <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3 max-sm:grid-cols-[116px_minmax(0,1fr)] max-sm:gap-3 max-sm:p-3">

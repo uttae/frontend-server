@@ -831,14 +831,14 @@ it("reveals repeated validation errors without smooth scrolling when reduced mot
 it("edits an optional independent name, uses the design name prompt, and explicitly clears it", async () => {
   await mount(null);
   await act(async () => categorySelect().props.onChange("FOOD"));
-  let name = renderer.root.findByProps({ name: "name" });
-  expect(name.props.placeholder).toBe("이름 없음");
+  let name = renderer.root.findByProps({ name: "expense-title" });
+  expect(name.props.placeholder).toBe("제목 없음");
   expect(name.props.maxLength).toBe(100);
   await act(async () => name.props.onChange({ target: { value: "점심" } }));
   await completeNewExpense();
   expect(mocks.save.mock.lastCall?.[0]).toMatchObject({ name: "점심", memo: "" });
   await mount(null);
-  name = renderer.root.findByProps({ name: "name" });
+  name = renderer.root.findByProps({ name: "expense-title" });
   await act(async () => name.props.onChange({ target: { value: " \u3000" } }));
   await completeNewExpense();
   expect(mocks.save.mock.lastCall?.[0].name).toBeNull();
@@ -849,11 +849,11 @@ it("omits an unchanged name on PATCH, clears explicitly, and rejects raw overlen
   const submit = async () => act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
   await submit();
   expect(mocks.save.mock.lastCall?.[0]).not.toHaveProperty("name");
-  await act(async () => renderer.root.findByProps({ name: "name" }).props.onChange({ target: { value: "" } }));
+  await act(async () => renderer.root.findByProps({ name: "expense-title" }).props.onChange({ target: { value: "" } }));
   await submit();
   expect(mocks.save.mock.lastCall?.[0]).toMatchObject({ name: null, memo: base.memo });
   mocks.save.mockClear();
-  await act(async () => renderer.root.findByProps({ name: "name" }).props.onChange({ target: { value: "😀".repeat(50) + " " } }));
+  await act(async () => renderer.root.findByProps({ name: "expense-title" }).props.onChange({ target: { value: "😀".repeat(50) + " " } }));
   await submit();
   expect(mocks.save).not.toHaveBeenCalled();
 });
