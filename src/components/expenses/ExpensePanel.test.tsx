@@ -532,3 +532,15 @@ it('switches category rows and day totals together without an intermediate curre
  await act(async()=>renderer.update(<ExpensePanel/>));
  expect(dayAmount()).toBe('100');
 });
+
+it.each(['disconnected', 'pending', 'error', 'ready'])('preserves known day totals during %s instead of switching to original currencies', async (syncStatus) => {
+ await mount();
+ const current=mocks.state as {krwSummary:{data:typeof contractFixture.response}};
+ const total={convertedTotalKrw:'12345',isComplete:false,missingCurrencies:['AED'],originalTotals:[]};
+ const summary={...current.krwSummary.data,days:[{expenseGroup:'PREPARATION',scheduleId:null,total}]};
+ mocks.state={...(mocks.state as object),syncStatus,krwSummary:{data:summary,isSuccess:syncStatus!=='error',isError:syncStatus==='error',isFetching:syncStatus==='pending'||syncStatus==='ready'}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ const heading=renderer.root.findAllByType('section').find(node=>node.props['aria-label']==='여행 준비 비용')!.findAllByType(ExpenseKrwAmount)[0];
+ expect(heading.props.total).toEqual(total);
+ expect(JSON.stringify(renderer.toJSON())).toContain('12,345원');
+});

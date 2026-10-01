@@ -153,13 +153,14 @@ function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, catego
   const { setKrwFilters } = context;
   useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
   const backgroundRefresh = context.syncStatus === "refreshing";
-  const displayReady = context.syncStatus === "ready" || backgroundRefresh;
+  // Connection/read status is separate from the validity of an existing snapshot.
+  // Access revocation still removes the panel and must never retain private totals.
+  const displayReady = !context.revoked && context.syncStatus !== "revoked";
   const filtersMatch = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters);
   const detailed = filtersMatch
-    && displayReady && context.filteredKrwSummary?.isSuccess
-    ? context.filteredKrwSummary.data : undefined;
-  const wholeKrw = displayReady && context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh)
-    ? context.krwSummary.data : undefined;
+    && displayReady
+    ? context.filteredKrwSummary?.data : undefined;
+  const wholeKrw = displayReady ? context.krwSummary.data : undefined;
   // Reuse authoritative totals for a single dimension; never sum rounded row amounts
   // or show the previous day/category total while a new intersection is loading.
   const fallbackTotal = selectFallbackTotal(wholeKrw, category, activeFilter);
