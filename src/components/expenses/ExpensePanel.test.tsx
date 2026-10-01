@@ -507,3 +507,28 @@ it("keeps the visible ledger unchanged during background tab-return reads", asyn
  await act(async () => renderer.update(<ExpensePanel />));
  expect(JSON.stringify(renderer.toJSON())).toBe(before);
 });
+
+it('switches category rows and day totals together without an intermediate currency fallback', async () => {
+ await mount();
+ const current=mocks.state as {list:{data:Expense[]};krwSummary:{data:typeof contractFixture.response}};
+ const food={...current.list.data[1],category:'FOOD' as const};
+ const other={...food,id:99,category:'OTHER' as const};
+ const total={convertedTotalKrw:'200',isComplete:true,missingCurrencies:[],originalTotals:[]};
+ const whole={...current.krwSummary.data,expenses:[food,other].map(expense=>({expense,convertedAmountKrw:'100',isComplete:true,missingCurrencies:[]})),days:[{expenseGroup:'TRIP_DAY',scheduleId:10,total}]};
+ mocks.state={...(mocks.state as object),list:{isSuccess:true,data:[food,other]},krwSummary:{isSuccess:true,data:whole},krwFilters:{},setKrwFilters:vi.fn(),filteredKrwSummary:{isPending:true,isFetching:true}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ const group=()=>renderer.root.findByProps({'aria-label':'1일차 비용'});
+ const dayAmount=()=>group().findAllByType(ExpenseKrwAmount)[0].props.total?.convertedTotalKrw;
+ expect(dayAmount()).toBe('200');
+ await act(async()=>renderer.root.findByType(ExpenseSelect).props.onChange('FOOD'));
+ expect(dayAmount()).toBe('200');
+ expect(renderer.root.findAllByProps({'data-expense-id':99})).toHaveLength(1);
+ const selected={...whole,expenses:[whole.expenses[0]],days:[{...whole.days[0],total:{...total,convertedTotalKrw:'100'}}]};
+ mocks.state={...(mocks.state as object),krwFilters:{category:'FOOD'},filteredKrwSummary:{isSuccess:true,data:selected}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ expect(dayAmount()).toBe('100');
+ expect(renderer.root.findAllByProps({'data-expense-id':99})).toHaveLength(0);
+ mocks.state={...(mocks.state as object),filteredKrwSummary:{isSuccess:true,isFetching:true,data:selected}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ expect(dayAmount()).toBe('100');
+});

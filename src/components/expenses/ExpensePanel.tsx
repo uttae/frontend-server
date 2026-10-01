@@ -148,14 +148,15 @@ function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, catego
     context.schedules.some((s) => String(s.scheduleId) === filter)
       ? filter
       : "ALL";
-  const filtered = context.list.data?.filter(e => matchesExpenseFilter(e, category, activeFilter)) ?? [];
+  const filtered = useMemo(() => context.list.data?.filter(e => matchesExpenseFilter(e, category, activeFilter)) ?? [], [context.list.data, category, activeFilter]);
   const krwFilters = useMemo(() => makeKrwFilters(category, activeFilter), [category, activeFilter]);
   const { setKrwFilters } = context;
   useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
   const backgroundRefresh = context.syncStatus === "refreshing";
   const displayReady = context.syncStatus === "ready" || backgroundRefresh;
-  const detailed = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters)
-    && displayReady && context.filteredKrwSummary?.isSuccess && (!context.filteredKrwSummary.isFetching || backgroundRefresh)
+  const filtersMatch = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters);
+  const detailed = filtersMatch
+    && displayReady && context.filteredKrwSummary?.isSuccess
     ? context.filteredKrwSummary.data : undefined;
   const wholeKrw = displayReady && context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh)
     ? context.krwSummary.data : undefined;
@@ -163,8 +164,20 @@ function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, catego
   // or show the previous day/category total while a new intersection is loading.
   const fallbackTotal = selectFallbackTotal(wholeKrw, category, activeFilter);
   const selectedTotal = detailed?.filtered ?? fallbackTotal;
-  const visibleExpenses = detailed?.expenses?.map((row) => row.expense) ?? filtered;
-  return { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses };
+  const visibleExpenses = useMemo(() => detailed?.expenses?.map((row) => row.expense) ?? filtered, [detailed, filtered]);
+  const nextList = useMemo(() => ({
+    expenses: visibleExpenses,
+    krwSummary: detailed ?? (category === "ALL" ? wholeKrw : undefined),
+    rowKrwSummary: detailed ?? wholeKrw,
+  }), [visibleExpenses, detailed, wholeKrw, category]);
+  const categoryPending = Boolean(context.filteredKrwSummary && category !== "ALL" && displayReady
+    && !detailed && !(filtersMatch && context.filteredKrwSummary.isError) && filtered.length);
+  const [settledList, setSettledList] = useState(nextList);
+  if (!categoryPending && settledList !== nextList) setSettledList(nextList);
+  // Keep rows and their authoritative day totals together until the new category
+  // snapshot arrives. Never attach an old category's total to newly filtered rows.
+  const displayList = categoryPending ? settledList : nextList;
+  return { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses: displayList.expenses, displayList, categoryPending };
 }
 
 function ExpenseMemberNotice({ context }: Readonly<{ context: ReturnType<typeof useExpenseContext> }>) {
@@ -215,7 +228,7 @@ export function ExpensePanel() {
   const lock = useRef(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses } = useExpenseDisplay(context, category, filter);
+  const { activeFilter, filtered, backgroundRefresh, selectedTotal, visibleExpenses, displayList, categoryPending } = useExpenseDisplay(context, category, filter);
   function remove(expense: Expense, reviewed = false) {
     if (
       lock.current ||
@@ -438,20 +451,22 @@ export function ExpensePanel() {
           {context.filteredKrwSummary?.isError && <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>}
           {context.list.isPending ? <LoadingIndicator label="비용 목록 불러오는 중" className="flex min-h-40 w-full" /> : context.list.isSuccess && (
             <>
-              <ExpenseList
-                roomId={context.roomId}
-                expenses={visibleExpenses}
-                krwSummary={detailed ?? (category === "ALL" ? wholeKrw : undefined)}
-                rowKrwSummary={detailed ?? wholeKrw}
-                members={context.members}
-                memberStatus={context.memberStatus}
-                schedules={context.schedules}
-                canManage={context.canManage}
-                onEdit={(expense) => context.open({ expense })}
-                onDelete={(expense) => void remove(expense)}
-                busy={context.busy || deleting || Boolean(conflict)}
-                grouped
-              />
+              <div aria-busy={categoryPending}>
+                <ExpenseList
+                  roomId={context.roomId}
+                  expenses={visibleExpenses}
+                  krwSummary={displayList.krwSummary}
+                  rowKrwSummary={displayList.rowKrwSummary}
+                  members={context.members}
+                  memberStatus={context.memberStatus}
+                  schedules={context.schedules}
+                  canManage={context.canManage}
+                  onEdit={(expense) => context.open({ expense })}
+                  onDelete={(expense) => void remove(expense)}
+                  busy={context.busy || deleting || Boolean(conflict)}
+                  grouped
+                />
+              </div>
               {(activeFilter !== "ALL" || category !== "ALL") && (
                 <div className="text-body-xs-regular text-text-subtle">
                   <p className="hidden @min-[800px]/expenses:block">
