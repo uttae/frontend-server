@@ -32,13 +32,13 @@ export function NewMessagePreviewButton({
         onClick={onClick}
         aria-label={`${message.sender ?? ""}님의 새 메시지: ${text}. 가장 아래로 이동`}
         className={cn(
-          "pointer-events-auto flex min-w-0 max-w-full cursor-pointer items-center gap-2 rounded-full bg-primary-subtle py-1.5 pl-1.5 pr-3.5 text-left shadow-md transition hover:brightness-[0.98]",
+          "pointer-events-auto flex min-w-0 max-w-full cursor-pointer items-center gap-2 rounded-xl bg-background-strong py-1.5 pl-1.5 pr-3.5 text-left shadow-md transition hover:brightness-[0.98]",
           isMinimized && "gap-1.5 py-1 pl-1 pr-3",
         )}
       >
         <ChatMemberAvatarRing
           chromeAvatarClassName={cn(
-            "shrink-0 overflow-hidden rounded-full",
+            "shrink-0 overflow-hidden rounded-lg ring-1 ring-border",
             isMinimized ? "h-6 w-6" : "h-7 w-7",
           )}
           avatarUrl={message.avatar}
@@ -48,7 +48,7 @@ export function NewMessagePreviewButton({
         />
         <span
           className={cn(
-            "shrink-0 text-text-default",
+            "shrink-0 text-primary",
             isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis",
           )}
         >
@@ -56,7 +56,7 @@ export function NewMessagePreviewButton({
         </span>
         <span
           className={cn(
-            "min-w-0 truncate text-text-subtle",
+            "min-w-0 truncate text-text",
             isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
           )}
         >
