@@ -38,7 +38,7 @@ const base: Expense = {
   payerUserIds: [1, 2],
   participantUserIds: [1],
   version: 0,
-  createdAt: "",
+  name: null, createdAt: "",
   updatedAt: "",
 };
 let renderer: ReactTestRenderer;

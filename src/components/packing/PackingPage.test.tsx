@@ -206,3 +206,27 @@ it.each(['취소','준비물 상세 닫기'])('does not close a reopened detail 
   await act(async()=>finish({kind:'success'}));
   expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(false);
 });
+
+it('dismisses the mobile detail with the shared header drag and retains its memo draft',async()=>{
+  vi.stubGlobal('matchMedia',()=>({matches:true}));
+  await mount();await selectFirstItem();
+  await act(async()=>renderer.root.findByType('textarea').props.onChange({target:{value:'드래그 후에도 유지할 메모'}}));
+  const detail=()=>renderer.root.findByProps({'aria-label':'준비물 상세'});
+  const handle=()=>detail().findAllByType('div').find(node=>node.props.onPointerDown);
+  expect(handle()).toBeDefined();
+  const target=document.createElement('div');
+  target.setPointerCapture=vi.fn();target.hasPointerCapture=()=>true;target.releasePointerCapture=vi.fn();
+  const event=(y:number)=>({pointerId:1,isPrimary:true,button:0,clientX:20,clientY:y,target,currentTarget:target});
+  await act(async()=>handle()!.props.onPointerDown(event(20)));
+  await act(async()=>handle()!.props.onPointerMove(event(150)));
+  expect(detail().props.style.transform).toBe('translateY(130px)');
+  await act(async()=>handle()!.props.onPointerUp(event(150)));
+  expect(detail().props.hidden).toBe(true);
+  await selectFirstItem();
+  expect(renderer.root.findByType('textarea').props.value).toBe('드래그 후에도 유지할 메모');
+  state.status='writing';await act(async()=>renderer.update(<PackingPage/>));
+  await act(async()=>handle()!.props.onPointerDown(event(20)));
+  await act(async()=>handle()!.props.onPointerMove(event(150)));
+  await act(async()=>handle()!.props.onPointerUp(event(150)));
+  expect(detail().props.hidden).toBe(false);
+});

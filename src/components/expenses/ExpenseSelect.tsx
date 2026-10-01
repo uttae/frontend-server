@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { ExpenseDialog } from "./ExpenseDialog";
+import { useMobileView } from "@/contexts/MobileViewContext";
+import { Check } from "lucide-react";
+import { ChevronDownIcon } from "@/assets/icons";
 
 export function ExpenseSelect({
   label,
@@ -11,6 +15,8 @@ export function ExpenseSelect({
   onChange,
   placeholder = "선택",
   disabled = false,
+  mobileSheet = false,
+  compact = false,
 }: {
   label: string;
   name?: string;
@@ -19,7 +25,11 @@ export function ExpenseSelect({
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  mobileSheet?: boolean;
+  compact?: boolean;
 }) {
+  const { isMobileDevice } = useMobileView();
+  const [sheet, setSheet] = useState(false);
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const root = useRef<HTMLDivElement>(null);
@@ -30,6 +40,12 @@ export function ExpenseSelect({
   const activeIndex = Math.min(active, options.length - 1);
   const selected = options.find((option) => option.value === value);
   function show() {
+    setSheet(
+      mobileSheet &&
+        (isMobileDevice ||
+          (typeof window !== "undefined" &&
+            window.matchMedia?.("(max-width: 639px)").matches)),
+    );
     setActive(
       Math.max(
         0,
@@ -46,14 +62,14 @@ export function ExpenseSelect({
   }
   useEffect(() => {
     const element = root.current;
-    if (!isOpen || !element) return;
+    if (!isOpen || !element || sheet) return;
     const outside = (event: PointerEvent) => {
       if (!element.contains(event.target as Node)) setOpen(false);
     };
     element.ownerDocument.addEventListener("pointerdown", outside);
     return () =>
       element.ownerDocument.removeEventListener("pointerdown", outside);
-  }, [isOpen]);
+  }, [isOpen, sheet]);
   useEffect(() => {
     if (isOpen)
       list.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
@@ -63,7 +79,8 @@ export function ExpenseSelect({
       ref={root}
       className="relative min-w-0"
       onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+        if (!sheet && !event.currentTarget.contains(event.relatedTarget))
+          setOpen(false);
       }}
     >
       <button
@@ -72,11 +89,13 @@ export function ExpenseSelect({
         name={name}
         role="combobox"
         aria-label={label}
-        aria-haspopup="listbox"
+        aria-haspopup={sheet ? "dialog" : "listbox"}
         aria-expanded={isOpen}
-        aria-controls={isOpen ? id : undefined}
+        aria-controls={isOpen && !sheet ? id : undefined}
         aria-activedescendant={
-          isOpen && options[activeIndex] ? id + "-" + activeIndex : undefined
+          isOpen && !sheet && options[activeIndex]
+            ? id + "-" + activeIndex
+            : undefined
         }
         disabled={disabled}
         onClick={() => {
@@ -112,24 +131,49 @@ export function ExpenseSelect({
             if (options[activeIndex]) choose(options[activeIndex].value);
           }
         }}
-        className="flex min-h-11 w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-gray-border bg-white px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular font-medium cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className={cn("flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50", compact && "min-h-10 gap-2 px-3 text-[14px] leading-5 mobile:min-h-11 max-sm:min-h-11")}
       >
-        <span className="min-w-0 break-words">
+        <span className={`min-w-0 break-words ${selected ? "" : "text-text-subtle"}`}>
           {selected?.label ?? placeholder}
         </span>
-        <ChevronDown
-          size={16}
+        <ChevronDownIcon
+          size={compact ? 16 : 20}
           aria-hidden="true"
-          className={`shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`shrink-0 text-icon-subtle transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
-      {isOpen && (
+      {isOpen && sheet && (
+        <ExpenseDialog title="카테고리" onClose={() => setOpen(false)}>
+          <p className="mb-3 text-body-xs-regular text-text-subtle">
+            선택한 카테고리를 보여줘요.
+          </p>
+          <div className="space-y-1">
+            {options.map((option) => (
+              <label
+                key={option.value}
+                className={cn("flex min-h-12 cursor-pointer items-center justify-between text-body-s-emphasis", compact && "text-[14px] leading-5")}
+              >
+                {option.value === "ALL" ? "전체" : option.label}
+                <input
+                  type="radio"
+                  name={id}
+                  value={option.value}
+                  checked={value === option.value}
+                  onChange={() => choose(option.value)}
+                  className="size-4 cursor-pointer accent-primary"
+                />
+              </label>
+            ))}
+          </div>
+        </ExpenseDialog>
+      )}
+      {isOpen && !sheet && (
         <div
           ref={list}
           id={id}
           role="listbox"
           aria-label={label}
-          className="absolute inset-x-0 top-full z-30 mt-2 max-h-60 overflow-y-auto overscroll-contain rounded-xl border border-gray-border bg-white p-1.5 shadow-lg"
+          className="absolute inset-x-0 top-full z-30 mt-2 max-h-60 overflow-y-auto overscroll-contain rounded-lg border border-border bg-background p-1.5 shadow-lg"
         >
           {options.map((option, index) => (
             <button
@@ -141,7 +185,7 @@ export function ExpenseSelect({
               tabIndex={-1}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(option.value)}
-              className={`flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular font-medium cursor-pointer transition-colors hover:bg-primary/10 ${index === activeIndex ? "bg-primary/5" : ""}`}
+              className={cn("flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors hover:bg-primary/10", compact && "text-[14px] leading-5", index === activeIndex && "bg-primary/5")}
             >
               <span className="min-w-0 break-words">{option.label}</span>
               {value === option.value && (

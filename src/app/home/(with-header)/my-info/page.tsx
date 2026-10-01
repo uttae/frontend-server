@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
@@ -100,7 +102,7 @@ export default function MyInfoPage() {
 
           {isLoading && (
             <div className="flex items-center justify-center py-20">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
+              <LoadingIndicator label="내 정보 불러오는 중" size={32} />
             </div>
           )}
 
@@ -114,9 +116,10 @@ export default function MyInfoPage() {
                 type="button"
                 onClick={() => refetch()}
                 disabled={isFetching}
+                aria-busy={isFetching}
                 className="mt-3 rounded-full bg-primary px-4 py-2 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {isFetching ? "불러오는 중…" : "다시 시도"}
+                다시 시도
               </button>
             </div>
           )}

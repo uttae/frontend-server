@@ -39,6 +39,7 @@ export function SettingsDialog({
   onClose,
   children,
   size = "default",
+  appearance = "default",
   stopPortalEventPropagation = false,
   className = "",
   overlayClassName = "",
@@ -48,6 +49,7 @@ export function SettingsDialog({
   onClose: () => void;
   children: ReactNode;
   size?: "default" | "compact";
+  appearance?: "default" | "ledger";
   stopPortalEventPropagation?: boolean;
   className?: string;
   overlayClassName?: string;
@@ -115,7 +117,7 @@ export function SettingsDialog({
     <div
       ref={overlayRef}
       {...(stopPortalEventPropagation ? portalEventBoundary : {})}
-      className={`fixed inset-0 z-[210] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm ${overlayClassName}`}
+      className={`fixed inset-0 z-[210] flex items-center justify-center ${appearance === "ledger" ? "bg-[#0f1724]/35 p-5" : "bg-black/40 p-4 backdrop-blur-sm"} ${overlayClassName}`}
     >
       <button
         type="button"
@@ -129,17 +131,17 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 text-neutral-900 shadow-xl [scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6 ${className}`}
+        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl ${appearance === "ledger" ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"} ${className}`}
       >
-        <div className="mb-2 flex items-center justify-between gap-4">
-          <h2 id={titleId} className="text-title-l mobile:text-title-m font-bold">
+        <div className={`${appearance === "ledger" ? "mb-6" : "mb-2"} flex items-center justify-between gap-4`}>
+          <h2 id={titleId} className={appearance === "ledger" ? "text-[20px] leading-7 font-bold" : "text-title-l mobile:text-title-m font-bold"}>
             {title}
           </h2>
           {showCloseButton && <button
             type="button"
             aria-label={`${title} 닫기`}
             onClick={onClose}
-            className="flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-bubble-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-bubble-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${appearance === "ledger" ? "mobile:hidden max-sm:hidden" : ""}`}
           >
             <X size={22} aria-hidden />
           </button>}

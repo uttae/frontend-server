@@ -18,7 +18,7 @@ it("opens an expense in the selected trip day", async () => {
   await mount();
   mocks.open.mockClear();
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("10"),
+    renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick(),
   );
   const add = renderer.root
     .findAllByType("button")
@@ -58,7 +58,7 @@ it("keeps a single reference travel total visible while filtering", async () => 
   };
   await act(async () => renderer.update(<ExpensePanel />));
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
+    renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "여행 준비 비용")!.props.onClick(),
   );
   const text = JSON.stringify(renderer.toJSON());
   expect(text).not.toContain("999,999,999,999,999.99");
@@ -152,7 +152,7 @@ async function mount() {
 it("filters preparation and trip day without altering server summary scope", async () => {
   await mount();
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("PREPARATION"),
+    renderer.root.findAllByType("button").find(b => b.props["aria-label"] === "여행 준비 비용")!.props.onClick(),
   );
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
   expect(JSON.stringify(renderer.toJSON())).toContain("준비");
@@ -167,6 +167,7 @@ it("filters preparation and trip day without altering server summary scope", asy
 });
 it("requires confirmation and preserves list with visible deletion failure", async () => {
   await mount();
+  await openFirstMenu();
   let button = renderer.root
     .findAllByType("button")
     .find((b) => b.props["aria-label"] === "비용 삭제")!;
@@ -175,6 +176,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
   expect(mocks.remove).not.toHaveBeenCalled();
   expect(renderer.root.findAllByType(ConfirmDialog)).toHaveLength(0);
   mocks.remove.mockRejectedValue(new Error("삭제 실패"));
+  await openFirstMenu();
   button = renderer.root
     .findAllByType("button")
     .find((b) => b.props["aria-label"] === "비용 삭제")!;
@@ -187,7 +189,7 @@ it("requires confirmation and preserves list with visible deletion failure", asy
 it("returns to all expenses when the selected day is deleted remotely", async () => {
   await mount();
   await act(async () =>
-    renderer.root.findByType(ExpenseSelect).props.onChange("10"),
+    renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick(),
   );
   const state = mocks.state as { list: { data: { id: number }[] } };
   mocks.state = {
@@ -200,10 +202,13 @@ it("returns to all expenses when the selected day is deleted remotely", async ()
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  expect(renderer.root.findByType(ExpenseSelect).props.value).toBe("ALL");
+  expect(renderer.root.findByProps({ "aria-label": "전체 비용" }).props["aria-pressed"]).toBe(true);
   expect(renderer.root.findAllByType("li")).toHaveLength(1);
 });
 
+async function openFirstMenu() {
+  await act(async () => renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 더보기"))!.props.onClick());
+}
 async function answerConfirm(confirmed: boolean) {
   const dialog = renderer.root.findByType(ConfirmDialog);
   await act(async () =>
@@ -227,6 +232,7 @@ it("retains deletion selection and requires confirmation of the fetched version 
     new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"),
   );
   mocks.readLatest.mockResolvedValueOnce(latest);
+  await openFirstMenu();
   await act(async () => panelButton("삭제")!.props.onClick());
   await answerConfirm(true);
   expect(mocks.readLatest).toHaveBeenCalledWith(1);
@@ -256,6 +262,7 @@ it.each(["missing", "offline"])(
     );
     if (mode === "missing") mocks.readLatest.mockResolvedValueOnce(undefined);
     else mocks.readLatest.mockRejectedValueOnce(new Error("offline"));
+    await openFirstMenu();
     await act(async () => panelButton("삭제")!.props.onClick());
     await answerConfirm(true);
     expect(mocks.remove).toHaveBeenCalledTimes(1);
@@ -293,7 +300,7 @@ it("keeps budget and original-currency settlement without comparison or explanat
     },
   };
   await act(async () => renderer.update(<ExpensePanel />));
-  expect(JSON.stringify(renderer.toJSON())).toContain("여행 전체 예산");
+  expect(JSON.stringify(renderer.toJSON())).toContain("전체 예산");
   expect(renderer.root.findAllByProps({ "aria-label": "예산 비교" })).toHaveLength(0);
   await act(async () =>
     renderer.root
@@ -387,7 +394,7 @@ it.each(["initial load", "change", "reconnect"])(
   },
 );
 
-it("switches from my settlement to all transfers and keeps analysis in a separate view", async () => {
+it("opens the whole-trip settlement without extra analysis or scope menus", async () => {
   await mount();
   mocks.state = {
     ...(mocks.state as object), currentUserId: 1,
@@ -402,14 +409,12 @@ it("switches from my settlement to all transfers and keeps analysis in a separat
     renderer.root.findAllByType("button").find(b => b.children.includes(label))!.props.onClick();
   });
   await click("정산 요약");
-  expect(JSON.stringify(renderer.toJSON())).toContain("주고받을 금액이 없어요");
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("12,345");
-  await click("전체 정산");
   expect(JSON.stringify(renderer.toJSON())).toContain("12,345");
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("카테고리별");
-  await click("비용 분석");
-  expect(JSON.stringify(renderer.toJSON())).toContain("카테고리별");
-  expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 범위");
+  const labels = renderer.root.findAllByType("button").map(button => button.children.filter(child => typeof child === "string").join(""));
+  expect(labels).not.toContain("비용 분석");
+  expect(labels).not.toContain("내 정산");
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("정산 보기 옵션");
+
 });
 
 it.each([
@@ -423,4 +428,119 @@ it.each([
   const output = renderer.root.findAllByType("output").find(node => node.children.join("").startsWith(message));
   expect(output).toBeDefined();
   expect(output!.props.style).toEqual({ display: "block" });
+});
+
+it("intersects day and category filters while keeping the trip budget visible", async () => {
+  await mount();
+  const state = mocks.state as { list: { data: Expense[] } };
+  mocks.state = { ...state, list: { ...state.list, data: [
+    { ...state.list.data[0], category: "FOOD" },
+    { ...state.list.data[1], category: "OTHER" },
+  ] } };
+  await act(async () => renderer.update(<ExpensePanel />));
+  const category = () => renderer.root.findAllByType(ExpenseSelect).find(s => s.props.label === "카테고리 필터")!;
+  expect(category()).toBeDefined();
+  await act(async () => category().props.onChange("FOOD"));
+  expect(renderer.root.findAllByProps({ "data-expense-id": 1 })).toHaveLength(1);
+  expect(renderer.root.findAllByProps({ "data-expense-id": 2 })).toHaveLength(0);
+  await act(async () => renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick());
+  expect(renderer.root.findAllByProps({ "data-expense-id": 1 })).toHaveLength(0);
+  expect(JSON.stringify(renderer.toJSON())).toContain("501");
+});
+
+it("can retry a failed summary from inside its modal", async () => {
+  await mount();
+  mocks.refresh.mockClear();
+  mocks.state = { ...(mocks.state as object), summary: { isError: true, isSuccess: false } };
+  await act(async () => renderer.update(<ExpensePanel />));
+  await act(async () => panelButton("정산 요약")!.props.onClick());
+  const dialog = renderer.root.findByType("dialog");
+  const retry = dialog.findAllByType("button").find(b => b.children.includes("조회 다시 시도"));
+  expect(retry).toBeDefined();
+  await act(async () => retry!.props.onClick());
+  expect(mocks.refresh).toHaveBeenCalledOnce();
+});
+
+import contractFixture from "./krw-contract.fixture.json";
+import { ExpenseKrwAmount } from "./ExpenseKrw";
+it("renders a complete filtered snapshot independently of a partial whole room and hides it on filter transition", async () => {
+  await mount();
+  const whole = { ...contractFixture.response, convertedTotalKrw: "508", isComplete: false, missingCurrencies: ["KWD"], stale: true };
+  const selected = { ...whole, filtered: { ...contractFixture.response.filtered, convertedTotalKrw: "501" }, expenses: [contractFixture.response.expenses[0]] };
+  const setKrwFilters = vi.fn();
+  mocks.state = { ...(mocks.state as object), krwSummary: { data: whole, isSuccess: true },
+    krwFilters: {}, setKrwFilters, filteredKrwSummary: { data: selected, isSuccess: true } };
+  await act(async () => renderer.update(<ExpensePanel />));
+  const selectedTotal = renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount);
+  expect(selectedTotal.props.total).toEqual(selected.filtered);
+  const allAmounts = renderer.root.findAllByType(ExpenseKrwAmount);
+  expect(allAmounts.some(node => node.props.total?.convertedTotalKrw === "508" && !node.props.total.isComplete)).toBe(true);
+  await act(async () => renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick());
+  expect(setKrwFilters).toHaveBeenLastCalledWith({ expenseGroup: "TRIP_DAY", scheduleId: 10 });
+  expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toBeUndefined();
+});
+
+it("keeps known row and day KRW amounts while a new filtered total loads without mixing category scopes", async () => {
+ await mount();
+ const current = mocks.state as { list: { data: Expense[] }; krwSummary: { data: typeof contractFixture.response } };
+ const row = { ...current.list.data[1], category: "FOOD" as const };
+ const dayTotal = { convertedTotalKrw: "13500", isComplete: true, missingCurrencies: [], originalTotals: [] };
+ const whole = { ...current.krwSummary.data, expenses: [{ expense: row, convertedAmountKrw: "13500", isComplete: true, missingCurrencies: [] }], days: [{ expenseGroup: "TRIP_DAY", scheduleId: 10, total: dayTotal }] };
+ mocks.state = { ...(mocks.state as object), list: { isSuccess: true, data: [row] }, krwSummary: { isSuccess: true, data: whole }, filteredKrwSummary: { isPending: true, isFetching: true }, krwFilters: {} };
+ await act(async () => renderer.update(<ExpensePanel />));
+ await act(async () => renderer.root.findByProps({ "aria-label": "Day 1 비용" }).props.onClick());
+ expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toEqual(dayTotal);
+ expect(JSON.stringify(renderer.toJSON())).toContain("13,500원");
+ expect(JSON.stringify(renderer.toJSON())).not.toContain("최신 비용 확인 중");
+ await act(async () => renderer.root.findByType(ExpenseSelect).props.onChange("FOOD"));
+ expect(renderer.root.findByProps({ "aria-label": "선택한 비용 합계" }).findByType(ExpenseKrwAmount).props.total).toBeUndefined();
+ expect(JSON.stringify(renderer.toJSON())).toContain("13,500원");
+});
+
+it("keeps the visible ledger unchanged during background tab-return reads", async () => {
+ await mount();
+ const healthy = { ...(mocks.state as Record<string, unknown>), list: { isSuccess: true, data: contractFixture.response.expenses.map(row => row.expense) }, krwSummary: { data: contractFixture.response, isSuccess: true }, krwFilters: {}, filteredKrwSummary: { data: contractFixture.response, isSuccess: true } };
+ mocks.state = healthy;
+ await act(async () => renderer.update(<ExpensePanel />));
+ const before = JSON.stringify(renderer.toJSON());
+ mocks.state = { ...healthy, syncStatus: "refreshing", list: { ...healthy.list, isFetching: true }, krwSummary: { ...healthy.krwSummary, isFetching: true }, filteredKrwSummary: { ...healthy.filteredKrwSummary, isFetching: true } };
+ await act(async () => renderer.update(<ExpensePanel />));
+ expect(JSON.stringify(renderer.toJSON())).toBe(before);
+});
+
+it('switches category rows and day totals together without an intermediate currency fallback', async () => {
+ await mount();
+ const current=mocks.state as {list:{data:Expense[]};krwSummary:{data:typeof contractFixture.response}};
+ const food={...current.list.data[1],category:'FOOD' as const};
+ const other={...food,id:99,category:'OTHER' as const};
+ const total={convertedTotalKrw:'200',isComplete:true,missingCurrencies:[],originalTotals:[]};
+ const whole={...current.krwSummary.data,expenses:[food,other].map(expense=>({expense,convertedAmountKrw:'100',isComplete:true,missingCurrencies:[]})),days:[{expenseGroup:'TRIP_DAY',scheduleId:10,total}]};
+ mocks.state={...(mocks.state as object),list:{isSuccess:true,data:[food,other]},krwSummary:{isSuccess:true,data:whole},krwFilters:{},setKrwFilters:vi.fn(),filteredKrwSummary:{isPending:true,isFetching:true}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ const group=()=>renderer.root.findByProps({'aria-label':'1일차 비용'});
+ const dayAmount=()=>group().findAllByType(ExpenseKrwAmount)[0].props.total?.convertedTotalKrw;
+ expect(dayAmount()).toBe('200');
+ await act(async()=>renderer.root.findByType(ExpenseSelect).props.onChange('FOOD'));
+ expect(dayAmount()).toBe('200');
+ expect(renderer.root.findAllByProps({'data-expense-id':99})).toHaveLength(1);
+ const selected={...whole,expenses:[whole.expenses[0]],days:[{...whole.days[0],total:{...total,convertedTotalKrw:'100'}}]};
+ mocks.state={...(mocks.state as object),krwFilters:{category:'FOOD'},filteredKrwSummary:{isSuccess:true,data:selected}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ expect(dayAmount()).toBe('100');
+ expect(renderer.root.findAllByProps({'data-expense-id':99})).toHaveLength(0);
+ mocks.state={...(mocks.state as object),filteredKrwSummary:{isSuccess:true,isFetching:true,data:selected}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ expect(dayAmount()).toBe('100');
+});
+
+it.each(['disconnected', 'pending', 'error', 'ready'])('preserves known day totals during %s instead of switching to original currencies', async (syncStatus) => {
+ await mount();
+ const current=mocks.state as {krwSummary:{data:typeof contractFixture.response}};
+ const total={convertedTotalKrw:'12345',isComplete:false,missingCurrencies:['AED'],originalTotals:[]};
+ const summary={...current.krwSummary.data,days:[{expenseGroup:'PREPARATION',scheduleId:null,total}]};
+ mocks.state={...(mocks.state as object),syncStatus,krwSummary:{data:summary,isSuccess:syncStatus!=='error',isError:syncStatus==='error',isFetching:syncStatus==='pending'||syncStatus==='ready'}};
+ await act(async()=>renderer.update(<ExpensePanel/>));
+ const heading=renderer.root.findAllByType('section').find(node=>node.props['aria-label']==='여행 준비 비용')!.findAllByType(ExpenseKrwAmount)[0];
+ expect(heading.props.total).toEqual(total);
+ expect(JSON.stringify(renderer.toJSON())).toContain('12,345원');
 });

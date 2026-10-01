@@ -35,7 +35,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
-it.each([30_000, 60_000, 90_000])("does not recover after %i ms alone; visible focus and visibility still recover and clean up", async (elapsed) => {
+it.each([30_000, 60_000, 90_000])("does not recover after %i ms alone; focus and visibility do not refetch either", async (elapsed) => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.useFakeTimers();
   const visibility = vi
@@ -75,12 +75,12 @@ it.each([30_000, 60_000, 90_000])("does not recover after %i ms alone; visible f
     await act(async () => {
       document.dispatchEvent(new Event("visibilitychange"));
     });
-    expect(mocks.read).toHaveBeenCalledTimes(6);
+    expect(mocks.read).not.toHaveBeenCalled();
     mocks.read.mockClear();
     await act(async () => {
       window.dispatchEvent(new Event("focus"));
     });
-    expect(mocks.read).toHaveBeenCalledTimes(6);
+    expect(mocks.read).not.toHaveBeenCalled();
   } finally {
     await act(async () => root.unmount());
     client.clear();
@@ -119,6 +119,7 @@ it("entry with warm inactive cache and reconnect each fetch all six endpoints", 
       render();
     });
     expect(host.querySelector("p")?.textContent).toBe("disconnected");
+    expect(mocks.read).toHaveBeenCalledTimes(6);
     mocks.read.mockClear();
     await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
     expect(mocks.read).not.toHaveBeenCalled();

@@ -24,6 +24,7 @@ import {
   patchExpense,
   type Expense,
   type ExpenseInput,
+  type ExpenseKrwFilters,
 } from "@/lib/api/rooms/expenses";
 import { canManageExpenses } from "@/lib/expenses/expense-policy";
 import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
@@ -55,7 +56,8 @@ function useExpenses(roomId: string) {
     retry: false,
     staleTime: 0,
     refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    // Visibility recovery already refreshes members with the other room data.
+    refetchOnWindowFocus: false,
   });
   const members = memberQuery.data?.members ?? [];
   const canManage =
@@ -88,6 +90,15 @@ function useExpenses(roomId: string) {
     ...options,
     queryKey: expenseKeys.krwSummary(roomId),
     queryFn: () => getExpenseKrwSummary(roomId),
+  });
+  const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
+  const filteredKrwSummary = useQuery({
+    ...options,
+    // The unfiltered view already has krwSummary; do not mount another observer
+    // onto that stale query when returning to All and trigger a whole-room refetch.
+    enabled: enabled && Object.keys(krwFilters).length > 0,
+    queryKey: [...expenseKeys.krwSummary(roomId), krwFilters],
+    queryFn: () => getExpenseKrwSummary(roomId, krwFilters),
   });
   const budgetMutation = useMutation({
     mutationFn: (body: ExpenseBudgetInput) => {
@@ -203,6 +214,7 @@ function useExpenses(roomId: string) {
       lock.current = false;
     }
   }
+  // A filter request updates only the selected list, not whole-trip synchronization.
   const reads = [list, summary, budget, krwSummary, currencies, memberQuery];
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
@@ -224,6 +236,9 @@ function useExpenses(roomId: string) {
     currencies,
     budget,
     krwSummary,
+    filteredKrwSummary,
+    krwFilters,
+    setKrwFilters,
     saveBudget,
     budgetBusy: budgetMutation.isPending,
     readLatestBudget: async () => {
@@ -352,7 +367,7 @@ export function ExpenseEntryButton({
   const scoped = expensesInScope(context.list.data ?? [], scope);
   const totals = totalsByCurrency(scoped);
   const summaryLabel = !context.list.isSuccess
-    ? context.list.isPending ? "비용 확인 중…" : "비용 보기"
+    ? "비용 보기"
     : scoped.length
       ? `비용 ${scoped.length}건 · ${totals.map(({ currency, amount }) => `${formatExpenseAmount(amount)} ${currency}`).join(" · ")}`
       : label;

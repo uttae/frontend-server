@@ -16,7 +16,7 @@ export const HOME_BANNERS: readonly HomeBanner[] = [
   {
     id: "feedback-event",
     href: "https://forms.gle/giYqRzrhCYF9Hz1M9",
-    label: "피드백 이벤트 참여하기 (새 창)",
+    label: "피드백 이벤트: 피드백 남기고 싸이버거 받아 가세요! 이벤트 기간 ~10/25일, 참여하기 (새 창)",
     content: <FeedbackBanner />,
   },
 ];

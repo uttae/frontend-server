@@ -2,16 +2,40 @@
 
 import { useEffect, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import { useSessionUser } from '@/hooks/useSessionUser';
 import { useSessionStore } from '@/stores/session-store';
+import { sessionUserQueryKey } from '@/lib/query-keys';
 import { isPackingPath, parseRoomContextPath } from '@/lib/room-context-path';
 import { getPackingCoordinator, releasePackingCoordinator, type PackingCoordinator, type PackingState } from '@/lib/packing/coordinator';
 
 const empty: PackingState = {data:null,status:'loading',message:null,confirmation:null};
 const emptySnapshot = () => empty;
 const emptySubscribe = () => () => {};
-const leases = new WeakMap<PackingCoordinator, number>();
+const guarded = new WeakSet<PackingCoordinator>();
+
+// The private list belongs to the room/session, not the lifetime of its tab.
+// Keep guards subscribed while the tab is absent, so logout still purges immediately.
+function guardScope(client: QueryClient, coordinator: PackingCoordinator, roomId: string, userId: number) {
+  if (guarded.has(coordinator)) return;
+  guarded.add(coordinator);
+  const release = () => {
+    unsubscribeSession();
+    unsubscribeQuery();
+    guarded.delete(coordinator);
+    releasePackingCoordinator(client, roomId, userId, coordinator);
+  };
+  const unsubscribeSession = useSessionStore.subscribe(session => {
+    if (!session.sessionReady || session.currentRoomId !== roomId) release();
+  });
+  const unsubscribeQuery = client.getQueryCache().subscribe(event => {
+    const key = event.query.queryKey;
+    if (JSON.stringify(key) === JSON.stringify(sessionUserQueryKey)) {
+      const user = event.query.state.data as { id?: number } | undefined;
+      if (event.type === 'removed' || user?.id !== userId) release();
+    }
+  });
+}
 
 export function usePackingList() {
   const pathname=usePathname();
@@ -28,25 +52,20 @@ export function usePackingList() {
   const state=useSyncExternalStore(coordinator?.subscribe ?? emptySubscribe,coordinator?.getSnapshot ?? emptySnapshot,emptySnapshot);
   useLayoutEffect(()=>{
     if(!coordinator || !roomId || !userId) return;
-    leases.set(coordinator,(leases.get(coordinator) ?? 0)+1);
-    const unsubscribe = useSessionStore.subscribe(session => {
-      if (!session.sessionReady || session.currentRoomId !== roomId) releasePackingCoordinator(client,roomId,userId,coordinator);
-    });
-    return ()=>{
-      unsubscribe();
-      leases.set(coordinator,(leases.get(coordinator) ?? 1)-1);
-      // StrictMode tears down and reattaches effects synchronously. Keep its one admission.
-      queueMicrotask(()=>{if(leases.get(coordinator)===0) {releasePackingCoordinator(client,roomId,userId,coordinator);leases.delete(coordinator);}});
-    };
+    guardScope(client,coordinator,roomId,userId);
+    return () => coordinator.cancelConfirmation();
   },[client,coordinator,roomId,userId]);
   useEffect(()=>{
     if(!coordinator) return;
-    void coordinator.refresh();
-    const refresh=()=>{if(document.visibilityState==='visible') void coordinator.refresh();};
-    window.addEventListener('focus',refresh);
-    window.addEventListener('online',refresh);
-    document.addEventListener('visibilitychange',refresh);
-    return ()=>{window.removeEventListener('focus',refresh);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',refresh);};
+    const recoverIfNeeded=()=>{
+      const {status}=coordinator.getSnapshot();
+      if(status!=='ready' && status!=='writing') void coordinator.refresh();
+    };
+    recoverIfNeeded();
+    // A personal list has no room broadcast stream. Reuse successful local state;
+    // reconnect only retries failed reads. Writes and explicit retries own refreshes.
+    window.addEventListener('online',recoverIfNeeded);
+    return ()=>window.removeEventListener('online',recoverIfNeeded);
   },[coordinator]);
   useEffect(()=>{
     if(state.status!=='revoked' || state.exitToHome === false) return;

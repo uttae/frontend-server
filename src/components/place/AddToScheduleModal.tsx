@@ -1,5 +1,7 @@
 "use client";
 
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -128,7 +130,9 @@ export function AddToScheduleModal({
           ) : null}
 
           {rid && schedulesLoading ? (
-            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">불러오는 중…</p>
+            <div className="flex justify-center py-6">
+              <LoadingIndicator label="일정 불러오는 중" />
+            </div>
           ) : null}
 
           {rid && schedulesError ? (

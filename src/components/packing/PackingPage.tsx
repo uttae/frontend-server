@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { usePackingList } from "@/hooks/usePackingList";
+import { useSheetDrag } from "@/components/mobile/useSheetDrag";
+import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { normalizePackingMemo, normalizePackingName } from "@/lib/packing/validation";
@@ -121,6 +123,7 @@ function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Con
 }
 
 function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem|null;context:Context;onClose:()=>void;onRename:()=>void;onDelete:()=>void;open:boolean}) {
+  const sheetDrag = useSheetDrag(onClose, !open || context.state.status === "writing", "(max-width: 700px)");
   useEffect(()=>{
     if(!open) return;
     function handleEscape(event:KeyboardEvent) {
@@ -133,18 +136,20 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
   },[open,onClose]);
   return <>
     {open && <button type="button" tabIndex={-1} className={styles.detailBackdrop} aria-label="준비물 상세 닫기" onClick={onClose}/>}
-    <aside className={styles.detail} hidden={!open} data-open={open} aria-label="준비물 상세">
-      <div className={styles.sheetHandle} aria-hidden="true"/>
-      <div className={styles.detailScroll}>
-        {item && <>
-          <div className={styles.detailHeader}>
+    <aside className={styles.detail} style={sheetDrag.surfaceStyle} hidden={!open} data-open={open} aria-label="준비물 상세">
+      <BottomSheetDragHandle drag={sheetDrag} className={styles.detailDragHeader}>
+        <div className={styles.sheetHandle} aria-hidden="true"/>
+        {item && <div className={styles.detailHeader}>
             <PackingCheckbox item={item} context={context} detail/>
             <h2 aria-label="선택한 준비물 이름">{item.name}</h2>
             <div className={styles.detailActions}>
               <button type="button" className={styles.iconButton} aria-label={`준비물 이름 수정: ${item.name}`} onClick={onRename}><PackingIcon name="edit" size={20}/></button>
               <button type="button" className={styles.iconButton} aria-label={`준비물 삭제: ${item.name}`} onClick={onDelete}><PackingIcon name="delete" size={20}/></button>
             </div>
-          </div>
+        </div>}
+      </BottomSheetDragHandle>
+      <div className={styles.detailScroll}>
+        {item && <>
           <MemoPanel key={item.id} item={item} context={context} open={open} onComplete={onClose}/>
           {item.tips.length>0 && <section className={styles.tips}>
             <h3 className={styles.sectionTitle}>우때의 여행 팁 <span aria-hidden="true">💡</span></h3>
@@ -160,8 +165,27 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
   </>;
 }
 
+function PackingLoadingBoard() {
+  return <>
+    <output className="block sr-only">준비물을 불러오는 중…</output>
+    <div className={styles.columns} aria-hidden="true">
+      {Array.from({length:4},(_,column)=><div className={styles.part} key={column}>
+        <div className={styles.partHeader}><span className={styles.loadingTitle}/></div>
+        <div className={styles.items}>
+          {Array.from({length:5},(_,row)=><div className={`${styles.item} ${styles.loadingItem}`} key={row}>
+            <span className={styles.loadingCheck}/><span className={styles.loadingLine}/>
+          </div>)}
+        </div>
+        <div className={styles.loadingAdd}/>
+      </div>)}
+    </div>
+  </>;
+}
+
 function PackingContent({context}: {context:Context}) {
   const {state,coordinator}=context;
+  const loading = !state.data && state.status === "loading";
+  const emptyBoard = loading ? <PackingLoadingBoard/> : <output>준비물을 확인할 수 없어요.</output>;
   const [selectedId,setSelectedId]=useState<number|null>(null);
   const [detailOpen,setDetailOpen]=useState(false);
   const [menuId,setMenuId]=useState<number|null>(null);
@@ -175,7 +199,7 @@ function PackingContent({context}: {context:Context}) {
   function closeMenu(){menuTrigger.current?.focus({preventScroll:true});setMenuId(null);}
   function prepareDelete(kind:"part"|"item",id:number){if(menuId!==null)closeMenu();void coordinator?.prepareDelete(kind,id);}
   useEffect(()=>{if(menuId===null)return;function close(event:PointerEvent){if(!(event.target instanceof Node) || !menuTrigger.current?.parentElement?.contains(event.target))setMenuId(null);}document.addEventListener("pointerdown",close);return()=>document.removeEventListener("pointerdown",close);},[menuId]);
-  return <div className={styles.page}>
+  return <div className={styles.page} aria-busy={loading}>
     <div className={styles.boardPane}>
       <div className={styles.content}>
         <header className={styles.pageHeader}>
@@ -183,18 +207,20 @@ function PackingContent({context}: {context:Context}) {
           {state.data && <button type="button" className={styles.addCategory} aria-label="카테고리 추가" onClick={()=>setEditor({kind:"createPart"})}>
             <PackingIcon name="plusWhite" size={16}/><span>카테고리 추가</span>
           </button>}
+          {loading && <span aria-hidden="true" className={`${styles.addCategory} ${styles.loadingAction}`}/>}
           <div className={styles.summary}>
             <p>해외여행 공통 준비물</p>
             {state.data && <p className={styles.progress} aria-label="전체 준비 현황">
               <strong>{items.filter(item=>item.checked).length} / {items.length}</strong><span>개 준비 완료</span>
             </p>}
+            {loading && <span aria-hidden="true" className={styles.loadingProgress}/>}
           </div>
         </header>
         {state.message && <div role="alert" className={styles.alert}>
           {state.message}
           {["sync-error","uncertain","error"].includes(state.status) && <button type="button" onClick={()=>void coordinator?.refresh(true)}>다시 확인</button>}
         </div>}
-        {!state.data ? <p role="status">{state.status==="loading" ? "준비물을 불러오는 중…" : "준비물을 확인할 수 없어요."}</p> : (
+        {!state.data ? emptyBoard : (
           <div className={styles.columns} aria-label="준비물 카테고리">
             {parts.map((part:PackingPart)=><section className={styles.part} key={part.id} aria-label={part.name}>
               <div className={styles.partHeader}>

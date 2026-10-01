@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { ChevronLeftIcon, CloseIcon } from "@/assets/icons";
+import { SHEET_DISMISS_DISTANCE } from "@/components/mobile/sheet-gesture";
 import { cn } from "@/lib/utils";
 
 /** Figma 기준 peek 영역 높이(핸들~사진 끝) — 실측 전 초기값 */
@@ -26,6 +27,7 @@ const SCROLL_AREA_CLASS =
 
 type DragState = {
   startY: number;
+  startedExpanded: boolean;
   /** 드래그 시작 시 시트 위치(translateY px) */
   baseOffset: number;
   fromHeader: boolean;
@@ -134,13 +136,14 @@ export function PlaceDetailSheet({
     if (!el) return;
 
     function handleStart(e: globalThis.TouchEvent) {
-      if (e.touches.length !== 1) {
+      if (e.touches.length !== 1 || (e.target as Element).closest("button, input, textarea, select, a")) {
         dragRef.current = null;
         return;
       }
       const y = e.touches[0].clientY;
       dragRef.current = {
         startY: y,
+        startedExpanded: expandedRef.current,
         baseOffset: offsetRef.current,
         fromHeader: headerRef.current?.contains(e.target as Node) ?? false,
         atTop: (scrollRef.current?.scrollTop ?? 0) <= 0,
@@ -184,10 +187,18 @@ export function PlaceDetailSheet({
       applyOffset(resisted, false);
     }
 
-    function handleEnd() {
+    function handleEnd(event: TouchEvent) {
       const drag = dragRef.current;
       dragRef.current = null;
       if (!drag?.dragging) return;
+      if (event.type === "touchcancel") {
+        snapTo(drag.startedExpanded);
+        return;
+      }
+      if (!drag.startedExpanded && drag.lastY - drag.startY >= SHEET_DISMISS_DISTANCE) {
+        onClose();
+        return;
+      }
       const max = collapsedOffsetRef.current;
       let nextExpanded = offsetRef.current < max / 2;
       if (drag.velocity < -FLING_VELOCITY) nextExpanded = true;
@@ -205,7 +216,7 @@ export function PlaceDetailSheet({
       el.removeEventListener("touchend", handleEnd);
       el.removeEventListener("touchcancel", handleEnd);
     };
-  }, [applyOffset, snapTo]);
+  }, [applyOffset, snapTo, onClose]);
 
   function handleWheel(e: WheelEvent<HTMLDivElement>) {
     if (!expanded && e.deltaY > 0) snapTo(true);

@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="travel">
+<path id="Vector" d="M21 13C21 9.13 17.63 6 11 6H3" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M3 15H19C19.5304 15 20.0391 14.7893 20.4142 14.4142C20.7893 14.0391 21 13.5304 21 13" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M3 6V11H20.5" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M3 11V15" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M8 11V6" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_6" d="M13 11V6.5" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_7" d="M3 19H21" stroke="#3B3F4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</svg>

@@ -1,4 +1,5 @@
 "use client";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import { useCallback, useId, useRef, useState } from "react";
 import {
@@ -14,7 +15,6 @@ import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { useExpenseContext } from "./ExpenseProvider";
 import {
   expenseButtonClass,
-  expenseInputClass,
   formatExpenseAmount,
 } from "./ExpenseViews";
 
@@ -95,20 +95,20 @@ export function ExpenseBudgetModal({
   }
   const busy = pending || context.budgetBusy;
   return (
-    <SettingsDialog
+    <SettingsDialog appearance="ledger"
       title={opened.budgetKrw === null ? "예산 설정" : "예산 수정"}
       onClose={close}
     >
       <form
-        className="space-y-5"
+        className="space-y-6"
         onSubmit={(e) => {
           e.preventDefault();
           void save();
         }}
       >
-        <p className="text-dark-gray">여행 전체의 예산을 설정해 주세요.</p>
+        <p className="sr-only">여행 전체의 예산을 설정해 주세요.</p>
         <div>
-          <label htmlFor={inputId} className="font-semibold">
+          <label htmlFor={inputId} className="text-[12px] leading-4 font-medium">
             예산 (KRW)
           </label>
           <ExpenseAmountInput
@@ -120,7 +120,6 @@ export function ExpenseBudgetModal({
             disabled={busy}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? errorId : undefined}
-            className={expenseInputClass}
             onChange={(value) => {
               setDraft(value);
               setError("");
@@ -176,7 +175,7 @@ export function ExpenseBudgetModal({
               <p>
                 {conflict.failed
                   ? "최신 예산 조회에 실패했어요. 다시 조회한 뒤 확인해 주세요."
-                  : "최신 예산 확인 중…"}
+                  : <LoadingIndicator label="최신 예산 확인 중" />}
               </p>
             )}
             {conflict.failed && (
@@ -193,14 +192,14 @@ export function ExpenseBudgetModal({
         )}
         <SettingsActionButtonRow>
           <SettingsActionButton
-            variant="secondary"
+            variant="secondary" className="h-12 rounded-lg text-[16px]"
             disabled={busy}
             onClick={close}
           >
             취소
           </SettingsActionButton>
           <SettingsActionButton
-            variant="primary"
+            variant="primary" className="h-12 rounded-lg text-[16px]"
             type="submit"
             disabled={busy || !context.canManage || Boolean(conflict)}
           >

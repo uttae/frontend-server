@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 import { toast } from "sonner";
 
 import {
@@ -387,10 +387,7 @@ function PlanPlaceStatus({ isLoading, isError }: Readonly<{ isLoading: boolean; 
   return (
     <>
       {isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-text-subtle">
-          <Loader2 className="size-5 animate-spin text-primary-strong" />
-          <span className="text-body-s-regular">장소 목록을 불러오는 중…</span>
-        </div>
+        <PlanLoadingSkeleton places />
       ) : null}
       {isError ? (
         <p className="py-4 text-center text-body-s-regular text-status-negative">

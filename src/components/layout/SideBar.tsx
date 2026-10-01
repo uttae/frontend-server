@@ -39,7 +39,7 @@ function SideBar() {
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const { roomId } = useCurrentRoomId();
 
-  const isChatActive = chatState !== "closed";
+  const isChatActive = chatState === "maximized";
   const isOnMemberSettings = pathname.startsWith("/member-settings");
   const isOnRoomSettings = pathname.startsWith("/room-settings");
   const isOnSettingsArea = isOnMemberSettings || isOnRoomSettings;
@@ -62,7 +62,10 @@ function SideBar() {
               label={item.label}
               tutorialTarget={item.key}
               isActive={!isChatActive && isSidebarItemActive(pathname, item.key, href)}
-              onClick={closeChat}
+              onClick={() => {
+                // Keep chat covering the previous page until a different route commits.
+                if (pathname === href || (item.key === "plan" && isSidebarItemActive(pathname, item.key, href))) closeChat();
+              }}
               showDividerBelow={item.key === "packing"}
             />
           ) : null;
@@ -85,7 +88,7 @@ function SideBar() {
           label="멤버"
           tutorialTarget="member-settings"
           isActive={!isChatActive && isOnMemberSettings}
-          onClick={closeChat}
+          onClick={() => { if (pathname === "/member-settings") closeChat(); }}
           showPingBadge={showSettingsNotification}
         />
       </nav>

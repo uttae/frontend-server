@@ -117,7 +117,7 @@ describe("expense roles and links", () => {
       ...body,
       id: 1,
       version: 0,
-      createdAt: "",
+      name: null, createdAt: "",
       updatedAt: "",
       payerUserIds: [99],
     };

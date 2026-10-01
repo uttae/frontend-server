@@ -1,0 +1,134 @@
+{
+  "fixtureKind": "Synthetic example using test-backed rate/amount values; IDs and timestamps illustrative, not captured HTTP output",
+  "ecbRatesPerEur": {
+    "EUR": "1",
+    "USD": "2",
+    "KRW": "1001"
+  },
+  "response": {
+    "originalTotals": [
+      {
+        "currency": "USD",
+        "totalAmount": "2.00"
+      }
+    ],
+    "convertedTotalKrw": "1001",
+    "missingCurrencies": [],
+    "isComplete": true,
+    "rateDate": "2026-09-11",
+    "rateSource": "ECB",
+    "stale": false,
+    "expenses": [
+      {
+        "expense": {
+          "id": 1,
+          "version": 0,
+          "expenseGroup": "PREPARATION",
+          "scheduleId": null,
+          "scheduleItemId": null,
+          "totalAmount": "1.00",
+          "currency": "USD",
+          "category": "OTHER",
+          "name": null,
+          "memo": null,
+          "payerUserIds": [
+            1
+          ],
+          "participantUserIds": [
+            1
+          ],
+          "createdAt": "2026-09-11T00:00:00Z",
+          "updatedAt": "2026-09-11T00:00:00Z"
+        },
+        "convertedAmountKrw": "501",
+        "missingCurrencies": [],
+        "isComplete": true
+      },
+      {
+        "expense": {
+          "id": 2,
+          "version": 0,
+          "expenseGroup": "PREPARATION",
+          "scheduleId": null,
+          "scheduleItemId": null,
+          "totalAmount": "1.00",
+          "currency": "USD",
+          "category": "OTHER",
+          "name": null,
+          "memo": null,
+          "payerUserIds": [
+            1
+          ],
+          "participantUserIds": [
+            1
+          ],
+          "createdAt": "2026-09-11T00:00:00Z",
+          "updatedAt": "2026-09-11T00:00:00Z"
+        },
+        "convertedAmountKrw": "501",
+        "missingCurrencies": [],
+        "isComplete": true
+      }
+    ],
+    "filtered": {
+      "originalTotals": [
+        {
+          "currency": "USD",
+          "totalAmount": "2.00"
+        }
+      ],
+      "convertedTotalKrw": "1001",
+      "missingCurrencies": [],
+      "isComplete": true
+    },
+    "categories": [
+      {
+        "category": "OTHER",
+        "total": {
+          "originalTotals": [
+            {
+              "currency": "USD",
+              "totalAmount": "2.00"
+            }
+          ],
+          "convertedTotalKrw": "1001",
+          "missingCurrencies": [],
+          "isComplete": true
+        }
+      }
+    ],
+    "days": [
+      {
+        "expenseGroup": "PREPARATION",
+        "scheduleId": null,
+        "total": {
+          "originalTotals": [
+            {
+              "currency": "USD",
+              "totalAmount": "2.00"
+            }
+          ],
+          "convertedTotalKrw": "1001",
+          "missingCurrencies": [],
+          "isComplete": true
+        }
+      }
+    ],
+    "payers": [
+      {
+        "userId": 1,
+        "total": {
+          "originalTotals": [
+            {
+              "currency": "USD",
+              "totalAmount": "2.00"
+            }
+          ],
+          "convertedTotalKrw": "1001",
+          "missingCurrencies": [],
+          "isComplete": true
+        }
+      }
+    ]
+  }
+}
