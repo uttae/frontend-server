@@ -151,7 +151,7 @@ export function ExpenseSelect({
             {options.map((option) => (
               <label
                 key={option.value}
-                className="flex min-h-12 cursor-pointer items-center justify-between text-body-s-emphasis"
+                className={cn("flex min-h-12 cursor-pointer items-center justify-between text-body-s-emphasis", compact && "text-[14px] leading-5")}
               >
                 {option.value === "ALL" ? "전체" : option.label}
                 <input
@@ -185,7 +185,7 @@ export function ExpenseSelect({
               tabIndex={-1}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(option.value)}
-              className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors hover:bg-primary/10 ${index === activeIndex ? "bg-primary/5" : ""}`}
+              className={cn("flex min-h-12 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors hover:bg-primary/10", compact && "text-[14px] leading-5", index === activeIndex && "bg-primary/5")}
             >
               <span className="min-w-0 break-words">{option.label}</span>
               {value === option.value && (
