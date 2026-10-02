@@ -48,7 +48,7 @@ function SideBar() {
 
   return (
     <aside
-      className="flex h-full shrink-0 flex-col items-center overflow-y-auto bg-background [scrollbar-gutter:auto] [scrollbar-width:thin]"
+      className="flex h-full shrink-0 flex-col items-center overflow-y-auto border-r border-border-subtle bg-fill-subtle [scrollbar-gutter:auto] [scrollbar-width:thin]"
       style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}
     >
       <nav aria-label="여행 주요 메뉴" className="flex w-full shrink-0 flex-col items-center">
