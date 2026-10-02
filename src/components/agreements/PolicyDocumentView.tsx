@@ -7,6 +7,7 @@ import { findAgreementByType } from "@/lib/agreements/paths";
 import type { AgreementType } from "@/lib/agreements/types";
 
 import { AgreementMarkdownContent } from "./AgreementMarkdownContent";
+import { PolicyHomeLink } from "./PolicyHomeLink";
 
 type Props = {
   agreementType: AgreementType;
@@ -19,6 +20,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
   if (isPending) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-10 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+        <PolicyHomeLink />
         <LoadingIndicator label="문서 불러오는 중" />
       </div>
     );
@@ -27,6 +29,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
   if (isError) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-primary/35 bg-primary/[0.06] px-6 py-8 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)]">
+        <PolicyHomeLink />
         <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">
           문서를 불러오지 못했습니다
         </p>
@@ -49,6 +52,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
   if (!agreement) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-10 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+        <PolicyHomeLink />
         <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">
           현재 게시된 문서를 찾을 수 없습니다.
         </p>
@@ -58,6 +62,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
 
   return (
     <article className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-8 shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:px-8 sm:py-10">
+      <PolicyHomeLink />
       <header className="border-b border-gray-border pb-6">
         <h2 className="text-heading-m mobile:text-heading-s font-bold text-neutral-900">{agreement.title}</h2>
         <p className="mt-2 text-body-m-regular mobile:text-body-s-regular text-dark-gray">버전 {agreement.version}</p>
