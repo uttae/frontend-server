@@ -53,7 +53,10 @@ export function FullAppProviderStack({ children }: { children: ReactNode }) {
           </AppChromeShell>
         </GoogleMapsProvider>
       </StompProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/* 개발 중 캐시 확인이 필요할 때만 .env.local에 NEXT_PUBLIC_RQ_DEVTOOLS=1 */}
+      {process.env.NEXT_PUBLIC_RQ_DEVTOOLS === "1" ? (
+        <ReactQueryDevtools initialIsOpen={false} />
+      ) : null}
     </QueryClientProvider>
   );
 }
