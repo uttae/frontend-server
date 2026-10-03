@@ -4,13 +4,11 @@ import type { ReactNode } from "react";
 
 import { MobileViewProvider } from "@/contexts/MobileViewContext";
 
-import { MobilePortraitShell } from "./MobilePortraitShell";
-
-/** 앱 루트 — 모바일 감지·가로 회전 셸 */
+/** 앱 루트 — 모바일 감지만 제공하고 화면 방향은 브라우저에 맡긴다. */
 export function MobileChrome({ children }: { children: ReactNode }) {
   return (
     <MobileViewProvider>
-      <MobilePortraitShell>{children}</MobilePortraitShell>
+      {children}
     </MobileViewProvider>
   );
 }
