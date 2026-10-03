@@ -26,13 +26,6 @@
   }
 }
 
-/* 모바일 가로 — 세로 UI 90° 회전 셸 안에서 viewport 단위 보정 */
-[data-mobile-portrait-rotate] .h-screen,
-[data-mobile-portrait-rotate] .min-h-screen {
-  height: 100% !important;
-  min-height: 100% !important;
-}
-
 /* 모바일 하단 탭바(메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */
 html:has([data-mobile-main-tabs]) {
   --toast-bottom-inset: calc(52px + env(safe-area-inset-bottom));

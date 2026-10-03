@@ -1,9 +1,5 @@
 export { readIsMobileDevice } from "./device";
 export {
-  readIsLandscapeOrientation,
-  readIsMobileLandscape,
-} from "./orientation";
-export {
   buildMobilePlanPanelHref,
   MOBILE_PLAN_PANEL_ORDER,
   readMobilePlanPanel,

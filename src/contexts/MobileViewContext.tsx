@@ -28,17 +28,11 @@ export function MobileViewProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    const orientation = window.screen?.orientation;
-
     const sync = () => setState(readMobileViewState());
 
     sync();
-    orientation?.addEventListener("change", sync);
-    window.addEventListener("orientationchange", sync);
     window.addEventListener("resize", sync);
     return () => {
-      orientation?.removeEventListener("change", sync);
-      window.removeEventListener("orientationchange", sync);
       window.removeEventListener("resize", sync);
     };
   }, []);
@@ -53,9 +47,8 @@ export function MobileViewProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       isMobileDevice: state.isMobileDevice,
-      isMobileLandscape: state.isMobileLandscape,
     }),
-    [state.isMobileDevice, state.isMobileLandscape],
+    [state.isMobileDevice],
   );
 
   return (
