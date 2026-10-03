@@ -36,7 +36,17 @@ import {
 } from "./ChatMessageGroup";
 import { PlaceShareCard } from "./PlaceShareCard";
 import { JumpToBottomButton } from "./JumpToBottomButton";
+import { NewMessagePreviewButton } from "./NewMessagePreviewButton";
 import { ChatReadDivider } from "./ChatReadDivider";
+
+/** 일반 채팅(내 것 포함)·장소 공유만 하단 미리보기 대상 — AI·시스템 제외 */
+function isPreviewMessage(message: ChatMessage): boolean {
+  return (
+    message.type === "other" ||
+    message.type === "mine" ||
+    message.type === "place"
+  );
+}
 
 function syncFollowTailFromScrollRoot(
   root: HTMLDivElement,
@@ -106,12 +116,18 @@ export function ChatMessageList({
   const [isAtBottom, setIsAtBottom] = useState(true);
   /** 하단으로 부드럽게 이동 중 상태 정리용 */
   const [smoothJumpToBottom, setSmoothJumpToBottom] = useState(false);
+  /** 위로 스크롤한 동안 도착한 다른 멤버의 최신 메시지 */
+  const [newMessagePreview, setNewMessagePreview] =
+    useState<ChatMessage | null>(null);
+  /** 스크롤바 폭(px) — 하단 버튼이 스크롤바에 가리지 않게 그만큼 오른쪽을 비운다 */
+  const [scrollbarWidth, setScrollbarWidth] = useState(0);
 
   const scrollToBottomSmooth = useCallback(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, []);
 
   const handleJumpClick = useCallback(() => {
+    setNewMessagePreview(null);
     restoringReadBoundaryRef.current = false;
     followTailRef.current = true;
     if (hasMoreNewer && onJumpToLatest) {
@@ -150,7 +166,10 @@ export function ChatMessageList({
     const near = dist < CHAT_NEAR_BOTTOM_PX;
     followTailRef.current = near;
     setIsAtBottomIfChanged(setIsAtBottom, near);
-    if (near) onAtBottom?.();
+    if (near) {
+      setNewMessagePreview(null);
+      onAtBottom?.();
+    }
   }, [onAtBottom]);
 
   useLayoutEffect(() => {
@@ -225,6 +244,22 @@ export function ChatMessageList({
     const nearAfter = distAfter < CHAT_NEAR_BOTTOM_PX;
     setIsAtBottomIfChanged(setIsAtBottom, nearAfter);
 
+    const newest = messages[count - 1];
+    if (
+      appended &&
+      !nearAfter &&
+      newest &&
+      isPreviewMessage(newest)
+    ) {
+      // 스크롤 보정이 끝난 다음 프레임에 표시 — 그 사이 하단에 닿았으면 띄우지 않는다
+      requestAnimationFrame(() => {
+        const r = scrollRootRef.current;
+        if (!r) return;
+        const d = r.scrollHeight - r.scrollTop - r.clientHeight;
+        if (d >= CHAT_NEAR_BOTTOM_PX) setNewMessagePreview(newest);
+      });
+    }
+
     if (scrollToAnchor && lastScrollAnchorKeyRef.current !== scrollToAnchor.key) {
       lastScrollAnchorKeyRef.current = scrollToAnchor.key;
       const targetId = scrollToAnchor.anchorId;
@@ -281,7 +316,13 @@ export function ChatMessageList({
         setIsAtBottomIfChanged(setIsAtBottom, d < CHAT_NEAR_BOTTOM_PX);
       });
     }
-  }, [messages, scrollToAnchor, groups, readMarkerMessageId, readDividerPlacement]);
+  }, [
+    messages,
+    scrollToAnchor,
+    groups,
+    readMarkerMessageId,
+    readDividerPlacement,
+  ]);
 
   useEffect(() => {
     const root = scrollRootRef.current;
@@ -370,6 +411,9 @@ export function ChatMessageList({
     const lastClientHeightRef = { current: root.clientHeight };
 
     const ro = new ResizeObserver(() => {
+      const sbw = root.offsetWidth - root.clientWidth;
+      setScrollbarWidth((prev) => (prev === sbw ? prev : sbw));
+
       const ch = root.clientHeight;
       if (ch === lastClientHeightRef.current) return;
       lastClientHeightRef.current = ch;
@@ -493,8 +537,20 @@ export function ChatMessageList({
           <div ref={bottomRef} className="h-0 shrink-0" />
         </div>
       </div>
-      {!isAtBottom ? (
-        <JumpToBottomButton isMinimized={isMinimized} onClick={handleJumpClick} />
+      {!isAtBottom && newMessagePreview ? (
+        <NewMessagePreviewButton
+          scrollbarWidth={scrollbarWidth}
+          message={newMessagePreview}
+          isMinimized={isMinimized}
+          onClick={handleJumpClick}
+        />
+      ) : null}
+      {!isAtBottom && !newMessagePreview ? (
+        <JumpToBottomButton
+          isMinimized={isMinimized}
+          scrollbarWidth={scrollbarWidth}
+          onClick={handleJumpClick}
+        />
       ) : null}
     </div>
   );

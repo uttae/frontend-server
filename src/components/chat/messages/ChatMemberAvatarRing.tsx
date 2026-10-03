@@ -37,6 +37,8 @@ export function ChatMemberAvatarRing({
         <img
           src={avatarUrl}
           alt={alt}
+          // 구글 프로필(lh3.googleusercontent.com/a/…)은 Referer가 붙으면 로드를 거부한다
+          referrerPolicy="no-referrer"
           className={cn(
             "h-full w-full object-cover",
             !reduceMotion && "transition-opacity duration-150 ease-out",

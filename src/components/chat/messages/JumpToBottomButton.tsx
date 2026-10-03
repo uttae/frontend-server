@@ -6,12 +6,18 @@ import { cn } from "@/lib/utils";
 export function JumpToBottomButton({
   onClick,
   isMinimized = false,
+  scrollbarWidth = 0,
 }: {
   onClick: () => void;
   isMinimized?: boolean;
+  /** 메시지 목록 스크롤바 폭 — 버튼을 스크롤바 바깥(왼쪽)에 둔다 */
+  scrollbarWidth?: number;
 }) {
   return (
-    <div className="pointer-events-none absolute bottom-3 right-3 z-10">
+    <div
+      className="pointer-events-none absolute bottom-3 z-10"
+      style={{ right: 12 + scrollbarWidth }}
+    >
       <button
         type="button"
         onClick={onClick}

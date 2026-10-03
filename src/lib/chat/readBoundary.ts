@@ -31,16 +31,22 @@ export function resolveReadDividerPlacement(
   slice: readonly ServerChatMessage[],
   lastReadMessageId: string | null,
   beforeSlice: readonly ServerChatMessage[],
+  hasMoreNewer = false,
 ): ReadDividerPlacement {
   if (!lastReadMessageId) {
     return EMPTY_READ_DIVIDER_PLACEMENT;
   }
+  // 경계 뒤에 새 메시지가 없으면 목록 맨 아래에 구분선만 남으므로 그리지 않는다
+  const placeAfter = (messageId: string): ReadDividerPlacement =>
+    !hasMoreNewer && newestServerMessageByCreatedAt([...slice])?.id === messageId
+      ? EMPTY_READ_DIVIDER_PLACEMENT
+      : { afterMessageId: messageId, beforeFirst: false };
   if (slice.some((m) => m.id === lastReadMessageId)) {
-    return { afterMessageId: lastReadMessageId, beforeFirst: false };
+    return placeAfter(lastReadMessageId);
   }
   const beforeNewest = newestServerMessageByCreatedAt([...beforeSlice]);
   if (beforeNewest) {
-    return { afterMessageId: beforeNewest.id, beforeFirst: false };
+    return placeAfter(beforeNewest.id);
   }
   if (slice.length > 0) {
     return { afterMessageId: null, beforeFirst: true };
