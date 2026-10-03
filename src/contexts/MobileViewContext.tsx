@@ -11,7 +11,6 @@ import {
 
 import {
   MOBILE_VIEW_DEFAULT,
-  ORIENTATION_LANDSCAPE_MEDIA_QUERY,
   readMobileViewState,
   type MobileViewState,
 } from "@/lib/mobile-view";
@@ -29,15 +28,17 @@ export function MobileViewProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
-    const orientationMq = window.matchMedia(ORIENTATION_LANDSCAPE_MEDIA_QUERY);
+    const orientation = window.screen?.orientation;
 
     const sync = () => setState(readMobileViewState());
 
     sync();
-    orientationMq.addEventListener("change", sync);
+    orientation?.addEventListener("change", sync);
+    window.addEventListener("orientationchange", sync);
     window.addEventListener("resize", sync);
     return () => {
-      orientationMq.removeEventListener("change", sync);
+      orientation?.removeEventListener("change", sync);
+      window.removeEventListener("orientationchange", sync);
       window.removeEventListener("resize", sync);
     };
   }, []);
