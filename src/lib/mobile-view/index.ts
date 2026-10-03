@@ -1,6 +1,5 @@
 export { readIsMobileDevice } from "./device";
 export {
-  ORIENTATION_LANDSCAPE_MEDIA_QUERY,
   readIsLandscapeOrientation,
   readIsMobileLandscape,
 } from "./orientation";
