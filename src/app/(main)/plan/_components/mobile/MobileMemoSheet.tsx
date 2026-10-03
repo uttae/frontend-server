@@ -62,16 +62,18 @@ export function MobileMemoSheet({
     >
       <label className="flex flex-col gap-4">
         <span className="text-label-m-regular text-text">메모</span>
-        <textarea
-          ref={textareaRef}
-          value={draft}
-          maxLength={MEMO_MAX_LENGTH}
-          onChange={(e) => setDraft(e.target.value)}
-          disabled={isPending}
-          rows={5}
-          placeholder="메모를 입력하세요"
-          className="h-36 w-full resize-none rounded-xl bg-fill p-3 text-body-s-regular text-text outline-none placeholder:text-text-subtle focus:ring-2 focus:ring-primary/30"
-        />
+        <div className="h-36 rounded-[12px] bg-fill py-3 focus-within:ring-2 focus-within:ring-primary/30">
+          <textarea
+            ref={textareaRef}
+            value={draft}
+            maxLength={MEMO_MAX_LENGTH}
+            onChange={(e) => setDraft(e.target.value)}
+            disabled={isPending}
+            rows={5}
+            placeholder="메모를 입력하세요"
+            className="block size-full resize-none bg-transparent px-3 text-body-s-regular text-text outline-none [scrollbar-color:var(--color-border-default)_transparent] [scrollbar-width:thin] placeholder:text-text-subtle"
+          />
+        </div>
       </label>
       <p className="text-caption-l-regular text-text-subtle">
         예약 정보나 함께 기억할 내용을 남겨보세요.
@@ -82,7 +84,7 @@ export function MobileMemoSheet({
             type="button"
             onClick={() => void saveMemo("")}
             disabled={isPending}
-            className="min-h-12 flex-1 rounded-xl border border-border text-label-m-regular text-status-negative disabled:opacity-40"
+            className="min-h-12 flex-1 rounded-[12px] border border-border text-label-m-regular text-status-negative disabled:opacity-40"
           >
             삭제
           </button>
@@ -91,7 +93,7 @@ export function MobileMemoSheet({
           type="button"
           onClick={() => void saveMemo(draft.trim())}
           disabled={isPending || !dirty}
-          className="min-h-12 flex-1 rounded-xl bg-primary text-label-m-regular text-fill-elevate disabled:opacity-40"
+          className="min-h-12 flex-1 rounded-[12px] bg-primary text-label-m-regular text-fill-elevate disabled:opacity-40"
         >
           {isPending ? "저장 중…" : "저장"}
         </button>
