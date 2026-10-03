@@ -1,7 +1,7 @@
 import { readIsMobileDevice } from "./device";
 
 export const ORIENTATION_LANDSCAPE_MEDIA_QUERY =
-  "(orientation: landscape)" as const;
+  "(orientation: landscape) and (max-height: 500px)" as const;
 
 export function readIsLandscapeOrientation(): boolean {
   if (typeof window === "undefined") return false;
