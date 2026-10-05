@@ -54,6 +54,8 @@ type SheetState =
 type MobilePlanItineraryProps = Readonly<{
   roomId: string;
   scheduleId: number;
+  /** `9월 21일` — 방문 시간 시트에 표시 */
+  monthDayLabel?: string;
   /** 전체 화면 검색으로 이 일차에 장소 추가 — 탭 제스처 안에서 호출해야 한다 */
   onRequestAddPlace: (places: PlanPlace[]) => void;
 }>;
@@ -62,6 +64,7 @@ type MobilePlanItineraryProps = Readonly<{
 export function MobilePlanItinerary({
   roomId,
   scheduleId,
+  monthDayLabel,
   onRequestAddPlace,
 }: MobilePlanItineraryProps) {
   const expenses = useExpenseContext();
@@ -256,6 +259,7 @@ export function MobilePlanItinerary({
           scheduleId={scheduleId}
           itemId={sheetItemId}
           placeName={sheetPlace.title}
+          dateLabel={monthDayLabel}
           startTime={sheetPlace.startTime}
           endTime={sheetPlace.endTime}
           onClose={() => setSheet(null)}

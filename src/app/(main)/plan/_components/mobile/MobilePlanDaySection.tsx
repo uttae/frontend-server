@@ -27,6 +27,8 @@ type MobilePlanDaySectionProps = Readonly<{
   dayLabel: string;
   /** `09. 21 수` */
   dateLabel: string;
+  /** `9월 21일` — 방문 시간 시트에 표시 */
+  monthDayLabel: string;
   menuDisabled: boolean;
   /** 순서 편집 모드 — 모든 일차가 함께 들어가고 나온다 */
   editing: boolean;
@@ -43,6 +45,7 @@ export function MobilePlanDaySection({
   scheduleId,
   dayLabel,
   dateLabel,
+  monthDayLabel,
   menuDisabled,
   editing,
   onStartEditing,
@@ -104,6 +107,7 @@ export function MobilePlanDaySection({
       <MobilePlanItinerary
         roomId={roomId}
         scheduleId={scheduleId}
+        monthDayLabel={monthDayLabel}
         onRequestAddPlace={(places) => onRequestAddPlace(scheduleId, places)}
       />
 
