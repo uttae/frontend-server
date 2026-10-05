@@ -6,19 +6,15 @@ import { useInViewport } from "@/hooks/useInViewport";
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
-import {
-  buildGoogleMapsPlaceUrl,
-  normalizeGooglePlaceResourceId,
-} from "@/lib/maps";
 import { cn } from "@/lib/utils";
 
 export type BookmarkPlacePreviewCardProps = {
   name: string;
   address?: string;
   primaryTypeDisplayName?: string;
-  /** 있으면 사진 클릭 시 Google Maps로 이동 */
   googlePlaceId?: string;
   onClick?: () => void;
+  onThumbnailClick?: () => void;
   className?: string;
   contentClassName?: string;
 };
@@ -29,6 +25,7 @@ export function BookmarkPlacePreviewCard({
   primaryTypeDisplayName,
   googlePlaceId,
   onClick,
+  onThumbnailClick,
   className,
   contentClassName,
 }: BookmarkPlacePreviewCardProps) {
@@ -38,12 +35,6 @@ export function BookmarkPlacePreviewCard({
   });
 
   const rawGid = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
-  const googleMapsPlaceUrl = rawGid.length
-    ? buildGoogleMapsPlaceUrl({
-        placeId: normalizeGooglePlaceResourceId(rawGid),
-        query: name,
-      })
-    : null;
 
   const thumbnailMedia = imageUrl ? (
     // eslint-disable-next-line @next/next/no-img-element -- remote place photo URL
@@ -100,15 +91,15 @@ export function BookmarkPlacePreviewCard({
         ) : null}
       </div>
 
-      {googleMapsPlaceUrl ? (
-        <a
+      {rawGid.length && onThumbnailClick ? (
+        <button
           ref={thumbnailRef}
-          href={googleMapsPlaceUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          aria-label={`${name} — Google Maps에서 열기`}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onThumbnailClick();
+          }}
+          aria-label={`${name} 지도에서 보기`}
           className="relative block h-[80px] w-[80px] shrink-0 cursor-pointer overflow-hidden rounded-lg bg-light-gray transition hover:brightness-105"
           draggable={false}
         >
@@ -119,7 +110,7 @@ export function BookmarkPlacePreviewCard({
           >
             <MapPin className="h-3 w-3" strokeWidth={2.4} />
           </span>
-        </a>
+        </button>
       ) : (
         <div
           ref={thumbnailRef}
