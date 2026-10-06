@@ -49,7 +49,7 @@ export function ConfirmDialog({
       stopPortalEventPropagation
     >
       {description ? (
-        <p className={appearance === "ledger" ? "text-[14px] leading-5 text-text-subtle" : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"}>
+        <p className={appearance === "ledger" ? "whitespace-pre-line text-[14px] leading-5 text-text-subtle" : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"}>
           {description}
         </p>
       ) : null}

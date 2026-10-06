@@ -4,6 +4,8 @@ import { useEffect, useId, useRef, type ReactNode, type SyntheticEvent } from "r
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 // 포털의 이벤트가 React 트리의 카드 클릭·드래그 호스트로 전파되는 것만 막는다.
 // 사용자 동작은 내부 버튼이 담당하며, 키 입력은 document의 포커스·Escape 처리로 전달한다.
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
@@ -44,16 +46,19 @@ export function SettingsDialog({
   className = "",
   overlayClassName = "",
   showCloseButton = true,
+  titleAccessory,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
-  size?: "default" | "compact";
+  size?: "default" | "medium" | "compact";
   appearance?: "default" | "ledger";
   stopPortalEventPropagation?: boolean;
   className?: string;
   overlayClassName?: string;
   showCloseButton?: boolean;
+  /** 제목 바로 옆에 붙는 보조 액션 — 예: 여행 삭제 */
+  titleAccessory?: ReactNode;
 }) {
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -75,7 +80,8 @@ export function SettingsDialog({
         'button:not(:disabled), a[href], summary, input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
       ),
     ];
-    focusable()[0]?.focus();
+    // 제목 옆 위험 액션 등 `data-skip-autofocus`는 첫 포커스에서 건너뛴다
+    (focusable().find((node) => !node.hasAttribute("data-skip-autofocus")) ?? focusable()[0])?.focus();
 
     function handleKey(event: KeyboardEvent) {
       if (event.defaultPrevented) return;
@@ -131,12 +137,15 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className={`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl ${appearance === "ledger" ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"} ${className}`}
+        className={cn(`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : size === "medium" ? "max-w-[600px]" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl ${appearance === "ledger" ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"}`, className)}
       >
         <div className={`${appearance === "ledger" ? "mb-6" : "mb-2"} flex items-center justify-between gap-4`}>
-          <h2 id={titleId} className={appearance === "ledger" ? "text-[20px] leading-7 font-bold" : "text-title-l mobile:text-title-m font-bold"}>
-            {title}
-          </h2>
+          <div className="flex min-w-0 items-baseline gap-2">
+            <h2 id={titleId} className={appearance === "ledger" ? "text-[20px] leading-7 font-bold" : "text-title-l mobile:text-title-m font-bold"}>
+              {title}
+            </h2>
+            {titleAccessory}
+          </div>
           {showCloseButton && <button
             type="button"
             aria-label={`${title} 닫기`}
