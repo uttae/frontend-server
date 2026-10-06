@@ -33,13 +33,15 @@ describe("invite preview proxy indexing contract", () => {
   it.each([
     "Discordbot/2.0",
     "KAKAOTALK-SCRAP/1.0",
+    "facebookexternalhit/1.1; kakaotalk-scrap/1.0; +https://devtalk.kakao.com/t/scrap/33984",
     "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
     "facebookexternalhit/1.1",
     "Twitterbot/1.0",
     "LinkedInBot/1.0",
     "TelegramBot (like TwitterBot)",
     "WhatsApp/2.23",
-    "Line/13.0",
+    "line-poker/1.0",
+    "facebookexternalhit/1.1;line-poker/1.0",
   ])("rewrites supported social preview UA %s with noindex headers", async (ua) => {
     const response = await proxy(inviteRequest(ua));
 
@@ -56,6 +58,19 @@ describe("invite preview proxy indexing contract", () => {
     "DuckDuckBot/1.1; (+http://duckduckgo.com/duckduckbot.html)",
     "Mozilla/5.0 (compatible; ExampleCrawler/1.0)",
   ])("does not turn search crawler UA %s into a preview response", async (ua) => {
+    const response = await proxy(inviteRequest(ua));
+
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    expect(response.headers.get("x-middleware-next")).toBe("1");
+    expect(verifySessionWithOptionalRefresh).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 KAKAOTALK 10.8.0",
+    "Mozilla/5.0 (Linux; Android 14; SM-S918N Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0.6367.82 Mobile Safari/537.36;KAKAOTALK 2410800",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Safari Line/14.8.0",
+    "Mozilla/5.0 (Linux; Android 14; SM-S918N Build/UP1A.231005.007; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/124.0.6367.82 Mobile Safari/537.36 Line/14.8.0/IAB",
+  ])("serves the app page to in-app browser UA %s", async (ua) => {
     const response = await proxy(inviteRequest(ua));
 
     expect(response.headers.get("x-middleware-rewrite")).toBeNull();
