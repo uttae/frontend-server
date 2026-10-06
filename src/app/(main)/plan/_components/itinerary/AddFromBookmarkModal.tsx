@@ -16,9 +16,11 @@ import {
   useCreateScheduleItem,
   useRoomBookmarks,
 } from "@/hooks/useRooms";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { placePreviewQueryOptions } from "@/lib/places/place-queries";
+import type { PlacePreview } from "@/lib/api/places";
 import type { RoomBookmark } from "@/lib/api/rooms";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
@@ -189,6 +191,32 @@ export function AddFromBookmarkModal({
     ],
   );
 
+  const openPlaceOnMap = useOpenPlaceOnMap();
+  const selectedCategoryColor = categories?.find(
+    (c) => c.categoryId === selectedCategoryId,
+  )?.colorCode;
+
+  const handleOpenOnMap = useCallback(
+    (googlePlaceId: string, preview: PlacePreview) => {
+      if (busy) return;
+      onClose();
+      openPlaceOnMap(
+        {
+          name: preview.name,
+          category: "",
+          rating: null,
+          address: preview.formattedAddress,
+          googlePlaceId: googlePlaceId.trim(),
+          location: preview.location,
+          fromBookmark: true,
+          bookmarkCategoryColor: selectedCategoryColor,
+        },
+        { itinerarySource: "bookmark" },
+      );
+    },
+    [busy, onClose, openPlaceOnMap, selectedCategoryColor],
+  );
+
   return (
     <div
       role="presentation"
@@ -328,6 +356,9 @@ export function AddFromBookmarkModal({
                         busy && !rowAdding && "pointer-events-none opacity-60",
                       )}
                       onClick={() => void handleAddPlace(googlePlaceId)}
+                      onThumbnailClick={() =>
+                        handleOpenOnMap(googlePlaceId, preview)
+                      }
                     />
                   );
                 })
