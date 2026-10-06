@@ -1,15 +1,12 @@
 "use client";
 
-import { CheckIcon, XIcon } from "lucide-react";
-
 import {
   useApproveJoinRequest,
   useJoinRequests,
   useRejectJoinRequest,
 } from "@/hooks/useRooms";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import type { JoinRequest } from "@/lib/api/rooms";
-import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
-import { cn } from "@/lib/utils";
 
 type Props = {
   roomId: string;
@@ -37,53 +34,41 @@ function JoinRequestCard({
   const isPending = isApproving || isRejecting;
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 py-3",
-        MAIN_CARD_INNER_PADDING_X_CLASS,
-      )}
-    >
-      {/* avatar */}
-      <div className="relative flex-shrink-0">
-        {request.profileImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={request.profileImageUrl}
-            alt={request.nickname}
-            className="h-9 w-9 rounded-full object-cover"
-          />
-        ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-primary">
-            {request.nickname.charAt(0)}
-          </div>
-        )}
-      </div>
+    <div className="flex items-center gap-3">
+      <UserAvatar
+        user={request}
+        size={36}
+        className="bg-primary-subtle"
+        initialClassName="font-medium text-primary"
+      />
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-gray-800">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <p className="truncate text-body-m-regular font-medium mobile:text-body-s-regular text-text">
           {request.nickname}
         </p>
-        <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+        <p className="text-caption-m-regular text-text-subtle">
           {formatRelativeTime(request.requestedAt)}
         </p>
       </div>
 
-      <div className="flex gap-1.5">
+      <div className="flex shrink-0 gap-2">
         <button
-          onClick={() => approve({ roomId, requestId: request.requestId })}
-          disabled={isPending}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary transition-colors hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="승인"
-        >
-          <CheckIcon size={14} strokeWidth={2.5} />
-        </button>
-        <button
+          type="button"
           onClick={() => reject({ roomId, requestId: request.requestId })}
           disabled={isPending}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-status-negative/30 bg-status-negative/10 text-status-negative transition-colors hover:bg-status-negative/20 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label="거절"
+          aria-label={`${request.nickname} 참여 거절`}
+          className="cursor-pointer rounded-lg border border-border bg-fill-subtle px-4 py-2 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:active:bg-fill-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
         >
-          <XIcon size={14} strokeWidth={2.5} />
+          거절
+        </button>
+        <button
+          type="button"
+          onClick={() => approve({ roomId, requestId: request.requestId })}
+          disabled={isPending}
+          aria-label={`${request.nickname} 참여 승인`}
+          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-label-m-emphasis text-text-inverse transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
+        >
+          승인
         </button>
       </div>
     </div>
@@ -91,47 +76,27 @@ function JoinRequestCard({
 }
 
 export function JoinRequestsSection({ roomId }: Props) {
-  const { data, isLoading } = useJoinRequests(roomId);
+  const { data } = useJoinRequests(roomId);
   const requests = data?.requests ?? [];
-
-  if (isLoading) {
-    return (
-      <section className="flex flex-col gap-3">
-        <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
-          입장 요청
-        </p>
-        <div className="flex items-center justify-center rounded-xl border border-gray-border bg-white py-6">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
-        </div>
-      </section>
-    );
-  }
 
   if (requests.length === 0) {
     return null;
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-center gap-2">
-        <p className="text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
-          입장 요청
-        </p>
-        <span className="rounded-full bg-primary px-1.5 py-0.5 text-body-xs-emphasis font-bold leading-none text-white">
-          {requests.length}
-        </span>
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-primary/20 bg-white shadow-sm">
-        {requests.map((req, i) => (
-          <div
-            key={req.requestId}
-            className={i < requests.length - 1 ? "border-b border-gray-border" : ""}
-          >
-            <JoinRequestCard request={req} roomId={roomId} />
-          </div>
-        ))}
-      </div>
-    </section>
+    <>
+      <section aria-label="참여 요청" className="flex flex-col gap-3">
+        <h2 className="flex items-baseline gap-2 text-title-s text-text">
+          참여 요청
+          <span className="text-body-m-regular font-medium text-primary">{requests.length}</span>
+        </h2>
+        <div className="flex flex-col gap-4">
+          {requests.map((req) => (
+            <JoinRequestCard key={req.requestId} request={req} roomId={roomId} />
+          ))}
+        </div>
+      </section>
+      <hr className="border-border-subtle" />
+    </>
   );
 }

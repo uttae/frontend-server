@@ -68,7 +68,7 @@ it("opens the selected room's invite link without regenerating it and restores f
   expect(state.regenerate).not.toHaveBeenCalled();
   await click("복사");
   expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/existing-code`);
-  expect(button("복사됨 ✓")).toBeDefined();
+  expect(button("복사됨")).toBeDefined();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(document.querySelector("dialog[open]")).toBeNull();
   expect(document.activeElement).toBe(button("제주 여행 더보기"));
@@ -104,7 +104,7 @@ it("reports clipboard failure without claiming the link was copied", async () =>
   await openInvite();
   await click("복사");
   expect(state.toastError).toHaveBeenCalled();
-  expect(button("복사됨 ✓")).toBeUndefined();
+  expect(button("복사됨")).toBeUndefined();
 });
 
 it("regenerates only on request and keeps the existing link when regeneration fails", async () => {
@@ -126,7 +126,7 @@ it("blocks copying and sharing the old link while regeneration is pending", asyn
   state.pending = true;
   await render();
   expect(button("복사").disabled).toBe(true);
-  expect(button("친구에게 공유").disabled).toBe(true);
+  expect(button("공유").disabled).toBe(true);
   expect(document.querySelector<HTMLInputElement>('input[aria-label="초대 링크"]')?.disabled).toBe(true);
   state.pending = false;
   await act(async () => state.regenerate.mock.calls[0][1].onSuccess({ inviteCode: "new-code" }));

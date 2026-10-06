@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
+import { MenuDotHorizontalIcon, UserEditIcon, UserXIcon } from "@/assets/icons";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import type { RoomMemberStatus } from "@/lib/api/rooms";
-import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
 
 export type MemberRole = "HOST" | "MEMBER";
@@ -12,12 +12,11 @@ export type MemberRole = "HOST" | "MEMBER";
 export type MemberCardData = {
   id: string;
   name: string;
-  avatarInitial: string;
   profileImageUrl?: string | null;
   role: MemberRole;
   status?: RoomMemberStatus;
   isCurrentUser?: boolean;
-  /** GET /rooms/.../members 의 `isOnline` — LEFT 또는 미지정 시 접속 상태 배지를 숨깁니다 */
+  /** GET /rooms/.../members 의 `isOnline` — LEFT 또는 미지정 시 접속 상태를 숨깁니다 */
   connectionStatus?: "online" | "offline";
 };
 
@@ -28,35 +27,9 @@ type Props = {
   onTransfer: (memberId: string) => void;
 };
 
-function Avatar({
-  name,
-  initial,
-  imageUrl,
-}: {
-  name: string;
-  initial: string;
-  imageUrl?: string | null;
-}) {
-  if (imageUrl) {
-    return (
-      <Image
-        src={imageUrl}
-        alt={name}
-        width={36}
-        height={36}
-        className="h-9 w-9 rounded-full object-cover"
-      />
-    );
-  }
-  return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-primary">
-      {initial}
-    </div>
-  );
-}
-
 export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) {
   const isLeft = member.status === "LEFT";
+  const isOnline = member.connectionStatus === "online";
   const canAct =
     isViewerHost &&
     !member.isCurrentUser &&
@@ -73,128 +46,88 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
         setOpen(false);
       }
     }
+    function handleEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [open]);
 
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3 rounded-xl py-2.5",
-        MAIN_CARD_INNER_PADDING_X_CLASS,
-        isLeft && "opacity-60",
-      )}
-    >
-      {/* Avatar */}
-      <div className="relative flex-shrink-0">
-        <Avatar
-          name={member.name}
-          initial={member.avatarInitial}
-          imageUrl={member.profileImageUrl}
-        />
-      </div>
+    <div className={cn("flex min-h-[72px] items-center gap-3", isLeft && "opacity-60")}>
+      <UserAvatar
+        user={{ nickname: member.name, profileImageUrl: member.profileImageUrl ?? null }}
+        size={36}
+        className={isOnline ? "bg-primary-subtle ring-2 ring-status-positive" : "bg-fill ring-1 ring-border-subtle"}
+        initialClassName={cn("font-medium", isOnline ? "text-primary" : "text-text-subtle")}
+      />
 
-      {/* Name + role */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-gray-800">
-            {member.name}
-          </span>
-        </div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <span className={cn("truncate text-body-m-regular font-medium mobile:text-body-s-regular", isOnline || member.isCurrentUser ? "text-text" : "text-text-subtle")}>
+          {member.name}
+          {member.isCurrentUser ? " (나)" : ""}
+        </span>
+        <div className="flex items-center gap-2">
           <span
-            className={`inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none ${
-              member.role === "HOST"
-                ? "bg-primary/10 text-primary"
-                : "bg-gray-100 text-dark-gray"
-            }`}
+            className={cn(
+              "rounded px-1.5 py-0.5 text-label-xs-regular",
+              member.role === "HOST" ? "bg-primary-subtle text-primary" : "bg-fill text-text-subtle",
+            )}
           >
-            {member.role}
+            {member.role === "HOST" ? "방장" : "참여자"}
           </span>
           {isLeft ? (
-            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none bg-gray-100 text-dark-gray">
-              방 나감
+            <span className="text-caption-m-regular text-text-subtle">방 나감</span>
+          ) : member.connectionStatus ? (
+            <span className="flex items-center gap-2 text-caption-m-regular text-text-subtle">
+              <span aria-hidden className={cn("size-1.5 rounded-full", isOnline ? "bg-status-positive" : "bg-icon-disabled")} />
+              {isOnline ? "온라인" : "오프라인"}
             </span>
-          ) : (
-            <>
-              {member.connectionStatus === "online" && (
-                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none bg-emerald-500/15 text-emerald-700">
-                  온라인
-                </span>
-              )}
-              {member.connectionStatus === "offline" && (
-                <span className="inline-flex items-center rounded px-1.5 py-0.5 text-body-xs-emphasis font-semibold leading-none bg-gray-100 text-dark-gray">
-                  오프라인
-                </span>
-              )}
-            </>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {/* ··· dropdown — HOST only, non-self, non-HOST targets */}
       {canAct && (
-        <div ref={menuRef} className="relative flex-shrink-0">
+        <div ref={menuRef} className="relative shrink-0">
           <button
+            type="button"
             onClick={() => setOpen((v) => !v)}
-            className={`flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg border transition-colors ${
-              open
-                ? "border-gray-300 bg-gray-100 text-gray-700"
-                : "border-transparent text-dark-gray hover:border-gray-border hover:bg-gray-50"
-            }`}
-            aria-label="멤버 옵션"
+            aria-label={`${member.name} 옵션`}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            className="flex size-8 cursor-pointer items-center justify-center rounded-lg text-icon transition-colors hover:bg-fill aria-expanded:bg-fill"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
-              <circle cx="2" cy="7" r="1.4" />
-              <circle cx="7" cy="7" r="1.4" />
-              <circle cx="12" cy="7" r="1.4" />
-            </svg>
+            <MenuDotHorizontalIcon size={24} />
           </button>
 
           {open && (
-            <div className="absolute right-0 top-full z-10 mt-1 w-32 rounded-xl border border-gray-border bg-white shadow-md">
+            <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-60 rounded-xl bg-fill-elevate p-2 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
               <button
+                type="button"
+                role="menuitem"
                 onClick={() => {
                   onTransfer(member.id);
                   setOpen(false);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-label-m-regular mobile:text-label-s-regular font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                className="flex h-10 w-full cursor-pointer items-center gap-2.5 border-b-[0.5px] border-border-subtle pl-3.5 text-left text-label-m-regular text-text transition-colors hover:bg-fill"
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="flex-shrink-0 text-dark-gray"
-                >
-                  <path d="M6 1v10M1 6l5-5 5 5" />
-                </svg>
+                <UserEditIcon size={20} className="text-icon-subtle" />
                 방장 위임
               </button>
-              <div className="mx-3 h-px bg-gray-border" />
               <button
+                type="button"
+                role="menuitem"
                 onClick={() => {
                   onKick(member.id);
                   setOpen(false);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-label-m-regular mobile:text-label-s-regular font-medium text-primary transition-colors hover:bg-primary/5"
+                className="flex h-10 w-full cursor-pointer items-center gap-2.5 pl-3.5 text-left text-label-m-regular text-status-negative transition-colors hover:bg-fill"
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  className="flex-shrink-0"
-                >
-                  <path d="M1 1l10 10M11 1L1 11" />
-                </svg>
+                <UserXIcon size={20} />
                 강제 퇴장
               </button>
             </div>
