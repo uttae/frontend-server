@@ -21,10 +21,7 @@ import {
 import { usePlanPlaceCardPhoto } from "@/hooks/usePlanPlaceCardPhoto";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import {
-  buildGoogleMapsPlaceUrl,
-  normalizeGooglePlaceResourceId,
-} from "@/lib/maps";
+import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 import {
@@ -218,12 +215,7 @@ export function PlanPlaceCard({
 
   const rawGooglePlaceId =
     typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
-  const googleMapsPlaceUrl = rawGooglePlaceId.length
-    ? buildGoogleMapsPlaceUrl({
-        placeId: normalizeGooglePlaceResourceId(rawGooglePlaceId),
-        query: place.title,
-      })
-    : null;
+  const hasGooglePlace = rawGooglePlaceId.length > 0;
 
   const memoText = typeof place.memo === "string" ? place.memo.trim() : "";
   const hasMemo = memoText.length > 0;
@@ -334,7 +326,7 @@ export function PlanPlaceCard({
             />
           ) : null;
 
-          if (!googleMapsPlaceUrl) {
+          if (!hasGooglePlace) {
             return (
               <div ref={thumbnailRef} className={PLAN_PLACE_CARD_TW.thumbnail}>
                 {media}
@@ -343,16 +335,8 @@ export function PlanPlaceCard({
           }
 
           return (
-            <a
+            <div
               ref={thumbnailRef}
-              href={googleMapsPlaceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-plan-card-no-drag
-              draggable={false}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-              aria-label={`${place.title} — Google Maps에서 열기`}
               className={cn(
                 PLAN_PLACE_CARD_TW.thumbnail,
                 "block cursor-pointer transition hover:brightness-105",
@@ -365,7 +349,7 @@ export function PlanPlaceCard({
               >
                 <MapPin className="h-3 w-3" strokeWidth={2.4} />
               </span>
-            </a>
+            </div>
           );
         })()}
 

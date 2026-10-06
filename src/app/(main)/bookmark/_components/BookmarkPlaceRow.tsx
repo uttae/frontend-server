@@ -181,6 +181,7 @@ export function BookmarkPlaceRow({
         className="min-w-0 w-full border-0 hover:bg-gray-50 active:bg-gray-100"
         contentClassName="pr-7"
         onClick={onOpenDetail}
+        onThumbnailClick={onOpenDetail}
       />
       <div
         className="absolute right-[6.25rem] top-3 z-10 flex"

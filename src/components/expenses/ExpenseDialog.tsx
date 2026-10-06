@@ -53,7 +53,7 @@ export function ExpenseDialog({
         event.preventDefault();
         onClose();
       }}
-      className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]" : ""} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]`}
+      className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]" : "mobile:h-[70dvh] mobile:max-h-[70dvh] max-sm:h-[70dvh] max-sm:max-h-[70dvh]"} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]`}
     >
       <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full max-sm:h-full max-sm:max-h-full">
         <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-5 mobile:pt-5">

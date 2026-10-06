@@ -14,6 +14,13 @@ export function formatMobileDayDate(ymd: string): string {
   return `${mm}. ${dd} ${WEEKDAYS_KO[d.getDay()]}`;
 }
 
+/** `2026-09-28` → `9월 28일` */
+export function formatMonthDayKo(ymd: string): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
+  const d = parseLocalYmd(ymd);
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+}
+
 /**
  * 모바일 비용 요약 — 지출이 가장 많은 통화의 합계만 보여주고, 다른 통화 지출은 건수로 붙인다.
  * 예: `357 KRW`, `357 KRW 외 1건`. 지출이 없으면 null.
