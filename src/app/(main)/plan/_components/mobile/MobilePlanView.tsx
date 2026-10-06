@@ -10,7 +10,7 @@ import type { RoomSchedule } from "@/lib/api/rooms/schedules";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import type { MapSearchPlaceEntry } from "@/lib/map-search-history";
-import { formatMobileDayDate } from "@/lib/plan/mobilePlanFormat";
+import { formatMobileDayDate, formatMonthDayKo } from "@/lib/plan/mobilePlanFormat";
 import { planCopy } from "@/lib/plan/planCopy";
 import { dayNumberForInsertAfterDayIndex } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -154,6 +154,7 @@ export function MobilePlanView({
           scheduleId={schedule.scheduleId}
           dayLabel={`${dayIndex + 1}일차`}
           dateLabel={formatMobileDayDate(schedule.date)}
+          monthDayLabel={formatMonthDayKo(schedule.date)}
           menuDisabled={menuDisabled || isCreatingDay}
           editing={editing}
           onStartEditing={() => setEditing(true)}
