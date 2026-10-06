@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({ mobile: true, pathname: "/plan/room" }));
+vi.mock("@/components/layout/HeaderMemberPreview", () => ({ HeaderMemberPreview: () => null }));
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams() }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: React.ComponentProps<"a">) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: state.mobile }) }));
@@ -52,7 +53,7 @@ it("opens the mobile menu with working destinations and closes it with Escape", 
   await act(async () => menuButton.click());
   const menu = host.querySelector('[aria-label="여행방 메뉴"]')!;
   expect(menu).not.toBeNull();
-  expect(menu.querySelector('a[href="/member-settings"]')?.textContent).toContain("멤버 관리");
+  expect(menu.querySelector('a[href="/member-settings"]')?.textContent).toContain("초대하기");
   expect(menu.querySelectorAll("a[href^='http']")).toHaveLength(2);
   expect(menu.querySelector('button')?.textContent).toContain("방 정보 수정");
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));

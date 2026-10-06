@@ -8,6 +8,8 @@ const state = vi.hoisted(() => ({
   isHost: true, isLoading: false, missing: false, pending: false,
   update: vi.fn(),
 }));
+vi.mock("next/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/navigation")>()), useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+vi.mock("@/components/layout/HeaderMemberPreview", () => ({ HeaderMemberPreview: () => null }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: state.room }) }));
 vi.mock("@/hooks/useRooms", () => ({
