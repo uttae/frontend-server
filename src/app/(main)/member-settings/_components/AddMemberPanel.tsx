@@ -23,6 +23,8 @@ type Props = {
   isHost?: boolean;
   isRoomDetailLoading: boolean;
   isRoomDetailError: boolean;
+  /** 안내 문구 — 모달처럼 바깥에서 본문으로 보여줄 때는 false */
+  showDescription?: boolean;
 };
 
 function normalizeInviteCode(inviteCode: string | null | undefined): string {
@@ -37,6 +39,7 @@ export function AddMemberPanel({
   isHost,
   isRoomDetailLoading,
   isRoomDetailError,
+  showDescription = true,
 }: Props) {
   const roomIdTrim = roomId.trim();
   // 초대 코드 발급·재발급 API는 방장 전용 — 참여자는 서버가 내려준 코드가 있을 때만 링크를 보여준다
@@ -169,9 +172,11 @@ export function AddMemberPanel({
   return (
     <div className="min-w-0">
       <div className="flex flex-col gap-3">
-        <p className="text-body-s-regular mobile:text-body-xs-regular text-text-subtle">
-          링크를 공유해 함께 여행을 계획해 보세요.
-        </p>
+        {showDescription ? (
+          <p className="text-body-s-regular mobile:text-body-xs-regular text-text-subtle">
+            링크를 공유해 함께 여행을 계획해 보세요.
+          </p>
+        ) : null}
 
         <div className="flex h-12 min-w-0 items-center gap-1 rounded-lg border border-border bg-fill pl-3.5 pr-1.5">
           <div className="flex min-w-0 flex-1 items-center">

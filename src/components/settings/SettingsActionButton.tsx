@@ -12,6 +12,18 @@ export const settingsActionButtonVariantClass = {
     "rounded-full border border-transparent bg-primary py-2.5 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
 } as const;
 
+/** Figma Alert Dialog 버튼 — Secondary와 Primary(Neutral·Brand Solid·Critical) */
+export const alertDialogButtonClass = {
+  secondary:
+    "h-12 cursor-pointer rounded-lg bg-fill px-3.5 text-label-l-emphasis text-text transition-colors enabled:hover:bg-fill-strong disabled:cursor-not-allowed disabled:text-text-disabled",
+  neutral:
+    "h-12 cursor-pointer rounded-lg bg-[var(--gray-800)] px-3.5 text-label-l-emphasis text-text-inverse transition-opacity enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
+  brand:
+    "h-12 cursor-pointer rounded-lg bg-primary px-3.5 text-label-l-emphasis text-text-inverse transition-opacity enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
+  critical:
+    "h-12 cursor-pointer rounded-lg bg-status-negative px-3.5 text-label-l-emphasis text-text-inverse transition-opacity enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40",
+} as const;
+
 export type SettingsActionButtonVariant = keyof typeof settingsActionButtonVariantClass;
 
 type SettingsActionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

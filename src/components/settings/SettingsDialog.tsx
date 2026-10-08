@@ -52,7 +52,8 @@ export function SettingsDialog({
   onClose: () => void;
   children: ReactNode;
   size?: "default" | "medium" | "compact";
-  appearance?: "default" | "ledger";
+  /** `alert` — Figma Alert Dialog(폭 400, 여백 20, 제목 title/lg) */
+  appearance?: "default" | "ledger" | "alert";
   stopPortalEventPropagation?: boolean;
   className?: string;
   overlayClassName?: string;
@@ -119,11 +120,14 @@ export function SettingsDialog({
     };
   }, [onClose]);
 
+  const isAlert = appearance === "alert";
+  const isCompactSurface = appearance === "ledger" || isAlert;
+
   return createPortal(
     <div
       ref={overlayRef}
       {...(stopPortalEventPropagation ? portalEventBoundary : {})}
-      className={`fixed inset-0 z-[210] flex items-center justify-center ${appearance === "ledger" ? "bg-[#0f1724]/35 p-5" : "bg-black/40 p-4 backdrop-blur-sm"} ${overlayClassName}`}
+      className={`fixed inset-0 z-[210] flex items-center justify-center ${isCompactSurface ? "bg-[#0f1724]/35 p-5" : "bg-black/40 p-4 backdrop-blur-sm"} ${overlayClassName}`}
     >
       <button
         type="button"
@@ -137,11 +141,16 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className={cn(`relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : size === "medium" ? "max-w-[600px]" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl ${appearance === "ledger" ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"}`, className)}
+        className={cn(
+          isAlert
+            ? "relative m-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[400px] overflow-y-auto overscroll-contain rounded-[10px] border-0 bg-fill-elevate p-5 text-text shadow-xl [scrollbar-gutter:auto]"
+            : `relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : size === "medium" ? "max-w-[600px]" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl ${appearance === "ledger" ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"}`,
+          className,
+        )}
       >
         <div className={`${appearance === "ledger" ? "mb-6" : "mb-2"} flex items-center justify-between gap-4`}>
           <div className="flex min-w-0 items-baseline gap-2">
-            <h2 id={titleId} className={appearance === "ledger" ? "text-[20px] leading-7 font-bold" : "text-title-l mobile:text-title-m font-bold"}>
+            <h2 id={titleId} className={isAlert ? "text-title-l" : appearance === "ledger" ? "text-[20px] leading-7 font-bold" : "text-title-l mobile:text-title-m font-bold"}>
               {title}
             </h2>
             {titleAccessory}
@@ -150,9 +159,9 @@ export function SettingsDialog({
             type="button"
             aria-label={`${title} 닫기`}
             onClick={onClose}
-            className={`flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-bubble-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${appearance === "ledger" ? "mobile:hidden max-sm:hidden" : ""}`}
+            className={`flex shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-bubble-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${isAlert ? "-my-1 -mr-1 size-8" : "h-11 w-11"} ${appearance === "ledger" ? "mobile:hidden max-sm:hidden" : ""}`}
           >
-            <X size={22} aria-hidden />
+            <X size={isAlert ? 20 : 22} aria-hidden />
           </button>}
         </div>
         {children}

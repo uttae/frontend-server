@@ -5,6 +5,8 @@ import {
   useJoinRequests,
   useRejectJoinRequest,
 } from "@/hooks/useRooms";
+import { toast } from "sonner";
+
 import { UserAvatar } from "@/components/user/UserAvatar";
 import type { JoinRequest } from "@/lib/api/rooms";
 
@@ -32,6 +34,21 @@ function JoinRequestCard({
   const { mutate: approve, isPending: isApproving } = useApproveJoinRequest();
   const { mutate: reject, isPending: isRejecting } = useRejectJoinRequest();
   const isPending = isApproving || isRejecting;
+  const variables = { roomId, requestId: request.requestId };
+
+  function handleReject() {
+    reject(variables, {
+      onSuccess: () => toast.success(`${request.nickname}님의 참여 요청을 거절했어요.`),
+      onError: () => toast.error("참여 요청을 거절하지 못했어요. 다시 시도해 주세요."),
+    });
+  }
+
+  function handleApprove() {
+    approve(variables, {
+      onSuccess: () => toast.success(`${request.nickname}님의 참여를 승인했어요.`),
+      onError: () => toast.error("참여 요청을 승인하지 못했어요. 다시 시도해 주세요."),
+    });
+  }
 
   return (
     <div className="flex items-center gap-3">
@@ -54,19 +71,19 @@ function JoinRequestCard({
       <div className="flex shrink-0 gap-2">
         <button
           type="button"
-          onClick={() => reject({ roomId, requestId: request.requestId })}
+          onClick={handleReject}
           disabled={isPending}
           aria-label={`${request.nickname} 참여 거절`}
-          className="cursor-pointer rounded-lg border border-border bg-fill-subtle px-4 py-2 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:active:bg-fill-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
+          className="h-8 cursor-pointer rounded-lg border border-border bg-fill-subtle px-3.5 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:active:bg-fill-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
         >
           거절
         </button>
         <button
           type="button"
-          onClick={() => approve({ roomId, requestId: request.requestId })}
+          onClick={handleApprove}
           disabled={isPending}
           aria-label={`${request.nickname} 참여 승인`}
-          className="cursor-pointer rounded-lg bg-primary px-4 py-2 text-label-m-emphasis text-text-inverse transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
+          className="h-8 cursor-pointer rounded-lg bg-primary px-3.5 text-label-m-emphasis text-text-inverse transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
         >
           승인
         </button>

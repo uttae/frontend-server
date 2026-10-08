@@ -112,7 +112,7 @@ export function useMobileMapTextSearch() {
       result_count_bucket: bucketResultCount(items.length),
       search_mode: search.mode,
     });
-    if (items.length === 0) toast("이 지역에는 검색 결과가 없어요.");
+    if (items.length === 0) toast.info("이 지역에는 검색 결과가 없어요.");
   }, [
     hasActiveSearch,
     isError,

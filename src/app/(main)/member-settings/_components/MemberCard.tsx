@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { MenuDotHorizontalIcon, UserEditIcon, UserXIcon } from "@/assets/icons";
 import { UserAvatar } from "@/components/user/UserAvatar";
@@ -36,24 +37,36 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
     member.role !== "HOST" &&
     !isLeft;
 
-  const [open, setOpen] = useState(false);
+  // 스크롤 영역(헤더 드롭다운) 안에서도 잘리지 않도록 메뉴는 body에 화면 기준 위치로 띄운다
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
+  const open = menuPosition !== null;
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  function toggleMenu() {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    setMenuPosition(open || !rect ? null : { top: rect.bottom + 4, right: window.innerWidth - rect.right });
+  }
 
   useEffect(() => {
     if (!open) return;
+    const close = () => setMenuPosition(null);
     function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (!buttonRef.current?.contains(target) && !menuRef.current?.contains(target)) close();
     }
     function handleEscape(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") close();
     }
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
     };
   }, [open]);
 
@@ -92,10 +105,11 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
       </div>
 
       {canAct && (
-        <div ref={menuRef} className="relative shrink-0">
+        <div className="shrink-0">
           <button
+            ref={buttonRef}
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={toggleMenu}
             aria-label={`${member.name} 옵션`}
             aria-haspopup="menu"
             aria-expanded={open}
@@ -104,14 +118,20 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
             <MenuDotHorizontalIcon size={24} />
           </button>
 
-          {open && (
-            <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-60 rounded-xl bg-fill-elevate p-2 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
+          {menuPosition && createPortal(
+            <div
+              ref={menuRef}
+              role="menu"
+              data-floating-menu
+              style={menuPosition}
+              className="fixed z-[60] w-60 rounded-xl bg-fill-elevate p-2 shadow-[0_2px_10px_rgba(0,0,0,0.1)]"
+            >
               <button
                 type="button"
                 role="menuitem"
                 onClick={() => {
                   onTransfer(member.id);
-                  setOpen(false);
+                  setMenuPosition(null);
                 }}
                 className="flex h-10 w-full cursor-pointer items-center gap-2.5 border-b-[0.5px] border-border-subtle pl-3.5 text-left text-label-m-regular text-text transition-colors hover:bg-fill"
               >
@@ -123,14 +143,15 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
                 role="menuitem"
                 onClick={() => {
                   onKick(member.id);
-                  setOpen(false);
+                  setMenuPosition(null);
                 }}
                 className="flex h-10 w-full cursor-pointer items-center gap-2.5 pl-3.5 text-left text-label-m-regular text-status-negative transition-colors hover:bg-fill"
               >
                 <UserXIcon size={20} />
                 강제 퇴장
               </button>
-            </div>
+            </div>,
+            document.body,
           )}
         </div>
       )}

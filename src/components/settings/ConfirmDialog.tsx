@@ -3,6 +3,7 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
 
 import {
+  alertDialogButtonClass,
   SettingsActionButton,
   SettingsActionButtonRow,
 } from "@/components/settings/SettingsActionButton";
@@ -15,7 +16,9 @@ type Props = {
   cancelLabel?: string;
   isPending?: boolean;
   destructive?: boolean;
-  appearance?: "default" | "ledger";
+  appearance?: "default" | "ledger" | "alert";
+  /** 확인 동작이 실패했을 때 버튼 아래에 보여줄 한 줄 안내 — `alert`에서만 쓴다 */
+  errorMessage?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
@@ -28,6 +31,7 @@ export function ConfirmDialog({
   isPending = false,
   destructive = false,
   appearance = "default",
+  errorMessage,
   onConfirm,
   onCancel,
 }: Props) {
@@ -39,6 +43,38 @@ export function ConfirmDialog({
   const handleClose = useCallback(() => {
     if (!latest.current.isPending) latest.current.onCancel();
   }, []);
+
+  if (appearance === "alert") {
+    return (
+      <SettingsDialog
+        title={title}
+        onClose={handleClose}
+        appearance="alert"
+        showCloseButton={false}
+        stopPortalEventPropagation
+      >
+        {description ? <p className="whitespace-pre-line text-body-l-regular text-text">{description}</p> : null}
+        <div className="mt-4 flex gap-2">
+          <button type="button" className={`flex-1 ${alertDialogButtonClass.secondary}`} onClick={handleClose} disabled={isPending}>
+            {cancelLabel}
+          </button>
+          <button
+            type="button"
+            className={`flex-1 ${alertDialogButtonClass[destructive ? "critical" : "brand"]}`}
+            onClick={onConfirm}
+            disabled={isPending}
+          >
+            {isPending ? "처리 중…" : confirmLabel}
+          </button>
+        </div>
+        {errorMessage ? (
+          <p role="alert" className="mt-2 text-body-s-regular text-status-negative">
+            {errorMessage}
+          </p>
+        ) : null}
+      </SettingsDialog>
+    );
+  }
 
   return (
     <SettingsDialog
