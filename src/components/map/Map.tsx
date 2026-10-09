@@ -30,6 +30,7 @@ import {
   writeRoomMapViewport,
 } from "@/lib/map-room-viewport-storage";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
+import { isMobileMapPathname } from "@/lib/mobile-view";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { useSearchMapPinsStore } from "@/stores/search-map-pins-store";
@@ -271,7 +272,8 @@ function MapSearchResultPins() {
 
 export default function Map() {
   const pathname = usePathname();
-  const isPlanPage = isPlanPath(pathname ?? "");
+  // 모바일 지도(`/map`)도 일정 화면의 지도라 일정에 있는 장소의 북마크 핀을 숨긴다
+  const isPlanPage = isPlanPath(pathname ?? "") || isMobileMapPathname(pathname ?? "");
   const planStopPlaceIds = usePlanItineraryStopNormalizedPlaceIds(isPlanPage);
 
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();

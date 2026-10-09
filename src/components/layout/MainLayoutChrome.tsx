@@ -1,13 +1,18 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { isPackingPath } from "@/lib/room-context-path";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { useChat } from "@/hooks/useChat";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
+import {
+  isChatPathname,
+  isMobileMapPathname,
+  isPlanPathname,
+  legacyPlanViewPath,
+} from "@/lib/mobile-view";
 import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
@@ -22,14 +27,13 @@ import SideBar from "./SideBar";
 function getMobileBackLink(
   pathname: string,
   isMobileDevice: boolean,
-  showMobilePlanSurface: boolean,
-  mobilePlanPanel: string,
 ): { href: string; label: string } | undefined {
-  if (isMobileDevice && pathname.startsWith("/bookmark/")) {
+  if (!isMobileDevice) return undefined;
+  if (pathname.startsWith("/bookmark/")) {
     return { href: "/bookmark", label: "북마크 목록으로 돌아가기" };
   }
-  if (showMobilePlanSurface && mobilePlanPanel === "map") {
-    return { href: buildMobilePlanPanelHref(pathname, "schedule"), label: "일정으로 돌아가기" };
+  if (isMobileMapPathname(pathname)) {
+    return { href: "/plan", label: "일정으로 돌아가기" };
   }
   return undefined;
 }
@@ -37,13 +41,10 @@ function getMobileBackLink(
 export function MainLayoutChrome({ children }: { children: ReactNode }) {
   const { isMobileDevice } = useMobileView();
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { chatState, closeChat } = useChat();
-  const previousRoute = useRef(pathname);
-  useLayoutEffect(() => {
-    if (previousRoute.current !== pathname) closeChat();
-    previousRoute.current = pathname;
-  }, [pathname, closeChat]);
+  // 최대화 채팅은 `/chat` 페이지가 그리고, 레이아웃은 다른 페이지 위에 떠 있는 최소화 채팅만 맡는다
+  const { chatState } = useChat();
   const showDesktopChat = !isMobileDevice && chatState === "maximized";
 
   const isPackingRoute = isPackingPath(pathname);
@@ -56,39 +57,34 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   }
   // Full-width tabs hide an existing map; direct entry does not create one.
   const keepDesktopMap = !isMobileDevice && roomId && (showDesktopMap || mapMountedRoom === roomId);
-  const isPlanRoute = pathname === "/plan" || pathname.startsWith("/plan/");
-  const mobilePlanPanel =
-    isMobileDevice && isPlanRoute
-      ? readMobilePlanPanel(searchParams.get("view"))
-      : "schedule";
-  const showMobilePlanSurface =
-    isMobileDevice && isPlanRoute && mobilePlanPanel !== "schedule";
-  // 모바일 일정은 탭 고정 + 목록만 스크롤하도록 화면이 직접 스크롤을 관리한다
-  const showMobileSchedule =
-    isMobileDevice && isPlanRoute && mobilePlanPanel === "schedule";
+  const isPlanRoute = isPlanPathname(pathname);
+  // 모바일 지도·채팅(`/map`, `/chat`)과 일정은 화면이 직접 스크롤을 관리한다(탭 고정 + 목록만 스크롤)
+  const showMobileSurface =
+    isMobileDevice && (isMobileMapPathname(pathname) || isChatPathname(pathname));
+  const showMobileSchedule = isMobileDevice && isPlanRoute;
   // 뒤로가기 헤더(Figma Default / Type=Back): 북마크 상세 → 목록, 지도 → 일정
-  const mobileBack = getMobileBackLink(pathname, isMobileDevice, showMobilePlanSurface, mobilePlanPanel);
+  const mobileBack = getMobileBackLink(pathname, isMobileDevice);
 
-  let mainContent: ReactNode = children;
-  if (showDesktopChat) mainContent = <ChatPanel inline />;
-  else if (showMobilePlanSurface) {
-    mainContent = mobilePlanPanel === "map" ? <MapWithDetailPanel mobileInline /> : <ChatPanel mobileInline />;
-  }
+  // 예전 `/plan?view=map|chat` 주소로 들어오면 새 경로로 옮긴다(방은 `/plan/[roomId]`가 먼저 저장해 둔다)
+  const legacyViewPath = isMobileDevice && isPlanRoute ? legacyPlanViewPath(searchParams.get("view")) : null;
+  useEffect(() => {
+    if (legacyViewPath) router.replace(legacyViewPath);
+  }, [legacyViewPath, router]);
+
 
   return (
     <main className="flex h-dvh flex-col">
       <div className="relative mx-auto flex min-h-0 flex-1 w-full overflow-hidden rounded-none bg-white">
         <LeftSection>
           <HeaderBar
-            mobilePlanPanel={mobilePlanPanel}
             mobileBackHref={mobileBack?.href}
             mobileBackLabel={mobileBack?.label}
           />
           {isMobileDevice && (pathname === "/cost" || isPackingRoute) ? <TravelToolsSwitcher /> : null}
           <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {!isMobileDevice ? <SideBar /> : null}
-            <MainContentScrollArea fill={isPackingRoute || showMobilePlanSurface || showMobileSchedule || showDesktopChat}>
-              {mainContent}
+            <MainContentScrollArea fill={isPackingRoute || showMobileSurface || showMobileSchedule || showDesktopChat}>
+              {legacyViewPath ? null : children}
             </MainContentScrollArea>
           </section>
           <MobileMainTabs />

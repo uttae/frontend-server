@@ -31,7 +31,9 @@ it("keeps messages and the working AI composer inside one inline panel", async (
   const host = document.createElement("div"); document.body.append(host);
   const root = createRoot(host);
   // `/chat`(최대화)에 북마크에서 들어온 상태
-  useChatPanelStore.setState({ minimized: false, returnPath: "/bookmark", openedInApp: true });
+  useChatPanelStore.setState({ minimized: false });
+  // 앱 안에서 연 채팅 — 돌아갈 기록이 있다
+  Object.defineProperty(window.history, "length", { configurable: true, value: 2 });
   try {
     await act(async () => root.render(<ChatPanel inline />));
     expect(host.querySelectorAll("textarea")).toHaveLength(1);

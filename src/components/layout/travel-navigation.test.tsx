@@ -8,6 +8,8 @@ const state = vi.hoisted(() => ({ pathname: "/plan/room", query: "", mobile: fal
 const history = vi.hoisted(() => [] as string[]);
 const push = vi.hoisted(() => (href: string) => { history.push(state.pathname); state.pathname = href.split("?")[0]; });
 const back = vi.hoisted(() => () => { state.pathname = history.pop() ?? state.pathname; });
+// 브라우저 기록 개수도 가짜 기록에 맞춘다 — 처음 들어온 페이지 1개 + push한 개수
+Object.defineProperty(window.history, "length", { configurable: true, get: () => history.length + 1 });
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.query), useRouter: () => ({ replace: state.replace, push, back }) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: React.ComponentProps<"a">) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: state.mobile }) }));
@@ -35,7 +37,7 @@ let root: Root;
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   Object.assign(state, { pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc", replace: vi.fn() });
-  useChatPanelStore.setState({ minimized: false, returnPath: "/plan", openedInApp: false });
+  useChatPanelStore.setState({ minimized: false });
   history.length = 0;
   HTMLElement.prototype.scrollTo = vi.fn();
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
@@ -102,8 +104,7 @@ it("minimizing goes back in history instead of stacking entries; direct /chat en
   await control("minimize");
   expect(state.pathname).toBe("/bookmark");
   expect(history).toEqual([]);
-  // 주소로 바로 들어온 `/chat` — 앞 기록이 없으므로 /plan으로 바꾼다
-  useChatPanelStore.setState({ minimized: false, openedInApp: false, returnPath: "/plan" });
+  // 새 탭에서 주소로 바로 들어온 `/chat` — 기록이 하나뿐이라 /plan으로 바꾼다
   state.pathname = "/chat"; await render();
   await control("close");
   expect(state.replace).toHaveBeenLastCalledWith("/plan");

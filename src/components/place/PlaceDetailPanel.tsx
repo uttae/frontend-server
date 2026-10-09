@@ -4,6 +4,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
@@ -69,7 +70,8 @@ export function PlaceDetailPanel({
     itinerarySource: selectedItinerarySource,
   } = useSelectedPlace();
   const { sendPlaceMessage, canSend } = useChatActions();
-  const { openChat } = useChat();
+  const { chatState, openChat } = useChat();
+  const { isMobileDevice } = useMobileView();
 
   const itinerarySource = selectedItinerarySource ?? "search";
 
@@ -135,15 +137,19 @@ export function PlaceDetailPanel({
       rating: displayRating ?? 0,
     });
     toast.success("장소를 채팅으로 보냈어요");
-    openChat();
+    // PC는 채팅이 닫혀 있으면 `/chat`으로 열어 보여 준다. 최소화 창이 떠 있거나 이미 `/chat`이면
+    // 그 화면에 바로 보이므로 이동하지 않는다. 모바일은 지도·장소 시트를 그대로 둔다(기존 동작)
+    if (!isMobileDevice && chatState === "closed") openChat();
   }, [
     address,
     canSend,
+    chatState,
     detailData?.formattedAddress,
     detailData?.location,
     displayName,
     displayRating,
     googlePlaceId,
+    isMobileDevice,
     location,
     openChat,
     sendPlaceMessage,
