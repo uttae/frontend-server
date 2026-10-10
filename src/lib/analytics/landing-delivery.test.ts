@@ -1,14 +1,7 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it, vi } from "vitest";
-const sdk = vi.hoisted(() => ({ initAll: vi.fn(async () => {}), track: vi.fn(), setUserId: vi.fn(), setOptOut: vi.fn() }));
-vi.mock("@amplitude/unified", () => sdk);
-vi.mock("./runtime", () => ({ analyticsRuntime: { enabled: true } }));
-vi.mock("./amplitude-runtime", () => ({ amplitudeRuntime: { enabled: true, apiKey: "local-test", sessionReplaySampleRate: 0 } }));
-afterEach(() => {
-  document.cookie = "uttae_analytics_consent=; Max-Age=0; Path=/";
-  delete window.gtag; delete window.dataLayer;
-  vi.resetModules(); vi.clearAllMocks();
-});
+import { expect, it, vi } from "vitest";
+import { sdk } from "./test-support/delivery-fixture";
+
 it("keeps landing events GA-only across real SDK initialization and consent changes", async () => {
   const { analyticsConsentStore: consent } = await import("./consent-store");
   const { denyAnalyticsConsent, grantAnalyticsConsent } = await import("./consent-actions");

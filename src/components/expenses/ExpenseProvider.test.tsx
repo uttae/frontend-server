@@ -916,7 +916,7 @@ it("emits no expense or budget analytics while pending, after rejected writes, o
   expect(analytics.send).not.toHaveBeenCalled();
 });
 
-it.each(["account", "logout", "room", "unmount", "revocation"])("does not attribute late expense and budget success after %s changes", async (change) => {
+async function startPendingExpenseAndBudgetWrites() {
   await mountMutations();
   let finishExpense!: (expense: Expense) => void;
   let finishBudget!: (budget: unknown) => void;
@@ -928,6 +928,15 @@ it.each(["account", "logout", "room", "unmount", "revocation"])("does not attrib
     saving = context.save(record, record.id, record.version);
     budgeting = context.saveBudget({ budgetKrw: "100", expectedVersion: 0 });
   });
+  return async () => {
+    finishExpense({ ...record, version: 3 });
+    finishBudget({ budgetKrw: "100", currency: "KRW", version: 1 });
+    await Promise.all([saving, budgeting]);
+  };
+}
+
+it.each(["account", "logout", "room", "unmount", "revocation"])("does not attribute late expense and budget success after %s changes", async (change) => {
+  const finishWrites = await startPendingExpenseAndBudgetWrites();
   await act(async () => {
     if (change === "unmount") renderer.unmount();
     else if (change === "revocation") getExpenseRecovery(client, "r").revoke();
@@ -940,9 +949,7 @@ it.each(["account", "logout", "room", "unmount", "revocation"])("does not attrib
     }
   });
   await act(async () => {
-    finishExpense({ ...record, version: 3 });
-    finishBudget({ budgetKrw: "100", currency: "KRW", version: 1 });
-    await Promise.all([saving, budgeting]);
+    await finishWrites();
   });
   expect(analytics.send).not.toHaveBeenCalled();
 });
@@ -994,17 +1001,7 @@ it("does not count a settlement that finishes loading after the dialog closes", 
 
 
 it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-roundtrip"])("synchronously fences pending expense and budget analytics on %s before React rerenders", async (change) => {
-  await mountMutations();
-  let finishExpense!: (expense: Expense) => void;
-  let finishBudget!: (budget: unknown) => void;
-  mocks.patch.mockImplementationOnce(() => new Promise(resolve => { finishExpense = resolve; }));
-  mocks.putBudget.mockImplementationOnce(() => new Promise(resolve => { finishBudget = resolve; }));
-  let saving!: Promise<void>;
-  let budgeting!: Promise<unknown>;
-  await act(async () => {
-    saving = context.save(record, record.id, record.version);
-    budgeting = context.saveBudget({ budgetKrw: "100", expectedVersion: 0 });
-  });
+  const finishWrites = await startPendingExpenseAndBudgetWrites();
   // These are the actual synchronous session mutations. No renderer.update or
   // hook identity change occurs before the in-flight REST writes resolve.
   await act(async () => {
@@ -1018,9 +1015,7 @@ it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-ro
       useSessionStore.getState().setCurrentRoomId("next-room");
       if (change === "room-roundtrip") useSessionStore.getState().setCurrentRoomId("r");
     }
-    finishExpense({ ...record, version: 3 });
-    finishBudget({ budgetKrw: "100", currency: "KRW", version: 1 });
-    await Promise.all([saving, budgeting]);
+    await finishWrites();
   });
   expect(analytics.send.mock.calls.filter(([command]) => command === "event")).toEqual([]);
   if (change.endsWith("roundtrip")) {

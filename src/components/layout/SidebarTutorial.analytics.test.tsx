@@ -29,19 +29,28 @@ beforeEach(() => {
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 afterEach(() => { document.body.innerHTML = ""; queryClient.clear(); vi.clearAllMocks(); });
 
-it.each(["room-a", undefined])("keeps the tutorial's starting room (%s) through async skip", async (roomId) => {
-  state.roomId = roomId;
+async function mountPendingTutorial({ attached = false } = {}) {
   let finish!: () => void;
   state.complete.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
   document.body.innerHTML = '<div data-tutorial-target="plan"></div>';
   const host = document.createElement("div");
-  document.body.append(host);
+  if (attached) document.body.append(host);
   const root = createRoot(host);
   await act(async () => root.render(<SidebarTutorial />));
-  expect(state.track.mock.calls[0][0]).toBe("tutorial_begin");
-  expect(state.track.mock.calls[0][1].room_id).toBe(roomId);
+  return { host, root, finish: () => finish() };
+}
+
+async function skipTutorial(host: HTMLDivElement) {
   const skip = [...host.querySelectorAll("button")].find((button) => button.textContent === "건너뛰기")!;
   await act(async () => skip.click());
+}
+
+it.each(["room-a", undefined])("keeps the tutorial's starting room (%s) through async skip", async (roomId) => {
+  state.roomId = roomId;
+  const { host, root, finish } = await mountPendingTutorial({ attached: true });
+  expect(state.track.mock.calls[0][0]).toBe("tutorial_begin");
+  expect(state.track.mock.calls[0][1].room_id).toBe(roomId);
+  await skipTutorial(host);
   state.roomId = "room-b";
   await act(async () => root.render(<SidebarTutorial />));
   await act(async () => finish());
@@ -52,13 +61,8 @@ it.each(["room-a", undefined])("keeps the tutorial's starting room (%s) through 
 
 it("updates the same-user completion cache after unmount without sending a pending exit", async () => {
   state.roomId = "room-a";
-  let finish!: () => void;
-  state.complete.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
-  document.body.innerHTML = '<div data-tutorial-target="plan"></div>';
-  const host = document.createElement("div");
-  const root = createRoot(host);
-  await act(async () => root.render(<SidebarTutorial />));
-  await act(async () => [...host.querySelectorAll("button")].find((button) => button.textContent === "건너뛰기")!.click());
+  const { host, root, finish } = await mountPendingTutorial();
+  await skipTutorial(host);
   await act(async () => root.unmount());
   await act(async () => finish());
   expect(state.track).toHaveBeenCalledTimes(1);
@@ -68,13 +72,8 @@ it("updates the same-user completion cache after unmount without sending a pendi
 
 it("drops the pending exit when the account cache changes before rerender", async () => {
   state.roomId = "room-a";
-  let finish!: () => void;
-  state.complete.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
-  document.body.innerHTML = '<div data-tutorial-target="plan"></div>';
-  const host = document.createElement("div");
-  const root = createRoot(host);
-  await act(async () => root.render(<SidebarTutorial />));
-  await act(async () => [...host.querySelectorAll("button")].find((button) => button.textContent === "건너뛰기")!.click());
+  const { host, root, finish } = await mountPendingTutorial();
+  await skipTutorial(host);
   queryClient.setQueryData(sessionUserQueryKey, { id: 84, tutorialCompleted: false });
   await act(async () => finish());
   expect(state.track).toHaveBeenCalledTimes(1);

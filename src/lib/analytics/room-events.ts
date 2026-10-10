@@ -39,7 +39,7 @@ export function getAnalyticsEventRoomId(
   eventName: string,
   properties: Record<string, unknown> | undefined,
 ): string | undefined {
-  if (!Object.prototype.hasOwnProperty.call(roomScopes, eventName)) return;
+  if (!Object.hasOwn(roomScopes, eventName)) return;
   if (roomScopes[eventName as keyof typeof roomScopes] === "none") return;
   const value = properties?.room_id;
   return typeof value === "string" ? value.trim() || undefined : undefined;

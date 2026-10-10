@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { resolveAnalyticsRoomId } from "./room-context";
+import { isAnalyticsRoomPath, resolveAnalyticsRoomId } from "./room-context";
 
 const session = { currentRoomId: "room-a", sessionReady: true, userId: 42 };
+describe("room route boundaries", () => {
+  it.each(["/plan/room-a///", "/search/?q=value", "/bookmark/folder#section", "/cost"])(
+    "accepts the supported route %s", (pathname) => expect(isAnalyticsRoomPath(pathname)).toBe(true),
+  );
+  it.each(["//search", "search", "/plan//room-a", "/plan/room-a/extra", "/packing", "/search/extra", "/", `/${"/".repeat(10000)}unknown`])(
+    "rejects malformed or unsupported route %#", (pathname) => expect(isAnalyticsRoomPath(pathname)).toBe(false),
+  );
+});
 describe("optional analytics room context", () => {
   it.each(["/plan", "/plan/room-a", "/search", "/cost", "/bookmark/folder-b", "/settings", "/member-settings", "/room-settings"])(
     "uses confirmed selected room for %s", (pathname) => {

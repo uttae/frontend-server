@@ -1,9 +1,19 @@
 import { parseRoomContextPath } from "@/lib/room-context-path";
 
+const roomRootPaths = new Set([
+  "plan", "bookmark", "search", "cost", "settings", "room-settings", "member-settings",
+]);
+const roomDetailPaths = new Set(["plan", "packing", "bookmark"]);
+
 /** Only routes actually rendered under MainRoomGate may use the selected room. */
 export function isAnalyticsRoomPath(pathname: string): boolean {
-  const path = pathname.split(/[?#]/, 1)[0].replace(/\/+$/, "");
-  return /^\/(?:plan(?:\/[^/]+)?|packing\/[^/]+|bookmark(?:\/[^/]+)?|search|cost|settings|room-settings|member-settings)$/.test(path);
+  const path = pathname.split(/[?#]/, 1)[0];
+  let end = path.length;
+  while (end > 0 && path[end - 1] === "/") end--;
+  const parts = path.slice(0, end).split("/");
+  if (parts[0] !== "") return false;
+  if (parts.length === 2) return roomRootPaths.has(parts[1]);
+  return parts.length === 3 && roomDetailPaths.has(parts[1]) && parts[2].length > 0;
 }
 
 export function resolveAnalyticsRoomId({

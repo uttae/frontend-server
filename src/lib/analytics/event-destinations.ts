@@ -36,6 +36,6 @@ const eventDestinations = {
 } as const satisfies Record<AnalyticsEventName | "page_view", AnalyticsDestination>;
 
 export function getAnalyticsEventDestination(name: unknown): AnalyticsDestination | undefined {
-  if (typeof name !== "string" || !Object.prototype.hasOwnProperty.call(eventDestinations, name)) return;
+  if (typeof name !== "string" || !Object.hasOwn(eventDestinations, name)) return;
   return eventDestinations[name as keyof typeof eventDestinations];
 }
