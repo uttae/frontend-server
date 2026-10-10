@@ -56,6 +56,7 @@ export function PlanPageView() {
     if (!roomDetail || lastTrackedPlanIdRef.current === roomDetail.id) return;
     lastTrackedPlanIdRef.current = roomDetail.id;
     trackAnalyticsEvent(AnalyticsEvents.viewPlan, {
+      room_id: roomDetail.id,
       member_count_bucket: bucketMemberCount(roomDetail.memberCount),
       role: toAnalyticsRoomRole(roomDetail.role),
     });

@@ -72,7 +72,7 @@ describe("completeWaitingJoinApproval", () => {
     expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledTimes(1);
     expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(
       AnalyticsEvents.joinPlan,
-      { member_count_bucket: "3_4", role: "member" },
+      { room_id: "room-123", member_count_bucket: "3_4", role: "member" },
     );
     expect(dependencies.cacheRoomDetail).toHaveBeenCalledWith(
       approvedResponse.id,
@@ -94,7 +94,7 @@ describe("completeWaitingJoinApproval", () => {
     expect(completed).toBe(true);
     expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(
       AnalyticsEvents.joinPlan,
-      { member_count_bucket: undefined, role: "member" },
+      { room_id: "room-123", member_count_bucket: undefined, role: "member" },
     );
     expect(dependencies.navigateToPlan).toHaveBeenCalledWith("/plan/room-123");
   });
@@ -119,7 +119,7 @@ describe("completeWaitingJoinApproval", () => {
       expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledTimes(1);
       expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(
         AnalyticsEvents.joinPlan,
-        { member_count_bucket: "3_4", role: "member" },
+        { room_id: "room-123", member_count_bucket: "3_4", role: "member" },
       );
       expect(steps).toEqual(["track:join_group", "navigate"]);
     },

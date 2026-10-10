@@ -12,7 +12,7 @@ import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
 import { FEEDBACK_FORM_URL } from "@/lib/contact";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
-import { buildMobilePlanPanelHref, type MobilePlanPanel } from "@/lib/mobile-view";
+import { isChatPathname, isMobileMapPathname, isPlanPathname, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import { isPackingPath } from "@/lib/room-context-path";
 import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
@@ -23,6 +23,7 @@ import {
   formatRoomTripSubtitleKo,
   tripYmdBoundsFromRoomSources,
 } from "@/lib/plan/tripRange";
+import { HeaderMemberPreview } from "./HeaderMemberPreview";
 import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 
 const mobileIcon = {
@@ -41,11 +42,9 @@ function MobileMenuIcon({ src }: { src: string }) {
 }
 
 const HeaderBar = ({
-  mobilePlanPanel = "schedule",
   mobileBackHref,
   mobileBackLabel = "뒤로 가기",
 }: {
-  mobilePlanPanel?: MobilePlanPanel;
   mobileBackHref?: string;
   mobileBackLabel?: string;
 }) => {
@@ -59,8 +58,8 @@ const HeaderBar = ({
   if (menuState.path !== pathname) setMenuState({ path: pathname, open: false });
   const menuOpen = menuState.path === pathname && menuState.open;
   const closeMenu = () => setMenuState({ path: pathname, open: false });
-  const isPlanRoute = pathname === "/plan" || Boolean(pathname?.startsWith("/plan/"));
-  const showMapShortcut = isPlanRoute || pathname === "/bookmark" || pathname === "/cost" || isPackingPath(pathname ?? "");
+  const isMapPanel = isMobileMapPathname(pathname ?? "");
+  const showMapShortcut = isPlanPathname(pathname ?? "") || isMapPanel || isChatPathname(pathname ?? "") || pathname === "/bookmark" || pathname === "/cost" || isPackingPath(pathname ?? "");
   const { dismiss: dismissFeedbackPrompt } = useSessionPromptVisible(FEEDBACK_FORM_CLICKED_KEY);
   const { roomId } = useCurrentRoomId();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -92,8 +91,7 @@ const HeaderBar = ({
     (roomDetail?.id === rid ? roomDetail.title?.trim() : "") ||
     "";
 
-  const isMapPanel = mobilePlanPanel === "map";
-  const mapHref = buildMobilePlanPanelHref(pathname || "/plan", isMapPanel ? "schedule" : "map");
+  const mapHref = isMapPanel ? "/plan" : MOBILE_MAP_PATH;
   const mobileTitle = displayTitle ? (
     <>
       <div className="truncate text-[18px] font-bold leading-[26px] tracking-[-0.02em] text-text">{displayTitle}</div>
@@ -163,7 +161,7 @@ const HeaderBar = ({
                     <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
                   </button>
                   <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
-                    <MobileMenuIcon src={mobileIcon.members} />멤버 관리
+                    <MobileMenuIcon src={mobileIcon.members} />초대하기
                   </Link>
                   <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.feedback} />피드백
@@ -184,7 +182,7 @@ const HeaderBar = ({
             </Link>
             <div className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border" aria-hidden />
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 px-5 pr-2">
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 px-5">
             <div className="min-w-0 bg-white">
               {currentRoom || displayTitle ? (
                 <>
@@ -202,6 +200,7 @@ const HeaderBar = ({
                 <span className="block truncate text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-tight text-dark-gray">방 정보 없음</span>
               )}
             </div>
+            <HeaderMemberPreview />
           </div>
         </div>
       )}

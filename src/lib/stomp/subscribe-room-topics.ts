@@ -18,10 +18,13 @@ import { parseRoomScheduleMessage } from "@/lib/stomp/schedule-events";
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 import { dispatchUserError } from "@/lib/stomp/user-error-dispatch";
 import { parseUserErrorMessage } from "@/lib/stomp/user-error-events";
+import { readSessionUserId } from "@/lib/session-user-cache";
 export type RoomTopicsUnsubscriber = () => void;
 
 export type SubscribeRoomStompTopicsOptions = {
   onRoomChatMessage?: (msg: ServerChatMessage) => void;
+  /** 같은 계정이 다른 탭에서 방을 나갔을 때 — 강퇴·방 삭제와 달리 개인 큐 알림이 없다 */
+  onSelfLeftRoom?: (roomId: string) => void;
 };
 
 /** 방 단위 members·presence·bookmarks·schedules + messages + 개인 에러 큐(`/user/queue/errors`) 구독; 반환값으로 한 번에 해제 */
@@ -39,6 +42,12 @@ export function subscribeRoomStompTopics(
       const event = parseRoomMemberMessage(message.body);
       if (!event) return;
       dispatchRoomMemberEvent(queryClientRef.current, subscribedRoomId, event);
+      if (
+        event.type === "MEMBER_LEFT" &&
+        event.detail?.userId === readSessionUserId(queryClientRef.current)
+      ) {
+        options.onSelfLeftRoom?.(subscribedRoomId);
+      }
     },
   );
 

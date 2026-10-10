@@ -21,17 +21,14 @@ export const panelTransition: Transition = {
   boxShadow: { duration: 0.25 },
 };
 
-export function getPanelAnimate(isMinimized: boolean) {
-  return {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    borderRadius: isMinimized ? 16 : 0,
-    boxShadow: isMinimized
-      ? "0 20px 40px -8px rgba(0,0,0,0.18)"
-      : "0 0 0 0 rgba(0,0,0,0)",
-  };
-}
+/** 다른 페이지 위에 떠 있는 최소화 채팅 — 최대화는 `/chat` 페이지가 본문으로 그린다 */
+export const minimizedPanelAnimate = {
+  opacity: 1,
+  scale: 1,
+  y: 0,
+  borderRadius: 16,
+  boxShadow: "0 20px 40px -8px rgba(0,0,0,0.18)",
+};
 
 export const chatTapSoft = { scale: 0.96 };
 export const chatTapTransition = {

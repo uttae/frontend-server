@@ -60,6 +60,7 @@ export default function NewTripPage() {
       {
         onSuccess: (room) => {
           trackAnalyticsEvent(AnalyticsEvents.createPlan, {
+            room_id: room.id,
             entry_point: "direct",
             trip_days_bucket: bucketTripDays(room.startDate, room.endDate),
           });

@@ -2,37 +2,17 @@
 
 import { useReducedMotion } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
-import { toast } from "sonner";
 
-import {
-  CoinIcon,
-  LocationAddIcon,
-  PlusIcon,
-  SavedAddIcon,
-  TimeClockIcon,
-  TrashIcon,
-  WriteAddIcon,
-  WriteIcon,
-} from "@/assets/icons";
+import { PlusIcon } from "@/assets/icons";
+import { DashedPlaceholderBox } from "@/components/mobile/DashedPlaceholderBox";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
-import {
-  MobileBottomSheet,
-  MobileSheetMenuItem,
-} from "@/components/mobile/MobileBottomSheet";
-import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
-import { useDeleteScheduleItem, useSchedulePlanPlaces } from "@/hooks/useRooms";
-import { bucketItemCount } from "@/lib/analytics/context";
-import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
+import { useRoomSchedules, useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
-import { normalizeGooglePlaceResourceId } from "@/lib/maps";
-import {
-  insertAnchorAfterItem,
-  resolveInsertIndex,
-  type InsertAnchor,
-} from "@/lib/plan/insertPosition";
+import { buildMapRouteHref } from "@/lib/mobile-view";
+import type { InsertAnchor } from "@/lib/plan/insertPosition";
 import { summarizeExpensesForMobile } from "@/lib/plan/mobilePlanFormat";
 import { planCopy } from "@/lib/plan/planCopy";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
@@ -40,24 +20,17 @@ import {
   scheduleIdsToRouteColors,
   sortedScheduleIdsForRouteColors,
 } from "@/lib/plan/planRouteDayColors";
+import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 
-import { AddFromBookmarkModal } from "../itinerary/AddFromBookmarkModal";
 import { PlanTravelTime } from "../travel-time/PlanTravelTime";
-import { MobileMemoSheet } from "./MobileMemoSheet";
 import { MobilePlanPlaceCard } from "./MobilePlanPlaceCard";
-import { MobileTimeSheet } from "./MobileTimeSheet";
+import { MobilePlanPlaceSheets, openPlaceExpenses, type MobilePlanPlaceSheet } from "./MobilePlanPlaceSheets";
 import { applyPendingPlanMove, useMobilePlanDrag } from "./mobilePlanDrag";
 
 const EMPTY_PLACES: PlanPlace[] = [];
-
-type SheetState =
-  | { kind: "actions"; place: PlanPlace }
-  | { kind: "memo"; place: PlanPlace }
-  | { kind: "time"; place: PlanPlace }
-  | { kind: "delete"; place: PlanPlace };
 
 type MobilePlanItineraryProps = Readonly<{
   roomId: string;
@@ -81,7 +54,8 @@ export function MobilePlanItinerary({
   onPlaceAdded,
 }: MobilePlanItineraryProps) {
   const expenses = useExpenseContext();
-  const openPlaceOnMap = useOpenPlaceOnMap();
+  const router = useRouter();
+  const { data: schedules } = useRoomSchedules(roomId);
   const { data, isLoading, isFetching, isError } = useSchedulePlanPlaces(roomId, scheduleId);
   const serverPlaces = data ?? EMPTY_PLACES;
   const drag = useMobilePlanDrag();
@@ -117,10 +91,7 @@ export function MobilePlanItinerary({
     [serverPlaces],
   );
 
-  const [sheet, setSheet] = useState<SheetState | null>(null);
-  /** anchor: 장소 사이에 넣을 기준, null이면 맨 뒤 */
-  const [bookmarkTarget, setBookmarkTarget] = useState<{ anchor: InsertAnchor | null } | null>(null);
-  const { mutateAsync: removeItem, isPending: isRemoving } = useDeleteScheduleItem();
+  const [sheet, setSheet] = useState<MobilePlanPlaceSheet | null>(null);
 
   const itemExpenses = useCallback(
     (itemId: number | undefined) =>
@@ -130,45 +101,10 @@ export function MobilePlanItinerary({
     [expenses.list.data, scheduleId],
   );
 
+  /** 카드 → 이 일차의 경로 보기(`/map?view=route`)에서 이 장소를 고른 채로 연다 */
   function openPlace(place: PlanPlace) {
-    const loc = place.location;
-    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) {
-      toast.info("지도에 표시할 위치 정보가 없어요.");
-      return;
-    }
-    const rawId = place.googlePlaceId?.trim() ?? "";
-    openPlaceOnMap(
-      {
-        name: place.title,
-        category: "",
-        rating: null,
-        ...(rawId ? { googlePlaceId: normalizeGooglePlaceResourceId(rawId) } : {}),
-        location: { lat: loc.lat, lng: loc.lng },
-        address: place.subtitle,
-      },
-      { analyticsSource: "plan" },
-    );
-  }
-
-  function openItemExpenses(place: PlanPlace) {
-    if (typeof place.itemId !== "number") return;
-    const scoped = itemExpenses(place.itemId);
-    if (scoped.length === 0) expenses.open({ scheduleId, scheduleItemId: place.itemId });
-    else expenses.openScope({ scheduleId, scheduleItemId: place.itemId, label: place.title });
-  }
-
-  async function handleDelete(place: PlanPlace) {
-    if (typeof place.itemId !== "number") return;
-    try {
-      await removeItem({ roomId, scheduleId, itemId: place.itemId });
-      trackAnalyticsEvent(AnalyticsEvents.removeFromItinerary, {
-        item_count_bucket: bucketItemCount(places.length - 1),
-      });
-      toast.success("일정에서 삭제했어요.");
-      setSheet(null);
-    } catch {
-      toast.error("삭제하지 못했어요.");
-    }
+    const dayNumber = sortRoomSchedules(schedules ?? []).findIndex((s) => s.scheduleId === scheduleId) + 1;
+    router.push(buildMapRouteHref(Math.max(dayNumber, 1), place.itemId));
   }
 
   // ─── 방금 추가한 카드로 스크롤 + 강조 ─────────────────────────────────
@@ -186,8 +122,6 @@ export function MobilePlanItinerary({
   }, [places, prefersReducedMotion, recentlyAddedItemId]);
 
   // ─── 렌더 ────────────────────────────────────────────────────────────
-  const sheetPlace = sheet?.place;
-  const sheetItemId = typeof sheetPlace?.itemId === "number" ? sheetPlace.itemId : null;
 
   return (
     <div className="flex flex-col">
@@ -220,7 +154,7 @@ export function MobilePlanItinerary({
                 expenseSummary={summarizeExpensesForMobile(itemExpenses(place.itemId))}
                 onOpen={() => openPlace(place)}
                 onOpenActions={() => setSheet({ kind: "actions", place })}
-                onOpenExpenses={() => openItemExpenses(place)}
+                onOpenExpenses={() => openPlaceExpenses(expenses, scheduleId, place)}
                 onEditMemo={() => setSheet({ kind: "memo", place })}
                 onEditTime={() => setSheet({ kind: "time", place })}
                 editing={editing}
@@ -253,84 +187,25 @@ export function MobilePlanItinerary({
         </button>
         <button
           type="button"
-          onClick={() => setBookmarkTarget({ anchor: null })}
+          onClick={() => setSheet({ kind: "bookmark", anchor: null })}
           className="flex items-center justify-center rounded-lg border border-border-subtle bg-fill-subtle px-3.5 py-3"
         >
           <span className="px-1.5 text-label-l-emphasis text-text-subtle">북마크에서 추가</span>
         </button>
       </div>
 
-      {sheet?.kind === "actions" && sheetPlace ? (
-        <MobilePlanActionSheet
-          place={sheetPlace}
-          itemId={sheetItemId}
-          canManageExpenses={expenses.canManage}
-          expensesBusy={expenses.busy}
-          // 순서 편집 중에는 아직 저장 전인 이동과 섞일 수 있어 삽입을 막는다
-          canInsert={!editing}
-          onClose={() => setSheet(null)}
-          onChangeSheet={setSheet}
-          onInsertFromSearch={(itemId) => {
-            setSheet(null);
-            onRequestAddPlace(insertAnchorAfterItem(places, itemId));
-          }}
-          onInsertFromBookmark={(itemId) => {
-            setSheet(null);
-            setBookmarkTarget({ anchor: insertAnchorAfterItem(places, itemId) });
-          }}
-          onAddExpense={(itemId) => {
-            setSheet(null);
-            expenses.open({ scheduleId, scheduleItemId: itemId });
-          }}
-        />
-      ) : null}
-
-      {sheet?.kind === "memo" && sheetPlace && sheetItemId !== null ? (
-        <MobileMemoSheet
-          roomId={roomId}
-          scheduleId={scheduleId}
-          itemId={sheetItemId}
-          placeName={sheetPlace.title}
-          memo={sheetPlace.memo ?? ""}
-          onClose={() => setSheet(null)}
-        />
-      ) : null}
-
-      {sheet?.kind === "time" && sheetPlace && sheetItemId !== null ? (
-        <MobileTimeSheet
-          roomId={roomId}
-          scheduleId={scheduleId}
-          itemId={sheetItemId}
-          placeName={sheetPlace.title}
-          dateLabel={monthDayLabel}
-          startTime={sheetPlace.startTime}
-          endTime={sheetPlace.endTime}
-          onClose={() => setSheet(null)}
-        />
-      ) : null}
-
-      {sheet?.kind === "delete" && sheetPlace ? (
-        <ConfirmDialog
-          title="일정에서 이 장소를 삭제할까요?"
-          description="이 장소와 연결된 모든 비용도 함께 삭제돼요."
-          confirmLabel="삭제"
-          isPending={isRemoving}
-          onConfirm={() => void handleDelete(sheetPlace)}
-          onCancel={() => setSheet(null)}
-        />
-      ) : null}
-
-      {bookmarkTarget ? (
-        <AddFromBookmarkModal
-          roomId={roomId}
-          scheduleId={scheduleId}
-          places={places}
-          // places가 최신 목록이라 렌더마다 다시 계산하면 그사이 바뀐 순서도 반영된다
-          insertIndex={resolveInsertIndex(places, bookmarkTarget.anchor)}
-          onAdded={(item) => onPlaceAdded(item.itemId)}
-          onClose={() => setBookmarkTarget(null)}
-        />
-      ) : null}
+      <MobilePlanPlaceSheets
+        roomId={roomId}
+        scheduleId={scheduleId}
+        places={places}
+        monthDayLabel={monthDayLabel}
+        sheet={sheet}
+        onChangeSheet={setSheet}
+        // 순서 편집 중에는 아직 저장 전인 이동과 섞일 수 있어 삽입을 막는다
+        canInsert={!editing}
+        onInsertFromSearch={(anchor) => onRequestAddPlace(anchor)}
+        onPlaceAdded={onPlaceAdded}
+      />
     </div>
   );
 }
@@ -378,83 +253,6 @@ function PlaceTravelSegment({
   );
 }
 
-function MobilePlanActionSheet({
-  place,
-  itemId,
-  canManageExpenses,
-  expensesBusy,
-  canInsert,
-  onClose,
-  onChangeSheet,
-  onInsertFromSearch,
-  onInsertFromBookmark,
-  onAddExpense,
-}: Readonly<{
-  place: PlanPlace;
-  itemId: number | null;
-  canManageExpenses: boolean;
-  expensesBusy: boolean;
-  /** 이 장소 바로 뒤에 장소를 넣는 메뉴를 보일지 */
-  canInsert: boolean;
-  onClose: () => void;
-  onChangeSheet: (sheet: SheetState) => void;
-  onInsertFromSearch: (itemId: number) => void;
-  onInsertFromBookmark: (itemId: number) => void;
-  onAddExpense: (itemId: number) => void;
-}>) {
-  return (
-    <MobileBottomSheet open onClose={onClose} title={place.title}>
-      {itemId === null ? (
-        <p className="py-2 text-body-s-regular text-text-subtle">
-          아직 저장 중인 장소예요. 잠시 후 다시 시도해 주세요.
-        </p>
-      ) : (
-        <>
-          {canInsert ? (
-            <>
-              <MobileSheetMenuItem
-                icon={LocationAddIcon}
-                label="일정 추가"
-                onClick={() => onInsertFromSearch(itemId)}
-              />
-              <MobileSheetMenuItem
-                icon={SavedAddIcon}
-                label="북마크에서 추가"
-                onClick={() => onInsertFromBookmark(itemId)}
-              />
-              <hr className="my-1 shrink-0 border-border-subtle" />
-            </>
-          ) : null}
-          <MobileSheetMenuItem
-            icon={place.memo?.trim() ? WriteIcon : WriteAddIcon}
-            label={place.memo?.trim() ? "메모 수정" : "메모 추가"}
-            onClick={() => onChangeSheet({ kind: "memo", place })}
-          />
-          <MobileSheetMenuItem
-            icon={TimeClockIcon}
-            label="시간 설정"
-            onClick={() => onChangeSheet({ kind: "time", place })}
-          />
-          {canManageExpenses ? (
-            <MobileSheetMenuItem
-              icon={CoinIcon}
-              label="비용 추가"
-              disabled={expensesBusy}
-              onClick={() => onAddExpense(itemId)}
-            />
-          ) : null}
-          <MobileSheetMenuItem
-            icon={TrashIcon}
-            label="일정 삭제"
-            danger
-            onClick={() => onChangeSheet({ kind: "delete", place })}
-          />
-        </>
-      )}
-    </MobileBottomSheet>
-  );
-}
-
 function PlanPlaceStatus({ isLoading, isError }: Readonly<{ isLoading: boolean; isError: boolean }>) {
   return (
     <>
@@ -470,31 +268,14 @@ function PlanPlaceStatus({ isLoading, isError }: Readonly<{ isLoading: boolean; 
   );
 }
 
-/**
- * 빈 일차 표시 — 평소에도 점선 박스이고, 순서 편집 중 카드가 올라오면 놓을 자리로 강조한다.
- * CSS 점선은 점 길이를 못 바꿔서 SVG로 긴 점선 테두리를 그린다.
- */
+/** 빈 일차 표시 — 평소에도 점선 박스이고, 순서 편집 중 카드가 올라오면 놓을 자리로 강조한다 */
 function EmptyDayDropZone({ active }: Readonly<{ active: boolean }>) {
   return (
-    <div
-      className={cn(
-        "relative flex h-14 items-center justify-center rounded-md text-body-s-regular transition-colors",
-        // primary-subtle은 이 영역에 너무 진해 한 단계 연한 원시 토큰을 쓴다
-        active ? "bg-[var(--blue-50)] text-primary" : "text-text-subtle",
-      )}
+    <DashedPlaceholderBox
+      active={active}
+      className={cn("h-14 text-body-s-regular", active ? "text-primary" : "text-text-subtle")}
     >
-      <svg aria-hidden className="pointer-events-none absolute inset-0 size-full overflow-visible">
-        <rect
-          width="100%"
-          height="100%"
-          rx="6"
-          fill="none"
-          strokeWidth="1"
-          strokeDasharray="8 6"
-          className={cn("transition-colors", active ? "stroke-primary" : "stroke-border")}
-        />
-      </svg>
       {active ? "여기에 놓기" : planCopy.placesEmpty}
-    </div>
+    </DashedPlaceholderBox>
   );
 }

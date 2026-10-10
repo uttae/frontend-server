@@ -3,12 +3,17 @@
 import {
   createContext,
   useContext,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { readSessionUserId } from "@/lib/session-user-cache";
+import { sessionUserQueryKey } from "@/lib/query-keys";
+import { useSessionStore } from "@/stores/session-store";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { getRoomMembers } from "@/lib/api/rooms/members";
 import {
   createExpense,
@@ -42,6 +47,49 @@ import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 function useExpenses(roomId: string) {
   const client = useQueryClient();
   const { data: user } = useSessionUser();
+  const sessionReady = useSessionStore((session) => session.sessionReady);
+  const currentRoomId = useSessionStore((session) => session.currentRoomId);
+  // A late response must never be attributed to the next account or room.
+  const analyticsScope = useRef<{ active: boolean } | null>(null);
+  const analyticsMounted = useRef(false);
+  useLayoutEffect(() => {
+    analyticsMounted.current = true;
+    const session = useSessionStore.getState();
+    const scope = {
+      active: session.sessionReady && session.currentRoomId === roomId &&
+        user?.id !== undefined && readSessionUserId(client) === user.id,
+    };
+    analyticsScope.current = scope;
+    // Session teardown and account/room changes happen before React rerenders.
+    // Invalidate captured tokens permanently, including tokens from new writes.
+    const invalidate = () => {
+      if (analyticsScope.current) analyticsScope.current.active = false;
+    };
+    const unsubscribeSession = useSessionStore.subscribe((next) => {
+      if (!next.sessionReady || next.currentRoomId !== roomId) invalidate();
+    });
+    const unsubscribeQuery = client.getQueryCache().subscribe((event) => {
+      if (JSON.stringify(event.query.queryKey) !== JSON.stringify(sessionUserQueryKey)) return;
+      if (event.type === "removed" || readSessionUserId(client) !== user?.id)
+        invalidate();
+    });
+    return () => {
+      analyticsMounted.current = false;
+      invalidate();
+      unsubscribeSession();
+      unsubscribeQuery();
+    };
+  }, [client, roomId, user?.id, sessionReady, currentRoomId]);
+  function captureAnalyticsScope() {
+    const session = useSessionStore.getState();
+    if (!analyticsMounted.current || !session.sessionReady ||
+      session.currentRoomId !== roomId || user?.id === undefined ||
+      readSessionUserId(client) !== user.id) return null;
+    // A batched roundtrip can leave React dependencies unchanged. New writes
+    // get a fresh token; pending writes retain their permanently invalid token.
+    if (!analyticsScope.current?.active) analyticsScope.current = { active: true };
+    return analyticsScope.current;
+  }
   const { recovery, revoked, syncStatus } = useExpenseRecovery(
     roomId,
     Boolean(roomId && user),
@@ -101,12 +149,16 @@ function useExpenses(roomId: string) {
     queryFn: () => getExpenseKrwSummary(roomId, krwFilters),
   });
   const budgetMutation = useMutation({
-    mutationFn: (body: ExpenseBudgetInput) => {
+    mutationFn: async (body: ExpenseBudgetInput) => {
       if (!canManage || recovery.getSnapshot() === "revoked")
         throw new Error(
           "현재 참여 중인 방장과 멤버만 예산을 변경할 수 있어요.",
         );
-      return putExpenseBudget(roomId, body);
+      const scope = captureAnalyticsScope();
+      const record = await putExpenseBudget(roomId, body);
+      if (scope?.active && recovery.getSnapshot() !== "revoked")
+        trackAnalyticsEvent(AnalyticsEvents.expenseBudgetSaved, { room_id: roomId });
+      return record;
     },
     retry: false,
     onError: recovery.handleError,
@@ -156,15 +208,31 @@ function useExpenses(roomId: string) {
         throw new Error(
           "현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.",
         );
-      if ("deleteId" in op)
-        return deleteExpense(roomId, op.deleteId, op.expectedVersion);
-      if (op.id === undefined) return createExpense(roomId, op.body);
-      if (op.expectedVersion === undefined)
-        throw new Error("수정할 비용을 다시 열어 주세요.");
-      return patchExpense(roomId, op.id, {
-        ...op.body,
-        expectedVersion: op.expectedVersion,
-      });
+      const scope = captureAnalyticsScope();
+      let record: Expense | void;
+      let event:
+        | typeof AnalyticsEvents.expenseCreated
+        | typeof AnalyticsEvents.expenseUpdated
+        | typeof AnalyticsEvents.expenseDeleted;
+      if ("deleteId" in op) {
+        record = await deleteExpense(roomId, op.deleteId, op.expectedVersion);
+        event = AnalyticsEvents.expenseDeleted;
+      } else if (op.id === undefined) {
+        record = await createExpense(roomId, op.body);
+        event = AnalyticsEvents.expenseCreated;
+      } else {
+        if (op.expectedVersion === undefined)
+          throw new Error("수정할 비용을 다시 열어 주세요.");
+        record = await patchExpense(roomId, op.id, {
+          ...op.body,
+          expectedVersion: op.expectedVersion,
+        });
+        event = AnalyticsEvents.expenseUpdated;
+      }
+      // Count the committed write before cache reconciliation or recovery reads.
+      if (scope?.active && recovery.getSnapshot() !== "revoked")
+        trackAnalyticsEvent(event, { room_id: roomId });
+      return record;
     },
     retry: false,
     onMutate: () => recovery.listRevision,

@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PackingCoordinator } from './coordinator';
 import { PackingApiError, packingApi } from '@/lib/api/rooms/packing';
 import type { PackingList } from './types';
+import { sendAnalyticsDataCommand } from '@/lib/analytics/client';
+vi.mock('@/lib/analytics/client', () => ({ sendAnalyticsDataCommand: vi.fn() }));
 vi.mock('@/lib/api/rooms/packing', () => ({
   PackingApiError: class extends Error { constructor(public status:number,public code:string,message:string){super(message);} },
   packingApi: { get:vi.fn(),initialize:vi.fn(),createPart:vi.fn(),renamePart:vi.fn(),deletePart:vi.fn(),createItem:vi.fn(),renameItem:vi.fn(),checkItem:vi.fn(),deleteItem:vi.fn(),saveMemo:vi.fn(),deleteMemo:vi.fn() },
@@ -48,6 +50,147 @@ describe('packing admission and recovery',()=>{
   expect(packingApi.deleteItem).toHaveBeenCalledExactlyOnceWith(room,3,0,true);
   expect(c.getSnapshot().data?.parts[0].items).toEqual([]);
  });
+});
+
+describe('confirmed packing analytics', () => {
+  it('records one addition after acknowledgement despite duplicate clicks and a failed follow-up read', async () => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh();
+    const pending = deferred<Awaited<ReturnType<typeof packingApi.createItem>>>();
+    vi.mocked(packingApi.createItem).mockReturnValue(pending.promise);
+    const command = { type: 'createItem', partId: 2, name: '개인 준비물' } as const;
+    const write = c.execute(command);
+    expect(await c.execute(command)).toEqual({ kind: 'blocked' });
+    await vi.waitFor(() => expect(packingApi.createItem).toHaveBeenCalledOnce());
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+
+    vi.mocked(packingApi.get).mockRejectedValue(new TypeError('offline'));
+    pending.resolve({ version: 1, item: { ...list().parts[0].items[0], id: 4, name: command.name } });
+    expect(await write).toEqual({ kind: 'success' });
+    expect(sendAnalyticsDataCommand).toHaveBeenCalledExactlyOnceWith('event', 'packing_item_added', { room_id: room });
+    expect(c.getSnapshot().status).toBe('sync-error');
+    expect(c.getSnapshot().data?.parts[0].items).toHaveLength(2);
+    await c.refresh(true);
+    expect(sendAnalyticsDataCommand).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    [false, true, 'packing_item_checked'],
+    [true, false, 'packing_item_unchecked'],
+  ] as const)('records confirmed %s → %s once before a failed follow-up read', async (before, after, eventName) => {
+    const { c } = setup();
+    const initial = list();
+    initial.parts[0].items[0].checked = before;
+    vi.mocked(packingApi.get).mockResolvedValue(initial);
+    await c.refresh();
+    const pending = deferred<Awaited<ReturnType<typeof packingApi.checkItem>>>();
+    vi.mocked(packingApi.checkItem).mockReturnValue(pending.promise);
+    const write = c.execute({ type: 'checkItem', id: 3, checked: after });
+    await vi.waitFor(() => expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(after));
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+    expect(await c.execute({ type: 'checkItem', id: 3, checked: after })).toEqual({ kind: 'blocked' });
+    vi.mocked(packingApi.get).mockRejectedValue(new TypeError('offline'));
+    pending.resolve({ version: 1, item: { ...initial.parts[0].items[0], checked: after } });
+    expect(await write).toEqual({ kind: 'success' });
+    expect(sendAnalyticsDataCommand).toHaveBeenCalledExactlyOnceWith('event', eventName, { room_id: room });
+    expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(after);
+  });
+
+  it.each([false, true])('does not record a check command %s when the confirmed state is unchanged', async (requested) => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh();
+    vi.mocked(packingApi.checkItem).mockResolvedValue({ version: 1, item: list().parts[0].items[0] });
+    vi.mocked(packingApi.get).mockResolvedValue(list(1));
+    expect(await c.execute({ type: 'checkItem', id: 3, checked: requested })).toEqual({ kind: 'success' });
+    expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(false);
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+  });
+
+  it.each(['createItem', 'checkItem'] as const)('does not record %s after disposal of a pending scope', async (type) => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh();
+    const pending = deferred<Awaited<ReturnType<typeof packingApi.createItem>>>();
+    vi.mocked(packingApi[type]).mockReturnValue(pending.promise);
+    const write = c.execute(type === 'createItem'
+      ? { type, partId: 2, name: '새 준비물' }
+      : { type, id: 3, checked: true });
+    await vi.waitFor(() => expect(packingApi[type]).toHaveBeenCalledOnce());
+    c.dispose();
+    pending.resolve({ version: 1, item: { ...list().parts[0].items[0], checked: true } });
+    expect(await write).toEqual({ kind: 'blocked' });
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['rejected', new PackingApiError(400, 'BAD_REQUEST', 'invalid')],
+    ['uncertain', new TypeError('lost response')],
+    ['revoked', new PackingApiError(403, 'NOT_ROOM_MEMBER', 'gone')],
+  ] as const)('does not record %s writes even when recovery reads show the requested state', async (_label, error) => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh();
+    vi.mocked(packingApi.checkItem).mockRejectedValue(error);
+    const recovered = list(1);
+    recovered.parts[0].items[0].checked = true;
+    vi.mocked(packingApi.get).mockResolvedValue(recovered);
+    expect(await c.execute({ type: 'checkItem', id: 3, checked: true })).toEqual({ kind: 'error' });
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    new PackingApiError(400, 'BAD_REQUEST', 'invalid'),
+    new TypeError('lost response'),
+  ])('does not count a failed or uncertain addition reconstructed by recovery', async (error) => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh();
+    vi.mocked(packingApi.createItem).mockRejectedValue(error);
+    const recovered = list(1);
+    recovered.parts[0].items.push({ ...recovered.parts[0].items[0], id: 4, name: '추가된 항목' });
+    vi.mocked(packingApi.get).mockResolvedValue(recovered);
+    expect(await c.execute({ type: 'createItem', partId: 2, name: '추가된 항목' })).toEqual({ kind: 'error' });
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+  });
+
+  it('does not record a stale write response rejected by reconciliation', async () => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list(2));
+    await c.refresh();
+    vi.mocked(packingApi.checkItem).mockResolvedValue({ version: 1, item: { ...list().parts[0].items[0], checked: true } });
+    expect(await c.execute({ type: 'checkItem', id: 3, checked: true })).toEqual({ kind: 'error' });
+    expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(false);
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+  });
+
+  it('does not record initialization, ordinary reads, or unrelated successful edits', async () => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockRejectedValueOnce(new PackingApiError(404, 'PACKING_LIST_NOT_INITIALIZED', 'missing'));
+    vi.mocked(packingApi.initialize).mockResolvedValue(list());
+    await c.refresh();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh(true);
+    vi.mocked(packingApi.renameItem).mockResolvedValue({ version: 1, item: { ...list().parts[0].items[0], name: '새 이름' } });
+    vi.mocked(packingApi.get).mockResolvedValue(list(1));
+    expect(await c.execute({ type: 'renameItem', id: 3, name: '새 이름' })).toEqual({ kind: 'success' });
+    expect(sendAnalyticsDataCommand).not.toHaveBeenCalled();
+  });
+
+  it('keeps acknowledged state and success when analytics delivery throws', async () => {
+    const { c } = setup();
+    vi.mocked(packingApi.get).mockResolvedValue(list());
+    await c.refresh();
+    vi.mocked(packingApi.checkItem).mockResolvedValue({ version: 1, item: { ...list().parts[0].items[0], checked: true } });
+    vi.mocked(sendAnalyticsDataCommand).mockImplementation(() => { throw new Error('SDK failed'); });
+    vi.mocked(packingApi.get).mockRejectedValue(new TypeError('offline'));
+    expect(await c.execute({ type: 'checkItem', id: 3, checked: true })).toEqual({ kind: 'success' });
+    expect(sendAnalyticsDataCommand).toHaveBeenCalledOnce();
+    expect(c.getSnapshot().data?.version).toBe(1);
+    expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(true);
+    expect(c.getSnapshot().status).toBe('sync-error');
+  });
 });
 
 it('does not send a confirmation after a read advances its reviewed version while cancellation settles',async()=>{

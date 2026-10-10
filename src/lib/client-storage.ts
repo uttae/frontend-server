@@ -1,8 +1,9 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { setAnalyticsUserId } from "@/lib/analytics/track";
+import { resetAmplitudeIdentityOnLogout } from "@/lib/analytics/amplitude";
 import { getQueryClient } from "@/lib/query-client";
-import { setSessionUserCache } from "@/lib/session-user-cache";
+import { readSessionUserId, setSessionUserCache } from "@/lib/session-user-cache";
 import { clearCurrentRoomIdSessionStorage } from "@/lib/session-room-storage";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -52,6 +53,9 @@ export function tearDownClientSession(options?: {
   queryClient?: QueryClient;
 }): void {
   const queryClient = options?.queryClient ?? getQueryClient();
+  if (queryClient && readSessionUserId(queryClient) !== undefined) {
+    resetAmplitudeIdentityOnLogout();
+  }
   setAnalyticsUserId(null);
   clearCurrentRoomIdSessionStorage();
   useSessionStore.getState().clearSessionRoomContext();

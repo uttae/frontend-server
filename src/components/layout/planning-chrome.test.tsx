@@ -2,6 +2,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("@/components/layout/HeaderMemberPreview", () => ({ HeaderMemberPreview: () => null }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/plan/room" }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useCurrentRoomMembership", () => ({ useCurrentRoomMembership: () => ({ roomId: "room", roomSource: null, isHost: false, isLoading: false }) }));

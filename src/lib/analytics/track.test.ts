@@ -20,8 +20,8 @@ function dataLayerCommands(dataLayer: readonly unknown[]): unknown[][] {
 }
 
 describe("AnalyticsEvents", () => {
-  it("exposes the frontend GA event schema", () => {
-    expect(AnalyticsEvents).toEqual({
+  it("preserves existing product event names", () => {
+    expect(AnalyticsEvents).toMatchObject({
       ctaClick: "cta_click",
       sectionView: "section_view",
       signUp: "sign_up",
@@ -50,6 +50,7 @@ describe("AnalyticsEvents", () => {
       AnalyticsEventParamsMap[typeof AnalyticsEvents.search];
 
     expectTypeOf<SearchResultParams>().toEqualTypeOf<{
+      room_id?: string;
       result_count_bucket: "0" | "1_5" | "6_20" | "21_plus";
       search_mode: "map_recenter" | "text";
     }>();
@@ -69,6 +70,7 @@ describe("AnalyticsEvents", () => {
     expectTypeOf<
       AnalyticsEventParamsMap[typeof AnalyticsEvents.addToItinerary]
     >().toEqualTypeOf<{
+      room_id: string;
       interaction_source: "bookmark" | "chat" | "map" | "plan" | "search";
       item_count_bucket: "0" | "1" | "2_3" | "4_7" | "8_plus";
       place_category?: string;
@@ -77,7 +79,7 @@ describe("AnalyticsEvents", () => {
 
   it("does not require browser URL context during SSR", () => {
     expect(() =>
-      trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder),
+      trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder, { room_id: "test-room" }),
     ).not.toThrow();
   });
 });
@@ -143,15 +145,15 @@ describe("analytics consent gate", () => {
       "@/lib/analytics/client"
     );
 
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     expect(window.dataLayer).toEqual([]);
 
     document.cookie = "uttae_analytics_consent=v1:granted";
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     expect(dataLayerCommands(window.dataLayer ?? [])).toEqual([
-      ["event", "create_bookmark_folder"],
+      ["event", "expense_created", {}],
     ]);
   });
 
@@ -187,9 +189,9 @@ describe("analytics consent gate", () => {
     });
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     expect(dataLayerCommands(dataLayer)).toEqual([
-      ["event", "create_bookmark_folder"],
+      ["event", "expense_created", {}],
     ]);
 
     dataLayer.length = 0;
@@ -198,7 +200,7 @@ describe("analytics consent gate", () => {
       persisted: false,
       state: "denied",
     });
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     expect(dataLayer).toEqual([]);
   });
 

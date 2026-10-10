@@ -99,6 +99,7 @@ export function PlanPlaceCard({
         itemId: place.itemId,
       });
       trackAnalyticsEvent(AnalyticsEvents.removeFromItinerary, {
+        room_id: scheduleTimeEdit.roomId,
         item_count_bucket: bucketItemCount(itineraryItemCount - 1),
       });
       toast.success("일정에서 삭제했어요.");

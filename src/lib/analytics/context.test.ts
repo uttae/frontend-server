@@ -4,6 +4,7 @@ import {
   analyticsEntryPoint,
   analyticsPagePath,
   buildAnalyticsPageView,
+  buildAnalyticsEventPageContext,
   bucketItemCount,
   bucketMemberCount,
   bucketResultCount,
@@ -74,6 +75,7 @@ describe("analytics context", () => {
     ["/search?q=home&inviteCode=secret", "/search"],
     ["/join/invite-secret#details", "/join/[inviteCode]"],
     ["/plan/123?roomTitle=Jeju", "/plan/[roomId]"],
+    ["/packing/room-secret/", "/packing/[roomId]"],
     ["/bookmark/456/", "/bookmark/[folderId]"],
     ["/privacy", "/privacy"],
     ["not-a-path", "/"],
@@ -96,6 +98,22 @@ describe("analytics context", () => {
       page_referrer: "https://uttae.example/join/[inviteCode]",
       page_title: "제주 여행 일정",
     });
+  });
+
+  it("removes packing room IDs from page views, referrers, and event context", () => {
+    expect(buildAnalyticsPageView({
+      origin: "https://uttae.example",
+      pathname: "/packing/room-secret",
+      referrer: "https://uttae.example/packing/previous-room",
+      title: "준비물",
+    })).toEqual({
+      page_path: "/packing/[roomId]",
+      page_location: "https://uttae.example/packing/[roomId]",
+      page_referrer: "https://uttae.example/packing/[roomId]",
+      page_title: "준비물",
+    });
+    expect(buildAnalyticsEventPageContext("https://uttae.example", "/packing/room-secret"))
+      .toEqual({ page_path: "/packing/[roomId]", page_location: "https://uttae.example/packing/[roomId]" });
   });
 
   it("keeps only the origin root for an external HTTP referrer", () => {

@@ -9,10 +9,12 @@ import {
 import { PlaceDetailPanel } from "./PlaceDetailPanel";
 import type { PlaceSummaryHeader } from "./PlaceSummaryHeader";
 const state = vi.hoisted(() => ({
+  roomId: "room-a" as string | undefined,
   track: vi.fn(),
   header: null as ComponentProps<typeof PlaceSummaryHeader> | null,
   source: "",
 }));
+vi.mock("@/hooks/useAnalyticsRoomId", () => ({ useAnalyticsRoomId: () => state.roomId }));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { viewPlace: "view_place" },
   trackAnalyticsEvent: state.track,
@@ -76,6 +78,7 @@ it("keeps the current entry source for schedule addition and emits one view per 
     selection.setSelectedPlace(place, { itinerarySource: "search" }),
   );
   expect(state.track).toHaveBeenCalledTimes(1);
+  expect(state.track.mock.lastCall?.[1].room_id).toBe("room-a");
   expect(state.track.mock.lastCall?.[1].interaction_source).toBe("search");
   await act(async () =>
     selection.setSelectedPlace(place, { itinerarySource: "bookmark" }),
