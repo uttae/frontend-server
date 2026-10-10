@@ -58,6 +58,15 @@
    export const MapPinIcon = createIcon(MapPinSvg, "MapPinIcon");  // 아래쪽 export 구역
    ```
 
+### 2-1-1. Figma에 추가 요청할 아이콘
+Figma 디자인 시스템 Icon에 없어 임시로 Tabler Icons(outline)에서 받아 쓰는 아이콘이다. 디자이너가 디자인 시스템에 추가하면 원본으로 바꾸고 이 목록에서 지운다.
+- 파일 형식은 2-1의 규칙(24×24 viewBox, `currentColor`, stroke 1.8)에 맞춰 수정해 넣는다
+
+| 아이콘 | 파일 | 출처 | 쓰는 곳 |
+|---|---|---|---|
+| 경로 보기 | `route.svg` (`RouteIcon`) | Tabler `route` | 모바일 지도 경로 보기 버튼 |
+| 보내기(종이비행기) | `send.svg` (`SendIcon`) | Tabler `send` | 헤더 초대하기 (PR #220) |
+
 ### 2-2. 아이콘 사용
 ```tsx
 import { MapPinIcon } from "@/assets/icons";

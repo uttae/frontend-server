@@ -1,7 +1,7 @@
 import { parseRoomContextPath } from "@/lib/room-context-path";
 
 const roomRootPaths = new Set([
-  "plan", "bookmark", "search", "cost", "settings", "room-settings", "member-settings",
+  "plan", "map", "chat", "bookmark", "search", "cost", "settings", "room-settings", "member-settings",
 ]);
 const roomDetailPaths = new Set(["plan", "packing", "bookmark"]);
 

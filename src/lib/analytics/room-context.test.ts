@@ -11,7 +11,7 @@ describe("room route boundaries", () => {
   );
 });
 describe("optional analytics room context", () => {
-  it.each(["/plan", "/plan/room-a", "/search", "/cost", "/bookmark/folder-b", "/settings", "/member-settings", "/room-settings"])(
+  it.each(["/plan", "/plan/room-a", "/map", "/map?view=route", "/chat", "/search", "/cost", "/bookmark/folder-b", "/settings", "/member-settings", "/room-settings"])(
     "uses confirmed selected room for %s", (pathname) => {
       expect(resolveAnalyticsRoomId({ ...session, pathname })).toBe("room-a");
     },

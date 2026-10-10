@@ -2,9 +2,8 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-const boundary = vi.hoisted(() => ({ sendAi: vi.fn(), sendChat: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
-vi.mock("@/contexts/MainChromeLayoutWidthContext", () => ({ useMainChromeLayoutWidth: () => ({ chatPanelDockWidthCss: "480px", chatPanelRevealReady: true }) }));
+const boundary = vi.hoisted(() => ({ sendAi: vi.fn(), sendChat: vi.fn(), pathname: "/chat", push: vi.fn(), back: vi.fn(), replace: vi.fn() }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: boundary.push, back: boundary.back, replace: boundary.replace }), usePathname: () => boundary.pathname }));
 vi.mock("@/hooks/useCurrentRoomTitle", () => ({ useCurrentRoomTitle: () => "제주 여행" }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRooms", () => ({ useRoomMembers: () => ({ data: { members: [] } }) }));
@@ -31,7 +30,10 @@ it("keeps messages and the working AI composer inside one inline panel", async (
   HTMLElement.prototype.scrollIntoView = vi.fn();
   const host = document.createElement("div"); document.body.append(host);
   const root = createRoot(host);
-  useChatPanelStore.getState().openChat();
+  // `/chat`(최대화) 주소로 직접 들어온 상태
+  useChatPanelStore.setState({ minimized: false });
+  // 다른 브라우저 기록이 있어도 앱에서 연 채팅이 아니므로 일정으로 돌아간다
+  Object.defineProperty(window.history, "length", { configurable: true, value: 2 });
   try {
     await act(async () => root.render(<ChatPanel inline />));
     expect(host.querySelectorAll("textarea")).toHaveLength(1);
@@ -54,15 +56,23 @@ it("keeps messages and the working AI composer inside one inline panel", async (
     expect(boundary.sendChat).not.toHaveBeenCalled();
     expect(host.querySelectorAll("textarea")).toHaveLength(1);
     await act(async () => minimize!.click());
-    expect(useChatPanelStore.getState().chatState).toBe("minimized");
+    expect(useChatPanelStore.getState().minimized).toBe(true);
+    expect(boundary.replace).toHaveBeenCalledWith("/plan");
+    expect(boundary.back).not.toHaveBeenCalled();
+    boundary.pathname = "/plan";
     await act(async () => root.render(<ChatPanel />));
     expect(host.querySelector('[aria-label="최대화"]')).not.toBeNull();
     expect(host.querySelector('[aria-label="채팅 닫기"]')).not.toBeNull();
     expect(host.textContent).not.toContain("제주 여행");
+    // 다른 페이지 위의 최소화 채팅을 닫으면 페이지는 그대로 둔다
+    boundary.back.mockClear();
+    boundary.replace.mockClear();
     await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="채팅 닫기"]')!.click());
-    expect(useChatPanelStore.getState().chatState).toBe("closed");
+    expect(useChatPanelStore.getState().minimized).toBe(false);
+    expect(boundary.back).not.toHaveBeenCalled();
+    expect(boundary.replace).not.toHaveBeenCalled();
   } finally {
     await act(async () => root.unmount()); host.remove();
-    useChatPanelStore.getState().closeChat(); vi.unstubAllGlobals();
+    useChatPanelStore.setState({ minimized: false }); vi.unstubAllGlobals();
   }
 });

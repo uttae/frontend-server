@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, type ReactNode } from "react";
+import { act, useLayoutEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -9,13 +9,15 @@ import { trackAnalyticsEvent } from "@/lib/analytics/track";
 import { AddToBookmarkModal } from "./AddToBookmarkModal";
 import { AddToScheduleModal } from "./AddToScheduleModal";
 import { PlanPlaceCard } from "@/app/(main)/plan/_components/itinerary/PlanPlaceCard";
+import { useMobileAddPlaceSearch } from "@/app/(main)/plan/_components/mobile/useMobileAddPlaceSearch";
+import { MobilePlanPlaceSheets } from "@/app/(main)/plan/_components/mobile/MobilePlanPlaceSheets";
 
 vi.mock("@/lib/client-env", () => ({ clientEnv: { NEXT_PUBLIC_API_BASE_URL: "https://api.example.test", NEXT_PUBLIC_GOOGLE_CLIENT_ID: "test", NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "https://example.test", NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "test" } }));
 const api = vi.hoisted(() => ({ bookmarks: vi.fn(), category: vi.fn(), item: vi.fn(), remove: vi.fn() }));
 vi.mock("@/lib/api/rooms", async (original) => ({
   ...await original<object>(), createRoomBookmarks: api.bookmarks, createBookmarkCategory: api.category, deleteScheduleItem: api.remove,
 }));
-vi.mock("@/components/expenses/ExpenseProvider", () => ({ ExpenseEntryButton: () => null }));
+vi.mock("@/components/expenses/ExpenseProvider", () => ({ ExpenseEntryButton: () => null, useExpenseContext: () => ({}) }));
 vi.mock("@/hooks/useOpenPlaceOnMap", () => ({ useOpenPlaceOnMap: () => vi.fn() }));
 vi.mock("@/hooks/useInViewport", () => ({ useInViewport: () => [() => {}, false] }));
 vi.mock("@/hooks/usePlanPlaceCardPhoto", () => ({ usePlanPlaceCardPhoto: () => ({ resolvedPhotoUrl: null, photoLoading: false }) }));
@@ -141,4 +143,44 @@ it("keeps a deletion tied to the card's original room when props change during t
   await render(card("room-b"));
   await finish(() => pending.resolve());
   expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("remove_from_itinerary", expect.objectContaining({ room_id: "room-a" }));
+});
+
+it("keeps the shared mobile add hook's request room after rerendering for a new room", async () => {
+  const pending = deferred<object>();
+  api.item.mockReturnValueOnce(pending.promise);
+  let add!: ReturnType<typeof useMobileAddPlaceSearch>;
+  function Probe({ roomId }: { roomId: string }) {
+    const value = useMobileAddPlaceSearch({ roomId, backLabel: "돌아가기" });
+    useLayoutEffect(() => { add = value; }, [value]);
+    return null;
+  }
+  await render(<Probe roomId="room-a" />);
+  let saving!: Promise<number | null>;
+  await act(async () => { saving = add.addAt({ scheduleId: 1, anchor: null }, "place", "map"); });
+  expect(api.item).toHaveBeenCalledWith("room-a", 1, expect.anything());
+  expect(trackAnalyticsEvent).not.toHaveBeenCalled();
+  await render(<Probe roomId="room-b" />);
+  await finish(() => pending.resolve({ createdItem: { itemId: 21, scheduleId: 1, googlePlaceId: "place", startTime: null, endTime: null, orderIndex: 0, travelMode: "DRIVING", createdAt: "2026-10-10" }, updatedItems: [], affectedRouteItemIds: [] }));
+  await expect(saving).resolves.toBe(21);
+  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("add_to_itinerary", {
+    room_id: "room-a", interaction_source: "map", item_count_bucket: "1",
+  });
+});
+
+it("keeps the extracted mobile delete sheet's room after its pending request completes", async () => {
+  const pending = deferred<void>();
+  api.remove.mockReturnValueOnce(pending.promise);
+  const place = { id: "p", itemId: 22, title: "장소", location: { lat: 1, lng: 2 } };
+  const sheet = (roomId: string) => <MobilePlanPlaceSheets roomId={roomId} scheduleId={1}
+    places={[place]} monthDayLabel="10/10" sheet={{ kind: "delete", place }}
+    onChangeSheet={() => {}} canInsert onInsertFromSearch={() => {}} onPlaceAdded={() => {}} />;
+  await render(sheet("room-a"));
+  await click("삭제");
+  expect(api.remove).toHaveBeenCalledWith("room-a", 1, 22);
+  expect(trackAnalyticsEvent).not.toHaveBeenCalled();
+  await render(sheet("room-b"));
+  await finish(() => pending.resolve());
+  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("remove_from_itinerary", {
+    room_id: "room-a", item_count_bucket: "0",
+  });
 });
