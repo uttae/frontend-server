@@ -14,6 +14,7 @@ vi.mock("@/lib/api/rooms/schedule-items", async (importOriginal) => {
 });
 
 let hydrateScheduleRoutesBatch: typeof import("@/lib/plan/schedule-bulk-hydration").hydrateScheduleRoutesBatch;
+let fetchAndSeedScheduleRoutesBatch: typeof import("@/lib/plan/schedule-bulk-hydration").fetchAndSeedScheduleRoutesBatch;
 let resolveScheduleSegmentRoute: typeof import("@/lib/plan/scheduleSegmentRoute").resolveScheduleSegmentRoute;
 let scheduleItemsQueryKey: typeof import("@/lib/query-keys").scheduleItemsQueryKey;
 let scheduleItemRouteQueryKey: typeof import("@/lib/query-keys").scheduleItemRouteQueryKey;
@@ -39,7 +40,7 @@ beforeAll(async () => {
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
 
-  ({ hydrateScheduleRoutesBatch } = await import(
+  ({ hydrateScheduleRoutesBatch, fetchAndSeedScheduleRoutesBatch } = await import(
     "@/lib/plan/schedule-bulk-hydration"
   ));
   ({ resolveScheduleSegmentRoute } = await import(
@@ -90,6 +91,24 @@ describe("hydrateScheduleRoutesBatch", () => {
       durationSeconds: 300,
       encodedPolyline: "_p~iF~ps|U_ulLnnqC",
     });
+  });
+
+  it("자전거로 저장된 구간만 화면에 보이는 수단(자동차)으로 계산해 달라고 지정한다", async () => {
+    const queryClient = new QueryClient();
+    const places = [
+      { ...place(1, "places/a"), travelMode: "BICYCLING" },
+      { ...place(2, "places/b"), travelMode: "WALKING" },
+      place(3, "places/c"),
+    ];
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
+    getScheduleItemRoutesBatchMock.mockResolvedValue([]);
+
+    await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledWith(ROOM_ID, SCHEDULE_ID, [
+      { itemId: 1, travelMode: "DRIVING" },
+      { itemId: 2 },
+    ]);
   });
 
   it("폴리라인이 없는 구간은 encodedPolyline 없이 시딩한다", async () => {
@@ -197,5 +216,47 @@ describe("hydrateScheduleRoutesBatch", () => {
         scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"),
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("fetchAndSeedScheduleRoutesBatch", () => {
+  const places = [place(1, "places/a"), place(2, "places/b"), place(3, "places/c")];
+  const route = { travelMode: "DRIVING", distanceMeters: 100, durationSeconds: 60 };
+
+  function seededClient() {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
+    queryClient.setQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"), route);
+    queryClient.setQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "DRIVING"), route);
+    return queryClient;
+  }
+
+  it("모든 구간 경로가 캐시에 있으면 일괄 요청을 보내지 않는다", async () => {
+    await fetchAndSeedScheduleRoutesBatch(seededClient(), ROOM_ID, SCHEDULE_ID, places);
+
+    expect(getScheduleItemRoutesBatchMock).not.toHaveBeenCalled();
+  });
+
+  it("캐시에 없는 구간이 있으면 일괄로 다시 받는다", async () => {
+    const queryClient = seededClient();
+    queryClient.removeQueries({ queryKey: scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "DRIVING") });
+    getScheduleItemRoutesBatchMock.mockResolvedValue([]);
+
+    await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledOnce();
+  });
+
+  it("일정 변경으로 무효화된 구간이 있으면 일괄로 다시 받는다", async () => {
+    const queryClient = seededClient();
+    await queryClient.invalidateQueries({
+      queryKey: scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"),
+      refetchType: "none",
+    });
+    getScheduleItemRoutesBatchMock.mockResolvedValue([]);
+
+    await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledOnce();
   });
 });

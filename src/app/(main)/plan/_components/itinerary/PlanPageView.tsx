@@ -9,6 +9,7 @@ import {
   useDeleteRoomSchedule,
   useRoomSchedules,
 } from "@/hooks/useRooms";
+import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
 import { useSessionStore } from "@/stores/session-store";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
@@ -39,6 +40,9 @@ import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 export function PlanPageView() {
   const planContainerRef = useRef<HTMLDivElement>(null);
   const { isMobileDevice } = useMobileView();
+  // 일정 화면을 떠나면 고른 장소(카드 강조·지도의 "이 일차만 보기")를 푼다 — 검색·북마크 탭에서도 지도는 그대로라서
+  const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
+  useEffect(() => () => clearPlanFocus(), [clearPlanFocus]);
   
   //room id 가져와서 room detail, schedules 가져오기
   const storedId = useSessionStore((s) => s.currentRoomId);

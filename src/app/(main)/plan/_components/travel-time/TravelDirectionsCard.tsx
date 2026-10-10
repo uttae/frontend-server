@@ -132,12 +132,14 @@ export function TravelDirectionsCard({
           <p className="mb-1.5 text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
             이동 수단
           </p>
+          {/* 아이콘 | 수단 | 시간·거리 세 칸을 모든 줄이 함께 써서(subgrid), 시간·거리가 가장 긴 수단 이름 뒤 오른쪽 끝에 맞춰진다 */}
           <ul
-            className="flex flex-col gap-1"
+            className="grid grid-cols-[auto_auto_auto] gap-x-2 gap-y-1"
             role={readOnly ? undefined : "listbox"}
           >
             {SCHEDULE_TRAVEL_MODES.map(({ value }) => {
               const rowSummary = modeRouteSummaries[value];
+              const selected = value === effectiveMode;
               const row =
                 rowSummary &&
                 rowSummary.durationSeconds >= 0 &&
@@ -151,12 +153,9 @@ export function TravelDirectionsCard({
                   <span className="inline-flex items-center gap-1 text-dark-gray">
                     <Loader2 className="h-3 w-3 animate-spin" />
                   </span>
-                ) : (
-                  <span className="text-dark-gray">—</span>
-                );
-              const selected = value === effectiveMode;
+                ) : null; // 고르지 않은 수단은 골라야 계산한다(미리 조회하지 않음)
               const rowClass = cn(
-                "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-body-s-regular mobile:text-body-xs-regular",
+                "col-span-3 grid grid-cols-subgrid items-center rounded-md px-1.5 py-1.5 text-left text-body-s-regular mobile:text-body-xs-regular",
                 !readOnly && "hover:bg-gray-border/30",
                 selected &&
                   (readOnly ?
@@ -164,26 +163,25 @@ export function TravelDirectionsCard({
                   : "bg-primary/10 ring-1 ring-primary/25"),
               );
 
+              // 고른 수단도 다른 줄처럼 시간·거리를 보이고, 배경 강조로만 구분한다
+              const rowValue = <span className="justify-self-end whitespace-nowrap pl-3 text-dark-gray">{row}</span>;
+
               if (readOnly) {
                 return (
-                  <li key={value}>
+                  <li key={value} className="col-span-3 grid grid-cols-subgrid">
                     <div className={rowClass}>
                       <TravelModeGlyph mode={value} />
                       <span className="font-medium text-gray-900">
                         {scheduleTravelModeLabel(value)}
                       </span>
-                      {selected ?
-                        <span className="ml-auto shrink-0 text-body-xs-emphasis font-semibold text-dark-gray">
-                          적용 중
-                        </span>
-                      : <span className="ml-auto text-dark-gray">{row}</span>}
+                      {rowValue}
                     </div>
                   </li>
                 );
               }
 
               return (
-                <li key={value}>
+                <li key={value} className="col-span-3 grid grid-cols-subgrid">
                   <button
                     type="button"
                     role="option"
@@ -200,19 +198,13 @@ export function TravelDirectionsCard({
                     <span className="font-medium text-gray-900">
                       {scheduleTravelModeLabel(value)}
                     </span>
-                    {selected ? (
-                      <span className="ml-auto shrink-0 text-body-xs-emphasis font-semibold uppercase text-primary">
-                        선택됨
-                      </span>
-                    ) : (
-                      <span className="ml-auto text-dark-gray">{row}</span>
-                    )}
+                    {rowValue}
                   </button>
                 </li>
               );
             })}
             {showUnknownOption && !readOnly ? (
-              <li>
+              <li className="col-span-3">
                 <button
                   type="button"
                   className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular hover:bg-gray-border/30 disabled:cursor-not-allowed disabled:opacity-50"

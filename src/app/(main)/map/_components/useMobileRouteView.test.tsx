@@ -52,9 +52,11 @@ import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import { useMobileRouteView } from "./useMobileRouteView";
 
 it.each([
-  { url: "/map?view=route&day=1", camera: "fit", item: "101" },
-  { url: "/map?view=route&day=1&item=102", camera: "place", item: "102" },
-])("$url 진입 후 URL에 선택 장소가 반영되면 해당 장소를 확대한다", async ({ url, camera, item }) => {
+  // 경로 보기 버튼 — 그 일차 첫 장소를 바로 확대한다(일차 전체를 먼저 맞췄다가 확대하지 않는다)
+  { url: "/map?view=route&day=1", item: "101" },
+  // 일정 카드 — 누른 장소를 확대한다
+  { url: "/map?view=route&day=1&item=102", item: "102" },
+])("$url 진입 시 처음부터 고른 장소를 확대하고, URL에 선택 장소가 반영돼도 그대로다", async ({ url, item }) => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   window.history.replaceState(null, "", url);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -72,7 +74,7 @@ it.each([
   const render = () => root.render(<QueryClientProvider client={queryClient}><Harness /></QueryClientProvider>);
   try {
     await act(async () => render());
-    expect(current?.mapRouteView?.camera.kind).toBe(camera);
+    expect(current?.mapRouteView?.camera.kind).toBe("place");
     expect(new URLSearchParams(window.location.search).get("item")).toBe(item);
     // Next.js reflects native replaceState into useSearchParams; emulate that rerender.
     await act(async () => render());
