@@ -19,7 +19,10 @@ import {
 } from "@/lib/places/place-queries";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
-import { canonicalScheduleTravelMode } from "@/lib/plan/scheduleTravelMode";
+import {
+  SCHEDULE_TRAVEL_MODE_DEFAULT,
+  canonicalScheduleTravelMode,
+} from "@/lib/plan/scheduleTravelMode";
 import type { PlanPlace } from "@/lib/plan/types";
 import {
   roomSchedulesQueryKey,
@@ -237,7 +240,32 @@ function scheduleRoutesBatchKey(
   return `${roomId.trim()}:${scheduleId}:${placesFingerprint}`;
 }
 
-/** 일차 구간 경로를 저장된 공유 이동수단 기준 batch로 시딩합니다 (in-flight dedup). */
+/**
+ * 일차의 모든 구간 경로가 이미 캐시에 있는지 — 일정 화면에서 받아 뒀거나, 화면을 다시 열었거나,
+ * 지도 경로 보기로 넘어온 경우다. 캐시가 지워졌거나(gc) 일정 변경으로 무효화된 구간이 하나라도 있으면 false.
+ */
+export function scheduleSegmentRoutesCached(
+  queryClient: QueryClient,
+  roomId: string,
+  scheduleId: number,
+  places: readonly PlanPlace[],
+): boolean {
+  const rid = roomId.trim();
+  const sources = places
+    .slice(0, -1)
+    .filter((p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number" && Number.isFinite(p.itemId));
+  if (!rid.length || !sources.length) return false;
+  return sources.every((place) => {
+    const mode = canonicalScheduleTravelMode(place.travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
+    const state = queryClient.getQueryState(scheduleItemRouteQueryKey(rid, scheduleId, place.itemId, mode));
+    return state?.status === "success" && !state.isInvalidated;
+  });
+}
+
+/**
+ * 일차 구간 경로를 저장된 공유 이동수단 기준 batch로 시딩합니다 (in-flight dedup).
+ * 모든 구간이 이미 캐시에 있으면 보내지 않는다 — 재마운트·화면 이동만으로 다시 조회하지 않는다.
+ */
 export async function fetchAndSeedScheduleRoutesBatch(
   queryClient: QueryClient,
   roomId: string,
@@ -253,6 +281,7 @@ export async function fetchAndSeedScheduleRoutesBatch(
   const key = scheduleRoutesBatchKey(rid, scheduleId, fingerprint);
   const inFlight = inFlightScheduleRoutesBatch.get(key);
   if (inFlight) return inFlight;
+  if (scheduleSegmentRoutesCached(queryClient, rid, scheduleId, places)) return;
 
   const promise = hydrateScheduleRoutesBatch(
     queryClient,
