@@ -33,6 +33,12 @@ type Props = {
   appearance?: "default" | "field";
 };
 
+function DestinationLeadingIcon({ show, type }: Readonly<{ show: boolean; type: "search" | "map-pin" }>) {
+  if (!show) return null;
+  const Icon = type === "search" ? Search : MapPin;
+  return <Icon size={15} className="shrink-0 text-dark-gray" />;
+}
+
 /**
  * Google Places Autocomplete Data API 기반 목적지 검색.
  * `includedPrimaryTypes`로 지역·행정구역·국가 등(레거시 `(regions)`에 대응).
@@ -47,7 +53,7 @@ export function DestinationSearchInput({
   leadingIconType = "map-pin",
   selectionOnly = false,
   appearance = "default",
-}: Props) {
+}: Readonly<Props>) {
   const isField = appearance === "field";
   const showHint = selectionOnly && !isField;
   const placesLib = useMapsLibrary("places");
@@ -179,13 +185,6 @@ export function DestinationSearchInput({
 
   const showDropdown = isOpen && predictions.length > 0;
 
-  const leadingGlyph =
-    showLeadingIcon && leadingIconType === "search" ? (
-      <Search size={15} className="shrink-0 text-dark-gray" />
-    ) : showLeadingIcon ? (
-      <MapPin size={15} className="shrink-0 text-dark-gray" />
-    ) : null;
-
   const showClear = inputValue.trim() !== "";
 
   return (
@@ -199,7 +198,7 @@ export function DestinationSearchInput({
               : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
           )}
         >
-          {leadingGlyph}
+          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} />
           <input
             ref={inputRef}
             aria-label="목적지 검색"

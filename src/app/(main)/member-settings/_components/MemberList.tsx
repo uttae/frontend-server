@@ -26,14 +26,14 @@ export function MemberList({
   onKick,
   onTransfer,
   className,
-}: {
+}: Readonly<{
   me: RoomMember | undefined;
   others: readonly RoomMember[];
   isHost: boolean;
   onKick: (member: RoomMember) => void;
   onTransfer: (member: RoomMember) => void;
   className?: string;
-}) {
+}>) {
   return (
     <ul className={cn("flex flex-col divide-y divide-border-subtle", className)}>
       {me ? (

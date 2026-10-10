@@ -14,7 +14,7 @@ type Props = {
 };
 
 /** 프로필 이미지가 없거나 로드에 실패하면 닉네임 첫 글자로 대체 */
-export function UserAvatar({ user, size = 32, className, initialClassName = "font-semibold text-white" }: Props) {
+export function UserAvatar({ user, size = 32, className, initialClassName = "font-semibold text-white" }: Readonly<Props>) {
   const [failed, setFailed] = useState(false);
   const initial = user.nickname.charAt(0);
   const showImage = Boolean(user.profileImageUrl) && !failed;

@@ -28,7 +28,21 @@ type Props = {
   onTransfer: (memberId: string) => void;
 };
 
-export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) {
+function MemberConnectionStatus({ member }: Readonly<{ member: MemberCardData }>) {
+  if (member.status === "LEFT") {
+    return <span className="text-caption-m-regular text-text-subtle">방 나감</span>;
+  }
+  if (!member.connectionStatus) return null;
+  const isOnline = member.connectionStatus === "online";
+  return (
+    <span className="flex items-center gap-2 text-caption-m-regular text-text-subtle">
+      <span aria-hidden className={cn("size-1.5 rounded-full", isOnline ? "bg-status-positive" : "bg-icon-disabled")} />
+      {isOnline ? "온라인" : "오프라인"}
+    </span>
+  );
+}
+
+export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Readonly<Props>) {
   const isLeft = member.status === "LEFT";
   const isOnline = member.connectionStatus === "online";
   const canAct =
@@ -93,14 +107,7 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Props) 
           >
             {member.role === "HOST" ? "방장" : "참여자"}
           </span>
-          {isLeft ? (
-            <span className="text-caption-m-regular text-text-subtle">방 나감</span>
-          ) : member.connectionStatus ? (
-            <span className="flex items-center gap-2 text-caption-m-regular text-text-subtle">
-              <span aria-hidden className={cn("size-1.5 rounded-full", isOnline ? "bg-status-positive" : "bg-icon-disabled")} />
-              {isOnline ? "온라인" : "오프라인"}
-            </span>
-          ) : null}
+          <MemberConnectionStatus member={member} />
         </div>
       </div>
 

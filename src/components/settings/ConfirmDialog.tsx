@@ -34,7 +34,7 @@ export function ConfirmDialog({
   errorMessage,
   onConfirm,
   onCancel,
-}: Props) {
+}: Readonly<Props>) {
   // SettingsDialog는 onClose가 바뀔 때마다 포커스·inert를 다시 잡으므로 안정된 함수를 넘긴다
   const latest = useRef({ onCancel, isPending });
   useLayoutEffect(() => {
@@ -43,6 +43,13 @@ export function ConfirmDialog({
   const handleClose = useCallback(() => {
     if (!latest.current.isPending) latest.current.onCancel();
   }, []);
+
+  const confirmText = isPending ? "처리 중…" : confirmLabel;
+  const alertConfirmClass = alertDialogButtonClass[destructive ? "critical" : "brand"];
+  const ledgerButtonClass = appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : undefined;
+  const descriptionClass = appearance === "ledger"
+    ? "whitespace-pre-line text-[14px] leading-5 text-text-subtle"
+    : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray";
 
   if (appearance === "alert") {
     return (
@@ -60,11 +67,11 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            className={`flex-1 ${alertDialogButtonClass[destructive ? "critical" : "brand"]}`}
+            className={`flex-1 ${alertConfirmClass}`}
             onClick={onConfirm}
             disabled={isPending}
           >
-            {isPending ? "처리 중…" : confirmLabel}
+            {confirmText}
           </button>
         </div>
         {errorMessage ? (
@@ -85,14 +92,14 @@ export function ConfirmDialog({
       stopPortalEventPropagation
     >
       {description ? (
-        <p className={appearance === "ledger" ? "whitespace-pre-line text-[14px] leading-5 text-text-subtle" : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"}>
+        <p className={descriptionClass}>
           {description}
         </p>
       ) : null}
       <SettingsActionButtonRow className="mt-6">
         <SettingsActionButton
           variant="secondary"
-          className={appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : undefined}
+          className={ledgerButtonClass}
           onClick={handleClose}
           disabled={isPending}
         >
@@ -100,11 +107,11 @@ export function ConfirmDialog({
         </SettingsActionButton>
         <SettingsActionButton
           variant="primary"
-          className={`${appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : ""} ${destructive ? "bg-status-negative" : ""}`}
+          className={`${ledgerButtonClass ?? ""} ${destructive ? "bg-status-negative" : ""}`}
           onClick={onConfirm}
           disabled={isPending}
         >
-          {isPending ? "처리 중…" : confirmLabel}
+          {confirmText}
         </SettingsActionButton>
       </SettingsActionButtonRow>
     </SettingsDialog>

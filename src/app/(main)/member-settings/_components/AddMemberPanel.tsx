@@ -31,6 +31,22 @@ function normalizeInviteCode(inviteCode: string | null | undefined): string {
   return typeof inviteCode === "string" ? inviteCode.trim() : "";
 }
 
+function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetailError, isRegenerating }: Readonly<{
+  canIssue: boolean;
+  inviteCode: Props["inviteCode"];
+  isRoomDetailLoading: boolean;
+  isRoomDetailError: boolean;
+  isRegenerating: boolean;
+}>) {
+  if (isRoomDetailLoading || isRegenerating) {
+    return <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
+  }
+  let message = "발급에 실패했어요. 아래에서 재발급을 눌러 주세요.";
+  if (!canIssue) message = "방장만 볼 수 있어요.";
+  else if (isRoomDetailError || inviteCode === undefined) message = "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요.";
+  return <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">{message}</span>;
+}
+
 export function AddMemberPanel({
   roomId,
   inviteCode,
@@ -40,7 +56,7 @@ export function AddMemberPanel({
   isRoomDetailLoading,
   isRoomDetailError,
   showDescription = true,
-}: Props) {
+}: Readonly<Props>) {
   const roomIdTrim = roomId.trim();
   // 초대 코드 발급·재발급 API는 방장 전용 — 참여자는 서버가 내려준 코드가 있을 때만 링크를 보여준다
   const canIssue = isHost ?? isHostRole(role);
@@ -159,16 +175,6 @@ export function AddMemberPanel({
     });
   }
 
-  let inviteFallback = <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">
-    {!canIssue
-      ? "방장만 볼 수 있어요."
-      : isRoomDetailError || inviteCode === undefined
-        ? "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요."
-        : "발급에 실패했어요. 아래에서 재발급을 눌러 주세요."}
-  </span>;
-  if (isRoomDetailLoading || isRegenerating) {
-    inviteFallback = <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
-  }
   return (
     <div className="min-w-0">
       <div className="flex flex-col gap-3">
@@ -182,7 +188,15 @@ export function AddMemberPanel({
           <div className="flex min-w-0 flex-1 items-center">
             {inviteUrl ? (
               <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 truncate bg-transparent text-body-m-regular mobile:text-body-s-regular text-text-subtle outline-none disabled:opacity-40" />
-            ) : inviteFallback}
+            ) : (
+              <InviteFallback
+                canIssue={canIssue}
+                inviteCode={inviteCode}
+                isRoomDetailLoading={isRoomDetailLoading}
+                isRoomDetailError={isRoomDetailError}
+                isRegenerating={isRegenerating}
+              />
+            )}
           </div>
           <button
             type="button"

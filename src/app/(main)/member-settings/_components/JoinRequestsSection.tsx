@@ -104,7 +104,7 @@ export function JoinRequestsSection({ roomId }: Props) {
     <>
       <section aria-label="참여 요청" className="flex flex-col gap-3">
         <h2 className="flex items-baseline gap-2 text-title-s text-text">
-          참여 요청
+          <span>참여 요청</span>
           <span className="text-body-m-regular font-medium text-primary">{requests.length}</span>
         </h2>
         <div className="flex flex-col gap-4">

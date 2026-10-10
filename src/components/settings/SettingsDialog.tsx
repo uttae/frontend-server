@@ -35,6 +35,33 @@ function restoreDialogFocus(trigger: Element | null) {
   else main.setAttribute("tabindex", previousTabIndex);
 }
 
+type DialogAppearance = "default" | "ledger" | "alert";
+type DialogSize = "default" | "medium" | "compact";
+
+const dialogWidthClass: Record<DialogSize, string> = {
+  compact: "max-w-md",
+  medium: "max-w-[600px]",
+  default: "max-w-[640px]",
+};
+const dialogTitleClass: Record<DialogAppearance, string> = {
+  alert: "text-title-l",
+  ledger: "text-[20px] leading-7 font-bold",
+  default: "text-title-l mobile:text-title-m font-bold",
+};
+
+function getDialogSurfaceClass(appearance: DialogAppearance, size: DialogSize) {
+  if (appearance === "alert") {
+    return "relative m-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[400px] overflow-y-auto overscroll-contain rounded-[10px] border-0 bg-fill-elevate p-5 text-text shadow-xl [scrollbar-gutter:auto]";
+  }
+  const isLedger = appearance === "ledger";
+  return cn(
+    "relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 overflow-y-auto overscroll-contain bg-white p-6 text-neutral-900 shadow-xl",
+    dialogWidthClass[size],
+    isLedger ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl",
+    isLedger ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6",
+  );
+}
+
 /** 기존 설정 모달의 표면·간격을 공유하는 키보드 접근 가능한 다이얼로그. */
 export function SettingsDialog({
   title,
@@ -47,20 +74,20 @@ export function SettingsDialog({
   overlayClassName = "",
   showCloseButton = true,
   titleAccessory,
-}: {
+}: Readonly<{
   title: string;
   onClose: () => void;
   children: ReactNode;
-  size?: "default" | "medium" | "compact";
+  size?: DialogSize;
   /** `alert` — Figma Alert Dialog(폭 400, 여백 20, 제목 title/lg) */
-  appearance?: "default" | "ledger" | "alert";
+  appearance?: DialogAppearance;
   stopPortalEventPropagation?: boolean;
   className?: string;
   overlayClassName?: string;
   showCloseButton?: boolean;
   /** 제목 바로 옆에 붙는 보조 액션 — 예: 여행 삭제 */
   titleAccessory?: ReactNode;
-}) {
+}>) {
   const titleId = useId();
   const overlayRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -82,7 +109,7 @@ export function SettingsDialog({
       ),
     ];
     // 제목 옆 위험 액션 등 `data-skip-autofocus`는 첫 포커스에서 건너뛴다
-    (focusable().find((node) => !node.hasAttribute("data-skip-autofocus")) ?? focusable()[0])?.focus();
+    (focusable().find((node) => node.dataset.skipAutofocus === undefined) ?? focusable()[0])?.focus();
 
     function handleKey(event: KeyboardEvent) {
       if (event.defaultPrevented) return;
@@ -141,16 +168,11 @@ export function SettingsDialog({
         ref={dialogRef}
         aria-modal="true"
         aria-labelledby={titleId}
-        className={cn(
-          isAlert
-            ? "relative m-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 max-w-[400px] overflow-y-auto overscroll-contain rounded-[10px] border-0 bg-fill-elevate p-5 text-text shadow-xl [scrollbar-gutter:auto]"
-            : `relative m-0 border-0 max-h-[calc(100dvh-2rem)] w-full min-w-0 ${size === "compact" ? "max-w-md" : size === "medium" ? "max-w-[600px]" : "max-w-[640px]"} overflow-y-auto overscroll-contain ${appearance === "ledger" ? "rounded-xl mobile:max-w-[353px] max-sm:max-w-[353px]" : "rounded-3xl"} bg-white p-6 text-neutral-900 shadow-xl ${appearance === "ledger" ? "[scrollbar-gutter:auto]" : "[scrollbar-gutter:stable_both-edges] sm:px-8 sm:py-6"}`,
-          className,
-        )}
+        className={cn(getDialogSurfaceClass(appearance, size), className)}
       >
         <div className={`${appearance === "ledger" ? "mb-6" : "mb-2"} flex items-center justify-between gap-4`}>
           <div className="flex min-w-0 items-baseline gap-2">
-            <h2 id={titleId} className={isAlert ? "text-title-l" : appearance === "ledger" ? "text-[20px] leading-7 font-bold" : "text-title-l mobile:text-title-m font-bold"}>
+            <h2 id={titleId} className={dialogTitleClass[appearance]}>
               {title}
             </h2>
             {titleAccessory}
