@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useRegenerateInviteCode } from "@/hooks/useRooms";
-import { isHostRole } from "@/lib/rooms";
+import { isHostRole, isRoomMemberRole } from "@/lib/rooms";
 import {
   bucketMemberCount,
   toAnalyticsRoomRole,
@@ -42,7 +42,7 @@ function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetai
     return <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
   }
   let message = "발급에 실패했어요. 아래에서 재발급을 눌러 주세요.";
-  if (!canIssue) message = "방장만 볼 수 있어요.";
+  if (!canIssue) message = "초대 링크를 사용할 수 없어요. 방 정보를 다시 확인해 주세요.";
   else if (isRoomDetailError || inviteCode === undefined) message = "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요.";
   return <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">{message}</span>;
 }
@@ -59,7 +59,8 @@ export function AddMemberPanel({
 }: Readonly<Props>) {
   const roomIdTrim = roomId.trim();
   // 초대 코드 발급·재발급 API는 방장 전용 — 참여자는 서버가 내려준 코드가 있을 때만 링크를 보여준다
-  const canIssue = isHost ?? isHostRole(role);
+  const canShareInvite = isRoomMemberRole(role) && !isRoomDetailError;
+  const canIssue = canShareInvite && (isHost ?? isHostRole(role));
   const detailInviteCode = normalizeInviteCode(inviteCode);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,7 +111,7 @@ export function AddMemberPanel({
 
   const displayedCode =
     issuedCode === undefined ? detailInviteCode || null : issuedCode;
-  const inviteUrl = displayedCode
+  const inviteUrl = canShareInvite && displayedCode
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${displayedCode}`
     : null;
 
@@ -163,7 +164,7 @@ export function AddMemberPanel({
   }
 
   function handleRegenerate() {
-    if (!roomIdTrim.length) return;
+    if (!roomIdTrim.length || !canIssue || isRegenerating) return;
     setCopied(false);
     regenerate(roomIdTrim, {
       onSuccess: ({ inviteCode: newCode }) => {

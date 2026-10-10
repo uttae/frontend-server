@@ -4,7 +4,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
-  room: { id: "room", title: "가을 여행", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12" },
+  room: { id: "room", title: "가을 여행", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12", role: "HOST" },
   isHost: true, isLoading: false, missing: false, pending: false,
   update: vi.fn(),
 }));
@@ -54,7 +54,7 @@ async function open() {
   return trigger;
 }
 beforeEach(async () => {
-  state.isHost = true; state.isLoading = false; state.missing = false; state.pending = false;
+  state.room.role = "HOST"; state.isHost = true; state.isLoading = false; state.missing = false; state.pending = false;
   state.update.mockReset();
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<HeaderBar />));
@@ -98,11 +98,21 @@ it("retains the original date floor, date ordering and required destination vali
   expect(state.update).not.toHaveBeenCalled();
 });
 
-it("shows nonhost travel information without editable fields or a save action", async () => {
-  state.isHost = false; await open();
-  expect(dialog()!.textContent).toContain("방장만 여행 정보를 수정할 수 있어요.");
+it("lets members save travel information without granting deletion", async () => {
+  state.isHost = false; state.room.role = "MEMBER"; await open();
+  await change('input[type="text"]', "멤버 수정");
+  await click("적용하기", dialog()!);
+  expect(state.update).toHaveBeenCalledWith(expect.objectContaining({
+    roomId: "room", data: expect.objectContaining({ title: "멤버 수정" }),
+  }), expect.any(Object));
+  expect(dialog()!.textContent).not.toContain("여행 삭제");
+});
+
+it.each(["PENDING", "", "UNKNOWN"])("denies editing for unrecognized membership %s", async (role) => {
+  state.isHost = false; state.room.role = role; await open();
   expect(dialog()!.querySelector("input")).toBeNull();
   expect(dialog()!.textContent).not.toContain("적용하기");
+  expect(state.update).not.toHaveBeenCalled();
 });
 
 it.each(["loading", "missing"])("does not offer editing for %s room data", async (mode) => {
