@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { packingApi, PackingApiError } from '@/lib/api/rooms/packing';
+import { AnalyticsEvents, trackAnalyticsEvent } from '@/lib/analytics/track';
 import type { PackingList, PackingItem, PackingPart } from './types';
 import { packingQueryKey } from '@/lib/query-keys';
 import { assertPackingChecked, assertPackingId, assertPackingVersion, normalizePackingMemo, normalizePackingName, PackingValidationError } from './validation';
@@ -183,6 +184,18 @@ export class PackingCoordinator {
       this.setData({ ...current, version: result.version, parts });
       this.publish({ confirmation: null });
       outcome = { ...outcome, kind: 'success' };
+      try {
+        if (command.type === 'createItem') {
+          trackAnalyticsEvent(AnalyticsEvents.packingItemAdded);
+        } else if (command.type === 'checkItem' && 'item' in result && result.item.id === command.id) {
+          const previous = findItem(snapshot, command.id);
+          if (previous && previous.checked !== result.item.checked) {
+            trackAnalyticsEvent(result.item.checked ? AnalyticsEvents.packingItemChecked : AnalyticsEvents.packingItemUnchecked);
+          }
+        }
+      } catch {
+        // Analytics must never roll back an acknowledged write or prevent reconciliation.
+      }
       await this.read(generation, false);
       return outcome;
     } catch (error) {

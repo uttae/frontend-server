@@ -1,4 +1,5 @@
 "use client";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { cn } from "@/lib/utils";
 import { expenseTitle } from "@/lib/expenses/expense-name";
@@ -207,6 +208,20 @@ function ExpenseMemberNotice({ context }: Readonly<{ context: ReturnType<typeof 
 export function ExpensePanel() {
   const context = useExpenseContext();
   const [tab, setTab] = useState<"list" | "summary">("list");
+  const summaryViewed = useRef(false);
+  useEffect(() => {
+    if (tab !== "summary") {
+      summaryViewed.current = false;
+    } else if (
+      !context.revoked &&
+      context.currentUserId !== undefined &&
+      context.summary.isSuccess &&
+      !summaryViewed.current
+    ) {
+      summaryViewed.current = true;
+      trackAnalyticsEvent(AnalyticsEvents.settlementSummaryViewed);
+    }
+  }, [tab, context.revoked, context.currentUserId, context.summary.isSuccess]);
   const [category, setCategory] = useState("ALL");
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");

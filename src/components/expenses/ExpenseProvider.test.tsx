@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { setSessionUserCache } from "@/lib/session-user-cache";
+import { tearDownClientSession } from "@/lib/client-storage";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 beforeEach(() => vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true));
 const stomp = vi.hoisted(() => ({
@@ -45,7 +47,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
 }));
 vi.mock("@/hooks/useSessionUser", () => ({
-  useSessionUser: () => ({ data: { id: 1 } }),
+  useSessionUser: () => ({ data: analytics.userId === undefined ? undefined : { id: analytics.userId } }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
   useSchedulePlanPlaces: () => ({ data: [], isSuccess: true }),
@@ -70,6 +72,10 @@ vi.mock("@/lib/api/rooms/expenses", async (importOriginal) => ({
   patchExpense: mocks.patch,
   deleteExpense: mocks.remove,
 }));
+const analytics = vi.hoisted(() => ({ send: vi.fn(), userId: 1 as number | undefined }));
+vi.mock("@/lib/analytics/client", () => ({ sendAnalyticsDataCommand: analytics.send }));
+beforeEach(() => { analytics.send.mockClear(); analytics.userId = 1; });
+import { ExpensePanel } from "./ExpensePanel";
 import { ExpenseProvider, useExpenseContext } from "./ExpenseProvider";
 function Probe() {
   const c = useExpenseContext();
@@ -130,23 +136,26 @@ const record: Expense = {
   name: null, createdAt: "",
   updatedAt: "",
 };
-async function mountMutations() {
+async function mountMutations(options: { panel?: boolean; summary?: () => Promise<unknown> } = {}) {
   mocks.members.mockResolvedValue({
     members: [{ userId: 1, role: "HOST", status: "ACTIVE" }],
   });
   mocks.list.mockResolvedValue([record]);
-  mocks.summary.mockResolvedValue({ currencies: [] });
+  mocks.summary.mockReset().mockImplementation(options.summary ?? (async () => ({ currencies: [] })));
   client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
   });
+  setSessionUserCache(client, { id: 1, email: "", nickname: "", profileImageUrl: null, provider: "GOOGLE", tutorialCompleted: true });
+  useSessionStore.setState({ sessionReady: true, currentRoomId: "r" });
   await act(async () => {
     renderer = create(
       <QueryClientProvider client={client}>
         <ExpenseProvider roomId="r">
           <MutationProbe />
+          {options.panel && <ExpensePanel />}
         </ExpenseProvider>
       </QueryClientProvider>,
     );
@@ -184,6 +193,7 @@ it("forwards the reviewed version and reflects PATCH before summary refresh comp
     expect.objectContaining({ expectedVersion: 2 }),
   );
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_updated"]]);
   await act(async () => {
     finishList([updated]);
     finish({ currencies: [] });
@@ -222,6 +232,7 @@ it("forwards DELETE reviewed version and removes the record before summary refre
   });
   expect(mocks.remove).toHaveBeenLastCalledWith("r", 10, 2);
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_deleted"]]);
   await act(async () => {
     finishList([]);
     finish({ currencies: [] });
@@ -264,6 +275,7 @@ it("saves as ACTIVE MEMBER, guards duplicate writes and installs PUT result", as
   await act(async () => {
     saving = context.saveBudget({ budgetKrw: "0", expectedVersion: 0 });
   });
+  expect(analytics.send).not.toHaveBeenCalled();
   await expect(
     context.saveBudget({ budgetKrw: "10", expectedVersion: 0 }),
   ).rejects.toThrow();
@@ -280,6 +292,7 @@ it("saves as ACTIVE MEMBER, guards duplicate writes and installs PUT result", as
     currency: "KRW",
     version: 1,
   });
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_budget_saved"]]);
 });
 it("fresh budget recovery propagates failure instead of accepting cached budget", async () => {
   await mountMutations();
@@ -312,6 +325,7 @@ it("does not permit budget writes after member access is lost", async () => {
     context.saveBudget({ budgetKrw: "1", expectedVersion: 0 }),
   ).rejects.toThrow();
   expect(mocks.putBudget.mock.calls).toHaveLength(before);
+  expect(analytics.send).not.toHaveBeenCalled();
 });
 
 it("subscribes to the exact expense topic and consumes minimal events from own sessions", async () => {
@@ -328,6 +342,7 @@ it("subscribes to the exact expense topic and consumes minimal events from own s
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
   expect(mocks.list.mock.calls.length).toBeGreaterThan(before);
+  expect(analytics.send).not.toHaveBeenCalled();
 });
 it("disconnect hides synchronized status and revocation stops subscription and closes expense children", async () => {
   await mountMutations();
@@ -374,6 +389,7 @@ it("late PATCH cannot replace a newer version read during its request", async ()
   expect(
     client.getQueryData<Expense[]>(expenseKeys.list("r"))?.[0],
   ).toMatchObject({ version: 9, memo: "newer" });
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_updated"]]);
 });
 import { beginExpenseRoomAdmission, getExpenseRecovery } from "@/lib/expenses/expense-recovery";
 it("late PUT never replaces a newer explicit recovery read while trailing GET is pending", async () => {
@@ -405,6 +421,7 @@ it("late PUT never replaces a newer explicit recovery read while trailing GET is
     finish({ budgetKrw: "100", currency: "KRW", version: 1 });
   });
   expect(client.getQueryData(expenseKeys.budget("r"))).toEqual(newer);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_budget_saved"]]);
   await act(async () => {
     finishRead(newer);
     await saving;
@@ -528,6 +545,7 @@ it("keeps a committed create successful when its follow-up summary read fails", 
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
   expect(context.syncStatus).toBe("error");
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_created"]]);
 });
 
 it("new authorized lifetime permits writes while late old PATCH and PUT stay fenced", async () => {
@@ -873,4 +891,147 @@ it("never reports a foreground load during successful tab-return revalidation", 
  expect(statuses).toContain("refreshing");
  expect(statuses).not.toContain("pending");
  expect(context.syncStatus).toBe("ready");
+});
+
+it("emits no expense or budget analytics while pending, after rejected writes, or blocked duplicate writes", async () => {
+  await mountMutations();
+  let reject!: (error: Error) => void;
+  mocks.create.mockImplementationOnce(() => new Promise((_, fail) => { reject = fail; }));
+  let saving!: Promise<void>;
+  await act(async () => { saving = context.save(record); });
+  expect(analytics.send).not.toHaveBeenCalled();
+  await expect(context.save(record)).rejects.toThrow("이전 요청");
+  await act(async () => {
+    reject(new Error("offline"));
+    await expect(saving).rejects.toThrow("offline");
+  });
+  mocks.patch.mockRejectedValueOnce(new Error("conflict"));
+  mocks.remove.mockRejectedValueOnce(new Error("offline"));
+  mocks.putBudget.mockRejectedValueOnce(new Error("offline"));
+  await act(async () => {
+    await expect(context.save(record, record.id, record.version)).rejects.toThrow("conflict");
+    await expect(context.remove(record)).rejects.toThrow("offline");
+    await expect(context.saveBudget({ budgetKrw: "100", expectedVersion: 0 })).rejects.toThrow("offline");
+  });
+  expect(analytics.send).not.toHaveBeenCalled();
+});
+
+it.each(["account", "logout", "room", "unmount", "revocation"])("does not attribute late expense and budget success after %s changes", async (change) => {
+  await mountMutations();
+  let finishExpense!: (expense: Expense) => void;
+  let finishBudget!: (budget: unknown) => void;
+  mocks.patch.mockImplementationOnce(() => new Promise(resolve => { finishExpense = resolve; }));
+  mocks.putBudget.mockImplementationOnce(() => new Promise(resolve => { finishBudget = resolve; }));
+  let saving!: Promise<void>;
+  let budgeting!: Promise<unknown>;
+  await act(async () => {
+    saving = context.save(record, record.id, record.version);
+    budgeting = context.saveBudget({ budgetKrw: "100", expectedVersion: 0 });
+  });
+  await act(async () => {
+    if (change === "unmount") renderer.unmount();
+    else if (change === "revocation") getExpenseRecovery(client, "r").revoke();
+    else {
+      if (change === "account") analytics.userId = 2;
+      if (change === "logout") analytics.userId = undefined;
+      renderer.update(<QueryClientProvider client={client}>
+        <ExpenseProvider roomId={change === "room" ? "next-room" : "r"}><MutationProbe /></ExpenseProvider>
+      </QueryClientProvider>);
+    }
+  });
+  await act(async () => {
+    finishExpense({ ...record, version: 3 });
+    finishBudget({ budgetKrw: "100", currency: "KRW", version: 1 });
+    await Promise.all([saving, budgeting]);
+  });
+  expect(analytics.send).not.toHaveBeenCalled();
+});
+
+function panelButton(label: string) {
+  return renderer.root.findAllByType("button").find(button => button.children.includes(label))!;
+}
+async function flushQueries() {
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+}
+it("counts displayed settlement once per opening, never initial reads, rerenders, or refetches", async () => {
+  await mountMutations({ panel: true });
+  expect(analytics.send).not.toHaveBeenCalled();
+  await act(async () => panelButton("정산 요약").props.onClick());
+  expect(renderer.root.findByType("dialog")).toBeDefined();
+  expect(analytics.send.mock.calls).toEqual([["event", "settlement_summary_viewed"]]);
+  await act(async () => { await context.refresh(); });
+  await flushQueries();
+  expect(analytics.send).toHaveBeenCalledTimes(1);
+  await act(async () => panelButton("확인").props.onClick());
+  await act(async () => panelButton("정산 요약").props.onClick());
+  expect(analytics.send.mock.calls).toEqual([
+    ["event", "settlement_summary_viewed"], ["event", "settlement_summary_viewed"],
+  ]);
+});
+it("waits for successful settlement data after loading and error before counting a view", async () => {
+  let reject!: (error: Error) => void;
+  await mountMutations({ panel: true, summary: () => new Promise((_, fail) => { reject = fail; }) });
+  await act(async () => panelButton("정산 요약").props.onClick());
+  expect(analytics.send).not.toHaveBeenCalled();
+  await act(async () => reject(new Error("offline")));
+  await flushQueries();
+  expect(JSON.stringify(renderer.toJSON())).toContain("정산 조회에 실패했어요.");
+  expect(analytics.send).not.toHaveBeenCalled();
+  mocks.summary.mockResolvedValue({ currencies: [] });
+  await act(async () => { await context.refresh(); });
+  await flushQueries();
+  expect(analytics.send.mock.calls).toEqual([["event", "settlement_summary_viewed"]]);
+});
+it("does not count a settlement that finishes loading after the dialog closes", async () => {
+  let finish!: (value: unknown) => void;
+  await mountMutations({ panel: true, summary: () => new Promise(resolve => { finish = resolve; }) });
+  await act(async () => panelButton("정산 요약").props.onClick());
+  await act(async () => panelButton("확인").props.onClick());
+  await act(async () => finish({ currencies: [] }));
+  await flushQueries();
+  expect(analytics.send).not.toHaveBeenCalled();
+});
+
+
+it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-roundtrip"])("synchronously fences pending expense and budget analytics on %s before React rerenders", async (change) => {
+  await mountMutations();
+  let finishExpense!: (expense: Expense) => void;
+  let finishBudget!: (budget: unknown) => void;
+  mocks.patch.mockImplementationOnce(() => new Promise(resolve => { finishExpense = resolve; }));
+  mocks.putBudget.mockImplementationOnce(() => new Promise(resolve => { finishBudget = resolve; }));
+  let saving!: Promise<void>;
+  let budgeting!: Promise<unknown>;
+  await act(async () => {
+    saving = context.save(record, record.id, record.version);
+    budgeting = context.saveBudget({ budgetKrw: "100", expectedVersion: 0 });
+  });
+  // These are the actual synchronous session mutations. No renderer.update or
+  // hook identity change occurs before the in-flight REST writes resolve.
+  await act(async () => {
+    if (change === "logout") tearDownClientSession({ queryClient: client });
+    else if (change.startsWith("account")) {
+      const user = { id: 2, email: "", nickname: "", profileImageUrl: null, provider: "GOOGLE", tutorialCompleted: true };
+      setSessionUserCache(client, user);
+      if (change === "account-roundtrip") setSessionUserCache(client, { ...user, id: 1 });
+    } else if (change === "room-loss") useSessionStore.getState().clearCurrentRoomId();
+    else {
+      useSessionStore.getState().setCurrentRoomId("next-room");
+      if (change === "room-roundtrip") useSessionStore.getState().setCurrentRoomId("r");
+    }
+    finishExpense({ ...record, version: 3 });
+    finishBudget({ budgetKrw: "100", currency: "KRW", version: 1 });
+    await Promise.all([saving, budgeting]);
+  });
+  expect(analytics.send.mock.calls.filter(([command]) => command === "event")).toEqual([]);
+  if (change.endsWith("roundtrip")) {
+    mocks.patch.mockResolvedValueOnce({ ...record, version: 4 });
+    mocks.putBudget.mockResolvedValueOnce({ budgetKrw: "200", currency: "KRW", version: 2 });
+    await act(async () => {
+      await context.save(record, record.id, 3);
+      await context.saveBudget({ budgetKrw: "200", expectedVersion: 1 });
+    });
+    expect(analytics.send.mock.calls.filter(([command]) => command === "event")).toEqual([
+      ["event", "expense_updated"], ["event", "expense_budget_saved"],
+    ]);
+  }
 });

@@ -2,7 +2,7 @@
 
 ## 목적과 범위
 
-우때 프론트엔드는 분석 쿠키에 동의한 브라우저에서만 `@amplitude/unified`를 초기화한다. 동일한 의미의 제품 이벤트는 `src/lib/analytics/track.ts`를 통해 GA4와 Amplitude에 함께 전달하고, Session Replay도 같은 동의 경계 안에서 동작한다.
+우때 프론트엔드는 분석 쿠키에 동의한 브라우저에서만 `@amplitude/unified`를 초기화한다. `src/lib/analytics/track.ts`로 기록한 이벤트 중 공통 성과와 세부 제품 행동을 Amplitude에 전달한다. GA4는 공통 성과와 랜딩 행동을 받는다. 목적지는 `event-destinations.ts`에서 관리하며 Session Replay도 같은 동의 경계 안에서 동작한다.
 
 SDK 초기화는 애플리케이션 생명주기 동안 한 번만 수행된다. 서버 렌더링과 API 서버에서는 Amplitude SDK를 실행하지 않는다.
 
@@ -31,7 +31,7 @@ Amplitude의 Development와 Production 프로젝트를 분리하고 API 키를 �
 - 페이지 조회: 앱의 SPA 라우트 추적기가 `page_view`를 직접 전송하므로 Amplitude 기본 page view autocapture는 끈다.
 - 사용자 행동: element, form, file download, frustration, network, Web Vitals, performance autocapture는 끈다.
 - URL 보강: SDK 자동 URL 보강은 끄고, 제품 이벤트에는 정규화된 `page_path`와 쿼리·해시가 없는 `page_location`을 명시적으로 전달한다.
-- 사용자 ID: 로그인 성공 뒤 내부 사용자 ID만 설정하며, 동의 철회 시 제거하고 opt-out 처리한다.
+- 사용자 ID: 로그인 성공 뒤 내부 사용자 ID만 설정하며, 동의 철회 시 제거하고 opt-out 처리한다. 짧은 양의 정수 ID를 그대로 사용하기 위해 `analytics.minIdLength: 1`을 지정한다(사용자·기기 ID 최소 길이에 함께 적용).
 
 Amplitude 프로젝트의 원격 autocapture 설정이 로컬 설정과 충돌하지 않는지 배포 때 확인한다.
 
@@ -77,9 +77,9 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 
 ## 대시보드 시작점
 
-- 활성화 퍼널: `sign_up` 또는 `login` → `create_plan` → `add_to_itinerary`
-- 협업 퍼널: `invite_view` → `join_group` → `view_plan` → `chat_message_sent`
-- 공유 퍼널: `create_plan` → `share` → `invite_view` → `join_group`
+- 생성자 활성화 퍼널: `create_plan` → `add_to_itinerary` (신규 가입자는 별도 코호트로 구분)
+- 참여자 활성화 퍼널: `invite_view` → `join_group` → `view_plan`; 이후 일정 편집과 조회 위주 사용을 구분
+- 공유: 생성자의 `create_plan → share`와 참여자의 `invite_view → join_group`을 분리. 서로 다른 사람의 행동을 기본 사용자 퍼널로 연결하지 않는다. 여행방 단위 분석에는 별도 그룹 계측 또는 백엔드 집계가 필요하다.
 - 탐색 퍼널: `view_search_results` → `view_place` → `add_to_bookmark` 또는 `add_to_itinerary`
 - 온보딩 퍼널: `tutorial_begin` → `tutorial_complete`; `tutorial_skip`은 `skip_step`별 이탈을 분석한다.
 
@@ -88,3 +88,11 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 - Analytics와 Replay 모두 중지: 배포 환경에서 `NEXT_PUBLIC_AMPLITUDE_API_KEY`를 제거하고 재배포한다.
 - Replay만 중지: `NEXT_PUBLIC_AMPLITUDE_SESSION_REPLAY_SAMPLE_RATE=0`으로 설정하고 재배포한다.
 - 사용자별 중지: 분석 동의를 철회하면 사용자 ID를 지우고 Amplitude opt-out을 활성화한다.
+
+## 이벤트 전송 대상 변경 후 운영 확인
+
+- `expense_created`·`packing_item_added`와 기존 공통 이벤트가 양쪽에서 수신되는지 확인한다.
+- `expense_updated`·`expense_budget_saved`·`settlement_summary_viewed`·`packing_item_checked` 등 세부 행동은 Amplitude에만, `cta_click`·`section_view`는 GA4에만 수신되는지 확인한다.
+- GA4 전용 랜딩 이벤트의 Amplitude 기존 차트와 Amplitude 전용 행동의 GA4 기존 차트는 배포 이후 신규 데이터가 끊긴다. 과거 데이터가 삭제되는 것은 아니다. 해당 보고서를 각 기준 도구로 옮기고 실제 배포일을 비교 구간에 표시한다.
+- 재사용 분석은 단순 페이지 재방문과 핵심 행동 재사용을 구분하고 여행 준비 기간/다음 여행을 고려한다.
+- 운영 Tracking Plan·대시보드·GA4 주요 이벤트 지정은 원격 설정이며 코드 변경만으로 완료되지 않는다. 신규 속성이 없는 가계부·준비물 이벤트에는 공통 정규화 URL 외에 금액·메모·이름·항목 식별자를 추가하지 않는다.

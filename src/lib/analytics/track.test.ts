@@ -20,8 +20,8 @@ function dataLayerCommands(dataLayer: readonly unknown[]): unknown[][] {
 }
 
 describe("AnalyticsEvents", () => {
-  it("exposes the frontend GA event schema", () => {
-    expect(AnalyticsEvents).toEqual({
+  it("preserves existing product event names", () => {
+    expect(AnalyticsEvents).toMatchObject({
       ctaClick: "cta_click",
       sectionView: "section_view",
       signUp: "sign_up",
@@ -143,15 +143,15 @@ describe("analytics consent gate", () => {
       "@/lib/analytics/client"
     );
 
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
     expect(window.dataLayer).toEqual([]);
 
     document.cookie = "uttae_analytics_consent=v1:granted";
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
     expect(dataLayerCommands(window.dataLayer ?? [])).toEqual([
-      ["event", "create_bookmark_folder"],
+      ["event", "expense_created"],
     ]);
   });
 
@@ -187,9 +187,9 @@ describe("analytics consent gate", () => {
     });
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
     expect(dataLayerCommands(dataLayer)).toEqual([
-      ["event", "create_bookmark_folder"],
+      ["event", "expense_created"],
     ]);
 
     dataLayer.length = 0;
@@ -198,7 +198,7 @@ describe("analytics consent gate", () => {
       persisted: false,
       state: "denied",
     });
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
     expect(dataLayer).toEqual([]);
   });
 

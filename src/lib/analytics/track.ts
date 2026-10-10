@@ -51,6 +51,14 @@ export const AnalyticsEvents = {
   tutorialBegin: "tutorial_begin",
   tutorialComplete: "tutorial_complete",
   tutorialSkip: "tutorial_skip",
+  expenseCreated: "expense_created",
+  expenseUpdated: "expense_updated",
+  expenseDeleted: "expense_deleted",
+  expenseBudgetSaved: "expense_budget_saved",
+  settlementSummaryViewed: "settlement_summary_viewed",
+  packingItemAdded: "packing_item_added",
+  packingItemChecked: "packing_item_checked",
+  packingItemUnchecked: "packing_item_unchecked",
 } as const;
 
 export type AnalyticsSource = "bookmark" | "chat" | "map" | "plan" | "search";
@@ -76,6 +84,14 @@ export type LandingSectionId =
   | "final_cta";
 
 export type AnalyticsEventParamsMap = {
+  [AnalyticsEvents.expenseCreated]: undefined;
+  [AnalyticsEvents.expenseUpdated]: undefined;
+  [AnalyticsEvents.expenseDeleted]: undefined;
+  [AnalyticsEvents.expenseBudgetSaved]: undefined;
+  [AnalyticsEvents.settlementSummaryViewed]: undefined;
+  [AnalyticsEvents.packingItemAdded]: undefined;
+  [AnalyticsEvents.packingItemChecked]: undefined;
+  [AnalyticsEvents.packingItemUnchecked]: undefined;
   [AnalyticsEvents.ctaClick]: {
     page_type: "landing";
     cta_id: "login" | "start_trip";
@@ -188,7 +204,7 @@ export function buildTutorialExitAnalyticsEvent(
   };
 }
 
-type AnalyticsEventName = keyof AnalyticsEventParamsMap;
+export type AnalyticsEventName = keyof AnalyticsEventParamsMap;
 
 type AnalyticsEventArguments<EventName extends AnalyticsEventName> =
   AnalyticsEventParamsMap[EventName] extends undefined
