@@ -161,37 +161,14 @@ export function useMobileRouteView({
     });
   });
 
-  const entries = [...baseEntries];
-  const anchorIndex = candidate ? baseEntries.findIndex((e) => e.key === candidate.anchorKey) : -1;
-  const anchorEntry = anchorIndex >= 0 ? baseEntries[anchorIndex] : undefined;
-  let ghost: CandidateEntry | undefined;
-  // 넣을 자리가 사라졌으면(삭제 등) 후보도 보이지 않는다
-  if (candidate && anchorEntry && anchorEntry.kind !== "candidate") {
-    ghost = {
-      kind: "candidate",
-      key: `candidate-${candidate.id}`,
-      scheduleId: anchorEntry.scheduleId,
-      dayNumber: anchorEntry.dayNumber,
-      googlePlaceId: candidate.googlePlaceId,
-      prev: anchorEntry.kind === "place" ? anchorEntry : null,
-    };
-    if (anchorEntry.kind === "empty") entries.splice(anchorIndex, 1, ghost);
-    else entries.splice(anchorIndex + 1, 0, ghost);
-  }
+  const { entries, anchorIndex, ghost } = insertCandidate(baseEntries, candidate);
 
-  const [focus, setFocus] = useState<Focus>({ key: null, index: 0, camera: { kind: "fit", seq: 0 } });
+  const [focus, setFocus] = useRouteFocus(active, initialItemId);
   const [expanded, setExpanded] = useState(false);
   /** 카드의 ⋮·시간·메모에서 연 시트 — 일정 목록과 같은 시트를 쓴다 */
   const [routeSheet, setRouteSheet] = useState<{ scheduleId: number; sheet: MobilePlanPlaceSheet } | null>(null);
 
-  let focusedIndex: number;
-  if (focus.key === null) {
-    const byItem = initialItemId === null ? -1 : entries.findIndex((e) => e.kind === "place" && e.itemId === initialItemId);
-    focusedIndex = byItem >= 0 ? byItem : entries.findIndex((e) => e.dayNumber === Math.min(day, schedules.length));
-  } else {
-    const byKey = entries.findIndex((e) => e.key === focus.key);
-    focusedIndex = byKey >= 0 ? byKey : Math.min(focus.index, entries.length - 1);
-  }
+  const focusedIndex = resolveFocusedIndex(entries, focus, initialItemId, day, schedules.length);
   const focused = focusedIndex >= 0 ? entries[focusedIndex] : undefined;
   const activeScheduleId = active ? (focused?.scheduleId ?? null) : null;
   const activeDayNumber = focused?.dayNumber ?? 0;
@@ -297,11 +274,12 @@ export function useMobileRouteView({
   }
 
   // 후보 핀은 그 일차를 볼 때만 그린다
-  const ghostOnMap = ghost && ghost.scheduleId === activeScheduleId ? ghost : undefined;
+  const ghostOnMap = ghost?.scheduleId === activeScheduleId ? ghost : undefined;
   const candidateLocation = candidateDetail?.location ?? candidate?.location ?? null;
 
-  const mapRouteView: MapRouteView | undefined = active
-    ? {
+  function buildRouteView(): MapRouteView | undefined {
+    if (!active) return undefined;
+    return {
         scheduleId: activeScheduleId,
         color: activeScheduleId === null ? FALLBACK_DAY_COLOR : dayColor(activeScheduleId),
         focusedItemId,
@@ -315,7 +293,7 @@ export function useMobileRouteView({
           if (index >= 0) focusEntry(index, "pan");
         },
         // 처음 들어올 때 — 일정 카드로 들어왔으면 그 장소를 가까이, 경로 보기 버튼이면 일차 전체를 보여 준다
-        camera: focus.key === null ? { kind: initialItemId !== null ? "place" : "fit", seq: 0 } : focus.camera,
+        camera: focus.camera,
         locations,
         expanded: isExpanded,
         candidate:
@@ -353,8 +331,8 @@ export function useMobileRouteView({
         onBackgroundClick: () => {
           if (candidate) closeCandidate();
         },
-      }
-    : undefined;
+      };
+  }
 
   const goToDay = (dayNumber: number) => {
     const index = entries.findIndex((e) => e.dayNumber === dayNumber);
@@ -394,36 +372,12 @@ export function useMobileRouteView({
   const itemExpenses = (scheduleId: number, itemId: number) =>
     expensesInScope(expenses.list.data ?? [], { scheduleId, scheduleItemId: itemId, label: "" });
 
-  // 경로 보기가 아닐 때(일반 지도)는 카드를 만들지 않는다 — 장소마다 비용 요약까지 계산하므로
-  let cards: ReactNode = null;
-  if (!active) {
-    cards = null;
-  } else if (schedulesQuery.isLoading || (schedules.length > 0 && entries.length === 0)) {
-    cards = <RouteCardSlot><MobileRoutePlaceCardSkeleton /></RouteCardSlot>;
-  } else if (schedulesQuery.isError) {
-    cards = (
-      <RouteCardSlot>
-        <MobileRouteMessageCard tone="error" title="일정을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." />
-      </RouteCardSlot>
-    );
-  } else if (entries.length === 0) {
-    cards = (
-      <RouteCardSlot>
-        <MobileRouteMessageCard title="일정이 없어요" description="일정 화면에서 일차를 추가해보세요." />
-      </RouteCardSlot>
-    );
-  } else {
-    cards = (
-      <MobileRouteCardCarousel
-        focusedKey={focused?.key ?? null}
-        onFocusChange={(index) => focusEntry(index)}
-        onPreviewChange={setPreviewIndex}
-        cards={entries.map((entry, index) => ({
-          key: entry.key,
-          node:
-            entry.kind === "empty" ? (
+  function renderEntry(entry: StripEntry, index: number): ReactNode {
+    if (entry.kind === "empty") return (
               <MobileRouteEmptyDayCard dayNumber={entry.dayNumber} />
-            ) : entry.kind === "candidate" ? (
+
+    );
+    if (entry.kind === "candidate") return (
               <MobileRouteCandidateCard
                 googlePlaceId={entry.googlePlaceId}
                 badgeColor={dayColor(entry.scheduleId)}
@@ -437,7 +391,9 @@ export function useMobileRouteView({
                 onCollapse={() => setExpandedAndRecenter(false)}
                 detailActive={index === focusedIndex}
               />
-            ) : (
+
+    );
+    return (
               <MobileRoutePlaceCard
                 place={entry.place}
                 orderNumber={entry.orderNumber}
@@ -457,10 +413,42 @@ export function useMobileRouteView({
                 onEditTime={() => setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "time", place: entry.place } })}
                 detail={isExpanded ? <MobileRoutePlaceDetail place={entry.place} active={index === focusedIndex} /> : null}
               />
-            ),
+
+    );
+  }
+
+  // 경로 보기가 아닐 때(일반 지도)는 카드를 만들지 않는다 — 장소마다 비용 요약까지 계산하므로
+  function renderCards(): ReactNode {
+  if (!active) {
+    return null;
+  } else if (schedulesQuery.isLoading || (schedules.length > 0 && entries.length === 0)) {
+    return <RouteCardSlot><MobileRoutePlaceCardSkeleton /></RouteCardSlot>;
+  } else if (schedulesQuery.isError) {
+    return (
+      <RouteCardSlot>
+        <MobileRouteMessageCard tone="error" title="일정을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." />
+      </RouteCardSlot>
+    );
+  } else if (entries.length === 0) {
+    return (
+      <RouteCardSlot>
+        <MobileRouteMessageCard title="일정이 없어요" description="일정 화면에서 일차를 추가해보세요." />
+      </RouteCardSlot>
+    );
+  } else {
+    return (
+      <MobileRouteCardCarousel
+        focusedKey={focused?.key ?? null}
+        onFocusChange={(index) => focusEntry(index)}
+        onPreviewChange={setPreviewIndex}
+        cards={entries.map((entry, index) => ({
+          key: entry.key,
+          node: renderEntry(entry, index),
         }))}
       />
     );
+  }
+
   }
 
   const sheetSchedule = routeSheet ? schedules.find((s) => s.scheduleId === routeSheet.scheduleId) : undefined;
@@ -500,7 +488,7 @@ export function useMobileRouteView({
         </div>
         {/* 접힘: 가장 긴 카드에 맞춰 모든 카드가 같은 높이 / 펼침: 지도의 70% */}
         <div className={cn("transition-[height] duration-300 ease-out", isExpanded && "h-[70%]")}>
-          {cards}
+          {renderCards()}
         </div>
       </div>
 
@@ -524,10 +512,62 @@ export function useMobileRouteView({
     </>
   ) : null;
 
-  return { mapRouteView, overlay, open };
+  return { mapRouteView: buildRouteView(), overlay, open };
 }
 
 /** 카드가 하나뿐일 때도 넘기는 카드와 같은 폭·위치에 둔다 */
 function RouteCardSlot({ children }: Readonly<{ children: ReactNode }>) {
   return <div className="pointer-events-auto h-full px-[18px]">{children}</div>;
+}
+
+function insertCandidate(baseEntries: StripEntry[], candidate: RouteCandidate | null) {
+  const entries = [...baseEntries];
+  const anchorIndex = candidate ? baseEntries.findIndex((e) => e.key === candidate.anchorKey) : -1;
+  const anchorEntry = anchorIndex >= 0 ? baseEntries[anchorIndex] : undefined;
+  let ghost: CandidateEntry | undefined;
+  // 넣을 자리가 사라졌으면(삭제 등) 후보도 보이지 않는다
+  if (candidate && anchorEntry && anchorEntry.kind !== "candidate") {
+    ghost = {
+      kind: "candidate",
+      key: `candidate-${candidate.id}`,
+      scheduleId: anchorEntry.scheduleId,
+      dayNumber: anchorEntry.dayNumber,
+      googlePlaceId: candidate.googlePlaceId,
+      prev: anchorEntry.kind === "place" ? anchorEntry : null,
+    };
+    if (anchorEntry.kind === "empty") entries.splice(anchorIndex, 1, ghost);
+    else entries.splice(anchorIndex + 1, 0, ghost);
+  }
+
+  return { entries, anchorIndex, ghost };
+}
+
+function resolveFocusedIndex(entries: StripEntry[], focus: Focus, initialItemId: number | null,
+  day: number, scheduleCount: number) {
+  let focusedIndex: number;
+  if (focus.key === null) {
+    const byItem = initialItemId === null ? -1 : entries.findIndex((e) => e.kind === "place" && e.itemId === initialItemId);
+    focusedIndex = byItem >= 0 ? byItem : entries.findIndex((e) => e.dayNumber === Math.min(day, scheduleCount));
+  } else {
+    const byKey = entries.findIndex((e) => e.key === focus.key);
+    focusedIndex = byKey >= 0 ? byKey : Math.min(focus.index, entries.length - 1);
+  }
+
+  return focusedIndex;
+}
+
+function initialFocus(itemId: number | null): Focus {
+  return { key: null, index: 0, camera: { kind: itemId === null ? "fit" : "place", seq: 0 } };
+}
+
+function useRouteFocus(active: boolean, initialItemId: number | null) {
+  const [focus, setFocus] = useState<Focus>(() => initialFocus(initialItemId));
+  const [wasActive, setWasActive] = useState(active);
+  // URL 동기화로 item이 바뀌어도 진입 시 카메라 모드는 유지한다.
+  // 같은 지도에서 경로 보기를 다시 열 때만 새 진입 위치를 적용한다.
+  if (wasActive !== active) {
+    setWasActive(active);
+    if (active) setFocus(initialFocus(initialItemId));
+  }
+  return [focus, setFocus] as const;
 }

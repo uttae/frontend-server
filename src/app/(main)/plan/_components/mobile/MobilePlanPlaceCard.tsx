@@ -74,12 +74,6 @@ export function MobilePlanPlaceCard({
   articleClassName,
   addWhenEmpty,
 }: MobilePlanPlaceCardProps) {
-  const [memoExpanded, setMemoExpanded] = useState(false);
-  const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
-  const memo = place.memo?.trim() ?? "";
-  const addTime = !timeRange && Boolean(addWhenEmpty?.time);
-  const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
-  const addMemo = !memo && Boolean(addWhenEmpty?.memo);
   const meta = [place.primaryTypeDisplayName, place.subtitle].filter(Boolean).join(" · ");
 
   return (
@@ -111,6 +105,46 @@ export function MobilePlanPlaceCard({
           <div className="min-w-0 flex-1">
             <h3 className="line-clamp-2 break-words text-title-s text-text">{place.title}</h3>
             {meta ? <p className="truncate text-body-s-regular text-text-subtle">{meta}</p> : null}
+            <PlaceTimeAndExpense place={place} expenseSummary={expenseSummary}
+              addWhenEmpty={addWhenEmpty} onEditTime={onEditTime} onOpenExpenses={onOpenExpenses} />
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onOpenActions();
+            }}
+            aria-label={`${place.title} 일정 편집`}
+            className="pointer-events-auto -mt-1 flex size-8 shrink-0 items-center justify-center"
+          >
+            <MenuDotVerticalIcon size={20} className="text-icon-subtle" />
+          </button>
+        </div>
+
+        <PlaceMemo place={place} addWhenEmpty={addWhenEmpty} onEditMemo={onEditMemo} />
+      </article>
+
+      {editing ? (
+        <button
+          type="button"
+          aria-label={`${place.title} 순서 변경`}
+          disabled={dragDisabled}
+          onPointerDown={onHandlePointerDown}
+          className="flex w-10 shrink-0 cursor-grab touch-none select-none items-center justify-center text-icon-subtle active:cursor-grabbing disabled:opacity-40"
+        >
+          <MenuHamburgerIcon />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, onOpenExpenses }:
+  Pick<MobilePlanPlaceCardProps, "place" | "expenseSummary" | "addWhenEmpty" | "onEditTime" | "onOpenExpenses">) {
+  const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
+  const addTime = !timeRange && Boolean(addWhenEmpty?.time);
+  const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
+  return <>
             {timeRange || expenseSummary || addTime || addExpense ? (
               <div
                 className={cn(
@@ -131,7 +165,8 @@ export function MobilePlanPlaceCard({
                     <TimeClockIcon size={18} className="text-icon-subtle" />
                     {timeRange}
                   </button>
-                ) : addTime ? (
+                ) : null}
+                {!timeRange && addTime ? (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -158,7 +193,8 @@ export function MobilePlanPlaceCard({
                     <CoinIcon size={18} className="text-icon-subtle" />
                     <span className="truncate">{expenseSummary}</span>
                   </button>
-                ) : addExpense ? (
+                ) : null}
+                {!expenseSummary && addExpense ? (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -174,20 +210,15 @@ export function MobilePlanPlaceCard({
                 ) : null}
               </div>
             ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              stop(e);
-              onOpenActions();
-            }}
-            aria-label={`${place.title} 일정 편집`}
-            className="pointer-events-auto -mt-1 flex size-8 shrink-0 items-center justify-center"
-          >
-            <MenuDotVerticalIcon size={20} className="text-icon-subtle" />
-          </button>
-        </div>
+  </>;
+}
 
+function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
+  Pick<MobilePlanPlaceCardProps, "place" | "addWhenEmpty" | "onEditMemo">) {
+  const [memoExpanded, setMemoExpanded] = useState(false);
+  const memo = place.memo?.trim() ?? "";
+  const addMemo = !memo && Boolean(addWhenEmpty?.memo);
+  return <>
         {memo ? (
           <div className="pointer-events-none relative mx-3.5 flex items-start gap-3.5 border-t border-border-subtle py-3">
             <button
@@ -233,7 +264,8 @@ export function MobilePlanPlaceCard({
               />
             </button>
           </div>
-        ) : addMemo ? (
+        ) : null}
+        {!memo && addMemo ? (
           // 메모가 있을 때와 같은 줄(구분선·아이콘·꺾쇠)을 흐리게 — 누르면 메모 시트
           <div className="pointer-events-none relative mx-3.5 border-t border-border-subtle py-3">
             <button
@@ -253,19 +285,5 @@ export function MobilePlanPlaceCard({
             </button>
           </div>
         ) : null}
-      </article>
-
-      {editing ? (
-        <button
-          type="button"
-          aria-label={`${place.title} 순서 변경`}
-          disabled={dragDisabled}
-          onPointerDown={onHandlePointerDown}
-          className="flex w-10 shrink-0 cursor-grab touch-none select-none items-center justify-center text-icon-subtle active:cursor-grabbing disabled:opacity-40"
-        >
-          <MenuHamburgerIcon />
-        </button>
-      ) : null}
-    </div>
-  );
+  </>;
 }

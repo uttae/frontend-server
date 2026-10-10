@@ -92,16 +92,12 @@ export function PlanItineraryMapRoutes({
   const inRouteView = routeDay != null;
   const routesReady = routeDay?.routesReady ?? true;
   const visibleScheduleIds = useMemo(
-    () =>
-      inRouteView
-        ? routeDayScheduleId !== null
-          ? [routeDayScheduleId]
-          : []
-        : Object.keys(visibleByScheduleId)
-            .map((k) => Number(k))
-            .filter(
-              (id) => Number.isFinite(id) && visibleByScheduleId[id] === true,
-            ),
+    () => {
+      if (inRouteView) return routeDayScheduleId !== null ? [routeDayScheduleId] : [];
+      return Object.keys(visibleByScheduleId)
+        .map(Number)
+        .filter((id) => Number.isFinite(id) && visibleByScheduleId[id] === true);
+    },
     [inRouteView, routeDayScheduleId, visibleByScheduleId],
   );
 

@@ -6,8 +6,17 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc", replace: (() => {}) as (href: string) => void }));
 // 실제 이동처럼 push·back이 경로와 기록을 바꾼다 — 다음 render()에서 반영된다
 const history = vi.hoisted(() => [] as string[]);
-const push = vi.hoisted(() => (href: string) => { history.push(state.pathname); state.pathname = href.split("?")[0]; });
-const back = vi.hoisted(() => () => { state.pathname = history.pop() ?? state.pathname; });
+const entryStates = vi.hoisted(() => [] as unknown[]);
+const push = vi.hoisted(() => (href: string) => {
+  history.push(state.pathname);
+  entryStates.push(window.history.state);
+  window.history.replaceState(null, "");
+  state.pathname = href.split("?")[0];
+});
+const back = vi.hoisted(() => () => {
+  state.pathname = history.pop() ?? state.pathname;
+  window.history.replaceState(entryStates.pop() ?? null, "");
+});
 // 브라우저 기록 개수도 가짜 기록에 맞춘다 — 처음 들어온 페이지 1개 + push한 개수
 Object.defineProperty(window.history, "length", { configurable: true, get: () => history.length + 1 });
 vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.query), useRouter: () => ({ replace: state.replace, push, back }) }));
@@ -39,6 +48,8 @@ beforeEach(() => {
   Object.assign(state, { pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc", replace: vi.fn() });
   useChatPanelStore.setState({ minimized: false });
   history.length = 0;
+  entryStates.length = 0;
+  window.history.replaceState(null, "");
   HTMLElement.prototype.scrollTo = vi.fn();
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   host.addEventListener("click", event => event.preventDefault());
@@ -115,6 +126,15 @@ it("leaving /chat through a menu closes chat without a minimized panel", async (
   state.pathname = "/bookmark"; await render();
   expect(host.querySelector("[data-chat]")).toBeNull();
   expect(active()).toEqual([items()[2]]);
+});
+it.each(["minimize", "close"] as const)("%s uses /plan for direct chat entry even with unrelated browser history", async action => {
+  history.push("https://external.example");
+  state.pathname = "/chat";
+  await render();
+  await control(action);
+  expect(state.replace).toHaveBeenLastCalledWith("/plan");
+  expect(history).toEqual(["https://external.example"]);
+  expect(useChatPanelStore.getState().minimized).toBe(action === "minimize");
 });
 it("minimized chat follows route changes and same-menu clicks", async () => {
   await render();

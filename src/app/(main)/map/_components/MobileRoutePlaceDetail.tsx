@@ -49,10 +49,10 @@ export function MobileRoutePlaceDetail({
       </div>
 
       {showSkeleton ? (
-        <div role="status" aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
+        <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
           <span className="h-5 w-24 animate-pulse rounded bg-fill-strong" />
           <span className="h-16 w-full animate-pulse rounded-md bg-fill" />
-        </div>
+        </output>
       ) : (
         // 장소 상세 시트와 같은 홈·리뷰 탭 — 같은 상세 응답을 쓰므로 추가 호출이 없다
         <div className="mt-3">

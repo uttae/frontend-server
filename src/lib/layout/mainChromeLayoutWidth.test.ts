@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { resolveLeftSectionTargetMaxWidthPx, resolveLeftSectionMinWidthPx } from "./mainChromeLayoutWidth";
+import { resolveLeftSectionTargetMaxWidthPx, resolveDesktopLeftSectionMinWidthPx } from "./mainChromeLayoutWidth";
 
 it("keeps the schedule width across collaboration tabs and /chat, including page width effects", () => {
   for (const pathname of ["/plan", "/plan/room", "/chat", "/search", "/bookmark", "/bookmark/folder", "/member-settings", "/room-settings", "/settings"]) {
@@ -16,8 +16,7 @@ it("lets the ledger and packing use the full desktop workspace", () => {
 });
 
 it("removes the desktop minimum width only for packing", () => {
-  expect(resolveLeftSectionMinWidthPx(false, "/packing/room")).toBe(0);
-  expect(resolveLeftSectionMinWidthPx(false, "/plan/room")).toBe(400);
-  expect(resolveLeftSectionMinWidthPx(false, "/chat")).toBe(400);
-  expect(resolveLeftSectionMinWidthPx(true, "/plan/room")).toBe(0);
+  expect(resolveDesktopLeftSectionMinWidthPx("/packing/room")).toBe(0);
+  expect(resolveDesktopLeftSectionMinWidthPx("/plan/room")).toBe(400);
+  expect(resolveDesktopLeftSectionMinWidthPx("/chat")).toBe(400);
 });

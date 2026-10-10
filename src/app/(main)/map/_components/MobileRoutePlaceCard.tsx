@@ -158,14 +158,14 @@ export function MobileRouteExpandedShell({
 /** 처음 불러오는 동안 — 카드와 같은 자리를 잡는다 */
 export function MobileRoutePlaceCardSkeleton() {
   return (
-    <div role="status" aria-label="장소 불러오는 중" aria-busy className={`${CARD_CLASS} flex min-h-[155px] gap-3 pl-3.5 pr-2 pt-3`}>
+    <output aria-label="장소 불러오는 중" aria-busy className={`${CARD_CLASS} flex min-h-[155px] gap-3 pl-3.5 pr-2 pt-3`}>
       <span className="size-6 shrink-0 animate-pulse rounded-[5.5px] bg-fill-strong" />
-      <div className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
+      <span className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
         <span className="h-5 w-2/3 animate-pulse rounded bg-fill-strong" />
         <span className="h-4 w-1/2 animate-pulse rounded bg-fill" />
         <span className="mt-3 h-4 w-5/6 animate-pulse rounded bg-fill" />
-      </div>
-    </div>
+      </span>
+    </output>
   );
 }
 

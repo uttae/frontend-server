@@ -149,6 +149,23 @@ export function MobilePlanPlaceSheets({
 
   if (sheet.kind !== "actions") return null;
 
+  return <PlaceActionsMenu place={place} itemId={itemId} canInsert={canInsert}
+    places={places} scheduleId={scheduleId} expenses={expenses} close={close}
+    onInsertFromSearch={onInsertFromSearch} onChangeSheet={onChangeSheet} />;
+}
+
+function PlaceActionsMenu({ place, itemId, canInsert, places, scheduleId, expenses,
+  close, onInsertFromSearch, onChangeSheet }: Readonly<{
+  place: PlanPlace;
+  itemId: number | null;
+  canInsert: boolean;
+  places: PlanPlace[];
+  scheduleId: number;
+  expenses: ExpenseContextValue;
+  close: () => void;
+  onInsertFromSearch: (anchor: InsertAnchor) => void;
+  onChangeSheet: (sheet: MobilePlanPlaceSheet | null) => void;
+}>) {
   return (
     <MobileBottomSheet open onClose={close} title={place.title}>
       {itemId === null ? (

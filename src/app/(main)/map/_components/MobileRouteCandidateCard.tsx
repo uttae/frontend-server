@@ -73,43 +73,20 @@ export function MobileRouteCandidateCard({
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           {isLoading && !detail ? (
-            <div
-              role="status"
+            <output
               aria-label="장소 정보 불러오는 중"
               aria-busy
               className="flex flex-col gap-1.5 pt-0.5"
             >
               <span className="h-5 w-2/3 animate-pulse rounded bg-fill-strong" />
               <span className="h-4 w-1/2 animate-pulse rounded bg-fill" />
-            </div>
+            </output>
           ) : (
             <>
               <h3 className="line-clamp-2 break-words text-title-s text-text">
                 {name}
               </h3>
-              <p className="flex min-w-0 items-center gap-1 text-body-s-regular text-text-subtle">
-                {category ? <span className="shrink-0">{category}</span> : null}
-                {detail?.rating != null ? (
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    {category ? <span aria-hidden>·</span> : null}
-                    <ReactionStarIcon
-                      size={14}
-                      className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
-                    />
-                    <span className="tabular-nums">
-                      {detail.rating.toFixed(1)}
-                    </span>
-                  </span>
-                ) : null}
-                {address ? (
-                  <>
-                    {category || detail?.rating != null ? (
-                      <span aria-hidden>·</span>
-                    ) : null}
-                    <span className="truncate">{address}</span>
-                  </>
-                ) : null}
-              </p>
+              <CandidateMetadata category={category} address={address} rating={detail?.rating} />
             </>
           )}
           <div className="mt-auto pt-3.5">
@@ -160,5 +137,37 @@ export function MobileRouteCandidateCard({
         analyticsSource="map"
       />
     </MobileRouteExpandedShell>
+  );
+}
+
+function CandidateMetadata({ category, address, rating }: Readonly<{
+  category: string;
+  address: string;
+  rating: number | null | undefined;
+}>) {
+  return (
+              <p className="flex min-w-0 items-center gap-1 text-body-s-regular text-text-subtle">
+                {category ? <span className="shrink-0">{category}</span> : null}
+                {rating != null ? (
+                  <span className="flex shrink-0 items-center gap-0.5">
+                    {category ? <span aria-hidden>·</span> : null}
+                    <ReactionStarIcon
+                      size={14}
+                      className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
+                    />
+                    <span className="tabular-nums">
+                      {rating.toFixed(1)}
+                    </span>
+                  </span>
+                ) : null}
+                {address ? (
+                  <>
+                    {category || rating != null ? (
+                      <span aria-hidden>·</span>
+                    ) : null}
+                    <span className="truncate">{address}</span>
+                  </>
+                ) : null}
+              </p>
   );
 }

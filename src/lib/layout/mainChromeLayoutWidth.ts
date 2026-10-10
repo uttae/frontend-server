@@ -108,6 +108,6 @@ export function resolveLeftSectionAnimateMaxWidth({
   return "none";
 }
 
-export function resolveLeftSectionMinWidthPx(isMobile: boolean, pathname = ""): number | string {
-  return isMobile || isPackingPath(pathname) ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
+export function resolveDesktopLeftSectionMinWidthPx(pathname = ""): number {
+  return isPackingPath(pathname) ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
 }

@@ -8,7 +8,7 @@ import { useSectionWidth } from "@/contexts/SectionWidthContext";
 import {
   MAIN_LAYOUT_WIDTH_TRANSITION,
   resolveLeftSectionAnimateMaxWidth,
-  resolveLeftSectionMinWidthPx,
+  resolveDesktopLeftSectionMinWidthPx,
   resolveLeftSectionTargetMaxWidthPx,
 } from "@/lib/layout/mainChromeLayoutWidth";
 
@@ -46,7 +46,7 @@ export function MainChromeLayoutWidthProvider({
         targetMaxWidthPx,
         isMobile: isMobileDevice,
       }),
-      leftSectionAnimateMinWidth: resolveLeftSectionMinWidthPx(isMobileDevice, pathname),
+      leftSectionAnimateMinWidth: isMobileDevice ? 0 : resolveDesktopLeftSectionMinWidthPx(pathname),
       layoutTransition: MAIN_LAYOUT_WIDTH_TRANSITION,
     }),
     [targetMaxWidthPx, isMobileDevice, pathname],
