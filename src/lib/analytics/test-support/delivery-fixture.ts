@@ -5,6 +5,7 @@ const sdk = vi.hoisted(() => ({
   track: vi.fn(),
   setUserId: vi.fn(),
   setOptOut: vi.fn(),
+  reset: vi.fn(),
 }));
 
 vi.mock("@amplitude/unified", () => sdk);

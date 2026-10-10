@@ -72,6 +72,12 @@ function cookieDomainCandidates(hostname: string): string[] {
 
 export function clearGoogleAnalyticsCookies(): void {
   if (typeof document === "undefined") return;
+  clearAnalyticsCookies(googleAnalyticsCookieNames(document.cookie));
+}
+
+/** Delete only the named cookies at the domains our browser SDKs may use. */
+export function clearAnalyticsCookies(names: readonly string[]): void {
+  if (typeof document === "undefined") return;
 
   const secure =
     typeof window !== "undefined" && window.location.protocol === "https:"
@@ -81,7 +87,7 @@ export function clearGoogleAnalyticsCookies(): void {
     typeof window !== "undefined" ? window.location.hostname : "";
   const domains = cookieDomainCandidates(hostname);
 
-  for (const name of googleAnalyticsCookieNames(document.cookie)) {
+  for (const name of names) {
     const base = `${name}=; Max-Age=0; Path=/; SameSite=Lax${secure}`;
     document.cookie = base;
     for (const domain of domains) {
