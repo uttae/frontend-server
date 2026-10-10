@@ -97,6 +97,7 @@ export function MobilePlanPlaceSheets({
     try {
       await removeItem({ roomId, scheduleId, itemId });
       trackAnalyticsEvent(AnalyticsEvents.removeFromItinerary, {
+        room_id: roomId,
         item_count_bucket: bucketItemCount(places.length - 1),
       });
       toast.success("일정에서 삭제했어요.");

@@ -40,6 +40,7 @@ export function useChatActions() {
         }),
       });
       trackAnalyticsEvent(AnalyticsEvents.chatMessageSent, {
+        room_id: ridTrimmed,
         message_type: "text",
       });
     },
@@ -66,6 +67,7 @@ export function useChatActions() {
         }),
       });
       trackAnalyticsEvent(AnalyticsEvents.chatMessageSent, {
+        room_id: ridTrimmed,
         message_type: "ai",
       });
     },
@@ -88,6 +90,7 @@ export function useChatActions() {
         }),
       });
       trackAnalyticsEvent(AnalyticsEvents.chatMessageSent, {
+        room_id: ridTrimmed,
         message_type: "place",
       });
     },

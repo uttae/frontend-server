@@ -78,6 +78,7 @@ export function AddToScheduleModal({
         placesSnapshot: cached,
       });
       trackAnalyticsEvent(AnalyticsEvents.addToItinerary, {
+        room_id: rid,
         item_count_bucket: bucketItemCount(cached.length + 1),
         place_category: placeCategory,
         interaction_source: source,

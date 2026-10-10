@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 
 import { HeroImage, HeroSkeleton } from "@/components/place/HeroSection";
 import { PlaceDetailTabs } from "@/components/place/PlaceDetailTabs";
@@ -23,6 +24,7 @@ export function MobileRoutePlaceDetail({
   active: boolean;
   analyticsSource?: AnalyticsSource;
 }>) {
+  const analyticsRoomId = useAnalyticsRoomId();
   const rawId = place.googlePlaceId?.trim() ?? "";
   const googlePlaceId = rawId ? normalizeGooglePlaceResourceId(rawId) : undefined;
   const { data: detail, isLoading } = usePlaceDetailData(active ? googlePlaceId : undefined);
@@ -33,8 +35,12 @@ export function MobileRoutePlaceDetail({
   useEffect(() => {
     if (!active || !googlePlaceId || isLoading || trackedPlaceIdRef.current === googlePlaceId) return;
     trackedPlaceIdRef.current = googlePlaceId;
-    trackAnalyticsEvent(AnalyticsEvents.viewPlace, { place_category: category, interaction_source: analyticsSource });
-  }, [active, analyticsSource, category, googlePlaceId, isLoading]);
+    trackAnalyticsEvent(AnalyticsEvents.viewPlace, {
+      place_category: category,
+      interaction_source: analyticsSource,
+      ...(analyticsRoomId ? { room_id: analyticsRoomId } : {}),
+    });
+  }, [active, analyticsSource, analyticsRoomId, category, googlePlaceId, isLoading]);
 
   const showSkeleton = !active || (isLoading && !detail);
 

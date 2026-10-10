@@ -149,6 +149,7 @@ export function AddToBookmarkModal({
           }
           if (result.added > 0) {
             trackAnalyticsEvent(AnalyticsEvents.addToBookmark, {
+              room_id: roomId,
               place_category: placeCategory,
               interaction_source: source,
             });
@@ -182,7 +183,9 @@ export function AddToBookmarkModal({
       { roomId, name: resolvedName, colorCode: color },
       {
         onSuccess: (created) => {
-          trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+          trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder, {
+            room_id: roomId,
+          });
           setCreateFolderModalOpen(false);
           setSubmitFeedback(null);
           setSelectedIds((prev) => new Set(prev).add(created.categoryId));

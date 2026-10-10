@@ -137,7 +137,9 @@ export function BookmarkFoldersView() {
       { roomId, name: resolvedName, colorCode: color },
       {
         onSuccess: () => {
-          trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+          trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder, {
+            room_id: roomId,
+          });
           setModalOpen(false);
         },
         onError: (e) => {

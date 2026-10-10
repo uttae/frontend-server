@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 import { usePlacesSearch } from "@/hooks/usePlacesSearch";
 import {
   clearActiveSearchMapPins,
@@ -29,6 +30,7 @@ import {
  * `/search` 페이지와 같은 스토어(검색 스냅샷·결과 핀·「이 지역 재검색」)를 쓴다.
  */
 export function useMobileMapTextSearch() {
+  const analyticsRoomId = useAnalyticsRoomId();
   const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const textSearchNonce = useMobileMapSearchStore((s) => s.textSearchNonce);
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
@@ -54,6 +56,7 @@ export function useMobileMapTextSearch() {
     generation: 0,
     nonce: textSearchNonce,
     recenterRequestId: searchRecenterRequestId,
+    analyticsRoomId,
     mode: "text" as "text" | "map_recenter",
   });
   const submitted = search.nonce !== textSearchNonce;
@@ -66,6 +69,7 @@ export function useMobileMapTextSearch() {
       generation: search.generation + 1,
       nonce: textSearchNonce,
       recenterRequestId: searchRecenterRequestId,
+      analyticsRoomId,
       mode: !submitted && recentered ? "map_recenter" : "text",
     });
   }
@@ -111,6 +115,7 @@ export function useMobileMapTextSearch() {
     trackAnalyticsEvent(AnalyticsEvents.search, {
       result_count_bucket: bucketResultCount(items.length),
       search_mode: search.mode,
+      ...(search.analyticsRoomId ? { room_id: search.analyticsRoomId } : {}),
     });
     if (items.length === 0) toast.info("이 지역에는 검색 결과가 없어요.");
   }, [
@@ -121,6 +126,7 @@ export function useMobileMapTextSearch() {
     items.length,
     search.generation,
     search.mode,
+    search.analyticsRoomId,
   ]);
 
   useEffect(() => {

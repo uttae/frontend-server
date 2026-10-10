@@ -41,6 +41,7 @@ describe("Amplitude browser client", () => {
     expect(amplitude.initAll).toHaveBeenCalledTimes(1);
     expect(amplitude.initAll).toHaveBeenCalledWith("test-api-key", {
       analytics: {
+        minIdLength: 1,
         autocapture: {
           attribution: true,
           elementInteractions: false,

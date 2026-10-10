@@ -121,7 +121,7 @@ describe("Google Consent Mode", () => {
     const { AnalyticsEvents, setAnalyticsUserId, trackAnalyticsEvent } =
       await import("@/lib/analytics/track");
 
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     client.trackAnalyticsPageView({
       page_location:
         "https://example.com/search?utm_source=newsletter&utm_campaign=summer",
@@ -149,7 +149,7 @@ describe("Google Consent Mode", () => {
       ],
       ["js", expect.any(Date)],
       ["config", "G-TEST123", { send_page_view: false }],
-      ["event", "create_bookmark_folder"],
+      ["event", "expense_created", {}],
       [
         "event",
         "page_view",
@@ -171,7 +171,7 @@ describe("Google Consent Mode", () => {
     });
     const client = await import("@/lib/analytics/client");
 
-    client.sendAnalyticsDataCommand("event", "direct_bypass");
+    client.sendAnalyticsDataCommand("event", "expense_created");
     expect(window.dataLayer).toBeUndefined();
     expect(window.gtag).toBeUndefined();
 
@@ -180,7 +180,7 @@ describe("Google Consent Mode", () => {
 
     expect(dataLayerCommands(window.dataLayer ?? [])).not.toContainEqual([
       "event",
-      "direct_bypass",
+      "expense_created",
     ]);
   });
 
@@ -189,14 +189,14 @@ describe("Google Consent Mode", () => {
 
     client.sendAnalyticsDataCommand(
       "event",
-      "held_before_runtime_disable",
+      "expense_created",
     );
     analyticsRuntime.enabled = false;
     client.initializeGoogleAnalytics("G-TEST123", false);
 
     expect(dataLayerCommands(dataLayer)).not.toContainEqual([
       "event",
-      "held_before_runtime_disable",
+      "expense_created",
     ]);
   });
 
@@ -206,7 +206,7 @@ describe("Google Consent Mode", () => {
     client.initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
 
-    client.sendAnalyticsDataCommand("event", "runtime_disabled_bypass");
+    client.sendAnalyticsDataCommand("event", "expense_created");
 
     expect(dataLayer).toEqual([]);
   });
@@ -222,7 +222,7 @@ describe("Google Consent Mode", () => {
       "@/lib/analytics/track"
     );
 
-    trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     client.revokeGoogleAnalyticsConsent();
 
     expect(window.dataLayer).toBeUndefined();

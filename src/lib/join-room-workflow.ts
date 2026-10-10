@@ -37,10 +37,12 @@ export function planPathForRoom(roomId: string): string {
 type JoinPlanAnalyticsParams = AnalyticsEventParamsMap[typeof AnalyticsEvents.joinPlan];
 
 export function buildJoinPlanAnalyticsParams(
+  roomId: string,
   role: string,
   memberCount?: number,
 ): JoinPlanAnalyticsParams {
   return {
+    room_id: roomId.trim(),
     member_count_bucket:
       memberCount === undefined ? undefined : bucketMemberCount(memberCount),
     role: toAnalyticsRoomRole(role),
@@ -77,7 +79,7 @@ export async function completeWaitingJoinApproval(
 
   dependencies.trackAnalyticsEvent(
     AnalyticsEvents.joinPlan,
-    buildJoinPlanAnalyticsParams(response.role, memberCount),
+    buildJoinPlanAnalyticsParams(response.id, response.role, memberCount),
   );
   dependencies.navigateToPlan(planPathForRoom(response.id));
   return true;

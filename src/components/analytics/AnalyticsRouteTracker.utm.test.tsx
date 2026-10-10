@@ -35,9 +35,9 @@ vi.mock("@/lib/auth-session", () => ({
 
 vi.mock("@/stores/session-store", () => ({
   useSessionStore: Object.assign(
-    (selector: (state: { sessionReady: boolean }) => unknown) =>
-      selector({ sessionReady: true }),
-    { getState: () => ({ sessionReady: true }) },
+    (selector: (state: { sessionReady: boolean; currentRoomId: string }) => unknown) =>
+      selector({ sessionReady: true, currentRoomId: "room-a" }),
+    { getState: () => ({ sessionReady: true, currentRoomId: "room-a" }) },
   ),
 }));
 
@@ -69,6 +69,7 @@ describe("analytics route campaign attribution", () => {
     AnalyticsRouteTracker();
 
     expect(analytics.trackPageView).toHaveBeenCalledWith({
+      room_id: "room-a",
       page_location: "https://example.com/search?utm_source=newsletter",
       page_path: "/search",
       page_title: "검색",

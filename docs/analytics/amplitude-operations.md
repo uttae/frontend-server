@@ -2,7 +2,7 @@
 
 ## 목적과 범위
 
-우때 프론트엔드는 분석 쿠키에 동의한 브라우저에서만 `@amplitude/unified`를 초기화한다. 동일한 의미의 제품 이벤트는 `src/lib/analytics/track.ts`를 통해 GA4와 Amplitude에 함께 전달하고, Session Replay도 같은 동의 경계 안에서 동작한다.
+우때 프론트엔드는 분석 쿠키에 동의한 브라우저에서만 `@amplitude/unified`를 초기화한다. `src/lib/analytics/track.ts`로 기록한 이벤트 중 공통 성과와 세부 제품 행동을 Amplitude에 전달한다. GA4는 공통 성과와 랜딩 행동을 받는다. 목적지는 `event-destinations.ts`에서 관리하며 Session Replay도 같은 동의 경계 안에서 동작한다.
 
 SDK 초기화는 애플리케이션 생명주기 동안 한 번만 수행된다. 서버 렌더링과 API 서버에서는 Amplitude SDK를 실행하지 않는다.
 
@@ -31,7 +31,7 @@ Amplitude의 Development와 Production 프로젝트를 분리하고 API 키를 �
 - 페이지 조회: 앱의 SPA 라우트 추적기가 `page_view`를 직접 전송하므로 Amplitude 기본 page view autocapture는 끈다.
 - 사용자 행동: element, form, file download, frustration, network, Web Vitals, performance autocapture는 끈다.
 - URL 보강: SDK 자동 URL 보강은 끄고, 제품 이벤트에는 정규화된 `page_path`와 쿼리·해시가 없는 `page_location`을 명시적으로 전달한다.
-- 사용자 ID: 로그인 성공 뒤 내부 사용자 ID만 설정하며, 동의 철회 시 제거하고 opt-out 처리한다.
+- 사용자 ID: 로그인 성공 뒤 내부 사용자 ID만 설정하며, 동의 철회 시 제거하고 opt-out 처리한다. 짧은 양의 정수 ID를 그대로 사용하기 위해 `analytics.minIdLength: 1`을 지정한다(사용자·기기 ID 최소 길이에 함께 적용).
 
 Amplitude 프로젝트의 원격 autocapture 설정이 로컬 설정과 충돌하지 않는지 배포 때 확인한다.
 
@@ -77,9 +77,9 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 
 ## 대시보드 시작점
 
-- 활성화 퍼널: `sign_up` 또는 `login` → `create_plan` → `add_to_itinerary`
-- 협업 퍼널: `invite_view` → `join_group` → `view_plan` → `chat_message_sent`
-- 공유 퍼널: `create_plan` → `share` → `invite_view` → `join_group`
+- 생성자 활성화 퍼널: `create_plan` → `add_to_itinerary` (신규 가입자는 별도 코호트로 구분)
+- 참여자 활성화 퍼널: `invite_view` → `join_group` → `view_plan`; 이후 일정 편집과 조회 위주 사용을 구분
+- 공유: 생성자의 `create_plan → share`와 참여자의 `invite_view → join_group`을 분리. 서로 다른 사람의 행동을 기본 사용자 퍼널로 연결하지 않는다. 여행방 기능 이벤트에는 기존 방 ID를 이벤트별 `groups.room_id`로 전달한다. 그룹 보고 기능의 사용 가능 여부를 확인한 뒤 방 기준 퍼널로 분석한다(정확한 신규 합류 판정은 별도 백엔드 이벤트 필요).
 - 탐색 퍼널: `view_search_results` → `view_place` → `add_to_bookmark` 또는 `add_to_itinerary`
 - 온보딩 퍼널: `tutorial_begin` → `tutorial_complete`; `tutorial_skip`은 `skip_step`별 이탈을 분석한다.
 
@@ -88,3 +88,25 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 - Analytics와 Replay 모두 중지: 배포 환경에서 `NEXT_PUBLIC_AMPLITUDE_API_KEY`를 제거하고 재배포한다.
 - Replay만 중지: `NEXT_PUBLIC_AMPLITUDE_SESSION_REPLAY_SAMPLE_RATE=0`으로 설정하고 재배포한다.
 - 사용자별 중지: 분석 동의를 철회하면 사용자 ID를 지우고 Amplitude opt-out을 활성화한다.
+
+## 이벤트 전송 대상 변경 후 운영 확인
+
+- `expense_created`·`packing_item_added`와 기존 공통 이벤트가 양쪽에서 수신되는지 확인한다.
+- `expense_updated`·`expense_budget_saved`·`settlement_summary_viewed`·`packing_item_checked` 등 세부 행동은 Amplitude에만, `cta_click`·`section_view`는 GA4에만 수신되는지 확인한다.
+- GA4 전용 랜딩 이벤트의 Amplitude 기존 차트와 Amplitude 전용 행동의 GA4 기존 차트는 배포 이후 신규 데이터가 끊긴다. 과거 데이터가 삭제되는 것은 아니다. 해당 보고서를 각 기준 도구로 옮기고 실제 배포일을 비교 구간에 표시한다.
+- 재사용 분석은 단순 페이지 재방문과 핵심 행동 재사용을 구분하고 여행 준비 기간/다음 여행을 고려한다.
+- 운영 Tracking Plan·대시보드·GA4 주요 이벤트 지정은 원격 설정이며 코드 변경만으로 완료되지 않는다. 가계부·준비물 이벤트에는 공통 정규화 URL과 방 ID만 사용하고 금액·메모·이름·항목 식별자는 추가하지 않는다.
+
+방 단위 퍼널은 그룹 타입 `room_id`를 선택하고 `share` 단계에 `role=host`, `join_group` 단계에 `role=member`를 적용한다. Accounts 기능 활성화/계약은 이번 프론트 코드 변경과 별개다. 이벤트 속성에 방 ID가 보이는 것만으로 그룹 퍼널이 설정된 것은 아니다.
+
+그룹 분석은 생성·조회·일정·북마크·채팅·가계부·준비물 전반에 사용할 수 있다. 검색·장소 상세·튜토리얼·페이지 조회는 확정된 방 문맥에서만 그룹을 가진다. 준비물은 개인 기능이며 이를 공동 편집 활성의 근거로 삼지 않는다. 협업 지표에는 적절한 이벤트 집합과 서로 다른 참여자 조건을 별도로 정의한다.
+
+현재 `SidebarTutorial`은 컴포넌트와 이벤트 코드만 있고 실제 화면에서 마운트하는 호출이 없다. 튜토리얼 이벤트의 그룹 지원은 준비되어 있으나, 화면에 연결하기 전에는 운영 이벤트 유입을 기대하지 않는다. 이번 변경에서 튜토리얼 표시를 새로 활성화하지 않았다.
+
+## 로그아웃 사용자 식별 경계
+
+- 세션 사용자 캐시가 있는 상태에서 로그아웃·세션 만료로 정리될 때 `resetAmplitudeIdentityOnLogout`을 호출한다. 준비된 SDK는 `reset()`으로 사용자 ID를 비우고 새 기기 ID를 발급한다. GA4는 기존 `user_id: null` 처리만 유지한다.
+- 일반 익명 페이지 조회와 반복된 세션 정리는 기기 ID를 다시 만들지 않는다. 재로그인은 새 기기 ID에 해당 사용자의 기존 내부 ID를 설정한다.
+- SDK 초기화 전 대기 중이던 이전 사용자의 Amplitude 명령은 폐기한다. 초기화 완료 후 식별자를 재설정한 다음 로그아웃 이후 명령을 처리한다. 초기화 중에는 SDK 자동 수집을 일시 정지하고, 동의가 유지된 경우에만 준비 후 재개한다.
+- SDK가 시작되지 않았다면 해당 프로젝트의 저장된 식별 쿠키만 제거한다. 로그아웃 때문에 SDK를 초기화하거나 동의를 허용하지 않는다. 초기화 실패 후 재시도에도 식별 경계를 유지한다.
+- 이 처리는 로그아웃 이후 이벤트의 귀속을 분리하며, 이미 수집된 과거 이벤트를 삭제하는 기능은 아니다.

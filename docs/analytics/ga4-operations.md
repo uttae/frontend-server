@@ -22,6 +22,7 @@
 | --- | --- |
 | `/join/{초대코드}` | `/join/[inviteCode]` |
 | `/plan/{방 ID}` | `/plan/[roomId]` |
+| `/packing/{방 ID}` | `/packing/[roomId]` |
 | `/bookmark/{폴더 ID}` | `/bookmark/[folderId]` |
 
 ## 리퍼러와 캠페인 수집 정책
@@ -75,9 +76,9 @@ NEXT_PUBLIC_GA_DEBUG_MODE=true
 
 관리자 → 데이터 스트림 → 웹 스트림 → 향상된 측정에서 `사이트 검색`을 끈다.
 
-우때는 검색 결과가 확정된 시점에 `view_search_results`를 직접 전송하며, 검색어 원문은 보내지 않는다. 사이트 검색 자동 수집이 켜져 있으면 `/search?q=...`의 `q` 값이 `search_term`으로 별도 수집되고 수동 이벤트와 중복될 수 있다.
+우때는 검색 결과가 확정된 시점에 `view_search_results`를 Amplitude에만 전송하며, 검색어 원문은 보내지 않는다. GA4 사이트 검색 자동 수집이 켜져 있으면 `/search?q=...`의 `q` 값이 `search_term`으로 별도 수집되어 목적지·개인정보 정책을 벗어날 수 있다.
 
-검색 이벤트에는 다음 파라미터만 허용한다.
+Amplitude로 보내는 검색 이벤트에는 다음 파라미터만 허용한다.
 
 - `search_mode`: `text` 또는 `map_recenter`
 - `result_count_bucket`: `0`, `1_5`, `6_20`, `21_plus`
@@ -93,19 +94,15 @@ NEXT_PUBLIC_GA_DEBUG_MODE=true
 | `entry_point` | 직접 진입/초대 진입 |
 | `item_count_bucket` | 일정 항목 수 구간 |
 | `member_count_bucket` | 참여 인원 수 구간 |
-| `message_type` | 채팅 메시지 유형 |
-| `method` | 로그인·공유·정렬 방식 |
+| `method` | 로그인·공유 방식 |
 | `place_category` | 장소 카테고리 |
-| `rank_bucket` | 검색 결과 순위 구간 |
-| `result_count_bucket` | 검색 결과 수 구간 |
 | `role` | 방 역할 |
-| `search_mode` | 검색 방식 |
 | `interaction_source` | 제품 내부 상호작용 출처 |
 | `trip_days_bucket` | 여행 일수 구간 |
-| `tutorial_version` | 튜토리얼 버전 |
-| `skip_step` | 튜토리얼을 건너뛴 단계 |
 
 `user_id`는 GA의 전용 User-ID 기능으로만 사용하고 맞춤 측정기준으로 등록하지 않는다.
+
+`message_type`, `rank_bucket`, `result_count_bucket`, `search_mode`, `tutorial_version`, `skip_step`은 이제 Amplitude 전용 이벤트의 속성이다. GA4에 신규 등록하지 않으며 기존 정의는 과거 보고서 의존성을 확인한 뒤 정리한다. 랜딩 맞춤 속성은 [랜딩 이벤트](landing-events.md)를 따른다.
 
 ### 4. 주요 이벤트 지정
 
@@ -152,11 +149,21 @@ NEXT_PUBLIC_GA_DEBUG_MODE=true
 11. 세션 확인 중 빠르게 리다이렉트되면 중간 경로는 없고 최종 경로의 `page_view`만 한 번 발생하는지 확인한다.
 12. `/?utm_source=newsletter&utm_medium=email&utm_campaign=launch`로 진입해 `page_location`에 세 값이 있고 획득 보고서에 반영되는지 확인한다.
 13. `/search?q=secret`, `/join/secret`, `/plan/123`, `/bookmark/456`을 이동해 GA 요청에 원문 값이 없는지 확인한다.
-14. 스테이징 DebugView에서 `sign_up`, `create_plan`, `join_group`, `share`, `add_to_itinerary`, `view_search_results`, `tutorial_begin`, `tutorial_complete`, `tutorial_skip`과 파라미터를 확인한다.
-15. 텍스트 검색과 지도 재검색을 각각 한 번 실행해 `view_search_results`가 실행당 한 번만 발생하는지 확인한다.
+14. 스테이징 DebugView에서 `sign_up`, `create_plan`, `join_group`, `share`, `add_to_itinerary`, `expense_created`, `packing_item_added`와 공통 파라미터를 확인한다.
+15. 텍스트 검색과 지도 재검색을 각각 한 번 실행해 `view_search_results`가 Amplitude에만 한 번 발생하고 GA4에는 없는지 확인한다. 튜토리얼·채팅·세부 편집도 GA4로 전달되지 않는지 확인한다.
 16. DebugView와 `google-analytics.com/g/collect` 요청에 `search_term`, 검색어 원문, `q=<원문>`이 없는지 확인한다.
 17. 개발자·내부 트래픽 필터가 운영 보고서에서 의도대로 제외되는지 확인한다.
 18. 미선택 또는 거부 상태에서 페이지뷰, User-ID, 일반 이벤트 호출 경로와 중앙 데이터 명령을 직접 실행해도 `dataLayer`에 데이터 명령이 추가되지 않고, 이후 허용해도 이전 명령이 되살아나지 않는지 확인한다.
 19. 같은 출처 화면 이동의 `page_referrer`에는 정규화된 내부 경로가 남고, 외부 HTTP(S) 유입에는 출처 루트만 남는지 `page_view` 페이로드에서 확인한다.
 20. 외부 리퍼러의 사용자 정보·경로·쿼리·해시와 `mailto:`, `ftp:` 등 비 HTTP(S) 리퍼러가 `page_view` 페이로드에 없는지 확인한다.
 21. UTM과 임의 쿼리가 함께 포함된 URL로 진입해 `page_location`에는 허용된 UTM만 있고 `page_path`, `page_referrer`에는 쿼리가 없는지 확인한다.
+
+## Amplitude와 역할 분담
+
+GA4는 유입·캠페인별 주요 성과의 기준 도구다. [이벤트 규약](amplitude-tracking-plan.md)의 공통 이벤트와 랜딩 이벤트만 수신한다. 탐색·편집·채팅·튜토리얼 등 제품 세부 행동은 Amplitude에서 분석한다. 이벤트 전송은 `event-destinations.ts`에서 결정하며 화면별 SDK 직접 호출을 추가하지 않는다.
+
+공통 이벤트를 모두 주요 이벤트로 지정하지 않는다. 초기 후보는 `sign_up`, `create_plan`, `join_group`, `add_to_itinerary`이며 실제 운영 지정은 GA4에서 별도로 한다. `expense_created`, `packing_item_added`는 유입별 기능 사용을 비교하는 데 사용할 수 있다. 코드 변경은 보고서/주요 이벤트 설정을 자동 변경하지 않는다.
+
+기존 세부 행동 이벤트는 목적지 분리 배포 이후 GA4 신규 수집이 중단된다. 해당 기능 분석은 Amplitude로 옮기고 과거 구간과 비교할 때 실제 배포일을 표시한다. 동의·차단·집계 정의가 다른 양 도구의 사용자/세션 수를 무조건 동일한 값으로 취급하지 않는다.
+
+공통 이벤트는 계속 양쪽에서 수집하지만 모든 이벤트의 방 식별자인 `room_id` 및 Amplitude 그룹 정보는 GA4에 전송하지 않는다. 방 ID를 맞춤 측정기준으로 등록하지 않는다.

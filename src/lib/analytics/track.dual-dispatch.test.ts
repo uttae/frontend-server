@@ -61,6 +61,7 @@ describe("custom product event URL context", () => {
       sendAmplitudeDataCommand.mockClear();
 
       trackAnalyticsEvent(AnalyticsEvents.addToItinerary, {
+        room_id: "target-room",
         interaction_source: "search",
         item_count_bucket: "1",
       });
@@ -77,7 +78,7 @@ describe("custom product event URL context", () => {
       expect(sendAmplitudeDataCommand).toHaveBeenCalledWith(
         "event",
         "add_to_itinerary",
-        expectedPayload,
+        { ...expectedPayload, room_id: "target-room" },
       );
       expect(JSON.stringify(expectedPayload)).not.toMatch(
         /private-|[?#]|utm_source/,

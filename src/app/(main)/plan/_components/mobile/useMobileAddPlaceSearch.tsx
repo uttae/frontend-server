@@ -81,6 +81,7 @@ export function useMobileAddPlaceSearch({
         placesSnapshot: latest,
       });
       trackAnalyticsEvent(AnalyticsEvents.addToItinerary, {
+        room_id: roomId,
         item_count_bucket: bucketItemCount(latest.length + 1),
         interaction_source: interactionSource,
       });
