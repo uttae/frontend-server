@@ -7,7 +7,7 @@ import { verifySessionWithOptionalRefresh } from "@/lib/auth-server";
 import { isProtectedAppPath } from "@/lib/auth-session";
 
 const LINK_PREVIEW_BOT_UA =
-  /facebookexternalhit|kakaotalk|twitterbot|slackbot|discordbot|linkedinbot|telegrambot|whatsapp|(?:^|[\s;(])line(?:\/|[\s;)])/i;
+  /facebookexternalhit|kakaotalk-scrap|line-poker|twitterbot|slackbot|discordbot|linkedinbot|telegrambot|whatsapp/i;
 
 function isInvitePreviewRequest(request: NextRequest): boolean {
   const { pathname } = request.nextUrl;
