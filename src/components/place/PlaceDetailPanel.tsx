@@ -17,15 +17,13 @@ import {
 import type { SearchResultCardProps } from "./SearchResultCard";
 import { AddToBookmarkModal } from "./AddToBookmarkModal";
 import { AddToScheduleModal } from "./AddToScheduleModal";
-import { TABS, type Tab } from "./types";
 import { usePlaceDetailData } from "./usePlaceDetailData";
 import { HeroSkeleton, HeroImage } from "./HeroSection";
 import { PlaceDetailSkeleton, PlaceSheetSummarySkeleton } from "./PlaceDetailSkeleton";
 import { PlaceDetailSheet } from "./PlaceDetailSheet";
 import { PlaceSheetSummary } from "./PlaceSheetSummary";
 import { PlaceSummaryHeader } from "./PlaceSummaryHeader";
-import { HomeTab } from "./HomeTab";
-import { ReviewsTab } from "./ReviewsTab";
+import { PlaceDetailTabs } from "./PlaceDetailTabs";
 
 type PlaceDetailPanelProps = SearchResultCardProps & {
   onClose: () => void;
@@ -60,7 +58,6 @@ export function PlaceDetailPanel({
   onBack = onClose,
   layout = "panel",
 }: PlaceDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("홈");
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
@@ -190,45 +187,23 @@ export function PlaceDetailPanel({
     : undefined;
 
   const tabs = (
-    <>
-      {/* Tab navigation */}
-      <div className="flex shrink-0 border-b border-gray-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 text-label-s-regular mobile:text-label-xs-regular font-medium transition-colors ${
-              activeTab === tab
-                ? "border-b-2 border-primary text-primary"
-                : "text-dark-gray hover:text-[#364153]"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "홈" && (
-        <HomeTab
-          isOpen={openNow}
-          address={displayAddress}
-          phone={phone}
-          hours={hours}
-          website={website}
-          googleMapsUrl={detailData?.placeUri ?? undefined}
-          reviewSummary={reviewSummary}
-        />
-      )}
-      {activeTab === "리뷰" && (
-        <ReviewsTab
-          rating={displayRating}
-          userRatingCount={userRatingCount}
-          reviews={reviews}
-          reviewsUri={detailData?.reviewsUri}
-        />
-      )}
-    </>
+    <PlaceDetailTabs
+      home={{
+        isOpen: openNow,
+        address: displayAddress,
+        phone,
+        hours,
+        website,
+        googleMapsUrl: detailData?.placeUri ?? undefined,
+        reviewSummary,
+      }}
+      reviews={{
+        rating: displayRating,
+        userRatingCount,
+        reviews,
+        reviewsUri: detailData?.reviewsUri,
+      }}
+    />
   );
 
   const modals = (
