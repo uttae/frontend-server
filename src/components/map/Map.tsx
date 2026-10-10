@@ -12,11 +12,13 @@ import {
   type MapMouseEvent,
 } from "@vis.gl/react-google-maps";
 
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import {
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   MAP_PAN_RESTRICTION,
+  normalizeGooglePlaceResourceId,
   readDestinationLatLngFromSession,
   viewportSearchRadiusMetersFromBounds,
   writeDestinationLatLngToSession,
@@ -36,6 +38,7 @@ import { useMapCenterStore } from "@/stores/map-center-store";
 import { useSearchMapPinsStore } from "@/stores/search-map-pins-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
+import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
 import { usePlanItineraryStopNormalizedPlaceIds } from "@/hooks/usePlanItineraryStopNormalizedPlaceIds";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import { useRoomsList } from "@/hooks/useRooms";
@@ -58,7 +61,7 @@ import type { OpenValue, RatingValue } from "./map-filters";
 export type MapRouteView = PlanItineraryRouteDay & {
   /**
    * `seq`가 바뀔 때마다 실행 — fit: 일차 전체가 보이게, pan: 줌은 두고 고른 장소로 이동,
-   * place: 고른 장소를 가까이(줌 15) 보여 준다(일정 카드를 눌러 들어올 때)
+   * place: 고른 장소를 가까이(줌 15) 보여 준다(경로 보기에 처음 들어올 때 — 일정 카드·경로 보기 버튼 모두)
    */
   camera: { kind: "fit" | "pan" | "place"; seq: number };
   /** 일차 장소 위치(순서대로) — 호출측에서 memo해 넘긴다 */
@@ -80,6 +83,24 @@ export type MapRouteView = PlanItineraryRouteDay & {
   /** 장소가 아닌 곳을 누름 — 후보를 닫는다 */
   onBackgroundClick: () => void;
 };
+
+// ─── 웹 일정에서 고른 장소로 지도 이동 ─────────────────────────────────────────
+
+/** 일정 카드·핀으로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동) */
+function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null }>) {
+  const map = useMap();
+  const rid = typeof roomId === "string" ? roomId.trim() : "";
+  const focusSeq = usePlanMapFocusStore((s) => (s.focus && s.focus.roomId === rid ? s.focus.seq : null));
+  const lat = usePlanMapFocusStore((s) => (s.focus?.roomId === rid ? s.focus.location?.lat : undefined));
+  const lng = usePlanMapFocusStore((s) => (s.focus?.roomId === rid ? s.focus.location?.lng : undefined));
+
+  useEffect(() => {
+    if (!map || focusSeq === null || lat === undefined || lng === undefined) return;
+    map.panTo({ lat, lng });
+  }, [map, focusSeq, lat, lng]);
+
+  return null;
+}
 
 // ─── 장소 선택 시 지도 이동 ───────────────────────────────────────────────────
 
@@ -314,6 +335,8 @@ export default function TripMap({
   const planStopPlaceIds = usePlanItineraryStopNormalizedPlaceIds(isPlanPage);
 
   const { setSelectedPlace } = useSelectedPlace();
+  const { isMobileDevice } = useMobileView();
+  const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
   const setMapCamera = useMapCenterStore((s) => s.setMapCamera);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -431,11 +454,14 @@ export default function TripMap({
           googlePlaceId: placeId,
           ...(latLng ? { location: latLng } : {}),
         },
-        { analyticsSource: "map", skipMapRecenter: true },
+        // 웹은 누른 장소로 줌을 두고 부드럽게 옮긴다. 모바일은 아래 시트가 지도를 가려 그대로 둔다
+        { analyticsSource: "map", ...(isMobileDevice ? { skipMapRecenter: true } : { preserveMapZoom: true }) },
       );
       return;
     }
+    // 빈 곳을 누르면 상세를 닫고, 웹 일정에서 고른 장소(강조·일차 경로만 보기)도 푼다
     setSelectedPlace(null);
+    clearPlanFocus();
   };
 
   return (
@@ -474,6 +500,8 @@ export default function TripMap({
           />
           <MapPreventHorizontalWrap />
           <SelectedPlaceController />
+          {/* 웹 일정에서 고른 장소로 이동 — 모바일(일반 지도·경로 보기)은 쓰지 않는다 */}
+          {routeView || isMobileDevice ? null : <PlanFocusCameraController roomId={currentRoomId} />}
           <DestinationPanController
             roomId={currentRoomId}
             destination={destination}
@@ -575,11 +603,19 @@ function RouteViewMarkers({ routeView }: Readonly<{ routeView: MapRouteView }>) 
 
 function SelectedPlaceMarker() {
   const { selectedPlace } = useSelectedPlace();
+  const { isMobileDevice } = useMobileView();
+  // 고른 일정 장소를 핀으로 열었으면 번호 핀을 키워 보이므로 일반 선택 핀을 겹쳐 그리지 않는다(웹 전용)
+  const planFocusGid = usePlanMapFocusStore((s) => (isMobileDevice ? null : (s.focus?.googlePlaceId ?? null)));
+  const selectedIsPlanFocus =
+    planFocusGid !== null &&
+    typeof selectedPlace?.googlePlaceId === "string" &&
+    normalizeGooglePlaceResourceId(selectedPlace.googlePlaceId.trim()) ===
+      normalizeGooglePlaceResourceId(planFocusGid.trim());
   const bookmarkColor = selectedPlace?.fromBookmark ? selectedPlace.bookmarkCategoryColor?.trim() : undefined;
   let colorClass = "text-primary";
   if (selectedPlace?.fromBookmark) colorClass = bookmarkColor ? "" : "text-secondary";
   return <>
-          {selectedPlace?.location && (
+          {selectedPlace?.location && !selectedIsPlanFocus && (
             <AdvancedMarker
               position={selectedPlace.location}
               onClick={(e) => e.stop()}
