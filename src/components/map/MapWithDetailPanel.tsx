@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import { PlaceDetailPanel } from "@/components/place/PlaceDetailPanel";
 import { MapToolbarLayoutProvider } from "@/contexts/MapToolbarLayoutContext";
@@ -8,15 +8,23 @@ import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapDiscoverToolbarOffset } from "@/hooks/useMapDiscoverToolbarOffset";
 import { cn } from "@/lib/utils";
 
-import Map from "./Map";
+import Map, { type MapRouteView } from "./Map";
 import { MobileMapSearch } from "./MobileMapSearch";
 
 export function MapWithDetailPanel({
   mobileInline = false,
   hidden = false,
+  routeView,
+  onOpenRouteView,
+  children,
 }: {
   mobileInline?: boolean;
   hidden?: boolean;
+  /** 모바일 경로 보기 — 검색창을 숨기고 지도에는 고른 일차만 그린다 */
+  routeView?: MapRouteView;
+  onOpenRouteView?: () => void;
+  /** 지도 위에 얹는 화면(경로 보기 카드·일차 탭 등) */
+  children?: ReactNode;
 }) {
   const { selectedPlace, setSelectedPlace, onBack } = useSelectedPlace();
 
@@ -43,8 +51,10 @@ export function MapWithDetailPanel({
       )}
     >
       <MapToolbarLayoutProvider setToolbarRef={setToolbarRef}>
-        <Map />
+        <Map routeView={routeView} onOpenRouteView={onOpenRouteView} />
       </MapToolbarLayoutProvider>
+
+      {children}
 
       {/* Detail panel — 데스크톱: 지도 왼쪽에서 슬라이드 / 모바일: 헤더 아래 12px까지 펼쳐지는 바텀 시트 */}
       <div
@@ -74,7 +84,7 @@ export function MapWithDetailPanel({
         )}
       </div>
 
-      {mobileInline ? <MobileMapSearch /> : null}
+      {mobileInline && !routeView ? <MobileMapSearch /> : null}
     </section>
   );
 }

@@ -39,6 +39,7 @@ import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { usePlanItineraryStopNormalizedPlaceIds } from "@/hooks/usePlanItineraryStopNormalizedPlaceIds";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import { useRoomsList } from "@/hooks/useRooms";
+import { RouteIcon } from "@/assets/icons";
 import { MapPinIcon } from "@/components/icons";
 import { MapPinWithPlaceName } from "@/components/map/MapPinWithPlaceName";
 import { MapBookmarkPins } from "./MapBookmarkPins";
@@ -49,8 +50,160 @@ import {
 import { MapSearchHereButton } from "./MapSearchHereButton";
 import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
-import { PlanItineraryMapRoutes } from "./PlanItineraryMapRoutes";
+import { PlanItineraryMapRoutes, type PlanItineraryRouteDay } from "./PlanItineraryMapRoutes";
 import type { OpenValue, RatingValue } from "./map-filters";
+
+/** 모바일 경로 보기 — 고른 일차만 그리고, 카드 선택에 맞춰 지도를 옮긴다 */
+export type MapRouteView = PlanItineraryRouteDay & {
+  /**
+   * `seq`가 바뀔 때마다 실행 — fit: 일차 전체가 보이게, pan: 줌은 두고 고른 장소로 이동,
+   * place: 고른 장소를 가까이(줌 15) 보여 준다(일정 카드를 눌러 들어올 때)
+   */
+  camera: { kind: "fit" | "pan" | "place"; seq: number };
+  /** 일차 장소 위치(순서대로) — 호출측에서 memo해 넘긴다 */
+  locations: ReadonlyArray<{ itemId: number; lat: number; lng: number }>;
+  /** 카드를 펼쳐 지도 아래쪽 대부분을 가리는 중 */
+  expanded: boolean;
+  /**
+   * 지도에서 누른 Google 장소 — 카드 줄 사이에 끼운 후보(이 일차를 볼 때만). 일반 지도의 선택 핀으로 그린다.
+   * `focused`: 후보 카드를 보고 있음 — 이때만 지도를 후보로 옮긴다.
+   */
+  candidate: {
+    googlePlaceId: string;
+    location: google.maps.LatLngLiteral | null;
+    focused: boolean;
+  } | null;
+  onPlaceClick: (googlePlaceId: string, location: google.maps.LatLngLiteral | null) => void;
+  /** 후보 핀을 누름 — 일정 핀처럼 그 후보 카드로 넘긴다 */
+  onCandidateClick: () => void;
+  /** 장소가 아닌 곳을 누름 — 후보를 닫는다 */
+  onBackgroundClick: () => void;
+};
+
+/** 접힌 카드·일차 탭·X가 가리는 지도 아래쪽 높이 */
+const ROUTE_VIEW_COLLAPSED_COVER_PX = 300;
+/** 펼친 카드가 가리는 지도 높이 비율(카드 70% + 아래 여백) */
+const ROUTE_VIEW_EXPANDED_COVER_RATIO = 0.72;
+const ROUTE_VIEW_EDGE_PADDING = 40;
+/** 장소 하나만 볼 때(장소 하나뿐인 일차·일정 카드로 들어올 때)의 줌 — 주변 길이 보이는 정도 */
+const ROUTE_VIEW_SINGLE_PLACE_ZOOM = 15;
+
+/**
+ * 가린 영역을 뺀 나머지의 가운데에 `target`이 오도록 옮긴다.
+ * 지도를 막 불러온 직후엔 `getProjection()`이 없을 수 있어 줌·위도로 직접 계산한다
+ * (메르카토르에서 위도 1px ≈ 경도 1px × cos(위도)).
+ */
+function panToVisibleCenter(
+  map: google.maps.Map,
+  target: google.maps.LatLngLiteral,
+  coveredPx: number,
+  zoom = map.getZoom(),
+) {
+  if (zoom === undefined || coveredPx <= 0) {
+    map.panTo(target);
+    return;
+  }
+  const lngDegreesPerPx = 360 / (256 * 2 ** zoom);
+  const latDegreesPerPx = lngDegreesPerPx * Math.cos((target.lat * Math.PI) / 180);
+  // 지도 중심을 아래로 coveredPx/2만큼 내리면 target이 보이는 영역 가운데로 올라온다
+  map.panTo({ lat: target.lat - (coveredPx / 2) * latDegreesPerPx, lng: target.lng });
+}
+
+/** 지도 왼쪽·위쪽에서 `target`까지의 거리(px) — 지도를 아직 그리지 않았으면 null */
+function offsetInMapPx(map: google.maps.Map, target: google.maps.LatLngLiteral) {
+  const projection = map.getProjection();
+  const bounds = map.getBounds();
+  const zoom = map.getZoom();
+  if (!projection || !bounds || zoom === undefined) return null;
+  const topRight = projection.fromLatLngToPoint(bounds.getNorthEast());
+  const bottomLeft = projection.fromLatLngToPoint(bounds.getSouthWest());
+  const point = projection.fromLatLngToPoint(target);
+  if (!topRight || !bottomLeft || !point) return null;
+  const scale = 2 ** zoom;
+  return { x: (point.x - bottomLeft.x) * scale, y: (point.y - topRight.y) * scale };
+}
+
+function RouteViewCameraController({
+  camera,
+  locations,
+  focusedItemId,
+  expanded,
+  candidate,
+}: Pick<MapRouteView, "camera" | "locations" | "focusedItemId" | "expanded" | "candidate">) {
+  const map = useMap();
+  const appliedRef = useRef<string | null>(null);
+  const candidateFocused = candidate?.focused ?? false;
+  const candidateLat = candidate?.location?.lat;
+  const candidateLng = candidate?.location?.lng;
+
+  // 후보 카드를 볼 때 — 누른 자리 그대로 두고, 카드에 가려질 때만 보이는 영역 가운데로 옮긴다
+  useEffect(() => {
+    if (!map || !candidateFocused || candidateLat === undefined || candidateLng === undefined) return;
+    const target = { lat: candidateLat, lng: candidateLng };
+    const coveredPx = expanded
+      ? Math.round(map.getDiv().clientHeight * ROUTE_VIEW_EXPANDED_COVER_RATIO)
+      : ROUTE_VIEW_COLLAPSED_COVER_PX;
+    const offset = offsetInMapPx(map, target);
+    const { clientWidth, clientHeight } = map.getDiv();
+    // 핀(고르면 약 55px)이 위로 그려지므로 위쪽 여유를 두고, 좌우 가장자리에 걸려도 옮긴다
+    if (
+      offset &&
+      offset.y > 72 &&
+      offset.y < clientHeight - coveredPx - 16 &&
+      offset.x > 36 &&
+      offset.x < clientWidth - 36
+    ) {
+      return;
+    }
+    panToVisibleCenter(map, target, coveredPx);
+  }, [map, candidateFocused, candidateLat, candidateLng, expanded]);
+
+  useEffect(() => {
+    // 후보 카드를 볼 때는 고른 장소(focusedItemId)가 없어 pan은 아무 일도 하지 않는다
+    if (!map || locations.length === 0) return;
+    // 같은 요청을 두 번 실행하지 않는다 — fit은 장소가 처음 채워질 때도 다시 맞춘다
+    const locationsKey = locations.map((l) => `${l.itemId}:${l.lat},${l.lng}`).join("|");
+    const key =
+      camera.kind === "fit"
+        ? `fit:${camera.seq}:${expanded}:${locationsKey}`
+        : `${camera.kind}:${camera.seq}:${expanded}`;
+    if (appliedRef.current === key) return;
+    const target = locations.find((l) => l.itemId === focusedItemId);
+    // 고른 장소의 위치가 아직 없으면 채워질 때 다시 시도한다
+    if (camera.kind === "place" && !target) return;
+    appliedRef.current = key;
+
+    const coveredPx = expanded
+      ? Math.round(map.getDiv().clientHeight * ROUTE_VIEW_EXPANDED_COVER_RATIO)
+      : ROUTE_VIEW_COLLAPSED_COVER_PX;
+    const toLatLng = (l: (typeof locations)[number]) => ({ lat: l.lat, lng: l.lng });
+
+    if (camera.kind === "pan") {
+      if (target) panToVisibleCenter(map, toLatLng(target), coveredPx);
+      return;
+    }
+    if (camera.kind === "place" && target) {
+      map.setZoom(ROUTE_VIEW_SINGLE_PLACE_ZOOM);
+      panToVisibleCenter(map, toLatLng(target), coveredPx, ROUTE_VIEW_SINGLE_PLACE_ZOOM);
+      return;
+    }
+    if (locations.length === 1) {
+      map.setZoom(ROUTE_VIEW_SINGLE_PLACE_ZOOM);
+      panToVisibleCenter(map, toLatLng(locations[0]!), coveredPx, ROUTE_VIEW_SINGLE_PLACE_ZOOM);
+      return;
+    }
+    const bounds = new google.maps.LatLngBounds();
+    locations.forEach((l) => bounds.extend(toLatLng(l)));
+    map.fitBounds(bounds, {
+      top: 56,
+      right: ROUTE_VIEW_EDGE_PADDING,
+      bottom: coveredPx + 16,
+      left: ROUTE_VIEW_EDGE_PADDING,
+    });
+  }, [map, camera.kind, camera.seq, locations, focusedItemId, expanded]);
+
+  return null;
+}
 
 // ─── 장소 선택 시 지도 이동 ───────────────────────────────────────────────────
 
@@ -270,7 +423,15 @@ function MapSearchResultPins() {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function Map() {
+export default function Map({
+  routeView,
+  onOpenRouteView,
+}: {
+  /** 있으면 경로 보기 — 검색·필터, 북마크·탐색 핀, 다른 일차 경로를 숨긴다 */
+  routeView?: MapRouteView;
+  /** 있으면 지도 왼쪽 아래에 경로 보기 버튼을 둔다(모바일 지도) */
+  onOpenRouteView?: () => void;
+} = {}) {
   const pathname = usePathname();
   // 모바일 지도(`/map`)도 일정 화면의 지도라 일정에 있는 장소의 북마크 핀을 숨긴다
   const isPlanPage = isPlanPath(pathname ?? "") || isMobileMapPathname(pathname ?? "");
@@ -382,6 +543,16 @@ export default function Map() {
 
   const handleMapClick = (ev: MapMouseEvent) => {
     const placeId = ev.detail.placeId?.trim() ?? "";
+    if (routeView) {
+      // 경로 보기: 장소 상세 시트 대신 고른 카드 뒤에 넣을 후보로 보여 준다
+      if (placeId.length > 0) {
+        ev.stop();
+        routeView.onPlaceClick(placeId, ev.detail.latLng ?? null);
+      } else {
+        routeView.onBackgroundClick();
+      }
+      return;
+    }
     if (placeId.length > 0) {
       ev.stop();
       const latLng = ev.detail.latLng;
@@ -424,7 +595,7 @@ export default function Map() {
             streetViewControl={false}
             mapTypeControl={false}
             fullscreenControl={false}
-            clickableIcons={selectedCategoryId == null}
+            clickableIcons={routeView ? true : selectedCategoryId == null}
             onClick={handleMapClick}
             onCameraChanged={handleCameraChanged}
           >
@@ -441,25 +612,54 @@ export default function Map() {
             destination={destination}
           />
 
-          <PlanItineraryMapRoutes />
+          {routeView ? (
+            <>
+              <PlanItineraryMapRoutes routeDay={routeView} />
+              <RouteViewCameraController
+                camera={routeView.camera}
+                locations={routeView.locations}
+                focusedItemId={routeView.focusedItemId}
+                expanded={routeView.expanded}
+                candidate={routeView.candidate}
+              />
+              {routeView.candidate?.location ? (
+                <AdvancedMarker
+                  position={routeView.candidate.location}
+                  zIndex={routeView.candidate.focused ? 200 : 90}
+                  onClick={(e) => {
+                    e.stop();
+                    routeView.onCandidateClick();
+                  }}
+                >
+                  <span className="block text-primary drop-shadow-md">
+                    <MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} />
+                  </span>
+                </AdvancedMarker>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <PlanItineraryMapRoutes />
 
-          <MapDiscoverPlaces
-            selectedCategoryId={selectedCategoryId}
-            rating={rating}
-            openNow={openNow}
-          />
+              <MapDiscoverPlaces
+                selectedCategoryId={selectedCategoryId}
+                rating={rating}
+                openNow={openNow}
+              />
 
-          <MapBookmarkPins
-            roomId={currentRoomId}
-            enabled={showBookmarkPins}
-            hiddenNormalizedPlaceIds={
-              isPlanPage ? planStopPlaceIds : undefined
-            }
-          />
+              <MapBookmarkPins
+                roomId={currentRoomId}
+                enabled={showBookmarkPins}
+                hiddenNormalizedPlaceIds={
+                  isPlanPage ? planStopPlaceIds : undefined
+                }
+              />
 
-          <MapSearchResultPins />
+              <MapSearchResultPins />
+            </>
+          )}
 
-          {selectedPlace?.location && (
+          {!routeView && selectedPlace?.location && (
             <AdvancedMarker
               position={selectedPlace.location}
               onClick={(e) => e.stop()}
@@ -490,19 +690,31 @@ export default function Map() {
         )}
       </div>
 
-      <MapDiscoverToolbar
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={setSelectedCategoryId}
-        rating={rating}
-        openNow={openNow}
-        setRating={setRating}
-        setOpenNow={setOpenNow}
-      />
+      {routeView ? null : (
+        <MapDiscoverToolbar
+          selectedCategoryId={selectedCategoryId}
+          onSelectCategory={setSelectedCategoryId}
+          rating={rating}
+          openNow={openNow}
+          setRating={setRating}
+          setOpenNow={setOpenNow}
+        />
+      )}
 
-      {!bootstrap.ready ? null : (
+      {!bootstrap.ready || routeView ? null : (
         <>
           <MapSearchHereButton discoverCategoryId={selectedCategoryId} />
-          <div className="pointer-events-none absolute bottom-6 left-4 z-[16]">
+          <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
+            {onOpenRouteView ? (
+              <button
+                type="button"
+                onClick={onOpenRouteView}
+                aria-label="경로 보기"
+                className="pointer-events-auto flex size-[42px] cursor-pointer items-center justify-center rounded-full bg-primary text-icon-inverse shadow-md transition-colors active:bg-primary-strong"
+              >
+                <RouteIcon size={24} />
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={() => setShowBookmarkPins((v) => !v)}

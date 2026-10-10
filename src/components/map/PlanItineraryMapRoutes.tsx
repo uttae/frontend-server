@@ -45,17 +45,37 @@ import { PlanItineraryStopMapPin } from "./PlanItineraryStopMapPin";
 /**
  * 일차별 "지도에 경로 표시" 토글(`usePlanScheduleRouteVisibilityStore`) ON인
  * 일차만 지도에 경로(polyline)와 정류장 마커를 그립니다.
+ * `routeDay`가 있으면(모바일 경로 보기) 토글과 관계없이 그 일차만 그립니다.
  * 폴리라인 travelMode는 서버에 저장된 구간별 공유 이동수단을 따릅니다.
  * STOMP 에폭은 {@link usePlanMapDirectionsEpochStore} 참고.
  */
-export function PlanItineraryMapRoutes() {
+/** 모바일 경로 보기 — 고른 일차 하나만 그린다 */
+export type PlanItineraryRouteDay = {
+  /** 일차를 아직 못 정했으면(불러오는 중·일차 없음) 아무것도 그리지 않는다 */
+  scheduleId: number | null;
+  /** 일정 화면과 같은 일차 색 */
+  color: string;
+  /** 카드로 고른 장소 — 핀을 크게 강조한다 */
+  focusedItemId: number | null;
+  /** 일차 구간 경로 batch(`usePrefetchScheduleRoutes`)가 끝나기 전에는 구간을 조회하지 않는다 */
+  routesReady: boolean;
+  onStopClick: (itemId: number) => void;
+};
+
+export function PlanItineraryMapRoutes({
+  routeDay,
+}: {
+  routeDay?: PlanItineraryRouteDay;
+} = {}) {
   const roomIdRaw = useSessionStore((s) => s.currentRoomId);
   const rid = typeof roomIdRaw === "string" ? roomIdRaw.trim() : "";
   const queryClient = useQueryClient();
   const { isSuccess: schedulesHydrated } = useRoomSchedules(rid || null);
 
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
+  // 경로 보기는 선택 장소도 일차 핀으로 강조해 보여 준다 — 일반 선택 핀으로 바꾸지 않는다
   const selectedNorm =
+    !routeDay &&
     selectedPlace?.googlePlaceId &&
     selectedPlace.googlePlaceId.trim().length > 0
       ? normalizeGooglePlaceResourceId(selectedPlace.googlePlaceId.trim())
@@ -67,14 +87,22 @@ export function PlanItineraryMapRoutes() {
   const visibilityOrder = usePlanScheduleRouteVisibilityStore(
     (s) => s.visibilityOrder,
   );
+  // 경로 보기 값은 렌더마다 새 객체라, 메모·쿼리 옵션에서는 아래 원시값만 읽는다
+  const routeDayScheduleId = routeDay?.scheduleId ?? null;
+  const inRouteView = routeDay != null;
+  const routesReady = routeDay?.routesReady ?? true;
   const visibleScheduleIds = useMemo(
     () =>
-      Object.keys(visibleByScheduleId)
-        .map((k) => Number(k))
-        .filter(
-          (id) => Number.isFinite(id) && visibleByScheduleId[id] === true,
-        ),
-    [visibleByScheduleId],
+      inRouteView
+        ? routeDayScheduleId !== null
+          ? [routeDayScheduleId]
+          : []
+        : Object.keys(visibleByScheduleId)
+            .map((k) => Number(k))
+            .filter(
+              (id) => Number.isFinite(id) && visibleByScheduleId[id] === true,
+            ),
+    [inRouteView, routeDayScheduleId, visibleByScheduleId],
   );
 
   const directionsEpoch = usePlanMapDirectionsEpochStore((s) =>
@@ -92,13 +120,16 @@ export function PlanItineraryMapRoutes() {
     [visibleScheduleIds],
   );
 
+  const routeDayColor = routeDay?.color ?? null;
   const routeColorByScheduleId = useMemo(
     () =>
-      scheduleIdsToRouteColors(
-        sortedScheduleIdsForRouteColors(visibleByScheduleId),
-        rid || undefined,
-      ),
-    [visibleByScheduleId, rid],
+      routeDayScheduleId !== null && routeDayColor
+        ? new Map([[routeDayScheduleId, routeDayColor]])
+        : scheduleIdsToRouteColors(
+            sortedScheduleIdsForRouteColors(visibleByScheduleId),
+            rid || undefined,
+          ),
+    [routeDayColor, routeDayScheduleId, visibleByScheduleId, rid],
   );
   const fallbackRouteStroke = "#f12d33";
 
@@ -119,8 +150,9 @@ export function PlanItineraryMapRoutes() {
   const buckets = orderedScheduleIdsForQueries.map(
     (_, idx) => placesQueries[idx]?.data ?? [],
   );
+  // 경로 보기는 일차 구간 경로 batch가 끝난 뒤에 구간을 조회한다(그 전엔 핀만 그린다)
   const segments = flattenPlanItinerarySegmentsFromPlaces(
-    orderedScheduleIdsForQueries,
+    routesReady ? orderedScheduleIdsForQueries : [],
     buckets,
   );
 
@@ -290,8 +322,12 @@ export function PlanItineraryMapRoutes() {
   }, [orderedScheduleIdsForQueries, buckets, selectedNorm]);
 
   const visibleStops = useMemo(
-    () => filterVisiblePlanMapStops(stopsForOffset, visibilityOrder),
-    [stopsForOffset, visibilityOrder],
+    () =>
+      filterVisiblePlanMapStops(
+        stopsForOffset,
+        inRouteView ? visibleScheduleIds : visibilityOrder,
+      ),
+    [inRouteView, stopsForOffset, visibilityOrder, visibleScheduleIds],
   );
 
   const placeByScheduleAndItemId = useMemo(() => {
@@ -324,13 +360,20 @@ export function PlanItineraryMapRoutes() {
     const legacyId = normalizeGooglePlaceResourceId(gid);
     const dayColor =
       routeColorByScheduleId.get(scheduleId) ?? fallbackRouteStroke;
+    const focused = routeDay != null && routeDay.focusedItemId === place.itemId;
+    const itemId = place.itemId;
     stopMarkers.push(
       <AdvancedMarker
         key={`plan-stop-${scheduleId}-${place.itemId}`}
         position={loc}
         title={place.title}
+        zIndex={focused ? 100 : undefined}
         onClick={(e) => {
           e.stop();
+          if (routeDay && typeof itemId === "number") {
+            routeDay.onStopClick(itemId);
+            return;
+          }
           setSelectedPlace(
             {
               name: place.title,
@@ -347,6 +390,7 @@ export function PlanItineraryMapRoutes() {
         <PlanItineraryStopMapPin
           orderLabel={stop.orderIndex + 1}
           pinColor={dayColor}
+          emphasized={focused}
           className="cursor-pointer select-none"
         />
       </AdvancedMarker>,

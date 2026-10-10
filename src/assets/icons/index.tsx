@@ -14,6 +14,7 @@ import MenuDotVerticalSvg from "@/assets/icons/menu-dot-vertical.svg";
 import MenuHamburgerSvg from "@/assets/icons/menu-hamburger.svg";
 import PlusSvg from "@/assets/icons/plus.svg";
 import ReactionStarSvg from "@/assets/icons/reaction-star.svg";
+import RouteSvg from "@/assets/icons/route.svg";
 import SavedAddSvg from "@/assets/icons/saved-add.svg";
 import SavedSvg from "@/assets/icons/saved.svg";
 import SearchSvg from "@/assets/icons/search.svg";
@@ -44,6 +45,8 @@ export const MenuDotVerticalIcon = createIcon(MenuDotVerticalSvg, "MenuDotVertic
 export const MenuHamburgerIcon = createIcon(MenuHamburgerSvg, "MenuHamburgerIcon");
 export const PlusIcon = createIcon(PlusSvg, "PlusIcon");
 export const ReactionStarIcon = createIcon(ReactionStarSvg, "ReactionStarIcon");
+// Figma DS에 없어 Tabler `route`(outline)를 받아 씀 — Design.md "Figma에 추가 요청할 아이콘" 참고
+export const RouteIcon = createIcon(RouteSvg, "RouteIcon");
 export const SavedAddIcon = createIcon(SavedAddSvg, "SavedAddIcon");
 export const SavedIcon = createIcon(SavedSvg, "SavedIcon");
 export const SearchIcon = createIcon(SearchSvg, "SearchIcon");

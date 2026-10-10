@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildMapRouteHref,
   isChatPathname,
   isMobileMapPathname,
   isPlanPathname,
   legacyPlanViewPath,
   mobileScheduleHref,
+  readMapRouteParams,
 } from "./plan-panel";
 
 describe("mobile plan routes", () => {
@@ -29,5 +31,21 @@ describe("mobile plan routes", () => {
     expect(legacyPlanViewPath("chat")).toBe("/chat");
     expect(legacyPlanViewPath("schedule")).toBeNull();
     expect(legacyPlanViewPath(null)).toBeNull();
+  });
+});
+
+describe("map route view params", () => {
+  it("경로 보기 주소를 만들고, 장소가 있으면 item을 붙인다", () => {
+    expect(buildMapRouteHref(2)).toBe("/map?view=route&day=2");
+    expect(buildMapRouteHref(1, 115)).toBe("/map?view=route&day=1&item=115");
+    expect(buildMapRouteHref(3, null)).toBe("/map?view=route&day=3");
+  });
+
+  it("잘못된 day는 1일차로, 잘못된 item은 무시한다", () => {
+    const read = (query: string) => readMapRouteParams(new URLSearchParams(query));
+    expect(read("view=route&day=4&item=115")).toEqual({ active: true, day: 4, itemId: 115 });
+    expect(read("view=route&day=0&item=abc")).toEqual({ active: true, day: 1, itemId: null });
+    expect(read("view=route")).toEqual({ active: true, day: 1, itemId: null });
+    expect(read("")).toEqual({ active: false, day: 1, itemId: null });
   });
 });
