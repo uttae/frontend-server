@@ -24,7 +24,10 @@ type MobilePlanPlaceCardProps = Readonly<{
   highlighted?: boolean;
   /** `45,000 KRW 외 1건` — 없으면 비용 줄을 숨긴다 */
   expenseSummary: string | null;
-  onOpen: () => void;
+  /** 카드 본문 — 없으면 본문을 눌러도 아무 일도 없다(예: 경로 보기에서 펼친 카드) */
+  onOpen?: () => void;
+  /** 본문 버튼의 접근성 이름 끝말 — 기본 "경로 보기" */
+  openLabel?: string;
   onOpenActions: () => void;
   onOpenExpenses: () => void;
   /** 메모 줄의 연필 아이콘 — 메모 수정 시트를 연다 */
@@ -35,13 +38,23 @@ type MobilePlanPlaceCardProps = Readonly<{
   editing: boolean;
   dragDisabled?: boolean;
   onHandlePointerDown?: (e: ReactPointerEvent<HTMLButtonElement>) => void;
+  /** 바깥 줄 — 예: 경로 보기에서 높이를 채운다 */
+  className?: string;
+  /** 카드 테두리·배경 — 예: 펼친 경로 카드 안에서는 테두리를 없앤다 */
+  articleClassName?: string;
+  /**
+   * 비어 있는 시간·비용·메모 자리에 흐린 "추가" 줄을 두고, 시간·비용을 늘 한 줄씩 나눠 보인다
+   * — 경로 보기처럼 카드 높이를 맞춰 넘겨 볼 때. 누르면 값이 있을 때와 같은 `onEditTime`·`onOpenExpenses`·`onEditMemo`를 부른다.
+   * `expense`는 비용 권한이 있을 때만 켠다.
+   */
+  addWhenEmpty?: { time: boolean; expense: boolean; memo: boolean };
 }>;
 
 function stop(e: { stopPropagation: () => void }) {
   e.stopPropagation();
 }
 
-/** 모바일 일정 장소 카드 — 시간·비용·메모 줄은 값이 있을 때만 보인다 */
+/** 모바일 일정 장소 카드 — 시간·비용·메모 줄은 값이 있을 때만 보인다(`addWhenEmpty`면 빈 줄도 "추가"로 보인다) */
 export function MobilePlanPlaceCard({
   place,
   orderNumber,
@@ -49,6 +62,7 @@ export function MobilePlanPlaceCard({
   highlighted = false,
   expenseSummary,
   onOpen,
+  openLabel = "경로 보기",
   onOpenActions,
   onOpenExpenses,
   onEditMemo,
@@ -56,28 +70,37 @@ export function MobilePlanPlaceCard({
   editing,
   dragDisabled = false,
   onHandlePointerDown,
+  className,
+  articleClassName,
+  addWhenEmpty,
 }: MobilePlanPlaceCardProps) {
   const [memoExpanded, setMemoExpanded] = useState(false);
   const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
   const memo = place.memo?.trim() ?? "";
+  const addTime = !timeRange && Boolean(addWhenEmpty?.time);
+  const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
+  const addMemo = !memo && Boolean(addWhenEmpty?.memo);
   const meta = [place.primaryTypeDisplayName, place.subtitle].filter(Boolean).join(" · ");
 
   return (
-    <div className="flex items-stretch gap-2">
+    <div className={cn("flex items-stretch gap-2", className)}>
       <article
         className={cn(
           "relative min-w-0 flex-1 rounded-md border text-left transition-colors duration-500",
           // primary-subtle은 카드 배경으로 너무 진해 빈 일차 드롭존과 같은 원시 토큰을 쓴다
           highlighted ? "border-primary bg-[var(--blue-50)]" : "border-border-subtle bg-fill-subtle",
+          articleClassName,
         )}
       >
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-label={`${orderNumber}번째 장소 ${place.title} 지도에서 보기`}
-          className="absolute inset-0 cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-primary-strong"
-        />
-        <div className="pointer-events-none relative flex gap-3 pb-4 pl-3.5 pr-2 pt-3">
+        {onOpen ? (
+          <button
+            type="button"
+            onClick={onOpen}
+            aria-label={`${orderNumber}번째 장소 ${place.title} ${openLabel}`}
+            className="absolute inset-0 cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-primary-strong"
+          />
+        ) : null}
+        <div className="pointer-events-none relative flex gap-3 pb-3 pl-3.5 pr-2 pt-3">
           <span
             aria-hidden
             className="mt-px flex size-6 shrink-0 items-center justify-center rounded-[5.5px] text-body-s-emphasis text-text-inverse"
@@ -88,8 +111,13 @@ export function MobilePlanPlaceCard({
           <div className="min-w-0 flex-1">
             <h3 className="line-clamp-2 break-words text-title-s text-text">{place.title}</h3>
             {meta ? <p className="truncate text-body-s-regular text-text-subtle">{meta}</p> : null}
-            {timeRange || expenseSummary ? (
-              <div className="mt-3.5 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-1">
+            {timeRange || expenseSummary || addTime || addExpense ? (
+              <div
+                className={cn(
+                  "mt-2 flex min-w-0 gap-y-1",
+                  addWhenEmpty ? "flex-col items-start" : "flex-wrap items-center gap-x-5",
+                )}
+              >
                 {timeRange ? (
                   <button
                     type="button"
@@ -102,6 +130,19 @@ export function MobilePlanPlaceCard({
                   >
                     <TimeClockIcon size={18} className="text-icon-subtle" />
                     {timeRange}
+                  </button>
+                ) : addTime ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      stop(e);
+                      onEditTime();
+                    }}
+                    aria-label={`${place.title} 방문 시간 추가`}
+                    className="pointer-events-auto flex items-center gap-1 text-body-s-regular text-text-disabled"
+                  >
+                    <TimeClockIcon size={18} className="text-icon-disabled" />
+                    시간 추가
                   </button>
                 ) : null}
                 {expenseSummary ? (
@@ -116,6 +157,19 @@ export function MobilePlanPlaceCard({
                   >
                     <CoinIcon size={18} className="text-icon-subtle" />
                     <span className="truncate">{expenseSummary}</span>
+                  </button>
+                ) : addExpense ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      stop(e);
+                      onOpenExpenses();
+                    }}
+                    aria-label={`${place.title} 비용 추가`}
+                    className="pointer-events-auto flex items-center gap-1 text-body-s-regular text-text-disabled"
+                  >
+                    <CoinIcon size={18} className="text-icon-disabled" />
+                    비용 추가
                   </button>
                 ) : null}
               </div>
@@ -177,6 +231,25 @@ export function MobilePlanPlaceCard({
                   memoExpanded && "rotate-180",
                 )}
               />
+            </button>
+          </div>
+        ) : addMemo ? (
+          // 메모가 있을 때와 같은 줄(구분선·아이콘·꺾쇠)을 흐리게 — 누르면 메모 시트
+          <div className="pointer-events-none relative mx-3.5 border-t border-border-subtle py-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                stop(e);
+                onEditMemo();
+              }}
+              aria-label={`${place.title} 메모 추가`}
+              className="pointer-events-auto flex w-full min-w-0 items-center gap-3.5 text-left"
+            >
+              <WriteIcon size={20} className="shrink-0 text-icon-disabled" />
+              <span className="min-w-0 flex-1 truncate text-caption-l-regular leading-5 text-text-disabled">
+                메모를 추가해보세요.
+              </span>
+              <ChevronDownIcon size={20} className="shrink-0 text-icon-disabled" />
             </button>
           </div>
         ) : null}
