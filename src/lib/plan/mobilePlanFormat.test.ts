@@ -2,11 +2,22 @@ import { describe, expect, it } from "vitest";
 
 import type { Expense } from "@/lib/api/rooms/expenses";
 
-import { formatMobileDayDate, summarizeExpensesForMobile } from "./mobilePlanFormat";
+import { formatMobileDayDate, formatMonthDayKo, summarizeExpensesForMobile } from "./mobilePlanFormat";
 
 function expense(currency: string, totalAmount: string, id: number): Expense {
   return { id, currency, totalAmount } as Expense;
 }
+
+describe("formatMonthDayKo", () => {
+  it("월·일을 앞자리 0 없이 표시한다", () => {
+    expect(formatMonthDayKo("2026-09-08")).toBe("9월 8일");
+    expect(formatMonthDayKo("2026-12-25")).toBe("12월 25일");
+  });
+
+  it("형식이 맞지 않으면 빈 문자열", () => {
+    expect(formatMonthDayKo("")).toBe("");
+  });
+});
 
 describe("formatMobileDayDate", () => {
   it("월·일을 두 자리로 맞추고 요일을 붙인다", () => {

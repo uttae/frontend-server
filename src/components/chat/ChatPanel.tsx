@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useMainChromeLayoutWidth } from "@/contexts/MainChromeLayoutWidthContext";
 import { useChat } from "@/hooks/useChat";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
@@ -18,9 +17,9 @@ import {
   CHAT_PANEL_MINIMIZED_VIEWPORT_INSET_RIGHT_PX,
 } from "@/lib/chat/chat-panel-minimized-size";
 import {
+  minimizedPanelAnimate,
   panelVariants,
   panelTransition,
-  getPanelAnimate,
 } from "./chat-animations";
 
 export function ChatPanel({
@@ -31,8 +30,6 @@ export function ChatPanel({
   inline?: boolean;
 }) {
   const { chatState, openChat, minimizeChat, closeChat } = useChat();
-  const { chatPanelDockWidthCss, chatPanelRevealReady } =
-    useMainChromeLayoutWidth();
   const isInline = mobileInline || inline;
   const isMinimized = !isInline && chatState === "minimized";
   const panelOpen = isInline || chatState !== "closed";
@@ -147,7 +144,7 @@ export function ChatPanel({
           key="chat-panel-minimized"
           variants={panelVariants}
           initial="hidden"
-          animate={getPanelAnimate(true)}
+          animate={minimizedPanelAnimate}
           exit="exit"
           transition={panelTransition}
           style={{
@@ -164,22 +161,6 @@ export function ChatPanel({
             onResizeEnd={persistSize}
             clampSize={clampSize}
           />
-          {panelBody}
-        </motion.div>
-      ) : null}
-      {chatState === "maximized" && chatPanelRevealReady ? (
-        <motion.div
-          key="chat-panel-maximized"
-          variants={panelVariants}
-          initial="hidden"
-          animate={getPanelAnimate(false)}
-          exit="exit"
-          transition={panelTransition}
-          style={
-            chatPanelDockWidthCss ? { width: chatPanelDockWidthCss } : undefined
-          }
-          className="absolute top-0 left-0 bottom-0 z-10 flex min-w-0 w-s1 flex-col overflow-hidden bg-white"
-        >
           {panelBody}
         </motion.div>
       ) : null}

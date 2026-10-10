@@ -16,10 +16,12 @@ import {
   useCreateScheduleItem,
   useRoomBookmarks,
 } from "@/hooks/useRooms";
+import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { placePreviewQueryOptions } from "@/lib/places/place-queries";
-import type { RoomBookmark } from "@/lib/api/rooms";
+import type { PlacePreview } from "@/lib/api/places";
+import type { RoomBookmark, RoomScheduleItem } from "@/lib/api/rooms";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +31,8 @@ type AddFromBookmarkModalProps = {
   places: PlanPlace[];
   /** 지정 시 해당 index에 삽입, 없으면 맨 뒤 */
   insertIndex?: number;
+  /** 추가 성공 직후 — 모바일에서 새 카드로 스크롤할 때 쓴다 */
+  onAdded?: (item: RoomScheduleItem) => void;
   onClose: () => void;
 };
 
@@ -37,6 +41,7 @@ export function AddFromBookmarkModal({
   scheduleId,
   places,
   insertIndex,
+  onAdded,
   onClose,
 }: AddFromBookmarkModalProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
@@ -158,7 +163,7 @@ export function AddFromBookmarkModal({
       setAddingGooglePlaceId(gid);
       const index = insertIndex ?? places.length;
       try {
-        await createItem({
+        const created = await createItem({
           roomId,
           scheduleId,
           googlePlaceId: gid,
@@ -170,6 +175,7 @@ export function AddFromBookmarkModal({
           interaction_source: "bookmark",
         });
         toast.success("일정에 추가했어요.");
+        onAdded?.(created);
         onClose();
       } catch {
         toast.error("장소를 일정에 추가하지 못했어요.");
@@ -182,11 +188,38 @@ export function AddFromBookmarkModal({
       createItem,
       existingPlaceIds,
       insertIndex,
+      onAdded,
       onClose,
       places,
       roomId,
       scheduleId,
     ],
+  );
+
+  const openPlaceOnMap = useOpenPlaceOnMap();
+  const selectedCategoryColor = categories?.find(
+    (c) => c.categoryId === selectedCategoryId,
+  )?.colorCode;
+
+  const handleOpenOnMap = useCallback(
+    (googlePlaceId: string, preview: PlacePreview) => {
+      if (busy) return;
+      onClose();
+      openPlaceOnMap(
+        {
+          name: preview.name,
+          category: "",
+          rating: null,
+          address: preview.formattedAddress,
+          googlePlaceId: googlePlaceId.trim(),
+          location: preview.location,
+          fromBookmark: true,
+          bookmarkCategoryColor: selectedCategoryColor,
+        },
+        { itinerarySource: "bookmark" },
+      );
+    },
+    [busy, onClose, openPlaceOnMap, selectedCategoryColor],
   );
 
   return (
@@ -328,6 +361,9 @@ export function AddFromBookmarkModal({
                         busy && !rowAdding && "pointer-events-none opacity-60",
                       )}
                       onClick={() => void handleAddPlace(googlePlaceId)}
+                      onThumbnailClick={() =>
+                        handleOpenOnMap(googlePlaceId, preview)
+                      }
                     />
                   );
                 })

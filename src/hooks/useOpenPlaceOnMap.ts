@@ -10,7 +10,7 @@ import {
 } from "@/contexts/SelectedPlaceContext";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { writeRoomMapViewport } from "@/lib/map-room-viewport-storage";
-import { buildMobilePlanPanelHref, readMobilePlanPanel } from "@/lib/mobile-view";
+import { isMobileMapPathname, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import type { SearchResultCardProps } from "@/types/place";
 
 /** 모바일에서 지도가 처음 열릴 때의 줌 — 장소 선택 시 카메라(`SelectedPlaceController`)와 같다 */
@@ -31,7 +31,7 @@ export function useOpenPlaceOnMap() {
 
   return useCallback(
     (place: SearchResultCardProps, options?: SetSelectedPlaceOptions) => {
-      const alreadyOnMap = readMobilePlanPanel(searchParams.get("view")) === "map";
+      const alreadyOnMap = isMobileMapPathname(pathname);
       if (!isMobileDevice || alreadyOnMap) {
         setSelectedPlace(place, options);
         return;
@@ -50,7 +50,7 @@ export function useOpenPlaceOnMap() {
       if (rid && place.location) {
         writeRoomMapViewport(rid, { ...place.location, zoom: PLACE_MAP_ZOOM });
       }
-      router.push(buildMobilePlanPanelHref(pathname, "map"));
+      router.push(MOBILE_MAP_PATH);
     },
     [isMobileDevice, pathname, roomId, router, searchParams, setSelectedPlace],
   );
