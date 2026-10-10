@@ -41,7 +41,7 @@ describe("applyHostTransferToCache", () => {
     const members = qc.getQueryData<RoomMemberListResponse>(roomMembersQueryKey(ROOM))!.members;
     expect(members.map((m) => [m.userId, m.role])).toEqual([[1, "MEMBER"], [2, "HOST"], [3, "MEMBER"]]);
     const detail = qc.getQueryData<RoomDetail>(roomDetailQueryKey(ROOM))!;
-    expect(detail).toMatchObject({ role: "MEMBER", inviteCode: null });
+    expect(detail).toMatchObject({ role: "MEMBER", inviteCode: "CODE" });
     const rooms = qc.getQueryData<RoomListResponse>(ROOMS_QUERY_KEY)!.rooms;
     expect(rooms.map((r) => r.role)).toEqual(["MEMBER", "HOST"]);
 

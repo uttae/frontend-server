@@ -7,6 +7,7 @@ import { DeleteConfirmModal } from "@/app/home/_components/DeleteConfirmModal";
 import { RoomTripEditForm } from "@/components/rooms/RoomTripEditForm";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { useCurrentRoomMembership } from "@/hooks/useCurrentRoomMembership";
+import { isRoomMemberRole } from "@/lib/rooms";
 import { useSessionStore } from "@/stores/session-store";
 
 /** 방장 전용 여행 삭제 — 제목 옆 작은 텍스트 버튼과 삭제 확인 */
@@ -51,9 +52,10 @@ export function RoomTripSettingsSection({
   onCancel?: () => void;
   onSaved?: () => void;
 }) {
-  const { roomId, roomSource, isHost, isLoading } = useCurrentRoomMembership();
-  const description = !isLoading && roomSource && roomId && !isHost
-    ? "방장만 여행 정보를 수정할 수 있어요."
+  const { roomId, roomSource, isLoading } = useCurrentRoomMembership();
+  const canEdit = isRoomMemberRole(roomSource?.role);
+  const description = !isLoading && roomSource && roomId && !canEdit
+    ? "여행 멤버만 여행 정보를 수정할 수 있어요."
     : undefined;
 
   return (
@@ -73,7 +75,7 @@ export function RoomTripSettingsSection({
           여행 정보를 불러오지 못했어요.
         </p>
       ) : (
-        <RoomTripEditForm room={roomSource} readOnly={!isHost} onCancel={onCancel} onSaved={onSaved} />
+        <RoomTripEditForm room={roomSource} readOnly={!canEdit} onCancel={onCancel} onSaved={onSaved} />
       )}
     </div>
   );

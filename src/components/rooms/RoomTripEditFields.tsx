@@ -64,6 +64,12 @@ function DateBox({ id, label, value, min, onChange }: { id: string; label: strin
         inputRef.current?.focus();
         inputRef.current?.showPicker?.();
       }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.showPicker?.();
+      }}
       className={cn(FIELD_BOX_CLASS, "relative cursor-pointer focus-within:border-primary")}
     >
       <span aria-hidden className={value ? undefined : "text-text-disabled"}>{formatYmd(value) || "날짜 선택"}</span>

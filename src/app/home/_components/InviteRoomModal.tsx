@@ -6,7 +6,7 @@ import { AddMemberPanel } from "@/app/(main)/member-settings/_components/AddMemb
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import type { RoomListItem } from "@/lib/api/rooms";
-import { isHostRole } from "@/lib/rooms";
+import { isRoomMemberRole } from "@/lib/rooms";
 
 export function InviteRoomModal({ room, onClose }: {
   room: RoomListItem;
@@ -24,8 +24,8 @@ export function InviteRoomModal({ room, onClose }: {
           <p className="text-body-m-regular text-text-subtle">방 정보를 불러오지 못했어요.</p>
           <button type="button" onClick={() => void refetch()} className="rounded-[12px] bg-primary px-5 py-3 text-label-l-emphasis text-text-inverse">다시 시도</button>
         </div>
-      ) : !isHostRole(data.role) ? (
-        <p className="py-8 text-center text-body-m-regular text-text-subtle">방장만 멤버를 초대할 수 있어요.</p>
+      ) : !isRoomMemberRole(data.role) ? (
+        <p className="py-8 text-center text-body-m-regular text-text-subtle">여행 멤버만 초대 링크를 공유할 수 있어요.</p>
       ) : (
         <AddMemberPanel
           key={room.id}
