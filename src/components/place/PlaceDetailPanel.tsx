@@ -4,6 +4,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
@@ -16,15 +17,13 @@ import {
 import type { SearchResultCardProps } from "./SearchResultCard";
 import { AddToBookmarkModal } from "./AddToBookmarkModal";
 import { AddToScheduleModal } from "./AddToScheduleModal";
-import { TABS, type Tab } from "./types";
 import { usePlaceDetailData } from "./usePlaceDetailData";
 import { HeroSkeleton, HeroImage } from "./HeroSection";
 import { PlaceDetailSkeleton, PlaceSheetSummarySkeleton } from "./PlaceDetailSkeleton";
 import { PlaceDetailSheet } from "./PlaceDetailSheet";
 import { PlaceSheetSummary } from "./PlaceSheetSummary";
 import { PlaceSummaryHeader } from "./PlaceSummaryHeader";
-import { HomeTab } from "./HomeTab";
-import { ReviewsTab } from "./ReviewsTab";
+import { PlaceDetailTabs } from "./PlaceDetailTabs";
 
 type PlaceDetailPanelProps = SearchResultCardProps & {
   onClose: () => void;
@@ -59,7 +58,6 @@ export function PlaceDetailPanel({
   onBack = onClose,
   layout = "panel",
 }: PlaceDetailPanelProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("홈");
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
@@ -69,7 +67,8 @@ export function PlaceDetailPanel({
     itinerarySource: selectedItinerarySource,
   } = useSelectedPlace();
   const { sendPlaceMessage, canSend } = useChatActions();
-  const { openChat } = useChat();
+  const { chatState, openChat } = useChat();
+  const { isMobileDevice } = useMobileView();
 
   const itinerarySource = selectedItinerarySource ?? "search";
 
@@ -135,15 +134,19 @@ export function PlaceDetailPanel({
       rating: displayRating ?? 0,
     });
     toast.success("장소를 채팅으로 보냈어요");
-    openChat();
+    // PC는 채팅이 닫혀 있으면 `/chat`으로 열어 보여 준다. 최소화 창이 떠 있거나 이미 `/chat`이면
+    // 그 화면에 바로 보이므로 이동하지 않는다. 모바일은 지도·장소 시트를 그대로 둔다(기존 동작)
+    if (!isMobileDevice && chatState === "closed") openChat();
   }, [
     address,
     canSend,
+    chatState,
     detailData?.formattedAddress,
     detailData?.location,
     displayName,
     displayRating,
     googlePlaceId,
+    isMobileDevice,
     location,
     openChat,
     sendPlaceMessage,
@@ -184,45 +187,23 @@ export function PlaceDetailPanel({
     : undefined;
 
   const tabs = (
-    <>
-      {/* Tab navigation */}
-      <div className="flex shrink-0 border-b border-gray-border">
-        {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 text-label-s-regular mobile:text-label-xs-regular font-medium transition-colors ${
-              activeTab === tab
-                ? "border-b-2 border-primary text-primary"
-                : "text-dark-gray hover:text-[#364153]"
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "홈" && (
-        <HomeTab
-          isOpen={openNow}
-          address={displayAddress}
-          phone={phone}
-          hours={hours}
-          website={website}
-          googleMapsUrl={detailData?.placeUri ?? undefined}
-          reviewSummary={reviewSummary}
-        />
-      )}
-      {activeTab === "리뷰" && (
-        <ReviewsTab
-          rating={displayRating}
-          userRatingCount={userRatingCount}
-          reviews={reviews}
-          reviewsUri={detailData?.reviewsUri}
-        />
-      )}
-    </>
+    <PlaceDetailTabs
+      home={{
+        isOpen: openNow,
+        address: displayAddress,
+        phone,
+        hours,
+        website,
+        googleMapsUrl: detailData?.placeUri ?? undefined,
+        reviewSummary,
+      }}
+      reviews={{
+        rating: displayRating,
+        userRatingCount,
+        reviews,
+        reviewsUri: detailData?.reviewsUri,
+      }}
+    />
   );
 
   const modals = (

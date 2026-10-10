@@ -94,7 +94,7 @@ function MobileBottomSheetContent({
           </button>
         </div>
         {subtitle ? (
-          <p className="shrink-0 truncate text-caption-l-regular text-text-subtle">{subtitle}</p>
+          <p className="shrink-0 truncate text-caption-m-regular text-text-subtle">{subtitle}</p>
         ) : null}
         </BottomSheetDragHandle>
         <div className={cn("-m-1 flex min-h-0 flex-col overflow-y-auto overscroll-contain p-1", variant === "menu" ? "gap-2" : "gap-4")}>{children}</div>

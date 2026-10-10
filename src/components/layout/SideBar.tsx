@@ -34,7 +34,7 @@ function isSidebarItemActive(pathname: string, key: string, href: string) {
 
 function SideBar() {
   const pathname = usePathname();
-  const { chatState, openChat, closeChat } = useChat();
+  const { chatState, openChat } = useChat();
   const { roomId } = useCurrentRoomId();
 
   const isChatActive = chatState === "maximized";
@@ -55,10 +55,6 @@ function SideBar() {
               label={item.label}
               tutorialTarget={item.key}
               isActive={!isChatActive && isSidebarItemActive(pathname, item.key, href)}
-              onClick={() => {
-                // Keep chat covering the previous page until a different route commits.
-                if (pathname === href || (item.key === "plan" && isSidebarItemActive(pathname, item.key, href))) closeChat();
-              }}
               showDividerBelow={item.key === "bookmark" || item.key === "packing"}
             />
           ) : null;

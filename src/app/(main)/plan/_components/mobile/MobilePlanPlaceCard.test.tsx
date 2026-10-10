@@ -26,7 +26,7 @@ describe("MobilePlanPlaceCard", () => {
       );
     });
 
-    const openButton = renderer.root.findByProps({ "aria-label": "1번째 장소 카페 지도에서 보기" });
+    const openButton = renderer.root.findByProps({ "aria-label": "1번째 장소 카페 경로 보기" });
     expect(openButton.type).toBe("button");
     act(() => openButton.props.onClick());
     expect(onOpen).toHaveBeenCalledOnce();
@@ -35,6 +35,55 @@ describe("MobilePlanPlaceCard", () => {
     act(() => timeButton.props.onClick({ stopPropagation: vi.fn() }));
     expect(onEditTime).toHaveBeenCalledOnce();
     expect(onOpen).toHaveBeenCalledOnce();
+
+    act(() => renderer.unmount());
+  });
+
+  it("빈 시간·비용·메모는 켠 경우에만 추가 줄로 보여 주고 같은 동작을 부른다", () => {
+    const onEditTime = vi.fn();
+    const onOpenExpenses = vi.fn();
+    const onEditMemo = vi.fn();
+    const place = { id: "place-1", title: "카페" };
+    const props = {
+      orderNumber: 1,
+      badgeColor: "#f12d33",
+      expenseSummary: null,
+      onOpenActions: vi.fn(),
+      onOpenExpenses,
+      onEditMemo,
+      onEditTime,
+      editing: false,
+    };
+    let renderer!: ReactTestRenderer;
+
+    act(() => {
+      renderer = create(<MobilePlanPlaceCard place={place} {...props} />);
+    });
+    expect(renderer.root.findAllByProps({ "aria-label": "카페 방문 시간 추가" })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ "aria-label": "카페 비용 추가" })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ "aria-label": "카페 메모 추가" })).toHaveLength(0);
+
+    act(() => {
+      renderer.update(
+        <MobilePlanPlaceCard place={place} {...props} addWhenEmpty={{ time: true, expense: false, memo: false }} />,
+      );
+    });
+    expect(renderer.root.findAllByProps({ "aria-label": "카페 메모 추가" })).toHaveLength(0);
+    expect(renderer.root.findAllByProps({ "aria-label": "카페 비용 추가" })).toHaveLength(0);
+    act(() =>
+      renderer.root.findByProps({ "aria-label": "카페 방문 시간 추가" }).props.onClick({ stopPropagation: vi.fn() }),
+    );
+    expect(onEditTime).toHaveBeenCalledOnce();
+
+    act(() => {
+      renderer.update(
+        <MobilePlanPlaceCard place={place} {...props} addWhenEmpty={{ time: true, expense: true, memo: true }} />,
+      );
+    });
+    act(() => renderer.root.findByProps({ "aria-label": "카페 비용 추가" }).props.onClick({ stopPropagation: vi.fn() }));
+    expect(onOpenExpenses).toHaveBeenCalledOnce();
+    act(() => renderer.root.findByProps({ "aria-label": "카페 메모 추가" }).props.onClick({ stopPropagation: vi.fn() }));
+    expect(onEditMemo).toHaveBeenCalledOnce();
 
     act(() => renderer.unmount());
   });

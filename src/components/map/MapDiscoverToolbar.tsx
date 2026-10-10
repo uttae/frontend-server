@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { flushSync } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { X } from "lucide-react";
 
 import { CircleCancelIcon, SearchIcon } from "@/assets/icons";
 import { useMobileView } from "@/contexts/MobileViewContext";
@@ -17,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import MapFilter from "./MapFilter";
+import { MapCloseButton } from "./MapCloseButton";
 import { MapCategoryChips } from "./MapCategoryChips";
 import type { OpenValue, RatingValue } from "./map-filters";
 import { mapToolbarPanelMotion } from "./map-toolbar-motion";
@@ -82,14 +82,7 @@ export function MapDiscoverToolbar({
               setOpenNow={setOpenNow}
               onRatingDropdownOpenChange={setRatingDropdownOpen}
             />
-            <button
-              type="button"
-              onClick={() => onSelectCategory(null)}
-              aria-label="카테고리 닫기"
-              className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-white text-dark-gray shadow-md transition hover:bg-gray-50"
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
+            <MapCloseButton label="카테고리 닫기" onClick={() => onSelectCategory(null)} />
           </motion.div>
         )}
       </AnimatePresence>
