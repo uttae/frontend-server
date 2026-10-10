@@ -893,6 +893,83 @@ it("never reports a foreground load during successful tab-return revalidation", 
  expect(context.syncStatus).toBe("ready");
 });
 
+
+it("confirms a scoped expense deletion, supports cancel, and updates the card total", async () => {
+  const linked = { ...record, scheduleId: 2, scheduleItemId: 3 };
+  await mountPlaceExpenseButton([linked]);
+  mocks.remove.mockReset();
+  mocks.remove.mockResolvedValue(undefined);
+  mocks.list.mockResolvedValue([]);
+  await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation() {} }));
+  const deleteButton = () => renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 삭제"))!;
+  expect(deleteButton()).toBeDefined();
+  await act(async () => deleteButton().props.onClick());
+  expect(mocks.remove).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findByProps({ "aria-label": "비용 삭제 취소" }).props.onClick());
+  expect(mocks.remove).not.toHaveBeenCalled();
+  await act(async () => deleteButton().props.onClick());
+  await act(async () => renderer.root.findByProps({ "aria-label": "비용 삭제 확인" }).props.onClick());
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(mocks.remove).toHaveBeenCalledExactlyOnceWith("r", 10, 2);
+  expect(renderer.root.findByType(ExpenseScopePanel).findAllByType("li")).toHaveLength(0);
+  expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
+  expect(renderer.root.findByProps({ "aria-label": "장소 비용 추가" })).toBeDefined();
+});
+
+
+it("keeps a scoped expense after a failed delete and prevents duplicate submissions", async () => {
+  await mountPlaceExpenseButton([{ ...record, scheduleId: 2, scheduleItemId: 3 }]);
+  mocks.remove.mockReset();
+  let reject!: (reason: Error) => void;
+  mocks.remove.mockImplementationOnce(() => new Promise((_, fail) => { reject = fail; }));
+  await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation() {} }));
+  const button = renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 삭제"));
+  expect(button).toBeDefined();
+  await act(async () => button!.props.onClick());
+  const confirm = renderer.root.findByProps({ "aria-label": "비용 삭제 확인" });
+  await act(async () => { confirm.props.onClick(); confirm.props.onClick(); });
+  expect(mocks.remove).toHaveBeenCalledTimes(1);
+  expect(renderer.root.findByProps({ "aria-label": "비용 삭제 확인" }).props.disabled).toBe(true);
+  await act(async () => reject(new Error("네트워크 오류")));
+  expect(renderer.root.findByProps({ role: "alert" }).children.join("")).toContain("네트워크 오류");
+  expect(renderer.root.findByType(ExpenseScopePanel).findAllByType("li")).toHaveLength(1);
+});
+
+
+it("requires reviewing the refreshed scoped expense before deleting after a conflict", async () => {
+  const { ExpenseApiError } = await import("@/lib/api/rooms/expenses");
+  const linked = { ...record, scheduleId: 2, scheduleItemId: 3 };
+  await mountPlaceExpenseButton([linked]);
+  mocks.remove.mockReset();
+  mocks.remove.mockRejectedValueOnce(new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"));
+  mocks.list.mockResolvedValue([{ ...linked, version: 3, totalAmount: "200" }]);
+  await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation() {} }));
+  const deleteButton = () => renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 삭제"))!;
+  await act(async () => deleteButton().props.onClick());
+  await act(async () => renderer.root.findByProps({ "aria-label": "비용 삭제 확인" }).props.onClick());
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
+  expect(mocks.remove).toHaveBeenCalledTimes(1);
+  expect(renderer.root.findAllByProps({ "aria-label": "비용 삭제 확인" })).toHaveLength(0);
+  expect(deleteButton().props["aria-label"]).toContain("200 KRW");
+  mocks.remove.mockResolvedValue(undefined);
+  mocks.list.mockResolvedValue([]);
+  await act(async () => deleteButton().props.onClick());
+  await act(async () => renderer.root.findByProps({ "aria-label": "비용 삭제 확인" }).props.onClick());
+  expect(mocks.remove).toHaveBeenLastCalledWith("r", 10, 3);
+});
+
+it("hides scoped deletion controls when management permission is lost", async () => {
+  await mountPlaceExpenseButton([{ ...record, scheduleId: 2, scheduleItemId: 3 }]);
+  await act(async () => renderer.root.findByType("button").props.onClick({ stopPropagation() {} }));
+  await act(async () => renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 삭제"))!.props.onClick());
+  await act(async () => {
+    client.setQueryData(expenseKeys.members("r"), { members: [] });
+    await new Promise(resolve => setTimeout(resolve, 20));
+  });
+  expect(renderer.root.findAllByProps({ "aria-label": "비용 삭제 확인" })).toHaveLength(0);
+  expect(renderer.root.findAllByType("button").filter(b => b.props["aria-label"]?.endsWith("비용 삭제"))).toHaveLength(0);
+});
+
 it("emits no expense or budget analytics while pending, after rejected writes, or blocked duplicate writes", async () => {
   await mountMutations();
   let reject!: (error: Error) => void;

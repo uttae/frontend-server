@@ -392,7 +392,8 @@ function ExpenseProviderLifetime({
             ? { scheduleId: scope.scheduleId }
             : { scheduleId: scope.scheduleId, scheduleItemId: scope.scheduleItemId })}
           onEdit={(expense) => setEntry({ expense })}
-          onRetry={() => void state.list.refetch()}
+          onDelete={state.remove}
+          onRetry={() => state.list.refetch({ throwOnError: true })}
           onClose={() => setScope(null)}
         />
       )}

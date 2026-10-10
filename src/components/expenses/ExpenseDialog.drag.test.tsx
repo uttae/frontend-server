@@ -116,7 +116,7 @@ function mountScope() {
   act(() => root.render(<ExpenseScopePanel
     scope={{ scheduleId: 1, label: "1일차" }} roomId="room" expenses={[]}
     isPending={false} isError={false} canManage busy={false}
-    onAdd={() => {}} onEdit={() => {}} onRetry={() => {}} onClose={close}
+    onAdd={() => {}} onEdit={() => {}} onDelete={async () => {}} onRetry={() => {}} onClose={close}
   />));
 }
 it("dismisses the day/place list sheet by dragging its header", () => {
