@@ -17,7 +17,7 @@
 
 ## 인터페이스 및 검증 기준
 
-새 이벤트 상수: AnalyticsEvents.expenseCreated / expenseUpdated / expenseDeleted / expenseBudgetSaved / settlementSummaryViewed / packingItemAdded / packingItemChecked / packingItemUnchecked. 속성은 우선 undefined로 두어 금액·메모·준비물 이름·방/항목 식별자를 전송하지 않는다. 공통 정규화 URL만 기존 trackAnalyticsEvent가 추가한다.
+새 이벤트 상수: AnalyticsEvents.expenseCreated / expenseUpdated / expenseDeleted / expenseBudgetSaved / settlementSummaryViewed / packingItemAdded / packingItemChecked / packingItemUnchecked. 초기 구현에서는 속성을 undefined로 두어 금액·메모·준비물 이름·방/항목 식별자를 전송하지 않는다. 초기에는 공통 정규화 URL만 기존 trackAnalyticsEvent가 추가했다. 이후 방 그룹 확대 합의로 해당 이벤트에 명시적 room_id가 필수가 됐다.
 
 목적지 map은 AnalyticsEventName 및 page_view를 전부 포함하며 임의 이벤트의 기본 양쪽 전송을 허용하지 않는다. 화면은 trackAnalyticsEvent를 한 번 호출한다. 테스트는 SDK나 외부 전송 경계만 모킹하며 실제 mutation/코디네이터/전송 분기를 검증한다.
 
@@ -39,3 +39,14 @@
 ## 후속 합의: 기존 여행방 ID
 
 사용자가 기존 방 ID 사용을 확정했다. `share`와 `join_group`의 Amplitude 속성 및 이벤트별 그룹으로 연결하고 GA4에는 ID를 제외한다. 공유 패널의 방 ID와 즉시/승인 참여 응답 ID를 사용한다. 사용자 ID, 초대 코드/URL 비수집, 동의·큐 정책은 유지한다. 그룹 기능의 운영 설정 및 정확한 신규 멤버십 판정은 별도이며 문서에 한계를 명시한다.
+
+## 후속 합의: 여행방 기능 전반으로 그룹 확대
+
+사용자가 초대 외의 여행방 기능 이벤트에도 그룹 정보를 확대하도록 승인했다. 필수 대상은 생성·조회·북마크·일정·채팅·가계부·준비물이며 검색·장소 상세·튜토리얼·페이지뷰는 확인된 방 문맥에서만 지정한다. 가입·로그인·초대 진입과 비여행방 화면은 제외한다.
+
+- 중앙 `room-events.ts`에서 모든 이벤트의 방 스코프를 명시하고 SDK는 이벤트별 그룹만 전달한다.
+- 요청/응답의 실제 대상 방 ID를 타입으로 요구한다. 검색은 시작 당시 방을 보존하고 전역 방을 완료 시 자동 주입하지 않는다.
+- 준비물은 개인 활동이라는 의미를 유지한다. GA4 방 ID 제외와 기존 목적지·동의 경계는 유지한다.
+- TDD로 대상 방 변경 중 완료, 방 ID가 없는/불일치하는 경로, 큐 재생·철회·그룹 비영속성·GA4 격리를 검증한다.
+
+그룹 확대 검증: 필수 호출부와 검색 시작 스냅샷, 페이지뷰의 늦은 문맥 보충/실제 방 전환, 비여행방 제외, GA4 방 ID 비전송을 확인했다. 리뷰에서 튜토리얼 언마운트 후 완료 캐시 갱신을 분석 이벤트 억제와 분리하도록 보완했다.

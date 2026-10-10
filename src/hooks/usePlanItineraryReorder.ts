@@ -307,6 +307,7 @@ export function usePlanItineraryReorder({
           },
         });
         trackAnalyticsEvent(AnalyticsEvents.reorderItinerary, {
+          room_id: roomId,
           item_count_bucket: bucketItemCount(places.length),
           method: "drag_drop",
         });

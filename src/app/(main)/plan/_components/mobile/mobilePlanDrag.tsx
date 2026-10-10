@@ -250,6 +250,7 @@ export function useMobilePlanDragController({
           body: { newOrderIndex: newOrderIndexAfterMove(sourceIndex, targetIndex, sourcePlaces.length) },
         });
         trackAnalyticsEvent(AnalyticsEvents.reorderItinerary, {
+          room_id: roomId,
           item_count_bucket: bucketItemCount(sourcePlaces.length),
           method: "drag_drop",
         });

@@ -193,7 +193,7 @@ it("forwards the reviewed version and reflects PATCH before summary refresh comp
     expect.objectContaining({ expectedVersion: 2 }),
   );
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
-  expect(analytics.send.mock.calls).toEqual([["event", "expense_updated"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_updated", { room_id: "r" }]]);
   await act(async () => {
     finishList([updated]);
     finish({ currencies: [] });
@@ -232,7 +232,7 @@ it("forwards DELETE reviewed version and removes the record before summary refre
   });
   expect(mocks.remove).toHaveBeenLastCalledWith("r", 10, 2);
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([]);
-  expect(analytics.send.mock.calls).toEqual([["event", "expense_deleted"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_deleted", { room_id: "r" }]]);
   await act(async () => {
     finishList([]);
     finish({ currencies: [] });
@@ -292,7 +292,7 @@ it("saves as ACTIVE MEMBER, guards duplicate writes and installs PUT result", as
     currency: "KRW",
     version: 1,
   });
-  expect(analytics.send.mock.calls).toEqual([["event", "expense_budget_saved"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_budget_saved", { room_id: "r" }]]);
 });
 it("fresh budget recovery propagates failure instead of accepting cached budget", async () => {
   await mountMutations();
@@ -389,7 +389,7 @@ it("late PATCH cannot replace a newer version read during its request", async ()
   expect(
     client.getQueryData<Expense[]>(expenseKeys.list("r"))?.[0],
   ).toMatchObject({ version: 9, memo: "newer" });
-  expect(analytics.send.mock.calls).toEqual([["event", "expense_updated"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_updated", { room_id: "r" }]]);
 });
 import { beginExpenseRoomAdmission, getExpenseRecovery } from "@/lib/expenses/expense-recovery";
 it("late PUT never replaces a newer explicit recovery read while trailing GET is pending", async () => {
@@ -421,7 +421,7 @@ it("late PUT never replaces a newer explicit recovery read while trailing GET is
     finish({ budgetKrw: "100", currency: "KRW", version: 1 });
   });
   expect(client.getQueryData(expenseKeys.budget("r"))).toEqual(newer);
-  expect(analytics.send.mock.calls).toEqual([["event", "expense_budget_saved"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_budget_saved", { room_id: "r" }]]);
   await act(async () => {
     finishRead(newer);
     await saving;
@@ -545,7 +545,7 @@ it("keeps a committed create successful when its follow-up summary read fails", 
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
   expect(context.syncStatus).toBe("error");
-  expect(analytics.send.mock.calls).toEqual([["event", "expense_created"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "expense_created", { room_id: "r" }]]);
 });
 
 it("new authorized lifetime permits writes while late old PATCH and PUT stay fenced", async () => {
@@ -958,14 +958,14 @@ it("counts displayed settlement once per opening, never initial reads, rerenders
   expect(analytics.send).not.toHaveBeenCalled();
   await act(async () => panelButton("정산 요약").props.onClick());
   expect(renderer.root.findByType("dialog")).toBeDefined();
-  expect(analytics.send.mock.calls).toEqual([["event", "settlement_summary_viewed"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "settlement_summary_viewed", { room_id: "r" }]]);
   await act(async () => { await context.refresh(); });
   await flushQueries();
   expect(analytics.send).toHaveBeenCalledTimes(1);
   await act(async () => panelButton("확인").props.onClick());
   await act(async () => panelButton("정산 요약").props.onClick());
   expect(analytics.send.mock.calls).toEqual([
-    ["event", "settlement_summary_viewed"], ["event", "settlement_summary_viewed"],
+    ["event", "settlement_summary_viewed", { room_id: "r" }], ["event", "settlement_summary_viewed", { room_id: "r" }],
   ]);
 });
 it("waits for successful settlement data after loading and error before counting a view", async () => {
@@ -980,7 +980,7 @@ it("waits for successful settlement data after loading and error before counting
   mocks.summary.mockResolvedValue({ currencies: [] });
   await act(async () => { await context.refresh(); });
   await flushQueries();
-  expect(analytics.send.mock.calls).toEqual([["event", "settlement_summary_viewed"]]);
+  expect(analytics.send.mock.calls).toEqual([["event", "settlement_summary_viewed", { room_id: "r" }]]);
 });
 it("does not count a settlement that finishes loading after the dialog closes", async () => {
   let finish!: (value: unknown) => void;
@@ -1031,7 +1031,7 @@ it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-ro
       await context.saveBudget({ budgetKrw: "200", expectedVersion: 1 });
     });
     expect(analytics.send.mock.calls.filter(([command]) => command === "event")).toEqual([
-      ["event", "expense_updated"], ["event", "expense_budget_saved"],
+      ["event", "expense_updated", { room_id: "r" }], ["event", "expense_budget_saved", { room_id: "r" }],
     ]);
   }
 });

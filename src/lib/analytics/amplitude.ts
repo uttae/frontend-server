@@ -3,6 +3,7 @@
 import * as amplitude from "@amplitude/unified";
 
 import { amplitudeRuntime } from "@/lib/analytics/amplitude-runtime";
+import { getAnalyticsEventRoomId } from "@/lib/analytics/room-events";
 const pendingAmplitudeCommands: unknown[][] = [];
 let amplitudeInitialization: Promise<void> | null = null;
 let amplitudeInitialized = false;
@@ -16,19 +17,19 @@ function dispatchAmplitudeDataCommand(...args: unknown[]): void {
       typeof maybeProperties === "object" && maybeProperties !== null
         ? (maybeProperties as Record<string, unknown>)
         : undefined;
-    const roomId = (nameOrProperties === "share" || nameOrProperties === "join_group") &&
-      typeof eventProperties?.room_id === "string"
-      ? eventProperties.room_id.trim()
-      : undefined;
+    const roomId = getAnalyticsEventRoomId(nameOrProperties, eventProperties);
+    const propertiesWithoutRoom = eventProperties && "room_id" in eventProperties
+      ? Object.fromEntries(Object.entries(eventProperties).filter(([key]) => key !== "room_id"))
+      : eventProperties;
     if (roomId) {
       // Event-scoped groups never attach this room to the user's later events.
       amplitude.track({
         event_type: nameOrProperties,
-        event_properties: { ...eventProperties, room_id: roomId },
+        event_properties: { ...propertiesWithoutRoom, room_id: roomId },
         groups: { room_id: roomId },
       });
     } else {
-      amplitude.track(nameOrProperties, eventProperties);
+      amplitude.track(nameOrProperties, propertiesWithoutRoom);
     }
     return;
   }

@@ -186,11 +186,11 @@ export class PackingCoordinator {
       outcome = { ...outcome, kind: 'success' };
       try {
         if (command.type === 'createItem') {
-          trackAnalyticsEvent(AnalyticsEvents.packingItemAdded);
+          trackAnalyticsEvent(AnalyticsEvents.packingItemAdded, { room_id: this.roomId });
         } else if (command.type === 'checkItem' && 'item' in result && result.item.id === command.id) {
           const previous = findItem(snapshot, command.id);
           if (previous && previous.checked !== result.item.checked) {
-            trackAnalyticsEvent(result.item.checked ? AnalyticsEvents.packingItemChecked : AnalyticsEvents.packingItemUnchecked);
+            trackAnalyticsEvent(result.item.checked ? AnalyticsEvents.packingItemChecked : AnalyticsEvents.packingItemUnchecked, { room_id: this.roomId });
           }
         }
       } catch {

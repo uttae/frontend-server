@@ -121,7 +121,7 @@ describe("Google Consent Mode", () => {
     const { AnalyticsEvents, setAnalyticsUserId, trackAnalyticsEvent } =
       await import("@/lib/analytics/track");
 
-    trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     client.trackAnalyticsPageView({
       page_location:
         "https://example.com/search?utm_source=newsletter&utm_campaign=summer",
@@ -149,7 +149,7 @@ describe("Google Consent Mode", () => {
       ],
       ["js", expect.any(Date)],
       ["config", "G-TEST123", { send_page_view: false }],
-      ["event", "expense_created"],
+      ["event", "expense_created", {}],
       [
         "event",
         "page_view",
@@ -222,7 +222,7 @@ describe("Google Consent Mode", () => {
       "@/lib/analytics/track"
     );
 
-    trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
+    trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     client.revokeGoogleAnalyticsConsent();
 
     expect(window.dataLayer).toBeUndefined();

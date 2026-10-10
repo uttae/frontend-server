@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
 import type { TripFormFields } from "@/components/rooms/TripFormFields";
 import NewTripPage from "./page";
+import { trackAnalyticsEvent } from "@/lib/analytics/track";
 
 const state = vi.hoisted(() => ({
   fields: null as ComponentProps<typeof TripFormFields> | null,
@@ -24,7 +25,7 @@ vi.mock("@/hooks/useRooms", () => ({
   useCreateRoom: () => ({ mutate: state.create, isPending: false, error: null }),
 }));
 vi.mock("@/stores/session-store", () => ({
-  useSessionStore: (select: (s: unknown) => unknown) => select({ setCurrentRoomId: state.setRoom }),
+  useSessionStore: (select: (s: unknown) => unknown) => select({ currentRoomId: "old-room", setCurrentRoomId: state.setRoom }),
 }));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { createPlan: "create_plan" }, trackAnalyticsEvent: vi.fn(),
@@ -62,6 +63,7 @@ it("lets mobile users stay on the form, validates dates, and enters the created 
     }, expect.objectContaining({ onSuccess: expect.any(Function) }));
     const room = { id: "new-room", startDate: "2099-07-10", endDate: "2099-07-12" };
     await act(async () => state.create.mock.calls[0][1].onSuccess(room));
+    expect(trackAnalyticsEvent).toHaveBeenCalledWith("create_plan", expect.objectContaining({ room_id: "new-room" }));
     expect(state.setRoom).toHaveBeenCalledWith("new-room");
     expect(state.setQueryData).toHaveBeenCalledWith(expect.any(Array), room);
     expect(state.push).toHaveBeenCalledWith("/plan");

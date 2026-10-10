@@ -4,6 +4,7 @@ import { ArrowLeft, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
@@ -59,6 +60,7 @@ export function PlaceDetailPanel({
   onBack = onClose,
   layout = "panel",
 }: PlaceDetailPanelProps) {
+  const analyticsRoomId = useAnalyticsRoomId();
   const [activeTab, setActiveTab] = useState<Tab>("홈");
   const [bookmarkModalOpen, setBookmarkModalOpen] = useState(false);
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
@@ -98,6 +100,7 @@ export function PlaceDetailPanel({
     }
     lastTrackedPlaceIdRef.current = placeId;
     trackAnalyticsEvent(AnalyticsEvents.viewPlace, {
+      ...(analyticsRoomId ? { room_id: analyticsRoomId } : {}),
       place_category: displayCategory,
       rank_bucket: analyticsRankBucket ?? undefined,
       interaction_source: analyticsSource ?? itinerarySource,
@@ -105,6 +108,7 @@ export function PlaceDetailPanel({
   }, [
     analyticsRankBucket,
     analyticsSource,
+    analyticsRoomId,
     displayCategory,
     googlePlaceId,
     isDetailLoading,

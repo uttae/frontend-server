@@ -157,7 +157,7 @@ function useExpenses(roomId: string) {
       const scope = captureAnalyticsScope();
       const record = await putExpenseBudget(roomId, body);
       if (scope?.active && recovery.getSnapshot() !== "revoked")
-        trackAnalyticsEvent(AnalyticsEvents.expenseBudgetSaved);
+        trackAnalyticsEvent(AnalyticsEvents.expenseBudgetSaved, { room_id: roomId });
       return record;
     },
     retry: false,
@@ -231,7 +231,7 @@ function useExpenses(roomId: string) {
       }
       // Count the committed write before cache reconciliation or recovery reads.
       if (scope?.active && recovery.getSnapshot() !== "revoked")
-        trackAnalyticsEvent(event);
+        trackAnalyticsEvent(event, { room_id: roomId });
       return record;
     },
     retry: false,

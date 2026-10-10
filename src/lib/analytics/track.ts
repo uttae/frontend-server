@@ -84,14 +84,14 @@ export type LandingSectionId =
   | "final_cta";
 
 export type AnalyticsEventParamsMap = {
-  [AnalyticsEvents.expenseCreated]: undefined;
-  [AnalyticsEvents.expenseUpdated]: undefined;
-  [AnalyticsEvents.expenseDeleted]: undefined;
-  [AnalyticsEvents.expenseBudgetSaved]: undefined;
-  [AnalyticsEvents.settlementSummaryViewed]: undefined;
-  [AnalyticsEvents.packingItemAdded]: undefined;
-  [AnalyticsEvents.packingItemChecked]: undefined;
-  [AnalyticsEvents.packingItemUnchecked]: undefined;
+  [AnalyticsEvents.expenseCreated]: { room_id: string };
+  [AnalyticsEvents.expenseUpdated]: { room_id: string };
+  [AnalyticsEvents.expenseDeleted]: { room_id: string };
+  [AnalyticsEvents.expenseBudgetSaved]: { room_id: string };
+  [AnalyticsEvents.settlementSummaryViewed]: { room_id: string };
+  [AnalyticsEvents.packingItemAdded]: { room_id: string };
+  [AnalyticsEvents.packingItemChecked]: { room_id: string };
+  [AnalyticsEvents.packingItemUnchecked]: { room_id: string };
   [AnalyticsEvents.ctaClick]: {
     page_type: "landing";
     cta_id: "login" | "start_trip";
@@ -109,16 +109,19 @@ export type AnalyticsEventParamsMap = {
     entry_point: AnalyticsEntryPoint;
     method: "google";
   };
-  [AnalyticsEvents.createBookmarkFolder]: undefined;
+  [AnalyticsEvents.createBookmarkFolder]: { room_id: string };
   [AnalyticsEvents.addToBookmark]: {
+    room_id: string;
     interaction_source?: AnalyticsSource;
     place_category?: string;
   };
   [AnalyticsEvents.createPlan]: {
+    room_id: string;
     entry_point: AnalyticsEntryPoint;
     trip_days_bucket?: TripDaysBucket;
   };
   [AnalyticsEvents.viewPlan]: {
+    room_id: string;
     member_count_bucket: MemberCountBucket;
     role?: AnalyticsRoomRole;
   };
@@ -131,23 +134,28 @@ export type AnalyticsEventParamsMap = {
     role?: AnalyticsRoomRole;
   };
   [AnalyticsEvents.viewPlace]: {
+    room_id?: string;
     interaction_source?: AnalyticsSource;
     place_category?: string;
     rank_bucket?: SearchRankBucket;
   };
   [AnalyticsEvents.addToItinerary]: {
+    room_id: string;
     interaction_source: AnalyticsSource;
     item_count_bucket: ItemCountBucket;
     place_category?: string;
   };
   [AnalyticsEvents.removeFromItinerary]: {
+    room_id: string;
     item_count_bucket: ItemCountBucket;
   };
   [AnalyticsEvents.reorderItinerary]: {
+    room_id: string;
     item_count_bucket: ItemCountBucket;
     method: "drag_drop";
   };
   [AnalyticsEvents.search]: {
+    room_id?: string;
     result_count_bucket: ResultCountBucket;
     search_mode: "map_recenter" | "text";
   };
@@ -158,15 +166,19 @@ export type AnalyticsEventParamsMap = {
     role?: AnalyticsRoomRole;
   };
   [AnalyticsEvents.chatMessageSent]: {
+    room_id: string;
     message_type: "ai" | "place" | "text";
   };
   [AnalyticsEvents.tutorialBegin]: {
+    room_id?: string;
     tutorial_version: TutorialAnalyticsVersion;
   };
   [AnalyticsEvents.tutorialComplete]: {
+    room_id?: string;
     tutorial_version: TutorialAnalyticsVersion;
   };
   [AnalyticsEvents.tutorialSkip]: {
+    room_id?: string;
     skip_step: (typeof tutorialSkipSteps)[number];
     tutorial_version: TutorialAnalyticsVersion;
   };

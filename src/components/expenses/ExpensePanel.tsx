@@ -219,9 +219,9 @@ export function ExpensePanel() {
       !summaryViewed.current
     ) {
       summaryViewed.current = true;
-      trackAnalyticsEvent(AnalyticsEvents.settlementSummaryViewed);
+      trackAnalyticsEvent(AnalyticsEvents.settlementSummaryViewed, { room_id: context.roomId });
     }
-  }, [tab, context.revoked, context.currentUserId, context.summary.isSuccess]);
+  }, [tab, context.roomId, context.revoked, context.currentUserId, context.summary.isSuccess]);
   const [category, setCategory] = useState("ALL");
   const [filter, setFilter] = useState("ALL");
   const [error, setError] = useState("");

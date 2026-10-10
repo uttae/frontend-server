@@ -68,7 +68,7 @@ describe('confirmed packing analytics', () => {
     vi.mocked(packingApi.get).mockRejectedValue(new TypeError('offline'));
     pending.resolve({ version: 1, item: { ...list().parts[0].items[0], id: 4, name: command.name } });
     expect(await write).toEqual({ kind: 'success' });
-    expect(sendAnalyticsDataCommand).toHaveBeenCalledExactlyOnceWith('event', 'packing_item_added');
+    expect(sendAnalyticsDataCommand).toHaveBeenCalledExactlyOnceWith('event', 'packing_item_added', { room_id: room });
     expect(c.getSnapshot().status).toBe('sync-error');
     expect(c.getSnapshot().data?.parts[0].items).toHaveLength(2);
     await c.refresh(true);
@@ -93,7 +93,7 @@ describe('confirmed packing analytics', () => {
     vi.mocked(packingApi.get).mockRejectedValue(new TypeError('offline'));
     pending.resolve({ version: 1, item: { ...initial.parts[0].items[0], checked: after } });
     expect(await write).toEqual({ kind: 'success' });
-    expect(sendAnalyticsDataCommand).toHaveBeenCalledExactlyOnceWith('event', eventName);
+    expect(sendAnalyticsDataCommand).toHaveBeenCalledExactlyOnceWith('event', eventName, { room_id: room });
     expect(c.getSnapshot().data?.parts[0].items[0].checked).toBe(after);
   });
 

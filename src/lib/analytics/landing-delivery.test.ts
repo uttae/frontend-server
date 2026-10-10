@@ -41,8 +41,8 @@ it("routes mixed events through the real independent SDK queues without duplicat
   const { initializeGoogleAnalytics } = await import("./client");
   const { initializeAmplitude } = await import("./amplitude");
   grantAnalyticsConsent();
-  trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
-  trackAnalyticsEvent(AnalyticsEvents.packingItemChecked);
+  trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
+  trackAnalyticsEvent(AnalyticsEvents.packingItemChecked, { room_id: "test-room" });
   trackAnalyticsEvent(AnalyticsEvents.ctaClick, { page_type: "landing", cta_id: "start_trip", cta_position: "hero" });
   expect(sdk.track).not.toHaveBeenCalled();
   initializeAmplitude();
@@ -51,9 +51,9 @@ it("routes mixed events through the real independent SDK queues without duplicat
   initializeGoogleAnalytics("G-LOCALTEST", false);
   const names = (window.dataLayer ?? []).map(c => Array.from(c as ArrayLike<unknown>)).filter(([type]) => type === "event").map(([, name]) => name);
   expect(names).toEqual(["expense_created", "cta_click"]);
-  expect(sdk.track.mock.calls.map(([name]) => name)).toEqual(["expense_created", "packing_item_checked"]);
+  expect(sdk.track.mock.calls.map(([event]) => typeof event === "string" ? event : event.event_type)).toEqual(["expense_created", "packing_item_checked"]);
   denyAnalyticsConsent();
-  trackAnalyticsEvent(AnalyticsEvents.expenseCreated);
+  trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
   grantAnalyticsConsent(); initializeAmplitude();
   expect(sdk.track).toHaveBeenCalledTimes(2);
 });
