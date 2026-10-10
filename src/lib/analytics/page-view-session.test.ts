@@ -141,6 +141,7 @@ describe("buildSessionPageViewPlan", () => {
       buildSessionPageViewPlan({
         ...page,
         pathname: "/plan/123",
+        currentRoomId: "123",
         lastTrackedPathname: null,
         queryStatus: "success",
         sessionReady: true,
@@ -158,6 +159,7 @@ describe("buildSessionPageViewPlan", () => {
       buildSessionPageViewPlan({
         ...page,
         pathname: "/search?q=raw-search&utm_source=newsletter",
+        currentRoomId: "room-a",
         referrer:
           "https://user:password@search.example/results/private?utm_medium=organic#result",
         lastTrackedPathname: null,
@@ -169,6 +171,7 @@ describe("buildSessionPageViewPlan", () => {
     ).toEqual({
       userId: 42,
       pageView: {
+        room_id: "room-a",
         page_location: "https://uttae.app/search",
         page_path: "/search",
         page_referrer: "https://search.example/",
@@ -176,6 +179,52 @@ describe("buildSessionPageViewPlan", () => {
       },
     });
   });
+  it("waits for room hydration and never attributes an explicit B route to A", () => {
+    const input = { ...page, pathname: "/plan/room-b", lastTrackedPathname: null,
+      queryStatus: "success" as const, sessionReady: true,
+      skipSessionReconciliation: false, userId: 42 };
+    expect(buildSessionPageViewPlan(input)?.pageView).toBeNull();
+    expect(buildSessionPageViewPlan({ ...input, currentRoomId: "room-a" })?.pageView).toBeNull();
+    expect(buildSessionPageViewPlan({ ...input, currentRoomId: "room-b" })?.pageView)
+      .toEqual(expect.objectContaining({ room_id: "room-b" }));
+  });
+
+  it.each(["error", "success"] as const)(
+    "preserves an ungrouped room view after %s without a known user", (queryStatus) => {
+      const plan = buildSessionPageViewPlan({ ...page, pathname: "/search",
+        lastTrackedPathname: null, currentRoomId: "room-a", queryStatus,
+        sessionReady: true, skipSessionReconciliation: false, userId: undefined });
+      expect(plan?.userId).toBeNull();
+      expect(plan?.pageView).toEqual(expect.objectContaining({ page_path: "/search" }));
+      expect(plan?.pageView).not.toHaveProperty("room_id");
+    });
+
+  it("does not count same-path identity enrichment or loss as navigation", () => {
+    const input = { ...page, pathname: "/search", lastTrackedPathname: "/search",
+      currentRoomId: "room-a", queryStatus: "success" as const,
+      sessionReady: true, skipSessionReconciliation: false, userId: 42 };
+    expect(buildSessionPageViewPlan(input)?.pageView).toBeNull();
+    expect(buildSessionPageViewPlan({ ...input, lastTrackedRoomId: "room-a",
+      userId: undefined, queryStatus: "error" })?.pageView).toBeNull();
+  });
+
+  it("counts hydration once but counts a new room at the same room-scoped path", () => {
+    const input = { ...page, pathname: "/search", lastTrackedPathname: "/search",
+      lastTrackedRoomId: "room-a", currentRoomId: "room-a", queryStatus: "success" as const,
+      sessionReady: true, skipSessionReconciliation: false, userId: 42 };
+    expect(buildSessionPageViewPlan(input)?.pageView).toBeNull();
+    expect(buildSessionPageViewPlan({ ...input, currentRoomId: "room-b" })?.pageView)
+      .toEqual(expect.objectContaining({ room_id: "room-b" }));
+  });
+
+  it.each(["/home", "/login", "/join/code", "/privacy-settings", "/home/new"])(
+    "never adds a remembered room on %s", (pathname) => {
+      const plan = buildSessionPageViewPlan({ ...page, pathname,
+        lastTrackedPathname: null, currentRoomId: "room-a", queryStatus: "success",
+        sessionReady: true, skipSessionReconciliation: false, userId: 42 });
+      expect(plan?.pageView).not.toHaveProperty("room_id");
+    });
+
 });
 
 describe("shouldSkipReconcileClientSession", () => {

@@ -15,6 +15,7 @@ export type AnalyticsPageViewInput = {
 };
 
 export type AnalyticsPageViewParams = {
+  room_id?: string;
   page_location: string;
   page_path: string;
   page_referrer?: string;
@@ -29,6 +30,7 @@ export type AnalyticsEventPageContext = Pick<
 const dynamicPagePaths: ReadonlyArray<readonly [RegExp, string]> = [
   [/^\/join\/[^/]+$/, "/join/[inviteCode]"],
   [/^\/plan\/[^/]+$/, "/plan/[roomId]"],
+  [/^\/packing\/[^/]+$/, "/packing/[roomId]"],
   [/^\/bookmark\/[^/]+$/, "/bookmark/[folderId]"],
 ];
 

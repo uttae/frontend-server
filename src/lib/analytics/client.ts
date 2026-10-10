@@ -1,6 +1,7 @@
 import type { AnalyticsPageViewParams } from "@/lib/analytics/context";
 import { analyticsConsentStore } from "@/lib/analytics/consent-store";
 import { analyticsRuntime } from "@/lib/analytics/runtime";
+import { getAnalyticsEventDestination } from "@/lib/analytics/event-destinations";
 
 import {
   revokeAmplitudeConsent,
@@ -69,16 +70,42 @@ function ensureGoogleTag(): GoogleTag | null {
 export function sendAnalyticsDataCommand(...args: unknown[]): void {
   if (!analyticsConsentStore.isGranted()) return;
 
-  sendAmplitudeDataCommand(...args);
+  const destination = args[0] === "event"
+    ? getAnalyticsEventDestination(args[1])
+    : "both";
+  if (!destination) return;
 
-  if (!analyticsRuntime.enabled) return;
+  if (destination !== "ga4") {
+    try {
+      sendAmplitudeDataCommand(...args);
+    } catch {
+      // Analytics must never fail a completed user action or the other sink.
+    }
+  }
 
+  if (destination === "amplitude" || !analyticsRuntime.enabled) return;
+
+  // Room identity is approved for Amplitude group analysis only, not GA4.
+  const gaArgs = [...args];
+  if (gaArgs[0] === "event" && typeof gaArgs[2] === "object" && gaArgs[2] !== null) {
+    gaArgs[2] = Object.fromEntries(
+      Object.entries(gaArgs[2]).filter(([key]) => key !== "room_id"),
+    );
+  }
   if (!analyticsTransportReady) {
-    pendingAnalyticsCommands.push(args);
+    pendingAnalyticsCommands.push(gaArgs);
     return;
   }
 
-  ensureGoogleTag()?.(...args);
+  sendGoogleAnalyticsDataCommand(...gaArgs);
+}
+
+function sendGoogleAnalyticsDataCommand(...args: unknown[]): void {
+  try {
+    ensureGoogleTag()?.(...args);
+  } catch {
+    // A blocked/broken tag must not interrupt the application or queue drain.
+  }
 }
 
 function sendInitializationCommand(...args: unknown[]): void {
@@ -88,9 +115,9 @@ function sendInitializationCommand(...args: unknown[]): void {
 function openAnalyticsTransport(): void {
   analyticsTransportReady = true;
   for (const command of pendingAnalyticsCommands.splice(0)) {
-    // Amplitude received this command on initial dispatch; this queue is GA-only.
+    // Routing happened before enqueueing; this queue is GA-only.
     if (analyticsConsentStore.isGranted() && analyticsRuntime.enabled) {
-      ensureGoogleTag()?.(...command);
+      sendGoogleAnalyticsDataCommand(...command);
     }
   }
 }

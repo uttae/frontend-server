@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
-import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import {
   sidebarWireframeIcons as sidebarIcons,
@@ -35,16 +34,10 @@ function isSidebarItemActive(pathname: string, key: string, href: string) {
 
 function SideBar() {
   const pathname = usePathname();
-  const { chatState, openChat, closeChat } = useChat();
-  const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
+  const { chatState, openChat } = useChat();
   const { roomId } = useCurrentRoomId();
 
   const isChatActive = chatState === "maximized";
-  const isOnMemberSettings = pathname.startsWith("/member-settings");
-  const isOnRoomSettings = pathname.startsWith("/room-settings");
-  const isOnSettingsArea = isOnMemberSettings || isOnRoomSettings;
-  const showSettingsNotification =
-    pendingJoinRequestsCount > 0 && !isOnSettingsArea;
 
   return (
     <aside
@@ -62,11 +55,7 @@ function SideBar() {
               label={item.label}
               tutorialTarget={item.key}
               isActive={!isChatActive && isSidebarItemActive(pathname, item.key, href)}
-              onClick={() => {
-                // Keep chat covering the previous page until a different route commits.
-                if (pathname === href || (item.key === "plan" && isSidebarItemActive(pathname, item.key, href))) closeChat();
-              }}
-              showDividerBelow={item.key === "packing"}
+              showDividerBelow={item.key === "bookmark" || item.key === "packing"}
             />
           ) : null;
         })}
@@ -82,15 +71,6 @@ function SideBar() {
           <span>채팅</span>
           <SidebarChatUnreadBadge />
         </button>
-        <SidebarNavItem
-          href="/member-settings"
-          icon={sidebarIcons.memberSettings}
-          label="멤버"
-          tutorialTarget="member-settings"
-          isActive={!isChatActive && isOnMemberSettings}
-          onClick={() => { if (pathname === "/member-settings") closeChat(); }}
-          showPingBadge={showSettingsNotification}
-        />
       </nav>
       <div className="mt-auto flex w-full shrink-0 flex-col items-center">
         <SidebarFeedbackFormButton />

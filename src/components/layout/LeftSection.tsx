@@ -12,7 +12,6 @@ export default function LeftSection({
 }) {
   const { isMobileDevice } = useMobileView();
   const {
-    setLeftSectionRef,
     leftSectionAnimateMaxWidth,
     leftSectionAnimateMinWidth,
     layoutTransition,
@@ -20,7 +19,6 @@ export default function LeftSection({
 
   return (
     <motion.section
-      ref={setLeftSectionRef}
       className={`relative flex flex-1 flex-col ${isMobileDevice ? "min-w-0 w-full border-r-0" : "border-r border-gray-border"}`}
       initial={false}
       // CSS applies `none` directly while interpolating numeric widths, without remounting the page.

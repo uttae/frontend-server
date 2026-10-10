@@ -21,7 +21,7 @@ import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { placePreviewQueryOptions } from "@/lib/places/place-queries";
 import type { PlacePreview } from "@/lib/api/places";
-import type { RoomBookmark } from "@/lib/api/rooms";
+import type { RoomBookmark, RoomScheduleItem } from "@/lib/api/rooms";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +31,8 @@ type AddFromBookmarkModalProps = {
   places: PlanPlace[];
   /** 지정 시 해당 index에 삽입, 없으면 맨 뒤 */
   insertIndex?: number;
+  /** 추가 성공 직후 — 모바일에서 새 카드로 스크롤할 때 쓴다 */
+  onAdded?: (item: RoomScheduleItem) => void;
   onClose: () => void;
 };
 
@@ -39,6 +41,7 @@ export function AddFromBookmarkModal({
   scheduleId,
   places,
   insertIndex,
+  onAdded,
   onClose,
 }: AddFromBookmarkModalProps) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
@@ -160,7 +163,7 @@ export function AddFromBookmarkModal({
       setAddingGooglePlaceId(gid);
       const index = insertIndex ?? places.length;
       try {
-        await createItem({
+        const created = await createItem({
           roomId,
           scheduleId,
           googlePlaceId: gid,
@@ -168,10 +171,12 @@ export function AddFromBookmarkModal({
           placesSnapshot: places,
         });
         trackAnalyticsEvent(AnalyticsEvents.addToItinerary, {
+          room_id: roomId,
           item_count_bucket: bucketItemCount(places.length + 1),
           interaction_source: "bookmark",
         });
         toast.success("일정에 추가했어요.");
+        onAdded?.(created);
         onClose();
       } catch {
         toast.error("장소를 일정에 추가하지 못했어요.");
@@ -184,6 +189,7 @@ export function AddFromBookmarkModal({
       createItem,
       existingPlaceIds,
       insertIndex,
+      onAdded,
       onClose,
       places,
       roomId,

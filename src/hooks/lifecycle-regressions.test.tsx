@@ -4,7 +4,6 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { hookHarness } from "@/test/hook-harness";
 import { useOnClickOutside } from "./useOnClickOutside";
 import { useSessionPromptVisible } from "./useSessionPromptVisible";
-import { usePlanChatPanelReveal } from "./usePlanChatPanelReveal";
 import { useResolvedCurrentRoomId } from "./use-room-id";
 import { useTripMapBootstrap } from "./useTripMapBootstrap";
 import { usePrefetchScheduleRoutes } from "./usePrefetchScheduleRoutes";
@@ -82,26 +81,6 @@ it("URL room switches are resolved before children commit and storage never over
   expect(hook.current.effectiveRoomId).toBe("b");
   expect(useSessionStore.getState().currentRoomId).toBe("b");
   await hook.unmount();
-});
-it("chat reveal fallback resets across close/reopen", async () => {
-  vi.useFakeTimers();
-  const hook = hookHarness(usePlanChatPanelReveal);
-  const args = {
-    pathname: "/plan/a",
-    chatState: "maximized" as const,
-    isMobile: false,
-    targetMaxWidthPx: 400,
-    measuredLeftWidthPx: 900,
-  };
-  await hook.render(args);
-  expect(hook.current).toBe(false);
-  await act(async () => vi.advanceTimersByTime(2000));
-  expect(hook.current).toBe(true);
-  await hook.render({ ...args, chatState: "closed" });
-  await hook.render(args);
-  expect(hook.current).toBe(false);
-  await hook.unmount();
-  vi.useRealTimers();
 });
 it("route batch gates a switched schedule immediately and ignores late completion", async () => {
   const pending: (() => void)[] = [];

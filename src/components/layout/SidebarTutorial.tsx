@@ -14,6 +14,7 @@ import {
 import type { CSSProperties, ComponentType } from "react";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { completeTutorial } from "@/lib/api/user";
 import {
@@ -23,6 +24,7 @@ import {
   TUTORIAL_ANALYTICS_VERSION,
   type TutorialExitReason,
 } from "@/lib/analytics/track";
+import { readSessionUserId } from "@/lib/session-user-cache";
 import { sessionUserQueryKey } from "@/lib/query-keys";
 import type { SessionUser } from "@/lib/session-user";
 
@@ -98,6 +100,15 @@ const CARD_HEIGHT_ESTIMATE = 330;
 
 export function SidebarTutorial() {
   const { data: user } = useSessionUser();
+  const analyticsRoomId = useAnalyticsRoomId();
+  const tutorialRoomIdRef = useRef<string | undefined>(undefined);
+  const activeUserIdRef = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    activeUserIdRef.current = user?.id;
+    return () => {
+      activeUserIdRef.current = undefined;
+    };
+  }, [user?.id]);
   const queryClient = useQueryClient();
   const maskId = useId().replaceAll(":", "");
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
@@ -148,10 +159,12 @@ export function SidebarTutorial() {
     if (!tutorialVisible || tutorialBeginTrackedRef.current) return;
 
     tutorialBeginTrackedRef.current = true;
+    tutorialRoomIdRef.current = analyticsRoomId;
     trackAnalyticsEvent(AnalyticsEvents.tutorialBegin, {
       tutorial_version: TUTORIAL_ANALYTICS_VERSION,
+      ...(analyticsRoomId ? { room_id: analyticsRoomId } : {}),
     });
-  }, [tutorialVisible]);
+  }, [tutorialVisible, analyticsRoomId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -201,19 +214,33 @@ export function SidebarTutorial() {
 
     try {
       const analyticsEvent = buildTutorialExitAnalyticsEvent(reason, stepIndex);
+      const startedUserId = user?.id;
+      const startedRoomId = tutorialRoomIdRef.current;
       await completeTutorial();
-
+      if (
+        !startedUserId ||
+        readSessionUserId(queryClient) !== startedUserId
+      ) return;
       queryClient.setQueryData<SessionUser | null>(
         sessionUserQueryKey,
         (current) =>
-          current ? { ...current, tutorialCompleted: true } : current,
+          current?.id === startedUserId
+            ? { ...current, tutorialCompleted: true }
+            : current,
       );
+      // The acknowledged save belongs in the same user cache even after unmount.
+      // Only the analytics exit requires the original visible tutorial lifetime.
+      if (activeUserIdRef.current !== startedUserId) return;
+      const roomContext = startedRoomId ? { room_id: startedRoomId } : {};
       if (analyticsEvent.eventName === AnalyticsEvents.tutorialSkip) {
-        trackAnalyticsEvent(analyticsEvent.eventName, analyticsEvent.params);
+        trackAnalyticsEvent(analyticsEvent.eventName, {
+          ...analyticsEvent.params,
+          ...roomContext,
+        });
       } else {
         trackAnalyticsEvent(
           analyticsEvent.eventName,
-          analyticsEvent.params,
+          { ...analyticsEvent.params, ...roomContext },
         );
       }
     } catch {

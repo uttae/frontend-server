@@ -3,9 +3,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
-import { RefreshCw } from "lucide-react";
 
 import { BrandLogo } from "@/components/BrandLogo";
+import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import { useCheckJoinStatus } from "@/hooks/useRooms";
 import { getRoomDetail, HttpError } from "@/lib/api/rooms";
@@ -68,127 +68,60 @@ function WaitingContent() {
   const isRejected = statusResult === "REJECTED";
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center gap-10 overflow-hidden bg-gradient-to-b from-bubble-gray/60 via-white to-white px-4 py-12">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(1,131,255,0.07),_transparent_55%)]"
-        aria-hidden
-      />
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-fill-elevate px-4 py-12">
+      <BrandLogo variant="symbol" size="S" alt="우때 로고" />
 
-      <BrandLogo variant="combination" size="M" alt="우때 로고" />
+      <div className="flex w-full max-w-[480px] flex-col gap-6 rounded-xl bg-fill-elevate p-6 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
+        <span
+          className={`self-start rounded p-1 text-label-xs-regular ${
+            isRejected ? "bg-fill text-text-subtle" : "bg-primary-subtle text-primary"
+          }`}
+        >
+          {isRejected ? "참여 거절" : "승인 대기"}
+        </span>
 
-      <div className="relative w-full max-w-sm rounded-3xl border border-gray-border bg-white/95 p-8 shadow-[0_24px_80px_-12px_rgba(15,23,42,0.10)] backdrop-blur-sm">
-        {/* 아이콘 */}
-        <div className="mb-8 flex items-center justify-center">
-          <div className="relative flex h-24 w-24 items-center justify-center">
-            {!isRejected && (
-              <>
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/20" />
-                <span className="absolute inline-flex h-16 w-16 animate-ping rounded-full bg-primary/15 [animation-delay:0.4s]" />
-              </>
-            )}
-            <div
-              className={`relative flex h-16 w-16 items-center justify-center rounded-full ${
-                isRejected ? "bg-gray-100" : "bg-primary/10"
-              }`}
-            >
-              {isRejected ? (
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-dark-gray"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M15 9l-6 6M9 9l6 6" />
-                </svg>
-              ) : (
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-primary"
-                >
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-              )}
-            </div>
-          </div>
-        </div>
+        <h1 className="text-title-l text-text">
+          {isRejected ? "참여 요청이 거절됐어요" : "참여 요청을 보냈어요"}
+        </h1>
 
-        {/* 텍스트 */}
-        <div className="mb-6 text-center">
-          {isRejected ? (
-            <>
-              <h1 className="mb-2 text-title-l mobile:text-title-m font-semibold text-gray-800">
-                입장이 거절되었습니다
-              </h1>
-              <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
-                방장이 입장 요청을 거절했습니다.
-              </p>
-            </>
-          ) : (
-            <>
-              <h1 className="mb-2 text-title-l mobile:text-title-m font-semibold text-gray-800">
-                입장 승인 대기 중
-              </h1>
-              <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
-                <span className="font-medium text-gray-800">{roomTitle}</span>{" "}
-                방의 방장이 입장 요청을 확인 중입니다.
-                <br />
-                승인되면 새로고침시 방으로 이동됩니다.
-              </p>
-            </>
-          )}
-        </div>
+        <p className="break-words text-title-m text-text">{roomTitle}</p>
 
-        {/* 오류 */}
+        <p className="whitespace-pre-line text-body-m-regular mobile:text-body-s-regular text-text-subtle">
+          {isRejected
+            ? "방장이 참여 요청을 거절했어요."
+            : "방장의 승인을 기다리고 있어요.\n승인 상태를 확인하면 여행 일정으로 이동해요."}
+        </p>
+
         {fetchError && (
-          <p className="mb-4 rounded-xl bg-status-negative/10 px-4 py-2.5 text-center text-body-s-regular mobile:text-body-xs-regular text-status-negative">
-            상태 조회에 실패했습니다. 다시 시도해 주세요.
+          <p role="alert" className="text-body-s-regular text-status-negative">
+            상태를 확인하지 못했어요. 다시 시도해 주세요.
           </p>
         )}
 
-        {/* 새로고침 버튼 (대기·오류 상태에서 항상 표시) */}
-        {!isRejected && (
+        {isRejected ? (
+          <button
+            type="button"
+            onClick={() => router.replace("/home")}
+            className="h-12 w-full cursor-pointer rounded-lg bg-primary text-label-l-emphasis text-text-inverse transition-colors hover:bg-primary-strong"
+          >
+            홈으로 돌아가기
+          </button>
+        ) : (
           <button
             type="button"
             onClick={handleRefresh}
             disabled={isChecking}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-dark-gray transition-colors hover:border-gray-400 hover:text-black disabled:opacity-50"
+            aria-busy={isChecking}
+            className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-primary text-label-l-emphasis text-text-inverse transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed"
           >
-            <RefreshCw size={14} className={isChecking ? "animate-spin" : ""} />
-            {isChecking ? "확인 중…" : "입장 상태 새로고침"}
-          </button>
-        )}
-
-        {/* 거절 시 홈으로 */}
-        {isRejected && (
-          <button
-            type="button"
-            onClick={() => router.replace("/home")}
-            className="w-full rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-dark-gray transition-colors hover:border-gray-400 hover:text-black"
-          >
-            홈으로 돌아가기
+            {isChecking ? <LoadingIndicator label="승인 상태 확인 중" className="text-text-inverse" /> : "승인 상태 확인"}
           </button>
         )}
       </div>
 
       {!isRejected && (
-        <p className="relative text-body-s-regular mobile:text-body-xs-regular text-light-gray">
-          페이지를 닫아도 승인 후에 로그인하면 참가 완료됩니다.
+        <p className="w-full max-w-[480px] text-body-s-regular text-text-subtle">
+          페이지를 닫아도 요청은 유지돼요.
         </p>
       )}
     </div>
@@ -199,8 +132,8 @@ export default function WaitingPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-bubble-gray/80 via-white to-white">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
+        <div className="flex min-h-screen items-center justify-center bg-fill-elevate">
+          <LoadingIndicator label="승인 대기 화면 준비 중" size={32} />
         </div>
       }
     >

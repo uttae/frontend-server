@@ -9,6 +9,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 
+import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { SearchResultCard } from "@/components/place";
 import { SetSectionMaxWidth } from "@/contexts/SectionWidthContext";
@@ -38,6 +39,7 @@ import {
 } from "@/stores/map-pins-focus-store";
 
 export default function SearchPage() {
+  const analyticsRoomId = useAnalyticsRoomId();
   const router = useRouter();
   const searchParams = useSearchParams();
   const qParam = searchParams.get("q")?.trim() ?? "";
@@ -62,6 +64,7 @@ export default function SearchPage() {
     snapshot: qParam ? viewport : null,
     generation: qParam && viewport ? 1 : 0,
     recenterRequestId: searchRecenterRequestId,
+    analyticsRoomId,
     mode: "text" as "text" | "map_recenter",
   });
   const urlChanged = search.query !== qParam;
@@ -72,6 +75,7 @@ export default function SearchPage() {
       snapshot: qParam ? viewport : null,
       generation: search.generation + 1,
       recenterRequestId: searchRecenterRequestId,
+      analyticsRoomId,
       mode: !urlChanged && recentered ? "map_recenter" : "text",
     });
   }
@@ -102,6 +106,7 @@ export default function SearchPage() {
         snapshot: trimmed ? viewport : null,
         generation: search.generation + 1,
         recenterRequestId: searchRecenterRequestId,
+        analyticsRoomId,
         mode: "text",
       });
     }
@@ -140,6 +145,7 @@ export default function SearchPage() {
     trackAnalyticsEvent(AnalyticsEvents.search, {
       result_count_bucket: bucketResultCount(items.length),
       search_mode: search.mode,
+      ...(search.analyticsRoomId ? { room_id: search.analyticsRoomId } : {}),
     });
   }, [
     isFetching,
@@ -149,6 +155,7 @@ export default function SearchPage() {
     searchCoords,
     searchGeneration,
     search.mode,
+    search.analyticsRoomId,
   ]);
 
   const hasActiveSearch = query.trim().length > 0 && searchCoords !== null;

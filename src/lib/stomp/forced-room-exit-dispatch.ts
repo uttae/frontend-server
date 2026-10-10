@@ -29,9 +29,14 @@ export function showForcedExitToast(
   reason: ForcedRoomExitReason,
   serverMessage?: string,
 ): void {
-  toast(forcedExitToastMessage(reason, serverMessage), {
+  toast.error(forcedExitToastMessage(reason, serverMessage), {
     duration: FORCED_ROOM_EXIT_TOAST_MS,
   });
+}
+
+/** 방 나가기 성공 — 나간 탭의 응답과 STOMP `MEMBER_LEFT`가 겹쳐도 같은 id라 한 번만 보인다 */
+export function showRoomLeftToast(roomId: string): void {
+  toast.success("방에서 나갔어요.", { id: `room-left-${roomId.trim()}` });
 }
 
 /** 강퇴·방 삭제 시 홈 목록·방 단위 React Query 캐시에서 해당 roomId 제거 */

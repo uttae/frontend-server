@@ -66,8 +66,8 @@ export default function MyInfoPage() {
       if (result.ok) {
         setShowWithdrawConfirm(false);
         clearExpenseCurrencyPreferencesForUser(user?.id);
-        queryClient.clear();
         tearDownClientSession({ queryClient });
+        queryClient.clear();
         router.replace("/");
         return;
       }

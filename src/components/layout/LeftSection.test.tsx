@@ -9,7 +9,6 @@ vi.mock("@/contexts/MobileViewContext", () => ({
 }));
 vi.mock("@/contexts/MainChromeLayoutWidthContext", () => ({
   useMainChromeLayoutWidth: () => ({
-    setLeftSectionRef: () => {},
     leftSectionAnimateMaxWidth: state.maxWidth,
     leftSectionAnimateMinWidth: 0,
     layoutTransition: { duration: 0.01, ease: [0.4, 0, 0.2, 1] },

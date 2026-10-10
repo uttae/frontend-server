@@ -3,17 +3,17 @@ import { act, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { RoomTripEditForm } from "./RoomTripEditForm";
-import type { TripFormFields } from "./TripFormFields";
+import type { RoomTripEditFields } from "./RoomTripEditFields";
 const state = vi.hoisted(() => ({
-  fields: null as ComponentProps<typeof TripFormFields> | null,
+  fields: null as ComponentProps<typeof RoomTripEditFields> | null,
   update: vi.fn(),
 }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomSchedules: () => ({ data: [{}, {}, {}] }),
   useUpdateRoom: () => ({ mutate: state.update, isPending: false }),
 }));
-vi.mock("./TripFormFields", () => ({
-  TripFormFields: (props: ComponentProps<typeof TripFormFields>) => {
+vi.mock("./RoomTripEditFields", () => ({
+  RoomTripEditFields: (props: ComponentProps<typeof RoomTripEditFields>) => {
     state.fields = props;
     return null;
   },
@@ -67,5 +67,23 @@ it("preserves drafts and original date floor on same-room refresh; cancel and ro
   expect(state.fields!.endDateMin).toBe("2026-11-10");
   expect(container.querySelector("[data-confirm]")).toBeNull();
   expect(state.update).not.toHaveBeenCalled();
+  await act(async () => root.unmount());
+});
+
+it("does not submit on cancel and submits once for rapid apply clicks", async () => {
+  state.update.mockClear();
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const room = { id: "r", title: "old", destinations: ["서울"], startDate: "2027-01-01", endDate: "2027-01-03" };
+  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  await act(async () => state.fields!.onTitleChange("cancelled"));
+  await act(async () => container.querySelectorAll("button")[0].click());
+  expect(state.update).not.toHaveBeenCalled();
+  await act(async () => state.fields!.onTitleChange("new"));
+  await act(async () => {
+    container.querySelectorAll("button")[1].click();
+    container.querySelectorAll("button")[1].click();
+  });
+  expect(state.update).toHaveBeenCalledTimes(1);
   await act(async () => root.unmount());
 });

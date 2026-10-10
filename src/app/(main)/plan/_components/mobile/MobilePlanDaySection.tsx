@@ -15,8 +15,8 @@ import {
   MobileSheetMenuItem,
 } from "@/components/mobile/MobileBottomSheet";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
+import type { InsertAnchor } from "@/lib/plan/insertPosition";
 import { summarizeExpensesForMobile } from "@/lib/plan/mobilePlanFormat";
-import type { PlanPlace } from "@/lib/plan/types";
 
 import { MobilePlanItinerary } from "./MobilePlanItinerary";
 
@@ -36,7 +36,11 @@ type MobilePlanDaySectionProps = Readonly<{
   onFinishEditing: () => void;
   onRequestInsertDayAfter: () => void;
   onRequestDeleteDay: () => void;
-  onRequestAddPlace: (scheduleId: number, places: PlanPlace[]) => void;
+  /** 전체 화면 검색으로 장소 추가 — anchor 자리에, null이면 맨 뒤 */
+  onRequestAddPlace: (scheduleId: number, anchor: InsertAnchor | null) => void;
+  /** 방금 추가한 장소 — 카드로 스크롤하고 잠깐 강조한다 */
+  recentlyAddedItemId: number | null;
+  onPlaceAdded: (itemId: number) => void;
 }>;
 
 /** 모바일 일차 한 개 — 헤더(순서 편집 ↑↓ / ⚙ 일정 관리)와 장소 목록 */
@@ -53,6 +57,8 @@ export function MobilePlanDaySection({
   onRequestInsertDayAfter,
   onRequestDeleteDay,
   onRequestAddPlace,
+  recentlyAddedItemId,
+  onPlaceAdded,
 }: MobilePlanDaySectionProps) {
   const expenses = useExpenseContext();
   const [manageOpen, setManageOpen] = useState(false);
@@ -108,7 +114,9 @@ export function MobilePlanDaySection({
         roomId={roomId}
         scheduleId={scheduleId}
         monthDayLabel={monthDayLabel}
-        onRequestAddPlace={(places) => onRequestAddPlace(scheduleId, places)}
+        onRequestAddPlace={(anchor) => onRequestAddPlace(scheduleId, anchor)}
+        recentlyAddedItemId={recentlyAddedItemId}
+        onPlaceAdded={onPlaceAdded}
       />
 
       <MobileBottomSheet open={manageOpen} onClose={() => setManageOpen(false)} title="일정 관리">

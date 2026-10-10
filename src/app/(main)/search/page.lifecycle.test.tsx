@@ -7,12 +7,15 @@ import { useMapCenterStore } from "@/stores/map-center-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 import type { PlacesSearchInput } from "@/components/search/PlacesSearchInput";
 const state = vi.hoisted(() => ({
+  roomId: "room-a" as string | undefined,
+  fetching: false,
   params: new URLSearchParams("q=cafe"),
   replace: vi.fn(),
   track: vi.fn(),
   input: null as ComponentProps<typeof PlacesSearchInput> | null,
   args: [] as unknown[],
 }));
+vi.mock("@/hooks/useAnalyticsRoomId", () => ({ useAnalyticsRoomId: () => state.roomId }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => state.params,
   useRouter: () => ({ replace: state.replace }),
@@ -20,7 +23,7 @@ vi.mock("next/navigation", () => ({
 vi.mock("@/hooks/usePlacesSearch", () => ({
   usePlacesSearch: (...args: unknown[]) => {
     state.args = args;
-    return { items: [], pageIndex: 0, isSuccess: true, isFetching: false };
+    return { items: [], pageIndex: 0, isSuccess: true, isFetching: state.fetching };
   },
 }));
 vi.mock("@/components/search/PlacesSearchInput", () => ({
@@ -102,5 +105,35 @@ it("keeps the existing default radius when the camera radius is non-finite", asy
   const root = createRoot(document.createElement("div"));
   await act(async () => root.render(<SearchPage />));
   expect(state.args[3]).toBe(5000);
+  await act(async () => root.unmount());
+});
+
+
+it("attributes settled results to the room where that search started", async () => {
+  state.track.mockClear();
+  state.params = new URLSearchParams("q=cafe");
+  state.roomId = "room-a";
+  state.fetching = true;
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12, radiusMeters: 1000 });
+  const root = createRoot(document.createElement("div"));
+  await act(async () => root.render(<SearchPage />));
+  state.roomId = "room-b";
+  state.fetching = false;
+  await act(async () => root.render(<SearchPage />));
+  expect(state.track).toHaveBeenCalledExactlyOnceWith("search", expect.objectContaining({ room_id: "room-a" }));
+  await act(async () => root.unmount());
+});
+
+it("does not retroactively add a room to a search that started without one", async () => {
+  state.track.mockClear();
+  state.roomId = undefined;
+  state.fetching = true;
+  const root = createRoot(document.createElement("div"));
+  await act(async () => root.render(<SearchPage />));
+  state.roomId = "room-b";
+  state.fetching = false;
+  await act(async () => root.render(<SearchPage />));
+  expect(state.track).toHaveBeenCalledTimes(1);
+  expect(state.track.mock.lastCall?.[1]).not.toHaveProperty("room_id");
   await act(async () => root.unmount());
 });
