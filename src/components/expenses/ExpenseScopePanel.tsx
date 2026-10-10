@@ -4,10 +4,10 @@ import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
-import { ChevronRight, Plus, X } from "lucide-react";
-import { useEffect, useId, useRef } from "react";
+import { ChevronRight, Plus, Trash2, X } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { type Expense } from "@/lib/api/rooms/expenses";
+import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
 import {
   expensesInScope,
   totalsByCurrency,
@@ -27,6 +27,7 @@ export function ExpenseScopePanel({
   busy,
   onAdd,
   onEdit,
+  onDelete,
   onRetry,
   onClose,
 }: Readonly<{
@@ -39,9 +40,40 @@ export function ExpenseScopePanel({
   busy: boolean;
   onAdd: () => void;
   onEdit: (expense: Expense) => void;
-  onRetry: () => void;
+  onDelete: (expense: Expense) => Promise<void>;
+  onRetry: () => void | Promise<unknown>;
   onClose: () => void;
 }>) {
+  const [selected, setSelected] = useState<Expense | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState("");
+  const deleteLock = useRef(false);
+  const disabled = busy || deleting;
+  async function confirmDelete() {
+    if (!selected || !canManage || busy || deleteLock.current) return;
+    deleteLock.current = true;
+    setDeleting(true);
+    setError("");
+    try {
+      await onDelete(selected);
+    } catch (error) {
+      if (error instanceof ExpenseApiError &&
+          (error.code === "EXPENSE_CONFLICT" || error.code === "EXPENSE_NOT_FOUND")) {
+        try {
+          await onRetry();
+          setError("비용이 변경되었거나 삭제되었어요. 최신 내역을 확인한 뒤 다시 선택해 주세요.");
+        } catch {
+          setError("최신 비용 조회에 실패했어요. 다시 시도해 주세요.");
+        }
+      } else {
+        setError(error instanceof Error ? error.message : "비용 삭제에 실패했어요.");
+      }
+    } finally {
+      setSelected(null);
+      setDeleting(false);
+      deleteLock.current = false;
+    }
+  }
   const sheetDrag = useSheetDrag(onClose);
   const dialog = useRef<HTMLDialogElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
@@ -105,7 +137,7 @@ export function ExpenseScopePanel({
           {canManage ? (
             <button
               type="button"
-              disabled={busy}
+              disabled={disabled || selected !== null}
               onClick={onAdd}
               className="mt-4 flex min-h-10 w-full cursor-pointer items-center justify-center gap-1 rounded-lg bg-primary px-4 py-2 text-label-m-emphasis font-semibold text-white transition-colors enabled:hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -114,24 +146,37 @@ export function ExpenseScopePanel({
             </button>
           ) : null}
 
+          {error && <p role="alert" className="mt-3 text-body-s-regular text-status-negative">{error}</p>}
+          {selected && canManage ? (
+            <div role="group" aria-label="삭제할 비용 확인" className="mt-4 rounded-lg border border-gray-border bg-gray-50 p-3">
+              <p className="text-body-s-emphasis">{expenseTitle(selected)} 비용을 삭제할까요?</p>
+              <p className="mt-1 text-body-s-regular tabular-nums">{formatExpenseAmount(selected.totalAmount)} {selected.currency}</p>
+              <p className="mt-1 text-body-xs-regular text-dark-gray">삭제한 내역은 복구할 수 없어요.</p>
+              <div className="mt-3 flex justify-end gap-2">
+                <button type="button" aria-label="비용 삭제 취소" autoFocus disabled={disabled} onClick={() => setSelected(null)} className="min-h-10 cursor-pointer rounded-lg px-3 text-body-s-regular transition-colors enabled:hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50">취소</button>
+                <button type="button" aria-label="비용 삭제 확인" disabled={disabled} onClick={() => void confirmDelete()} className="min-h-10 cursor-pointer rounded-lg bg-status-negative px-3 text-body-s-emphasis text-white transition-colors enabled:hover:brightness-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-negative disabled:cursor-not-allowed disabled:opacity-50">{deleting ? "삭제 중…" : "삭제"}</button>
+              </div>
+            </div>
+          ) : null}
           <h3 className="mt-4 text-body-s-emphasis font-semibold text-dark-gray">내역</h3>
           {isPending && !scoped.length ? (
             <LoadingIndicator label="비용 불러오는 중" className="flex w-full py-5" />
           ) : isError && !scoped.length ? (
             <div className="space-y-3 py-5 text-body-s-regular text-dark-gray">
               <p role="alert">비용 조회에 실패했어요.</p>
-              <button type="button" onClick={onRetry} className="cursor-pointer text-primary-strong underline">다시 시도</button>
+              <button type="button" onClick={() => { void Promise.resolve(onRetry()).catch(() => setError("비용 조회에 실패했어요. 다시 시도해 주세요.")); }} className="cursor-pointer text-primary-strong underline">다시 시도</button>
             </div>
           ) : scoped.length ? (
             <ul className="mt-2 -mr-5 min-h-0 overflow-y-auto overscroll-contain pr-5 divide-y divide-gray-border [scrollbar-color:rgba(0,0,0,0.2)_transparent]">
               {scoped.map((expense) => (
-                <li key={expense.id}>
+                <li key={expense.id} className="flex items-center gap-1">
                   <button
                     type="button"
-                    disabled={!canManage || busy}
+                    disabled={!canManage || disabled || selected !== null}
                     aria-label={`${expenseTitle(expense)} ${formatExpenseAmount(expense.totalAmount)} ${expense.currency} 비용 수정`}
+                    title="비용 수정"
                     onClick={() => onEdit(expense)}
-                    className="flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 py-2 text-left text-body-s-regular transition-colors enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
+                    className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-between gap-3 rounded-lg px-2 py-2 text-left text-body-s-regular transition-colors enabled:hover:bg-primary/10 enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-default"
                   >
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="truncate">{expenseTitle(expense)}</span>
@@ -149,6 +194,18 @@ export function ExpenseScopePanel({
                       {canManage ? <ChevronRight size={15} aria-hidden="true" /> : null}
                     </span>
                   </button>
+                  {canManage ? (
+                    <button
+                      type="button"
+                      aria-label={`${expenseTitle(expense)} ${formatExpenseAmount(expense.totalAmount)} ${expense.currency} 비용 삭제`}
+                      title="비용 삭제"
+                      disabled={disabled || selected !== null}
+                      onClick={() => { setError(""); setSelected(expense); }}
+                      className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-dark-gray transition-colors enabled:hover:bg-status-negative/10 enabled:hover:text-status-negative focus-visible:outline-2 focus-visible:outline-status-negative disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <Trash2 size={18} aria-hidden="true" />
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>
