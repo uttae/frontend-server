@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { CloseIcon } from "@/assets/icons";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
@@ -36,7 +36,7 @@ type Props = {
   onEndDateChange: (value: string) => void;
 };
 
-function Field({ label, htmlFor, className, children }: { label: string; htmlFor?: string; className?: string; children: ReactNode }) {
+function Field({ label, htmlFor, className, children }: Readonly<{ label: string; htmlFor?: string; className?: string; children: ReactNode }>) {
   const LabelTag = htmlFor ? "label" : "p";
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", className)}>
@@ -54,35 +54,32 @@ function formatYmd(ymd: string): string {
   return y && m && d ? `${y}. ${m}. ${d}.` : "";
 }
 
-function DateBox({ id, label, value, min, onChange }: { id: string; label: string; value: string; min?: string; onChange: (value: string) => void }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+function DateBox({ id, label, value, min, onChange }: Readonly<{ id: string; label: string; value: string; min?: string; onChange: (value: string) => void }>) {
   return (
     <label
       htmlFor={id}
-      onClick={(event) => {
-        event.preventDefault();
-        inputRef.current?.focus();
-        inputRef.current?.showPicker?.();
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        inputRef.current?.focus();
-        inputRef.current?.showPicker?.();
-      }}
       className={cn(FIELD_BOX_CLASS, "relative cursor-pointer focus-within:border-primary")}
     >
       <span aria-hidden className={value ? undefined : "text-text-disabled"}>{formatYmd(value) || "날짜 선택"}</span>
       <input
         id={id}
-        ref={inputRef}
         aria-label={label}
         type="date"
         value={value}
         min={min}
         max="9999-12-31"
+        onClick={(event) => {
+          event.preventDefault();
+          event.currentTarget.focus();
+          event.currentTarget.showPicker?.();
+        }}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          event.currentTarget.showPicker?.();
+        }}
         onChange={(event) => onChange(event.target.value)}
-        className="pointer-events-none absolute inset-0 opacity-0"
+        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
       />
     </label>
   );
@@ -99,7 +96,7 @@ export function RoomTripEditFields({
   onDestinationsChange,
   onStartDateChange,
   onEndDateChange,
-}: Props) {
+}: Readonly<Props>) {
   const { title, destinations, startDate, endDate } = values;
   const [destinationDraft, setDestinationDraft] = useState("");
   const [destinationWarning, setDestinationWarning] = useState<string | null>(null);
@@ -107,13 +104,10 @@ export function RoomTripEditFields({
   const dateRangeInvalid = isTripDateRangeInvalid(startDate, endDate);
   const startBeforeMin = startDateMin != null && isTripStartBeforeMin(startDate, startDateMin);
   const scheduleDayLimitExceeded = isTripScheduleDayLimitExceeded(startDate, endDate);
-  const dateMessage = startBeforeMin
-    ? TRIP_START_BEFORE_MIN_MESSAGE
-    : dateRangeInvalid
-      ? TRIP_DATE_RANGE_INVALID_MESSAGE
-      : scheduleDayLimitExceeded
-        ? TRIP_SCHEDULE_DAY_LIMIT_MESSAGE
-        : null;
+  let dateMessage = null;
+  if (startBeforeMin) dateMessage = TRIP_START_BEFORE_MIN_MESSAGE;
+  else if (dateRangeInvalid) dateMessage = TRIP_DATE_RANGE_INVALID_MESSAGE;
+  else if (scheduleDayLimitExceeded) dateMessage = TRIP_SCHEDULE_DAY_LIMIT_MESSAGE;
 
   function addDestination(place: { description: string; placeId: string } | null) {
     if (!place) return;

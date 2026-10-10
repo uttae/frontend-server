@@ -25,12 +25,12 @@ function NoticeDialog({
   description,
   actionLabel,
   onClose,
-}: {
+}: Readonly<{
   title: string;
   description: string;
   actionLabel: string;
   onClose: () => void;
-}) {
+}>) {
   return (
     <SettingsDialog title={title} onClose={onClose} appearance="alert" showCloseButton={false}>
       <p className="whitespace-pre-line text-body-l-regular text-text">{description}</p>

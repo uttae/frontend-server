@@ -18,6 +18,11 @@ import { SidebarPingBadge } from "./SidebarPingBadge";
 /** 드롭다운 구성원 목록 — 4명(카드 72px + 사이 간격·구분선)까지 보이고 넘치면 스크롤 */
 const MEMBER_LIST_MAX_HEIGHT_CLASS = "max-h-[339px]";
 
+function memberPreviewLabel(memberCount: number, pendingJoinRequestsCount: number) {
+  const label = `구성원 ${memberCount}명`;
+  return pendingJoinRequestsCount > 0 ? `${label}, 참여 요청 ${pendingJoinRequestsCount}건` : label;
+}
+
 /** PC 헤더 우측 — 구성원 미리보기(드롭다운으로 구성원 관리)와 초대하기(모달) */
 export function HeaderMemberPreview() {
   const {
@@ -68,7 +73,7 @@ export function HeaderMemberPreview() {
         <div ref={dropdownRef} className="relative">
           <button
             type="button"
-            aria-label={pendingJoinRequestsCount > 0 ? `구성원 ${memberCount}명, 참여 요청 ${pendingJoinRequestsCount}건` : `구성원 ${memberCount}명`}
+            aria-label={memberPreviewLabel(memberCount, pendingJoinRequestsCount)}
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
             onClick={() => setDropdownOpen((open) => !open)}
@@ -110,7 +115,7 @@ export function HeaderMemberPreview() {
               {isHost && roomId ? <JoinRequestsSection roomId={roomId} /> : null}
               <section aria-label="구성원" className="flex flex-col gap-2">
                 <h2 className="flex items-baseline gap-2 text-title-s text-text">
-                  구성원
+                  <span>구성원</span>
                   <span className="text-body-m-regular font-medium text-primary">{memberCount}</span>
                 </h2>
                 <MemberList
