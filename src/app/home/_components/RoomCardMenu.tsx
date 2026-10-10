@@ -7,7 +7,7 @@ import { InviteRoomModal } from "./InviteRoomModal";
 
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { RoomListItem } from "@/lib/api/rooms";
-import { isHostRole, isRoomMemberRole } from "@/lib/rooms";
+import { isHostRole } from "@/lib/rooms";
 
 type Props = {
   room: RoomListItem;
@@ -56,7 +56,8 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
 
       {open && (
         <div className="absolute right-[10px] top-[42px] z-30 w-40 overflow-hidden rounded-[12px] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-          {isRoomMemberRole(room.role) ? (
+          {isHost ? (
+            <>
             <button
               type="button"
               onClick={() => {
@@ -69,8 +70,6 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
               <Image src="/rooms/figma/invite.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
               초대하기
             </button>
-          ) : null}
-          {isHost ? (
             <button
               type="button"
               onClick={(e) => {
@@ -83,6 +82,7 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
               <Image src="/rooms/figma/trash.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
               방 삭제하기
             </button>
+            </>
           ) : (
             <button
               type="button"

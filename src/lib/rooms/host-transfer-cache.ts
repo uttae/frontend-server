@@ -34,10 +34,10 @@ export function applyHostTransferToCache(
         }),
       },
   );
-  // 위임 후에도 기존 멤버이므로 초대 링크는 유지한다.
+  // 서버는 참여자에게 inviteCode를 내려주지 않는다
   queryClient.setQueryData<RoomDetail>(
     roomDetailQueryKey(roomId),
-    (prev) => prev && { ...prev, role: "MEMBER" },
+    (prev) => prev && { ...prev, role: "MEMBER", inviteCode: null },
   );
   queryClient.setQueryData<RoomListResponse>(
     ROOMS_QUERY_KEY,

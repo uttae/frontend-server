@@ -3,7 +3,6 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { RoomDetail, RoomListItem } from "@/lib/api/rooms";
-import { AddMemberPanel } from "@/app/(main)/member-settings/_components/AddMemberPanel";
 import { RoomCardMenu } from "./RoomCardMenu";
 
 const state = vi.hoisted(() => ({
@@ -93,8 +92,7 @@ it.each(["loading", "error", "member"])("does not issue links while detail is %s
   if (mode === "member") state.detail!.role = "MEMBER";
   await openInvite();
   expect(state.regenerate).not.toHaveBeenCalled();
-  if (mode === "member") expect(button("복사").disabled).toBe(true);
-  else expect(button("복사")).toBeUndefined();
+  expect(button("복사")).toBeUndefined();
   if (mode === "error") {
     await click("다시 시도");
     expect(state.refetch).toHaveBeenCalledOnce();
@@ -144,35 +142,8 @@ it("preserves host deletion and member leave permissions", async () => {
   expect(onDelete).toHaveBeenCalledWith(room);
   await render("MEMBER");
   await click("제주 여행 더보기");
-  expect(button("초대하기")).toBeDefined();
+  expect(button("초대하기")).toBeUndefined();
   expect(button("방 삭제하기")).toBeUndefined();
   await click("방 나가기");
   expect(onLeave).toHaveBeenCalledWith({ ...room, role: "MEMBER" });
-});
-
-it("lets a member copy and share the existing link without issuing or regenerating it", async () => {
-  state.detail!.role = "MEMBER";
-  await render("MEMBER");
-  await click("제주 여행 더보기"); await click("초대하기");
-  await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code`);
-  await click("공유");
-  expect(state.copy).toHaveBeenCalledTimes(2);
-  expect(button("초대 링크 재발급")).toBeUndefined();
-  expect(state.regenerate).not.toHaveBeenCalled();
-});
-
-it("does not expose an invite from a nonmember detail response", async () => {
-  state.detail!.role = "PENDING" as RoomDetail["role"];
-  await openInvite();
-  expect(document.querySelector('input[aria-label="초대 링크"]')).toBeNull();
-  expect(state.regenerate).not.toHaveBeenCalled();
-});
-
-it.each(["PENDING", undefined])("hides even a cached invite link for invalid role %s", async (role) => {
-  await act(async () => root.render(<AddMemberPanel roomId="selected-room" role={role} inviteCode="cached-code" isRoomDetailLoading={false} isRoomDetailError={false} />));
-  expect(document.querySelector('input[aria-label="초대 링크"]')).toBeNull();
-  expect(button("복사").disabled).toBe(true);
-  expect(button("초대 링크 재발급")).toBeUndefined();
-  expect(state.regenerate).not.toHaveBeenCalled();
 });

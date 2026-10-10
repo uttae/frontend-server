@@ -53,11 +53,6 @@ export function isHostRole(role: string | undefined | null): boolean {
   return role.toUpperCase() === "HOST";
 }
 
-/** 서버가 확인한 기존 방 참여자만 초대 링크 공유와 여행 정보 수정을 할 수 있다. */
-export function isRoomMemberRole(role: string | undefined | null): boolean {
-  return isHostRole(role) || role?.toUpperCase() === "MEMBER";
-}
-
 /** 방 목록·상세·멤버 role 중 하나라도 HOST 이면 true (캐시 타이밍 보강) */
 export function resolveViewerIsHost(sources: {
   listRole?: string | null;
