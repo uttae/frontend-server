@@ -1,7 +1,8 @@
 "use client";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
-import { useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { flushSync } from "react-dom";
 import { toast } from "sonner";
 
@@ -10,10 +11,12 @@ import type { RoomSchedule } from "@/lib/api/rooms/schedules";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import type { MapSearchPlaceEntry } from "@/lib/map-search-history";
+import { resolveInsertIndex, type InsertAnchor } from "@/lib/plan/insertPosition";
 import { formatMobileDayDate, formatMonthDayKo } from "@/lib/plan/mobilePlanFormat";
 import { planCopy } from "@/lib/plan/planCopy";
 import { dayNumberForInsertAfterDayIndex } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
+import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import { useCreateRoomSchedule, useCreateScheduleItem } from "@/hooks/useRooms";
 import { cn } from "@/lib/utils";
 import {
@@ -23,6 +26,9 @@ import {
 
 import { MobilePlanDaySection } from "./MobilePlanDaySection";
 import { MobilePlanDragProvider, useMobilePlanDragController } from "./mobilePlanDrag";
+
+/** 추가한 카드를 강조하는 시간 */
+const ADDED_HIGHLIGHT_MS = 1500;
 
 type MobilePlanViewProps = Readonly<{
   roomId: string;
@@ -83,13 +89,28 @@ export function MobilePlanView({
   }
 
   // ─── 장소 추가: 지도와 같은 전체 화면 검색을 재사용 ─────────────────────
+  const queryClient = useQueryClient();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchResetKey, setSearchResetKey] = useState(0);
-  const addTargetRef = useRef<{ scheduleId: number; places: PlanPlace[] } | null>(null);
+  /** anchor: 장소 사이에 넣을 기준, null이면 맨 뒤 */
+  const addTargetRef = useRef<{ scheduleId: number; anchor: InsertAnchor | null } | null>(null);
+  // 방금 추가한 장소 — 해당 카드로 스크롤하고 잠깐 강조한다
+  const [recentlyAddedItemId, setRecentlyAddedItemId] = useState<number | null>(null);
+  const highlightTimerRef = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(highlightTimerRef.current), []);
 
-  function openAddPlace(scheduleId: number, places: PlanPlace[]) {
-    addTargetRef.current = { scheduleId, places };
+  function showAddedPlace(itemId: number) {
+    window.clearTimeout(highlightTimerRef.current);
+    setRecentlyAddedItemId(itemId);
+    highlightTimerRef.current = window.setTimeout(
+      () => setRecentlyAddedItemId(null),
+      ADDED_HIGHLIGHT_MS,
+    );
+  }
+
+  function openAddPlace(scheduleId: number, anchor: InsertAnchor | null) {
+    addTargetRef.current = { scheduleId, anchor };
     // 검색 화면을 먼저 그린 뒤 같은 탭 안에서 focus해야 iOS에서도 키보드가 뜬다
     flushSync(() => setSearchOpen(true));
     searchInputRef.current?.focus();
@@ -103,19 +124,26 @@ export function MobilePlanView({
   async function handleSelectPlace(entry: MapSearchPlaceEntry): Promise<MapSearchPlaceEntry | null> {
     const target = addTargetRef.current;
     if (!target) return null;
+    // 검색하는 동안 다른 사람이 일정을 바꿨을 수 있어 고른 시점의 최신 목록으로 위치를 정한다
+    const latest =
+      queryClient.getQueryData<PlanPlace[]>(
+        scheduleItemsQueryKey(roomId.trim() || null, target.scheduleId),
+      ) ?? [];
+    const insertIndex = resolveInsertIndex(latest, target.anchor);
     try {
-      await createItem({
+      const created = await createItem({
         roomId,
         scheduleId: target.scheduleId,
         googlePlaceId: entry.googlePlaceId,
-        insertIndex: target.places.length,
-        placesSnapshot: target.places,
+        insertIndex,
+        placesSnapshot: latest,
       });
       trackAnalyticsEvent(AnalyticsEvents.addToItinerary, {
-        item_count_bucket: bucketItemCount(target.places.length + 1),
+        item_count_bucket: bucketItemCount(latest.length + 1),
         interaction_source: "search",
       });
       toast.success("일정에 추가했어요.");
+      showAddedPlace(created.itemId);
       closeAddPlace();
       return entry;
     } catch {
@@ -162,6 +190,8 @@ export function MobilePlanView({
           onRequestInsertDayAfter={() => void insertDayAfter(dayIndex)}
           onRequestDeleteDay={() => onRequestDeleteDay(dayIndex)}
           onRequestAddPlace={openAddPlace}
+          recentlyAddedItemId={recentlyAddedItemId}
+          onPlaceAdded={showAddedPlace}
         />
       );
     });

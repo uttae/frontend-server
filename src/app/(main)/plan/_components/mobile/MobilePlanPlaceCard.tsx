@@ -20,6 +20,8 @@ type MobilePlanPlaceCardProps = Readonly<{
   orderNumber: number;
   /** 지도 핀과 같은 일차 색 */
   badgeColor: string;
+  /** 방금 추가된 카드 — 잠깐 강조한다 */
+  highlighted?: boolean;
   /** `45,000 KRW 외 1건` — 없으면 비용 줄을 숨긴다 */
   expenseSummary: string | null;
   onOpen: () => void;
@@ -44,6 +46,7 @@ export function MobilePlanPlaceCard({
   place,
   orderNumber,
   badgeColor,
+  highlighted = false,
   expenseSummary,
   onOpen,
   onOpenActions,
@@ -62,7 +65,11 @@ export function MobilePlanPlaceCard({
   return (
     <div className="flex items-stretch gap-2">
       <article
-        className="relative min-w-0 flex-1 rounded-md border border-border-subtle bg-fill-subtle text-left"
+        className={cn(
+          "relative min-w-0 flex-1 rounded-md border text-left transition-colors duration-500",
+          // primary-subtle은 카드 배경으로 너무 진해 빈 일차 드롭존과 같은 원시 토큰을 쓴다
+          highlighted ? "border-primary bg-[var(--blue-50)]" : "border-border-subtle bg-fill-subtle",
+        )}
       >
         <button
           type="button"
