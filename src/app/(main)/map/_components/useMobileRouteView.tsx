@@ -163,7 +163,7 @@ export function useMobileRouteView({
 
   const { entries, anchorIndex, ghost } = insertCandidate(baseEntries, candidate);
 
-  const [focus, setFocus] = useRouteFocus(active, initialItemId);
+  const [focus, setFocus] = useState<Focus>({ key: null, index: 0, camera: { kind: "fit", seq: 0 } });
   const [expanded, setExpanded] = useState(false);
   /** 카드의 ⋮·시간·메모에서 연 시트 — 일정 목록과 같은 시트를 쓴다 */
   const [routeSheet, setRouteSheet] = useState<{ scheduleId: number; sheet: MobilePlanPlaceSheet } | null>(null);
@@ -293,7 +293,7 @@ export function useMobileRouteView({
           if (index >= 0) focusEntry(index, "pan");
         },
         // 처음 들어올 때 — 일정 카드로 들어왔으면 그 장소를 가까이, 경로 보기 버튼이면 일차 전체를 보여 준다
-        camera: focus.camera,
+        camera: focus.key === null ? { kind: initialItemId !== null ? "place" : "fit", seq: 0 } : focus.camera,
         locations,
         expanded: isExpanded,
         candidate:
@@ -554,20 +554,4 @@ function resolveFocusedIndex(entries: StripEntry[], focus: Focus, initialItemId:
   }
 
   return focusedIndex;
-}
-
-function initialFocus(itemId: number | null): Focus {
-  return { key: null, index: 0, camera: { kind: itemId === null ? "fit" : "place", seq: 0 } };
-}
-
-function useRouteFocus(active: boolean, initialItemId: number | null) {
-  const [focus, setFocus] = useState<Focus>(() => initialFocus(initialItemId));
-  const [wasActive, setWasActive] = useState(active);
-  // URL 동기화로 item이 바뀌어도 진입 시 카메라 모드는 유지한다.
-  // 같은 지도에서 경로 보기를 다시 열 때만 새 진입 위치를 적용한다.
-  if (wasActive !== active) {
-    setWasActive(active);
-    if (active) setFocus(initialFocus(initialItemId));
-  }
-  return [focus, setFocus] as const;
 }

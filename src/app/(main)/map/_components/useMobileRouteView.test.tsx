@@ -54,7 +54,7 @@ import { useMobileRouteView } from "./useMobileRouteView";
 it.each([
   { url: "/map?view=route&day=1", camera: "fit", item: "101" },
   { url: "/map?view=route&day=1&item=102", camera: "place", item: "102" },
-])("$url 진입 시 URL 동기화 후에도 $camera 카메라를 유지한다", async ({ url, camera, item }) => {
+])("$url 진입 후 URL에 선택 장소가 반영되면 해당 장소를 확대한다", async ({ url, camera, item }) => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   window.history.replaceState(null, "", url);
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -76,7 +76,7 @@ it.each([
     expect(new URLSearchParams(window.location.search).get("item")).toBe(item);
     // Next.js reflects native replaceState into useSearchParams; emulate that rerender.
     await act(async () => render());
-    expect(current?.mapRouteView?.camera.kind).toBe(camera);
+    expect(current?.mapRouteView?.camera.kind).toBe("place");
   } finally {
     await act(async () => root.unmount());
     queryClient.clear();
