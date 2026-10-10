@@ -79,7 +79,7 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 
 - 생성자 활성화 퍼널: `create_plan` → `add_to_itinerary` (신규 가입자는 별도 코호트로 구분)
 - 참여자 활성화 퍼널: `invite_view` → `join_group` → `view_plan`; 이후 일정 편집과 조회 위주 사용을 구분
-- 공유: 생성자의 `create_plan → share`와 참여자의 `invite_view → join_group`을 분리. 서로 다른 사람의 행동을 기본 사용자 퍼널로 연결하지 않는다. 여행방 단위 분석에는 별도 그룹 계측 또는 백엔드 집계가 필요하다.
+- 공유: 생성자의 `create_plan → share`와 참여자의 `invite_view → join_group`을 분리. 서로 다른 사람의 행동을 기본 사용자 퍼널로 연결하지 않는다. `share`·`join_group`에는 기존 방 ID를 이벤트별 `groups.room_id`로 전달한다. 그룹 보고 기능의 사용 가능 여부를 확인한 뒤 방 기준 퍼널로 분석한다(정확한 신규 합류 판정은 별도 백엔드 이벤트 필요).
 - 탐색 퍼널: `view_search_results` → `view_place` → `add_to_bookmark` 또는 `add_to_itinerary`
 - 온보딩 퍼널: `tutorial_begin` → `tutorial_complete`; `tutorial_skip`은 `skip_step`별 이탈을 분석한다.
 
@@ -96,3 +96,5 @@ AdGuard 같은 DNS 광고 차단기를 사용하면 아래 호스트를 허용�
 - GA4 전용 랜딩 이벤트의 Amplitude 기존 차트와 Amplitude 전용 행동의 GA4 기존 차트는 배포 이후 신규 데이터가 끊긴다. 과거 데이터가 삭제되는 것은 아니다. 해당 보고서를 각 기준 도구로 옮기고 실제 배포일을 비교 구간에 표시한다.
 - 재사용 분석은 단순 페이지 재방문과 핵심 행동 재사용을 구분하고 여행 준비 기간/다음 여행을 고려한다.
 - 운영 Tracking Plan·대시보드·GA4 주요 이벤트 지정은 원격 설정이며 코드 변경만으로 완료되지 않는다. 신규 속성이 없는 가계부·준비물 이벤트에는 공통 정규화 URL 외에 금액·메모·이름·항목 식별자를 추가하지 않는다.
+
+방 단위 퍼널은 그룹 타입 `room_id`를 선택하고 `share` 단계에 `role=host`, `join_group` 단계에 `role=member`를 적용한다. Accounts 기능 활성화/계약은 이번 프론트 코드 변경과 별개다. 이벤트 속성에 방 ID가 보이는 것만으로 그룹 퍼널이 설정된 것은 아니다.

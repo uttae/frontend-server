@@ -126,6 +126,7 @@ export type AnalyticsEventParamsMap = {
     entry_point: AnalyticsEntryPoint;
   };
   [AnalyticsEvents.joinPlan]: {
+    room_id: string;
     member_count_bucket?: MemberCountBucket;
     role?: AnalyticsRoomRole;
   };
@@ -151,6 +152,7 @@ export type AnalyticsEventParamsMap = {
     search_mode: "map_recenter" | "text";
   };
   [AnalyticsEvents.sharePlan]: {
+    room_id: string;
     member_count_bucket?: MemberCountBucket;
     method: SharePlanMethod;
     role?: AnalyticsRoomRole;

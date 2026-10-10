@@ -62,7 +62,7 @@ export default function JoinPage() {
             }
             trackAnalyticsEvent(
               AnalyticsEvents.joinPlan,
-              buildJoinPlanAnalyticsParams(data.role, memberCount)
+              buildJoinPlanAnalyticsParams(data.id, data.role, memberCount)
             );
             router.replace(planPathForRoom(data.id));
             return;

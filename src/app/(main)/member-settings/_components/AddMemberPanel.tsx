@@ -97,6 +97,7 @@ export function AddMemberPanel({
     try {
       await navigator.clipboard.writeText(inviteUrl);
       trackAnalyticsEvent(AnalyticsEvents.sharePlan, {
+        room_id: roomIdTrim,
         member_count_bucket:
           memberCount === undefined
             ? undefined
@@ -125,6 +126,7 @@ export function AddMemberPanel({
           url: inviteUrl,
         });
         trackAnalyticsEvent(AnalyticsEvents.sharePlan, {
+          room_id: roomIdTrim,
           member_count_bucket:
             memberCount === undefined
               ? undefined

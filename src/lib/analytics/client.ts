@@ -85,12 +85,19 @@ export function sendAnalyticsDataCommand(...args: unknown[]): void {
 
   if (destination === "amplitude" || !analyticsRuntime.enabled) return;
 
+  // Room identity is approved for Amplitude group analysis only, not GA4.
+  const gaArgs = [...args];
+  if (gaArgs[0] === "event" && typeof gaArgs[2] === "object" && gaArgs[2] !== null) {
+    gaArgs[2] = Object.fromEntries(
+      Object.entries(gaArgs[2]).filter(([key]) => key !== "room_id"),
+    );
+  }
   if (!analyticsTransportReady) {
-    pendingAnalyticsCommands.push(args);
+    pendingAnalyticsCommands.push(gaArgs);
     return;
   }
 
-  sendGoogleAnalyticsDataCommand(...args);
+  sendGoogleAnalyticsDataCommand(...gaArgs);
 }
 
 function sendGoogleAnalyticsDataCommand(...args: unknown[]): void {

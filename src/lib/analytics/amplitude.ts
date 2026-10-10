@@ -16,7 +16,20 @@ function dispatchAmplitudeDataCommand(...args: unknown[]): void {
       typeof maybeProperties === "object" && maybeProperties !== null
         ? (maybeProperties as Record<string, unknown>)
         : undefined;
-    amplitude.track(nameOrProperties, eventProperties);
+    const roomId = (nameOrProperties === "share" || nameOrProperties === "join_group") &&
+      typeof eventProperties?.room_id === "string"
+      ? eventProperties.room_id.trim()
+      : undefined;
+    if (roomId) {
+      // Event-scoped groups never attach this room to the user's later events.
+      amplitude.track({
+        event_type: nameOrProperties,
+        event_properties: { ...eventProperties, room_id: roomId },
+        groups: { room_id: roomId },
+      });
+    } else {
+      amplitude.track(nameOrProperties, eventProperties);
+    }
     return;
   }
 
