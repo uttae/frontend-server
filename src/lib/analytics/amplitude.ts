@@ -58,6 +58,7 @@ export function initializeAmplitude(): void {
 
   const initialization = amplitude.initAll(amplitudeRuntime.apiKey, {
     analytics: {
+      minIdLength: 1,
       autocapture: {
         attribution: true,
         elementInteractions: false,
