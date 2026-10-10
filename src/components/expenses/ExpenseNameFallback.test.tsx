@@ -31,7 +31,7 @@ it("keeps scoped expense titles and edit labels category-only, with memo and pla
   await act(async () => { renderer = create(<QueryClientProvider client={client}><ExpenseScopePanel scope={{ scheduleId: 2, label: "2일차" }} roomId="room" expenses={[expense]} isPending={false} isError={false} canManage busy={false} onAdd={vi.fn()} onEdit={vi.fn()} onDelete={async () => {}} onRetry={vi.fn()} onClose={vi.fn()} /></QueryClientProvider>); });
   const edit = renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 수정"))!;
   expect(edit.props["aria-label"]).toBe("식비 1,000 KRW 비용 수정");
-  expect(edit.findAllByType("span")[1].children).toEqual(["식비"]);
+  expect(renderer.root.findByType("li").findAllByType("span").some(span => span.children.length === 1 && span.children[0] === "식비")).toBe(true);
   expect(JSON.stringify(renderer.toJSON())).toContain("별도 메모");
   expect(JSON.stringify(renderer.toJSON())).toContain("경복궁");
 });
