@@ -92,6 +92,24 @@ describe("hydrateScheduleRoutesBatch", () => {
     });
   });
 
+  it("자전거로 저장된 구간만 화면에 보이는 수단(자동차)으로 계산해 달라고 지정한다", async () => {
+    const queryClient = new QueryClient();
+    const places = [
+      { ...place(1, "places/a"), travelMode: "BICYCLING" },
+      { ...place(2, "places/b"), travelMode: "WALKING" },
+      place(3, "places/c"),
+    ];
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
+    getScheduleItemRoutesBatchMock.mockResolvedValue([]);
+
+    await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledWith(ROOM_ID, SCHEDULE_ID, [
+      { itemId: 1, travelMode: "DRIVING" },
+      { itemId: 2 },
+    ]);
+  });
+
   it("폴리라인이 없는 구간은 encodedPolyline 없이 시딩한다", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(

@@ -129,13 +129,6 @@ export function PlanTravelTime({
     fpTrim,
   );
 
-  const deferredLazyEnabled =
-    routeQueryEnabled &&
-    menuOpen &&
-    rid.length > 0 &&
-    Number.isFinite(scheduleId) &&
-    Number.isFinite(segmentSourceItemId);
-
   const menuDeferredModes = useMemo(
     () =>
       SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter(
@@ -144,6 +137,8 @@ export function PlanTravelTime({
     [selectedMode],
   );
 
+  // 고르지 않은 수단은 조회하지 않는다(경로 조회 비용) — 예전에 고른 적이 있어 캐시에 남은 값만 보여 주고,
+  // 나머지는 그 수단을 골라야 계산한다
   const deferredRouteQueries = useQueries({
     queries: menuDeferredModes.map((mode) =>
       persistedScheduleItemRouteQueryOptions(
@@ -154,7 +149,7 @@ export function PlanTravelTime({
         fpTrim,
         {
           segmentReady: routeQueryEnabled,
-          networkEnabled: deferredLazyEnabled,
+          networkEnabled: false,
         },
       ),
     ),
@@ -222,27 +217,18 @@ export function PlanTravelTime({
         s.distanceMeters >= 0
       );
     };
+    // 고르지 않은 수단은 조회하지 않으니 고른 수단만 불러오는 중을 표시한다
     if (routeQueryEnabled) {
       out[selectedMode] =
         !hasSummary(selectedMode) && (selectedPending || selectedFetching);
-      menuDeferredModes.forEach((mode, i) => {
-        const q = deferredRouteQueries[i];
-        out[mode] =
-          deferredLazyEnabled &&
-          !hasSummary(mode) &&
-          Boolean(q?.isPending || q?.isFetching);
-      });
     }
     return out;
   }, [
     modeRouteSummaries,
     routeQueryEnabled,
     selectedMode,
-    deferredLazyEnabled,
     selectedPending,
     selectedFetching,
-    menuDeferredModes,
-    deferredRouteQueries,
   ]);
 
   const primarySettled = !selectedPending && !selectedFetching;

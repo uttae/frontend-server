@@ -1,9 +1,12 @@
-/** 일정 구간(이전 장소 → 이 항목) 이동 수단 — 서버: `WALKING`, `DRIVING`, `BICYCLING`, `TRANSIT` */
+/**
+ * 일정 구간(이전 장소 → 이 항목) 이동 수단 — 서버: `WALKING`, `DRIVING`, `BICYCLING`, `TRANSIT`.
+ * 자전거는 경로 조회(Google Routes)를 줄이려 고를 수 없게 뺐다 — 예전에 자전거로 저장된 구간은
+ * 기본값(자동차)으로 보이고, 사용자가 다시 고르면 서버 값도 바뀐다(`LEGACY_ALIAS`).
+ */
 export const SCHEDULE_TRAVEL_MODES = [
   { value: "WALKING", label: "도보" },
   { value: "TRANSIT", label: "대중교통" },
   { value: "DRIVING", label: "자동차" },
-  { value: "BICYCLING", label: "자전거" },
 ] as const;
 
 export type ScheduleTravelModeValue =
@@ -16,14 +19,14 @@ const API_VALUES = new Set<string>(
   SCHEDULE_TRAVEL_MODES.map((m) => m.value),
 );
 
-/** 예전 클라이언트·데이터 호환 */
+/** 예전 클라이언트·데이터 호환 — 고를 수 없게 된 자전거는 기본값으로 읽는다 */
 const LEGACY_ALIAS: Record<string, ScheduleTravelModeValue> = {
   WALK: "WALKING",
-  CYCLING: "BICYCLING",
+  CYCLING: SCHEDULE_TRAVEL_MODE_DEFAULT,
   WALKING: "WALKING",
   TRANSIT: "TRANSIT",
   DRIVING: "DRIVING",
-  BICYCLING: "BICYCLING",
+  BICYCLING: SCHEDULE_TRAVEL_MODE_DEFAULT,
 };
 
 /**
