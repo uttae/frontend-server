@@ -8,6 +8,8 @@ const state = vi.hoisted(() => ({
   isHost: true, isLoading: false, missing: false, pending: false,
   update: vi.fn(),
 }));
+vi.mock("next/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/navigation")>()), useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+vi.mock("@/components/layout/HeaderMemberPreview", () => ({ HeaderMemberPreview: () => null }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: state.room }) }));
 vi.mock("@/hooks/useRooms", () => ({
@@ -140,4 +142,22 @@ it("names the existing title, destination and date inputs", async () => {
   expect(names).toContain("목적지 검색");
   expect(names).toContain("여행 시작일");
   expect(names).toContain("여행 종료일");
+});
+
+it.each(["Enter", " "])("opens either date picker with %s without submitting the form", async (key) => {
+  await open();
+  const inputs = dialog()!.querySelectorAll<HTMLInputElement>('input[type="date"]');
+  for (const input of inputs) {
+    const showPicker = vi.fn();
+    Object.defineProperty(input, "showPicker", { value: showPicker });
+    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+    await act(async () => {
+      input.focus();
+      input.dispatchEvent(event);
+    });
+    expect(showPicker).toHaveBeenCalledOnce();
+    expect(event.defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(input);
+  }
+  expect(state.update).not.toHaveBeenCalled();
 });

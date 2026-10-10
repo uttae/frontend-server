@@ -88,7 +88,7 @@ it("switches between expenses and packing inside the mobile travel tools tab", a
 
 it("desktop chat menu opens the /chat route next to the map, and route links leave it", async () => {
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "가계부", "준비물", "채팅", "멤버"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "가계부", "준비물", "채팅"]);
   expect(active()).toHaveLength(1);
   await openChatFromSidebar();
   expect(state.pathname).toBe("/chat");
@@ -275,7 +275,7 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
   state.mobile = mobile;
   state.pathname = "/packing/12345678-1234-1234-1234-123456789abc";
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "북마크", "여행 도구", "채팅"] : ["일정", "검색", "북마크", "가계부", "준비물", "채팅", "멤버"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "북마크", "여행 도구", "채팅"] : ["일정", "검색", "북마크", "가계부", "준비물", "채팅"]);
   expect(active().map(item => item.getAttribute("aria-label"))).toEqual([mobile ? "여행 도구" : "준비물"]);
   expect(host.querySelector(`a[href="/packing/${state.roomId}"]`)).not.toBeNull();
   expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
@@ -306,13 +306,13 @@ it('keeps /chat until another route commits, then shows that route', async () =>
  state.pathname=`/packing/${state.roomId}`;
  await render();
  await openChatFromSidebar();
- await act(async()=>items()[6].click());
+ await act(async()=>items()[2].click());
  expect(state.pathname).toBe('/chat');
  expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['채팅']);
- state.pathname='/member-settings';
+ state.pathname='/bookmark';
  await render();
  expect(host.querySelector('[data-chat]')).toBeNull();
- expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['멤버']);
+ expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['북마크']);
 });
 it('links back to the original packing tab from /chat', async () => {
  state.pathname=`/packing/${state.roomId}`;
@@ -346,7 +346,6 @@ it.each([
   ['/bookmark', '북마크'],
   ['/cost', '가계부'],
   ['/packing/12345678-1234-1234-1234-123456789abc', '준비물'],
-  ['/member-settings', '멤버'],
 ])('selects the visible route after minimizing chat on %s', async (pathname, label) => {
   state.pathname = pathname;
   await render();

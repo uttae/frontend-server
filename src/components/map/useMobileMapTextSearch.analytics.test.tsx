@@ -10,7 +10,7 @@ const state = vi.hoisted(() => ({ roomId: "room-a", fetching: true, track: vi.fn
 vi.mock("@/hooks/useAnalyticsRoomId", () => ({ useAnalyticsRoomId: () => state.roomId }));
 vi.mock("@/hooks/usePlacesSearch", () => ({ usePlacesSearch: () => ({ items: [], isFetching: state.fetching, isSuccess: !state.fetching, isError: false }) }));
 vi.mock("@/lib/analytics/track", () => ({ AnalyticsEvents: { search: "search" }, trackAnalyticsEvent: state.track }));
-vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn() }) }));
+vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { error: vi.fn(), info: vi.fn() }) }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 it("keeps the submitted mobile search room while its results are pending", async () => {

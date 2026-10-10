@@ -29,14 +29,12 @@ export function InviteRoomModal({ room, onClose }: {
       ) : (
         <AddMemberPanel
           key={room.id}
-          embedded
           roomId={room.id}
           inviteCode={data.inviteCode}
           memberCount={data.memberCount}
           role={data.role}
           isRoomDetailLoading={false}
           isRoomDetailError={false}
-          onClose={onClose}
         />
       )}
     </SettingsDialog>

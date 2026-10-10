@@ -1,12 +1,13 @@
 "use client";
 
+import { CopyCheckIcon, CopyIcon, RefreshIcon, ShareIcon } from "@/assets/icons";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import { useEffect, useRef, useState } from "react";
-import { RefreshCw, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useRegenerateInviteCode } from "@/hooks/useRooms";
+import { isHostRole } from "@/lib/rooms";
 import {
   bucketMemberCount,
   toAnalyticsRoomRole,
@@ -18,14 +19,32 @@ type Props = {
   inviteCode: string | null | undefined;
   memberCount?: number;
   role?: string;
+  /** 방장 여부를 이미 계산한 화면은 넘긴다 — 없으면 `role`로 판단 */
+  isHost?: boolean;
   isRoomDetailLoading: boolean;
   isRoomDetailError: boolean;
-  onClose: () => void;
-  embedded?: boolean;
+  /** 안내 문구 — 모달처럼 바깥에서 본문으로 보여줄 때는 false */
+  showDescription?: boolean;
 };
 
 function normalizeInviteCode(inviteCode: string | null | undefined): string {
   return typeof inviteCode === "string" ? inviteCode.trim() : "";
+}
+
+function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetailError, isRegenerating }: Readonly<{
+  canIssue: boolean;
+  inviteCode: Props["inviteCode"];
+  isRoomDetailLoading: boolean;
+  isRoomDetailError: boolean;
+  isRegenerating: boolean;
+}>) {
+  if (isRoomDetailLoading || isRegenerating) {
+    return <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
+  }
+  let message = "발급에 실패했어요. 아래에서 재발급을 눌러 주세요.";
+  if (!canIssue) message = "방장만 볼 수 있어요.";
+  else if (isRoomDetailError || inviteCode === undefined) message = "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요.";
+  return <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">{message}</span>;
 }
 
 export function AddMemberPanel({
@@ -33,12 +52,14 @@ export function AddMemberPanel({
   inviteCode,
   memberCount,
   role,
+  isHost,
   isRoomDetailLoading,
   isRoomDetailError,
-  onClose,
-  embedded = false,
-}: Props) {
+  showDescription = true,
+}: Readonly<Props>) {
   const roomIdTrim = roomId.trim();
+  // 초대 코드 발급·재발급 API는 방장 전용 — 참여자는 서버가 내려준 코드가 있을 때만 링크를 보여준다
+  const canIssue = isHost ?? isHostRole(role);
   const detailInviteCode = normalizeInviteCode(inviteCode);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,7 +76,7 @@ export function AddMemberPanel({
     useRegenerateInviteCode();
 
   useEffect(() => {
-    if (!roomIdTrim.length || isRoomDetailLoading) return;
+    if (!roomIdTrim.length || isRoomDetailLoading || !canIssue) return;
 
     if (detailInviteCode) return;
 
@@ -78,6 +99,7 @@ export function AddMemberPanel({
       },
     });
   }, [
+    canIssue,
     detailInviteCode,
     inviteCode,
     isRoomDetailError,
@@ -155,86 +177,62 @@ export function AddMemberPanel({
     });
   }
 
-  let inviteFallback = <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-light-gray">
-    {isRoomDetailError || inviteCode === undefined
-      ? "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요."
-      : "발급에 실패했어요. 아래에서 재발급을 눌러 주세요."}
-  </span>;
-  if (isRoomDetailLoading || isRegenerating) {
-    inviteFallback = <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
-  }
   return (
-    <div className={embedded ? "min-w-0" : "overflow-hidden rounded-xl border border-gray-border bg-gray-50"}>
-      {!embedded && (
-      <div className="flex items-center justify-between border-b border-gray-border bg-white px-4 py-3">
-        <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-gray-800">멤버 초대</span>
-        <button
-          onClick={onClose}
-          className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-md text-dark-gray transition-colors hover:bg-gray-100"
-          aria-label="닫기"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="M1 1l12 12M13 1L1 13" />
-          </svg>
-        </button>
-      </div>
-      )}
+    <div className="min-w-0">
+      <div className="flex flex-col gap-3">
+        {showDescription ? (
+          <p className="text-body-s-regular mobile:text-body-xs-regular text-text-subtle">
+            링크를 공유해 함께 여행을 계획해 보세요.
+          </p>
+        ) : null}
 
-      <div className={embedded ? "flex flex-col gap-4" : "flex flex-col gap-3 p-4"}>
-        <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-          아래 초대 링크를 복사해 멤버를 초대하세요.
-        </p>
-
-        <div className="flex gap-2">
-          <div className="flex min-w-0 flex-1 items-center rounded-lg border border-gray-border bg-white px-3 py-2">
+        <div className="flex h-12 min-w-0 items-center gap-1 rounded-lg border border-border bg-fill pl-3.5 pr-1.5">
+          <div className="flex min-w-0 flex-1 items-center">
             {inviteUrl ? (
-              <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 bg-transparent text-body-s-regular text-dark-gray outline-none disabled:opacity-40" />
-            ) : inviteFallback}
+              <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 truncate bg-transparent text-body-m-regular mobile:text-body-s-regular text-text-subtle outline-none disabled:opacity-40" />
+            ) : (
+              <InviteFallback
+                canIssue={canIssue}
+                inviteCode={inviteCode}
+                isRoomDetailLoading={isRoomDetailLoading}
+                isRoomDetailError={isRoomDetailError}
+                isRegenerating={isRegenerating}
+              />
+            )}
           </div>
           <button
             type="button"
             onClick={handleCopy}
             disabled={!inviteUrl || isRegenerating}
-            className={`flex-shrink-0 cursor-pointer rounded-lg border px-3 py-2 text-label-m-regular mobile:text-label-s-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-              copied
-                ? "border-status-positive bg-status-positive/10 text-status-positive"
-                : "border-gray-border bg-white text-dark-gray hover:border-gray-400"
+            className={`flex h-9 flex-shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 text-label-m-regular transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              copied ? "text-status-positive" : "text-dark-gray enabled:hover:bg-fill-strong"
             }`}
           >
-            {copied ? "복사됨 ✓" : "복사"}
+            {copied ? <CopyCheckIcon size={16} /> : <CopyIcon size={16} />}
+            {copied ? "복사됨" : "복사"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleShare()}
+            disabled={!inviteUrl || isRegenerating}
+            className="flex h-9 flex-shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 text-label-m-regular text-dark-gray transition-colors enabled:hover:bg-fill-strong disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <ShareIcon size={16} />
+            공유
           </button>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void handleShare()}
-          disabled={!inviteUrl || isRegenerating}
-          className="flex w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2.5 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold text-white shadow-sm transition hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Share2 size={16} strokeWidth={2.2} aria-hidden />
-          친구에게 공유
-        </button>
-
+        {canIssue ? (
         <button
           type="button"
           onClick={handleRegenerate}
           disabled={isRegenerating}
           className="flex cursor-pointer items-center gap-1.5 self-start text-label-m-regular mobile:text-label-s-regular text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <RefreshCw
-            size={12}
-            className={isRegenerating ? "animate-spin" : ""}
-          />
+          <RefreshIcon size={12} className={isRegenerating ? "animate-spin motion-reduce:animate-none" : undefined} />
           {isRegenerating ? "재발급 중…" : "초대 링크 재발급"}
         </button>
+        ) : null}
       </div>
     </div>
   );

@@ -3,17 +3,17 @@ import { act, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { RoomTripEditForm } from "./RoomTripEditForm";
-import type { TripFormFields } from "./TripFormFields";
+import type { RoomTripEditFields } from "./RoomTripEditFields";
 const state = vi.hoisted(() => ({
-  fields: null as ComponentProps<typeof TripFormFields> | null,
+  fields: null as ComponentProps<typeof RoomTripEditFields> | null,
   update: vi.fn(),
 }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomSchedules: () => ({ data: [{}, {}, {}] }),
   useUpdateRoom: () => ({ mutate: state.update, isPending: false }),
 }));
-vi.mock("./TripFormFields", () => ({
-  TripFormFields: (props: ComponentProps<typeof TripFormFields>) => {
+vi.mock("./RoomTripEditFields", () => ({
+  RoomTripEditFields: (props: ComponentProps<typeof RoomTripEditFields>) => {
     state.fields = props;
     return null;
   },

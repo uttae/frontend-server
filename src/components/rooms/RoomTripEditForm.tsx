@@ -8,7 +8,7 @@ import {
   SettingsActionButtonRow,
 } from "@/components/settings/SettingsActionButton";
 import { TripDateShrinkConfirmModal } from "@/components/rooms/TripDateShrinkConfirmModal";
-import { TripFormFields } from "@/components/rooms/TripFormFields";
+import { RoomTripEditFields } from "@/components/rooms/RoomTripEditFields";
 import { useRoomSchedules, useUpdateRoom } from "@/hooks/useRooms";
 import {
   countSchedulesTrimmedByDateChange,
@@ -150,7 +150,7 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
-      <TripFormFields
+      <RoomTripEditFields
         idPrefix={`trip-${room.id}`}
         values={{ title, destinations, startDate, endDate }}
         readOnly={readOnly}
@@ -171,9 +171,10 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
       )}
 
       {!readOnly && (
-        <SettingsActionButtonRow>
+        <SettingsActionButtonRow className="gap-3 pt-0">
           <SettingsActionButton
             variant="secondary"
+            className="h-12 rounded-lg border-border bg-fill-subtle py-0 text-[16px] font-bold text-text hover:bg-fill"
             onClick={handleCancel}
             disabled={(!onCancel && !isDirty) || isPending}
           >
@@ -181,6 +182,7 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
           </SettingsActionButton>
           <SettingsActionButton
             variant="primary"
+            className="h-12 rounded-lg py-0 text-[16px] font-bold enabled:hover:bg-primary-strong hover:opacity-100 disabled:bg-fill disabled:text-text-disabled disabled:opacity-100"
             onClick={handleApply}
             disabled={!canApply}
           >

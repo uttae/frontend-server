@@ -94,6 +94,8 @@ import { invalidateScheduleItemRouteForWholeSchedule } from "@/lib/plan/schedule
 import type { ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
 import { useSessionUser } from "@/hooks/useSessionUser";
+import { applyHostTransferToCache } from "@/lib/rooms/host-transfer-cache";
+import { readSessionUserId } from "@/lib/session-user-cache";
 
 export function useRoomsList() {
   return useQuery({
@@ -660,8 +662,16 @@ export function useTransferHost() {
       roomId: string;
       targetUserId: number;
     }) => transferHost(roomId, targetUserId),
-    onSuccess: (_, { roomId }) => {
+    onSuccess: (_, { roomId, targetUserId }) => {
+      applyHostTransferToCache(
+        queryClient,
+        roomId,
+        readSessionUserId(queryClient),
+        targetUserId,
+      );
+      // 반영한 결과를 서버 값으로 다시 맞춘다 — 캐시는 바로 바뀌어 있으므로 화면은 기다리지 않는다
       queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
+      queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(roomId) });
       queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });

@@ -13,14 +13,14 @@ beforeEach(() => {
 });
 afterEach(async () => { await act(async () => renderer?.unmount()); vi.unstubAllGlobals(); vi.clearAllMocks(); });
 async function mount() {
-  await act(async () => { renderer = create(<AddMemberPanel roomId="room-42" inviteCode="private-access-code" memberCount={2} role="HOST" isRoomDetailLoading={false} isRoomDetailError={false} onClose={() => {}} />); });
+  await act(async () => { renderer = create(<AddMemberPanel roomId="room-42" inviteCode="private-access-code" memberCount={2} role="HOST" isRoomDetailLoading={false} isRoomDetailError={false} />); });
 }
 it.each(["copy_link", "native_share"])("records the existing room only after %s succeeds", async (method) => {
   let resolve!: () => void;
   const pending = new Promise<void>(done => { resolve = done; });
   vi.stubGlobal("navigator", { clipboard: { writeText: () => pending }, share: () => pending });
   await mount();
-  const button = renderer.root.findAllByType("button").find(b => b.children.includes(method === "copy_link" ? "복사" : "친구에게 공유"))!;
+  const button = renderer.root.findAllByType("button").find(b => b.children.includes(method === "copy_link" ? "복사" : "공유"))!;
   await act(async () => { void button.props.onClick(); });
   expect(commands).not.toHaveBeenCalled();
   await act(async () => { resolve(); await pending; });
@@ -36,7 +36,7 @@ it("does not record a rejected copy or cancelled native share", async () => {
     share: async () => { throw Object.assign(new Error("cancelled"), { name: "AbortError" }); },
   });
   await mount();
-  for (const label of ["복사", "친구에게 공유"]) {
+  for (const label of ["복사", "공유"]) {
     const button = renderer.root.findAllByType("button").find(b => b.children.includes(label))!;
     await act(async () => { await button.props.onClick(); });
   }
