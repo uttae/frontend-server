@@ -80,21 +80,19 @@ it("issues a link once when the room detail confirms no existing code", async ()
   state.detail!.inviteCode = null;
   await openInvite();
   expect(state.regenerate).toHaveBeenCalledTimes(1);
-  expect(state.regenerate.mock.calls[0][0]).toBe("selected-room");
+  expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "automatic" });
   await act(async () => state.regenerate.mock.calls[0][1].onSuccess({ inviteCode: "first-code" }));
   await click("복사");
   expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/first-code`);
 });
 
-it.each(["loading", "error", "member"])("does not issue links while detail is %s", async (mode) => {
+it.each(["loading", "error"])("does not issue links while detail is %s", async (mode) => {
   state.detail!.inviteCode = null;
   state.loading = mode === "loading";
   state.error = mode === "error";
-  if (mode === "member") state.detail!.role = "MEMBER";
   await openInvite();
   expect(state.regenerate).not.toHaveBeenCalled();
-  if (mode === "member") expect(button("복사").disabled).toBe(true);
-  else expect(button("복사")).toBeUndefined();
+  expect(button("복사")).toBeUndefined();
   if (mode === "error") {
     await click("다시 시도");
     expect(state.refetch).toHaveBeenCalledOnce();
@@ -158,7 +156,7 @@ it("lets a member copy and share the existing link without issuing or regenerati
   expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code`);
   await click("공유");
   expect(state.copy).toHaveBeenCalledTimes(2);
-  expect(button("초대 링크 재발급")).toBeUndefined();
+  expect(button("초대 링크 재발급")).toBeDefined();
   expect(state.regenerate).not.toHaveBeenCalled();
 });
 
@@ -169,10 +167,24 @@ it("does not expose an invite from a nonmember detail response", async () => {
   expect(state.regenerate).not.toHaveBeenCalled();
 });
 
-it.each(["PENDING", undefined])("hides even a cached invite link for invalid role %s", async (role) => {
+it.each(["PENDING", "LEFT", undefined])("hides even a cached invite link for invalid role %s", async (role) => {
   await act(async () => root.render(<AddMemberPanel roomId="selected-room" role={role} inviteCode="cached-code" isRoomDetailLoading={false} isRoomDetailError={false} />));
   expect(document.querySelector('input[aria-label="초대 링크"]')).toBeNull();
   expect(button("복사").disabled).toBe(true);
   expect(button("초대 링크 재발급")).toBeUndefined();
   expect(state.regenerate).not.toHaveBeenCalled();
+});
+
+it("lets MEMBER use the existing reissue button once for rapid clicks", async () => {
+  state.detail!.role = "MEMBER";
+  await render("MEMBER"); await click("제주 여행 더보기"); await click("초대하기");
+  await act(async () => { button("초대 링크 재발급").click(); button("초대 링크 재발급").click(); });
+  expect(state.regenerate).toHaveBeenCalledTimes(1);
+  expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "explicit" });
+});
+it("allows MEMBER automatic fallback without presenting it as an explicit issuance", async () => {
+  state.detail!.role = "MEMBER"; state.detail!.inviteCode = null;
+  await render("MEMBER"); await click("제주 여행 더보기"); await click("초대하기");
+  expect(state.regenerate).toHaveBeenCalledTimes(1);
+  expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "automatic" });
 });

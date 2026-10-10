@@ -37,7 +37,6 @@ export function RoomMembersSection() {
           inviteCode={roomDetail?.inviteCode}
           memberCount={roomDetail?.memberCount}
           role={roomDetail?.role}
-          isHost={isHost}
           isRoomDetailLoading={isDetailLoading}
           isRoomDetailError={isDetailError}
         />

@@ -69,3 +69,21 @@ it("preserves drafts and original date floor on same-room refresh; cancel and ro
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => root.unmount());
 });
+
+it("does not submit on cancel and submits once for rapid apply clicks", async () => {
+  state.update.mockClear();
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const room = { id: "r", title: "old", destinations: ["서울"], startDate: "2027-01-01", endDate: "2027-01-03" };
+  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  await act(async () => state.fields!.onTitleChange("cancelled"));
+  await act(async () => container.querySelectorAll("button")[0].click());
+  expect(state.update).not.toHaveBeenCalled();
+  await act(async () => state.fields!.onTitleChange("new"));
+  await act(async () => {
+    container.querySelectorAll("button")[1].click();
+    container.querySelectorAll("button")[1].click();
+  });
+  expect(state.update).toHaveBeenCalledTimes(1);
+  await act(async () => root.unmount());
+});

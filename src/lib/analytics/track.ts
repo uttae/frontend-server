@@ -47,6 +47,8 @@ export const AnalyticsEvents = {
   reorderItinerary: "reorder_itinerary",
   search: "view_search_results",
   sharePlan: "share",
+  inviteCodeIssued: "invite_code_issued",
+  roomInfoUpdated: "room_info_updated",
   chatMessageSent: "chat_message_sent",
   tutorialBegin: "tutorial_begin",
   tutorialComplete: "tutorial_complete",
@@ -84,6 +86,8 @@ export type LandingSectionId =
   | "final_cta";
 
 export type AnalyticsEventParamsMap = {
+  [AnalyticsEvents.inviteCodeIssued]: { room_id: string; role: AnalyticsRoomRole };
+  [AnalyticsEvents.roomInfoUpdated]: { room_id: string; role: AnalyticsRoomRole };
   [AnalyticsEvents.expenseCreated]: { room_id: string };
   [AnalyticsEvents.expenseUpdated]: { room_id: string };
   [AnalyticsEvents.expenseDeleted]: { room_id: string };
