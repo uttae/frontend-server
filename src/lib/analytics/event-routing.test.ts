@@ -17,6 +17,7 @@ afterEach(() => { vi.resetModules(); vi.resetAllMocks(); vi.unstubAllGlobals(); 
 it.each([
   ["sign_up", "both"], ["login", "both"], ["create_plan", "both"],
   ["invite_view", "both"], ["join_group", "both"], ["view_plan", "both"],
+  ["invite_code_issued", "amplitude"], ["room_info_updated", "amplitude"],
   ["share", "both"], ["add_to_bookmark", "both"], ["add_to_itinerary", "both"],
   ["expense_created", "both"], ["packing_item_added", "both"], ["page_view", "both"],
   ["view_search_results", "amplitude"], ["view_place", "amplitude"],

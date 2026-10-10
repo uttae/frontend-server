@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useRegenerateInviteCode } from "@/hooks/useRooms";
-import { isHostRole, isRoomMemberRole } from "@/lib/rooms";
+import { isRoomMemberRole } from "@/lib/rooms";
 import {
   bucketMemberCount,
   toAnalyticsRoomRole,
@@ -19,8 +19,6 @@ type Props = {
   inviteCode: string | null | undefined;
   memberCount?: number;
   role?: string;
-  /** 방장 여부를 이미 계산한 화면은 넘긴다 — 없으면 `role`로 판단 */
-  isHost?: boolean;
   isRoomDetailLoading: boolean;
   isRoomDetailError: boolean;
   /** 안내 문구 — 모달처럼 바깥에서 본문으로 보여줄 때는 false */
@@ -52,15 +50,14 @@ export function AddMemberPanel({
   inviteCode,
   memberCount,
   role,
-  isHost,
   isRoomDetailLoading,
   isRoomDetailError,
   showDescription = true,
 }: Readonly<Props>) {
   const roomIdTrim = roomId.trim();
-  // 초대 코드 발급·재발급 API는 방장 전용 — 참여자는 서버가 내려준 코드가 있을 때만 링크를 보여준다
   const canShareInvite = isRoomMemberRole(role) && !isRoomDetailError;
-  const canIssue = canShareInvite && (isHost ?? isHostRole(role));
+  const canIssue = canShareInvite && !isRoomDetailLoading;
+  const issueInFlight = useRef(false);
   const detailInviteCode = normalizeInviteCode(inviteCode);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,11 +88,14 @@ export function AddMemberPanel({
 
     autoIssueAttemptedRoomRef.current = roomIdTrim;
 
-    regenerate(roomIdTrim, {
+    issueInFlight.current = true;
+    regenerate({ roomId: roomIdTrim, trigger: "automatic" }, {
       onSuccess: ({ inviteCode: newCode }) => {
+        issueInFlight.current = false;
         setIssuedCode(newCode);
       },
       onError: () => {
+        issueInFlight.current = false;
         toast.error("초대 링크를 발급하지 못했어요.");
       },
     });
@@ -166,13 +166,16 @@ export function AddMemberPanel({
   }
 
   function handleRegenerate() {
-    if (!roomIdTrim.length || !canIssue || isRegenerating) return;
+    if (!roomIdTrim.length || !canIssue || isRegenerating || issueInFlight.current) return;
     setCopied(false);
-    regenerate(roomIdTrim, {
+    issueInFlight.current = true;
+    regenerate({ roomId: roomIdTrim, trigger: "explicit" }, {
       onSuccess: ({ inviteCode: newCode }) => {
+        issueInFlight.current = false;
         setIssuedCode(newCode);
       },
       onError: () => {
+        issueInFlight.current = false;
         toast.error("초대 링크를 재발급하지 못했어요.");
       },
     });

@@ -1,3 +1,5 @@
+import { AnalyticsEvents } from "@/lib/analytics/track";
+import { trackRoomMutation } from "@/lib/analytics/room-mutation";
 import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
 import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
@@ -510,7 +512,9 @@ export function useUpdateRoom() {
       data: RoomUpdateRequest;
       previousStartDate?: string | null;
       previousEndDate?: string | null;
-    }) => updateRoom(roomId, data),
+    }) => trackRoomMutation(queryClient, roomId, AnalyticsEvents.roomInfoUpdated,
+      () => updateRoom(roomId, data), result => result.role),
+    retry: false,
     onSuccess: async (
       updated,
       { roomId, data, previousStartDate, previousEndDate },
@@ -575,8 +579,12 @@ export function useRegenerateInviteCode() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (roomId: string) => regenerateInviteCode(roomId),
-    onSuccess: (data, roomId) => {
+    mutationFn: ({ roomId, trigger }: { roomId: string; trigger: "explicit" | "automatic" }) =>
+      trigger === "automatic" ? regenerateInviteCode(roomId) :
+        trackRoomMutation(queryClient, roomId, AnalyticsEvents.inviteCodeIssued,
+          () => regenerateInviteCode(roomId)),
+    retry: false,
+    onSuccess: (data, { roomId }) => {
       queryClient.setQueryData<RoomDetail>(
         roomDetailQueryKey(roomId),
         (prev) => (prev ? { ...prev, inviteCode: data.inviteCode } : prev),

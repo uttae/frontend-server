@@ -11,6 +11,8 @@ const roomScopes = {
   cta_click: "none",
   section_view: "none",
   share: "required",
+  invite_code_issued: "required",
+  room_info_updated: "required",
   join_group: "required",
   create_plan: "required",
   view_plan: "required",

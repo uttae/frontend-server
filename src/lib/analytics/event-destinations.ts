@@ -12,6 +12,8 @@ const eventDestinations = {
   join_group: "both",
   view_plan: "both",
   share: "both",
+  invite_code_issued: "amplitude",
+  room_info_updated: "amplitude",
   add_to_bookmark: "both",
   add_to_itinerary: "both",
   expense_created: "both",

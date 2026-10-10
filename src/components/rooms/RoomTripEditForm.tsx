@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -85,7 +85,10 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
     !isPending &&
     isDirty;
 
+  const submitInFlight = useRef(false);
   const submitUpdate = useCallback(() => {
+    if (submitInFlight.current || readOnly) return;
+    submitInFlight.current = true;
     updateRoom(
       {
         roomId: room.id,
@@ -99,6 +102,7 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
         previousEndDate: saved.endDate,
       },
       {
+        onSettled: () => { submitInFlight.current = false; },
         onSuccess: () => {
           setShrinkConfirmOpen(false);
           toast.success("여행 정보가 수정되었어요");
@@ -116,6 +120,7 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
     startDate,
     title,
     updateRoom,
+    readOnly,
     onSaved,
   ]);
 
