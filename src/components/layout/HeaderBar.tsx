@@ -23,6 +23,7 @@ import {
   formatRoomTripSubtitleKo,
   tripYmdBoundsFromRoomSources,
 } from "@/lib/plan/tripRange";
+import { HeaderMemberPreview } from "./HeaderMemberPreview";
 import { FEEDBACK_FORM_CLICKED_KEY } from "./sidebarFeedbackForm";
 
 const mobileIcon = {
@@ -160,7 +161,7 @@ const HeaderBar = ({
                     <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
                   </button>
                   <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
-                    <MobileMenuIcon src={mobileIcon.members} />멤버 관리
+                    <MobileMenuIcon src={mobileIcon.members} />초대하기
                   </Link>
                   <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
                     <MobileMenuIcon src={mobileIcon.feedback} />피드백
@@ -181,7 +182,7 @@ const HeaderBar = ({
             </Link>
             <div className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border" aria-hidden />
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 px-5 pr-2">
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 px-5">
             <div className="min-w-0 bg-white">
               {currentRoom || displayTitle ? (
                 <>
@@ -199,6 +200,7 @@ const HeaderBar = ({
                 <span className="block truncate text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-tight text-dark-gray">방 정보 없음</span>
               )}
             </div>
+            <HeaderMemberPreview />
           </div>
         </div>
       )}

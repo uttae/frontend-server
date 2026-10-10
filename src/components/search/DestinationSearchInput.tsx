@@ -29,7 +29,15 @@ type Props = {
   leadingIconType?: "search" | "map-pin";
   /** true면 목록에서만 선택 — 입력·드롭다운 동작 동일하게 한 줄 필드 유지 */
   selectionOnly?: boolean;
+  /** `field`: 48px 테두리 입력칸 모양, 하단 안내 문구 없음 (여행 정보 수정 모달) */
+  appearance?: "default" | "field";
 };
+
+function DestinationLeadingIcon({ show, type }: Readonly<{ show: boolean; type: "search" | "map-pin" }>) {
+  if (!show) return null;
+  const Icon = type === "search" ? Search : MapPin;
+  return <Icon size={15} className="shrink-0 text-dark-gray" />;
+}
 
 /**
  * Google Places Autocomplete Data API 기반 목적지 검색.
@@ -44,7 +52,10 @@ export function DestinationSearchInput({
   showLeadingIcon = true,
   leadingIconType = "map-pin",
   selectionOnly = false,
-}: Props) {
+  appearance = "default",
+}: Readonly<Props>) {
+  const isField = appearance === "field";
+  const showHint = selectionOnly && !isField;
   const placesLib = useMapsLibrary("places");
 
   const buildRequest = useCallback(
@@ -174,13 +185,6 @@ export function DestinationSearchInput({
 
   const showDropdown = isOpen && predictions.length > 0;
 
-  const leadingGlyph =
-    showLeadingIcon && leadingIconType === "search" ? (
-      <Search size={15} className="shrink-0 text-dark-gray" />
-    ) : showLeadingIcon ? (
-      <MapPin size={15} className="shrink-0 text-dark-gray" />
-    ) : null;
-
   const showClear = inputValue.trim() !== "";
 
   return (
@@ -189,11 +193,12 @@ export function DestinationSearchInput({
         <div
           className={cn(
             "flex w-full items-center gap-2",
-            selectionOnly &&
-              "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
+            isField
+              ? "h-12 rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary"
+              : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
           )}
         >
-          {leadingGlyph}
+          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} />
           <input
             ref={inputRef}
             aria-label="목적지 검색"
@@ -211,12 +216,13 @@ export function DestinationSearchInput({
                   "aria-autocomplete": "list" as const,
                   "aria-expanded": showDropdown,
                   "aria-haspopup": "listbox" as const,
-                  "aria-describedby": selectionOnlyFooterId,
+                  "aria-describedby": showHint ? selectionOnlyFooterId : undefined,
                 } as const)
               : {})}
             className={cn(
               "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
               selectionOnly && "bg-transparent",
+              isField && "text-text-subtle placeholder:text-text-disabled",
             )}
           />
           {showClear ? (
@@ -264,7 +270,7 @@ export function DestinationSearchInput({
         ) : null}
       </div>
 
-      {selectionOnly ? (
+      {showHint ? (
         <p
           id={selectionOnlyFooterId}
           className="mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"

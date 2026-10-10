@@ -17,6 +17,7 @@ import {
   evictRoomFromClientCaches,
   refreshRoomsList,
   showForcedExitToast,
+  showRoomLeftToast,
 } from "@/lib/stomp/forced-room-exit-dispatch";
 import {
   pathDefersRoomStompRoomTopics,
@@ -159,6 +160,30 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
+  /** 같은 계정이 다른 탭에서 방을 나감 — 이 탭도 방 캐시를 비우고, 그 방을 보고 있으면 홈으로 보낸다 */
+  const notifySelfLeftRoom = useCallback(
+    (roomId: string) => {
+      const rid = roomId.trim();
+      if (!rid) return;
+
+      evictRoomFromClientCaches(queryClientRef.current, rid);
+      refreshRoomsList(queryClientRef.current);
+      showRoomLeftToast(rid);
+
+      if ((getResolvedRoomId()?.trim() ?? "") === rid) {
+        if (forcedExitConsumedRef.current) return;
+        forcedExitConsumedRef.current = true;
+        handleForcedRoomExit();
+        return;
+      }
+
+      if (useSessionStore.getState().currentRoomId?.trim() === rid) {
+        useSessionStore.getState().clearCurrentRoomId();
+      }
+    },
+    [getResolvedRoomId, handleForcedRoomExit],
+  );
+
   const roomChatMessageHandlerRef = useRef<
     ((msg: ServerChatMessage) => void) | null
   >(null);
@@ -190,10 +215,10 @@ export function StompProvider({ children }: { children: ReactNode }) {
         client,
         rid,
         queryClientRef,
-        { onRoomChatMessage },
+        { onRoomChatMessage, onSelfLeftRoom: notifySelfLeftRoom },
       );
     },
-    [detachRoomTopicsOnly, onRoomChatMessage],
+    [detachRoomTopicsOnly, onRoomChatMessage, notifySelfLeftRoom],
   );
 
   const teardownConnectedClient = useCallback(() => {

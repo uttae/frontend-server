@@ -66,12 +66,11 @@ it("retains landing and room footers and removes only the requested navigation e
   expect(source("app/home/(with-header)/layout.tsx")).toContain("<SiteFooter");
   const sidebar = source("components/layout/SideBar.tsx");
   expect(sidebar).not.toContain("PrivacySettingsLink");
+  expect(sidebar).not.toContain("member-settings");
   for (const entry of [
     "search",
     "plan",
     "bookmark",
-    "member-settings",
-    "room-settings",
     "SidebarFeedbackFormButton",
     "openChat",
   ])

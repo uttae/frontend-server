@@ -14,7 +14,7 @@ export function dispatchHostJoinRequestFromStomp(
   nickname: string,
 ): void {
   const label = nickname.trim().length > 0 ? nickname.trim() : "새 멤버";
-  toast(`${label}님이 입장을 요청했습니다`, {
+  toast.success(`${label}님이 입장을 요청했습니다`, {
     duration: HOST_JOIN_REQUEST_TOAST_MS,
   });
 

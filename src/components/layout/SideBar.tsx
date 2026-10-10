@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
-import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import {
   sidebarWireframeIcons as sidebarIcons,
@@ -36,15 +35,9 @@ function isSidebarItemActive(pathname: string, key: string, href: string) {
 function SideBar() {
   const pathname = usePathname();
   const { chatState, openChat } = useChat();
-  const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const { roomId } = useCurrentRoomId();
 
   const isChatActive = chatState === "maximized";
-  const isOnMemberSettings = pathname.startsWith("/member-settings");
-  const isOnRoomSettings = pathname.startsWith("/room-settings");
-  const isOnSettingsArea = isOnMemberSettings || isOnRoomSettings;
-  const showSettingsNotification =
-    pendingJoinRequestsCount > 0 && !isOnSettingsArea;
 
   return (
     <aside
@@ -62,7 +55,7 @@ function SideBar() {
               label={item.label}
               tutorialTarget={item.key}
               isActive={!isChatActive && isSidebarItemActive(pathname, item.key, href)}
-              showDividerBelow={item.key === "packing"}
+              showDividerBelow={item.key === "bookmark" || item.key === "packing"}
             />
           ) : null;
         })}
@@ -78,14 +71,6 @@ function SideBar() {
           <span>채팅</span>
           <SidebarChatUnreadBadge />
         </button>
-        <SidebarNavItem
-          href="/member-settings"
-          icon={sidebarIcons.memberSettings}
-          label="멤버"
-          tutorialTarget="member-settings"
-          isActive={!isChatActive && isOnMemberSettings}
-          showPingBadge={showSettingsNotification}
-        />
       </nav>
       <div className="mt-auto flex w-full shrink-0 flex-col items-center">
         <SidebarFeedbackFormButton />
