@@ -35,7 +35,7 @@ function isSidebarItemActive(pathname: string, key: string, href: string) {
 
 function SideBar() {
   const pathname = usePathname();
-  const { chatState, openChat, closeChat } = useChat();
+  const { chatState, openChat } = useChat();
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const { roomId } = useCurrentRoomId();
 
@@ -62,10 +62,6 @@ function SideBar() {
               label={item.label}
               tutorialTarget={item.key}
               isActive={!isChatActive && isSidebarItemActive(pathname, item.key, href)}
-              onClick={() => {
-                // Keep chat covering the previous page until a different route commits.
-                if (pathname === href || (item.key === "plan" && isSidebarItemActive(pathname, item.key, href))) closeChat();
-              }}
               showDividerBelow={item.key === "packing"}
             />
           ) : null;
@@ -88,7 +84,6 @@ function SideBar() {
           label="멤버"
           tutorialTarget="member-settings"
           isActive={!isChatActive && isOnMemberSettings}
-          onClick={() => { if (pathname === "/member-settings") closeChat(); }}
           showPingBadge={showSettingsNotification}
         />
       </nav>

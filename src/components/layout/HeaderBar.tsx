@@ -12,7 +12,7 @@ import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
 import { FEEDBACK_FORM_URL } from "@/lib/contact";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
-import { buildMobilePlanPanelHref, type MobilePlanPanel } from "@/lib/mobile-view";
+import { isChatPathname, isMobileMapPathname, isPlanPathname, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import { isPackingPath } from "@/lib/room-context-path";
 import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
@@ -41,11 +41,9 @@ function MobileMenuIcon({ src }: { src: string }) {
 }
 
 const HeaderBar = ({
-  mobilePlanPanel = "schedule",
   mobileBackHref,
   mobileBackLabel = "뒤로 가기",
 }: {
-  mobilePlanPanel?: MobilePlanPanel;
   mobileBackHref?: string;
   mobileBackLabel?: string;
 }) => {
@@ -59,8 +57,8 @@ const HeaderBar = ({
   if (menuState.path !== pathname) setMenuState({ path: pathname, open: false });
   const menuOpen = menuState.path === pathname && menuState.open;
   const closeMenu = () => setMenuState({ path: pathname, open: false });
-  const isPlanRoute = pathname === "/plan" || Boolean(pathname?.startsWith("/plan/"));
-  const showMapShortcut = isPlanRoute || pathname === "/bookmark" || pathname === "/cost" || isPackingPath(pathname ?? "");
+  const isMapPanel = isMobileMapPathname(pathname ?? "");
+  const showMapShortcut = isPlanPathname(pathname ?? "") || isMapPanel || isChatPathname(pathname ?? "") || pathname === "/bookmark" || pathname === "/cost" || isPackingPath(pathname ?? "");
   const { dismiss: dismissFeedbackPrompt } = useSessionPromptVisible(FEEDBACK_FORM_CLICKED_KEY);
   const { roomId } = useCurrentRoomId();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -92,8 +90,7 @@ const HeaderBar = ({
     (roomDetail?.id === rid ? roomDetail.title?.trim() : "") ||
     "";
 
-  const isMapPanel = mobilePlanPanel === "map";
-  const mapHref = buildMobilePlanPanelHref(pathname || "/plan", isMapPanel ? "schedule" : "map");
+  const mapHref = isMapPanel ? "/plan" : MOBILE_MAP_PATH;
   const mobileTitle = displayTitle ? (
     <>
       <div className="truncate text-[18px] font-bold leading-[26px] tracking-[-0.02em] text-text">{displayTitle}</div>

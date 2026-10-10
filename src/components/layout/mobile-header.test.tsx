@@ -33,7 +33,7 @@ async function rerender() { await act(async () => root.render(<HeaderBar />)); }
 it("shows the room details and map action in the mobile top navigation", () => {
   expect(host.querySelector("header")?.textContent).toContain("가을 여행");
   expect(host.querySelector("header")?.textContent).toContain("26/10/10 - 26/10/12");
-  expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/plan/room?view=map");
+  expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/map");
   expect(host.querySelector('a[aria-label="홈으로 이동"]')?.getAttribute("href")).toBe("/home");
 });
 
@@ -63,8 +63,21 @@ it("opens the mobile menu with working destinations and closes it with Escape", 
 it.each(["/bookmark", "/cost", "/packing/12345678-1234-1234-1234-123456789abc"])("shows the map shortcut on %s", async pathname => {
   state.pathname = pathname;
   await rerender();
-  expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/plan?view=map");
+  expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/map");
   expect(host.querySelector('button[aria-label="메뉴 열기"]')).not.toBeNull();
+});
+
+it("keeps the map shortcut on the mobile chat screen", async () => {
+  state.pathname = "/chat";
+  await rerender();
+  expect(host.querySelector('a[aria-label="지도 보기"]')?.getAttribute("href")).toBe("/map");
+});
+
+it("switches the shortcut to the schedule on the map screen", async () => {
+  state.pathname = "/map";
+  await rerender();
+  expect(host.querySelector('a[aria-label="일정 보기"]')?.getAttribute("href")).toBe("/plan");
+  expect(host.querySelector('a[aria-label="지도 보기"]')).toBeNull();
 });
 
 it("keeps the map shortcut hidden on search", async () => {

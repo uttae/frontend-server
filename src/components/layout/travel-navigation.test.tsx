@@ -3,8 +3,23 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc" }));
-vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.query) }));
+const state = vi.hoisted(() => ({ pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc", replace: (() => {}) as (href: string) => void }));
+// 실제 이동처럼 push·back이 경로와 기록을 바꾼다 — 다음 render()에서 반영된다
+const history = vi.hoisted(() => [] as string[]);
+const entryStates = vi.hoisted(() => [] as unknown[]);
+const push = vi.hoisted(() => (href: string) => {
+  history.push(state.pathname);
+  entryStates.push(window.history.state);
+  window.history.replaceState(null, "");
+  state.pathname = href.split("?")[0];
+});
+const back = vi.hoisted(() => () => {
+  state.pathname = history.pop() ?? state.pathname;
+  window.history.replaceState(entryStates.pop() ?? null, "");
+});
+// 브라우저 기록 개수도 가짜 기록에 맞춘다 — 처음 들어온 페이지 1개 + push한 개수
+Object.defineProperty(window.history, "length", { configurable: true, get: () => history.length + 1 });
+vi.mock("next/navigation", () => ({ usePathname: () => state.pathname, useSearchParams: () => new URLSearchParams(state.query), useRouter: () => ({ replace: state.replace, push, back }) }));
 vi.mock("next/link", () => ({ default: ({ href, children, ...props }: React.ComponentProps<"a">) => <a href={href} {...props}>{children}</a> }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: state.mobile }) }));
 vi.mock("@/hooks/useHostJoinRequestsBadgeCount", () => ({ useHostJoinRequestsBadgeCount: () => 2 }));
@@ -18,19 +33,31 @@ vi.mock("@/components/map", () => ({ MapWithDetailPanel: ({ hidden }: { hidden?:
 vi.mock("@/components/chat", () => ({ ChatPanel: ({ inline }: { inline?: boolean }) => <div data-chat data-inline={inline ? "true" : "false"} /> }));
 import { MainLayoutChrome } from "./MainLayoutChrome";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
+import { useChat } from "@/hooks/useChat";
+
+/** 채팅 패널 헤더의 최소화·닫기 버튼 대신 — 실제 `useChat` 동작을 누른다 */
+function ChatControls() {
+  const { minimizeChat, closeChat } = useChat();
+  return <div><button data-control="minimize" onClick={minimizeChat} /><button data-control="close" onClick={closeChat} /></div>;
+}
 
 let host: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  Object.assign(state, { pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc" });
-  useChatPanelStore.getState().closeChat();
+  Object.assign(state, { pathname: "/plan/room", query: "", mobile: false, unread: 0, roomId: "12345678-1234-1234-1234-123456789abc", replace: vi.fn() });
+  useChatPanelStore.setState({ minimized: false });
+  history.length = 0;
+  entryStates.length = 0;
+  window.history.replaceState(null, "");
   HTMLElement.prototype.scrollTo = vi.fn();
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   host.addEventListener("click", event => event.preventDefault());
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
-async function render() { await act(async () => root.render(<MainLayoutChrome><article>일정 본문</article></MainLayoutChrome>)); }
+async function render() { await act(async () => root.render(<><MainLayoutChrome><article>일정 본문</article></MainLayoutChrome><ChatControls /></>)); }
+async function control(name: "minimize" | "close") { await act(async () => host.querySelector<HTMLButtonElement>(`[data-control="${name}"]`)!.click()); await render(); }
+async function openChatFromSidebar() { await act(async () => items()[5].click()); await render(); }
 function nav() { return host.querySelector('nav[aria-label="여행 주요 메뉴"],nav[aria-label="모바일 주요 메뉴"]')!; }
 function items() { return [...nav().querySelectorAll<HTMLAnchorElement | HTMLButtonElement>("a,button")]; }
 function active() { return [...nav().querySelectorAll('[aria-current="page"], [aria-pressed="true"]')]; }
@@ -59,35 +86,75 @@ it("switches between expenses and packing inside the mobile travel tools tab", a
   expect(nav().querySelector('[aria-current="page"]')?.getAttribute("aria-label")).toBe("여행 도구");
 });
 
-it("desktop selects chat alone in the content panel and route links restore route content", async () => {
+it("desktop chat menu opens the /chat route next to the map, and route links leave it", async () => {
   await render();
   expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "검색", "북마크", "가계부", "준비물", "채팅", "멤버"]);
   expect(active()).toHaveLength(1);
-  await act(async () => items()[5].click());
+  await openChatFromSidebar();
+  expect(state.pathname).toBe("/chat");
   expect(active()).toEqual([items()[5]]);
-  expect(host.querySelector("article")).toBeNull();
-  expect(host.querySelectorAll("[data-chat]")).toHaveLength(1);
-  expect(host.querySelector("[data-main-content-scroll] [data-chat]")).not.toBeNull();
-  expect(host.querySelectorAll("[data-map]")).toHaveLength(1);
-  await act(async () => items()[0].dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true })));
-  expect(host.querySelector("article")).not.toBeNull();
+  // 최대화 채팅은 `/chat` 페이지(본문)가 그린다 — 레이아웃은 지도만 옆에 둔다
+  expect(host.querySelector("[data-chat]")).toBeNull();
+  expect(host.querySelectorAll("[data-map]:not([hidden])")).toHaveLength(1);
+  state.pathname = "/plan/room"; await render();
+  expect(active()).toEqual([items()[0]]);
   expect(host.querySelector("[data-chat]")).toBeNull();
 });
-it("minimizing desktop chat restores the route content and docks chat over the map", async () => {
+it("minimizing desktop chat returns to the previous route and docks chat over the map", async () => {
   await render();
-  await act(async () => useChatPanelStore.getState().openChat());
-  expect(host.querySelector('[data-main-content-scroll] [data-chat][data-inline="true"]')).not.toBeNull();
-  await act(async () => useChatPanelStore.getState().minimizeChat());
+  await openChatFromSidebar();
+  await control("minimize");
+  expect(state.pathname).toBe("/plan/room");
   expect(host.querySelector("article")).not.toBeNull();
   expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
   expect(host.querySelector("[data-map]")).not.toBeNull();
 });
-it("external route changes close chat too", async () => {
-  await render(); await act(async () => useChatPanelStore.getState().openChat());
+it("minimizing goes back in history instead of stacking entries; direct /chat entry replaces to /plan", async () => {
   state.pathname = "/bookmark"; await render();
-  expect(useChatPanelStore.getState().chatState).toBe("closed");
+  await openChatFromSidebar();
+  await control("minimize");
+  expect(state.pathname).toBe("/bookmark");
+  expect(history).toEqual([]);
+  // 새 탭에서 주소로 바로 들어온 `/chat` — 기록이 하나뿐이라 /plan으로 바꾼다
+  state.pathname = "/chat"; await render();
+  await control("close");
+  expect(state.replace).toHaveBeenLastCalledWith("/plan");
+});
+it("leaving /chat through a menu closes chat without a minimized panel", async () => {
+  await render();
+  await openChatFromSidebar();
+  state.pathname = "/bookmark"; await render();
   expect(host.querySelector("[data-chat]")).toBeNull();
   expect(active()).toEqual([items()[2]]);
+});
+it.each(["minimize", "close"] as const)("%s uses /plan for direct chat entry even with unrelated browser history", async action => {
+  history.push("https://external.example");
+  state.pathname = "/chat";
+  await render();
+  await control(action);
+  expect(state.replace).toHaveBeenLastCalledWith("/plan");
+  expect(history).toEqual(["https://external.example"]);
+  expect(useChatPanelStore.getState().minimized).toBe(action === "minimize");
+});
+it("minimized chat follows route changes and same-menu clicks", async () => {
+  await render();
+  await openChatFromSidebar();
+  await control("minimize");
+  state.pathname = "/bookmark"; await render();
+  expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
+  await act(async () => nav().querySelector<HTMLAnchorElement>('a[href="/bookmark"]')!.click());
+  await render();
+  expect(useChatPanelStore.getState().minimized).toBe(true);
+  expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
+});
+it("closing the chat on /chat returns to the previous route; reopening comes back to /chat", async () => {
+  state.pathname = "/bookmark"; await render();
+  await openChatFromSidebar();
+  await control("close");
+  expect(state.pathname).toBe("/bookmark");
+  expect(host.querySelector("[data-chat]")).toBeNull();
+  await openChatFromSidebar();
+  expect(state.pathname).toBe("/chat");
 });
 it.each([[4, "4"], [120, "99+"]])("retains unread value %i and the separate feedback survey", async (count, label) => {
   state.unread = count; await render();
@@ -108,19 +175,34 @@ it("shows labeled feedback and bug report links in the sidebar", async () => {
 it("mobile uses the four Figma destinations, with travel tools opening expenses", async () => {
   state.mobile = true; await render();
   expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "북마크", "여행 도구", "채팅"]);
-  expect(items().map(x => x.getAttribute("href"))).toEqual(["/plan/room", "/bookmark", "/cost", "/plan/room?view=chat"]);
+  expect(items().map(x => x.getAttribute("href"))).toEqual(["/plan/room", "/bookmark", "/cost", "/chat"]);
   expect(nav().className).toContain("safe-area-inset-bottom");
   expect(nav().querySelector('a[href="/search"]')).toBeNull();
   expect(items().every(item => item.querySelector('[style*="mask"]'))).toBe(true);
   expect(host.querySelector("article")!.compareDocumentPosition(nav()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  state.query = "view=map"; await render();
+  // 지도·채팅은 각자의 페이지가 본문을 그리고, 레이아웃은 탭만 고른다
+  state.pathname = "/map"; await render();
   expect(active()).toEqual([items()[0]]);
-  expect(host.querySelector("article")).toBeNull();
-  expect(host.querySelectorAll("[data-map]")).toHaveLength(1);
-  state.query = "view=chat"; await render();
+  expect(items()[0].getAttribute("href")).toBe("/plan");
+  expect(host.querySelector("article")).not.toBeNull();
+  state.pathname = "/chat"; await render();
   expect(active()).toEqual([items()[3]]);
-  expect(host.querySelectorAll("[data-chat]")).toHaveLength(1);
+  expect(host.querySelector("[data-chat]")).toBeNull();
   expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
+});
+
+it("moves old mobile ?view=map|chat links to /map and /chat", async () => {
+  state.mobile = true;
+  state.query = "view=map"; await render();
+  expect(state.replace).toHaveBeenLastCalledWith("/map");
+  state.query = "view=chat"; await render();
+  expect(state.replace).toHaveBeenLastCalledWith("/chat");
+  // 옮기는 동안에는 일정 본문을 그리지 않는다(깜빡임 방지)
+  expect(host.querySelector("article")).toBeNull();
+  vi.mocked(state.replace).mockClear();
+  state.mobile = false; await render();
+  expect(state.replace).not.toHaveBeenCalled();
+  expect(host.querySelector("article")).not.toBeNull();
 });
 
 it("shows unread messages on the mobile chat tab", async () => {
@@ -155,18 +237,17 @@ it("uses the back header only within a bookmark folder and on the map", async ()
   state.pathname = "/bookmark";
   await render();
   expect(host.querySelector("header")?.hasAttribute("data-mobile-back-href")).toBe(false);
-  state.pathname = "/plan/room";
-  state.query = "view=map";
+  state.pathname = "/map";
   await render();
-  expect(host.querySelector("header")?.getAttribute("data-mobile-back-href")).toBe("/plan/room");
-  state.query = "view=chat";
+  expect(host.querySelector("header")?.getAttribute("data-mobile-back-href")).toBe("/plan");
+  state.pathname = "/chat";
   await render();
   expect(host.querySelector("header")?.hasAttribute("data-mobile-back-href")).toBe(false);
 });
 
 it("cost follows bookmarks, selects alone and closes chat", async () => {
   await render();
-  await act(async () => useChatPanelStore.getState().openChat());
+  await openChatFromSidebar();
   const cost = nav().querySelector<HTMLAnchorElement>('a[href="/cost"]');
   expect(cost).not.toBeNull();
   await act(async () => cost!.click());
@@ -201,16 +282,17 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
   expect(host.querySelector("[data-main-content-scroll]")?.className).toContain("overflow-hidden");
   expect(host.querySelector("[data-main-content-scroll]")?.className).not.toContain("overflow-y-auto");
   if (!mobile) {
-    await act(async () => items()[5].click());
+    await openChatFromSidebar();
     expect(active()).toEqual([items()[5]]);
-    expect(host.querySelector("[data-chat]")).not.toBeNull();
-    expect(host.querySelector("article")).toBeNull();
-    expect(host.querySelector("[data-map]")).not.toBeNull();
-    await act(async () => useChatPanelStore.getState().minimizeChat());
+    // 준비물은 지도 없이 전체 폭이지만, 채팅(`/chat`)은 지도 옆에 연다
+    expect(host.querySelector("[data-map]:not([hidden])")).not.toBeNull();
+    await control("minimize");
+    expect(state.pathname).toBe(`/packing/${state.roomId}`);
     expect(host.querySelector("article")).not.toBeNull();
     expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
     expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
-    await act(async () => useChatPanelStore.getState().closeChat());
+    await control("close");
+    expect(host.querySelector("[data-chat]")).toBeNull();
     expect(host.querySelector("article")).not.toBeNull();
     expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
     expect(active().map(item => item.getAttribute("aria-label"))).toEqual(["준비물"]);
@@ -220,26 +302,26 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
   }
 });
 
-it('keeps chat visible until another route commits, without revealing the old packing page', async () => {
+it('keeps /chat until another route commits, then shows that route', async () => {
  state.pathname=`/packing/${state.roomId}`;
  await render();
- await act(async()=>items()[5].click());
+ await openChatFromSidebar();
  await act(async()=>items()[6].click());
- expect(host.querySelector('article')).toBeNull();
- expect(host.querySelector('[data-chat]')).not.toBeNull();
+ expect(state.pathname).toBe('/chat');
+ expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['채팅']);
  state.pathname='/member-settings';
  await render();
  expect(host.querySelector('[data-chat]')).toBeNull();
- expect(host.querySelector('article')).not.toBeNull();
  expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['멤버']);
 });
-it('immediately restores packing when selecting the original tab from chat', async () => {
+it('links back to the original packing tab from /chat', async () => {
  state.pathname=`/packing/${state.roomId}`;
  await render();
- await act(async()=>items()[5].click());
- await act(async()=>items()[4].click());
+ await openChatFromSidebar();
+ expect(items()[4].getAttribute('href')).toBe(`/packing/${state.roomId}`);
+ state.pathname=`/packing/${state.roomId}`; await render();
  expect(host.querySelector('[data-chat]')).toBeNull();
- expect(host.querySelector('article')).not.toBeNull();
+ expect(active().map(item=>item.getAttribute('aria-label'))).toEqual(['준비물']);
 });
 
 it('creates the desktop map lazily and preserves the same map through full-width tabs', async () => {
@@ -268,11 +350,17 @@ it.each([
 ])('selects the visible route after minimizing chat on %s', async (pathname, label) => {
   state.pathname = pathname;
   await render();
-  await act(async () => useChatPanelStore.getState().openChat());
+  await openChatFromSidebar();
   expect(active().map(item => item.getAttribute('aria-label'))).toEqual(['채팅']);
-  await act(async () => useChatPanelStore.getState().minimizeChat());
+  await control('minimize');
+  expect(state.pathname).toBe(pathname);
   expect(active().map(item => item.getAttribute('aria-label'))).toEqual([label]);
   expect(host.querySelector('[data-chat][data-inline="false"]')).not.toBeNull();
-  await act(async () => items()[5].click());
+  // 최소화 중에 채팅에 들어가면 최대화(`/chat`)되고, 메뉴로 나가도 최소화 창이 다시 뜨지 않는다
+  await openChatFromSidebar();
+  expect(state.pathname).toBe('/chat');
   expect(active().map(item => item.getAttribute('aria-label'))).toEqual(['채팅']);
+  expect(host.querySelector('[data-chat]')).toBeNull();
+  state.pathname = pathname; await render();
+  expect(host.querySelector('[data-chat]')).toBeNull();
 });
