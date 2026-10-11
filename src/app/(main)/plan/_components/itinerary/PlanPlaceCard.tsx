@@ -4,7 +4,7 @@ import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
 import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 
 import type { DragEvent } from "react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Clock, Loader2, MapPin } from "lucide-react";
 
@@ -13,7 +13,6 @@ import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { toast } from "sonner";
 
 import { useInViewport } from "@/hooks/useInViewport";
-import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import {
   useDeleteScheduleItem,
   useUpdateScheduleItem,
@@ -21,7 +20,6 @@ import {
 import { usePlanPlaceCardPhoto } from "@/hooks/usePlanPlaceCardPhoto";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 import {
@@ -29,6 +27,8 @@ import {
 } from "@/lib/plan/scheduleTime";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
+import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
 
 import { PlanItemMemoEditor, PlanItemMemoReadOnly } from "./PlanItemMemoForm";
 import { PlanItemTimeEditor } from "./PlanItemTimeForm";
@@ -68,7 +68,34 @@ export function PlanPlaceCard({
   onDragStart,
   onDragEnd,
 }: PlanPlaceCardProps) {
-  const openPlaceOnMap = useOpenPlaceOnMap();
+  const { setSelectedPlace } = useSelectedPlace();
+  const focusPlace = usePlanMapFocusStore((s) => s.focusPlace);
+  const clearFocus = usePlanMapFocusStore((s) => s.clearFocus);
+  const focusRoomId = scheduleTimeEdit?.roomId.trim() ?? "";
+  const focusScheduleId = scheduleTimeEdit?.scheduleId ?? null;
+  /** 고른 장소 — 다른 카드를 고르거나, 같은 카드를 다시 누르거나, 지도 빈 곳을 누를 때까지 강조해 둔다 */
+  const focused = usePlanMapFocusStore(
+    (s) =>
+      s.focus !== null &&
+      s.focus.roomId === focusRoomId &&
+      s.focus.scheduleId === focusScheduleId &&
+      s.focus.itemId === place.itemId,
+  );
+  /** 지도 핀으로 고른 경우에만 값이 있다 — 그때 일정 목록을 이 카드로 스크롤한다 */
+  const focusSeqFromMap = usePlanMapFocusStore((s) =>
+    s.focus?.source === "map" &&
+    s.focus.roomId === focusRoomId &&
+    s.focus.scheduleId === focusScheduleId &&
+    s.focus.itemId === place.itemId
+      ? s.focus.seq
+      : null,
+  );
+  const articleRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (focusSeqFromMap === null) return;
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    articleRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
+  }, [focusSeqFromMap]);
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const blockCardDragRef = useRef(false);
   const [thumbnailRef, thumbnailInViewport] = useInViewport<HTMLElement>();
@@ -169,42 +196,42 @@ export function PlanPlaceCard({
           Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y);
         if (moved > 12) return;
       }
-      const loc = place.location;
-      if (
-        !loc ||
-        typeof loc.lat !== "number" ||
-        typeof loc.lng !== "number" ||
-        !Number.isFinite(loc.lat) ||
-        !Number.isFinite(loc.lng)
-      ) {
-        toast.info("지도에 표시할 위치 정보가 없어요.");
+      if (!focusRoomId || focusScheduleId === null || typeof place.itemId !== "number") return;
+      // 고른 카드를 다시 누르면 강조와 "이 일차 경로만 보기"를 푼다
+      if (focused) {
+        clearFocus();
+        setSelectedPlace(null);
         return;
       }
-      const rawId =
-        typeof place.googlePlaceId === "string"
-          ? place.googlePlaceId.trim()
-          : "";
-      const gid =
-        rawId.length > 0 ? normalizeGooglePlaceResourceId(rawId) : undefined;
-
-      openPlaceOnMap(
-        {
-          name: place.title,
-          category: "",
-          rating: null,
-          ...(gid ? { googlePlaceId: gid } : {}),
-          location: { lat: loc.lat, lng: loc.lng },
-          address: place.subtitle,
-        },
-        { analyticsSource: "plan" },
-      );
+      const loc = place.location;
+      const hasLocation =
+        loc != null &&
+        typeof loc.lat === "number" &&
+        typeof loc.lng === "number" &&
+        Number.isFinite(loc.lat) &&
+        Number.isFinite(loc.lng);
+      // 일정에 넣은 장소는 상세를 보려는 게 아니라 위치를 보려는 것 — 상세(조회 포함) 대신 카드·지도 핀만 강조한다
+      setSelectedPlace(null);
+      focusPlace({
+        roomId: focusRoomId,
+        scheduleId: focusScheduleId,
+        itemId: place.itemId,
+        googlePlaceId: place.googlePlaceId?.trim() || null,
+        location: hasLocation ? { lat: loc.lat, lng: loc.lng } : null,
+        source: "card",
+      });
+      if (!hasLocation) toast.info("지도에 표시할 위치 정보가 없어요.");
     },
     [
-      openPlaceOnMap,
+      clearFocus,
+      focusPlace,
+      focusRoomId,
+      focusScheduleId,
+      focused,
       place.googlePlaceId,
+      place.itemId,
       place.location,
-      place.subtitle,
-      place.title,
+      setSelectedPlace,
     ],
   );
 
@@ -283,14 +310,19 @@ export function PlanPlaceCard({
   return (
     <div className="flex w-full flex-col gap-2">
       <article
+        ref={articleRef}
         draggable={!dragDisabled}
         onPointerDownCapture={handlePointerDownCapture}
         onDragStart={dragDisabled ? undefined : handleDragStart}
         onDragEnd={dragDisabled ? undefined : handleDragEnd}
         onClick={handleCardClick}
+        aria-current={focused || undefined}
         className={cn(
-          "w-full select-none",
+          "w-full select-none transition-colors",
           PLAN_PLACE_CARD_TW.article,
+          // 고른 카드는 계속 켜져 있으므로 배경은 그대로 두고 테두리와 옅게 번지는 파란 그림자로만 표시한다
+          // (그림자 토큰이 없어 파랑 원시 토큰으로 지정)
+          focused && "border-primary shadow-[0_0_12px_var(--blue-200)]",
           dragDisabled
             ? "cursor-default"
             : "cursor-grab active:cursor-grabbing",

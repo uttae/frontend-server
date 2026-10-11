@@ -293,7 +293,9 @@ export function useMobileRouteView({
           if (index >= 0) focusEntry(index, "pan");
         },
         // 처음 들어올 때 — 일정 카드로 들어왔으면 그 장소를 가까이, 경로 보기 버튼이면 일차 전체를 보여 준다
-        camera: focus.key === null ? { kind: initialItemId !== null ? "place" : "fit", seq: 0 } : focus.camera,
+        // 처음 들어올 때는 일정 카드로 왔든 경로 보기 버튼으로 왔든 고른 장소(버튼은 그 일차 첫 장소)를 바로 확대한다 —
+        // 일차 전체를 먼저 맞췄다가 확대하면 지도가 두 번 움직인다. 일차 전체(fit)는 일차 탭·다른 일차로 넘길 때만 쓴다
+        camera: focus.key === null ? { kind: "place", seq: 0 } : focus.camera,
         locations,
         expanded: isExpanded,
         candidate:
@@ -349,7 +351,7 @@ export function useMobileRouteView({
     setExpanded(false);
     setCandidate(null);
     setPreviewIndex(null);
-    setFocus((prev) => ({ key: null, index: 0, camera: { kind: "fit", seq: prev.camera.seq + 1 } }));
+    setFocus((prev) => ({ key: null, index: 0, camera: { kind: "place", seq: prev.camera.seq + 1 } }));
     router.replace(buildMapRouteHref(1));
   };
 

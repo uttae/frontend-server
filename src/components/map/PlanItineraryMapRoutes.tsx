@@ -6,6 +6,7 @@ import { AdvancedMarker, Polyline } from "@vis.gl/react-google-maps";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, type JSX } from "react";
 
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useRoomSchedules } from "@/hooks/useRooms";
 import {
@@ -38,6 +39,7 @@ import {
   usePlanMapDirectionsEpochStore,
 } from "@/stores/plan-map-directions-epoch-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
+import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
 import { useSessionStore } from "@/stores/session-store";
 
 import { PlanItineraryStopMapPin } from "./PlanItineraryStopMapPin";
@@ -73,13 +75,23 @@ export function PlanItineraryMapRoutes({
   const { isSuccess: schedulesHydrated } = useRoomSchedules(rid || null);
 
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
-  // 경로 보기는 선택 장소도 일차 핀으로 강조해 보여 준다 — 일반 선택 핀으로 바꾸지 않는다
-  const selectedNorm =
+  const { isMobileDevice } = useMobileView();
+  const focusPlace = usePlanMapFocusStore((s) => s.focusPlace);
+  // 웹 일정에서 고른 장소 — 그 일차 경로만 그리고 번호 핀을 키운다. 모바일(일반 지도·경로 보기)에서는 쓰지 않는다:
+  // 화면 크기가 바뀌어 PC → 모바일로 넘어가도 남은 포커스가 모바일 지도에 걸리지 않게 읽는 쪽에서도 막는다
+  const webFocus = usePlanMapFocusStore((s) =>
+    !routeDay && !isMobileDevice && s.focus && s.focus.roomId === rid ? s.focus : null,
+  );
+  const webFocusScheduleId = webFocus?.scheduleId ?? null;
+  const webFocusNorm = webFocus?.googlePlaceId ? normalizeGooglePlaceResourceId(webFocus.googlePlaceId) : null;
+  // 선택 장소는 일반 선택 핀으로 보이므로 같은 번호 핀을 숨긴다. 단 경로 보기와 고른 일정 장소는 번호 핀을 키워 보인다
+  const selectedGid =
     !routeDay &&
     selectedPlace?.googlePlaceId &&
     selectedPlace.googlePlaceId.trim().length > 0
       ? normalizeGooglePlaceResourceId(selectedPlace.googlePlaceId.trim())
       : null;
+  const selectedNorm = selectedGid !== null && selectedGid !== webFocusNorm ? selectedGid : null;
 
   const visibleByScheduleId = usePlanScheduleRouteVisibilityStore(
     (s) => s.visibleByScheduleId,
@@ -91,14 +103,17 @@ export function PlanItineraryMapRoutes({
   const routeDayScheduleId = routeDay?.scheduleId ?? null;
   const inRouteView = routeDay != null;
   const routesReady = routeDay?.routesReady ?? true;
+  // 경로 보기·웹에서 고른 장소가 있으면 그 일차 하나만(일차 표시 토글보다 우선)
+  const singleDayScheduleId = inRouteView ? routeDayScheduleId : webFocusScheduleId;
+  const singleDay = inRouteView || webFocusScheduleId !== null;
   const visibleScheduleIds = useMemo(
     () => {
-      if (inRouteView) return routeDayScheduleId !== null ? [routeDayScheduleId] : [];
+      if (singleDay) return singleDayScheduleId !== null ? [singleDayScheduleId] : [];
       return Object.keys(visibleByScheduleId)
         .map(Number)
         .filter((id) => Number.isFinite(id) && visibleByScheduleId[id] === true);
     },
-    [inRouteView, routeDayScheduleId, visibleByScheduleId],
+    [singleDay, singleDayScheduleId, visibleByScheduleId],
   );
 
   const directionsEpoch = usePlanMapDirectionsEpochStore((s) =>
@@ -321,9 +336,9 @@ export function PlanItineraryMapRoutes({
     () =>
       filterVisiblePlanMapStops(
         stopsForOffset,
-        inRouteView ? visibleScheduleIds : visibilityOrder,
+        singleDay ? visibleScheduleIds : visibilityOrder,
       ),
-    [inRouteView, stopsForOffset, visibilityOrder, visibleScheduleIds],
+    [singleDay, stopsForOffset, visibilityOrder, visibleScheduleIds],
   );
 
   const placeByScheduleAndItemId = useMemo(() => {
@@ -356,7 +371,12 @@ export function PlanItineraryMapRoutes({
     const legacyId = normalizeGooglePlaceResourceId(gid);
     const dayColor =
       routeColorByScheduleId.get(scheduleId) ?? fallbackRouteStroke;
-    const focused = routeDay != null && routeDay.focusedItemId === place.itemId;
+    const focused =
+      routeDay != null
+        ? routeDay.focusedItemId === place.itemId
+        : webFocus !== null &&
+          webFocus.scheduleId === scheduleId &&
+          webFocus.itemId === place.itemId;
     const itemId = place.itemId;
     stopMarkers.push(
       <AdvancedMarker
@@ -381,6 +401,17 @@ export function PlanItineraryMapRoutes({
             },
             { analyticsSource: "plan", preserveMapZoom: true },
           );
+          // 웹: 상세와 함께 그 일정 카드를 강조·스크롤하고 그 일차 경로만 보인다
+          if (!isMobileDevice && typeof itemId === "number") {
+            focusPlace({
+              roomId: rid,
+              scheduleId,
+              itemId,
+              googlePlaceId: legacyId,
+              location: loc,
+              source: "map",
+            });
+          }
         }}
       >
         <PlanItineraryStopMapPin
