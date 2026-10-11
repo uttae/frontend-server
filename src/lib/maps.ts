@@ -290,7 +290,7 @@ export function buildPlanItineraryRouteConnectorPaths({
 }
 
 /**
- * 서버가 준 Google encoded polyline을 지도 좌표로 디코딩합니다.
+ * 서버가 준 encoded polyline을 지도 좌표로 디코딩합니다.
  * 폴리라인은 백엔드 경로 응답에 실려 오므로 여기서 Routes API를 호출하지 않습니다.
  */
 export async function decodePlanSegmentPathLatLng(

@@ -65,7 +65,7 @@ export type ScheduleItemRouteLeg = {
   distanceMeters: number;
   durationSeconds: number;
   travelMode: string;
-  /** 지도 폴리라인용 Google encoded polyline — 경로에 폴리라인이 없으면 서버가 생략 */
+  /** 지도 폴리라인용 encoded polyline — 경로에 폴리라인이 없으면 서버가 생략 */
   encodedPolyline?: string;
 };
 
@@ -90,7 +90,7 @@ export type ScheduleItemRouteBatchItem =
       travelMode: string;
       distanceMeters: number;
       durationSeconds: number;
-      /** 지도 폴리라인용 Google encoded polyline — 폴리라인이 없으면 서버가 생략 */
+      /** 지도 폴리라인용 encoded polyline — 폴리라인이 없으면 서버가 생략 */
       encodedPolyline?: string;
     })
   | {
