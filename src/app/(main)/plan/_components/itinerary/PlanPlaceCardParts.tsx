@@ -1,5 +1,4 @@
-import { Trash2 } from "lucide-react";
-
+import { TrashIcon } from "@/assets/icons";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
 
@@ -71,11 +70,7 @@ export function PlanScheduleItemDeleteButton({
         onDelete();
       }}
     >
-      <Trash2
-        className={PLAN_PLACE_CARD_TW.deleteIconCompact}
-        strokeWidth={2}
-        aria-hidden
-      />
+      <TrashIcon size={PLAN_PLACE_CARD_TW.deleteIconSize} />
     </button>
   );
 }
