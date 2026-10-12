@@ -3,6 +3,7 @@ import type { PlanDayData } from "@/lib/plan/types";
 
 import {
   formatKoreanDateLabel,
+  formatShortDateLabel,
   parseLocalYmd,
 } from "@/lib/plan/tripRange";
 
@@ -23,6 +24,7 @@ export function mergeSchedulesWithPlaces(schedules: RoomSchedule[]): PlanDayData
     id: `schedule-${s.scheduleId}`,
     dayLabel: `${i + 1}일차`,
     dateLabel: formatKoreanDateLabel(parseLocalYmd(s.date)),
+    shortDateLabel: formatShortDateLabel(parseLocalYmd(s.date)),
     places: [],
   }));
 }

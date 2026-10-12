@@ -258,6 +258,7 @@ export function PlanPageView() {
                   scheduleId={sortedSchedules[dayIndex]!.scheduleId}
                   title={day.dayLabel}
                   subtitle={day.dateLabel}
+                  dateHeading={day.shortDateLabel}
                   onRequestDeleteSchedule={
                     sortedSchedules[dayIndex]
                       ? () => handleDeleteScheduleDay(dayIndex)
