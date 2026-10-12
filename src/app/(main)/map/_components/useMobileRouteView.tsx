@@ -16,7 +16,7 @@ import { expensesInScope } from "@/lib/expenses/expense-scope";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import { buildMapRouteHref, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import { insertAnchorAfterItem } from "@/lib/plan/insertPosition";
-import { formatMonthDayKo, summarizeExpensesForMobile } from "@/lib/plan/mobilePlanFormat";
+import { formatMonthDayKo, summarizeExpensesInKrw } from "@/lib/plan/mobilePlanFormat";
 import {
   scheduleIdsToRouteColors,
   sortedScheduleIdsForRouteColors,
@@ -401,7 +401,7 @@ export function useMobileRouteView({
                 orderNumber={entry.orderNumber}
                 badgeColor={dayColor(entry.scheduleId)}
                 highlighted={addPlace.recentlyAddedItemId === entry.itemId}
-                expenseSummary={summarizeExpensesForMobile(itemExpenses(entry.scheduleId, entry.itemId))}
+                expenseSummary={summarizeExpensesInKrw(itemExpenses(entry.scheduleId, entry.itemId))}
                 canAddExpense={expenses.canManage}
                 expanded={isExpanded}
                 onExpand={() => {

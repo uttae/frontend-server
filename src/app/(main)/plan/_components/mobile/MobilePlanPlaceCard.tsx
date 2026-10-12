@@ -22,7 +22,7 @@ type MobilePlanPlaceCardProps = Readonly<{
   badgeColor: string;
   /** 방금 추가된 카드 — 잠깐 강조한다 */
   highlighted?: boolean;
-  /** `45,000 KRW 외 1건` — 없으면 비용 줄을 숨긴다 */
+  /** 원화 합계 `45,000 KRW` — 없으면 비용 줄을 숨긴다 */
   expenseSummary: string | null;
   /** 카드 본문 — 없으면 본문을 눌러도 아무 일도 없다(예: 경로 보기에서 펼친 카드) */
   onOpen?: () => void;

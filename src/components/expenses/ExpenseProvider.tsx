@@ -34,15 +34,14 @@ import {
 import { canManageExpenses } from "@/lib/expenses/expense-policy";
 import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
 import { expenseKeys } from "@/lib/expenses/expense-queries";
-import { expensesInScope, totalsByCurrency, type ExpenseScope } from "@/lib/expenses/expense-scope";
+import { expensesInScope, type ExpenseScope } from "@/lib/expenses/expense-scope";
+import { summarizeExpensesInKrw } from "@/lib/plan/mobilePlanFormat";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { useRoomSchedules } from "@/hooks/useRooms";
 import { useExpenseRecovery } from "@/hooks/useExpenseRecovery";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
 import { ExpenseScopePanel } from "./ExpenseScopePanel";
-import { formatExpenseAmount } from "./ExpenseViews";
 import { cn } from "@/lib/utils";
-import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 
 function useExpenses(roomId: string) {
   const client = useQueryClient();
@@ -434,12 +433,9 @@ export function ExpenseEntryButton({
   if (!context?.canManage) return null;
   const scope = { scheduleId, scheduleItemId, label: scopeLabel, subtitle: scopeSubtitle };
   const scoped = expensesInScope(context.list.data ?? [], scope);
-  const totals = totalsByCurrency(scoped);
   const summaryLabel = !context.list.isSuccess
     ? "비용 보기"
-    : scoped.length
-      ? `비용 ${scoped.length}건 · ${totals.map(({ currency, amount }) => `${formatExpenseAmount(amount)} ${currency}`).join(" · ")}`
-      : label;
+    : (summarizeExpensesInKrw(scoped) ?? label);
   return (
     <button
       type="button"
@@ -458,9 +454,9 @@ export function ExpenseEntryButton({
           context.openScope(scope);
         }
       }}
-      className={cn(className, "min-w-0 max-w-full whitespace-normal break-words text-left", scoped.length > 0 && PLAN_PLACE_CARD_TW.triggerButtonActive, "disabled:cursor-not-allowed disabled:opacity-50")}
+      className={cn(className, "min-w-0 max-w-full text-left", "disabled:cursor-not-allowed disabled:opacity-50")}
     >
-      {icon}{summaryLabel}
+      {icon}<span className="min-w-0 truncate">{summaryLabel}</span>
     </button>
   );
 }

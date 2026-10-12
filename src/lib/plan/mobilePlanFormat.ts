@@ -22,26 +22,10 @@ export function formatMonthDayKo(ymd: string): string {
 }
 
 /**
- * 모바일 비용 요약 — 지출이 가장 많은 통화의 합계만 보여주고, 다른 통화 지출은 건수로 붙인다.
- * 예: `357 KRW`, `357 KRW 외 1건`. 지출이 없으면 null.
+ * 일정 비용 요약(PC·모바일 일정 카드와 일차) — 원화(KRW) 합계 하나만 보인다(예: `130,200 KRW`).
+ * 다른 통화 비용은 가계부에서 본다. 원화 비용이 없으면 null.
  */
-export function summarizeExpensesForMobile(expenses: readonly Expense[]): string | null {
-  if (expenses.length === 0) return null;
-  const countByCurrency = new Map<string, number>();
-  for (const expense of expenses) {
-    countByCurrency.set(expense.currency, (countByCurrency.get(expense.currency) ?? 0) + 1);
-  }
-  const totals = totalsByCurrency(expenses);
-  const [first, ...rest] = totals;
-  if (!first) return null;
-  // 건수가 같으면 먼저 나온 통화를 쓴다(totalsByCurrency는 등장 순서를 유지)
-  const primary = rest.reduce((best, current) =>
-    (countByCurrency.get(current.currency) ?? 0) > (countByCurrency.get(best.currency) ?? 0)
-      ? current
-      : best,
-    first,
-  );
-  const others = expenses.length - (countByCurrency.get(primary.currency) ?? 0);
-  const label = `${formatExpenseAmount(primary.amount)} ${primary.currency}`;
-  return others > 0 ? `${label} 외 ${others}건` : label;
+export function summarizeExpensesInKrw(expenses: readonly Expense[]): string | null {
+  const krw = totalsByCurrency(expenses).find((total) => total.currency === "KRW");
+  return krw ? `${formatExpenseAmount(krw.amount)} KRW` : null;
 }
