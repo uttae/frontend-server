@@ -169,7 +169,14 @@ export function PlanPageView() {
   const pageContentClassName =
     "@container/plan space-y-2.5 overflow-x-auto pb-8";
 
-  const pageHeader = <MainPageHeader title="일정" />;
+  // 제목과 첫 일차 사이는 20px(목록 간격 10px + 아래 여백 10px)
+  const pageHeader = (
+    <MainPageHeader
+      className="pb-2.5"
+      title="일정"
+      description="현재 진행 중인 일정을 확인하세요."
+    />
+  );
 
   const deleteDayDialog = dayToDelete ? (
     <ConfirmDialog
