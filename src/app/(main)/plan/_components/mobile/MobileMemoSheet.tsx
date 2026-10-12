@@ -71,7 +71,7 @@ export function MobileMemoSheet({
             disabled={isPending}
             rows={5}
             placeholder="메모를 입력하세요"
-            className="block size-full resize-none bg-transparent px-3 text-body-s-regular text-text outline-none [scrollbar-color:var(--color-border-default)_transparent] [scrollbar-width:thin] placeholder:text-text-subtle"
+            className="block size-full resize-none bg-transparent px-3 text-body-m-regular text-text outline-none [scrollbar-color:var(--color-border-default)_transparent] [scrollbar-width:thin] placeholder:text-text-subtle"
           />
         </div>
       </label>
