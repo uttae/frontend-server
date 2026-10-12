@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { act, create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { setSessionUserCache } from "@/lib/session-user-cache";
@@ -12,6 +12,10 @@ const stomp = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
 }));
 const stompClient = { subscribe: stomp.subscribe };
+/** 버튼 안 `<span>` 라벨까지 이어 붙인 글자 */
+const textOf = (node: ReactTestInstance): string =>
+  node.children.map((child) => (typeof child === "string" ? child : textOf(child))).join("");
+
 vi.mock("@/contexts/StompContext", () => ({
   useStompContext: () => ({ connected: stomp.connected, client: stompClient }),
 }));
@@ -610,7 +614,7 @@ it("shares one room subscription across route children and resets it on selected
   gateState.roomContextReady = true;
   await act(async () => { renderer.update(tree("장소 비용")); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(renderer.root.findAllByType("button").some(b => b.children.join("").includes("장소 비용"))).toBe(true);
+  expect(renderer.root.findAllByType("button").some(b => textOf(b).includes("장소 비용"))).toBe(true);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   expect(stomp.subscribe.mock.calls[0][0]).toBe("/topic/rooms/r/expenses");
   await act(async () => { renderer.update(tree("일차 비용")); });
@@ -648,7 +652,7 @@ it("mobile plan shares the provider with the cost page while day/place entries k
   expect(renderer.root.findAllByType("a").some(a => a.props.href === "/cost")).toBe(false);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   for (const [label, initial] of [["일차 비용", { scheduleId: 10 }], ["장소 비용", { scheduleId: 10, scheduleItemId: 20 }]] as const) {
-    const button = renderer.root.findAllByType("button").find(b => b.children.join("").includes(label))!;
+    const button = renderer.root.findAllByType("button").find(b => textOf(b).includes(label))!;
     await act(async () => button.props.onClick({ stopPropagation: () => {} }));
     expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(1);
     expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual(initial);
@@ -754,8 +758,7 @@ it("opens a place cost list instead of editing only the latest linked expense", 
     client.setQueryData(scheduleItemsQueryKey("r", 2), [{ itemId: 3, title: "경복궁" }]);
   });
   const button = renderer.root.findByType("button");
-  expect(button.children.join("")).toContain("비용 2건");
-  expect(button.children.join("")).toContain("24,690 KRW");
+  expect(button.findByType("span").children.join("")).toBe("24,690 KRW");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
   expect(renderer.root.findAllByType("h2").some(heading => heading.children.join("") === "장소 비용")).toBe(true);
@@ -772,7 +775,7 @@ it("opens a place cost list instead of editing only the latest linked expense", 
   expect(renderer.root.findByType(ExpenseEditor).props.initial.expense.id).toBe(99);
 });
 
-it("opens a day cost list with separate totals for each currency", async () => {
+it("opens a day cost list from the KRW total only", async () => {
   await mountMutations();
   await act(async () => {
     client.setQueryData(expenseKeys.list("r"), [
@@ -788,7 +791,7 @@ it("opens a day cost list with separate totals for each currency", async () => {
   });
 
   const button = renderer.root.findByType("button");
-  expect(button.children.join("")).toContain("비용 2건 · 1,000 KRW · 2.50 USD");
+  expect(button.findByType("span").children.join("")).toBe("1,000 KRW");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   const panel = renderer.root.findByType(ExpenseScopePanel);
   expect(panel.findAllByType("h2")[0].children.join("")).toBe("1일차 비용");
@@ -804,7 +807,7 @@ it("returns to add mode after the last linked expense is deleted", async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
   const button = renderer.root.findByType("button");
-  expect(button.children.join("")).toContain("비용 추가");
+  expect(button.findByType("span").children.join("")).toBe("비용 추가");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2, scheduleItemId: 3 });
 });

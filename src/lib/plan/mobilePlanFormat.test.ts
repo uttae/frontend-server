@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Expense } from "@/lib/api/rooms/expenses";
 
-import { formatMobileDayDate, formatMonthDayKo, summarizeExpensesForMobile } from "./mobilePlanFormat";
+import { formatMobileDayDate, formatMonthDayKo, summarizeExpensesInKrw } from "./mobilePlanFormat";
 
 function expense(currency: string, totalAmount: string, id: number): Expense {
   return { id, currency, totalAmount } as Expense;
@@ -31,30 +31,22 @@ describe("formatMobileDayDate", () => {
   });
 });
 
-describe("summarizeExpensesForMobile", () => {
-  it("지출이 없으면 null", () => {
-    expect(summarizeExpensesForMobile([])).toBeNull();
+describe("summarizeExpensesInKrw", () => {
+  it("비용이 없으면 null", () => {
+    expect(summarizeExpensesInKrw([])).toBeNull();
   });
 
-  it("통화가 하나면 합계만 보여준다", () => {
+  it("원화 비용 합계 하나만 보여준다", () => {
     expect(
-      summarizeExpensesForMobile([expense("KRW", "45000", 1), expense("KRW", "5000", 2)]),
+      summarizeExpensesInKrw([
+        expense("KRW", "45000", 1),
+        expense("USD", "50.00", 2),
+        expense("KRW", "5000", 3),
+      ]),
     ).toBe("50,000 KRW");
   });
 
-  it("지출이 가장 많은 통화 합계에 다른 통화 지출 건수를 붙인다", () => {
-    expect(
-      summarizeExpensesForMobile([
-        expense("AFN", "123.00", 1),
-        expense("KRW", "300", 2),
-        expense("KRW", "57", 3),
-      ]),
-    ).toBe("357 KRW 외 1건");
-  });
-
-  it("건수가 같으면 먼저 나온 통화를 쓴다", () => {
-    expect(
-      summarizeExpensesForMobile([expense("JPY", "3600", 1), expense("KRW", "1000", 2)]),
-    ).toBe("3,600 JPY 외 1건");
+  it("원화 비용이 없으면 null", () => {
+    expect(summarizeExpensesInKrw([expense("JPY", "3600", 1)])).toBeNull();
   });
 });

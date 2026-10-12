@@ -5,13 +5,13 @@ import { describe, expect, it } from "vitest";
 import { PlanDaySection } from "./PlanDaySection";
 
 describe("PlanDaySection", () => {
-  it("펼침 토글 아이콘을 제목 왼쪽에 배치한다", () => {
+  it("펼침 토글 아이콘을 날짜·일차 배지 뒤에 배치한다", () => {
     const html = renderToStaticMarkup(
       createElement(
         PlanDaySection,
         {
           title: "1일차",
-          subtitle: "7월 16일 (목)",
+          subtitle: "07.16(목)",
         },
         createElement("div", null, "일정"),
       ),
@@ -24,8 +24,11 @@ describe("PlanDaySection", () => {
     expect(triggerMarkup).toBeDefined();
     expect(triggerMarkup).toContain('class="shrink-0 text-dark-gray"');
     expect(triggerMarkup).not.toContain("ml-auto");
-    expect(triggerMarkup!.indexOf("lucide-chevron-up")).toBeLessThan(
-      triggerMarkup!.indexOf("7월 16일 (목)"),
+    expect(triggerMarkup!.indexOf("lucide-chevron-up")).toBeGreaterThan(
+      triggerMarkup!.indexOf("1일차"),
+    );
+    expect(triggerMarkup!.indexOf("07.16(목)")).toBeLessThan(
+      triggerMarkup!.indexOf("1일차"),
     );
     expect(html).not.toContain("absolute left-1/2");
   });
