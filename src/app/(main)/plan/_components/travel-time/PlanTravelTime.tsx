@@ -324,6 +324,7 @@ export function PlanTravelTime({
               : undefined
           }
           googleMapsDirectionsUrl={googleMapsDirectionsUrl ?? undefined}
+          subtleDirectionsLink={!isMobileDevice}
           onSelectTravelMode={handleSelectTravelMode}
           onHideDirections={() => {
             setDirectionsHidden(true);

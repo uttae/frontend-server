@@ -259,6 +259,8 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
                 >
                   <PlanTravelTime
                     contentOnly
+                    // 구간 줄을 카드 폭만큼 채워 Google 길찾기를 오른쪽 끝에 둔다
+                    className="w-full"
                     roomId={roomId}
                     scheduleId={scheduleId}
                     segmentSourceItemId={place.itemId}
