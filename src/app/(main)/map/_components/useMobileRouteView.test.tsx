@@ -128,7 +128,11 @@ it.each([
     const button = host.querySelector<HTMLButtonElement>(`button[aria-label="첫 장소 비용 ${label ? "보기" : "추가"}"]`);
     if (label) {
       expect(button?.textContent).toContain(label);
-      expect(button?.getAttribute("aria-description")).toBe(label);
+      const descriptionId = button?.getAttribute("aria-describedby");
+      expect(descriptionId).toBeTruthy();
+      expect(document.getElementById(descriptionId!)?.textContent).toBe(label);
+      const expenseButtons = [...host.querySelectorAll("button[aria-describedby]")];
+      expect(new Set(expenseButtons.map(node => node.getAttribute("aria-describedby"))).size).toBe(expenseButtons.length);
       await act(async () => button!.click());
       expect(fixtures.openScope).toHaveBeenLastCalledWith({ scheduleId: 10, scheduleItemId: 101, label: "첫 장소" });
       expect(fixtures.open).not.toHaveBeenCalled();

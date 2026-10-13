@@ -1123,7 +1123,9 @@ it.each([
   const button = renderer.root.findByType("button");
   expect(button.findByType("span").children.join("")).toBe(label);
   expect(button.props["aria-label"]).toBe("장소 비용 목록 열기");
-  expect(button.props["aria-description"]).toBe(label);
+  const descriptionId = button.props["aria-describedby"];
+  expect(descriptionId).toBeTruthy();
+  expect(textOf(renderer.root.findByProps({ id: descriptionId }))).toBe(label);
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
   const panel = renderer.root.findByType(ExpenseScopePanel);

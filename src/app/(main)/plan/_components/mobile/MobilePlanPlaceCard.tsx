@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useId, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import {
   ChevronDownIcon,
@@ -141,6 +141,7 @@ export function MobilePlanPlaceCard({
 
 function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, onOpenExpenses }:
   Pick<MobilePlanPlaceCardProps, "place" | "expenseSummary" | "addWhenEmpty" | "onEditTime" | "onOpenExpenses">) {
+  const summaryId = useId();
   const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
   const addTime = !timeRange && Boolean(addWhenEmpty?.time);
   const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
@@ -188,11 +189,11 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onOpenExpenses();
                     }}
                     aria-label={`${place.title} 비용 보기`}
-                    aria-description={expenseSummary}
+                    aria-describedby={summaryId}
                     className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
                   >
                     <CoinIcon size={18} className="text-icon-subtle" />
-                    <span className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
+                    <span id={summaryId} className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
                   </button>
                 ) : null}
                 {!expenseSummary && addExpense ? (
