@@ -6,6 +6,8 @@ import { usePackingList } from "@/hooks/usePackingList";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { SetSectionSideDetailWidth } from "@/contexts/SectionWidthContext";
+import { PACKING_DETAIL_WIDTH_PX } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { normalizePackingMemo, normalizePackingName } from "@/lib/packing/validation";
 import type { PackingItem, PackingPart } from "@/lib/packing/types";
@@ -201,6 +203,8 @@ function PackingContent({context}: {context:Context}) {
   function prepareDelete(kind:"part"|"item",id:number){if(menuId!==null)closeMenu();void coordinator?.prepareDelete(kind,id);}
   useEffect(()=>{if(menuId===null)return;function close(event:PointerEvent){if(!(event.target instanceof Node) || !menuTrigger.current?.parentElement?.contains(event.target))setMenuId(null);}document.addEventListener("pointerdown",close);return()=>document.removeEventListener("pointerdown",close);},[menuId]);
   return <div className={styles.page} aria-busy={loading}>
+    {/* 상세가 열리면 목록 400을 지킨 채 상세 폭만큼 데스크톱 최소 폭을 넓힌다 */}
+    <SetSectionSideDetailWidth px={detailOpen && selected!==null ? PACKING_DETAIL_WIDTH_PX : 0}/>
     <div className={styles.boardPane}>
       <div className={styles.content}>
         <header className={styles.pageHeader}>
