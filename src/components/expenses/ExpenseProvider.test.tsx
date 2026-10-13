@@ -1110,3 +1110,26 @@ it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-ro
     ]);
   }
 });
+
+
+it.each([
+  { rows: [["KRW", "1000"]], label: "1,000 KRW" },
+  { rows: [["JPY", "3600"]], label: "3,600 JPY" },
+  { rows: [["USD", "10"], ["USD", "20"], ["KRW", "1000"]], label: "30 USD 외 1건" },
+  { rows: [["JPY", "0"]], label: "0 JPY" },
+])("place summary $label opens the complete scoped original-currency list", async ({ rows, label }) => {
+  const records = rows.map(([currency, totalAmount], id) => ({ ...record, id, currency, totalAmount, scheduleId: 2, scheduleItemId: 3 }));
+  await mountPlaceExpenseButton([...records, { ...record, id: 100, scheduleId: 9, scheduleItemId: 3 }]);
+  const button = renderer.root.findByType("button");
+  expect(button.findByType("span").children.join("")).toBe(label);
+  expect(button.props["aria-label"]).toBe("장소 비용 목록 열기");
+  expect(button.props["aria-description"]).toBe(label);
+  await act(async () => button.props.onClick({ stopPropagation() {} }));
+  expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
+  const panel = renderer.root.findByType(ExpenseScopePanel);
+  expect(panel.findAllByType("li")).toHaveLength(rows.length);
+  for (const { currency, totalAmount } of records) {
+    expect(textOf(panel)).toContain(currency);
+    expect(panel.props.expenses).toContainEqual(expect.objectContaining({ currency, totalAmount }));
+  }
+});

@@ -188,10 +188,11 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onOpenExpenses();
                     }}
                     aria-label={`${place.title} 비용 보기`}
-                    className="pointer-events-auto flex min-w-0 items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    aria-description={expenseSummary}
+                    className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
                   >
                     <CoinIcon size={18} className="text-icon-subtle" />
-                    <span className="truncate">{expenseSummary}</span>
+                    <span className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
                   </button>
                 ) : null}
                 {!expenseSummary && addExpense ? (
