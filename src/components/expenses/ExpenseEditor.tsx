@@ -378,7 +378,8 @@ export function ExpenseEditor({
               placeholder="제목 없음"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
           </label>
-          <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3">
+          {/* 통화 이름이 숨는 조건(ExpenseCurrencyPicker의 mobile·max-sm)에서는 통화 칸을 코드 3글자 + ▼ 폭으로 줄여 금액 칸을 넓힌다 */}
+          <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[96px_minmax(0,1fr)] max-sm:grid-cols-[96px_minmax(0,1fr)] mobile:gap-3 mobile:p-3">
             <ExpenseCurrencyPicker
               value={body.currency}
               currencies={context.currencies.data ?? []}
