@@ -15,8 +15,8 @@ it("lets the ledger and packing use the full desktop workspace", () => {
   expect(resolveLeftSectionTargetMaxWidthPx({ pathname: "/packing/room", contentWidthToken: "400px", isMobile: false })).toBeNull();
 });
 
-it("removes the desktop minimum width only for packing", () => {
+it("keeps the 400px panel beside the sidebar rail and removes the minimum only for packing", () => {
   expect(resolveDesktopLeftSectionMinWidthPx("/packing/room")).toBe(0);
-  expect(resolveDesktopLeftSectionMinWidthPx("/plan/room")).toBe(400);
-  expect(resolveDesktopLeftSectionMinWidthPx("/chat")).toBe(400);
+  expect(resolveDesktopLeftSectionMinWidthPx("/plan/room")).toBe(469);
+  expect(resolveDesktopLeftSectionMinWidthPx("/chat")).toBe(469);
 });

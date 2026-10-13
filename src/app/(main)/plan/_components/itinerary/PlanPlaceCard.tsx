@@ -429,7 +429,8 @@ export function PlanPlaceCard({
                     scheduleItemId={scheduleItemId}
                     scopeLabel={place.title}
                     label="비용"
-                    className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0")}
+                    // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
+                    className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
                     icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
                   />
                 )}

@@ -6,6 +6,7 @@ import { PlaceDetailPanel } from "@/components/place/PlaceDetailPanel";
 import { MapToolbarLayoutProvider } from "@/contexts/MapToolbarLayoutContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapDiscoverToolbarOffset } from "@/hooks/useMapDiscoverToolbarOffset";
+import { MAIN_MAP_MIN_WIDTH_PX } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
 
 import Map, { type MapRouteView } from "./Map";
@@ -42,7 +43,7 @@ export function MapWithDetailPanel({
       hidden={hidden}
       inert={hidden}
       aria-hidden={hidden || undefined}
-      style={hidden ? { display: "none" } : undefined}
+      style={hidden ? { display: "none" } : mobileInline ? undefined : { minWidth: MAIN_MAP_MIN_WIDTH_PX }}
       className={cn(
         "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden",
         mobileInline
@@ -63,7 +64,7 @@ export function MapWithDetailPanel({
           "absolute z-20 flex flex-col duration-300 ease-out",
           mobileInline
             ? "pointer-events-none inset-x-0 bottom-0 top-3 transition-transform"
-            : "bottom-3 left-2 w-[360px] overflow-hidden rounded-xl shadow-[6px_0_24px_-4px_rgba(0,0,0,0.12),16px_0_32px_-6px_rgba(0,0,0,0.08)] transition-[transform,top]",
+            : "bottom-3 left-2.5 w-[360px] overflow-hidden rounded-xl shadow-[6px_0_24px_-4px_rgba(0,0,0,0.12),16px_0_32px_-6px_rgba(0,0,0,0.08)] transition-[transform,top]",
           selectedPlace
             ? cn("translate-x-0 translate-y-0", !mobileInline && "pointer-events-auto")
             : mobileInline

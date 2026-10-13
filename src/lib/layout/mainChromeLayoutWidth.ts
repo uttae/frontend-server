@@ -108,6 +108,15 @@ export function resolveLeftSectionAnimateMaxWidth({
   return "none";
 }
 
+/** 데스크톱 `LeftSection` 오른쪽 테두리 — 최소 폭(border-box)에 더해야 패널이 400을 다 쓴다 */
+const LEFT_SECTION_BORDER_PX = 1;
+
+/** 데스크톱 좌측 영역 최소 폭 — 일정·채팅 등 패널 400 + 사이드바 레일 + 테두리. 지도 없이 전체 폭을 쓰는 준비물은 두지 않는다 */
 export function resolveDesktopLeftSectionMinWidthPx(pathname = ""): number {
-  return isPackingPath(pathname) ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
+  if (isPackingPath(pathname)) return 0;
+  return (
+    parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH) +
+    parseLayoutLengthToPx(MAIN_SIDEBAR_RAIL_WIDTH) +
+    LEFT_SECTION_BORDER_PX
+  );
 }

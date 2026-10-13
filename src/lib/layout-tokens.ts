@@ -6,8 +6,14 @@ export const width = {
 /** Figma 사이드바 1049:2992 · HeaderBar 홈 열 공통 폭 */
 export const MAIN_SIDEBAR_RAIL_WIDTH = "68px" as const;
 
-/** 채팅·LeftSection 최소 폭 */
+/** 채팅·일정 등 좌측 패널 최소 폭(사이드바 레일 제외) */
 export const CHAT_PANEL_DOCKED_WIDTH = width.s1;
+
+/**
+ * 데스크톱 지도 최소 폭 — 장소 상세 패널(360) + 좌우 여백 10.
+ * 좌측 영역(레일 + 패널 400)과 합친 폭보다 화면이 좁으면 레이아웃 안에서 가로 스크롤한다.
+ */
+export const MAIN_MAP_MIN_WIDTH_PX = 380 as const;
 
 /**
  * 플랜 루트 콘텐츠 박스 인라인 폭이 이 값 미만이면 narrow.
