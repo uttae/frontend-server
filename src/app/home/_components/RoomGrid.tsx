@@ -66,7 +66,7 @@ export function RoomGrid({
   }
 
   return (
-    <ul className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:grid-cols-1 mobile:gap-y-4">
+    <ul className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:gap-y-4">
       {rooms.map((room, index) => (
         <li key={room.id} className="min-w-0">
           <RoomCard
