@@ -123,7 +123,7 @@ function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Con
 }
 
 function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem|null;context:Context;onClose:()=>void;onRename:()=>void;onDelete:()=>void;open:boolean}) {
-  const sheetDrag = useSheetDrag(onClose, !open || context.state.status === "writing", "(max-width: 700px)");
+  const sheetDrag = useSheetDrag(onClose, !open || context.state.status === "writing");
   useEffect(()=>{
     if(!open) return;
     function handleEscape(event:KeyboardEvent) {

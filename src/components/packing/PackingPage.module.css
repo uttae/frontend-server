@@ -94,6 +94,7 @@
 .dialog>div:first-child {margin-bottom:24px}
 .dialog h2 {font-size:18px;line-height:26px;font-weight:700}
 
+/* 좁은 화면의 페이지 배치 — 상세 바텀시트는 화면 폭과 관계없이 모바일 기기에서만(아래 .is-mobile-device) */
 @media (max-width:700px) {
   .content {padding:20px}
   .pageHeader {grid-template-rows:44px auto;gap:8px;min-height:96px;margin-bottom:20px}
@@ -112,22 +113,7 @@
   .itemSelect strong {min-height:44px;margin-left:48px}
   .itemSelect small {margin-top:4px}
   .addItem {min-height:44px}
-  .detailBackdrop {position:fixed;z-index:190;inset:0;display:block;background:#0f172459;animation:sheetBackdropIn 200ms ease-out}
-  .detail {position:fixed;z-index:200;right:0;bottom:0;left:0;width:100%;height:76.53dvh;max-height:calc(100dvh - 80px);border:0;border-radius:20px 20px 0 0;background:var(--color-fill-elevate, #fff);animation:sheetIn 200ms ease-out}
-  .sheetHandle {display:block;flex:none;width:36px;height:4px;margin:12px auto 4px;border-radius:2px;background:var(--color-border-subtle)}
-  .detailDragHeader {padding:0 20px 20px;touch-action:none;user-select:none}
-  .detailScroll {gap:20px;padding:0 20px max(20px, env(safe-area-inset-bottom))}
-  .detailHeader {gap:8px;min-height:44px}
-  .detailHeader .checkbox,.iconButton {width:44px;height:44px}
-  .detailHeader h2 {font-size:20px;line-height:28px}
-  .detailActions {gap:8px}
-  .collapseDetail {display:none}
-  .memoActions {height:48px}
   .dialogActions .actionButton {flex:1;height:48px;font-size:16px;line-height:22px}
-  .tips {padding-top:20px}
-  .tipCard {background:var(--color-fill-default)}
-  .tipCard h4 {margin-bottom:12px}
-  .tipCard ul {gap:12px}
   .dialog {max-width:353px;padding:24px}
   .dialog h2 {font-size:20px;line-height:28px}
   .deleteCopy {font-size:14px;line-height:20px}

@@ -53,36 +53,36 @@ export function ExpenseDialog({
         event.preventDefault();
         onClose();
       }}
-      className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]" : "mobile:h-[70dvh] mobile:max-h-[70dvh] max-sm:h-[70dvh] max-sm:max-h-[70dvh]"} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200 max-sm:mb-0 max-sm:w-full max-sm:max-w-none max-sm:rounded-b-none mobile:mb-0 mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] max-sm:rounded-t-[20px]`}
+      className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)]" : "mobile:h-[70dvh] mobile:max-h-[70dvh]"} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200 mobile:mb-0 mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px]`}
     >
-      <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full max-sm:h-full max-sm:max-h-full">
-        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-3 mobile:pt-3">
+      <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full">
+        <BottomSheetDragHandle drag={sheetDrag} className="mobile:pt-3">
         <div
           aria-hidden
-          className="mx-auto hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle max-sm:block mobile:block"
+          className="mx-auto hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle mobile:block"
         />
-        <header className="flex shrink-0 items-center justify-between px-8 pt-8 pb-6 max-sm:px-5 max-sm:pt-3 max-sm:pb-3 mobile:px-5 mobile:pt-3 mobile:pb-3">
+        <header className="flex shrink-0 items-center justify-between px-8 pt-8 pb-6 mobile:px-5 mobile:pt-3 mobile:pb-3">
           <div>
-          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] font-bold mobile:text-title-m mobile:leading-7 max-sm:text-title-m max-sm:leading-7">
+          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] font-bold mobile:text-title-m mobile:leading-7">
             {title}
           </h2>
-          {description && <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{description}</p>}
+          {description && <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block">{description}</p>}
           </div>
           <button
             type="button"
             aria-label={`${title} 닫기`}
             onClick={onClose}
-            className={`cursor-pointer flex size-6 items-center justify-center rounded-md mobile:-my-2.5 mobile:-mr-2.5 mobile:size-11 text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "max-sm:hidden mobile:hidden" : ""}`}
+            className={`cursor-pointer flex size-6 items-center justify-center rounded-md mobile:-my-2.5 mobile:-mr-2.5 mobile:size-11 text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "mobile:hidden" : ""}`}
           >
             <CloseIcon size={24} />
           </button>
         </header>
         </BottomSheetDragHandle>
-        <div className={`flex min-h-0 flex-col overflow-y-auto mobile:flex-1 max-sm:flex-1 overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] max-sm:px-5 mobile:px-5 ${footer ? "" : "mobile:pb-[max(1.5rem,env(safe-area-inset-bottom))]"}`}>
+        <div className={`flex min-h-0 flex-col overflow-y-auto mobile:flex-1 overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] mobile:px-5 ${footer ? "" : "mobile:pb-[max(1.5rem,env(safe-area-inset-bottom))]"}`}>
           {children}
         </div>
         {footer && (
-          <footer className={`shrink-0 px-8 pb-8 mobile:px-5 mobile:pt-3 max-sm:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] max-sm:px-5 max-sm:pb-5 ${settlement ? "" : "border-t border-border-subtle pt-4"}`}>
+          <footer className={`shrink-0 px-8 pb-8 mobile:px-5 mobile:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] ${settlement ? "" : "border-t border-border-subtle pt-4"}`}>
             {footer}
           </footer>
         )}

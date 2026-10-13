@@ -37,7 +37,7 @@ function MobileBottomSheetContent({
   children,
 }: MobileBottomSheetProps) {
   const titleId = useId();
-  const drag = useSheetDrag(onClose, closeDisabled, null);
+  const drag = useSheetDrag(onClose, closeDisabled, false);
 
   useEffect(() => {
     if (!open) return;

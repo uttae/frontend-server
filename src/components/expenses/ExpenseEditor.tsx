@@ -342,43 +342,43 @@ export function ExpenseEditor({
       onClick={(event) => {
         if (isMobileDevice && !pending && backdropPress.current && event.target === event.currentTarget) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
         noValidate
-        className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]"
+        className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)]"
         aria-describedby={error ? errorId : undefined}
       >
-        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-3 mobile:pt-3">
-        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle max-sm:block mobile:block" />
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-3 max-sm:pb-3">
+        <BottomSheetDragHandle drag={sheetDrag} className="mobile:pt-3">
+        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle mobile:block" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3">
           <div>
-          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-title-m mobile:leading-7 max-sm:text-title-m max-sm:leading-7 font-bold">
+          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-title-m mobile:leading-7 font-bold">
             {original ? "비용 수정" : "비용 추가"}
           </h2>
-          <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "제목과 결제 정보를 입력해주세요."}</p>
+          <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block">{original ? expenseTitle(original) : "제목과 결제 정보를 입력해주세요."}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={pending}
             aria-label="닫기"
-            className="flex size-10 mobile:hidden max-sm:hidden items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex size-10 mobile:hidden items-center justify-center rounded-full text-dark-gray cursor-pointer transition-colors enabled:hover:bg-gray-50 enabled:hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
           >
             <CloseIcon size={24} aria-hidden="true" />
           </button>
         </div>
         </BottomSheetDragHandle>
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0 max-sm:px-5 max-sm:pt-0">
-        <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4 max-sm:space-y-4">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0">
+        <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4">
           <label className="block text-[12px] leading-4">
             <span>제목 (선택)</span>
             <input name="expense-title" aria-label="제목 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
               placeholder="제목 없음"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
           </label>
-          <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3 max-sm:grid-cols-[116px_minmax(0,1fr)] max-sm:gap-3 max-sm:p-3">
+          <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[116px_minmax(0,1fr)] mobile:gap-3 mobile:p-3">
             <ExpenseCurrencyPicker
               value={body.currency}
               currencies={context.currencies.data ?? []}
@@ -484,7 +484,7 @@ export function ExpenseEditor({
             />
           </div>
           {context.memberStatus === "success" ? (
-            <div className="grid min-w-0 grid-cols-2 gap-4 mobile:gap-3 max-sm:gap-3">
+            <div className="grid min-w-0 grid-cols-2 gap-4 mobile:gap-3">
               <ExpenseRolePicker
                 title="결제자"
                 members={context.members}
@@ -556,7 +556,7 @@ export function ExpenseEditor({
           </p>
         )}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:h-12 [&>button]:text-[16px] [&>button]:leading-[22px] [&>button]:font-bold mobile:border-0 mobile:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] max-sm:border-0 max-sm:pt-3 max-sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:h-12 [&>button]:text-[16px] [&>button]:leading-[22px] [&>button]:font-bold mobile:border-0 mobile:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] [&>button]:min-h-12 [&>button]:min-w-[88px] mobile:[&>button]:flex-1">
           <button
             type="button"
             className={expenseButtonClass}
