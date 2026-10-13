@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useMemo,
   useState,
   useEffect,
   type ReactNode,
@@ -29,8 +30,12 @@ const SectionWidthContext = createContext<SectionWidthContextType>({
 export function SectionWidthProvider({ children }: { children: ReactNode }) {
   const [maxWidth, setMaxWidth] = useState("");
   const [sideDetailWidthPx, setSideDetailWidthPx] = useState(0);
+  const value = useMemo(
+    () => ({ maxWidth, setMaxWidth, sideDetailWidthPx, setSideDetailWidthPx }),
+    [maxWidth, sideDetailWidthPx],
+  );
   return (
-    <SectionWidthContext.Provider value={{ maxWidth, setMaxWidth, sideDetailWidthPx, setSideDetailWidthPx }}>
+    <SectionWidthContext.Provider value={value}>
       {children}
     </SectionWidthContext.Provider>
   );

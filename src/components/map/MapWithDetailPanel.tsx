@@ -37,13 +37,15 @@ export function MapWithDetailPanel({
   const { setToolbarRef, panelTopPx } =
     useMapDiscoverToolbarOffset(mapSectionEl);
 
+  const visibleStyle = mobileInline ? undefined : { minWidth: MAIN_MAP_MIN_WIDTH_PX };
+
   return (
     <section
       ref={setMapSectionRef}
       hidden={hidden}
       inert={hidden}
       aria-hidden={hidden || undefined}
-      style={hidden ? { display: "none" } : mobileInline ? undefined : { minWidth: MAIN_MAP_MIN_WIDTH_PX }}
+      style={hidden ? { display: "none" } : visibleStyle}
       className={cn(
         "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden",
         mobileInline

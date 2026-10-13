@@ -107,10 +107,15 @@ export function ExpenseScopePanel({
         if (!disabled && !confirming) onClose();
       }}
       onPointerDown={(event) => {
-        backdropPress.current = event.target === event.currentTarget;
+        backdropPress.current = event.button === 0 && event.target === event.currentTarget;
       }}
-      onClick={(event) => {
-        if (isMobileDevice && !disabled && !confirming && backdropPress.current && event.target === event.currentTarget) onClose();
+      onPointerUp={(event) => {
+        const startedOnBackdrop = backdropPress.current;
+        backdropPress.current = false;
+        if (isMobileDevice && !disabled && !confirming && startedOnBackdrop && event.target === event.currentTarget) onClose();
+      }}
+      onPointerCancel={() => {
+        backdropPress.current = false;
       }}
       className="fixed inset-auto left-1/2 top-1/2 m-0 max-h-[85dvh] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-2xl border border-gray-border bg-white p-0 text-text shadow-2xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 mobile:bottom-0 mobile:left-0 mobile:max-h-[60dvh] mobile:top-auto mobile:w-full mobile:max-w-none mobile:translate-x-0 mobile:translate-y-0 mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200 mobile:border-x-0 mobile:border-b-0"
     >

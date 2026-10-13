@@ -337,10 +337,15 @@ export function ExpenseEditor({
         if (!pending) onClose();
       }}
       onPointerDown={(event) => {
-        backdropPress.current = event.target === event.currentTarget;
+        backdropPress.current = event.button === 0 && event.target === event.currentTarget;
       }}
-      onClick={(event) => {
-        if (isMobileDevice && !pending && backdropPress.current && event.target === event.currentTarget) onClose();
+      onPointerUp={(event) => {
+        const startedOnBackdrop = backdropPress.current;
+        backdropPress.current = false;
+        if (isMobileDevice && !pending && startedOnBackdrop && event.target === event.currentTarget) onClose();
+      }}
+      onPointerCancel={() => {
+        backdropPress.current = false;
       }}
       className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
