@@ -136,7 +136,8 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
   },[open,onClose]);
   return <>
     {open && <button type="button" tabIndex={-1} className={styles.detailBackdrop} aria-label="준비물 상세 닫기" onClick={onClose}/>}
-    <aside className={styles.detail} style={sheetDrag.surfaceStyle} hidden={!open} data-open={open} aria-label="준비물 상세">
+    {/* 닫혀도 언마운트되지 않아, 드래그 후에도 열 때마다 CSS 등장 애니메이션이 다시 돌도록 애니메이션 해제는 쓰지 않는다 */}
+    <aside className={styles.detail} style={{...sheetDrag.surfaceStyle, animation: undefined}} hidden={!open} data-open={open} aria-label="준비물 상세">
       <BottomSheetDragHandle drag={sheetDrag} className={styles.detailDragHeader}>
         <div className={styles.sheetHandle} aria-hidden="true"/>
         {item && <div className={styles.detailHeader}>

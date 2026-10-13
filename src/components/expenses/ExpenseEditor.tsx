@@ -1,5 +1,6 @@
 "use client";
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 
@@ -206,6 +207,9 @@ export function ExpenseEditor({
   }, []);
   const pending = saving || context.busy;
   const sheetDrag = useSheetDrag(onClose, pending);
+  const { isMobileDevice } = useMobileView();
+  // 바텀시트는 기준 시트처럼 딤을 눌러 닫는다. 시트 안에서 시작한 드래그가 딤에서 끝나면 닫지 않는다.
+  const backdropPress = useRef(false);
   const currentTarget = context.list?.data?.find(
     (e) => e.id === original?.id,
   );
@@ -332,7 +336,13 @@ export function ExpenseEditor({
         event.preventDefault();
         if (!pending) onClose();
       }}
-      className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
+      onPointerDown={(event) => {
+        backdropPress.current = event.target === event.currentTarget;
+      }}
+      onClick={(event) => {
+        if (isMobileDevice && !pending && backdropPress.current && event.target === event.currentTarget) onClose();
+      }}
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[640px] overflow-hidden rounded-xl border-0 bg-white p-0 text-black shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 max-sm:mb-0 max-sm:w-full max-sm:rounded-b-none mobile:mb-0 mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)] mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200"
     >
       <form
         onSubmit={submit}
@@ -340,11 +350,11 @@ export function ExpenseEditor({
         className="@container/expense-editor flex max-h-[calc(100dvh-3rem)] min-h-0 flex-col overflow-hidden mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)] max-sm:h-[calc(100dvh-92px)] max-sm:max-h-[calc(100dvh-92px)]"
         aria-describedby={error ? errorId : undefined}
       >
-        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-5 mobile:pt-5">
-        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-full bg-border max-sm:block mobile:block" />
+        <BottomSheetDragHandle drag={sheetDrag} className="max-sm:pt-3 mobile:pt-3">
+        <div aria-hidden className="mx-auto hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle max-sm:block mobile:block" />
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-5 mobile:border-0 mobile:px-5 mobile:pt-3 mobile:pb-3 max-sm:border-0 max-sm:px-5 max-sm:pt-3 max-sm:pb-3">
           <div>
-          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-[20px] mobile:leading-6 max-sm:text-[20px] max-sm:leading-6 font-bold">
+          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] mobile:text-title-m mobile:leading-7 max-sm:text-title-m max-sm:leading-7 font-bold">
             {original ? "비용 수정" : "비용 추가"}
           </h2>
           <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block max-sm:block">{original ? expenseTitle(original) : "제목과 결제 정보를 입력해주세요."}</p>
@@ -546,7 +556,7 @@ export function ExpenseEditor({
           </p>
         )}
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:h-12 [&>button]:text-[16px] [&>button]:leading-[22px] [&>button]:font-bold mobile:border-0 mobile:pt-3 mobile:pb-5 max-sm:border-0 max-sm:pt-3 max-sm:pb-5 [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
+        <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-gray-border bg-white px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6 [&>button]:h-12 [&>button]:text-[16px] [&>button]:leading-[22px] [&>button]:font-bold mobile:border-0 mobile:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] max-sm:border-0 max-sm:pt-3 max-sm:pb-[max(1.25rem,env(safe-area-inset-bottom))] [&>button]:min-h-12 [&>button]:min-w-[88px] max-sm:[&>button]:flex-1 mobile:[&>button]:flex-1">
           <button
             type="button"
             className={expenseButtonClass}

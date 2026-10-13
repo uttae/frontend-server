@@ -226,11 +226,14 @@ export function AddFromBookmarkModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/40 md:justify-center md:px-4"
-      onMouseDown={(ev) => {
-        if (ev.target === ev.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[60] flex flex-col justify-end md:justify-center md:px-4"
     >
+      {/* 딤은 시트와 따로 둬서 기준 시트처럼 딤만 서서히 나타나고 시트는 아래에서 올라온다 */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-[#0f1724]/35 max-md:animate-in max-md:fade-in-0 max-md:duration-200 md:bg-black/40"
+        onMouseDown={onClose}
+      />
       <div
         style={sheetDrag.surfaceStyle}
         role="dialog"
@@ -238,9 +241,9 @@ export function AddFromBookmarkModal({
         aria-labelledby="add-from-bookmark-modal-title"
         onMouseDown={(e) => e.stopPropagation()}
         className={cn(
-          "flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden",
+          "relative flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden max-md:animate-in max-md:slide-in-from-bottom max-md:duration-200",
           "border-t border-gray-border bg-white shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.12)] md:rounded-2xl md:border md:shadow-lg",
-          "rounded-t-[1.35rem]",
+          "rounded-t-[20px]",
           "mx-auto md:max-w-md",
           "pb-[max(env(safe-area-inset-bottom,0px),12px)]",
         )}
@@ -248,13 +251,13 @@ export function AddFromBookmarkModal({
         <BottomSheetDragHandle drag={sheetDrag} className="max-md:touch-none max-md:select-none max-md:cursor-grab">
         <div
           aria-hidden
-          className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-black/15 md:hidden"
+          className="mx-auto mt-[11px] h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle md:hidden"
         />
 
         <div className="shrink-0 px-5 pb-2 pt-3">
           <h2
             id="add-from-bookmark-modal-title"
-            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
+            className="text-title-l mobile:text-title-m font-semibold mobile:font-bold text-neutral-900"
           >
             북마크에서 추가
           </h2>
