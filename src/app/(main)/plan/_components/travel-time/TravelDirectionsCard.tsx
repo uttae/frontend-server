@@ -40,8 +40,6 @@ export type TravelDirectionsCardProps = {
   effectiveMode: ScheduleTravelModeValue;
   showUnknownOption: boolean;
   modeRaw: string;
-  /** 지도 polyline을 만들 수 없을 때 요약 우측에 표시 */
-  renderWarning?: string;
   googleMapsDirectionsUrl?: string;
   /** PC 일정 — 구간마다 반복되는 길찾기 링크가 튀지 않게 회색 12px로 낮춘다 */
   subtleDirectionsLink?: boolean;
@@ -63,7 +61,6 @@ export function TravelDirectionsCard({
   effectiveMode,
   showUnknownOption,
   modeRaw,
-  renderWarning,
   googleMapsDirectionsUrl,
   subtleDirectionsLink = false,
   readOnly = false,
@@ -124,15 +121,6 @@ export function TravelDirectionsCard({
           </a>
         ) : null}
 
-        {renderWarning ? (
-          <span
-            role="status"
-            title={renderWarning}
-            className="flex h-10 min-w-0 flex-1 items-center overflow-hidden px-2 text-body-xs-emphasis font-medium text-primary"
-          >
-            <span className="truncate">{renderWarning}</span>
-          </span>
-        ) : null}
       </div>
 
       {menuOpen ? (

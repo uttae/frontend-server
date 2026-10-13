@@ -46,7 +46,7 @@ export function TravelRouteSummaryLine({
       <LoadingIndicator label="이동 시간 불러오는 중" size={14} />
     );
   }
-  if (isError) return "이동 시간을 불러오지 못했어요";
+  if (isError) return <span className="text-status-negative">경로 조회 오류</span>;
   if (routeUnavailable) return "이동 안내 없음";
   return "다음 장소로 이동";
 }
