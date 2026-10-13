@@ -64,7 +64,7 @@ afterEach(async () => {
 
 it("opens the selected room's invite link without regenerating it and restores focus on Escape", async () => {
   await openInvite();
-  expect(document.querySelector("dialog[open]")?.textContent).toContain("제주 여행");
+  expect(document.querySelector("dialog[open] h2")?.textContent).toBe("초대하기");
   expect(state.detailId).toHaveBeenCalledWith("selected-room");
   expect(state.regenerate).not.toHaveBeenCalled();
   await click("복사");
@@ -92,11 +92,27 @@ it.each(["loading", "error"])("does not issue links while detail is %s", async (
   state.error = mode === "error";
   await openInvite();
   expect(state.regenerate).not.toHaveBeenCalled();
-  expect(button("복사")).toBeUndefined();
+  expect(document.querySelector('input[aria-label="초대 링크"]')).toBeNull();
+  expect(button("복사").disabled).toBe(true);
+  expect(button("공유").disabled).toBe(true);
+  await click("복사");
+  await click("공유");
+  expect(state.copy).not.toHaveBeenCalled();
+  expect(state.regenerate).not.toHaveBeenCalled();
   if (mode === "error") {
+    expect(document.querySelector('[role="alert"]')?.textContent).toContain("방 정보를 불러오지 못했어요");
     await click("다시 시도");
     expect(state.refetch).toHaveBeenCalledOnce();
+    expect(state.regenerate).not.toHaveBeenCalled();
   }
+  state.loading = false;
+  state.error = false;
+  state.detail!.inviteCode = "recovered-code";
+  await render();
+  expect(button("다시 시도")).toBeUndefined();
+  await click("복사");
+  expect(state.copy).toHaveBeenCalledExactlyOnceWith(`${window.location.origin}/join/recovered-code`);
+  expect(state.regenerate).not.toHaveBeenCalled();
 });
 
 it("reports clipboard failure without claiming the link was copied", async () => {

@@ -9,7 +9,7 @@ export function InviteRoomModal({ room, onClose }: {
   room: RoomListItem;
   onClose: () => void;
 }) {
-  const { data, isLoading, isError } = useRoomDetail(room.id);
+  const { data, isLoading, isError, refetch } = useRoomDetail(room.id);
 
   return (
     <InviteRoomDialog
@@ -19,6 +19,7 @@ export function InviteRoomModal({ room, onClose }: {
       role={data?.role}
       isRoomDetailLoading={isLoading}
       isRoomDetailError={isError}
+      onRetryRoomDetail={() => { void refetch(); }}
       onClose={onClose}
     />
   );

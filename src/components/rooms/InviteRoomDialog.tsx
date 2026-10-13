@@ -11,6 +11,7 @@ export function InviteRoomDialog({
   role,
   isRoomDetailLoading,
   isRoomDetailError,
+  onRetryRoomDetail,
   onClose,
 }: Readonly<{
   roomId: string;
@@ -19,6 +20,7 @@ export function InviteRoomDialog({
   role?: string;
   isRoomDetailLoading: boolean;
   isRoomDetailError: boolean;
+  onRetryRoomDetail?: () => void;
   onClose: () => void;
 }>) {
   return (
@@ -35,6 +37,16 @@ export function InviteRoomDialog({
           isRoomDetailError={isRoomDetailError}
           showDescription={false}
         />
+        {isRoomDetailError && onRetryRoomDetail ? (
+          <button
+            type="button"
+            onClick={onRetryRoomDetail}
+            disabled={isRoomDetailLoading}
+            className="mt-3 cursor-pointer rounded-sm text-label-m-emphasis text-primary transition-colors enabled:hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            다시 시도
+          </button>
+        ) : null}
       </div>
     </SettingsDialog>
   );
