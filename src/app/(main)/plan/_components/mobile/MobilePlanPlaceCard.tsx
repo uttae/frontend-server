@@ -268,7 +268,7 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
           </div>
         ) : null}
         {!memo && addMemo ? (
-          // 메모가 있을 때와 같은 줄(구분선·아이콘·꺾쇠)을 흐리게 — 누르면 메모 시트
+          // 메모가 있을 때와 같은 줄(구분선·아이콘)을 흐리게 — 펼칠 내용이 없어 꺾쇠는 두지 않는다. 누르면 메모 시트
           <div className="pointer-events-none relative mx-3.5 border-t border-border-subtle py-3">
             <button
               type="button"
@@ -283,7 +283,6 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
               <span className="min-w-0 flex-1 truncate text-caption-l-regular leading-5 text-text-disabled">
                 메모를 추가해보세요.
               </span>
-              <ChevronDownIcon size={20} className="shrink-0 text-icon-disabled" />
             </button>
           </div>
         ) : null}
