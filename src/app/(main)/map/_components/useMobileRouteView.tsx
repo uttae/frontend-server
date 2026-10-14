@@ -459,34 +459,34 @@ export function useMobileRouteView({
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end pb-3.5">
         {/* 펼치면 X·일차 탭은 사라지고 카드가 그 자리까지 커진다 */}
         <div className={cn("flex flex-col transition-opacity duration-200", isExpanded && "invisible h-0 opacity-0")}>
-          <div className="flex justify-end pr-[18px]">
+          <div className="mb-[9px] flex items-center gap-2 pr-[18px]">
+            <nav
+              ref={tabsRef}
+              aria-label="경로 일차 선택"
+              // relative: 탭 위치(offsetLeft)를 탭 줄 기준으로 재서 가로 스크롤 위치를 정한다
+              className="pointer-events-auto relative flex h-[34px] min-w-0 flex-1 gap-2.5 overflow-x-auto px-[15px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {schedules.map((s, index) => {
+                const selected = index + 1 === tabDayNumber;
+                return (
+                  <button
+                    key={s.scheduleId}
+                    ref={selected ? selectedTabRef : undefined}
+                    type="button"
+                    onClick={() => goToDay(index + 1)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "shrink-0 cursor-pointer rounded-[30px] border border-border bg-fill-subtle px-3.5 py-1.5 text-label-m-emphasis",
+                      selected ? "text-primary" : "text-text-disabled",
+                    )}
+                  >
+                    Day {index + 1}
+                  </button>
+                );
+              })}
+            </nav>
             <MapCloseButton label="경로 보기 닫기" onClick={close} className="pointer-events-auto" />
           </div>
-          <nav
-            ref={tabsRef}
-            aria-label="경로 일차 선택"
-            // relative: 탭 위치(offsetLeft)를 탭 줄 기준으로 재서 가로 스크롤 위치를 정한다
-            className="pointer-events-auto relative mb-[9px] mt-3 flex h-[34px] gap-2.5 overflow-x-auto px-[15px] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {schedules.map((s, index) => {
-              const selected = index + 1 === tabDayNumber;
-              return (
-                <button
-                  key={s.scheduleId}
-                  ref={selected ? selectedTabRef : undefined}
-                  type="button"
-                  onClick={() => goToDay(index + 1)}
-                  aria-pressed={selected}
-                  className={cn(
-                    "shrink-0 cursor-pointer rounded-[30px] border border-border bg-fill-subtle px-3.5 py-1.5 text-label-m-emphasis",
-                    selected ? "text-primary" : "text-text-disabled",
-                  )}
-                >
-                  Day {index + 1}
-                </button>
-              );
-            })}
-          </nav>
         </div>
         {/* 접힘: 가장 긴 카드에 맞춰 모든 카드가 같은 높이 / 펼침: 지도의 70% */}
         <div className={cn("transition-[height] duration-300 ease-out", isExpanded && "h-[70%]")}>
