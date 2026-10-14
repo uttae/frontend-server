@@ -311,9 +311,7 @@ export function PlanPlaceCard({
         className={cn(
           "w-full select-none transition-colors",
           PLAN_PLACE_CARD_TW.article,
-          // 고른 카드는 계속 켜져 있으므로 배경은 그대로 두고 테두리와 옅게 번지는 파란 그림자로만 표시한다
-          // (그림자 토큰이 없어 파랑 원시 토큰으로 지정)
-          focused && "border-primary shadow-[0_0_12px_var(--blue-200)]",
+          focused && "border-primary",
           dragDisabled
             ? "cursor-default"
             : "cursor-grab active:cursor-grabbing",
