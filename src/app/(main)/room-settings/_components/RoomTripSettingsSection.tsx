@@ -45,11 +45,9 @@ export function RoomTripDeleteButton() {
 
 export function RoomTripSettingsSection({
   embedded = false,
-  onCancel,
   onSaved,
 }: {
   embedded?: boolean;
-  onCancel?: () => void;
   onSaved?: () => void;
 }) {
   const { roomId, roomSource, isLoading } = useCurrentRoomMembership();
@@ -75,7 +73,7 @@ export function RoomTripSettingsSection({
           여행 정보를 불러오지 못했어요.
         </p>
       ) : (
-        <RoomTripEditForm room={roomSource} readOnly={!canEdit} onCancel={onCancel} onSaved={onSaved} />
+        <RoomTripEditForm room={roomSource} readOnly={!canEdit} onSaved={onSaved} />
       )}
     </div>
   );
