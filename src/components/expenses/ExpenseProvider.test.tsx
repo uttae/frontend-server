@@ -775,13 +775,19 @@ it("opens a place cost list instead of editing only the latest linked expense", 
   expect(renderer.root.findByType(ExpenseEditor).props.initial.expense.id).toBe(99);
 });
 
-it("opens a day cost list from the KRW total only", async () => {
+it.each([
+  { rows: [["KRW", "1000"], ["USD", "2.50"]], label: "1,000 KRW 외 1건" },
+  { rows: [["JPY", "3600"]], label: "3,600 JPY" },
+  { rows: [["KRW", "1000"], ["USD", "10"], ["USD", "20"]], label: "30 USD 외 1건" },
+  { rows: [["USD", "10"], ["EUR", "20"], ["EUR", "30"], ["USD", "5"]], label: "15 USD 외 2건" },
+])("day summary $label opens all expenses for that day", async ({ rows, label }) => {
   await mountMutations();
   await act(async () => {
     client.setQueryData(expenseKeys.list("r"), [
-      { ...record, id: 20, scheduleId: 2, scheduleItemId: 3, totalAmount: "1000", currency: "KRW" },
-      { ...record, id: 21, scheduleId: 2, scheduleItemId: null, totalAmount: "2.50", currency: "USD" },
-      { ...record, id: 22, scheduleId: 3, scheduleItemId: null, totalAmount: "500", currency: "KRW" },
+      ...rows.map(([currency, totalAmount], id) => ({
+        ...record, id: 20 + id, scheduleId: 2, scheduleItemId: id === 0 ? 3 : null, currency, totalAmount,
+      })),
+      { ...record, id: 100, scheduleId: 3, scheduleItemId: null, totalAmount: "500", currency: "KRW" },
     ]);
     renderer.update(
       <QueryClientProvider client={client}>
@@ -791,11 +797,11 @@ it("opens a day cost list from the KRW total only", async () => {
   });
 
   const button = renderer.root.findByType("button");
-  expect(button.findByType("span").children.join("")).toBe("1,000 KRW");
+  expect(button.findByType("span").children.join("")).toBe(label);
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   const panel = renderer.root.findByType(ExpenseScopePanel);
   expect(panel.findAllByType("h2")[0].children.join("")).toBe("1일차 비용");
-  expect(panel.findAllByType("li")).toHaveLength(2);
+  expect(panel.findAllByType("li")).toHaveLength(rows.length);
   await act(async () => panel.findAllByType("button").find(b => b.children.join("").includes("비용 추가"))!.props.onClick());
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2 });
 });

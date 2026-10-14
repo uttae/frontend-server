@@ -22,16 +22,7 @@ export function formatMonthDayKo(ymd: string): string {
 }
 
 /**
- * 일차 비용 요약(PC·모바일) — 원화(KRW) 합계 하나만 보인다(예: `130,200 KRW`).
- * 다른 통화 비용은 가계부에서 본다. 원화 비용이 없으면 null.
- */
-export function summarizeExpensesInKrw(expenses: readonly Expense[]): string | null {
-  const krw = totalsByCurrency(expenses).find((total) => total.currency === "KRW");
-  return krw ? `${formatExpenseAmount(krw.amount)} KRW` : null;
-}
-
-/**
- * 장소 비용 요약 — 가장 많은 지출 건수의 통화를 원금액으로 합산한다.
+ * 일차·장소 비용 요약 — 가장 많은 지출 건수의 통화를 원금액으로 합산한다.
  * 동률이면 처음 등장한 통화, `외 N건`은 나머지 통화의 지출 건수다.
  * 예: `30 USD 외 1건`. 0원도 지출이며, 빈 목록만 null이다.
  */

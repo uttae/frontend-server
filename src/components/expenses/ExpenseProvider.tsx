@@ -36,7 +36,7 @@ import { canManageExpenses } from "@/lib/expenses/expense-policy";
 import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
 import { expenseKeys } from "@/lib/expenses/expense-queries";
 import { expensesInScope, type ExpenseScope } from "@/lib/expenses/expense-scope";
-import { summarizeExpensesInKrw, summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
+import { summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { useRoomSchedules } from "@/hooks/useRooms";
 import { useExpenseRecovery } from "@/hooks/useExpenseRecovery";
@@ -435,10 +435,9 @@ export function ExpenseEntryButton({
   if (!context?.canManage) return null;
   const scope = { scheduleId, scheduleItemId, label: scopeLabel, subtitle: scopeSubtitle };
   const scoped = expensesInScope(context.list.data ?? [], scope);
-  const summarize = scheduleItemId === undefined ? summarizeExpensesInKrw : summarizePlaceExpenses;
   const summaryLabel = !context.list.isSuccess
     ? "비용 보기"
-    : (summarize(scoped) ?? label);
+    : (summarizePlaceExpenses(scoped) ?? label);
   return (
     <button
       type="button"
