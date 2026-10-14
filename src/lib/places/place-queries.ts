@@ -14,7 +14,8 @@ import {
 } from "@/lib/place-photo-query";
 
 export const placeDetailQueryDefaults = {
-  staleTime: 60_000,
+  staleTime: Infinity,
+  refetchOnMount: false,
   refetchOnWindowFocus: false,
 } as const;
 
@@ -23,9 +24,9 @@ export const placePreviewQueryDefaults = {
   refetchOnWindowFocus: false,
 } as const;
 
-function placeDetailQueryKey(googlePlaceId: string) {
+export function placeDetailQueryKey(googlePlaceId: string) {
   const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
-  return ["places", "detail", id] as const;
+  return ["places", "detail", normalizeGooglePlaceResourceId(id)] as const;
 }
 
 export function placePreviewQueryKey(googlePlaceId: string) {

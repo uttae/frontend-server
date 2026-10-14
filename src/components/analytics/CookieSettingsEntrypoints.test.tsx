@@ -68,7 +68,6 @@ it("retains landing and room footers and removes only the requested navigation e
   expect(sidebar).not.toContain("PrivacySettingsLink");
   expect(sidebar).not.toContain("member-settings");
   for (const entry of [
-    "search",
     "plan",
     "bookmark",
     "SidebarFeedbackFormButton",

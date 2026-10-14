@@ -28,6 +28,8 @@ export type SetSelectedPlaceOptions = {
   itinerarySource?: ItinerarySource;
   /** 검색 결과 선택 순위 버킷 — `view_place` 이벤트에서 사용 */
   analyticsRankBucket?: SearchRankBucket;
+  /** The visible recommendation is waiting for Text Search membership/rank. */
+  analyticsRankPending?: boolean;
   /** `view_place`의 `interaction_source` */
   analyticsSource?: AnalyticsSource;
   /**
@@ -46,6 +48,7 @@ type SelectedPlaceContextType = {
   placeSelectionCameraRef: MutableRefObject<PlaceSelectionCamera>;
   itinerarySource: ItinerarySource | null;
   analyticsRankBucket: SearchRankBucket | null;
+  analyticsRankPending: boolean;
   analyticsSource: AnalyticsSource | null;
   onBack: (() => void) | null;
 };
@@ -56,6 +59,7 @@ const SelectedPlaceContext = createContext<SelectedPlaceContextType>({
   placeSelectionCameraRef: { current: "full" },
   itinerarySource: null,
   analyticsRankBucket: null,
+  analyticsRankPending: false,
   analyticsSource: null,
   onBack: null,
 });
@@ -67,22 +71,41 @@ export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
   const [entry, setEntry] = useState<{
     itinerarySource: ItinerarySource | null;
     analyticsRankBucket: SearchRankBucket | null;
+    analyticsRankPending: boolean;
     analyticsSource: AnalyticsSource | null;
     onBack: (() => void) | null;
-  }>({ itinerarySource: null, analyticsRankBucket: null, analyticsSource: null, onBack: null });
+  }>({
+    itinerarySource: null,
+    analyticsRankBucket: null,
+    analyticsRankPending: false,
+    analyticsSource: null,
+    onBack: null,
+  });
 
   const setSelectedPlace = useCallback(
-    (place: SearchResultCardProps | null, options?: SetSelectedPlaceOptions) => {
+    (
+      place: SearchResultCardProps | null,
+      options?: SetSelectedPlaceOptions,
+    ) => {
       if (place === null) {
         placeSelectionCameraRef.current = "full";
-        setEntry({ itinerarySource: null, analyticsRankBucket: null, analyticsSource: null, onBack: null });
+        setEntry({
+          itinerarySource: null,
+          analyticsRankBucket: null,
+          analyticsRankPending: false,
+          analyticsSource: null,
+          onBack: null,
+        });
         setSelectedPlaceState(null);
         return;
       }
       setEntry({
-        itinerarySource: options?.itinerarySource ?? options?.analyticsSource ?? null,
+        itinerarySource:
+          options?.itinerarySource ?? options?.analyticsSource ?? null,
         analyticsRankBucket: options?.analyticsRankBucket ?? null,
-        analyticsSource: options?.analyticsSource ?? options?.itinerarySource ?? null,
+        analyticsRankPending: options?.analyticsRankPending ?? false,
+        analyticsSource:
+          options?.analyticsSource ?? options?.itinerarySource ?? null,
         onBack: options?.onBack ?? null,
       });
       if (options?.skipMapRecenter === true) {

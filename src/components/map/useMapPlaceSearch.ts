@@ -1,0 +1,294 @@
+"use client";
+
+import { useEffect, useEffectEvent, useRef } from "react";
+import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { useSessionUser } from "@/hooks/useSessionUser";
+import {
+  fetchPlacesPageWithPhotos,
+  type PlaceSearchResult,
+} from "@/hooks/usePlacesSearch";
+import {
+  clearActiveSearchMapPins,
+  placeSearchResultsToMapPins,
+  setActiveSearchMapPins,
+} from "@/lib/active-search-map-pins";
+import {
+  bucketResultCount,
+  bucketSearchRank,
+  type SearchRankBucket,
+} from "@/lib/analytics/context";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
+import { getQueryClient } from "@/lib/query-client";
+import {
+  fetchPlaceDetail,
+  placeDetailQueryKey,
+} from "@/lib/places/place-queries";
+import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
+import {
+  confirmPlaceSearch,
+  type PredictionCoordinates,
+  type SearchConfirmation,
+} from "@/lib/places/search-session";
+import { useMapCenterStore } from "@/stores/map-center-store";
+import {
+  searchPinWriteStillValid,
+  useMapPinsFocusStore,
+} from "@/stores/map-pins-focus-store";
+import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
+import { usePlaceSearchStore } from "@/stores/place-search-store";
+import { useSearchRecenterStore } from "@/stores/search-recenter-store";
+import { useSessionStore } from "@/stores/session-store";
+
+export function useMapPlaceSearch(mobile: boolean) {
+  const roomId = useSessionStore((s) => s.currentRoomId);
+  const userId = useSessionUser().data?.id;
+  const scopeKey = `${userId ?? "anonymous"}:${roomId ?? "no-room"}`;
+  const { selectedPlace, setSelectedPlace, analyticsRankPending } =
+    useSelectedPlace();
+  const pinsFocus = useMapPinsFocusStore((s) => s.focus);
+  const recenterId = useSearchRecenterStore((s) => s.searchRecenterRequestId);
+  const legacyQuery = useMobileMapSearchStore((s) => s.textQuery);
+  const legacyNonce = useMobileMapSearchStore((s) => s.textSearchNonce);
+  const seenLegacyNonce = useRef(legacyNonce);
+  const seenRecenter = useRef(recenterId);
+
+  useEffect(() => {
+    if (usePlaceSearchStore.getState().scope !== scopeKey) {
+      usePlaceSearchStore.getState().setScope(scopeKey);
+      clearActiveSearchMapPins();
+      useSearchRecenterStore.getState().clearSearchSnapshot();
+      setSelectedPlace(null);
+    }
+  }, [scopeKey, setSelectedPlace]);
+
+  function invalidate(clear: boolean) {
+    if (clear) {
+      usePlaceSearchStore.getState().clear();
+      clearActiveSearchMapPins();
+      useSearchRecenterStore.getState().clearSearchSnapshot();
+      useMapPinsFocusStore.getState().releaseSearchFocusIfActive();
+      setSelectedPlace(null);
+    } else {
+      const selectedId = usePlaceSearchStore.getState().selectedId;
+      // Keep complete visible data, but unmount an unfinished detail selection so its late
+      // request can populate the public cache without changing the edited search UI.
+      if (
+        selectedId &&
+        !getQueryClient()?.getQueryData(placeDetailQueryKey(selectedId))
+      )
+        setSelectedPlace(null);
+      else if (analyticsRankPending && selectedPlace)
+        setSelectedPlace(selectedPlace, {
+          itinerarySource: "search",
+          analyticsSource: "search",
+          skipMapRecenter: true,
+        });
+      usePlaceSearchStore.getState().invalidate();
+    }
+  }
+
+  const settleOwnershipLoss = useEffectEvent(() => {
+    if (usePlaceSearchStore.getState().status === "pending") invalidate(false);
+  });
+  useEffect(() => {
+    if (pinsFocus !== "search") settleOwnershipLoss();
+  }, [pinsFocus]);
+
+  async function confirm(
+    confirmation: SearchConfirmation,
+    mode: "text" | "map_recenter" = "text",
+  ): Promise<boolean> {
+    const query = confirmation.query.trim();
+    if (!query) return false;
+    const state = usePlaceSearchStore.getState();
+    const generation = state.invalidate();
+    const epoch = useMapPinsFocusStore.getState().claimFocus("search");
+    const isCurrent = () =>
+      usePlaceSearchStore.getState().generation === generation &&
+      usePlaceSearchStore.getState().scope === scopeKey &&
+      useSessionStore.getState().currentRoomId === roomId &&
+      searchPinWriteStillValid(epoch);
+    const mapCenter = useMapCenterStore.getState().mapCenter;
+    usePlaceSearchStore.setState({
+      query,
+      confirmationKind: confirmation.kind,
+      status: "pending",
+      error: null,
+      expanded: false,
+      termination: "not-requested",
+    });
+    if (mobile) {
+      setSelectedPlace(null);
+      useMobileMapSearchStore.setState({ textQuery: query });
+    }
+    const toAnchor = (anchor: PredictionCoordinates): PlaceSearchResult => ({
+      googlePlaceId: anchor.googlePlaceId,
+      name:
+        confirmation.prediction?.mainText?.text ??
+        confirmation.prediction?.text.text ??
+        "장소",
+      address: confirmation.prediction?.secondaryText?.text ?? "",
+      category: "",
+      rating: null,
+      location: anchor.location,
+    });
+    let anchoredSelection: PlaceSearchResult | null = null;
+    try {
+      const result = await confirmPlaceSearch({
+        ...confirmation,
+        mapCenter,
+        isCurrent,
+        onAnchor: (anchor) => {
+          usePlaceSearchStore.setState({
+            termination: "completed",
+            ...(!mobile ? { selectedId: anchor.googlePlaceId } : {}),
+          });
+          if (!mobile) {
+            anchoredSelection = toAnchor(anchor);
+            setSelectedPlace(anchoredSelection, {
+              itinerarySource: "search",
+              analyticsSource: "search",
+              analyticsRankPending: confirmation.kind === "whole",
+            });
+          }
+        },
+        search: async (params) => {
+          useSearchRecenterStore.getState().setSearchSnapshot({
+            center: { lat: params.latitude, lng: params.longitude },
+            zoom: useMapCenterStore.getState().zoom,
+            radius: params.radius,
+          });
+          const page = await fetchPlacesPageWithPhotos({
+            ...params,
+            pageSize: PLACES_SEARCH_PAGE_SIZE,
+            pageToken: undefined,
+          });
+          return page.items;
+        },
+      });
+      if (!result || !isCurrent()) return false;
+      const searchRankBuckets: Record<string, SearchRankBucket> =
+        confirmation.kind === "whole"
+          ? Object.fromEntries(
+              result.items.map((item, index) => [
+                item.googlePlaceId,
+                bucketSearchRank(index),
+              ]),
+            )
+          : {};
+      let items = result.items;
+      if (confirmation.kind === "specific" && result.anchor) {
+        // Only the chosen mobile recommendation needs full summary information now.
+        if (mobile) {
+          const detail = await fetchPlaceDetail(result.anchor.googlePlaceId);
+          if (!isCurrent()) return false;
+          items = [
+            {
+              googlePlaceId: detail.googlePlaceId,
+              name: detail.name,
+              address: detail.formattedAddress,
+              category: detail.primaryTypeDisplayName || detail.primaryType,
+              rating: detail.rating,
+              userRatingCount: detail.userRatingCount,
+              isOpen: detail.regularOpeningHours?.openNow ?? null,
+              location: detail.location,
+            },
+          ];
+        } else items = [toAnchor(result.anchor)];
+        useSearchRecenterStore.getState().clearSearchSnapshot();
+      } else if (
+        !mobile &&
+        result.anchor &&
+        !items.some(
+          (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
+        )
+      ) {
+        items = [toAnchor(result.anchor), ...items];
+      }
+      const selectedId =
+        !mobile && result.anchor
+          ? result.anchor.googlePlaceId
+          : (items[0]?.googlePlaceId ?? null);
+      usePlaceSearchStore.setState({
+        items,
+        searchRankBuckets,
+        selectedId,
+        status: "done",
+        fallback: result.fallback,
+        termination: result.termination,
+      });
+      setActiveSearchMapPins(placeSearchResultsToMapPins(items));
+      if (!mobile) {
+        const selected = result.anchor
+          ? (items.find(
+              (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
+            ) ?? toAnchor(result.anchor))
+          : (items[0] ?? null);
+        setSelectedPlace(selected, {
+          itinerarySource: "search",
+          analyticsSource: "search",
+          analyticsRankBucket: selected
+            ? searchRankBuckets[selected.googlePlaceId]
+            : undefined,
+          ...(result.anchor ? { skipMapRecenter: true } : {}),
+        });
+      }
+      if (confirmation.kind === "whole") {
+        trackAnalyticsEvent(AnalyticsEvents.search, {
+          result_count_bucket: bucketResultCount(result.items.length),
+          search_mode: mode,
+          ...(roomId ? { room_id: roomId } : {}),
+        });
+      }
+      return true;
+    } catch (error) {
+      if (!isCurrent()) return false;
+      if (anchoredSelection)
+        setSelectedPlace(anchoredSelection, {
+          itinerarySource: "search",
+          analyticsSource: "search",
+          skipMapRecenter: true,
+        });
+      usePlaceSearchStore.setState({
+        status: "error",
+        termination:
+          usePlaceSearchStore.getState().termination === "completed"
+            ? "completed"
+            : confirmation.prediction
+              ? "failed"
+              : "not-requested",
+        error:
+          error instanceof Error
+            ? error.message
+            : "검색에 실패했어요. 다시 시도해주세요.",
+      });
+      return false;
+    }
+  }
+  const recenter = useEffectEvent(() => {
+    const query = usePlaceSearchStore.getState().query;
+    if (query)
+      void confirm(
+        { query, kind: "whole", session: {}, generation: 0 },
+        "map_recenter",
+      );
+  });
+  useEffect(() => {
+    if (seenRecenter.current !== recenterId) {
+      seenRecenter.current = recenterId;
+      recenter();
+    }
+  }, [recenterId]);
+  const clearLegacy = useEffectEvent(() => {
+    if (!legacyQuery && mobile && usePlaceSearchStore.getState().query)
+      invalidate(true);
+  });
+  useEffect(() => {
+    if (seenLegacyNonce.current !== legacyNonce) {
+      seenLegacyNonce.current = legacyNonce;
+      clearLegacy();
+    }
+  }, [legacyNonce, legacyQuery]);
+
+  return { confirm, invalidate, scopeKey };
+}

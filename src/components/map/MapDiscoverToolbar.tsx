@@ -52,7 +52,7 @@ export function MapDiscoverToolbar({
     <div
       ref={setToolbarRef}
       className={cn(
-        "pointer-events-none absolute inset-x-0 top-0 mt-4 max-w-full overflow-visible px-4 mobile:mt-3 mobile:px-5",
+        "pointer-events-none absolute inset-x-0 top-0 mt-[72px] max-w-full overflow-visible px-4 mobile:mt-3 mobile:px-5",
         ratingDropdownOpen ? MAP_TOOLBAR_ELEVATED_Z_CLASS : MAP_TOOLBAR_Z_CLASS,
       )}
     >

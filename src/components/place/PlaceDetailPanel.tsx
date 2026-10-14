@@ -65,6 +65,7 @@ export function PlaceDetailPanel({
 
   const {
     analyticsRankBucket,
+    analyticsRankPending,
     analyticsSource,
     itinerarySource: selectedItinerarySource,
   } = useSelectedPlace();
@@ -74,7 +75,7 @@ export function PlaceDetailPanel({
 
   const itinerarySource = selectedItinerarySource ?? "search";
 
-  const { data: detailData, isLoading: isDetailLoading } =
+  const { data: detailData, isLoading: isDetailLoading, isError: isDetailError, refetch } =
     usePlaceDetailData(googlePlaceId);
 
   const displayName =
@@ -94,7 +95,7 @@ export function PlaceDetailPanel({
       lastTrackedPlaceIdRef.current = null;
       return;
     }
-    if (isDetailLoading || lastTrackedPlaceIdRef.current === placeId) {
+    if (isDetailLoading || isDetailError || analyticsRankPending || lastTrackedPlaceIdRef.current === placeId) {
       return;
     }
     lastTrackedPlaceIdRef.current = placeId;
@@ -106,11 +107,13 @@ export function PlaceDetailPanel({
     });
   }, [
     analyticsRankBucket,
+    analyticsRankPending,
     analyticsSource,
     analyticsRoomId,
     displayCategory,
     googlePlaceId,
     isDetailLoading,
+    isDetailError,
     itinerarySource,
   ]);
   const displayRating = detailData?.rating ?? rating;
@@ -190,7 +193,12 @@ export function PlaceDetailPanel({
     ? () => setBookmarkModalOpen(true)
     : undefined;
 
-  const tabs = (
+  const tabs = isDetailError && !detailData ? (
+    <div role="alert" className="m-3.5 rounded-md border border-border-subtle p-3 text-body-s-regular text-text">
+      <p>장소 정보를 불러오지 못했어요.</p>
+      <button type="button" onClick={() => void refetch()} className="mt-2 text-primary underline">다시 시도</button>
+    </div>
+  ) : (
     <PlaceDetailTabs
       home={{
         isOpen: openNow,

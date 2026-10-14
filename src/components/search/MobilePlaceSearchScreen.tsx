@@ -39,6 +39,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useMapCenterStore } from "@/stores/map-center-store";
 
+import { MapMobileSearchScreen, type MapMobileSearchProps } from "./MapMobileSearchScreen";
+
 type SuggestState =
   | { status: "idle" }
   | { status: "loading"; items: MapSearchPlaceEntry[] }
@@ -83,7 +85,14 @@ type MobilePlaceSearchScreenProps = Readonly<{
  * 모바일 전체 화면 장소 검색 — 입력하는 동안 자동완성 결과를 보여주고, 입력이 비면 검색 기록을 보여준다.
  * 닫혀도 언마운트하지 않아 다시 열면 입력·결과가 그대로 남는다.
  */
-export function MobilePlaceSearchScreen({
+export function MobilePlaceSearchScreen(props: MobilePlaceSearchScreenProps & Partial<Pick<MapMobileSearchProps, "onConfirm" | "onInvalidate" | "scopeKey" | "initialQuery">>) {
+  if (props.onConfirm && props.onInvalidate && props.scopeKey) {
+    return <MapMobileSearchScreen {...props} onConfirm={props.onConfirm} onInvalidate={props.onInvalidate} scopeKey={props.scopeKey} />;
+  }
+  return <LegacyMobilePlaceSearchScreen {...props} />;
+}
+
+function LegacyMobilePlaceSearchScreen({
   open,
   onClose,
   inputRef,

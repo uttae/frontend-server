@@ -9,7 +9,7 @@ import { useMapDiscoverToolbarOffset } from "@/hooks/useMapDiscoverToolbarOffset
 import { cn } from "@/lib/utils";
 
 import Map, { type MapRouteView } from "./Map";
-import { MobileMapSearch } from "./MobileMapSearch";
+import { MapPlaceSearch } from "./MapPlaceSearch";
 
 export function MapWithDetailPanel({
   mobileInline = false,
@@ -84,7 +84,7 @@ export function MapWithDetailPanel({
         )}
       </div>
 
-      {mobileInline && !routeView ? <MobileMapSearch /> : null}
+      {!routeView ? <MapPlaceSearch mobile={mobileInline} /> : null}
     </section>
   );
 }

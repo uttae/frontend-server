@@ -8,6 +8,7 @@ import { PlaceDetailTabs } from "@/components/place/PlaceDetailTabs";
 import { usePlaceDetailData } from "@/components/place/usePlaceDetailData";
 import { AnalyticsEvents, trackAnalyticsEvent, type AnalyticsSource } from "@/lib/analytics/track";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
+import type { SearchRankBucket } from "@/lib/analytics/context";
 import type { PlanPlace } from "@/lib/plan/types";
 
 /**
@@ -19,28 +20,31 @@ export function MobileRoutePlaceDetail({
   place,
   active,
   analyticsSource = "plan",
+  analyticsRankBucket,
 }: Readonly<{
   place: Pick<PlanPlace, "googlePlaceId" | "title" | "subtitle" | "location" | "imageUrl" | "primaryTypeDisplayName">;
   active: boolean;
   analyticsSource?: AnalyticsSource;
+  analyticsRankBucket?: SearchRankBucket;
 }>) {
   const analyticsRoomId = useAnalyticsRoomId();
   const rawId = place.googlePlaceId?.trim() ?? "";
   const googlePlaceId = rawId ? normalizeGooglePlaceResourceId(rawId) : undefined;
-  const { data: detail, isLoading } = usePlaceDetailData(active ? googlePlaceId : undefined);
+  const { data: detail, isLoading, isError, refetch } = usePlaceDetailData(active ? googlePlaceId : undefined);
   const category = detail?.primaryTypeDisplayName ?? place.primaryTypeDisplayName ?? "";
 
   // 일정 상세를 본 것으로 한 번만 기록한다(장소 상세 패널과 같은 이벤트)
   const trackedPlaceIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!active || !googlePlaceId || isLoading || trackedPlaceIdRef.current === googlePlaceId) return;
+    if (!active || !googlePlaceId || isLoading || isError || trackedPlaceIdRef.current === googlePlaceId) return;
     trackedPlaceIdRef.current = googlePlaceId;
     trackAnalyticsEvent(AnalyticsEvents.viewPlace, {
       place_category: category,
       interaction_source: analyticsSource,
+      ...(analyticsRankBucket ? { rank_bucket: analyticsRankBucket } : {}),
       ...(analyticsRoomId ? { room_id: analyticsRoomId } : {}),
     });
-  }, [active, analyticsSource, analyticsRoomId, category, googlePlaceId, isLoading]);
+  }, [active, analyticsSource, analyticsRankBucket, analyticsRoomId, category, googlePlaceId, isLoading, isError]);
 
   const showSkeleton = !active || (isLoading && !detail);
 
@@ -54,7 +58,12 @@ export function MobileRoutePlaceDetail({
         )}
       </div>
 
-      {showSkeleton ? (
+      {isError && !detail && active ? (
+        <div role="alert" className="m-3.5 rounded-md border border-border-subtle p-3 text-body-s-regular text-text">
+          <p>장소 정보를 불러오지 못했어요.</p>
+          <button type="button" onClick={() => void refetch()} className="mt-2 text-primary underline">다시 시도</button>
+        </div>
+      ) : showSkeleton ? (
         <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
           <span className="h-5 w-24 animate-pulse rounded bg-fill-strong" />
           <span className="h-16 w-full animate-pulse rounded-md bg-fill" />
