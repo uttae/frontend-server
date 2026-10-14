@@ -775,13 +775,19 @@ it("opens a place cost list instead of editing only the latest linked expense", 
   expect(renderer.root.findByType(ExpenseEditor).props.initial.expense.id).toBe(99);
 });
 
-it("opens a day cost list from the KRW total only", async () => {
+it.each([
+  { rows: [["KRW", "1000"], ["USD", "2.50"]], label: "1,000 KRW 외 1건" },
+  { rows: [["JPY", "3600"]], label: "3,600 JPY" },
+  { rows: [["KRW", "1000"], ["USD", "10"], ["USD", "20"]], label: "30 USD 외 1건" },
+  { rows: [["USD", "10"], ["EUR", "20"], ["EUR", "30"], ["USD", "5"]], label: "15 USD 외 2건" },
+])("day summary $label opens all expenses for that day", async ({ rows, label }) => {
   await mountMutations();
   await act(async () => {
     client.setQueryData(expenseKeys.list("r"), [
-      { ...record, id: 20, scheduleId: 2, scheduleItemId: 3, totalAmount: "1000", currency: "KRW" },
-      { ...record, id: 21, scheduleId: 2, scheduleItemId: null, totalAmount: "2.50", currency: "USD" },
-      { ...record, id: 22, scheduleId: 3, scheduleItemId: null, totalAmount: "500", currency: "KRW" },
+      ...rows.map(([currency, totalAmount], id) => ({
+        ...record, id: 20 + id, scheduleId: 2, scheduleItemId: id === 0 ? 3 : null, currency, totalAmount,
+      })),
+      { ...record, id: 100, scheduleId: 3, scheduleItemId: null, totalAmount: "500", currency: "KRW" },
     ]);
     renderer.update(
       <QueryClientProvider client={client}>
@@ -791,11 +797,11 @@ it("opens a day cost list from the KRW total only", async () => {
   });
 
   const button = renderer.root.findByType("button");
-  expect(button.findByType("span").children.join("")).toBe("1,000 KRW");
+  expect(button.findByType("span").children.join("")).toBe(label);
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   const panel = renderer.root.findByType(ExpenseScopePanel);
   expect(panel.findAllByType("h2")[0].children.join("")).toBe("1일차 비용");
-  expect(panel.findAllByType("li")).toHaveLength(2);
+  expect(panel.findAllByType("li")).toHaveLength(rows.length);
   await act(async () => panel.findAllByType("button").find(b => b.children.join("").includes("비용 추가"))!.props.onClick());
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2 });
 });
@@ -1108,5 +1114,30 @@ it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-ro
     expect(analytics.send.mock.calls.filter(([command]) => command === "event")).toEqual([
       ["event", "expense_updated", { room_id: "r" }], ["event", "expense_budget_saved", { room_id: "r" }],
     ]);
+  }
+});
+
+
+it.each([
+  { rows: [["KRW", "1000"]], label: "1,000 KRW" },
+  { rows: [["JPY", "3600"]], label: "3,600 JPY" },
+  { rows: [["USD", "10"], ["USD", "20"], ["KRW", "1000"]], label: "30 USD 외 1건" },
+  { rows: [["JPY", "0"]], label: "0 JPY" },
+])("place summary $label opens the complete scoped original-currency list", async ({ rows, label }) => {
+  const records = rows.map(([currency, totalAmount], id) => ({ ...record, id, currency, totalAmount, scheduleId: 2, scheduleItemId: 3 }));
+  await mountPlaceExpenseButton([...records, { ...record, id: 100, scheduleId: 9, scheduleItemId: 3 }]);
+  const button = renderer.root.findByType("button");
+  expect(button.findByType("span").children.join("")).toBe(label);
+  expect(button.props["aria-label"]).toBe("장소 비용 목록 열기");
+  const descriptionId = button.props["aria-describedby"];
+  expect(descriptionId).toBeTruthy();
+  expect(textOf(renderer.root.findByProps({ id: descriptionId }))).toBe(label);
+  await act(async () => button.props.onClick({ stopPropagation() {} }));
+  expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
+  const panel = renderer.root.findByType(ExpenseScopePanel);
+  expect(panel.findAllByType("li")).toHaveLength(rows.length);
+  for (const { currency, totalAmount } of records) {
+    expect(textOf(panel)).toContain(currency);
+    expect(panel.props.expenses).toContainEqual(expect.objectContaining({ currency, totalAmount }));
   }
 });

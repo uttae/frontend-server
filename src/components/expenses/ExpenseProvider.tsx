@@ -3,6 +3,7 @@
 import {
   createContext,
   useContext,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -35,7 +36,7 @@ import { canManageExpenses } from "@/lib/expenses/expense-policy";
 import { getExpenseRecoveryStore } from "@/lib/expenses/expense-recovery";
 import { expenseKeys } from "@/lib/expenses/expense-queries";
 import { expensesInScope, type ExpenseScope } from "@/lib/expenses/expense-scope";
-import { summarizeExpensesInKrw } from "@/lib/plan/mobilePlanFormat";
+import { summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { useRoomSchedules } from "@/hooks/useRooms";
 import { useExpenseRecovery } from "@/hooks/useExpenseRecovery";
@@ -429,19 +430,21 @@ export function ExpenseEntryButton({
   className?: string;
   icon?: ReactNode;
 }>) {
+  const summaryId = useId();
   const context = useContext(ExpenseContext);
   if (!context?.canManage) return null;
   const scope = { scheduleId, scheduleItemId, label: scopeLabel, subtitle: scopeSubtitle };
   const scoped = expensesInScope(context.list.data ?? [], scope);
   const summaryLabel = !context.list.isSuccess
     ? "비용 보기"
-    : (summarizeExpensesInKrw(scoped) ?? label);
+    : (summarizePlaceExpenses(scoped) ?? label);
   return (
     <button
       type="button"
       data-plan-card-no-drag
       disabled={context.busy}
       aria-label={`${scopeLabel} ${context.list.isSuccess && !scoped.length ? "비용 추가" : "비용 목록 열기"}`}
+      aria-describedby={scheduleItemId === undefined ? undefined : summaryId}
       aria-haspopup="dialog"
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => {
@@ -456,7 +459,7 @@ export function ExpenseEntryButton({
       }}
       className={cn(className, "min-w-0 max-w-full text-left", "disabled:cursor-not-allowed disabled:opacity-50")}
     >
-      {icon}<span className="min-w-0 truncate">{summaryLabel}</span>
+      {icon}<span id={scheduleItemId === undefined ? undefined : summaryId} className="min-w-0 truncate" title={scheduleItemId === undefined ? undefined : summaryLabel}>{summaryLabel}</span>
     </button>
   );
 }

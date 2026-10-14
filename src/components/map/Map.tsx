@@ -19,6 +19,7 @@ import {
   MAP_MIN_ZOOM,
   MAP_PAN_RESTRICTION,
   normalizeGooglePlaceResourceId,
+  panToWithinWorld,
   readDestinationLatLngFromSession,
   viewportSearchRadiusMetersFromBounds,
   writeDestinationLatLngToSession,
@@ -96,7 +97,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
   useEffect(() => {
     if (!map || focusSeq === null || lat === undefined || lng === undefined) return;
-    map.panTo({ lat, lng });
+    panToWithinWorld(map, { lat, lng });
   }, [map, focusSeq, lat, lng]);
 
   return null;
@@ -114,7 +115,7 @@ function SelectedPlaceController() {
     placeSelectionCameraRef.current = "full";
 
     if (mode === "none") return;
-    map.panTo(selectedPlace.location);
+    panToWithinWorld(map, selectedPlace.location);
     if (mode === "full") {
       map.setZoom(16);
     }
@@ -202,7 +203,7 @@ function MapPreventHorizontalWrap() {
 
       const last = lastValidCenterRef.current;
       if (last) {
-        map.panTo(last);
+        panToWithinWorld(map, last);
       }
     });
 

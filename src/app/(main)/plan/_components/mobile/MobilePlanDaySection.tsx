@@ -16,7 +16,7 @@ import {
 } from "@/components/mobile/MobileBottomSheet";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
 import type { InsertAnchor } from "@/lib/plan/insertPosition";
-import { summarizeExpensesInKrw } from "@/lib/plan/mobilePlanFormat";
+import { summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
 
 import { MobilePlanItinerary } from "./MobilePlanItinerary";
 
@@ -64,7 +64,7 @@ export function MobilePlanDaySection({
   const [manageOpen, setManageOpen] = useState(false);
 
   const dayExpenses = expensesInScope(expenses.list.data ?? [], { scheduleId, label: dayLabel });
-  const dayExpenseSummary = summarizeExpensesInKrw(dayExpenses);
+  const dayExpenseSummary = summarizePlaceExpenses(dayExpenses);
 
   function openDayExpenses() {
     setManageOpen(false);

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Expense } from "@/lib/api/rooms/expenses";
 
-import { formatMobileDayDate, formatMonthDayKo, summarizeExpensesInKrw } from "./mobilePlanFormat";
+import { formatMobileDayDate, formatMonthDayKo, summarizePlaceExpenses } from "./mobilePlanFormat";
 
 function expense(currency: string, totalAmount: string, id: number): Expense {
   return { id, currency, totalAmount } as Expense;
@@ -31,22 +31,21 @@ describe("formatMobileDayDate", () => {
   });
 });
 
-describe("summarizeExpensesInKrw", () => {
-  it("비용이 없으면 null", () => {
-    expect(summarizeExpensesInKrw([])).toBeNull();
-  });
-
-  it("원화 비용 합계 하나만 보여준다", () => {
-    expect(
-      summarizeExpensesInKrw([
-        expense("KRW", "45000", 1),
-        expense("USD", "50.00", 2),
-        expense("KRW", "5000", 3),
-      ]),
-    ).toBe("50,000 KRW");
-  });
-
-  it("원화 비용이 없으면 null", () => {
-    expect(summarizeExpensesInKrw([expense("JPY", "3600", 1)])).toBeNull();
+describe("summarizePlaceExpenses", () => {
+  it.each([
+    { name: "empty", rows: [], want: null },
+    { name: "single KRW", rows: [["KRW", "1000"]], want: "1,000 KRW" },
+    { name: "single foreign", rows: [["JPY", "3600"]], want: "3,600 JPY" },
+    { name: "same currency", rows: [["USD", "10.10"], ["USD", "20.20"]], want: "30.30 USD" },
+    { name: "most entries, not largest amount", rows: [["KRW", "1000000"], ["USD", "10"], ["USD", "20"]], want: "30 USD 외 1건" },
+    { name: "tie uses first occurrence; suffix counts entries not currencies", rows: [["USD", "10"], ["EUR", "20"], ["EUR", "30"], ["USD", "5"]], want: "15 USD 외 2건" },
+    { name: "zero is an expense", rows: [["JPY", "0"]], want: "0 JPY" },
+    { name: "zero entries participate in counts", rows: [["USD", "0"], ["USD", "0"], ["KRW", "1000"]], want: "0 USD 외 1건" },
+    { name: "large precise amount", rows: [["USD", "12345678901234567890.12"], ["USD", "0.01"]], want: "12,345,678,901,234,567,890.13 USD" },
+  ])("$name", ({ rows, want }) => {
+    const records = rows.map(([currency, amount], index) => expense(currency, amount, index));
+    const before = structuredClone(records);
+    expect(summarizePlaceExpenses(records)).toBe(want);
+    expect(records).toEqual(before);
   });
 });
