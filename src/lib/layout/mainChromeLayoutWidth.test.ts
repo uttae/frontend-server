@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { resolveLeftSectionTargetMaxWidthPx, resolveDesktopLeftSectionMinWidthPx } from "./mainChromeLayoutWidth";
 
 it("keeps the schedule width across collaboration tabs and /chat, including page width effects", () => {
-  for (const pathname of ["/plan", "/plan/room", "/chat", "/search", "/bookmark", "/bookmark/folder", "/member-settings", "/room-settings", "/settings"]) {
+  for (const pathname of ["/plan", "/plan/room", "/chat", "/search", "/bookmark", "/bookmark/folder", "/member-settings", "/settings"]) {
     for (const contentWidthToken of ["", "400px"]) {
       expect(resolveLeftSectionTargetMaxWidthPx({ pathname, contentWidthToken, isMobile: false })).toBe(720);
       expect(resolveLeftSectionTargetMaxWidthPx({ pathname, contentWidthToken, isMobile: true })).toBeNull();

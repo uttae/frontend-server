@@ -58,9 +58,7 @@ export function resolveRouteDefaultContentWidth(pathname: string): string {
     pathname === "/bookmark" ||
     pathname.startsWith("/bookmark/") ||
     pathname === "/member-settings" ||
-    pathname.startsWith("/member-settings/") ||
-    pathname === "/room-settings" ||
-    pathname.startsWith("/room-settings/")
+    pathname.startsWith("/member-settings/")
   ) {
     return width.s1;
   }
