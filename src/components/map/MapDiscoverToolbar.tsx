@@ -52,7 +52,7 @@ export function MapDiscoverToolbar({
     <div
       ref={setToolbarRef}
       className={cn(
-        "pointer-events-none absolute inset-x-0 top-0 mt-[72px] max-w-full overflow-visible px-4 mobile:mt-3 mobile:px-5",
+        "pointer-events-none absolute left-0 right-[432px] top-3 flex min-h-12 max-w-full flex-col justify-center overflow-visible px-4 mobile:right-0 mobile:block mobile:px-5",
         ratingDropdownOpen ? MAP_TOOLBAR_ELEVATED_Z_CLASS : MAP_TOOLBAR_Z_CLASS,
       )}
     >
@@ -65,6 +65,7 @@ export function MapDiscoverToolbar({
             {...mapToolbarPanelMotion}
           >
             <MapCategoryChips
+              className="flex-nowrap overflow-x-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               selectedCategoryId={selectedCategoryId}
               onSelectCategory={onSelectCategory}
             />
