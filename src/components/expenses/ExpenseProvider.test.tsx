@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { act, create, type ReactTestInstance, type ReactTestRenderer } from "react-test-renderer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { setSessionUserCache } from "@/lib/session-user-cache";
@@ -12,6 +12,10 @@ const stomp = vi.hoisted(() => ({
   unsubscribe: vi.fn(),
 }));
 const stompClient = { subscribe: stomp.subscribe };
+/** 버튼 안 `<span>` 라벨까지 이어 붙인 글자 */
+const textOf = (node: ReactTestInstance): string =>
+  node.children.map((child) => (typeof child === "string" ? child : textOf(child))).join("");
+
 vi.mock("@/contexts/StompContext", () => ({
   useStompContext: () => ({ connected: stomp.connected, client: stompClient }),
 }));
@@ -610,7 +614,7 @@ it("shares one room subscription across route children and resets it on selected
   gateState.roomContextReady = true;
   await act(async () => { renderer.update(tree("장소 비용")); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(renderer.root.findAllByType("button").some(b => b.children.join("").includes("장소 비용"))).toBe(true);
+  expect(renderer.root.findAllByType("button").some(b => textOf(b).includes("장소 비용"))).toBe(true);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   expect(stomp.subscribe.mock.calls[0][0]).toBe("/topic/rooms/r/expenses");
   await act(async () => { renderer.update(tree("일차 비용")); });
@@ -648,7 +652,7 @@ it("mobile plan shares the provider with the cost page while day/place entries k
   expect(renderer.root.findAllByType("a").some(a => a.props.href === "/cost")).toBe(false);
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   for (const [label, initial] of [["일차 비용", { scheduleId: 10 }], ["장소 비용", { scheduleId: 10, scheduleItemId: 20 }]] as const) {
-    const button = renderer.root.findAllByType("button").find(b => b.children.join("").includes(label))!;
+    const button = renderer.root.findAllByType("button").find(b => textOf(b).includes(label))!;
     await act(async () => button.props.onClick({ stopPropagation: () => {} }));
     expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(1);
     expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual(initial);
@@ -754,8 +758,7 @@ it("opens a place cost list instead of editing only the latest linked expense", 
     client.setQueryData(scheduleItemsQueryKey("r", 2), [{ itemId: 3, title: "경복궁" }]);
   });
   const button = renderer.root.findByType("button");
-  expect(button.children.join("")).toContain("비용 2건");
-  expect(button.children.join("")).toContain("24,690 KRW");
+  expect(button.findByType("span").children.join("")).toBe("24,690 KRW");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
   expect(renderer.root.findAllByType("h2").some(heading => heading.children.join("") === "장소 비용")).toBe(true);
@@ -772,13 +775,19 @@ it("opens a place cost list instead of editing only the latest linked expense", 
   expect(renderer.root.findByType(ExpenseEditor).props.initial.expense.id).toBe(99);
 });
 
-it("opens a day cost list with separate totals for each currency", async () => {
+it.each([
+  { rows: [["KRW", "1000"], ["USD", "2.50"]], label: "1,000 KRW 외 1건" },
+  { rows: [["JPY", "3600"]], label: "3,600 JPY" },
+  { rows: [["KRW", "1000"], ["USD", "10"], ["USD", "20"]], label: "30 USD 외 1건" },
+  { rows: [["USD", "10"], ["EUR", "20"], ["EUR", "30"], ["USD", "5"]], label: "15 USD 외 2건" },
+])("day summary $label opens all expenses for that day", async ({ rows, label }) => {
   await mountMutations();
   await act(async () => {
     client.setQueryData(expenseKeys.list("r"), [
-      { ...record, id: 20, scheduleId: 2, scheduleItemId: 3, totalAmount: "1000", currency: "KRW" },
-      { ...record, id: 21, scheduleId: 2, scheduleItemId: null, totalAmount: "2.50", currency: "USD" },
-      { ...record, id: 22, scheduleId: 3, scheduleItemId: null, totalAmount: "500", currency: "KRW" },
+      ...rows.map(([currency, totalAmount], id) => ({
+        ...record, id: 20 + id, scheduleId: 2, scheduleItemId: id === 0 ? 3 : null, currency, totalAmount,
+      })),
+      { ...record, id: 100, scheduleId: 3, scheduleItemId: null, totalAmount: "500", currency: "KRW" },
     ]);
     renderer.update(
       <QueryClientProvider client={client}>
@@ -788,11 +797,11 @@ it("opens a day cost list with separate totals for each currency", async () => {
   });
 
   const button = renderer.root.findByType("button");
-  expect(button.children.join("")).toContain("비용 2건 · 1,000 KRW · 2.50 USD");
+  expect(button.findByType("span").children.join("")).toBe(label);
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   const panel = renderer.root.findByType(ExpenseScopePanel);
   expect(panel.findAllByType("h2")[0].children.join("")).toBe("1일차 비용");
-  expect(panel.findAllByType("li")).toHaveLength(2);
+  expect(panel.findAllByType("li")).toHaveLength(rows.length);
   await act(async () => panel.findAllByType("button").find(b => b.children.join("").includes("비용 추가"))!.props.onClick());
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2 });
 });
@@ -804,7 +813,7 @@ it("returns to add mode after the last linked expense is deleted", async () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
   });
   const button = renderer.root.findByType("button");
-  expect(button.children.join("")).toContain("비용 추가");
+  expect(button.findByType("span").children.join("")).toBe("비용 추가");
   await act(async () => button.props.onClick({ stopPropagation() {} }));
   expect(renderer.root.findByType(ExpenseEditor).props.initial).toEqual({ scheduleId: 2, scheduleItemId: 3 });
 });
@@ -1105,5 +1114,30 @@ it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-ro
     expect(analytics.send.mock.calls.filter(([command]) => command === "event")).toEqual([
       ["event", "expense_updated", { room_id: "r" }], ["event", "expense_budget_saved", { room_id: "r" }],
     ]);
+  }
+});
+
+
+it.each([
+  { rows: [["KRW", "1000"]], label: "1,000 KRW" },
+  { rows: [["JPY", "3600"]], label: "3,600 JPY" },
+  { rows: [["USD", "10"], ["USD", "20"], ["KRW", "1000"]], label: "30 USD 외 1건" },
+  { rows: [["JPY", "0"]], label: "0 JPY" },
+])("place summary $label opens the complete scoped original-currency list", async ({ rows, label }) => {
+  const records = rows.map(([currency, totalAmount], id) => ({ ...record, id, currency, totalAmount, scheduleId: 2, scheduleItemId: 3 }));
+  await mountPlaceExpenseButton([...records, { ...record, id: 100, scheduleId: 9, scheduleItemId: 3 }]);
+  const button = renderer.root.findByType("button");
+  expect(button.findByType("span").children.join("")).toBe(label);
+  expect(button.props["aria-label"]).toBe("장소 비용 목록 열기");
+  const descriptionId = button.props["aria-describedby"];
+  expect(descriptionId).toBeTruthy();
+  expect(textOf(renderer.root.findByProps({ id: descriptionId }))).toBe(label);
+  await act(async () => button.props.onClick({ stopPropagation() {} }));
+  expect(renderer.root.findAllByType(ExpenseEditor)).toHaveLength(0);
+  const panel = renderer.root.findByType(ExpenseScopePanel);
+  expect(panel.findAllByType("li")).toHaveLength(rows.length);
+  for (const { currency, totalAmount } of records) {
+    expect(textOf(panel)).toContain(currency);
+    expect(panel.props.expenses).toContainEqual(expect.objectContaining({ currency, totalAmount }));
   }
 });

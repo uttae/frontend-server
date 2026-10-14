@@ -21,6 +21,22 @@
 - 특정 페이지 전용 컴포넌트는 `src/app/**/_components/`에 둔다
 - 없으면 Tailwind로 직접 작업한다
 
+### 1-4. Figma 디자인 시스템
+[Design System](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System) 파일은 확정된 내용만 모아 둔 곳이다. 퍼블리싱할 때 해당 페이지의 컴포넌트·토큰을 기준으로 맞춘다.
+
+- 00 [Foundation](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=161-9) — Color(Primitive·Semantic), Typography, Icon, Spacing, Shadow, Radius, Grid, Logo
+- 01 [Button](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5002-3575) — Button, Button Base (Size·State·Layout)
+- 02 [Text Field](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5002-4296) — Text Field Emphasis, Textarea Field, Search Bar, Input Base
+- 03·04·05 [Header · Footer · Side Bar](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5001-3046) — Header(Login·Logout), Footer, Side Bar
+- 06 [Navigation](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5002-4797) — Bottom Navigation
+- 07·08 [Select Field · Dropdown](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5030-540) — Select Field, Select Field_Emphasis, Dropdown, Item
+- 09·10 [Date Picker · Time Picker](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5045-885) — Date Picker, Date Cell, Time Picker, Time Picker Modal, Period
+- 11 [Tabs](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5138-2632) — Tabs Line, Tabs Chip, Tab Item
+- 12 [Toast](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5285-4979) — Toast
+- 13 [Alert Dialog](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5619-553) — Alert Dialog
+- 14·15 [Chip · Badge](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5624-159) — Chip(Solid·Outline), Badge(Weak·Solid·Outline, 톤 6종)
+- [Update Log](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5635-11) — 디자인 시스템 변경 기록
+
 ---
 
 ## 2. 아이콘의 사용

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useId, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import {
   ChevronDownIcon,
@@ -22,7 +22,7 @@ type MobilePlanPlaceCardProps = Readonly<{
   badgeColor: string;
   /** 방금 추가된 카드 — 잠깐 강조한다 */
   highlighted?: boolean;
-  /** `45,000 KRW 외 1건` — 없으면 비용 줄을 숨긴다 */
+  /** 대표 통화 원금액 요약 `30 USD 외 1건` — 없으면 비용 줄을 숨긴다 */
   expenseSummary: string | null;
   /** 카드 본문 — 없으면 본문을 눌러도 아무 일도 없다(예: 경로 보기에서 펼친 카드) */
   onOpen?: () => void;
@@ -141,6 +141,7 @@ export function MobilePlanPlaceCard({
 
 function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, onOpenExpenses }:
   Pick<MobilePlanPlaceCardProps, "place" | "expenseSummary" | "addWhenEmpty" | "onEditTime" | "onOpenExpenses">) {
+  const summaryId = useId();
   const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
   const addTime = !timeRange && Boolean(addWhenEmpty?.time);
   const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
@@ -188,10 +189,11 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onOpenExpenses();
                     }}
                     aria-label={`${place.title} 비용 보기`}
-                    className="pointer-events-auto flex min-w-0 items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    aria-describedby={summaryId}
+                    className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
                   >
                     <CoinIcon size={18} className="text-icon-subtle" />
-                    <span className="truncate">{expenseSummary}</span>
+                    <span id={summaryId} className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
                   </button>
                 ) : null}
                 {!expenseSummary && addExpense ? (

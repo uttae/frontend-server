@@ -1,7 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
-
+import { TrashIcon } from "@/assets/icons";
 import { MemoIcon } from "@/components/icons";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -116,9 +115,10 @@ export function PlanItemMemoReadOnly({
   if (!text.length) return null;
 
   return (
-    <div className={PLAN_PLACE_CARD_TW.editorModule}>
-      <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
-        <MemoIcon className="h-6 w-6" />
+    // 아이콘·간격은 카드 액션 버튼(16px 아이콘, 6px 간격)과 맞추고, 글자 시작·높이·휴지통 위치는 디자인 값에 맞춘다
+    <div className={cn(PLAN_PLACE_CARD_TW.editorModule, "gap-1.5 py-[13px] pl-[19px]")}>
+      <div className={cn(PLAN_PLACE_CARD_TW.editorSideLabelWrapper, "pt-1")}>
+        <MemoIcon className="h-4 w-4" />
       </div>
       <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-gray-900">
         {renderTextWithLinks(text, {
@@ -136,9 +136,9 @@ export function PlanItemMemoReadOnly({
             e.stopPropagation();
             onDelete();
           }}
-          className="shrink-0 cursor-pointer self-start rounded-md p-1 text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          className="-mr-[3px] shrink-0 cursor-pointer self-start rounded-md p-1 text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Trash2 className="h-4 w-4" aria-hidden />
+          <TrashIcon size={16} />
         </button>
       ) : null}
     </div>

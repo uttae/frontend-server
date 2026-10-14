@@ -19,7 +19,7 @@ type MobileRoutePlaceCardProps = Readonly<{
   badgeColor: string;
   /** 방금 추가된 카드 — 잠깐 강조한다 */
   highlighted: boolean;
-  /** `45,000 KRW 외 1건` — 없으면 비용 권한이 있을 때 "비용 추가"를 보인다 */
+  /** 대표 통화 원금액 요약 `30 USD 외 1건` — 없으면 비용 권한이 있을 때 "비용 추가"를 보인다 */
   expenseSummary: string | null;
   /** 비용을 추가할 수 있는지(비용 권한) */
   canAddExpense: boolean;
