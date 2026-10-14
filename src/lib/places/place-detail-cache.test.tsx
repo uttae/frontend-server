@@ -4,16 +4,18 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { expect, it, vi } from "vitest";
 import { fetchPlaceDetail, placeDetailQueryKey } from "./place-queries";
-import { terminatePredictionSession } from "./search-session";
+import { confirmPlaceSearch } from "./search-session";
 import { registerQueryClient } from "@/lib/query-client";
 import { usePlaceDetailData } from "@/components/place/usePlaceDetailData";
+import { apiFetch } from "@/lib/api/client";
+vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 import { requestPlaceDetail, type PlaceDetail } from "@/lib/api/places";
 vi.mock("@/lib/api/places", async (original) => ({
   ...(await original<object>()),
   requestPlaceDetail: vi.fn(),
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-it("SDK coordinates never seed full detail; later panels reuse full information without another request", async () => {
+it("resolved full raw response seeds canonical cache and later panels reuse it with zero GET requests", async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -37,7 +39,7 @@ it("SDK coordinates never seed full detail; later panels reuse full information 
       writeAReviewUri: null,
       photosUri: null,
     },
-    regularOpeningHours: { openNow: true, weekdayDescriptions: ["월요일 9시"] },
+    regularOpeningHours: { openNow: true, weekdayDescriptions: ["월요일 9시"], secondaryHoursType: null, specialDays: [], periods: [], nextOpenTime: null, nextCloseTime: null },
     reviewSummary: "요약",
     reviews: [
       {
@@ -50,18 +52,11 @@ it("SDK coordinates never seed full detail; later panels reuse full information 
     ],
   };
   vi.mocked(requestPlaceDetail).mockReset().mockResolvedValue(detail);
-  await terminatePredictionSession(
-    {
-      placeId: "one",
-      toPlace: () => ({
-        fetchFields: async () => {},
-        location: { lat: () => 1, lng: () => 2 },
-      }),
-    } as unknown as google.maps.places.PlacePrediction,
-    {},
-  );
-  expect(client.getQueryData(placeDetailQueryKey("one"))).toBeUndefined();
-  await fetchPlaceDetail("places/one");
+  vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" }));
+  await confirmPlaceSearch({ query: "카페", kind: "specific", prediction: { placeId: "one", text: null, structuredFormat: null }, session: { sessionToken: "token", expiresAt: Date.now()+60000 }, mapCenter: null, isCurrent: () => true, search: async () => [] });
+  const cached = client.getQueryData(placeDetailQueryKey("one"));
+  expect(cached).toEqual(detail);
+  expect(await fetchPlaceDetail("places/one")).toBe(cached);
   let view: ReturnType<typeof usePlaceDetailData>;
   function Panel() {
     const result = usePlaceDetailData("one");
@@ -78,7 +73,8 @@ it("SDK coordinates never seed full detail; later panels reuse full information 
       </QueryClientProvider>,
     ),
   );
-  expect(requestPlaceDetail).toHaveBeenCalledTimes(1);
+  expect(requestPlaceDetail).not.toHaveBeenCalled();
+  expect(apiFetch).toHaveBeenCalledTimes(1);
   expect(view!.data).toMatchObject({
     openNow: true,
     phone: "전화",

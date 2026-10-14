@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { PlaceResolveResponse } from "@/lib/api/place-sessions";
 import type { SearchRankBucket } from "@/lib/analytics/context";
 import type { PlaceSearchResult } from "@/hooks/usePlacesSearch";
 
@@ -15,7 +16,8 @@ type PlaceSearchState = {
   status: "idle" | "pending" | "done" | "error";
   error: string | null;
   fallback: boolean;
-  termination: "completed" | "failed" | "not-requested";
+  termination: PlaceResolveResponse["termination"] | "failed" | "not-requested";
+  resolution: Omit<PlaceResolveResponse, "detail"> | null;
   setScope: (scope: string) => void;
   invalidate: () => number;
   select: (id: string) => void;
@@ -33,6 +35,7 @@ const empty = {
   error: null,
   fallback: false,
   termination: "not-requested" as const,
+  resolution: null,
 };
 export const usePlaceSearchStore = create<PlaceSearchState>((set, get) => ({
   ...empty,

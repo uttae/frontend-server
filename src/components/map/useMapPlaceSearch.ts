@@ -19,14 +19,11 @@ import {
 } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { getQueryClient } from "@/lib/query-client";
-import {
-  fetchPlaceDetail,
-  placeDetailQueryKey,
-} from "@/lib/places/place-queries";
+import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
 import {
   confirmPlaceSearch,
-  type PredictionCoordinates,
+  type ResolvedSearchAnchor,
   type SearchConfirmation,
 } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
@@ -116,20 +113,23 @@ export function useMapPlaceSearch(mobile: boolean) {
       error: null,
       expanded: false,
       termination: "not-requested",
+      resolution: null,
     });
     if (mobile) {
       setSelectedPlace(null);
       useMobileMapSearchStore.setState({ textQuery: query });
     }
-    const toAnchor = (anchor: PredictionCoordinates): PlaceSearchResult => ({
+    const toAnchor = (anchor: ResolvedSearchAnchor): PlaceSearchResult => ({
       googlePlaceId: anchor.googlePlaceId,
       name:
-        confirmation.prediction?.mainText?.text ??
-        confirmation.prediction?.text.text ??
-        "장소",
-      address: confirmation.prediction?.secondaryText?.text ?? "",
-      category: "",
-      rating: null,
+        anchor.detail.name ??
+        confirmation.prediction?.structuredFormat?.mainText?.text ??
+        confirmation.prediction?.text?.text ?? "",
+      address: anchor.detail.formattedAddress ?? "",
+      category: anchor.detail.primaryTypeDisplayName ?? anchor.detail.primaryType ?? "",
+      rating: anchor.detail.rating,
+      userRatingCount: anchor.detail.userRatingCount,
+      isOpen: anchor.detail.regularOpeningHours?.openNow ?? null,
       location: anchor.location,
     });
     let anchoredSelection: PlaceSearchResult | null = null;
@@ -138,9 +138,20 @@ export function useMapPlaceSearch(mobile: boolean) {
         ...confirmation,
         mapCenter,
         isCurrent,
+        onResolved: (resolved) => {
+          usePlaceSearchStore.setState({
+            termination: resolved.termination,
+            resolution: {
+              source: resolved.source,
+              cacheStatus: resolved.cacheStatus,
+              googleDetailsRequested: resolved.googleDetailsRequested,
+              termination: resolved.termination,
+            },
+          });
+        },
         onAnchor: (anchor) => {
           usePlaceSearchStore.setState({
-            termination: "completed",
+            termination: anchor.termination,
             ...(!mobile ? { selectedId: anchor.googlePlaceId } : {}),
           });
           if (!mobile) {
@@ -178,23 +189,7 @@ export function useMapPlaceSearch(mobile: boolean) {
           : {};
       let items = result.items;
       if (confirmation.kind === "specific" && result.anchor) {
-        // Only the chosen mobile recommendation needs full summary information now.
-        if (mobile) {
-          const detail = await fetchPlaceDetail(result.anchor.googlePlaceId);
-          if (!isCurrent()) return false;
-          items = [
-            {
-              googlePlaceId: detail.googlePlaceId,
-              name: detail.name,
-              address: detail.formattedAddress,
-              category: detail.primaryTypeDisplayName || detail.primaryType,
-              rating: detail.rating,
-              userRatingCount: detail.userRatingCount,
-              isOpen: detail.regularOpeningHours?.openNow ?? null,
-              location: detail.location,
-            },
-          ];
-        } else items = [toAnchor(result.anchor)];
+        items = [toAnchor(result.anchor)];
         useSearchRecenterStore.getState().clearSearchSnapshot();
       } else if (
         !mobile &&
@@ -252,11 +247,13 @@ export function useMapPlaceSearch(mobile: boolean) {
       usePlaceSearchStore.setState({
         status: "error",
         termination:
-          usePlaceSearchStore.getState().termination === "completed"
-            ? "completed"
-            : confirmation.prediction
-              ? "failed"
-              : "not-requested",
+          usePlaceSearchStore.getState().termination === "SUCCEEDED"
+            ? "SUCCEEDED"
+            : usePlaceSearchStore.getState().termination === "NOT_TERMINATED"
+              ? "NOT_TERMINATED"
+              : confirmation.prediction
+                ? "failed"
+                : "not-requested",
         error:
           error instanceof Error
             ? error.message
@@ -269,7 +266,7 @@ export function useMapPlaceSearch(mobile: boolean) {
     const query = usePlaceSearchStore.getState().query;
     if (query)
       void confirm(
-        { query, kind: "whole", session: {}, generation: 0 },
+        { query, kind: "whole", session: null, generation: 0 },
         "map_recenter",
       );
   });

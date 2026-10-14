@@ -1,4 +1,7 @@
 // @vitest-environment jsdom
+import { apiFetch } from "@/lib/api/client";
+import { registerQueryClient } from "@/lib/query-client";
+vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 import { act, useEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -79,6 +82,8 @@ it.each([false, true])(
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
+    registerQueryClient(client);
+    vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: { googlePlaceId: "anchor", name: "첫 추천", formattedAddress: "주소", location: { lat: 1, lng: 2 }, primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] }, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" }));
     client.setQueryData(ROOMS_QUERY_KEY, {
       rooms: [{ id: "room", destinations: [] }],
     });
@@ -130,23 +135,13 @@ it.each([false, true])(
           </QueryClientProvider>,
         ),
       );
-      const prediction = withAnchor
-        ? ({
-            placeId: "anchor",
-            mainText: { text: "첫 추천" },
-            text: { text: "첫 추천" },
-            toPlace: () => ({
-              fetchFields: async () => {},
-              location: { lat: () => 1, lng: () => 2 },
-            }),
-          } as unknown as google.maps.places.PlacePrediction)
-        : undefined;
+      const prediction = withAnchor ? { placeId: "anchor", text: null, structuredFormat: null } : undefined;
       let pending!: Promise<boolean>;
       await act(async () => {
         pending = api.confirm({
           query: "원래 검색어",
           kind: "whole",
-          session: {},
+          session: { sessionToken: "token", expiresAt: Date.now()+60000 },
           generation: 0,
           prediction,
         });
@@ -192,6 +187,8 @@ it.each([false, true])(
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
+    registerQueryClient(client);
+    vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: { googlePlaceId: "anchor", name: "첫 추천", formattedAddress: "주소", location: { lat: 1, lng: 2 }, primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] }, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" }));
     client.setQueryData(ROOMS_QUERY_KEY, {
       rooms: [{ id: "room", destinations: [] }],
     });

@@ -8,14 +8,9 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { CircleCancelIcon, LocationIcon, SearchIcon } from "@/assets/icons";
-import {
-  AUTOCOMPLETE_SUGGEST_DEBOUNCE_MS,
-  circleLocationBias,
-  fetchPlacePredictionsForRequest,
-  newAutocompleteSessionToken,
-} from "@/lib/placesAutocompleteSuggest";
+import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
+import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { cn } from "@/lib/utils";
@@ -33,9 +28,10 @@ export type MapPlaceSearchInputProps = {
 };
 type Suggestions = {
   query: string;
-  items: google.maps.places.PlacePrediction[];
-  session: object;
+  items: PlacePrediction[];
+  session: PlaceSession | null;
   status: "done" | "error";
+  error?: string;
 };
 
 /** Shared web/mobile map search. Original input and prediction/token identity survive confirmation. */
@@ -50,7 +46,6 @@ export function MapPlaceSearchInput({
   autoConfirm = false,
   onQueryChange,
 }: MapPlaceSearchInputProps) {
-  const placesLib = useMapsLibrary("places");
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const [value, setValue] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
@@ -59,7 +54,7 @@ export function MapPlaceSearchInput({
   const autoQuery = useRef(autoConfirm ? initialQuery : null);
   const [pending, setPending] = useState(false);
   const generation = useRef(0);
-  const token = useRef<object | null>(null);
+  const token = useRef<AutocompleteSearchSession | null>(null);
   const confirmGeneration = useRef<number | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const listId = useId();
@@ -75,6 +70,7 @@ export function MapPlaceSearchInput({
   }
   const invalidateScope = useEffectEvent(() => {
     cancel();
+    token.current?.abandon();
     token.current = null;
     confirmGeneration.current = null;
     setValue("");
@@ -90,6 +86,8 @@ export function MapPlaceSearchInput({
     }
     return () => {
       cancel();
+      token.current?.abandon();
+      token.current = null;
     };
   }, [scopeKey]);
 
@@ -97,49 +95,37 @@ export function MapPlaceSearchInput({
     cancel();
     setSuggestions(null);
     setActive(-1);
-    if (!query.trim() || !placesLib) return;
+    if (!query.trim() || !mapCenter || !enabled) return;
     const requestGeneration = generation.current;
     timer.current = setTimeout(() => {
-      token.current ??= newAutocompleteSessionToken();
-      const requestToken = token.current;
-      void fetchPlacePredictionsForRequest({
-        input: query.trim(),
-        language: "ko",
-        sessionToken:
-          requestToken as google.maps.places.AutocompleteSessionToken,
-        ...(mapCenter
-          ? { locationBias: circleLocationBias(mapCenter, 50_000) }
-          : {}),
-      }).then(
-        (items) => {
-          if (requestGeneration === generation.current)
-            setSuggestions({
-              query,
-              items,
-              session: requestToken,
-              status: "done",
-            });
+      token.current ??= new AutocompleteSearchSession();
+      const flow = token.current;
+      void flow.suggest(query.trim(), mapCenter, () => requestGeneration === generation.current).then(
+        (result) => {
+          if (result && requestGeneration === generation.current)
+            setSuggestions({ query, ...result, status: "done" });
         },
-        () => {
-          if (requestGeneration === generation.current)
-            setSuggestions({
-              query,
-              items: [],
-              session: requestToken,
-              status: "error",
-            });
+        (error: unknown) => {
+          if (requestGeneration === generation.current) {
+            flow.abandon();
+            token.current = null;
+            setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof Error ? error.message : undefined });
+          }
         },
       );
-    }, AUTOCOMPLETE_SUGGEST_DEBOUNCE_MS);
+    }, MAP_AUTOCOMPLETE_DEBOUNCE_MS);
   }
   const retryReady = useEffectEvent(() => {
     if (value.trim() && open) schedule(value);
   });
   useEffect(() => {
-    if (placesLib && enabled) retryReady();
-  }, [placesLib, enabled]);
+    if (mapCenter && enabled) retryReady();
+  }, [mapCenter, enabled]);
   useEffect(() => {
-    if (!enabled) cancel();
+    if (!enabled) {
+      cancel(); token.current?.abandon(); token.current = null;
+      setSuggestions(null);
+    }
   }, [enabled]);
 
   function update(query: string) {
@@ -150,7 +136,7 @@ export function MapPlaceSearchInput({
     setOpen(Boolean(query.trim()));
     confirmGeneration.current = null;
     setPending(false);
-    if (!query.trim()) token.current = null;
+    if (!query.trim()) { token.current?.abandon(); token.current = null; }
     schedule(query);
   }
   async function confirm(index: number) {
@@ -161,10 +147,15 @@ export function MapPlaceSearchInput({
         : null;
     const prediction = index > 0 ? ready?.items[index - 1] : ready?.items[0];
     if (index > 0 && !prediction) return;
-    const requestSession = ready?.session ?? token.current ?? {};
+    if (ready?.session && ready.session.expiresAt <= Date.now()) {
+      token.current?.abandon(); token.current = null;
+      schedule(value); return;
+    }
+    const requestSession = ready?.session ?? null;
     cancel();
     const requestGeneration = generation.current;
     confirmGeneration.current = requestGeneration;
+    token.current?.abandon();
     token.current = null;
     setPending(true);
     setOpen(false);
@@ -247,7 +238,8 @@ export function MapPlaceSearchInput({
               )
                 return;
               cancel();
-              token.current = null;
+              token.current?.abandon(); token.current = null;
+              setSuggestions(null);
               onInvalidate(false);
               setOpen(false);
             }}
@@ -268,7 +260,8 @@ export function MapPlaceSearchInput({
               }
               if (event.key === "Escape") {
                 cancel();
-                token.current = null;
+                token.current?.abandon(); token.current = null;
+                setSuggestions(null);
                 onInvalidate(false);
                 setOpen(false);
               }
@@ -313,8 +306,10 @@ export function MapPlaceSearchInput({
               key={prediction.placeId}
               id={`${listId}-${index + 1}`}
               active={active === index + 1}
-              title={prediction.mainText?.text ?? prediction.text.text}
-              subtitle={prediction.secondaryText?.text}
+              title={prediction.structuredFormat?.mainText?.text != null
+                ? prediction.structuredFormat.mainText
+                : prediction.text}
+              subtitle={prediction.structuredFormat?.secondaryText?.text ?? undefined}
               onClick={() => void confirm(index + 1)}
               place
             />
@@ -324,7 +319,7 @@ export function MapPlaceSearchInput({
               role="status"
               className="px-3.5 py-3 text-caption-m-regular text-text-subtle"
             >
-              검색 추천을 불러오지 못했어요. 다시 입력해주세요.
+              {suggestions.error ?? "검색 추천을 불러오지 못했어요. 다시 입력해주세요."}
             </li>
           ) : null}
         </ul>
@@ -341,7 +336,7 @@ function SuggestionRow({
   place = false,
 }: {
   id: string;
-  title: string;
+  title: string | PredictionText | null;
   subtitle?: string;
   active: boolean;
   onClick: () => void;
@@ -364,7 +359,7 @@ function SuggestionRow({
         <Icon size={20} className="shrink-0 text-icon-subtle" />
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-body-s-emphasis text-text">
-            {title}
+            {typeof title === "string" ? title : <HighlightedText value={title} />}
           </span>
           {subtitle ? (
             <span className="truncate text-caption-m-regular text-text-subtle">
@@ -375,4 +370,14 @@ function SuggestionRow({
       </button>
     </li>
   );
+}
+
+/** Backend offsets count Unicode code points, not UTF-16 code units. */
+function HighlightedText({ value }: { value: PredictionText | null }) {
+  if (!value?.text) return null;
+  const points = Array.from(value.text);
+  const matches = value.matches ?? [];
+  return points.map((point, index) => matches.some(match => index >= match.startOffset && index < match.endOffset)
+    ? <mark key={index} className="bg-transparent font-semibold text-inherit">{point}</mark>
+    : point);
 }

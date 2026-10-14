@@ -78,8 +78,8 @@ export function MapMobileSearchScreen({
             ? {
                 type: "place",
                 googlePlaceId: prediction.placeId,
-                name: prediction.mainText?.text ?? prediction.text.text,
-                address: prediction.secondaryText?.text ?? "",
+                name: prediction.structuredFormat?.mainText?.text ?? prediction.text?.text ?? "",
+                address: prediction.structuredFormat?.secondaryText?.text ?? "",
               }
             : { type: "query", query: confirmation.query },
         ),
@@ -100,7 +100,7 @@ export function MapMobileSearchScreen({
         await confirm({
           query: entry.query,
           kind: "whole",
-          session: {},
+          session: null,
           generation: 0,
         });
       } else {

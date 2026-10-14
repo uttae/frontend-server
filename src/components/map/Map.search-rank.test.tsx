@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { apiFetch } from "@/lib/api/client";
+vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 import { act, useEffect, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -107,15 +109,7 @@ const items = Array.from({ length: 11 }, (_, index) => ({
   location: { lat: 37 + index / 100, lng: 127 },
 }));
 function prediction(id = "anchor") {
-  return {
-    placeId: id,
-    mainText: { text: "첫 추천" },
-    text: { text: "첫 추천" },
-    toPlace: () => ({
-      fetchFields: async () => {},
-      location: { lat: () => 37, lng: () => 127 },
-    }),
-  } as unknown as google.maps.places.PlacePrediction;
+  return { placeId: id, text: { text: "첫 추천", matches: null }, structuredFormat: null };
 }
 async function render(mobile: boolean) {
   boundary.mobile = mobile;
@@ -125,6 +119,10 @@ async function render(mobile: boolean) {
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   registerQueryClient(client);
+  vi.mocked(apiFetch).mockReset().mockImplementation(async (_url, init) => {
+    const body = JSON.parse(init!.body as string);
+    return Response.json({ detail: client.getQueryData(placeDetailQueryKey(body.googlePlaceId)), source: "CACHE", cacheStatus: "HIT", googleDetailsRequested: false, termination: "NOT_TERMINATED" });
+  });
   client.setQueryData(ROOMS_QUERY_KEY, {
     rooms: [{ id: "room", destinations: [] }],
   });
@@ -217,7 +215,7 @@ it("web prepended absent anchor remains unranked while original results keep thi
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
       prediction: prediction(),
     });
   });
@@ -253,7 +251,7 @@ it("web first-place view waits for Text Search membership and keeps its original
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
       prediction: prediction("result-11"),
     });
   });
@@ -278,7 +276,7 @@ it("web map-center fallback auto-selection retains the first result bucket", asy
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
     });
   });
   expect(views()).toHaveLength(1);
@@ -292,7 +290,7 @@ it("mobile expanded result emits original fourth/eleventh rank while specific pr
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
     });
   });
   expect(views()).toHaveLength(0);
@@ -316,7 +314,7 @@ it("mobile expanded result emits original fourth/eleventh rank while specific pr
       query: "원문",
       kind: "specific",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
       prediction: prediction("result-11"),
     });
   });
@@ -339,7 +337,7 @@ it("failed Text Search settles the already visible recommendation as one unranke
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
       prediction: prediction(),
     });
   });
@@ -362,7 +360,7 @@ it("cancelling rank lookup keeps complete visible data and cannot add late rank/
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
       prediction: prediction(),
     });
   });
@@ -387,7 +385,7 @@ it("ordinary POI selection does not inherit a previous Text Search rank", async 
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
     });
   });
   const fourth = [
@@ -417,7 +415,7 @@ it("discover ownership settles still-visible complete recommendation once withou
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: {},
+      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
       prediction: prediction(),
     });
   });

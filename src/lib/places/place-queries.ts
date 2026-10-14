@@ -34,7 +34,7 @@ export function placePreviewQueryKey(googlePlaceId: string) {
 }
 
 export function normalizePreviewLocation(
-  location: PlacePreviewResponse["location"] | { lat?: number; lng?: number },
+  location: PlacePreviewResponse["location"] | { lat?: number | null; lng?: number | null },
 ): { lat: number; lng: number } | undefined {
   if (!location || typeof location !== "object") return undefined;
 

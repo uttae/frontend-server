@@ -1,93 +1,78 @@
-/** Location-only SDK response. Never write this value to the full detail cache. */
-export type PredictionCoordinates = {
-  kind: "coordinates";
-  googlePlaceId: string;
-  location: google.maps.LatLngLiteral;
-  termination: "completed";
-};
+import {
+  resolvePlaceSession, PlaceSessionError,
+  type PlacePrediction, type PlaceResolveResponse, type PlaceSession,
+} from "@/lib/api/place-sessions";
+import { getQueryClient } from "@/lib/query-client";
+import { placeDetailQueryKey, normalizePreviewLocation } from "./place-queries";
+
 export type SearchConfirmation = {
   query: string;
   kind: "whole" | "specific";
-  prediction?: google.maps.places.PlacePrediction;
-  /** Identity of the token used by the actual prediction request. */
-  session: object;
+  prediction?: PlacePrediction;
+  /** Issued token from the successful autocomplete that supplied this prediction. */
+  session: PlaceSession | null;
   generation: number;
 };
-const terminations = new WeakMap<
-  object,
-  { googlePlaceId: string; promise: Promise<PredictionCoordinates> }
->();
-
-/** A consumed session remains single-flight even if its terminating request fails. */
+export type ResolvedSearchAnchor = PlaceResolveResponse & {
+  googlePlaceId: string;
+  location: google.maps.LatLngLiteral;
+};
+const resolutions = new WeakMap<PlaceSession, {
+  googlePlaceId: string; promise: Promise<PlaceResolveResponse>;
+}>();
+/** Errors remain tied to this operation; cancel/timeout never prove Google was not called. */
 export function terminatePredictionSession(
-  prediction: google.maps.places.PlacePrediction,
-  session: object,
-): Promise<PredictionCoordinates> {
-  const pending = terminations.get(session);
-  if (pending)
-    return pending.googlePlaceId === prediction.placeId
-      ? pending.promise
-      : Promise.reject(
-          new Error("이미 확인한 검색 세션입니다. 다시 검색해주세요."),
-        );
-  const request = (async (): Promise<PredictionCoordinates> => {
-    const place = prediction.toPlace();
-    await place.fetchFields({ fields: ["location"] });
-    const lat = place.location?.lat();
-    const lng = place.location?.lng();
-    if (
-      lat == null ||
-      lng == null ||
-      !Number.isFinite(lat) ||
-      !Number.isFinite(lng) ||
-      Math.abs(lat) > 90 ||
-      Math.abs(lng) > 180
-    ) {
-      throw new Error("장소 좌표를 확인할 수 없어요.");
+  prediction: PlacePrediction, session: PlaceSession | null, isCurrent: () => boolean = () => true,
+): Promise<PlaceResolveResponse> {
+  if (!session || session.expiresAt <= Date.now())
+    return Promise.reject(new PlaceSessionError(400, "PLACE_SESSION_INVALID", "검색 세션이 만료됐어요. 다시 입력해주세요."));
+  const existing = resolutions.get(session);
+  if (existing) return existing.googlePlaceId === prediction.placeId ? existing.promise
+    : Promise.reject(new PlaceSessionError(409, "PLACE_SESSION_CONFLICT", "이미 확인한 검색 세션입니다. 다시 검색해주세요."));
+  const promise = (async () => {
+    // Only IN_PROGRESS is known to permit a bounded delayed same-token/place retry.
+    for (let attempt = 0; ; attempt++) {
+      try { return await resolvePlaceSession(session.sessionToken, prediction.placeId); }
+      catch (error) {
+        if (!(error instanceof PlaceSessionError) || error.code !== "PLACE_SESSION_IN_PROGRESS" || attempt >= 1) throw error;
+        await new Promise(r => setTimeout(r, 300));
+        if (!isCurrent()) throw new DOMException("Search abandoned", "AbortError");
+      }
     }
-    return {
-      kind: "coordinates",
-      googlePlaceId: prediction.placeId,
-      location: { lat, lng },
-      termination: "completed",
-    };
   })();
-  terminations.set(session, {
-    googlePlaceId: prediction.placeId,
-    promise: request,
-  });
-  return request;
+  resolutions.set(session, { googlePlaceId: prediction.placeId, promise });
+  return promise;
 }
-
-export async function confirmPlaceSearch<T>(
-  args: Omit<SearchConfirmation, "generation"> & {
-    mapCenter: google.maps.LatLngLiteral | null;
-    isCurrent: () => boolean;
-    onAnchor?: (anchor: PredictionCoordinates) => void;
-    search: (params: {
-      query: string;
-      latitude: number;
-      longitude: number;
-      radius: number;
-    }) => Promise<T[]>;
-  },
-): Promise<{
-  anchor: PredictionCoordinates | null;
-  items: T[];
-  fallback: boolean;
-  termination: "completed" | "failed" | "not-requested";
+export async function confirmPlaceSearch<T>(args: Omit<SearchConfirmation, "generation"> & {
+  mapCenter: google.maps.LatLngLiteral | null;
+  isCurrent: () => boolean;
+  onAnchor?: (anchor: ResolvedSearchAnchor) => void;
+  onResolved?: (resolved: PlaceResolveResponse) => void;
+  search: (params: { query: string; latitude: number; longitude: number; radius: number }) => Promise<T[]>;
+}): Promise<{
+  anchor: ResolvedSearchAnchor | null; items: T[]; fallback: boolean;
+  termination: PlaceResolveResponse["termination"] | "failed" | "not-requested";
 } | null> {
   const query = args.query.trim();
   if (!query) throw new Error("검색어를 입력해주세요.");
   if (!args.isCurrent()) return null;
-  let anchor: PredictionCoordinates | null = null;
-  let termination: "completed" | "failed" | "not-requested" = "not-requested";
+  let anchor: ResolvedSearchAnchor | null = null;
+  let termination: PlaceResolveResponse["termination"] | "failed" | "not-requested" = "not-requested";
   if (args.prediction) {
     try {
-      anchor = await terminatePredictionSession(args.prediction, args.session);
-      termination = "completed";
+      const resolved = await terminatePredictionSession(args.prediction, args.session, args.isCurrent);
+      if (!args.isCurrent()) return null;
+      termination = resolved.termination;
+      // Seed the complete untouched server DTO BEFORE a detail consumer mounts.
+      getQueryClient()?.setQueryData(placeDetailQueryKey(resolved.detail.googlePlaceId), resolved.detail);
+      args.onResolved?.(resolved);
+      const location = normalizePreviewLocation(resolved.detail.location);
+      if (location && Math.abs(location.lat) <= 90 && Math.abs(location.lng) <= 180)
+        anchor = { ...resolved, googlePlaceId: resolved.detail.googlePlaceId, location };
+      else if (args.kind === "specific") throw new Error("장소 좌표를 확인할 수 없어요.");
     } catch (error) {
-      termination = "failed";
+      // Coordinate absence does not erase a verified server termination.
+      if (termination === "not-requested") termination = "failed";
       if (args.kind === "specific" && args.isCurrent()) throw error;
     }
   }
@@ -99,12 +84,7 @@ export async function confirmPlaceSearch<T>(
   }
   const center = anchor?.location ?? args.mapCenter;
   if (!center) throw new Error("지도 위치를 확인한 뒤 다시 검색해주세요.");
-  const items = await args.search({
-    query,
-    latitude: center.lat,
-    longitude: center.lng,
-    radius: 5000,
-  });
+  const items = await args.search({ query, latitude: center.lat, longitude: center.lng, radius: 5000 });
   if (!args.isCurrent()) return null;
   return { anchor, items, fallback: !anchor, termination };
 }

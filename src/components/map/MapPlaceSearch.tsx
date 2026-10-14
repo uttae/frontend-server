@@ -41,7 +41,7 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
           className="shrink-0 text-primary underline"
           onClick={() => {
             if (confirmationKind === "specific") {
-              // A consumed failed SDK session must be replaced by fresh predictions.
+              // A failed server session must be replaced by fresh predictions.
               // Return to the chosen-place input instead of changing its intent to whole search.
               if (mobile) {
                 flushSync(() =>
@@ -51,7 +51,7 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
               } else inputRef.current?.focus();
               return;
             }
-            void confirm({ query, kind: "whole", session: {}, generation: 0 });
+            void confirm({ query, kind: "whole", session: null, generation: 0 });
           }}
         >
           다시 시도

@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { MobilePlaceSearchScreen } from "@/components/search/MobilePlaceSearchScreen";
 import type { MapSearchPlaceEntry } from "@/lib/map-search-history";
-import { fetchPlaceDetail } from "@/lib/places/place-queries";
+import { fetchPlaceDetail, normalizePreviewLocation } from "@/lib/places/place-queries";
 import type { SearchConfirmation } from "@/lib/places/search-session";
 import {
   placeSearchResultsToMapPins,
@@ -67,15 +67,17 @@ export function MobileMapSearch({
       const state = usePlaceSearchStore.getState();
       if (state.generation !== generation || state.scope !== scopeKey)
         return null;
+      const location = normalizePreviewLocation(detail.location);
+      if (!location) throw new Error("장소 좌표를 확인할 수 없어요.");
       const item = {
         googlePlaceId: entry.googlePlaceId,
         name: detail.name || entry.name,
         address: detail.formattedAddress || entry.address,
-        category: detail.primaryTypeDisplayName || detail.primaryType,
+        category: detail.primaryTypeDisplayName || detail.primaryType || "",
         rating: detail.rating,
         userRatingCount: detail.userRatingCount,
         isOpen: detail.regularOpeningHours?.openNow ?? null,
-        location: detail.location,
+        location,
       };
       useMapPinsFocusStore.getState().claimFocus("search");
       usePlaceSearchStore.setState({
@@ -87,6 +89,7 @@ export function MobileMapSearch({
         error: null,
         fallback: false,
         termination: "not-requested",
+        resolution: null,
         query: item.name,
         confirmationKind: "specific",
       });

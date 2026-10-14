@@ -6,6 +6,10 @@ import { MapPlaceSearchInput } from "@/components/search/MapPlaceSearchInput";
 import { useMapPlaceSearch } from "./useMapPlaceSearch";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
 import { useMapCenterStore } from "@/stores/map-center-store";
+import { apiFetch } from "@/lib/api/client";
+import { QueryClient } from "@tanstack/react-query";
+import { registerQueryClient } from "@/lib/query-client";
+import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { useSessionStore } from "@/stores/session-store";
 const network = vi.hoisted(() => ({
   page: vi.fn(),
@@ -18,10 +22,7 @@ const network = vi.hoisted(() => ({
 vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: network.page,
 }));
-vi.mock("@/lib/places/place-queries", () => ({
-  fetchPlaceDetail: network.detail,
-  placeDetailQueryKey: (id: string) => ["places", "detail", id],
-}));
+vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 vi.mock("@/contexts/SelectedPlaceContext", () => ({
   useSelectedPlace: () => ({ setSelectedPlace: network.select }),
 }));
@@ -31,14 +32,6 @@ vi.mock("@/hooks/useSessionUser", () => ({
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { search: "search" },
   trackAnalyticsEvent: network.track,
-}));
-const library = {};
-vi.mock("@vis.gl/react-google-maps", () => ({ useMapsLibrary: () => library }));
-vi.mock("@/lib/placesAutocompleteSuggest", () => ({
-  AUTOCOMPLETE_SUGGEST_DEBOUNCE_MS: 1,
-  newAutocompleteSessionToken: () => ({}),
-  circleLocationBias: (center: unknown, radius: number) => ({ center, radius }),
-  fetchPlacePredictionsForRequest: network.suggest,
 }));
 let root: Root, host: HTMLDivElement, api: ReturnType<typeof useMapPlaceSearch>;
 function Harness({ mobile = false }: { mobile?: boolean }) {
@@ -55,27 +48,27 @@ function Harness({ mobile = false }: { mobile?: boolean }) {
   );
 }
 function confirmation(kind: "whole" | "specific" = "whole") {
-  const fetchFields = vi.fn().mockResolvedValue(undefined);
   return {
-    query: "원래 검색어",
-    kind,
-    generation: 1,
-    session: {},
-    prediction: {
-      placeId: "first",
-      mainText: { text: "추천" },
-      secondaryText: { text: "주소" },
-      toPlace: () => ({
-        fetchFields,
-        location: { lat: () => 37, lng: () => 127 },
-      }),
-    },
-  } as unknown as Parameters<typeof api.confirm>[0];
+    query: "원래 검색어", kind, generation: 1,
+    session: { sessionToken: "server-token", expiresAt: Date.now()+60000 },
+    prediction: { placeId: "first", text: null, structuredFormat: { mainText: { text: "추천", matches: null }, secondaryText: { text: "주소", matches: null } } },
+  };
 }
+let client: QueryClient;
+let rawDetail: Record<string, unknown>;
+
 beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   network.user = 7;
-  network.suggest.mockReset().mockResolvedValue([confirmation().prediction]);
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  registerQueryClient(client);
+  rawDetail = { googlePlaceId: "first", name: "추천", formattedAddress: "주소", primaryType: "restaurant", primaryTypeDisplayName: "음식점", rating: 4.5, userRatingCount: 3, location: { lat: 37, lng: 127 }, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] };
+  vi.mocked(apiFetch).mockReset().mockImplementation(async url => {
+    if (String(url).endsWith("/places/sessions")) return Response.json({ sessionToken: "input-token", expiresAt: Date.now()+60000 }, { status: 201 });
+    if (String(url).endsWith("/places/autocomplete")) return Response.json({ suggestions: [{ placePrediction: confirmation().prediction }] });
+    if (String(url).endsWith("/places/resolve")) return Response.json({ detail: rawDetail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" });
+    throw new Error(`Unexpected HTTP ${String(url)}`);
+  });
   network.page.mockReset().mockResolvedValue({
     items: [
       {
@@ -126,7 +119,7 @@ it("web retains first prediction selection absent from text results, preserving 
   ).toEqual(["first", "other"]);
   expect(usePlaceSearchStore.getState().items[1].rating).toBe(4.2);
 });
-it("mobile whole search keeps cards collapsed and never eagerly loads complete Details", async () => {
+it("mobile whole search keeps cards collapsed and reuses resolved full detail without GET supplement", async () => {
   await act(async () => root.render(<Harness mobile />));
   await act(async () => {
     await api.confirm(confirmation());
@@ -138,13 +131,14 @@ it("mobile whole search keeps cards collapsed and never eagerly loads complete D
     usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId),
   ).toEqual(["other"]);
 });
-it("mobile specific loads only chosen detail without Text Search", async () => {
+it("mobile specific reuses chosen resolved detail without Text Search", async () => {
   await act(async () => root.render(<Harness mobile />));
   await act(async () => {
     await api.confirm(confirmation("specific"));
   });
   expect(network.page).not.toHaveBeenCalled();
-  expect(network.detail).toHaveBeenCalledExactlyOnceWith("first");
+  expect(vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/resolve"))).toHaveLength(1);
+  expect(client.getQueryData(placeDetailQueryKey("first"))).toEqual(rawDetail);
   expect(usePlaceSearchStore.getState().items[0].rating).toBe(4.5);
   expect(usePlaceSearchStore.getState().expanded).toBe(false);
 });
@@ -185,7 +179,7 @@ it("actual input editing during confirmation blocks late Text Search publication
   );
   await typeInput("입력 원문");
   await act(async () => {
-    await new Promise((r) => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 280));
   });
   await act(async () =>
     host
@@ -233,7 +227,7 @@ it.each(["room", "account"])(
   },
 );
 
-it("editing while web's first-place detail is pending clears its visible selection", async () => {
+it("editing while Text Search is pending retains already resolved complete selection", async () => {
   let finish!: (value: unknown) => void;
   network.page.mockReturnValue(
     new Promise((resolve) => {
@@ -247,9 +241,25 @@ it("editing while web's first-place detail is pending clears its visible selecti
     expect.any(Object),
   );
   await act(async () => api.invalidate(false));
-  expect(network.select).toHaveBeenLastCalledWith(null);
+  expect(network.select).toHaveBeenLastCalledWith(expect.objectContaining({ googlePlaceId: "first" }), expect.any(Object));
   await act(async () => {
     finish({ items: [], nextPageToken: null });
     await pending;
   });
+});
+
+it("scope loss during resolve cannot seed cache or display stale detail", async () => {
+  let finish!: (r: Response) => void;
+  vi.mocked(apiFetch).mockReturnValue(new Promise(r => { finish = r; }));
+  const pending = api.confirm(confirmation("specific"));
+  await act(async () => { network.user = 8; root.render(<Harness />); });
+  await act(async () => { finish(Response.json({ detail: rawDetail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" })); await pending; });
+  expect(client.getQueryData(placeDetailQueryKey("first"))).toBeUndefined();
+  expect(usePlaceSearchStore.getState().items).toEqual([]);
+  expect(network.track).not.toHaveBeenCalled();
+});
+it("cache HIT never falsely marks termination completed", async () => {
+  vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: rawDetail, source: "CACHE", cacheStatus: "HIT", googleDetailsRequested: false, termination: "NOT_TERMINATED" }));
+  await act(async () => { await api.confirm(confirmation("specific")); });
+  expect(usePlaceSearchStore.getState().termination).toBe("NOT_TERMINATED");
 });

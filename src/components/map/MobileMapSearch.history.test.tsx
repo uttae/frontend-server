@@ -21,7 +21,8 @@ vi.mock("@vis.gl/react-google-maps", () => ({ useMapsLibrary: () => library }));
 vi.mock("@/hooks/useSessionUser", () => ({
   useSessionUser: () => ({ data: { id: 7 } }),
 }));
-vi.mock("@/lib/places/place-queries", () => ({
+vi.mock("@/lib/places/place-queries", async original => ({
+  ...(await original<object>()),
   fetchPlaceDetail: boundary.detail,
 }));
 vi.mock("./MobileSearchResultCarousel", () => ({

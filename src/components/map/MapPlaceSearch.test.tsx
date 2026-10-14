@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { apiFetch } from "@/lib/api/client";
+vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
@@ -29,12 +31,6 @@ vi.mock("@/contexts/SelectedPlaceContext", () => ({
 vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: boundary.page,
 }));
-vi.mock("@/lib/placesAutocompleteSuggest", () => ({
-  AUTOCOMPLETE_SUGGEST_DEBOUNCE_MS: 1,
-  newAutocompleteSessionToken: () => ({}),
-  circleLocationBias: (center: unknown, radius: number) => ({ center, radius }),
-  fetchPlacePredictionsForRequest: boundary.suggestions,
-}));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { search: "search" },
   trackAnalyticsEvent: vi.fn(),
@@ -46,20 +42,18 @@ afterEach(async () => {
 });
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it("specific Details failure retry returns to that input with a fresh session and never Text Search", async () => {
-  const prediction = {
-    placeId: "chosen",
-    mainText: { text: "추천 장소" },
-    secondaryText: { text: "주소" },
-    text: { text: "추천 장소 주소" },
-    toPlace: () => ({
-      fetchFields: boundary.fetchFields,
-      location: { lat: () => 1, lng: () => 2 },
-    }),
-  };
-  boundary.fetchFields
-    .mockRejectedValueOnce(new Error("장소 정보 실패"))
-    .mockResolvedValue(undefined);
-  boundary.suggestions.mockResolvedValue([prediction]);
+  const prediction = { placeId: "chosen", text: { text: "추천 장소 주소", matches: null }, structuredFormat: { mainText: { text: "추천 장소", matches: null }, secondaryText: { text: "주소", matches: null } } };
+  let tokens = 0, resolves = 0;
+  vi.mocked(apiFetch).mockReset().mockImplementation(async url => {
+    if (String(url).endsWith("/places/sessions")) return Response.json({ sessionToken: `token-${++tokens}`, expiresAt: Date.now()+60000 }, { status: 201 });
+    if (String(url).endsWith("/places/autocomplete")) return Response.json({ suggestions: [{ placePrediction: prediction }] });
+    if (String(url).endsWith("/places/resolve")) {
+      if (++resolves === 1) return Response.json({ code: "EXTERNAL_API_ERROR", message: "장소 정보 실패" }, { status: 502 });
+      return Response.json({ detail: { googlePlaceId: "chosen", name: "추천 장소", formattedAddress: "주소", location: { lat: 1, lng: 2 }, primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] }, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" });
+    }
+    throw new Error(`Unexpected HTTP ${String(url)}`);
+  });
+  const autocompleteCalls = () => vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/autocomplete"));
   boundary.page.mockResolvedValue({ items: [], nextPageToken: null });
   useSessionStore.setState({ currentRoomId: "room" });
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
@@ -81,9 +75,9 @@ it("specific Details failure retry returns to that input with a fresh session an
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 280));
   });
-  const token = boundary.suggestions.mock.calls[0][0].sessionToken;
+  const token = JSON.parse(autocompleteCalls()[0][1]!.body as string).sessionToken;
   await act(async () => {
     const buttons = host.querySelectorAll('[role="option"] button');
     (buttons[1] as HTMLButtonElement).click();
@@ -97,9 +91,9 @@ it("specific Details failure retry returns to that input with a fresh session an
   expect(document.activeElement).toBe(input);
   expect(input.value).toBe("원래 검색어");
   await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 280));
   });
-  expect(boundary.suggestions.mock.calls.at(-1)![0].sessionToken).not.toBe(
+  expect(JSON.parse(autocompleteCalls().at(-1)![1]!.body as string).sessionToken).not.toBe(
     token,
   );
   await act(async () => {
@@ -107,7 +101,7 @@ it("specific Details failure retry returns to that input with a fresh session an
       host.querySelectorAll('[role="option"] button')[1] as HTMLButtonElement
     ).click();
   });
-  expect(boundary.fetchFields).toHaveBeenCalledTimes(2);
+  expect(resolves).toBe(2);
   expect(boundary.page).not.toHaveBeenCalled();
   expect(usePlaceSearchStore.getState().selectedId).toBe("chosen");
 });
