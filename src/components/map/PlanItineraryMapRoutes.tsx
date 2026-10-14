@@ -4,7 +4,7 @@
 
 import { AdvancedMarker, Polyline } from "@vis.gl/react-google-maps";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, type JSX } from "react";
+import { useMemo, type JSX } from "react";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
@@ -122,9 +122,6 @@ export function PlanItineraryMapRoutes({
   const epochBySegmentKey = usePlanMapDirectionsEpochStore(
     (s) => s.epochBySegmentKey,
   );
-  const syncRouteRenderStatuses = usePlanMapDirectionsEpochStore(
-    (s) => s.syncRouteRenderStatuses,
-  );
 
   const orderedScheduleIdsForQueries = useMemo(
     () => [...visibleScheduleIds].sort((a, b) => a - b),
@@ -213,13 +210,11 @@ export function PlanItineraryMapRoutes({
               { segmentReady: true },
             ),
           );
-          /** 경로 없음과 "경로는 있는데 폴리라인이 없음"을 구분해야 렌더링 경고가 정확해집니다. */
           return {
             path: await decodeOrientedPlanItinerarySegmentPath(
               seg,
               route?.encodedPolyline,
             ),
-            hasRoute: route != null,
           };
         },
         enabled: rid.length > 0 && segments.length > 0,
@@ -230,33 +225,6 @@ export function PlanItineraryMapRoutes({
       };
     }),
   });
-
-  const routeRenderStatusEntries = useMemo(
-    () =>
-      segments.map((seg, index) => {
-        const query = pathsPerSegmentQueries[index];
-        const status =
-          !query || query.isPending || query.isFetching
-            ? "loading"
-            : query.isError
-              ? "unavailable"
-              : !query.data?.hasRoute
-                ? "no-route"
-                : !query.data.path.length
-                  ? "unavailable"
-                  : "available";
-        return {
-          scheduleId: seg.scheduleId,
-          segmentSourceItemId: seg.segmentSourceItemId,
-          status,
-        } as const;
-      }),
-    [segments, pathsPerSegmentQueries],
-  );
-
-  useEffect(() => {
-    syncRouteRenderStatuses(rid, routeRenderStatusEntries);
-  }, [rid, routeRenderStatusEntries, syncRouteRenderStatuses]);
 
   const polylines: Array<JSX.Element> = [];
   segments.forEach((seg, segIdx) => {

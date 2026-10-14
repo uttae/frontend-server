@@ -40,12 +40,7 @@ export function ExpenseSelect({
   const activeIndex = Math.min(active, options.length - 1);
   const selected = options.find((option) => option.value === value);
   function show() {
-    setSheet(
-      mobileSheet &&
-        (isMobileDevice ||
-          (typeof window !== "undefined" &&
-            window.matchMedia?.("(max-width: 639px)").matches)),
-    );
+    setSheet(mobileSheet && isMobileDevice);
     setActive(
       Math.max(
         0,

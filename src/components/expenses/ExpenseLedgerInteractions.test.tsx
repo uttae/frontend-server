@@ -6,6 +6,10 @@ import { ExpenseSelect } from "./ExpenseSelect";
 import { ExpenseItemMenu } from "./ExpenseItemMenu";
 import { ExpenseCategorySummary } from "./ExpenseCategorySummary";
 
+// 카테고리 바텀시트는 화면 폭이 아니라 모바일 기기일 때만 열린다
+vi.mock("@/contexts/MobileViewContext", () => ({
+  useMobileView: () => ({ isMobileDevice: true }),
+}));
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => ({
     list: {

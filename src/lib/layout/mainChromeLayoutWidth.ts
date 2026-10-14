@@ -1,6 +1,7 @@
 import { isPackingPath } from "@/lib/room-context-path";
 import {
   CHAT_PANEL_DOCKED_WIDTH,
+  MAIN_MAP_MIN_WIDTH_PX,
   MAIN_SIDEBAR_RAIL_WIDTH,
   width,
 } from "@/lib/layout-tokens";
@@ -108,6 +109,24 @@ export function resolveLeftSectionAnimateMaxWidth({
   return "none";
 }
 
-export function resolveDesktopLeftSectionMinWidthPx(pathname = ""): number {
-  return isPackingPath(pathname) ? 0 : parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH);
+/** 데스크톱 `LeftSection` 오른쪽 테두리 — 최소 폭(border-box)에 더해야 패널이 400을 다 쓴다 */
+const LEFT_SECTION_BORDER_PX = 1;
+
+/**
+ * 데스크톱 좌측 영역 최소 폭.
+ * - 일정·채팅 등: 패널 400 + 사이드바 레일 + 테두리(469). 옆 지도 최소 380과 합쳐 레이아웃 최소 849.
+ * - 지도 없이 전체 폭을 쓰는 가계부·준비물: 좌측 영역이 레이아웃 최소 849를 다 맡는다.
+ * - 패널 오른쪽에 상세가 붙으면(준비물 상세 440) 패널 400을 지킨 채 상세 폭을 더한다.
+ * 화면이 이보다 좁으면 레이아웃 안에서 가로 스크롤한다.
+ */
+export function resolveDesktopLeftSectionMinWidthPx(pathname = "", sideDetailWidthPx = 0): number {
+  const panelMinPx =
+    parseLayoutLengthToPx(CHAT_PANEL_DOCKED_WIDTH) +
+    parseLayoutLengthToPx(MAIN_SIDEBAR_RAIL_WIDTH) +
+    LEFT_SECTION_BORDER_PX;
+  const withDetailPx = panelMinPx + Math.max(0, sideDetailWidthPx);
+  if (pathname === "/cost" || isPackingPath(pathname)) {
+    return Math.max(panelMinPx + MAIN_MAP_MIN_WIDTH_PX, withDetailPx);
+  }
+  return withDetailPx;
 }

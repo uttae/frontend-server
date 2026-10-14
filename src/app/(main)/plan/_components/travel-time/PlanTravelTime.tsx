@@ -21,10 +21,6 @@ import { useMobileView } from "@/contexts/MobileViewContext";
 import { PLAN_ROUTE_CARD_WIDTH_PX } from "@/lib/layout-tokens";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/maps";
 import { cn } from "@/lib/utils";
-import {
-  planMapSegmentEpochStoreKey,
-  usePlanMapDirectionsEpochStore,
-} from "@/stores/plan-map-directions-epoch-store";
 
 import { PlanTravelTimeCollapsed } from "./PlanTravelTimeCollapsed";
 import { TravelDirectionsCard } from "./TravelDirectionsCard";
@@ -78,18 +74,6 @@ export function PlanTravelTime({
 
   const fpTrim = scheduleFingerprint.trim();
   const rid = roomId.trim();
-  const mapRouteRenderStatus = usePlanMapDirectionsEpochStore((s) =>
-    rid.length > 0
-      ? s.routeRenderStatusBySegmentKey[
-          planMapSegmentEpochStoreKey(
-            rid,
-            scheduleId,
-            segmentSourceItemId,
-          )
-        ]
-      : undefined,
-  );
-
   /** 서버 저장값 기준 표준 이동수단 — 이 값이 곧 방 전체 공유 상태 */
   const serverMode =
     canonicalScheduleTravelMode(travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
@@ -275,6 +259,7 @@ export function PlanTravelTime({
       selectedMode,
       serverMode,
       mutateTravelMode,
+      setSelectedMode,
     ],
   );
 
@@ -318,11 +303,6 @@ export function PlanTravelTime({
           effectiveMode={selectedMode}
           showUnknownOption={false}
           modeRaw=""
-          renderWarning={
-            mapRouteRenderStatus === "unavailable"
-              ? "해당 경로는 렌더링할 수 없어요."
-              : undefined
-          }
           googleMapsDirectionsUrl={googleMapsDirectionsUrl ?? undefined}
           subtleDirectionsLink={!isMobileDevice}
           onSelectTravelMode={handleSelectTravelMode}

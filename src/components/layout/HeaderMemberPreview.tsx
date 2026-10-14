@@ -2,12 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { AddMemberPanel } from "@/app/(main)/member-settings/_components/AddMemberPanel";
 import { JoinRequestsSection } from "@/app/(main)/member-settings/_components/JoinRequestsSection";
 import { MemberList } from "@/app/(main)/member-settings/_components/MemberList";
 import { useMemberActions } from "@/app/(main)/member-settings/_components/useMemberActions";
 import { ChevronDownIcon, SendIcon } from "@/assets/icons";
-import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { InviteRoomDialog } from "@/components/rooms/InviteRoomDialog";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
 import { selectHeaderMemberPreview } from "@/lib/rooms/member-preview";
@@ -165,21 +164,15 @@ export function HeaderMemberPreview() {
       </button>
 
       {inviteOpen && roomId ? (
-        <SettingsDialog title="초대하기" appearance="alert" onClose={() => setInviteOpen(false)}>
-          <p className="text-body-l-regular text-text">링크를 공유해 함께 여행을 계획해 보세요.</p>
-          <div className="mt-4">
-            <AddMemberPanel
-              key={roomId}
-              roomId={roomId}
-              inviteCode={roomDetail?.inviteCode}
-              memberCount={roomDetail?.memberCount}
-              role={roomDetail?.role}
-              isRoomDetailLoading={isDetailLoading}
-              isRoomDetailError={isDetailError}
-              showDescription={false}
-            />
-          </div>
-        </SettingsDialog>
+        <InviteRoomDialog
+          roomId={roomId}
+          inviteCode={roomDetail?.inviteCode}
+          memberCount={roomDetail?.memberCount}
+          role={roomDetail?.role}
+          isRoomDetailLoading={isDetailLoading}
+          isRoomDetailError={isDetailError}
+          onClose={() => setInviteOpen(false)}
+        />
       ) : null}
 
       {dialogs}

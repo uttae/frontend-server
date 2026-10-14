@@ -15,7 +15,7 @@ let state: {data: typeof data|null; status:string; message:string|null; confirma
 let coordinator: {execute:ReturnType<typeof vi.fn>;prepareDelete:ReturnType<typeof vi.fn>;confirmDelete:ReturnType<typeof vi.fn>;cancelConfirmation:ReturnType<typeof vi.fn>;refresh:ReturnType<typeof vi.fn>};
 let renderer:ReactTestRenderer;
 beforeEach(()=>{vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);state={data:structuredClone(data),status:'ready',message:null,confirmation:null};coordinator={execute:vi.fn().mockResolvedValue({kind:'success'}),prepareDelete:vi.fn(),confirmDelete:vi.fn(),cancelConfirmation:vi.fn(),refresh:vi.fn()};mocks.context={state,coordinator,scopeKey:'room:user'};});
-afterEach(()=>{if(renderer)act(()=>renderer.unmount());vi.unstubAllGlobals();});
+afterEach(()=>{if(renderer)act(()=>renderer.unmount());vi.unstubAllGlobals();document.documentElement.classList.remove('is-mobile-device');});
 async function mount(){await act(async()=>{renderer=create(<PackingPage/>);});}
 function button(label:string){const scope=renderer.root.findAllByType('dialog').at(-1) ?? renderer.root;return scope.findAllByType('button').find(node=>node.props['aria-label']===label || node.children.join('')===label)!;}
 async function selectFirstItem(){await act(async()=>button('준비물 선택: 여권').props.onClick());}
@@ -209,6 +209,7 @@ it.each(['취소','준비물 상세 닫기'])('does not close a reopened detail 
 
 it('dismisses the mobile detail with the shared header drag and retains its memo draft',async()=>{
   vi.stubGlobal('matchMedia',()=>({matches:true}));
+  document.documentElement.classList.add('is-mobile-device');
   await mount();await selectFirstItem();
   await act(async()=>renderer.root.findByType('textarea').props.onChange({target:{value:'드래그 후에도 유지할 메모'}}));
   const detail=()=>renderer.root.findByProps({'aria-label':'준비물 상세'});
