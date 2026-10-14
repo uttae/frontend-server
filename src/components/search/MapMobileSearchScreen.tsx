@@ -3,7 +3,6 @@
 import { useEffect, useEffectEvent, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import {
-  ChevronLeftIcon,
   CloseIcon,
   LocationIcon,
   SearchIcon,
@@ -122,16 +121,7 @@ export function MapMobileSearchScreen({
         !open && "hidden",
       )}
     >
-      <div className="flex shrink-0 items-start gap-1 px-2 pb-1 pt-4">
-        <button
-          type="button"
-          aria-label={backLabel}
-          onClick={close}
-          className="flex h-12 w-7 shrink-0 items-center justify-center"
-        >
-          <ChevronLeftIcon size={20} className="text-icon-subtle" />
-        </button>
-        <div className="min-w-0 flex-1">
+      <div className="flex min-h-0 flex-col">
           <MapPlaceSearchInput
             key={`${scopeKey}:${initialQuery}:${resetKey}`}
             initialQuery={initialQuery}
@@ -143,8 +133,9 @@ export function MapMobileSearchScreen({
             onConfirm={confirm}
             onInvalidate={onInvalidate}
             onQueryChange={setQuery}
+            onBack={close}
+            backLabel={backLabel}
           />
-        </div>
       </div>
       {error ? (
         <div

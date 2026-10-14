@@ -97,7 +97,7 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
         </div>
       )}
       {mobile && feedback ? (
-        <div className="absolute inset-x-[18px] top-[72px] z-20 rounded-lg border border-border-subtle bg-fill-subtle p-3">
+        <div className="absolute inset-x-[18px] top-[112px] z-20 rounded-lg border border-border-subtle bg-fill-subtle p-3">
           {feedback}
         </div>
       ) : null}

@@ -32,7 +32,7 @@ vi.mock("./MobileSearchResultCarousel", () => ({
   },
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-it("saved history selection closes an existing POI and exposes its new collapsed card/map selection", async () => {
+it("saved history selection replaces the existing POI with the chosen place detail", async () => {
   useSessionStore.setState({ currentRoomId: "room" });
   usePlaceSearchStore.getState().clear();
   usePlaceSearchStore.getState().setScope("7:room");
@@ -93,10 +93,8 @@ it("saved history selection closes an existing POI and exposes its new collapsed
       (button) => button.textContent?.includes("저장 장소"),
     )!;
     await act(async () => (saved as HTMLButtonElement).click());
-    expect(host.querySelector("[data-detail]")?.textContent).toBe("");
-    expect(host.querySelector("[data-search-card]")?.textContent).toBe(
-      "저장 장소",
-    );
+    expect(host.querySelector("[data-detail]")?.textContent).toBe("저장 장소");
+    expect(host.querySelector("[data-search-card]")).toBeNull();
     expect(usePlaceSearchStore.getState()).toMatchObject({
       selectedId: "saved",
       expanded: false,

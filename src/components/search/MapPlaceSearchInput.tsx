@@ -8,7 +8,7 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { CircleCancelIcon, LocationIcon, SearchIcon } from "@/assets/icons";
+import { ChevronLeftIcon, CircleCancelIcon, LocationIcon, SearchIcon } from "@/assets/icons";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
 import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
@@ -25,6 +25,8 @@ export type MapPlaceSearchInputProps = {
   active?: boolean;
   autoConfirm?: boolean;
   onQueryChange?: (query: string) => void;
+  onBack?: () => void;
+  backLabel?: string;
 };
 type Suggestions = {
   query: string;
@@ -45,6 +47,8 @@ export function MapPlaceSearchInput({
   active: enabled = true,
   autoConfirm = false,
   onQueryChange,
+  onBack,
+  backLabel = "지도로 돌아가기",
 }: MapPlaceSearchInputProps) {
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const [value, setValue] = useState(initialQuery);
@@ -195,17 +199,22 @@ export function MapPlaceSearchInput({
       ref={containerRef}
       className={cn(
         "relative",
-        mobile ? "w-full" : "w-[400px] max-w-[calc(100vw-32px)]",
+        mobile ? "flex min-h-0 w-full flex-col" : "w-[400px] max-w-[calc(100vw-32px)]",
       )}
     >
       <form
+        className={mobile ? "shrink-0 px-5 pb-2 pt-4" : undefined}
         onSubmit={(event) => {
           event.preventDefault();
           void confirm(active);
         }}
       >
-        <div className="flex h-12 items-center gap-2.5 rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary">
-          <SearchIcon size={20} className="shrink-0 text-icon-subtle" />
+        <div className="flex h-12 items-center gap-2 rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary">
+          {onBack ? (
+            <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 items-center justify-center">
+              <ChevronLeftIcon size={20} className="text-icon-subtle" />
+            </button>
+          ) : <SearchIcon size={20} className="shrink-0 text-icon-subtle" />}
           <input
             ref={fieldRef}
             type="search"
@@ -266,9 +275,9 @@ export function MapPlaceSearchInput({
                 setOpen(false);
               }
             }}
-            placeholder="떠나고 싶은 지역을 입력해주세요"
+            placeholder="장소 검색"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent text-body-m-regular text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden"
+            className="min-w-0 flex-1 bg-transparent pr-1 text-body-m-regular text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden"
           />
           {value ? (
             <button
@@ -278,7 +287,7 @@ export function MapPlaceSearchInput({
                 update("");
                 fieldRef.current?.focus();
               }}
-              className="flex size-5 shrink-0 items-center justify-center"
+              className="flex h-12 w-8 shrink-0 items-center justify-center"
             >
               <CircleCancelIcon size={20} className="text-icon-subtle" />
             </button>
@@ -291,14 +300,16 @@ export function MapPlaceSearchInput({
           role="listbox"
           aria-label="검색 추천"
           className={cn(
-            "mt-2 overflow-hidden rounded-lg border border-border-subtle bg-fill-subtle",
-            !mobile && "absolute inset-x-0 top-full shadow-sm",
+            "bg-fill-subtle",
+            mobile
+              ? "min-h-0 overflow-y-auto overscroll-contain"
+              : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
           )}
         >
           <SuggestionRow
             id={`${listId}-0`}
             active={active === 0}
-            title={`${value.trim()} 전체 결과`}
+            title={`${value.trim()} 모든 결과보기`}
             onClick={() => void confirm(0)}
           />
           {rows.map((prediction, index) => (
@@ -348,16 +359,16 @@ function SuggestionRow({
       role="option"
       id={id}
       aria-selected={active}
-      className={cn("h-14", active && "bg-fill")}
+      className={cn("h-14 border-b-[0.5px] border-border-subtle last:border-b-0", active && "bg-fill")}
     >
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
-        className="flex h-full w-full items-center gap-2.5 px-3.5 text-left"
+        className="flex h-full w-full items-center gap-2.5 pl-3.5 pr-4 text-left"
       >
         <Icon size={20} className="shrink-0 text-icon-subtle" />
-        <span className="flex min-w-0 flex-col">
+        <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-body-s-emphasis text-text">
             {typeof title === "string" ? title : <HighlightedText value={title} />}
           </span>

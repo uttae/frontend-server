@@ -213,7 +213,7 @@ export function useMapPlaceSearch(mobile: boolean) {
         termination: result.termination,
       });
       setActiveSearchMapPins(placeSearchResultsToMapPins(items));
-      if (!mobile) {
+      if (!mobile || confirmation.kind === "specific") {
         const selected = result.anchor
           ? (items.find(
               (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
@@ -225,7 +225,7 @@ export function useMapPlaceSearch(mobile: boolean) {
           analyticsRankBucket: selected
             ? searchRankBuckets[selected.googlePlaceId]
             : undefined,
-          ...(result.anchor ? { skipMapRecenter: true } : {}),
+          ...(!mobile && result.anchor ? { skipMapRecenter: true } : {}),
         });
       }
       if (confirmation.kind === "whole") {

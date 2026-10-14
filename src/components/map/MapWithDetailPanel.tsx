@@ -44,7 +44,7 @@ export function MapWithDetailPanel({
       aria-hidden={hidden || undefined}
       style={hidden ? { display: "none" } : undefined}
       className={cn(
-        "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden",
+        "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-clip",
         mobileInline
           ? "flex"
           : "hidden border-l border-gray-border s1:flex",

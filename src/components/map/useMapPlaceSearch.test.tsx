@@ -141,6 +141,10 @@ it("mobile specific reuses chosen resolved detail without Text Search", async ()
   expect(client.getQueryData(placeDetailQueryKey("first"))).toEqual(rawDetail);
   expect(usePlaceSearchStore.getState().items[0].rating).toBe(4.5);
   expect(usePlaceSearchStore.getState().expanded).toBe(false);
+  expect(network.select).toHaveBeenLastCalledWith(
+    expect.objectContaining({ googlePlaceId: "first", name: "추천" }),
+    expect.objectContaining({ analyticsSource: "search", itinerarySource: "search" }),
+  );
 });
 it("editing input suppresses a late response and analytics", async () => {
   let finish!: (v: unknown) => void;

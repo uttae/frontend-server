@@ -3,12 +3,10 @@
 import type { SearchRankBucket } from "@/lib/analytics/context";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  CalendarAddIcon,
-  ChatIcon,
-  ReactionStarIcon,
-  SavedIcon,
-} from "@/assets/icons";
+import CalendarIcon from "@/assets/icons/map-search-calendar.svg";
+import ChatIcon from "@/assets/icons/map-search-chat.svg";
+import StarIcon from "@/assets/icons/map-search-star.svg";
+import BookmarkIcon from "@/assets/icons/map-search-bookmark.svg";
 import { MobileRouteCardCarousel } from "@/app/(main)/map/_components/MobileRouteCardCarousel";
 import { MobileRouteExpandedShell } from "@/app/(main)/map/_components/MobileRoutePlaceCard";
 import { MobileRoutePlaceDetail } from "@/app/(main)/map/_components/MobileRoutePlaceDetail";
@@ -88,44 +86,41 @@ function SearchPlaceCard({
           className="absolute inset-0 rounded-md focus-visible:outline-2 focus-visible:outline-primary"
         />
       ) : null}
-      <div className="pointer-events-none relative flex min-h-[125px] flex-col gap-2.5">
-        <div className="flex min-w-0 items-start justify-between gap-2">
-          <div className="flex min-w-0 flex-col gap-1">
-            <h3 className="truncate text-[18px] font-bold leading-6 text-text">
+      <div className="pointer-events-none relative flex min-h-[120px] flex-col gap-2.5">
+        <div className="flex h-[78px] min-w-0 items-center gap-2">
+          <div className="flex h-full min-w-0 flex-1 flex-col gap-1">
+            <h3 className="truncate text-[18px] font-bold leading-[normal] text-text">
               {item.name}
             </h3>
             {item.category ? (
-              <p className="text-[12px] leading-4 text-text-subtle">
+              <p className="truncate text-[12px] leading-[normal] text-text-subtle">
                 {item.category}
               </p>
+            ) : null}
+            {item.rating != null ? (
+              <div className="flex h-6 items-center gap-1">
+                <StarIcon aria-hidden className="shrink-0" />
+                <span className="text-[12px] font-bold leading-[normal] text-text">
+                  {item.rating.toFixed(1)}
+                </span>
+                {item.userRatingCount != null ? (
+                  <span className="text-[11px] leading-[normal] text-text-subtle">
+                    ({item.userRatingCount.toLocaleString()}개)
+                  </span>
+                ) : null}
+              </div>
             ) : null}
           </div>
           <button
             type="button"
             aria-label={`${item.name} 북마크에 추가`}
             onClick={() => setModal("bookmark")}
-            className="pointer-events-auto flex size-8 shrink-0 items-center justify-center rounded-full bg-primary-subtle"
+            className="pointer-events-auto mr-2 flex size-8 shrink-0 items-center justify-center rounded-full bg-[#dbf5ff]"
           >
-            <SavedIcon size={18} className="text-primary" />
+            <BookmarkIcon aria-hidden />
           </button>
         </div>
-        {item.rating != null ? (
-          <div className="flex items-center gap-1">
-            <ReactionStarIcon
-              size={14}
-              className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
-            />
-            <span className="text-[12px] font-bold leading-4 text-text">
-              {item.rating.toFixed(1)}
-            </span>
-            {item.userRatingCount != null ? (
-              <span className="text-[11px] leading-4 text-text-subtle">
-                ({item.userRatingCount.toLocaleString()}개)
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-        <div className="mt-auto flex gap-[5px]">
+        <div className="flex gap-[5px]">
           <button
             type="button"
             aria-label={`${item.name} 채팅으로 보내기`}
@@ -141,18 +136,18 @@ function SearchPlaceCard({
               });
               toast.success("장소를 채팅으로 보냈어요");
             }}
-            className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-[7px] border border-border text-[12px] font-semibold text-primary disabled:opacity-50"
+            className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center gap-[5px] rounded-[7px] border border-border text-[12px] font-semibold text-primary disabled:opacity-50"
           >
-            <ChatIcon size={16} />
+            <ChatIcon aria-hidden className="shrink-0" />
             채팅으로 보내기
           </button>
           <button
             type="button"
             aria-label={`${item.name} 일정에 추가`}
             onClick={() => setModal("schedule")}
-            className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center gap-1 rounded-[7px] bg-primary text-[12px] font-semibold text-text-inverse"
+            className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center gap-[5px] rounded-[7px] bg-primary text-[12px] font-semibold text-text-inverse"
           >
-            <CalendarAddIcon size={16} className="text-icon-inverse" />
+            <CalendarIcon aria-hidden className="shrink-0" />
             일정에 추가
           </button>
         </div>

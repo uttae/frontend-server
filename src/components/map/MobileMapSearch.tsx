@@ -95,6 +95,10 @@ export function MobileMapSearch({
       });
       useSearchRecenterStore.getState().clearSearchSnapshot();
       setActiveSearchMapPins(placeSearchResultsToMapPins([item]));
+      setSelectedPlace(item, {
+        itinerarySource: "search",
+        analyticsSource: "search",
+      });
       useMobileMapSearchStore.setState({ textQuery: item.name });
       closeSearch();
       return {

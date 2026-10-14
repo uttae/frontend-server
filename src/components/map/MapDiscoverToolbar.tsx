@@ -104,20 +104,20 @@ function MobileMapSearchBar() {
   }
 
   return (
-    <div className="pointer-events-auto mb-3 flex h-12 w-full items-center rounded-full border border-border bg-fill-subtle pr-2.5 shadow-[0_4px_16px_rgba(0,0,0,0.12)]">
+    <div className="pointer-events-auto mb-3 flex h-11 w-full items-center rounded-[28px] bg-fill-subtle pr-2.5">
       <button
         type="button"
         onClick={handleOpen}
-        className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3.5 text-left"
+        className="flex h-full min-w-0 flex-1 items-center gap-[9px] pl-[15px] text-left"
       >
-        <SearchIcon size={20} className="text-icon-subtle" />
+        <SearchIcon size={19} className="shrink-0 text-icon-subtle" />
         <span
           className={cn(
             "truncate pr-1 text-body-m-regular",
-            textQuery ? "text-text" : "text-text-subtle",
+            textQuery ? "font-semibold text-text" : "text-text-subtle",
           )}
         >
-          {textQuery || "떠나고 싶은 지역을 입력해주세요"}
+          {textQuery || "장소 검색"}
         </span>
       </button>
       {textQuery ? (
@@ -125,7 +125,7 @@ function MobileMapSearchBar() {
           type="button"
           onClick={clearTextSearch}
           aria-label="검색 결과 지우기"
-          className="flex h-12 w-8 shrink-0 items-center justify-center"
+          className="flex h-11 w-8 shrink-0 items-center justify-center"
         >
           <CircleCancelIcon size={20} className="text-icon-subtle" />
         </button>
