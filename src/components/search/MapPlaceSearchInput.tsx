@@ -199,7 +199,7 @@ export function MapPlaceSearchInput({
       ref={containerRef}
       className={cn(
         "relative",
-        mobile ? "flex min-h-0 w-full flex-col" : "w-[400px] max-w-[calc(100vw-32px)]",
+        mobile ? "flex min-h-0 w-full flex-col" : "w-[280px] max-w-[calc(100vw-32px)]",
       )}
     >
       <form
@@ -209,12 +209,15 @@ export function MapPlaceSearchInput({
           void confirm(active);
         }}
       >
-        <div className="flex h-12 items-center gap-2 rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary">
+        <div className={cn(
+          "flex items-center border border-border bg-fill-subtle focus-within:border-primary",
+          mobile ? "h-12 gap-2 rounded-lg pl-3.5 pr-2.5" : "h-9 gap-1.5 rounded-md px-2.5",
+        )}>
           {onBack ? (
             <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 items-center justify-center">
               <ChevronLeftIcon size={20} className="text-icon-subtle" />
             </button>
-          ) : <SearchIcon size={20} className="shrink-0 text-icon-subtle" />}
+          ) : <SearchIcon size={mobile ? 20 : 16} className="shrink-0 text-icon-subtle" />}
           <input
             ref={fieldRef}
             type="search"
@@ -277,7 +280,10 @@ export function MapPlaceSearchInput({
             }}
             placeholder="장소 검색"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent pr-1 text-body-m-regular text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden"
+            className={cn(
+              "min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
+              mobile ? "text-body-m-regular" : "text-body-s-regular",
+            )}
           />
           {value ? (
             <button
@@ -287,9 +293,9 @@ export function MapPlaceSearchInput({
                 update("");
                 fieldRef.current?.focus();
               }}
-              className="flex h-12 w-8 shrink-0 items-center justify-center"
+              className={cn("flex h-full shrink-0 items-center justify-center", mobile ? "w-8" : "w-6")}
             >
-              <CircleCancelIcon size={20} className="text-icon-subtle" />
+              <CircleCancelIcon size={mobile ? 20 : 16} className="text-icon-subtle" />
             </button>
           ) : null}
         </div>

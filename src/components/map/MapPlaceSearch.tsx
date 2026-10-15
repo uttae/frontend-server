@@ -78,7 +78,7 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
       ) : (
         <div
           data-tutorial-target="search"
-          className="absolute right-4 top-3 z-30"
+          className="absolute right-4 top-[18px] z-30"
         >
           <MapPlaceSearchInput
             key={`${scopeKey}:${initialQuery}`}
