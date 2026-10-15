@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, X } from "lucide-react";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -28,7 +28,7 @@ import { PlaceDetailTabs } from "./PlaceDetailTabs";
 
 type PlaceDetailPanelProps = SearchResultCardProps & {
   onClose: () => void;
-  /** 뒤로가기(←) — 없으면 `onClose`와 같다 */
+  /** 모바일 시트 뒤로가기(←) — 없으면 `onClose`와 같다 */
   onBack?: () => void;
   /**
    * `panel`(데스크톱): 사진 고정, 아래 본문만 스크롤.
@@ -301,16 +301,6 @@ export function PlaceDetailPanel({
       <div className={SCROLL_AREA_CLASS}>{body}</div>
 
       {/* 닫기 버튼 — 스크롤과 무관하게 패널 상단에 고정 */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onBack();
-        }}
-        aria-label="뒤로가기"
-        className="absolute left-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </button>
       <button
         onClick={(e) => {
           e.stopPropagation();
