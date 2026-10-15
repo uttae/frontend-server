@@ -13,8 +13,9 @@ import { BookmarkFolderDetailHeader } from "./BookmarkFolderDetailHeader";
 import { BookmarkListSkeleton } from "./BookmarkListSkeleton";
 import { BookmarkPlaceRow } from "./BookmarkPlaceRow";
 
+// 장소 추가·삭제 시 데스크톱 목록 행의 너비가 흔들리지 않게 한다.
 const SCROLLBAR =
-  "min-h-0 flex-1 overflow-y-auto [scrollbar-color:rgba(0,0,0,0.2)_transparent]";
+  "min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] mobile:[scrollbar-gutter:auto] [scrollbar-color:rgba(0,0,0,0.2)_transparent]";
 
 function trimGooglePlaceId(raw: unknown): string {
   return typeof raw === "string" ? raw.trim() : "";

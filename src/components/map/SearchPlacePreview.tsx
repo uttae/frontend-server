@@ -14,7 +14,7 @@ export function SearchPlacePreview({ place, onOpenDetail, onClose }: {
       <div className="flex items-start gap-2">
         <h3 className="min-w-0 flex-1 text-body-m-emphasis break-words">{place.name}</h3>
         <button type="button" onClick={onClose} aria-label="미리보기 닫기"
-          className="flex size-6 shrink-0 items-center justify-center rounded text-icon-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
+          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-icon-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
           <X size={18} aria-hidden />
         </button>
       </div>
@@ -31,7 +31,7 @@ export function SearchPlacePreview({ place, onOpenDetail, onClose }: {
           {place.isOpen == null ? "" : place.isOpen ? "영업 중" : "영업 종료"}
         </span>
         <button type="button" onClick={onOpenDetail} aria-label={`${place.name} 상세정보 보기`}
-          className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-text-inverse hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-text-inverse hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
           <ArrowRight size={18} aria-hidden />
         </button>
       </div>

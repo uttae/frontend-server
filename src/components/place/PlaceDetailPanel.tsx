@@ -41,8 +41,9 @@ type PlaceDetailPanelProps = SearchResultCardProps & {
 const SHEET_PHOTO_HEIGHT_PX = 200;
 const SHEET_PHOTO_HIDDEN_RATIO = 3 / 5;
 
+// 홈·리뷰 전환으로 스크롤바가 생겨도 상세 본문과 버튼의 너비를 유지한다.
 const SCROLL_AREA_CLASS =
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
 
 export function PlaceDetailPanel({
   name,

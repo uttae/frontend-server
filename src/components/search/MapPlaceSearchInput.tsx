@@ -165,13 +165,21 @@ export function MapPlaceSearchInput({
     setOpen(false);
     fieldRef.current?.blur();
     try {
-      await onConfirm({
+      const success = await onConfirm({
         query: value.trim(),
         kind: index > 0 ? "specific" : "whole",
         prediction,
         session: requestSession,
         generation: requestGeneration,
       });
+      if (success && !mobile && generation.current === requestGeneration) {
+        // 입력창만 비운다. update("")는 이미 표시한 검색 결과까지 지우므로 호출하지 않는다.
+        setValue("");
+        setSuggestions(null);
+        setActive(-1);
+        autoQuery.current = null;
+        onQueryChange?.("");
+      }
     } finally {
       if (generation.current === requestGeneration) {
         setPending(false);
@@ -214,7 +222,7 @@ export function MapPlaceSearchInput({
           mobile ? "h-12 gap-2 rounded-lg pl-3.5 pr-2.5" : "h-9 gap-1.5 rounded-md px-2.5",
         )}>
           {onBack ? (
-            <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 items-center justify-center">
+            <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
               <ChevronLeftIcon size={20} className="text-icon-subtle" />
             </button>
           ) : <SearchIcon size={mobile ? 20 : 16} className="shrink-0 text-icon-subtle" />}
@@ -293,7 +301,7 @@ export function MapPlaceSearchInput({
                 update("");
                 fieldRef.current?.focus();
               }}
-              className={cn("flex h-full shrink-0 items-center justify-center", mobile ? "w-8" : "w-6")}
+              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", mobile ? "w-8" : "w-6")}
             >
               <CircleCancelIcon size={mobile ? 20 : 16} className="text-icon-subtle" />
             </button>
@@ -309,12 +317,13 @@ export function MapPlaceSearchInput({
             "bg-fill-subtle",
             mobile
               ? "min-h-0 overflow-y-auto overscroll-contain"
-              : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
+              : "absolute inset-x-0 top-full mt-1.5 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-md border border-border-subtle",
           )}
         >
           <SuggestionRow
             id={`${listId}-0`}
             active={active === 0}
+            compact={!mobile}
             title={`${value.trim()} 모든 결과보기`}
             onClick={() => void confirm(0)}
           />
@@ -323,6 +332,7 @@ export function MapPlaceSearchInput({
               key={prediction.placeId}
               id={`${listId}-${index + 1}`}
               active={active === index + 1}
+              compact={!mobile}
               title={prediction.structuredFormat?.mainText?.text != null
                 ? prediction.structuredFormat.mainText
                 : prediction.text}
@@ -351,6 +361,7 @@ function SuggestionRow({
   active,
   onClick,
   place = false,
+  compact = false,
 }: {
   id: string;
   title: string | PredictionText | null;
@@ -358,6 +369,7 @@ function SuggestionRow({
   active: boolean;
   onClick: () => void;
   place?: boolean;
+  compact?: boolean;
 }) {
   const Icon = place ? LocationIcon : SearchIcon;
   return (
@@ -365,21 +377,21 @@ function SuggestionRow({
       role="option"
       id={id}
       aria-selected={active}
-      className={cn("h-14 border-b-[0.5px] border-border-subtle last:border-b-0", active && "bg-fill")}
+      className={cn("border-b-[0.5px] border-border-subtle last:border-b-0", compact ? (place ? "h-11" : "h-9") : "h-14", active && "bg-fill")}
     >
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
-        className="flex h-full w-full items-center gap-2.5 pl-3.5 pr-4 text-left"
+        className={cn("flex h-full w-full cursor-pointer items-center text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none", compact ? "gap-2 px-2.5" : "gap-2.5 pl-3.5 pr-4")}
       >
-        <Icon size={20} className="shrink-0 text-icon-subtle" />
+        <Icon size={compact ? 16 : 20} className="shrink-0 text-icon-subtle" />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate text-body-s-emphasis text-text">
+          <span className={cn("truncate text-text", compact ? "text-caption-m-emphasis" : "text-body-s-emphasis")}>
             {typeof title === "string" ? title : <HighlightedText value={title} />}
           </span>
           {subtitle ? (
-            <span className="truncate text-caption-m-regular text-text-subtle">
+            <span className={cn("truncate text-text-subtle", compact ? "text-[11px] leading-4" : "text-caption-m-regular")}>
               {subtitle}
             </span>
           ) : null}

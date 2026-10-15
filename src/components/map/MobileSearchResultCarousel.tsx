@@ -83,7 +83,7 @@ function SearchPlaceCard({
           type="button"
           aria-label={`${item.name} 상세 보기`}
           onClick={onExpand}
-          className="absolute inset-0 rounded-md focus-visible:outline-2 focus-visible:outline-primary"
+          className="absolute inset-0 cursor-pointer rounded-md hover:bg-fill/40 focus-visible:outline-2 focus-visible:outline-primary"
         />
       ) : null}
       <div className="pointer-events-none relative flex min-h-[120px] flex-col gap-2.5">
@@ -115,7 +115,7 @@ function SearchPlaceCard({
             type="button"
             aria-label={`${item.name} 북마크에 추가`}
             onClick={() => setModal("bookmark")}
-            className="pointer-events-auto mr-2 flex size-8 shrink-0 items-center justify-center rounded-full bg-[#dbf5ff]"
+            className="pointer-events-auto mr-2 flex cursor-pointer hover:brightness-95 size-8 shrink-0 items-center justify-center rounded-full bg-[#dbf5ff]"
           >
             <BookmarkIcon aria-hidden />
           </button>
@@ -136,7 +136,7 @@ function SearchPlaceCard({
               });
               toast.success("장소를 채팅으로 보냈어요");
             }}
-            className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center gap-[5px] rounded-[7px] border border-border text-[12px] font-semibold text-primary disabled:opacity-50"
+            className="pointer-events-auto flex h-8 cursor-pointer hover:brightness-95 disabled:cursor-not-allowed min-w-0 flex-1 items-center justify-center gap-[5px] rounded-[7px] border border-border text-[12px] font-semibold text-primary disabled:opacity-50"
           >
             <ChatIcon aria-hidden className="shrink-0" />
             채팅으로 보내기
@@ -145,7 +145,7 @@ function SearchPlaceCard({
             type="button"
             aria-label={`${item.name} 일정에 추가`}
             onClick={() => setModal("schedule")}
-            className="pointer-events-auto flex h-8 min-w-0 flex-1 items-center justify-center gap-[5px] rounded-[7px] bg-primary text-[12px] font-semibold text-text-inverse"
+            className="pointer-events-auto flex h-8 cursor-pointer hover:brightness-95 disabled:cursor-not-allowed min-w-0 flex-1 items-center justify-center gap-[5px] rounded-[7px] bg-primary text-[12px] font-semibold text-text-inverse"
           >
             <CalendarIcon aria-hidden className="shrink-0" />
             일정에 추가

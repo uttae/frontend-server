@@ -171,3 +171,24 @@ it("nullable structured main text falls back to actual complete prediction text"
   await type("원래"); await wait();
   expect(host.querySelectorAll('[role="option"]')[1]?.textContent).toContain("전체 실제 이름");
 });
+
+it.each(["whole", "specific"])("clears successful desktop %s input without invalidating published results", async kind => {
+  await type("원래"); await wait();
+  const invalidations = invalidate.mock.calls.length;
+  if (kind === "specific") { await key("ArrowDown"); await key("ArrowDown"); }
+  await key("Enter");
+  expect(host.querySelector("input")!.value).toBe("");
+  expect(host.querySelector('[role="listbox"]')).toBeNull();
+  expect(invalidate).toHaveBeenCalledTimes(invalidations);
+});
+it("retains failed input for retry and never clears a newer draft after a late success", async () => {
+  confirm.mockResolvedValueOnce(false);
+  await type("실패 검색"); await wait(); await key("Enter");
+  expect(host.querySelector("input")!.value).toBe("실패 검색");
+  let finish!: (success: boolean) => void;
+  confirm.mockReturnValueOnce(new Promise<boolean>(resolve => { finish = resolve; }));
+  await type("진행 검색"); await wait(); await key("Enter");
+  await type("새 입력");
+  await act(async () => finish(true));
+  expect(host.querySelector("input")!.value).toBe("새 입력");
+});

@@ -38,7 +38,7 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
         <span>{error}</span>
         <button
           type="button"
-          className="shrink-0 text-primary underline"
+          className="shrink-0 cursor-pointer text-primary underline hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary"
           onClick={() => {
             if (confirmationKind === "specific") {
               // A failed server session must be replaced by fresh predictions.
