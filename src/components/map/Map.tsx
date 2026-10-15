@@ -35,6 +35,7 @@ import {
   readRoomMapViewport,
   writeRoomMapViewport,
 } from "@/lib/map-room-viewport-storage";
+import { MAP_DETAIL_PANEL_COVER_WIDTH_PX } from "@/lib/layout-tokens";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
@@ -62,6 +63,7 @@ import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
 import { RouteViewCameraController } from "./RouteViewCameraController";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
 import { PlanItineraryMapRoutes, type PlanItineraryRouteDay } from "./PlanItineraryMapRoutes";
+import { PlanRouteStepper } from "./PlanRouteStepper";
 import type { OpenValue, RatingValue } from "./map-filters";
 
 /** 모바일 경로 보기 — 고른 일차만 그리고, 카드 선택에 맞춰 지도를 옮긴다 */
@@ -131,6 +133,9 @@ function SelectedPlaceController() {
 }
 
 const VIEWPORT_PERSIST_DEBOUNCE_MS = 400;
+
+/** 오른쪽 아래 확대·축소(+/−) 자리 — 지도 끝 24 + 버튼 40 + 간격 12. 장소 이동 스테퍼가 이보다 오른쪽으로 가지 않는다 */
+const ZOOM_CONTROL_CLEARANCE_PX = 24 + 40 + 12;
 
 /** bootstrap 복원 직후 Zustand `mapCenter`·줌을 검색/일정 UI와 맞춤 */
 function MapBootstrapSync({
@@ -402,7 +407,7 @@ export default function TripMap({
   const isPlanPage = isPlanPath(pathname ?? "") || isMobileMapPathname(pathname ?? "");
   const planStopPlaceIds = usePlanItineraryStopNormalizedPlaceIds(isPlanPage);
 
-  const { setSelectedPlace } = useSelectedPlace();
+  const { selectedPlace, setSelectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
   const setMapCamera = useMapCenterStore((s) => s.setMapCamera);
@@ -557,7 +562,7 @@ export default function TripMap({
   );
 
   return (
-    <div className="relative h-full min-h-0 w-full min-w-0">
+    <div className="relative h-full min-h-0 w-full min-w-0" data-map-controls-inset={isMobileDevice ? undefined : ""}>
       <div className="absolute inset-0 min-h-0 overflow-hidden">
         {!bootstrap.ready ? (
           <div
@@ -612,10 +617,11 @@ export default function TripMap({
 
           {!routeView && <SelectedPlaceMarker />}
 
-          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다 */}
+          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다.
+              오른쪽은 +/−와 같이 지도 끝에서 24px(globals.css `[data-map-controls-inset]`) */}
           {routeView || isMobileDevice ? null : (
             <MapControl position={ControlPosition.RIGHT_BOTTOM}>
-              <div className="mr-2.5">{bookmarkToggle}</div>
+              <div className="mr-6">{bookmarkToggle}</div>
             </MapControl>
           )}
           </GoogleMap>
@@ -632,6 +638,24 @@ export default function TripMap({
           setOpenNow={setOpenNow}
         />
       )}
+
+      {/* 웹 동선보기 장소 이동 — 지도 아래 가운데, 다른 지도 버튼처럼 아래 24px.
+          상세 패널이 열리면 패널 오른쪽 끝~지도 오른쪽 끝의 가운데로 옮긴다.
+          오른쪽 칸은 +/− 자리만큼 줄어들지 않아, 지도가 좁아지면 +/−에 밀려 왼쪽으로 넘치고(justify-end)
+          z-[16]이 상세 패널(`MapWithDetailPanel` z-20)보다 낮아 패널 뒤로 가려진다 */}
+      {bootstrap.ready && !routeView && !isMobileDevice && isPlanPage ? (
+        <div
+          style={{
+            paddingLeft: selectedPlace ? MAP_DETAIL_PANEL_COVER_WIDTH_PX : 0,
+            gridTemplateColumns: `minmax(0, 1fr) auto minmax(${ZOOM_CONTROL_CLEARANCE_PX}px, 1fr)`,
+          }}
+          className="pointer-events-none absolute inset-x-0 bottom-6 z-[16] grid justify-end transition-[padding] duration-300 ease-out"
+        >
+          <div className="col-start-2">
+            <PlanRouteStepper roomId={currentRoomId} />
+          </div>
+        </div>
+      ) : null}
 
       {!bootstrap.ready || routeView ? null : (
         <>

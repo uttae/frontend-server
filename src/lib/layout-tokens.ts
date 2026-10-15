@@ -15,6 +15,9 @@ export const CHAT_PANEL_DOCKED_WIDTH = width.s1;
  */
 export const MAIN_MAP_MIN_WIDTH_PX = 380 as const;
 
+/** 데스크톱 장소 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5`(10) + `w-[360px]`와 같게 유지 */
+export const MAP_DETAIL_PANEL_COVER_WIDTH_PX = 370 as const;
+
 /** 데스크톱 준비물 상세 패널 폭 — `PackingPage.module.css`의 `.detail`과 같게 유지 */
 export const PACKING_DETAIL_WIDTH_PX = 440 as const;
 
