@@ -21,7 +21,6 @@ import {
   isTripStartBeforeMin,
   ROOM_TRIP_TITLE_MAX_LENGTH,
   toTripFormValues,
-  tripEndDateMinYmd,
   type RoomTripFormSource,
 } from "@/lib/rooms/trip-form";
 
@@ -46,7 +45,6 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
 
   // Keep the original date floor throughout this room's edit session.
   const [baselineStartYmd] = useState(saved.startDate);
-  const endDateMin = tripEndDateMinYmd(startDate, baselineStartYmd);
 
   const { data: schedules } = useRoomSchedules(room.id);
   const { mutate: updateRoom, isPending, error } = useUpdateRoom();
@@ -149,7 +147,6 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
         values={{ title, destinations, startDate, endDate }}
         readOnly={readOnly}
         startDateMin={baselineStartYmd || undefined}
-        endDateMin={endDateMin || undefined}
         onTitleChange={setTitle}
         onDestinationsChange={setDestinations}
         onStartDateChange={setStartDate}

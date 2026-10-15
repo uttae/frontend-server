@@ -1,5 +1,6 @@
 "use client";
 
+import { DateRangeField } from "@/components/date-picker/DateRangeField";
 import { DestinationChipsField } from "@/components/rooms/DestinationChipsField";
 import {
   isTripScheduleDayLimitExceeded,
@@ -18,15 +19,12 @@ import {
   type TripFormValues,
 } from "@/lib/rooms/trip-form";
 
-import { TripDateField } from "./TripDateField";
-
 type Props = {
   idPrefix: string;
   values: TripFormValues;
   readOnly?: boolean;
   autoFocusTitle?: boolean;
   startDateMin?: string;
-  endDateMin?: string;
   onTitleChange: (value: string) => void;
   onDestinationsChange: (next: string[]) => void;
   onStartDateChange: (value: string) => void;
@@ -39,7 +37,6 @@ export function TripFormFields({
   readOnly = false,
   autoFocusTitle = false,
   startDateMin,
-  endDateMin,
   onTitleChange,
   onDestinationsChange,
   onStartDateChange,
@@ -106,25 +103,16 @@ export function TripFormFields({
 
       <div className={fieldClassName}>
         <p className="mb-1.5 text-body-m-emphasis mobile:text-body-s-emphasis font-bold text-black">날짜</p>
-        <div className="flex min-w-0 items-center gap-3">
-          <TripDateField
-            id={`${idPrefix}-start`}
-            label="여행 시작일"
-            value={startDate}
-            min={startDateMin}
-            onChange={onStartDateChange}
-            readOnly={readOnly}
-          />
-          <span className="shrink-0 select-none text-light-gray">|</span>
-          <TripDateField
-            id={`${idPrefix}-end`}
-            label="여행 종료일"
-            value={endDate}
-            min={endDateMin}
-            onChange={onEndDateChange}
-            readOnly={readOnly}
-          />
-        </div>
+        <DateRangeField
+          idPrefix={idPrefix}
+          value={{ start: startDate, end: endDate }}
+          min={startDateMin}
+          readOnly={readOnly}
+          onChange={(next) => {
+            onStartDateChange(next.start);
+            onEndDateChange(next.end);
+          }}
+        />
         {!readOnly && startBeforeMin && (
           <p className="mt-2 text-body-s-regular mobile:text-body-xs-regular text-primary">
             {TRIP_START_BEFORE_MIN_MESSAGE}

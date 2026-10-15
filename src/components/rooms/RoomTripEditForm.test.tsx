@@ -46,7 +46,6 @@ it("preserves drafts and original date floor on same-room refresh; reopening and
     state.fields!.onStartDateChange("2026-10-11");
     state.fields!.onEndDateChange("2026-10-11");
   });
-  expect(state.fields!.endDateMin).toBe("2026-10-11");
   await act(async () => root.render(null));
   await render(room);
   expect(state.fields!.values.startDate).toBe("2026-10-10");
@@ -66,7 +65,6 @@ it("preserves drafts and original date floor on same-room refresh; reopening and
   });
   expect(state.fields!.values.title).toBe("B");
   expect(state.fields!.startDateMin).toBe("2026-11-10");
-  expect(state.fields!.endDateMin).toBe("2026-11-10");
   expect(container.querySelector("[data-confirm]")).toBeNull();
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => root.unmount());
