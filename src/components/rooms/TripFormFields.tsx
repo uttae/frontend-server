@@ -101,8 +101,7 @@ export function TripFormFields({
         />
       </div>
 
-      <div className={fieldClassName}>
-        <p className="mb-1.5 text-body-m-emphasis mobile:text-body-s-emphasis font-bold text-black">날짜</p>
+      <div>
         <DateRangeField
           idPrefix={idPrefix}
           value={{ start: startDate, end: endDate }}
