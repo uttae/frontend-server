@@ -61,13 +61,13 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
 
-it("opens one named modal beside the title and cancel discards its draft with focus restoration", async () => {
+it("opens one named modal beside the title and closing discards its draft with focus restoration", async () => {
   const trigger = await open();
   expect(trigger.parentElement?.textContent).toContain("가을 여행");
   expect(document.querySelectorAll("dialog[open]")).toHaveLength(1);
   expect(document.getElementById(dialog()!.getAttribute("aria-labelledby")!)?.textContent).toBe("여행 정보 수정");
   await change('input[type="text"]', "임시 제목");
-  await click("취소", dialog()!);
+  await click("여행 정보 수정 닫기", dialog()!);
   expect(dialog()).toBeNull(); expect(document.activeElement).toBe(trigger);
   await open();
   expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("가을 여행");

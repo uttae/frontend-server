@@ -4,7 +4,7 @@ import { type ButtonHTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
 
-/** room-settings `RoomTripEditForm` 하단 액션 버튼과 동일 */
+/** `RoomTripEditForm` 하단 액션 버튼과 동일 */
 export const settingsActionButtonVariantClass = {
   secondary:
     "rounded-full border border-gray-border bg-transparent py-2.5 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-dark-gray transition hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-40",

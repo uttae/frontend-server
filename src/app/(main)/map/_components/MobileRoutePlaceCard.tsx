@@ -19,7 +19,7 @@ type MobileRoutePlaceCardProps = Readonly<{
   badgeColor: string;
   /** 방금 추가된 카드 — 잠깐 강조한다 */
   highlighted: boolean;
-  /** `45,000 KRW 외 1건` — 없으면 비용 권한이 있을 때 "비용 추가"를 보인다 */
+  /** 대표 통화 원금액 요약 `30 USD 외 1건` — 없으면 비용 권한이 있을 때 "비용 추가"를 보인다 */
   expenseSummary: string | null;
   /** 비용을 추가할 수 있는지(비용 권한) */
   canAddExpense: boolean;
@@ -146,9 +146,10 @@ export function MobileRouteExpandedShell({
           resetDrag();
         }}
         onPointerCancel={resetDrag}
-        className="flex h-8 w-full shrink-0 cursor-pointer touch-pan-x items-end justify-center pb-2"
+        // 바텀시트 핸들과 같이 위·아래 12px — 아래 12px는 카드 위 여백과 겹쳐 누르는 영역만 넓힌다(테두리 1px 포함 바깥에서 12px)
+        className="relative z-10 -mb-3 flex w-full shrink-0 cursor-pointer touch-pan-x justify-center pb-3 pt-[11px]"
       >
-        <span aria-hidden className="h-[3px] w-10 rounded-full bg-icon-disabled" />
+        <span aria-hidden className="h-1 w-9 rounded-[2px] bg-border-subtle" />
       </button>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">{children}</div>
     </div>

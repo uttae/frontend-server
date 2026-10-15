@@ -55,6 +55,8 @@ vi.mock("@vis.gl/react-google-maps", () => ({
   InfoWindow: ({ children }: { children: ReactNode }) => (
     <div role="dialog" aria-label="검색 장소 미리보기">{children}</div>
   ),
+  MapControl: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ControlPosition: { RIGHT_BOTTOM: 9 },
   useMap: () => null,
   useMapsLibrary: () => null,
   Map: ({

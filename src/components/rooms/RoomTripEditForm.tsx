@@ -28,7 +28,6 @@ import {
 type Props = {
   room: RoomTripFormSource;
   readOnly?: boolean;
-  onCancel?: () => void;
   onSaved?: () => void;
 };
 
@@ -36,7 +35,7 @@ export function RoomTripEditForm(props: Props) {
   return <RoomTripEditSession key={props.room.id} {...props} />;
 }
 
-function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Props) {
+function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
   const saved = toTripFormValues(room);
 
   const [title, setTitle] = useState(saved.title);
@@ -124,16 +123,6 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
     onSaved,
   ]);
 
-  function handleCancel() {
-    const next = toTripFormValues(room);
-    setTitle(next.title);
-    setDestinations(next.destinations);
-    setStartDate(next.startDate);
-    setEndDate(next.endDate);
-    setShrinkConfirmOpen(false);
-    onCancel?.();
-  }
-
   function handleApply() {
     if (!canApply) return;
 
@@ -176,15 +165,7 @@ function RoomTripEditSession({ room, readOnly = false, onCancel, onSaved }: Prop
       )}
 
       {!readOnly && (
-        <SettingsActionButtonRow className="gap-3 pt-0">
-          <SettingsActionButton
-            variant="secondary"
-            className="h-12 rounded-lg border-border bg-fill-subtle py-0 text-[16px] font-bold text-text hover:bg-fill"
-            onClick={handleCancel}
-            disabled={(!onCancel && !isDirty) || isPending}
-          >
-            취소
-          </SettingsActionButton>
+        <SettingsActionButtonRow className="pt-0">
           <SettingsActionButton
             variant="primary"
             className="h-12 rounded-lg py-0 text-[16px] font-bold enabled:hover:bg-primary-strong hover:opacity-100 disabled:bg-fill disabled:text-text-disabled disabled:opacity-100"

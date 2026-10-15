@@ -6,8 +6,17 @@ export const width = {
 /** Figma 사이드바 1049:2992 · HeaderBar 홈 열 공통 폭 */
 export const MAIN_SIDEBAR_RAIL_WIDTH = "68px" as const;
 
-/** 채팅·LeftSection 최소 폭 */
+/** 채팅·일정 등 좌측 패널 최소 폭(사이드바 레일 제외) */
 export const CHAT_PANEL_DOCKED_WIDTH = width.s1;
+
+/**
+ * 데스크톱 지도 최소 폭 — 장소 상세 패널(360) + 좌우 여백 10.
+ * 좌측 영역(레일 + 패널 400)과 합친 폭보다 화면이 좁으면 레이아웃 안에서 가로 스크롤한다.
+ */
+export const MAIN_MAP_MIN_WIDTH_PX = 380 as const;
+
+/** 데스크톱 준비물 상세 패널 폭 — `PackingPage.module.css`의 `.detail`과 같게 유지 */
+export const PACKING_DETAIL_WIDTH_PX = 440 as const;
 
 /**
  * 플랜 루트 콘텐츠 박스 인라인 폭이 이 값 미만이면 narrow.
@@ -30,29 +39,31 @@ export const PLAN_PLACE_CARD_MIN_SIZE_REM = "6rem" as const;
  */
 export const PLAN_PLACE_CARD_TW = {
   article:
-    "relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3.5 rounded-xl border border-gray-border bg-white p-3.5 shadow-sm mobile:gap-x-2.5 mobile:p-2.5",
+    "relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 rounded-xl border border-gray-border bg-white p-3.5 shadow-sm mobile:gap-x-2.5 mobile:p-2.5",
   thumbnail:
     "relative h-[6rem] w-[6rem] shrink-0 overflow-hidden rounded-lg bg-fill-strong mobile:h-[4.5rem] mobile:w-[4.5rem]",
+  /** 장소명·카테고리는 위, 주소는 썸네일 아래 끝에 맞춘다 */
   contentColumn:
-    "flex min-h-[6rem] min-w-0 flex-col justify-start gap-2 mobile:min-h-[4.5rem]",
+    "flex min-h-[6rem] min-w-0 flex-col justify-between gap-2 pb-1 mobile:min-h-[4.5rem]",
   titleRow: "flex min-w-0 items-start gap-2.5",
-  subtitle: "text-body-xs-regular leading-snug text-dark-gray/85",
+  subtitle: "truncate text-caption-l-regular text-text-subtle",
   controlsStack: "flex min-w-0 flex-col gap-0.5",
   orderBadgeCompact:
     "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular mobile:text-body-xs-regular shadow-md",
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
-  titleClamp: "line-clamp-2",
-  subtitleClamp: "line-clamp-2",
+  title: "truncate text-body-l-emphasis mobile:text-body-s-emphasis text-text",
   primaryTypeBadge:
-    "shrink-0 rounded-full bg-gray-100 px-2 py-0.5 text-body-xs-emphasis font-medium leading-none text-dark-gray",
+    "w-fit max-w-full shrink-0 truncate rounded-full bg-fill px-1.5 py-0.5 text-body-xs-regular text-text-subtle",
   deleteButtonCompact: "p-1 @min-[370px]/plan:p-1.5",
-  deleteIconCompact: "h-5 w-5",
-  triggerRow:
-    "flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1",
-  triggerButton:
-    "flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray/85 transition hover:bg-sky-50 hover:text-sky-600",
-  triggerButtonActive: "text-sky-600 font-semibold",
-  triggerIcon: "h-4 w-4 shrink-0",
+  deleteIconSize: 16,
+  /** 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄 — 버튼 배경이 카드 안쪽 여백보다 바깥에 오도록 좌우를 넓힌다 */
+  actionBar: "-mx-1.5 flex min-w-0 items-center justify-between gap-2",
+  /** 디자인 시스템 Button Base(sm) — 버튼 좌우 여백 10, 아이콘 16, 라벨(`span`) 좌우 여백 6 */
+  actionButton:
+    "flex h-9 shrink-0 cursor-pointer items-center rounded-md bg-fill-subtle px-2.5 text-body-s-emphasis text-text transition-colors hover:bg-fill disabled:cursor-not-allowed disabled:opacity-50 [&>span]:px-1.5",
+  /** 메모 버튼만 Button Base 좌우 여백이 4다(디자인) */
+  actionButtonTrailing: "px-1",
+  actionIcon: "shrink-0 text-primary",
   editorModule:
     "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular mobile:text-body-xs-regular text-gray-900",
   editorSideLabelWrapper:

@@ -1,7 +1,7 @@
 "use client";
 
+import { CoinIcon } from "@/assets/icons";
 import { ExpenseEntryButton, useExpenseContext } from "@/components/expenses/ExpenseProvider";
-import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 
 import type { CSSProperties, Ref } from "react";
 
@@ -18,7 +18,10 @@ type PlanScheduleDayBlockProps = {
   roomId: string;
   scheduleId: number;
   title: string;
+  /** 가계부 패널 부제목에 쓰는 날짜 — `10월 12일 (월)` */
   subtitle?: string;
+  /** 일차 헤더에 보이는 날짜 — `10.12(월)` */
+  dateHeading?: string;
   onRequestDeleteSchedule?: () => void;
   onRequestInsertScheduleAfter?: () => void;
   isScheduleMenuDisabled?: boolean;
@@ -33,6 +36,7 @@ export function PlanScheduleDayBlock({
   scheduleId,
   title,
   subtitle,
+  dateHeading,
   onRequestDeleteSchedule,
   onRequestInsertScheduleAfter,
   isScheduleMenuDisabled = false,
@@ -55,15 +59,15 @@ export function PlanScheduleDayBlock({
   return (
     <PlanDaySection
       title={title}
-      subtitle={subtitle}
+      subtitle={dateHeading ?? subtitle}
       itineraryScheduleId={scheduleId}
       summaryAction={expenses.canManage ? (
         <ExpenseEntryButton
           scheduleId={scheduleId}
           scopeLabel={title}
           scopeSubtitle={subtitle}
-          className="inline-flex min-h-10 max-w-full cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray/85 transition-colors enabled:hover:bg-sky-50 enabled:hover:text-sky-600 focus-visible:outline-2 focus-visible:outline-primary"
-          icon={<ExpenseIcon className="size-4 shrink-0" />}
+          className="inline-flex min-h-8 max-w-full cursor-pointer items-center gap-1 rounded-lg py-1 pl-[3px] pr-1 text-body-s-emphasis text-primary transition-colors enabled:hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
+          icon={<CoinIcon size={16} />}
         />
       ) : undefined}
       onRequestAddExpense={expenses.canManage ? () => expenses.open({ scheduleId }) : undefined}

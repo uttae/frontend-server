@@ -6,7 +6,9 @@ import { Bookmark } from "lucide-react";
 import {
   AdvancedMarker,
   InfoWindow,
+  ControlPosition,
   Map as GoogleMap,
+  MapControl,
   useMap,
   useMapsLibrary,
   type MapCameraChangedEvent,
@@ -533,6 +535,27 @@ export default function TripMap({
     clearPlanFocus();
   };
 
+  const bookmarkToggle = (
+    <button
+      type="button"
+      onClick={() => setShowBookmarkPins((v) => !v)}
+      aria-pressed={showBookmarkPins}
+      aria-label={
+        showBookmarkPins
+          ? "북마크 장소 표시 끄기"
+          : "북마크 장소 표시 켜기"
+      }
+      title="북마크 장소 표시"
+      className={`pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-md ring-2 ring-black/5 transition ${
+        showBookmarkPins
+          ? "bg-primary text-white"
+          : "bg-white text-dark-gray hover:bg-gray-50"
+      }`}
+    >
+      <Bookmark className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+    </button>
+  );
+
   return (
     <div className="relative h-full min-h-0 w-full min-w-0">
       <div className="absolute inset-0 min-h-0 overflow-hidden">
@@ -588,6 +611,13 @@ export default function TripMap({
           )}
 
           {!routeView && <SelectedPlaceMarker />}
+
+          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다 */}
+          {routeView || isMobileDevice ? null : (
+            <MapControl position={ControlPosition.RIGHT_BOTTOM}>
+              <div className="mr-2.5">{bookmarkToggle}</div>
+            </MapControl>
+          )}
           </GoogleMap>
         )}
       </div>
@@ -606,36 +636,21 @@ export default function TripMap({
       {!bootstrap.ready || routeView ? null : (
         <>
           <MapSearchHereButton discoverCategoryId={selectedCategoryId} />
-          <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
-            {onOpenRouteView ? (
-              <button
-                type="button"
-                onClick={onOpenRouteView}
-                aria-label="경로 보기"
-                className="pointer-events-auto flex size-[42px] cursor-pointer items-center justify-center rounded-full bg-primary text-icon-inverse shadow-md transition-colors active:bg-primary-strong"
-              >
-                <RouteIcon size={24} />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setShowBookmarkPins((v) => !v)}
-              aria-pressed={showBookmarkPins}
-              aria-label={
-                showBookmarkPins
-                  ? "북마크 장소 표시 끄기"
-                  : "북마크 장소 표시 켜기"
-              }
-              title="북마크 장소 표시"
-              className={`pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-md ring-2 ring-black/5 transition ${
-                showBookmarkPins
-                  ? "bg-primary text-white"
-                  : "bg-white text-dark-gray hover:bg-gray-50"
-              }`}
-            >
-              <Bookmark className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-            </button>
-          </div>
+          {isMobileDevice ? (
+            <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
+              {onOpenRouteView ? (
+                <button
+                  type="button"
+                  onClick={onOpenRouteView}
+                  aria-label="경로 보기"
+                  className="pointer-events-auto flex size-[42px] cursor-pointer items-center justify-center rounded-full bg-primary text-icon-inverse shadow-md transition-colors active:bg-primary-strong"
+                >
+                  <RouteIcon size={24} />
+                </button>
+              ) : null}
+              {bookmarkToggle}
+            </div>
+          ) : null}
         </>
       )}
     </div>

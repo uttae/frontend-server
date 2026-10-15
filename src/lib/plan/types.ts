@@ -26,6 +26,9 @@ export type PlanPlace = {
 export type PlanDayData = {
   id: string;
   dayLabel: string;
+  /** `10월 12일 (월)` — 가계부 패널 부제목 등 */
   dateLabel: string;
+  /** `10.12(월)` — 일차 헤더 */
+  shortDateLabel: string;
   places: PlanPlace[];
 };

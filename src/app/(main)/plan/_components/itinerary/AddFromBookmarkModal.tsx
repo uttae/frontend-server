@@ -148,7 +148,7 @@ export function AddFromBookmarkModal({
     useCreateScheduleItem();
 
   const busy = isCreatingItem || addingGooglePlaceId != null;
-  const sheetDrag = useSheetDrag(onClose, busy, "(max-width: 767px)");
+  const sheetDrag = useSheetDrag(onClose, busy);
 
   const handleAddPlace = useCallback(
     async (googlePlaceId: string) => {
@@ -226,11 +226,14 @@ export function AddFromBookmarkModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex flex-col justify-end bg-black/40 md:justify-center md:px-4"
-      onMouseDown={(ev) => {
-        if (ev.target === ev.currentTarget) onClose();
-      }}
+      className="fixed inset-0 z-[60] flex flex-col justify-center px-4 mobile:justify-end mobile:px-0"
     >
+      {/* 딤은 시트와 따로 둬서 기준 시트처럼 딤만 서서히 나타나고 시트는 아래에서 올라온다 */}
+      <div
+        aria-hidden
+        className="absolute inset-0 bg-black/40 mobile:bg-[#0f1724]/35 mobile:animate-in mobile:fade-in-0 mobile:duration-200"
+        onMouseDown={onClose}
+      />
       <div
         style={sheetDrag.surfaceStyle}
         role="dialog"
@@ -238,23 +241,24 @@ export function AddFromBookmarkModal({
         aria-labelledby="add-from-bookmark-modal-title"
         onMouseDown={(e) => e.stopPropagation()}
         className={cn(
-          "flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden",
-          "border-t border-gray-border bg-white shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.12)] md:rounded-2xl md:border md:shadow-lg",
-          "rounded-t-[1.35rem]",
-          "mx-auto md:max-w-md",
+          "relative flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden",
+          // PC는 가운데 모달, 모바일 기기는 화면 폭과 관계없이 바텀시트
+          "mx-auto max-w-md rounded-2xl border border-gray-border bg-white shadow-lg",
+          "mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:border-x-0 mobile:border-b-0 mobile:shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.12)]",
+          "mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200",
           "pb-[max(env(safe-area-inset-bottom,0px),12px)]",
         )}
       >
-        <BottomSheetDragHandle drag={sheetDrag} className="max-md:touch-none max-md:select-none max-md:cursor-grab">
+        <BottomSheetDragHandle drag={sheetDrag}>
         <div
           aria-hidden
-          className="mx-auto mt-3 h-1 w-10 shrink-0 rounded-full bg-black/15 md:hidden"
+          className="mx-auto mt-[11px] hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle mobile:block"
         />
 
         <div className="shrink-0 px-5 pb-2 pt-3">
           <h2
             id="add-from-bookmark-modal-title"
-            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
+            className="text-title-l mobile:text-title-m font-semibold mobile:font-bold text-neutral-900"
           >
             북마크에서 추가
           </h2>

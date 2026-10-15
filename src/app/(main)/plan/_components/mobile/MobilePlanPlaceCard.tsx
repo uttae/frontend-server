@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import {
   ChevronDownIcon,
@@ -10,6 +10,7 @@ import {
   TimeClockIcon,
   WriteIcon,
 } from "@/assets/icons";
+import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { formatScheduleTimeRange } from "@/lib/plan/scheduleTime";
 import type { PlanPlace } from "@/lib/plan/types";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
@@ -22,7 +23,7 @@ type MobilePlanPlaceCardProps = Readonly<{
   badgeColor: string;
   /** 방금 추가된 카드 — 잠깐 강조한다 */
   highlighted?: boolean;
-  /** `45,000 KRW 외 1건` — 없으면 비용 줄을 숨긴다 */
+  /** 대표 통화 원금액 요약 `30 USD 외 1건` — 없으면 비용 줄을 숨긴다 */
   expenseSummary: string | null;
   /** 카드 본문 — 없으면 본문을 눌러도 아무 일도 없다(예: 경로 보기에서 펼친 카드) */
   onOpen?: () => void;
@@ -104,7 +105,7 @@ export function MobilePlanPlaceCard({
           </span>
           <div className="min-w-0 flex-1">
             <h3 className="line-clamp-2 break-words text-title-s text-text">{place.title}</h3>
-            {meta ? <p className="truncate text-body-s-regular text-text-subtle">{meta}</p> : null}
+            {meta ? <PlaceMeta place={place} meta={meta} /> : null}
             <PlaceTimeAndExpense place={place} expenseSummary={expenseSummary}
               addWhenEmpty={addWhenEmpty} onEditTime={onEditTime} onOpenExpenses={onOpenExpenses} />
           </div>
@@ -139,8 +140,60 @@ export function MobilePlanPlaceCard({
   );
 }
 
+/** 분류·주소 줄 — 좁은 화면에서 잘렸을 때만 눌러서 전체 주소를 아래 드롭다운으로 보여 준다 */
+function PlaceMeta({ place, meta }: Readonly<{ place: PlanPlace; meta: string }>) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const addressId = useId();
+  const [truncated, setTruncated] = useState(false);
+  const [open, setOpen] = useState(false);
+  useOnClickOutside(wrapRef, () => setOpen(false));
+
+  // 카드 폭(회전·넘겨 보기 칸)이 바뀌면 잘렸는지 다시 잰다
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setTruncated(el.scrollWidth > el.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [meta]);
+
+  const expandable = truncated && Boolean(place.subtitle);
+  return (
+    <div ref={wrapRef} className="relative">
+      <p ref={textRef} className="truncate text-body-s-regular text-text-subtle">{meta}</p>
+      {expandable ? (
+        // 잘리지 않았으면 버튼을 두지 않아 이 줄을 눌러도 카드 본문(열기)이 눌린다
+        <button
+          type="button"
+          onClick={(e) => {
+            stop(e);
+            setOpen((v) => !v);
+          }}
+          aria-expanded={open}
+          aria-controls={addressId}
+          aria-label={`${place.title} 전체 주소 ${open ? "닫기" : "보기"}`}
+          className="pointer-events-auto absolute inset-0 cursor-pointer"
+        />
+      ) : null}
+      {expandable && open ? (
+        // pointer-events-auto: 드롭다운을 눌러도 아래 카드 본문(열기)이 눌리지 않게 막는다
+        <p
+          id={addressId}
+          className="pointer-events-auto absolute inset-x-0 top-full z-20 mt-1 break-words rounded-[12px] bg-fill-elevate px-3.5 py-3 text-body-s-regular text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]"
+        >
+          {place.subtitle}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, onOpenExpenses }:
   Pick<MobilePlanPlaceCardProps, "place" | "expenseSummary" | "addWhenEmpty" | "onEditTime" | "onOpenExpenses">) {
+  const summaryId = useId();
   const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
   const addTime = !timeRange && Boolean(addWhenEmpty?.time);
   const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
@@ -188,10 +241,11 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onOpenExpenses();
                     }}
                     aria-label={`${place.title} 비용 보기`}
-                    className="pointer-events-auto flex min-w-0 items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    aria-describedby={summaryId}
+                    className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
                   >
                     <CoinIcon size={18} className="text-icon-subtle" />
-                    <span className="truncate">{expenseSummary}</span>
+                    <span id={summaryId} className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
                   </button>
                 ) : null}
                 {!expenseSummary && addExpense ? (
@@ -266,7 +320,7 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
           </div>
         ) : null}
         {!memo && addMemo ? (
-          // 메모가 있을 때와 같은 줄(구분선·아이콘·꺾쇠)을 흐리게 — 누르면 메모 시트
+          // 메모가 있을 때와 같은 줄(구분선·아이콘)을 흐리게 — 펼칠 내용이 없어 꺾쇠는 두지 않는다. 누르면 메모 시트
           <div className="pointer-events-none relative mx-3.5 border-t border-border-subtle py-3">
             <button
               type="button"
@@ -281,7 +335,6 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
               <span className="min-w-0 flex-1 truncate text-caption-l-regular leading-5 text-text-disabled">
                 메모를 추가해보세요.
               </span>
-              <ChevronDownIcon size={20} className="shrink-0 text-icon-disabled" />
             </button>
           </div>
         ) : null}

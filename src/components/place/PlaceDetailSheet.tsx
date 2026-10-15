@@ -235,8 +235,8 @@ export function PlaceDetailSheet({
       onWheel={handleWheel}
     >
       <div ref={headerRef} className="shrink-0">
-        <div aria-hidden className="flex h-3 w-full items-end justify-center">
-          <span className="h-[3px] w-10 rounded-full bg-icon-disabled" />
+        <div aria-hidden className="flex w-full justify-center pt-3">
+          <span className="h-1 w-9 rounded-[2px] bg-border-subtle" />
         </div>
         <div className="flex items-center justify-between">
           <button

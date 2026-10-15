@@ -5,12 +5,11 @@ import { useRouter } from "next/navigation";
 
 import { DeleteConfirmModal } from "@/app/home/_components/DeleteConfirmModal";
 import { RoomTripEditForm } from "@/components/rooms/RoomTripEditForm";
-import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { useCurrentRoomMembership } from "@/hooks/useCurrentRoomMembership";
 import { isRoomMemberRole } from "@/lib/rooms";
 import { useSessionStore } from "@/stores/session-store";
 
-/** 방장 전용 여행 삭제 — 제목 옆 작은 텍스트 버튼과 삭제 확인 */
+/** 방장 전용 여행 삭제 — 적용하기 아래 작은 텍스트 버튼과 삭제 확인 */
 export function RoomTripDeleteButton() {
   const router = useRouter();
   const { roomSource, isHost, isLoading } = useCurrentRoomMembership();
@@ -23,7 +22,6 @@ export function RoomTripDeleteButton() {
     <>
       <button
         type="button"
-        data-skip-autofocus
         onClick={() => setDeleteOpen(true)}
         className="shrink-0 cursor-pointer rounded-md px-1.5 py-0.5 text-label-s-regular text-status-negative underline underline-offset-2 transition-colors hover:bg-status-negative/5"
       >
@@ -43,15 +41,7 @@ export function RoomTripDeleteButton() {
   );
 }
 
-export function RoomTripSettingsSection({
-  embedded = false,
-  onCancel,
-  onSaved,
-}: {
-  embedded?: boolean;
-  onCancel?: () => void;
-  onSaved?: () => void;
-}) {
+export function RoomTripSettingsSection({ onSaved }: { onSaved?: () => void }) {
   const { roomId, roomSource, isLoading } = useCurrentRoomMembership();
   const canEdit = isRoomMemberRole(roomSource?.role);
   const description = !isLoading && roomSource && roomId && !canEdit
@@ -60,11 +50,7 @@ export function RoomTripSettingsSection({
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
-      {embedded ? (
-        description ? <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">{description}</p> : null
-      ) : (
-        <MainPageHeader title="여행 정보 수정" description={description} action={<RoomTripDeleteButton />} />
-      )}
+      {description ? <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">{description}</p> : null}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
@@ -75,7 +61,7 @@ export function RoomTripSettingsSection({
           여행 정보를 불러오지 못했어요.
         </p>
       ) : (
-        <RoomTripEditForm room={roomSource} readOnly={!canEdit} onCancel={onCancel} onSaved={onSaved} />
+        <RoomTripEditForm room={roomSource} readOnly={!canEdit} onSaved={onSaved} />
       )}
     </div>
   );

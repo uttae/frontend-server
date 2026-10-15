@@ -22,10 +22,11 @@ export function formatMonthDayKo(ymd: string): string {
 }
 
 /**
- * 모바일 비용 요약 — 지출이 가장 많은 통화의 합계만 보여주고, 다른 통화 지출은 건수로 붙인다.
- * 예: `357 KRW`, `357 KRW 외 1건`. 지출이 없으면 null.
+ * 일차·장소 비용 요약 — 가장 많은 지출 건수의 통화를 원금액으로 합산한다.
+ * 동률이면 처음 등장한 통화, `외 N건`은 나머지 통화의 지출 건수다.
+ * 예: `30 USD 외 1건`. 0원도 지출이며, 빈 목록만 null이다.
  */
-export function summarizeExpensesForMobile(expenses: readonly Expense[]): string | null {
+export function summarizePlaceExpenses(expenses: readonly Expense[]): string | null {
   if (expenses.length === 0) return null;
   const countByCurrency = new Map<string, number>();
   for (const expense of expenses) {

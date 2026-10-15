@@ -75,22 +75,25 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   return (
     <main className="flex h-dvh flex-col">
       <div className="relative mx-auto flex min-h-0 flex-1 w-full overflow-hidden rounded-none bg-white">
-        <LeftSection>
-          <HeaderBar
-            mobileBackHref={mobileBack?.href}
-            mobileBackLabel={mobileBack?.label}
-          />
-          {isMobileDevice && (pathname === "/cost" || isPackingRoute) ? <TravelToolsSwitcher /> : null}
-          <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
-            {!isMobileDevice ? <SideBar /> : null}
-            <MainContentScrollArea fill={isPackingRoute || showMobileSurface || showMobileSchedule || showDesktopChat}>
-              {legacyViewPath ? null : children}
-            </MainContentScrollArea>
-          </section>
-          <MobileMainTabs />
-        </LeftSection>
+        {/* 좌측 영역과 지도의 최소 폭 합보다 화면이 좁으면 페이지 대신 이 안에서 가로 스크롤한다(떠 있는 채팅은 화면 오른쪽에 그대로 둔다) */}
+        <div className="flex min-h-0 min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+          <LeftSection>
+            <HeaderBar
+              mobileBackHref={mobileBack?.href}
+              mobileBackLabel={mobileBack?.label}
+            />
+            {isMobileDevice && (pathname === "/cost" || isPackingRoute) ? <TravelToolsSwitcher /> : null}
+            <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
+              {!isMobileDevice ? <SideBar /> : null}
+              <MainContentScrollArea fill={isPackingRoute || showMobileSurface || showMobileSchedule || showDesktopChat}>
+                {legacyViewPath ? null : children}
+              </MainContentScrollArea>
+            </section>
+            <MobileMainTabs />
+          </LeftSection>
 
-        {keepDesktopMap ? <MapWithDetailPanel key={roomId} hidden={!showDesktopMap} /> : null}
+          {keepDesktopMap ? <MapWithDetailPanel key={roomId} hidden={!showDesktopMap} /> : null}
+        </div>
         {!isMobileDevice && chatState === "minimized" ? <ChatPanel /> : null}
       </div>
     </main>

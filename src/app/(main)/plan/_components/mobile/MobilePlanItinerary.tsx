@@ -13,7 +13,7 @@ import { useRoomSchedules, useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
 import { buildMapRouteHref } from "@/lib/mobile-view";
 import type { InsertAnchor } from "@/lib/plan/insertPosition";
-import { summarizeExpensesForMobile } from "@/lib/plan/mobilePlanFormat";
+import { summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
 import { planCopy } from "@/lib/plan/planCopy";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import {
@@ -151,7 +151,7 @@ export function MobilePlanItinerary({
                 orderNumber={index + 1}
                 badgeColor={badgeColor}
                 highlighted={recentlyAddedItemId !== null && place.itemId === recentlyAddedItemId}
-                expenseSummary={summarizeExpensesForMobile(itemExpenses(place.itemId))}
+                expenseSummary={summarizePlaceExpenses(itemExpenses(place.itemId))}
                 onOpen={() => openPlace(place)}
                 onOpenActions={() => setSheet({ kind: "actions", place })}
                 onOpenExpenses={() => openPlaceExpenses(expenses, scheduleId, place)}

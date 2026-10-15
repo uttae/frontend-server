@@ -56,6 +56,8 @@ vi.mock("@/lib/analytics/track", () => ({
   trackAnalyticsEvent: boundary.track,
 }));
 vi.mock("@vis.gl/react-google-maps", () => ({
+  MapControl: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  ControlPosition: { RIGHT_BOTTOM: 9 },
   useMap: () => null,
   useMapsLibrary: () => null,
   Map: function GoogleMapBoundary({

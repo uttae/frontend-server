@@ -40,9 +40,9 @@ export type TravelDirectionsCardProps = {
   effectiveMode: ScheduleTravelModeValue;
   showUnknownOption: boolean;
   modeRaw: string;
-  /** 지도 polyline을 만들 수 없을 때 요약 우측에 표시 */
-  renderWarning?: string;
   googleMapsDirectionsUrl?: string;
+  /** PC 일정 — 구간마다 반복되는 길찾기 링크가 튀지 않게 회색 12px로 낮춘다 */
+  subtleDirectionsLink?: boolean;
   /** true면 목록은 참고용(클릭 선택 불가), `onSelectTravelMode` 미사용 */
   readOnly?: boolean;
   onSelectTravelMode?: (next: ScheduleTravelModeValue) => void;
@@ -61,8 +61,8 @@ export function TravelDirectionsCard({
   effectiveMode,
   showUnknownOption,
   modeRaw,
-  renderWarning,
   googleMapsDirectionsUrl,
+  subtleDirectionsLink = false,
   readOnly = false,
   onSelectTravelMode,
   onHideDirections,
@@ -109,22 +109,18 @@ export function TravelDirectionsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Google Maps에서 길찾기"
-            className="inline-flex h-10 shrink-0 items-center gap-1 px-2 text-label-xs-regular font-medium text-primary-strong underline-offset-2 hover:underline"
+            className={cn(
+              "inline-flex h-10 shrink-0 items-center gap-1 underline-offset-2 hover:underline",
+              subtleDirectionsLink
+                ? "px-1 text-body-xs-regular text-text-subtle"
+                : "px-2 text-label-xs-regular font-medium text-primary-strong",
+            )}
           >
             Google 길찾기
-            <ExternalLink className="h-3 w-3" aria-hidden />
+            <ExternalLink className={subtleDirectionsLink ? "size-[11px]" : "h-3 w-3"} aria-hidden />
           </a>
         ) : null}
 
-        {renderWarning ? (
-          <span
-            role="status"
-            title={renderWarning}
-            className="flex h-10 min-w-0 flex-1 items-center overflow-hidden px-2 text-body-xs-emphasis font-medium text-primary"
-          >
-            <span className="truncate">{renderWarning}</span>
-          </span>
-        ) : null}
       </div>
 
       {menuOpen ? (
