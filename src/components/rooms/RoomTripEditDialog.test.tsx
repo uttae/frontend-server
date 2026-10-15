@@ -53,6 +53,16 @@ async function open() {
   await click("여행 정보 수정", host);
   return trigger;
 }
+const dateField = (edge: "start" | "end") => dialog()!.querySelector<HTMLButtonElement>(`#trip-room-${edge}`)!;
+const picker = () => dialog()!.querySelector<HTMLElement>('[role="dialog"][aria-label="날짜 선택"]');
+const day = (ymd: string) => picker()!.querySelector<HTMLButtonElement>(`button[data-ymd="${ymd}"]`)!;
+/** 날짜 칸을 눌러 달력을 열고, 날짜를 차례로 누른 뒤 확인한다 */
+async function pickDates(edge: "start" | "end", ...days: string[]) {
+  await act(async () => dateField(edge).click());
+  expect(picker()).not.toBeNull();
+  for (const ymd of days) await act(async () => day(ymd).click());
+  await click("확인", picker()!);
+}
 beforeEach(async () => {
   state.room.role = "HOST"; state.isHost = true; state.isLoading = false; state.missing = false; state.pending = false;
   state.update.mockReset();
@@ -88,11 +98,14 @@ it("uses the existing trimmed mutation payload and closes only after save succee
 
 it("retains the original date floor, date ordering and required destination validation", async () => {
   await open();
-  await change('input[type="date"]', "2026-10-09");
+  await pickDates("start", "2026-10-09");
+  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
   expect(button("적용하기", dialog()!).disabled).toBe(true);
-  await change('input[type="date"]', "2026-10-13");
-  expect(button("적용하기", dialog()!).disabled).toBe(true);
-  await change('input[type="date"]', "2026-10-10");
+  // 시작일보다 이른 종료일을 고르면 기간을 거꾸로 만들지 않고 새 시작일로 다시 고른다
+  await pickDates("start", "2026-10-11", "2026-10-12");
+  await pickDates("end", "2026-10-10");
+  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 10일");
   await click("서울 삭제", dialog()!);
   expect(button("적용하기", dialog()!).disabled).toBe(true);
   expect(state.update).not.toHaveBeenCalled();
@@ -124,7 +137,7 @@ it.each(["loading", "missing"])("does not offer editing for %s room data", async
 
 it("contains shrink confirmation focus and Escape dismisses only confirmation, preserving the draft", async () => {
   await open();
-  await change('input[id="trip-room-end"]', "2026-10-10");
+  await pickDates("end", "2026-10-10");
   button("적용하기", dialog()!).focus();
   await click("적용하기", dialog()!);
   const confirm = document.querySelector('[role="alertdialog"]')!;
@@ -138,36 +151,31 @@ it("contains shrink confirmation focus and Escape dismisses only confirmation, p
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(document.querySelector('[role="alertdialog"]')).toBeNull();
   expect(dialog()).not.toBeNull();
-  expect(dialog()!.querySelector<HTMLInputElement>('#trip-room-end')!.value).toBe("2026-10-10");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 10일");
   expect(document.activeElement).toBe(button("적용하기", dialog()!));
   expect(state.update).not.toHaveBeenCalled();
 });
 
-it("names the existing title, destination and date inputs", async () => {
+it("names the existing title, destination and date fields", async () => {
   await open();
   const modal = dialog()!;
   const inputs = [...modal.querySelectorAll("input")];
   const names = inputs.map(input => input.getAttribute("aria-label") || [...(input.labels ?? [])].map(label => label.textContent).join(""));
   expect(names).toContain("여행 제목");
   expect(names).toContain("목적지 검색");
-  expect(names).toContain("여행 시작일");
-  expect(names).toContain("여행 종료일");
+  expect(dateField("start").getAttribute("aria-label")).toBe("시작 날짜 2026년 10월 10일 토요일");
+  expect(dateField("end").getAttribute("aria-label")).toBe("종료 날짜 2026년 10월 12일 월요일");
 });
 
-it.each(["Enter", " "])("opens either date picker with %s without submitting the form", async (key) => {
+it("opens the date picker from either date field without submitting the form", async () => {
   await open();
-  const inputs = dialog()!.querySelectorAll<HTMLInputElement>('input[type="date"]');
-  for (const input of inputs) {
-    const showPicker = vi.fn();
-    Object.defineProperty(input, "showPicker", { value: showPicker });
-    const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
-    await act(async () => {
-      input.focus();
-      input.dispatchEvent(event);
-    });
-    expect(showPicker).toHaveBeenCalledOnce();
-    expect(event.defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(input);
+  for (const edge of ["start", "end"] as const) {
+    expect(dateField(edge).type).toBe("button");
+    expect(dateField(edge).getAttribute("aria-haspopup")).toBe("dialog");
+    await act(async () => dateField(edge).click());
+    expect(picker()).not.toBeNull();
+    await click("취소", picker()!);
+    expect(picker()).toBeNull();
   }
   expect(state.update).not.toHaveBeenCalled();
 });
