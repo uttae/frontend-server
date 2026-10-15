@@ -12,4 +12,5 @@
 - [ ] `npm run lint`
 - [ ] `npm test`
 - [ ] `npm run build`
+- [ ] 화면 확인(`npm run screens`):
 - [ ] 그 외 수동 검증:

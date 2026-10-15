@@ -34,6 +34,9 @@ SERVICE_CONTEXT.md
 # Claude Code personal settings (project skills in .claude/skills are committed)
 .claude/settings.local.json
 
+# check-screens 스크린샷 결과 (npm run screens)
+.screens/
+
 # misc
 .DS_Store
 .idea/
