@@ -148,6 +148,23 @@ export const MAP_PAN_RESTRICTION: google.maps.MapRestriction = {
   strictBounds: true,
 };
 
+/**
+ * 가로 래핑을 막은 지도({@link MAP_PAN_RESTRICTION})에서 `target`으로 옮긴다.
+ * `panTo`는 날짜변경선(경도 ±180)을 넘는 쪽이 더 가까우면 그쪽으로 가다 경계에 막혀 바다 한가운데에 멈추므로
+ * (예: 샌프란시스코 → 도쿄), 그때만 `setCenter`로 바로 옮긴다. 이만큼 먼 이동은 `panTo`도 애니메이션 없이 건너뛴다.
+ */
+export function panToWithinWorld(
+  map: google.maps.Map,
+  target: google.maps.LatLngLiteral,
+): void {
+  const center = map.getCenter();
+  if (center && Math.abs(target.lng - center.lng()) > 180) {
+    map.setCenter(target);
+    return;
+  }
+  map.panTo(target);
+}
+
 /** Google Places 리소스 id(`places/…`) 접두를 제거한 레거시 id */
 export function normalizeGooglePlaceResourceId(id: string): string {
   const prefix = "places/";

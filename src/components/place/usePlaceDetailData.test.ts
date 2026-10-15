@@ -1,14 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { PlaceDetail } from "@/lib/api/places";
 
 import * as placeDetailDataModule from "./usePlaceDetailData";
 import type { PlaceDetailResult } from "./types";
-
-vi.mock("@/lib/places/place-queries", () => ({
-  fetchPlaceDetail: vi.fn(),
-  placeDetailQueryDefaults: {},
-}));
 
 type PlaceDetailDataModule = typeof placeDetailDataModule & {
   toPlaceDetailResult: (detail: PlaceDetail) => PlaceDetailResult;
@@ -48,4 +43,15 @@ describe("toPlaceDetailResult", () => {
       "https://maps.google.com/recommended-place",
     );
   });
+});
+it("nullable resolve fields remain absent without fabricated coordinates or summary", () => {
+  const result = placeDetailDataModule.toPlaceDetailResult({
+    googlePlaceId: "null", name: null, formattedAddress: null, location: { lat: null, lng: 2 },
+    primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null,
+    phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null,
+    regularOpeningHours: null, reviews: [{ rating: null, text: null, authorDisplayName: null, publishTime: null, relativePublishTimeDescription: null }],
+  });
+  expect(result.location).toBeUndefined();
+  expect(result.reviewSummary).toBeNull();
+  expect(result.reviews[0].rating).toBeNull();
 });

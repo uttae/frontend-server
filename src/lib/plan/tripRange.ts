@@ -35,6 +35,13 @@ export function formatKoreanDateLabel(d: Date): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${w})`;
 }
 
+/** 일정 일차 헤더용 짧은 날짜 — `10.12(월)` */
+export function formatShortDateLabel(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${m}.${day}(${WEEKDAYS_KO[d.getDay()]})`;
+}
+
 function formatYmdKoShort(ymd: string): string {
   const d = parseLocalYmd(ymd);
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;

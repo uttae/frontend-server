@@ -40,9 +40,10 @@ function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetai
     return <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
   }
   let message = "발급에 실패했어요. 아래에서 재발급을 눌러 주세요.";
-  if (!canIssue) message = "초대 링크를 사용할 수 없어요. 방 정보를 다시 확인해 주세요.";
-  else if (isRoomDetailError || inviteCode === undefined) message = "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요.";
-  return <span className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">{message}</span>;
+  if (isRoomDetailError) message = "방 정보를 불러오지 못했어요.";
+  else if (!canIssue) message = "초대 링크를 사용할 수 없어요. 방 정보를 다시 확인해 주세요.";
+  else if (inviteCode === undefined) message = "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요.";
+  return <span role={isRoomDetailError ? "alert" : undefined} className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">{message}</span>;
 }
 
 export function AddMemberPanel({

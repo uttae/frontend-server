@@ -3,8 +3,11 @@
 import { SHEET_DISMISS_DISTANCE } from "./sheet-gesture";
 import { useRef, useState, type CSSProperties, type PointerEvent } from "react";
 
-/** Keep dragging on the fixed header so scrolling and form controls remain native. */
-export function useSheetDrag(onClose: () => void, disabled = false, mediaQuery: string | null = "(max-width: 639px)") {
+/**
+ * Keep dragging on the fixed header so scrolling and form controls remain native.
+ * 바텀시트는 모바일 기기에서만 쓰므로 화면 폭과 관계없이 `is-mobile-device`일 때만 끈다. 모바일 전용 시트는 `mobileOnly=false`.
+ */
+export function useSheetDrag(onClose: () => void, disabled = false, mobileOnly = true) {
   const gesture = useRef<{ id: number; x: number; y: number; distance: number } | null>(null);
   const [offset, setOffset] = useState(0);
   const [dragging, setDragging] = useState(false);
@@ -29,8 +32,7 @@ export function useSheetDrag(onClose: () => void, disabled = false, mediaQuery: 
     handleProps: {
       onPointerDown(event: PointerEvent<HTMLElement>) {
         if (disabled || !event.isPrimary || event.button !== 0 || gesture.current) return;
-        if (mediaQuery && !window.matchMedia?.(mediaQuery).matches &&
-          !document.documentElement.classList.contains("is-mobile-device")) return;
+        if (mobileOnly && !document.documentElement.classList.contains("is-mobile-device")) return;
         if ((event.target as Element).closest("button, input, textarea, select, a, [role='button'], [contenteditable='true']")) return;
         gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, distance: 0 };
         event.currentTarget.setPointerCapture(event.pointerId);
@@ -54,6 +56,6 @@ export function useSheetDrag(onClose: () => void, disabled = false, mediaQuery: 
       onPointerCancel(event: PointerEvent<HTMLElement>) { finish(event, true); },
       onLostPointerCapture(event: PointerEvent<HTMLElement>) { finish(event, true); },
     },
-    handleClassName: `shrink-0 max-sm:touch-none mobile:touch-none max-sm:select-none mobile:select-none ${dragging ? "max-sm:cursor-grabbing mobile:cursor-grabbing" : "max-sm:cursor-grab mobile:cursor-grab"}`,
+    handleClassName: `shrink-0 mobile:touch-none mobile:select-none ${dragging ? "mobile:cursor-grabbing" : "mobile:cursor-grab"}`,
   };
 }

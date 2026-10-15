@@ -11,6 +11,7 @@ const capture = vi.fn();
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("matchMedia", () => ({ matches: true }));
+  document.documentElement.classList.add("is-mobile-device");
   HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   HTMLDialogElement.prototype.close = function () { this.open = false; };
   HTMLElement.prototype.setPointerCapture = capture;
@@ -46,8 +47,8 @@ it.each([[30, "pointerup"], [130, "pointercancel"], [-100, "pointerup"]])("snaps
   expect(close).not.toHaveBeenCalled();
   expect(container.querySelector("dialog")!.style.transform).not.toContain("translateY(");
 });
-it("ignores desktop drags but supports wide mobile devices", () => {
-  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+it("ignores desktop drags even on narrow screens and supports mobile devices", () => {
+  document.documentElement.classList.remove("is-mobile-device");
   drag(130);
   expect(close).not.toHaveBeenCalled();
   document.documentElement.classList.add("is-mobile-device");
@@ -125,7 +126,7 @@ it("dismisses the day/place list sheet by dragging its header", () => {
   expect(close).toHaveBeenCalledOnce();
 });
 it("leaves the desktop scope panel transform untouched", () => {
-  vi.stubGlobal("matchMedia", () => ({ matches: false }));
+  document.documentElement.classList.remove("is-mobile-device");
   mountScope();
   drag(130);
   expect(close).not.toHaveBeenCalled();

@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useMainChromeLayoutWidth } from "@/contexts/MainChromeLayoutWidthContext";
 
@@ -16,22 +14,20 @@ export default function LeftSection({
     leftSectionAnimateMinWidth,
     layoutTransition,
   } = useMainChromeLayoutWidth();
+  const timing = `${layoutTransition.duration}s cubic-bezier(${layoutTransition.ease.join(",")})`;
 
   return (
-    <motion.section
+    <section
       className={`relative flex flex-1 flex-col ${isMobileDevice ? "min-w-0 w-full border-r-0" : "border-r border-gray-border"}`}
-      initial={false}
       // CSS applies `none` directly while interpolating numeric widths, without remounting the page.
+      // 최소 폭도 CSS로 넣는다 — framer `animate`로 넣었을 때 준비물(최소 0)에 들렀다 오면 다시 커지지 않았다.
       style={{
         maxWidth: leftSectionAnimateMaxWidth,
-        transition: `max-width ${layoutTransition.duration}s cubic-bezier(${layoutTransition.ease.join(",")})`,
-      }}
-      animate={{
         minWidth: leftSectionAnimateMinWidth,
+        transition: `max-width ${timing}, min-width ${timing}`,
       }}
-      transition={layoutTransition}
     >
       {children}
-    </motion.section>
+    </section>
   );
 }

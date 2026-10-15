@@ -37,7 +37,7 @@ function MobileBottomSheetContent({
   children,
 }: MobileBottomSheetProps) {
   const titleId = useId();
-  const drag = useSheetDrag(onClose, closeDisabled, null);
+  const drag = useSheetDrag(onClose, closeDisabled, false);
 
   useEffect(() => {
     if (!open) return;
@@ -65,12 +65,13 @@ function MobileBottomSheetContent({
         aria-modal="true"
         aria-labelledby={titleId}
         className={cn(
-          "relative m-0 flex w-full max-h-[90dvh] max-w-none flex-col overflow-hidden rounded-t-[20px] border-0 bg-fill-elevate p-5 pb-[max(20px,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200",
+          "relative m-0 flex w-full max-h-[90dvh] max-w-none flex-col overflow-hidden rounded-t-[20px] border-0 bg-fill-elevate p-5 pt-3 pb-[max(20px,env(safe-area-inset-bottom))] animate-in slide-in-from-bottom duration-200",
           variant === "menu" ? "gap-2" : "gap-4",
         )}
       >
         <BottomSheetDragHandle drag={drag} className={cn("touch-none select-none cursor-grab", variant === "menu" ? "space-y-2" : "space-y-4")}>
-        <div aria-hidden className="flex shrink-0 justify-center">
+        {/* 핸들 위·아래 12px, 그 아래 제목 줄(Figma) — 닫기 버튼 터치 영역(44)은 위아래로 겹쳐 제목 줄 높이를 키우지 않는다 */}
+        <div aria-hidden className="mb-3 flex shrink-0 justify-center">
           <span className="h-1 w-9 rounded-[2px] bg-border-subtle" />
         </div>
         <div className="flex shrink-0 items-center">
@@ -88,7 +89,7 @@ function MobileBottomSheetContent({
             onClick={onClose}
             disabled={closeDisabled}
             aria-label="닫기"
-            className="-mr-2.5 flex size-11 shrink-0 items-center justify-center disabled:opacity-40"
+            className="-my-2.5 -mr-2.5 flex size-11 shrink-0 items-center justify-center disabled:opacity-40"
           >
             <CloseIcon className="text-icon" />
           </button>

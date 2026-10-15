@@ -1,139 +1,33 @@
 // @vitest-environment jsdom
-import { act, type ComponentProps } from "react";
+import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import SearchPage from "./page";
-import { useMapCenterStore } from "@/stores/map-center-store";
-import { useSearchRecenterStore } from "@/stores/search-recenter-store";
-import type { PlacesSearchInput } from "@/components/search/PlacesSearchInput";
 const state = vi.hoisted(() => ({
-  roomId: "room-a" as string | undefined,
-  fetching: false,
-  params: new URLSearchParams("q=cafe"),
+  mobile: false,
+  params: new URLSearchParams("q=원래 검색어"),
   replace: vi.fn(),
-  track: vi.fn(),
-  input: null as ComponentProps<typeof PlacesSearchInput> | null,
-  args: [] as unknown[],
 }));
-vi.mock("@/hooks/useAnalyticsRoomId", () => ({ useAnalyticsRoomId: () => state.roomId }));
 vi.mock("next/navigation", () => ({
   useSearchParams: () => state.params,
   useRouter: () => ({ replace: state.replace }),
 }));
-vi.mock("@/hooks/usePlacesSearch", () => ({
-  usePlacesSearch: (...args: unknown[]) => {
-    state.args = args;
-    return { items: [], pageIndex: 0, isSuccess: true, isFetching: state.fetching };
-  },
-}));
-vi.mock("@/components/search/PlacesSearchInput", () => ({
-  PlacesSearchInput: (props: ComponentProps<typeof PlacesSearchInput>) => {
-    state.input = props;
-    return null;
-  },
-}));
-vi.mock("@/components/place", () => ({ SearchResultCard: () => null }));
-// 카드 클릭(장소 열기)은 이 테스트 범위 밖 — 지도 이동 훅의 라우터·세션 의존성을 끊는다
-vi.mock("@/hooks/useOpenPlaceOnMap", () => ({ useOpenPlaceOnMap: () => () => {} }));
-vi.mock("@/components/layout/MainPageHeader", () => ({
-  MainPageHeader: () => null,
-}));
-vi.mock("@/contexts/SectionWidthContext", () => ({
-  SetSectionMaxWidth: () => null,
-}));
-vi.mock("@/lib/analytics/track", () => ({
-  AnalyticsEvents: { search: "search" },
-  trackAnalyticsEvent: state.track,
+vi.mock("@/contexts/MobileViewContext", () => ({
+  useMobileView: () => ({ isMobileDevice: state.mobile }),
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-it("commits URL, same-text and recenter searches once; camera drags alone do not search", async () => {
-  useMapCenterStore.setState({
-    mapCenter: null,
-    zoom: null,
-    radiusMeters: null,
-  });
-  const root = createRoot(document.createElement("div"));
-  const render = async () => {
+it.each([false, true])(
+  "keeps legacy query links by handing them to the common map search (mobile=%s)",
+  async (mobile) => {
+    state.mobile = mobile;
+    state.replace.mockReset();
+    const host = document.createElement("div");
+    const root = createRoot(host);
     await act(async () => root.render(<SearchPage />));
-  };
-  await render();
-  expect(state.args[1]).toBeNull();
-  await act(async () =>
-    useMapCenterStore
-      .getState()
-      .setMapCamera({
-        mapCenter: { lat: 1, lng: 2 },
-        zoom: 12,
-        radiusMeters: 1000,
-      }),
-  );
-  expect(state.args.slice(0, 4)).toEqual(["cafe", 1, 2, 1000]);
-  expect(state.track).toHaveBeenCalledTimes(1);
-  await act(async () =>
-    useMapCenterStore
-      .getState()
-      .setMapCamera({
-        mapCenter: { lat: 3, lng: 4 },
-        zoom: 13,
-        radiusMeters: 2000,
-      }),
-  );
-  expect(state.args[1]).toBe(1);
-  expect(state.track).toHaveBeenCalledTimes(1);
-  await act(async () => state.input!.onSearch("food"));
-  state.params = new URLSearchParams("q=food");
-  await render();
-  expect(state.track).toHaveBeenCalledTimes(2);
-  expect(state.args.slice(0, 4)).toEqual(["food", 3, 4, 2000]);
-  await act(async () => state.input!.onSearch("food"));
-  expect(state.track).toHaveBeenCalledTimes(3);
-  await act(async () =>
-    useSearchRecenterStore.getState().requestSearchRecenter(),
-  );
-  expect(state.track).toHaveBeenCalledTimes(4);
-  expect(state.track.mock.lastCall?.[1].search_mode).toBe("map_recenter");
-  state.params = new URLSearchParams("q=park");
-  await render();
-  expect(state.track).toHaveBeenCalledTimes(5);
-  expect(state.track.mock.lastCall?.[1].search_mode).toBe("text");
-  await act(async () => root.unmount());
-});
-
-it("keeps the existing default radius when the camera radius is non-finite", async () => {
-  state.params = new URLSearchParams("q=cafe");
-  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12, radiusMeters: NaN });
-  const root = createRoot(document.createElement("div"));
-  await act(async () => root.render(<SearchPage />));
-  expect(state.args[3]).toBe(5000);
-  await act(async () => root.unmount());
-});
-
-
-it("attributes settled results to the room where that search started", async () => {
-  state.track.mockClear();
-  state.params = new URLSearchParams("q=cafe");
-  state.roomId = "room-a";
-  state.fetching = true;
-  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12, radiusMeters: 1000 });
-  const root = createRoot(document.createElement("div"));
-  await act(async () => root.render(<SearchPage />));
-  state.roomId = "room-b";
-  state.fetching = false;
-  await act(async () => root.render(<SearchPage />));
-  expect(state.track).toHaveBeenCalledExactlyOnceWith("search", expect.objectContaining({ room_id: "room-a" }));
-  await act(async () => root.unmount());
-});
-
-it("does not retroactively add a room to a search that started without one", async () => {
-  state.track.mockClear();
-  state.roomId = undefined;
-  state.fetching = true;
-  const root = createRoot(document.createElement("div"));
-  await act(async () => root.render(<SearchPage />));
-  state.roomId = "room-b";
-  state.fetching = false;
-  await act(async () => root.render(<SearchPage />));
-  expect(state.track).toHaveBeenCalledTimes(1);
-  expect(state.track.mock.lastCall?.[1]).not.toHaveProperty("room_id");
-  await act(async () => root.unmount());
-});
+    expect(state.replace).toHaveBeenCalledWith(
+      `${mobile ? "/map" : "/plan"}?q=${encodeURIComponent("원래 검색어")}`,
+    );
+    expect(host.textContent).toBe("");
+    await act(async () => root.unmount());
+  },
+);

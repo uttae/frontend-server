@@ -19,7 +19,6 @@ import { sidebarNavButtonClassName } from "./sidebarNavButton";
 
 const SIDEBAR_ITEMS = [
   { key: "plan", href: "/plan", label: "일정", icon: sidebarIcons.plan },
-  { key: "search", href: "/search", label: "검색", icon: sidebarIcons.search },
   { key: "bookmark", href: "/bookmark", label: "북마크", icon: sidebarIcons.bookmark },
   { key: "cost", href: "/cost", label: "가계부", icon: sharedSidebarIcons.cost },
   { key: "packing", href: "/packing", label: "준비물", icon: sidebarIcons.packing },

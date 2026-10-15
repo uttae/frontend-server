@@ -6,6 +6,8 @@ import { usePackingList } from "@/hooks/usePackingList";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { SetSectionSideDetailWidth } from "@/contexts/SectionWidthContext";
+import { PACKING_DETAIL_WIDTH_PX } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { normalizePackingMemo, normalizePackingName } from "@/lib/packing/validation";
 import type { PackingItem, PackingPart } from "@/lib/packing/types";
@@ -123,7 +125,7 @@ function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Con
 }
 
 function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem|null;context:Context;onClose:()=>void;onRename:()=>void;onDelete:()=>void;open:boolean}) {
-  const sheetDrag = useSheetDrag(onClose, !open || context.state.status === "writing", "(max-width: 700px)");
+  const sheetDrag = useSheetDrag(onClose, !open || context.state.status === "writing");
   useEffect(()=>{
     if(!open) return;
     function handleEscape(event:KeyboardEvent) {
@@ -136,7 +138,8 @@ function Detail({item,context,onClose,onRename,onDelete,open}: {item:PackingItem
   },[open,onClose]);
   return <>
     {open && <button type="button" tabIndex={-1} className={styles.detailBackdrop} aria-label="준비물 상세 닫기" onClick={onClose}/>}
-    <aside className={styles.detail} style={sheetDrag.surfaceStyle} hidden={!open} data-open={open} aria-label="준비물 상세">
+    {/* 닫혀도 언마운트되지 않아, 드래그 후에도 열 때마다 CSS 등장 애니메이션이 다시 돌도록 애니메이션 해제는 쓰지 않는다 */}
+    <aside className={styles.detail} style={{...sheetDrag.surfaceStyle, animation: undefined}} hidden={!open} data-open={open} aria-label="준비물 상세">
       <BottomSheetDragHandle drag={sheetDrag} className={styles.detailDragHeader}>
         <div className={styles.sheetHandle} aria-hidden="true"/>
         {item && <div className={styles.detailHeader}>
@@ -200,6 +203,8 @@ function PackingContent({context}: {context:Context}) {
   function prepareDelete(kind:"part"|"item",id:number){if(menuId!==null)closeMenu();void coordinator?.prepareDelete(kind,id);}
   useEffect(()=>{if(menuId===null)return;function close(event:PointerEvent){if(!(event.target instanceof Node) || !menuTrigger.current?.parentElement?.contains(event.target))setMenuId(null);}document.addEventListener("pointerdown",close);return()=>document.removeEventListener("pointerdown",close);},[menuId]);
   return <div className={styles.page} aria-busy={loading}>
+    {/* 상세가 열리면 목록 400을 지킨 채 상세 폭만큼 데스크톱 최소 폭을 넓힌다 */}
+    <SetSectionSideDetailWidth px={detailOpen && selected!==null ? PACKING_DETAIL_WIDTH_PX : 0}/>
     <div className={styles.boardPane}>
       <div className={styles.content}>
         <header className={styles.pageHeader}>

@@ -22,7 +22,7 @@ vi.mock("./TripDateShrinkConfirmModal", () => ({
   TripDateShrinkConfirmModal: () => <div data-confirm />,
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-it("preserves drafts and original date floor on same-room refresh; cancel and room switch reset correctly", async () => {
+it("preserves drafts and original date floor on same-room refresh; reopening and room switch reset correctly", async () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = {
@@ -39,21 +39,23 @@ it("preserves drafts and original date floor on same-room refresh; cancel and ro
   await act(async () => state.fields!.onTitleChange("draft"));
   await render({ ...room, destinations: [...room.destinations] });
   expect(state.fields!.values.title).toBe("draft");
-  await act(async () => container.querySelectorAll("button")[0].click());
+  await act(async () => root.render(null));
+  await render(room);
   expect(state.fields!.values.title).toBe("A");
   await act(async () => {
     state.fields!.onStartDateChange("2026-10-11");
     state.fields!.onEndDateChange("2026-10-11");
   });
   expect(state.fields!.endDateMin).toBe("2026-10-11");
-  await act(async () => container.querySelectorAll("button")[0].click());
+  await act(async () => root.render(null));
+  await render(room);
   expect(state.fields!.values.startDate).toBe("2026-10-10");
   expect(state.fields!.values.endDate).toBe("2026-10-12");
   expect(state.fields!.startDateMin).toBe("2026-10-10");
   await render({ ...room, startDate: "2026-10-11" });
   expect(state.fields!.startDateMin).toBe("2026-10-10");
   await act(async () => state.fields!.onEndDateChange("2026-10-11"));
-  await act(async () => container.querySelectorAll("button")[1].click());
+  await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
   expect(container.querySelector("[data-confirm]")).not.toBeNull();
   await render({
     ...room,
@@ -70,19 +72,18 @@ it("preserves drafts and original date floor on same-room refresh; cancel and ro
   await act(async () => root.unmount());
 });
 
-it("does not submit on cancel and submits once for rapid apply clicks", async () => {
+it("does not submit draft edits and submits once for rapid apply clicks", async () => {
   state.update.mockClear();
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = { id: "r", title: "old", destinations: ["서울"], startDate: "2027-01-01", endDate: "2027-01-03" };
   await act(async () => root.render(<RoomTripEditForm room={room} />));
   await act(async () => state.fields!.onTitleChange("cancelled"));
-  await act(async () => container.querySelectorAll("button")[0].click());
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => state.fields!.onTitleChange("new"));
   await act(async () => {
-    container.querySelectorAll("button")[1].click();
-    container.querySelectorAll("button")[1].click();
+    container.querySelector<HTMLButtonElement>("button")!.click();
+    container.querySelector<HTMLButtonElement>("button")!.click();
   });
   expect(state.update).toHaveBeenCalledTimes(1);
   await act(async () => root.unmount());

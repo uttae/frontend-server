@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import {
   AdvancedMarker,
+  InfoWindow,
+  ControlPosition,
   Map as GoogleMap,
+  MapControl,
   useMap,
   useMapsLibrary,
   type MapCameraChangedEvent,
@@ -19,6 +22,7 @@ import {
   MAP_MIN_ZOOM,
   MAP_PAN_RESTRICTION,
   normalizeGooglePlaceResourceId,
+  panToWithinWorld,
   readDestinationLatLngFromSession,
   viewportSearchRadiusMetersFromBounds,
   writeDestinationLatLngToSession,
@@ -35,6 +39,8 @@ import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
 import { useMapCenterStore } from "@/stores/map-center-store";
+import { useSearchRecenterStore } from "@/stores/search-recenter-store";
+import { usePlaceSearchStore } from "@/stores/place-search-store";
 import { useSearchMapPinsStore } from "@/stores/search-map-pins-store";
 import { useSessionStore } from "@/stores/session-store";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
@@ -51,6 +57,7 @@ import {
   mapPinBodyBorderProps,
 } from "./map-pin-stroke";
 import { MapSearchHereButton } from "./MapSearchHereButton";
+import { SearchPlacePreview } from "./SearchPlacePreview";
 import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
 import { RouteViewCameraController } from "./RouteViewCameraController";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
@@ -96,7 +103,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
   useEffect(() => {
     if (!map || focusSeq === null || lat === undefined || lng === undefined) return;
-    map.panTo({ lat, lng });
+    panToWithinWorld(map, { lat, lng });
   }, [map, focusSeq, lat, lng]);
 
   return null;
@@ -114,7 +121,7 @@ function SelectedPlaceController() {
     placeSelectionCameraRef.current = "full";
 
     if (mode === "none") return;
-    map.panTo(selectedPlace.location);
+    panToWithinWorld(map, selectedPlace.location);
     if (mode === "full") {
       map.setZoom(16);
     }
@@ -202,7 +209,7 @@ function MapPreventHorizontalWrap() {
 
       const last = lastValidCenterRef.current;
       if (last) {
-        map.panTo(last);
+        panToWithinWorld(map, last);
       }
     });
 
@@ -281,11 +288,45 @@ function DestinationPanController({
   return null;
 }
 
+/** A new ordinary map selection supersedes search without deleting its reusable results. */
+function releaseSearchForMapSelection() {
+  usePlaceSearchStore.getState().invalidate();
+  useMapPinsFocusStore.getState().releaseSearchFocusIfActive();
+  useSearchMapPinsStore.getState().clearPins();
+  useSearchRecenterStore.getState().clearSearchSnapshot();
+}
+
+const SEARCH_PREVIEW_OFFSET: [number, number] = [0, -40];
+
 function MapSearchResultPins() {
+  const map = useMap();
   const pins = useSearchMapPinsStore((s) => s.pins);
   const pinsFocus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
-  const selectedPlaceId = selectedPlace?.googlePlaceId?.trim() ?? "";
+  const { isMobileDevice } = useMobileView();
+  const searchSelectedId = usePlaceSearchStore((s) => s.selectedId);
+  const items = usePlaceSearchStore((s) => s.items);
+  const status = usePlaceSearchStore((s) => s.status);
+  const kind = usePlaceSearchStore((s) => s.confirmationKind);
+  const fittedItemsRef = useRef<typeof items | null>(null);
+  const preview = !isMobileDevice && kind === "whole" && !selectedPlace
+    ? items.find((item) => item.googlePlaceId === searchSelectedId)
+    : undefined;
+  const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
+
+  // 전체 검색 결과가 준비되면 첫 추천 대신 실제 결과들이 보이도록 맞춘다.
+  useEffect(() => {
+    if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
+    fittedItemsRef.current = items;
+    if (items.length === 1) {
+      panToWithinWorld(map, items[0].location);
+      map.setZoom(16);
+    } else {
+      const bounds = new google.maps.LatLngBounds();
+      items.forEach((item) => bounds.extend(item.location));
+      map.fitBounds(bounds, 80);
+    }
+  }, [map, isMobileDevice, pinsFocus, kind, status, items]);
 
   if (pinsFocus !== "search") return null;
 
@@ -299,6 +340,17 @@ function MapSearchResultPins() {
             position={{ lat: pin.lat, lng: pin.lng }}
             onClick={(e) => {
               e.stop();
+              const result = usePlaceSearchStore.getState().items.find((item) => item.googlePlaceId === pin.googlePlaceId);
+              if (result) {
+                usePlaceSearchStore.getState().select(result.googlePlaceId);
+                if (!isMobileDevice && kind === "specific") {
+                  setSelectedPlace(result, { itinerarySource: "search", analyticsSource: "search", preserveMapZoom: true });
+                } else {
+                  setSelectedPlace(null);
+                }
+                return;
+              }
+              releaseSearchForMapSelection();
               setSelectedPlace(
                 {
                   name: pin.name,
@@ -314,6 +366,22 @@ function MapSearchResultPins() {
             <MapPinWithPlaceName name={pin.name} />
           </AdvancedMarker>
         ))}
+      {preview ? (
+        <InfoWindow key={preview.googlePlaceId} position={preview.location} pixelOffset={SEARCH_PREVIEW_OFFSET}
+          maxWidth={280} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
+          onClose={() => {
+            if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
+              usePlaceSearchStore.getState().select(null);
+          }}>
+          <SearchPlacePreview place={preview} onClose={() => usePlaceSearchStore.getState().select(null)} onOpenDetail={() => {
+            setSelectedPlace(preview, {
+              itinerarySource: "search", analyticsSource: "search",
+              analyticsRankBucket: usePlaceSearchStore.getState().searchRankBuckets[preview.googlePlaceId],
+              preserveMapZoom: true,
+            });
+          }} />
+        </InfoWindow>
+      ) : null}
     </>
   );
 }
@@ -444,6 +512,7 @@ export default function TripMap({
       return;
     }
     if (placeId.length > 0) {
+      releaseSearchForMapSelection();
       ev.stop();
       const latLng = ev.detail.latLng;
       setSelectedPlace(
@@ -459,10 +528,33 @@ export default function TripMap({
       );
       return;
     }
-    // 빈 곳을 누르면 상세를 닫고, 웹 일정에서 고른 장소(강조·일차 경로만 보기)도 푼다
+    // 빈 곳은 완료된 검색 핀·카드를 유지한다. 진행 중인 응답만 무효화하고 상세·일정 강조를 닫는다.
+    if (usePlaceSearchStore.getState().status === "pending") usePlaceSearchStore.getState().invalidate();
+    if (!isMobileDevice) usePlaceSearchStore.getState().select(null);
     setSelectedPlace(null);
     clearPlanFocus();
   };
+
+  const bookmarkToggle = (
+    <button
+      type="button"
+      onClick={() => setShowBookmarkPins((v) => !v)}
+      aria-pressed={showBookmarkPins}
+      aria-label={
+        showBookmarkPins
+          ? "북마크 장소 표시 끄기"
+          : "북마크 장소 표시 켜기"
+      }
+      title="북마크 장소 표시"
+      className={`pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-md ring-2 ring-black/5 transition ${
+        showBookmarkPins
+          ? "bg-primary text-white"
+          : "bg-white text-dark-gray hover:bg-gray-50"
+      }`}
+    >
+      <Bookmark className="h-5 w-5" strokeWidth={2.2} aria-hidden />
+    </button>
+  );
 
   return (
     <div className="relative h-full min-h-0 w-full min-w-0">
@@ -500,6 +592,7 @@ export default function TripMap({
           />
           <MapPreventHorizontalWrap />
           <SelectedPlaceController />
+          {!routeView && isMobileDevice ? <MobileSearchSelection /> : null}
           {/* 웹 일정에서 고른 장소로 이동 — 모바일(일반 지도·경로 보기)은 쓰지 않는다 */}
           {routeView || isMobileDevice ? null : <PlanFocusCameraController roomId={currentRoomId} />}
           <DestinationPanController
@@ -518,6 +611,13 @@ export default function TripMap({
           )}
 
           {!routeView && <SelectedPlaceMarker />}
+
+          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다 */}
+          {routeView || isMobileDevice ? null : (
+            <MapControl position={ControlPosition.RIGHT_BOTTOM}>
+              <div className="mr-2.5">{bookmarkToggle}</div>
+            </MapControl>
+          )}
           </GoogleMap>
         )}
       </div>
@@ -536,36 +636,21 @@ export default function TripMap({
       {!bootstrap.ready || routeView ? null : (
         <>
           <MapSearchHereButton discoverCategoryId={selectedCategoryId} />
-          <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
-            {onOpenRouteView ? (
-              <button
-                type="button"
-                onClick={onOpenRouteView}
-                aria-label="경로 보기"
-                className="pointer-events-auto flex size-[42px] cursor-pointer items-center justify-center rounded-full bg-primary text-icon-inverse shadow-md transition-colors active:bg-primary-strong"
-              >
-                <RouteIcon size={24} />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => setShowBookmarkPins((v) => !v)}
-              aria-pressed={showBookmarkPins}
-              aria-label={
-                showBookmarkPins
-                  ? "북마크 장소 표시 끄기"
-                  : "북마크 장소 표시 켜기"
-              }
-              title="북마크 장소 표시"
-              className={`pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-md ring-2 ring-black/5 transition ${
-                showBookmarkPins
-                  ? "bg-primary text-white"
-                  : "bg-white text-dark-gray hover:bg-gray-50"
-              }`}
-            >
-              <Bookmark className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-            </button>
-          </div>
+          {isMobileDevice ? (
+            <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
+              {onOpenRouteView ? (
+                <button
+                  type="button"
+                  onClick={onOpenRouteView}
+                  aria-label="경로 보기"
+                  className="pointer-events-auto flex size-[42px] cursor-pointer items-center justify-center rounded-full bg-primary text-icon-inverse shadow-md transition-colors active:bg-primary-strong"
+                >
+                  <RouteIcon size={24} />
+                </button>
+              ) : null}
+              {bookmarkToggle}
+            </div>
+          ) : null}
         </>
       )}
     </div>
@@ -653,4 +738,21 @@ function resolveMapDestination(
     roomsFetched || (roomDetailFetched && Boolean(destination?.trim()));
 
   return { destination, mapMetaReady };
+}
+
+/** A search card selection only pans the map; collapsed cards do not fetch Details. */
+function MobileSearchSelection() {
+  const map = useMap();
+  const items = usePlaceSearchStore((s) => s.items);
+  const selectedId = usePlaceSearchStore((s) => s.selectedId);
+  const focus = useMapPinsFocusStore((s) => s.focus);
+  const { selectedPlace } = useSelectedPlace();
+  const item = items.find((value) => value.googlePlaceId === selectedId);
+  const lat = item?.location.lat;
+  const lng = item?.location.lng;
+  useEffect(() => {
+    if (map && focus === "search" && !selectedPlace && lat != null && lng != null) panToWithinWorld(map, { lat, lng });
+  }, [map, focus, selectedPlace, selectedId, lat, lng]);
+  if (!item || focus !== "search" || selectedPlace) return null;
+  return <AdvancedMarker position={item.location} onClick={(event) => event.stop()}><span className="block text-primary drop-shadow-md"><MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} /></span></AdvancedMarker>;
 }

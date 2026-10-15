@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -17,7 +17,6 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { tearDownClientSession } from "@/lib/client-storage";
 
 export function HomeHeader() {
-  const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -46,7 +45,8 @@ export function HomeHeader() {
       return;
     }
     tearDownClientSession({ queryClient });
-    router.replace("/");
+    // 로그인 중 prefetch된 `/`(→ `/home` 리다이렉트)를 재사용하지 않도록 문서 이동으로 라우터 캐시를 비운다.
+    window.location.replace("/");
   };
 
   return (

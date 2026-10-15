@@ -1,14 +1,13 @@
 "use client";
 
 import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
-import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 
 import type { DragEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Clock, Loader2, MapPin } from "lucide-react";
+import { Loader2, MapPin } from "lucide-react";
 
-import { MemoIcon } from "@/components/icons";
+import { CoinIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { toast } from "sonner";
 
@@ -270,16 +269,14 @@ export function PlanPlaceCard({
         setMemoOpen((v) => !v);
       }}
       aria-expanded={memoOpen}
+      aria-label={hasMemo ? "메모 수정" : "메모 추가"}
       className={cn(
-        PLAN_PLACE_CARD_TW.triggerButton,
-        (memoOpen || hasMemo) && PLAN_PLACE_CARD_TW.triggerButtonActive,
+        PLAN_PLACE_CARD_TW.actionButton,
+        PLAN_PLACE_CARD_TW.actionButtonTrailing,
       )}
     >
-      <MemoIcon
-        className={PLAN_PLACE_CARD_TW.triggerIcon}
-        strokeWidth={2}
-      />
-      {hasMemo ? "메모 수정" : "메모 추가"}
+      <MemoAddIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
+      <span>메모</span>
     </button>
   ) : null;
 
@@ -293,17 +290,11 @@ export function PlanPlaceCard({
         setTimeOpen((v) => !v);
       }}
       aria-expanded={timeOpen}
-      className={cn(
-        PLAN_PLACE_CARD_TW.triggerButton,
-        (timeOpen || hasTime) && PLAN_PLACE_CARD_TW.triggerButtonActive,
-      )}
+      aria-label={hasTime ? `시간 ${timeRange} 수정` : "시간 설정"}
+      className={cn(PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
     >
-      <Clock
-        className={PLAN_PLACE_CARD_TW.triggerIcon}
-        strokeWidth={2}
-        aria-hidden
-      />
-      {timeRange || "시간 설정"}
+      <TimeClockIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
+      <span>{timeRange || "시간"}</span>
     </button>
   ) : null;
 
@@ -320,9 +311,7 @@ export function PlanPlaceCard({
         className={cn(
           "w-full select-none transition-colors",
           PLAN_PLACE_CARD_TW.article,
-          // 고른 카드는 계속 켜져 있으므로 배경은 그대로 두고 테두리와 옅게 번지는 파란 그림자로만 표시한다
-          // (그림자 토큰이 없어 파랑 원시 토큰으로 지정)
-          focused && "border-primary shadow-[0_0_12px_var(--blue-200)]",
+          focused && "border-primary",
           dragDisabled
             ? "cursor-default"
             : "cursor-grab active:cursor-grabbing",
@@ -389,42 +378,29 @@ export function PlanPlaceCard({
         <div className={PLAN_PLACE_CARD_TW.contentColumn}>
           <div className={PLAN_PLACE_CARD_TW.titleRow}>
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <div className="flex min-w-0 items-baseline gap-1.5">
-                <h3
-                  className={cn(
-                    "min-w-0 flex-1",
-                    PLAN_PLACE_CARD_TW.titleCompact,
-                    PLAN_PLACE_CARD_TW.titleClamp,
-                    "mobile:text-title-s",
-                  )}
-                  title={place.title}
-                >
-                  {place.title}
-                </h3>
-                {place.primaryTypeDisplayName ? (
-                  <span className={PLAN_PLACE_CARD_TW.primaryTypeBadge}>
-                    {place.primaryTypeDisplayName}
-                  </span>
-                ) : null}
-              </div>
-
-              {place.subtitle ? (
-                <p
-                  className={cn(
-                    PLAN_PLACE_CARD_TW.subtitle,
-                    PLAN_PLACE_CARD_TW.subtitleClamp,
-                    "mobile:hidden",
-                  )}
-                  title={place.subtitle}
-                >
-                  {place.subtitle}
-                </p>
+              <h3 className={PLAN_PLACE_CARD_TW.title} title={place.title}>
+                {place.title}
+              </h3>
+              {place.primaryTypeDisplayName ? (
+                <span className={PLAN_PLACE_CARD_TW.primaryTypeBadge}>
+                  {place.primaryTypeDisplayName}
+                </span>
               ) : null}
             </div>
             {deleteButton ? (
-              <span className="flex shrink-0 self-start">{deleteButton}</span>
+              // 휴지통은 썸네일 윗선에 맞추고 오른쪽 테두리에서 17px에 둔다
+              <span className="-mr-1 -mt-1.5 flex shrink-0 self-start">{deleteButton}</span>
             ) : null}
           </div>
+
+          {place.subtitle ? (
+            <p
+              className={cn(PLAN_PLACE_CARD_TW.subtitle, "mobile:hidden")}
+              title={place.subtitle}
+            >
+              {place.subtitle}
+            </p>
+          ) : null}
 
           {timeRange && !canEditScheduleItem ? (
             <span
@@ -440,24 +416,25 @@ export function PlanPlaceCard({
         </div>
 
         {canEditScheduleItem ? (
-          <div
-            className={cn(
-              PLAN_PLACE_CARD_TW.triggerRow,
-              "col-span-2 mt-2 border-t border-gray-100 pt-2",
-            )}
-          >
-            {memoTrigger}
-            {timeTrigger}
-            {scheduleTimeEdit && scheduleItemId !== null && (
-              <ExpenseEntryButton
-                scheduleId={scheduleTimeEdit.scheduleId}
-                scheduleItemId={scheduleItemId}
-                scopeLabel={place.title}
-                label="비용 추가"
-                className={PLAN_PLACE_CARD_TW.triggerButton}
-                icon={<ExpenseIcon className={PLAN_PLACE_CARD_TW.triggerIcon} />}
-              />
-            )}
+          // 디자인: 구분선 위아래 8px, 버튼 아래 카드 테두리까지 5px
+          <div className="col-span-2 -mb-[9px] mt-2 border-t border-gray-100 pt-2">
+            <div className={PLAN_PLACE_CARD_TW.actionBar}>
+              <div className="flex min-w-0 items-center">
+                {timeTrigger}
+                {scheduleTimeEdit && scheduleItemId !== null && (
+                  <ExpenseEntryButton
+                    scheduleId={scheduleTimeEdit.scheduleId}
+                    scheduleItemId={scheduleItemId}
+                    scopeLabel={place.title}
+                    label="비용"
+                    // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
+                    className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
+                    icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
+                  />
+                )}
+              </div>
+              {memoTrigger}
+            </div>
           </div>
         ) : null}
       </article>

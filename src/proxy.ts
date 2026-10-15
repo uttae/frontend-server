@@ -121,8 +121,6 @@ export const config = {
     "/search/:path*",
     "/member-settings",
     "/member-settings/:path*",
-    "/room-settings",
-    "/room-settings/:path*",
     "/settings",
     "/settings/:path*",
     "/waiting",

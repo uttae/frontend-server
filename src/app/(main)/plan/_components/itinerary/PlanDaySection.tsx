@@ -170,7 +170,7 @@ export function PlanDaySection({
       <div className="overflow-visible rounded-2xl">
         <div
           className={cn(
-            "relative flex w-full items-stretch gap-0.5 py-3.5",
+            "relative flex w-full items-stretch gap-0.5 pb-[13px] pt-3.5",
             MAIN_CARD_INNER_PADDING_X_CLASS,
             expanded ? "rounded-t-2xl" : "rounded-2xl",
           )}
@@ -191,7 +191,8 @@ export function PlanDaySection({
                 if (e.key === " " || e.key === "Enter") e.preventDefault();
               }}
               className={cn(
-                "flex shrink-0 touch-none select-none self-center rounded-lg p-1.5 text-dark-gray",
+                // 그래버를 아래 비용 줄의 코인 아이콘과 같은 세로선(가로 중심)에 둔다
+                "-ml-[5px] mr-[3px] flex shrink-0 touch-none select-none self-center rounded-lg p-1.5 text-dark-gray",
                 dragDisabled
                   ? "cursor-not-allowed opacity-40"
                   : "cursor-grab active:cursor-grabbing hover:bg-bubble-gray/60",
@@ -206,8 +207,19 @@ export function PlanDaySection({
             aria-expanded={expanded}
             aria-controls={`${panelId}-panel`}
             onClick={toggle}
-            className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-lg text-left transition-colors hover:bg-bubble-gray/60"
+            className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg text-left transition-colors hover:bg-bubble-gray/60"
           >
+            <div className="flex min-w-0 items-center gap-1">
+              <h2 className="min-w-0 truncate text-title-s text-gray-900">
+                {subtitle || title}
+              </h2>
+              {subtitle ? (
+                // 디자인 시스템 Badge / Weak / Brand / md — 배경색은 시맨틱 토큰이 없어 원시 토큰을 쓴다
+                <span className="inline-flex h-5 shrink-0 items-center rounded bg-[var(--blue-50)] px-1.5 text-label-xs-regular text-primary">
+                  {title}
+                </span>
+              ) : null}
+            </div>
             <span className="shrink-0 text-dark-gray" aria-hidden>
               {expanded ? (
                 <ChevronUp className="h-5 w-5" />
@@ -215,18 +227,6 @@ export function PlanDaySection({
                 <ChevronDown className="h-5 w-5" />
               )}
             </span>
-            <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-2">
-                <h2 className="min-w-0 truncate text-title-s font-semibold text-gray-900">
-                  {subtitle || title}
-                </h2>
-                {subtitle ? (
-                  <span className="inline-flex shrink-0 items-center rounded-md bg-sky-100 px-2 py-0.5 text-body-xs-emphasis font-semibold text-sky-700">
-                    {title}
-                  </span>
-                ) : null}
-              </div>
-            </div>
           </button>
           {showScheduleMenu ? (
             <div ref={menuRef} className="relative shrink-0 self-center">
@@ -315,7 +315,7 @@ export function PlanDaySection({
         </div>
         {summaryAction || trackedSid !== undefined ? (
           <div className={cn(
-            "flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-border py-2",
+            "flex flex-wrap items-center justify-between gap-2 border-t border-dashed border-gray-border py-1",
             MAIN_CARD_INNER_PADDING_X_CLASS,
           )}>
             <div className="min-w-0 flex-1">{summaryAction}</div>
@@ -328,7 +328,7 @@ export function PlanDaySection({
                   toggleRouteVisible();
                 }}
                 aria-checked={routeVisible}
-                className="flex min-h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-s-regular text-dark-gray transition-colors hover:bg-bubble-gray/60 focus-visible:outline-2 focus-visible:outline-primary"
+                className="flex min-h-8 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-xs-regular text-text-subtle transition-colors hover:bg-bubble-gray/60 focus-visible:outline-2 focus-visible:outline-primary"
               >
                 지도에 경로 표시
                 <span aria-hidden="true" className={cn(
@@ -353,9 +353,10 @@ export function PlanDaySection({
           <div
             className={cn(
               cn(MAIN_CARD_INNER_PADDING_X_CLASS, "pb-4"),
+              // 비용·경로 표시 줄이 있으면 첫 카드 위 여백을 두지 않아 그 줄의 위아래 여백(4px)을 같게 한다
               expanded
                 ? summaryAction || trackedSid !== undefined
-                  ? "pt-1"
+                  ? null
                   : "border-t border-dashed border-gray-border pt-3"
                 : "pt-1",
             )}

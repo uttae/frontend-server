@@ -3,7 +3,6 @@
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -34,7 +33,6 @@ function providerLabel(provider: string): string {
 }
 
 export default function MyInfoPage() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { data: user, isLoading, isFetching, refetch } = useSessionUser();
 
@@ -56,7 +54,7 @@ export default function MyInfoPage() {
       return;
     }
     tearDownClientSession({ queryClient });
-    router.replace("/");
+    window.location.replace("/");
   }
 
   async function handleWithdrawConfirm() {
@@ -68,7 +66,7 @@ export default function MyInfoPage() {
         clearExpenseCurrencyPreferencesForUser(user?.id);
         tearDownClientSession({ queryClient });
         queryClient.clear();
-        router.replace("/");
+        window.location.replace("/");
         return;
       }
       if (result.kind === "host_delegation_required") {

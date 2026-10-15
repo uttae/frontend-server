@@ -5,16 +5,17 @@ const AI_LABEL_WIDTH_CH = 1.5;
 
 /** 말풍선·카드·입력 등 본문 (패널 일반 크기) */
 const chatTypographyMessage = {
-  bubble: "text-body-s-regular mobile:text-body-xs-regular leading-relaxed",
-  systemBody: "text-body-s-regular mobile:text-body-xs-regular leading-relaxed",
+  bubble: "text-body-s-regular leading-relaxed",
+  systemBody: "text-body-s-regular leading-relaxed",
   metaMuted: "text-caption-s-regular leading-relaxed text-dark-gray",
   wooriSenderLabel: "text-caption-s-regular font-medium leading-relaxed text-primary",
-  aiRequestBubblePrefix: "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-relaxed text-secondary",
-  placeTitle: "text-body-s-emphasis mobile:text-body-xs-emphasis font-semibold leading-snug text-primary-strong",
+  aiRequestBubblePrefix: "text-body-s-emphasis font-semibold leading-relaxed text-secondary",
+  placeTitle: "text-body-s-emphasis font-semibold leading-snug text-primary-strong",
   placeRating: "text-body-xs-emphasis font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-body-xs-regular leading-relaxed text-[#99A1AF]",
   input: "text-body-s-regular leading-relaxed",
-  inputAiLabel: "text-body-s-emphasis leading-relaxed text-secondary font-semibold",
+  /** 입력창 글자와 같은 크기 — 모바일 입력창은 iOS 확대 방지로 16px */
+  inputAiLabel: "text-body-s-emphasis mobile:text-body-m-emphasis leading-relaxed text-secondary font-semibold",
 } as const;
 
 /** 패널 최소화(좁은 폭) */
@@ -60,7 +61,7 @@ export const chatAiBubbleEmphasisClass = "font-semibold text-primary-strong";
 export function chatAiBubbleBlockTitleClass(isMinimized: boolean): string {
   return cn(
     "font-semibold text-gray-900",
-    isMinimized ? "text-body-xs-regular leading-snug" : "text-body-s-regular mobile:text-body-xs-regular leading-snug",
+    isMinimized ? "text-body-xs-regular leading-snug" : "text-body-s-regular leading-snug",
   );
 }
 
@@ -98,7 +99,7 @@ export function chatAiBubblePlaceRecommendationHeadingTitleClass(
 ): string {
   return cn(
     "font-semibold leading-snug text-[#0f172a]",
-    isMinimized ? "text-body-xs-regular" : "text-body-s-regular mobile:text-body-xs-regular",
+    isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
   );
 }
 
@@ -108,7 +109,7 @@ export function chatAiBubblePlaceRecommendationHeadingSubtitleClass(
 ): string {
   return cn(
     "font-normal leading-relaxed text-[#1e293b]",
-    isMinimized ? "text-body-xs-regular" : "text-body-s-regular mobile:text-body-xs-regular",
+    isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
   );
 }
 
