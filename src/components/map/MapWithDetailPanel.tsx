@@ -10,7 +10,7 @@ import { MAIN_MAP_MIN_WIDTH_PX } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
 
 import Map, { type MapRouteView } from "./Map";
-import { MobileMapSearch } from "./MobileMapSearch";
+import { MapPlaceSearch } from "./MapPlaceSearch";
 
 export function MapWithDetailPanel({
   mobileInline = false,
@@ -47,7 +47,7 @@ export function MapWithDetailPanel({
       aria-hidden={hidden || undefined}
       style={hidden ? { display: "none" } : visibleStyle}
       className={cn(
-        "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-hidden",
+        "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-clip",
         mobileInline
           ? "flex"
           : "hidden border-l border-gray-border s1:flex",
@@ -87,7 +87,7 @@ export function MapWithDetailPanel({
         )}
       </div>
 
-      {mobileInline && !routeView ? <MobileMapSearch /> : null}
+      {!routeView ? <MapPlaceSearch mobile={mobileInline} /> : null}
     </section>
   );
 }

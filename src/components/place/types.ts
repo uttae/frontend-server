@@ -1,22 +1,17 @@
 export const TABS = ["홈", "리뷰"] as const;
 export type Tab = (typeof TABS)[number];
 
-export type PlaceReview = {
-  rating: number;
-  text: string;
-  authorDisplayName: string;
-  publishTime: string;
-  relativePublishTimeDescription: string;
-};
+export type { PlaceReview } from "@/lib/api/places";
+import type { PlaceReview } from "@/lib/api/places";
 
 export type PlaceDetailResult = {
-  name: string;
-  primaryTypeDisplayName: string;
+  name: string | null;
+  primaryTypeDisplayName: string | null;
   rating: number | null;
-  formattedAddress: string;
-  location: { lat: number; lng: number };
-  phone: string;
-  websiteUri: string;
+  formattedAddress: string | null;
+  location: { lat: number; lng: number } | undefined;
+  phone: string | null;
+  websiteUri: string | null;
   placeUri: string | null;
   reviewsUri: string | null;
   openNow: boolean | null;

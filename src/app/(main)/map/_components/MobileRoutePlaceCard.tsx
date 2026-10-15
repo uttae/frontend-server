@@ -151,7 +151,7 @@ export function MobileRouteExpandedShell({
       >
         <span aria-hidden className="h-1 w-9 rounded-[2px] bg-border-subtle" />
       </button>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">{children}</div>
     </div>
   );
 }

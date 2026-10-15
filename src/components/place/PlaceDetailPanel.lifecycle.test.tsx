@@ -13,6 +13,8 @@ const state = vi.hoisted(() => ({
   track: vi.fn(),
   header: null as ComponentProps<typeof PlaceSummaryHeader> | null,
   source: "",
+  failure: false,
+  retry: vi.fn(),
 }));
 vi.mock("@/hooks/useAnalyticsRoomId", () => ({ useAnalyticsRoomId: () => state.roomId }));
 vi.mock("@/lib/analytics/track", () => ({
@@ -24,14 +26,14 @@ vi.mock("@/hooks/useChatActions", () => ({
   useChatActions: () => ({ canSend: false }),
 }));
 vi.mock("./usePlaceDetailData", () => ({
-  usePlaceDetailData: () => ({ isLoading: false }),
+  usePlaceDetailData: () => ({ isLoading: false, isError: state.failure, refetch: state.retry }),
 }));
 vi.mock("./HeroSection", () => ({
   HeroImage: () => null,
   HeroSkeleton: () => null,
 }));
 vi.mock("./HomeTab", () => ({ HomeTab: () => null }));
-vi.mock("./ReviewsTab", () => ({ ReviewsTab: () => null }));
+vi.mock("./ReviewsTab", () => ({ ReviewsTab: () => <div data-reviews /> }));
 vi.mock("./PlaceSummaryHeader", () => ({
   PlaceSummaryHeader: (props: ComponentProps<typeof PlaceSummaryHeader>) => {
     state.header = props;
@@ -102,4 +104,16 @@ it("keeps the current entry source for schedule addition and emits one view per 
     expect(state.track.mock.lastCall?.[1].interaction_source).toBe(source);
   }
   await act(async () => root.unmount());
+});
+
+it("full-detail failure shows retry without no-review content or a successful view", async () => {
+  state.failure = true; state.track.mockClear(); state.retry.mockClear();
+  const host = document.createElement("div"); const root = createRoot(host);
+  await act(async () => root.render(<PlaceDetailPanel name="장소" category="" rating={null} googlePlaceId="failed" onClose={() => {}} />));
+  expect(host.querySelector("[data-reviews]")).toBeNull();
+  expect(host.querySelector('[role="alert"]')).not.toBeNull();
+  expect(state.track).not.toHaveBeenCalled();
+  const retry = [...host.querySelectorAll("button")].find((button) => button.textContent === "다시 시도");
+  await act(async () => retry!.click()); expect(state.retry).toHaveBeenCalledTimes(1);
+  await act(async () => root.unmount()); state.failure = false;
 });

@@ -2,10 +2,10 @@ import { Clock, ExternalLink, Globe, MapPin, Phone } from "lucide-react";
 
 type Props = {
   isOpen?: boolean | null;
-  address?: string;
-  phone?: string;
+  address?: string | null;
+  phone?: string | null;
   hours?: string;
-  website?: string;
+  website?: string | null;
   googleMapsUrl?: string;
   reviewSummary?: string | null;
 };

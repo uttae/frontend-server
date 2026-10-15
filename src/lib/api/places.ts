@@ -24,39 +24,34 @@ export type PlaceSearchPageResponse = {
 };
 
 export type PlaceReview = {
-  rating: number;
-  text: string;
-  authorDisplayName: string;
-  publishTime: string;
-  relativePublishTimeDescription: string;
+  rating: number | null; text: string | null; authorDisplayName: string | null;
+  publishTime: string | null; relativePublishTimeDescription: string | null;
 };
-
+export type PlaceDateParts = { year: number | null; month: number | null; day: number | null };
+export type PlaceTimePoint = {
+  day: number | null; hour: number | null; minute: number | null;
+  date: PlaceDateParts | null; truncated: boolean | null;
+};
 export type PlaceDetail = {
   googlePlaceId: string;
-  name: string;
-  formattedAddress: string;
-  location: { lat: number; lng: number };
-  primaryType: string;
-  primaryTypeDisplayName: string;
-  rating: number | null;
-  userRatingCount: number | null;
-  phoneNumber: string;
-  websiteUri: string;
-  googleMapsUri: string;
+  name: string | null; formattedAddress: string | null;
+  location: { lat: number | null; lng: number | null } | null;
+  primaryType: string | null; primaryTypeDisplayName: string | null;
+  rating: number | null; userRatingCount: number | null;
+  phoneNumber: string | null; websiteUri: string | null; googleMapsUri: string | null;
   googleMapsLinks: {
-    placeUri: string | null;
-    directionsUri: string | null;
-    writeAReviewUri: string | null;
-    reviewsUri: string | null;
-    photosUri: string | null;
+    placeUri: string | null; directionsUri: string | null; writeAReviewUri: string | null;
+    reviewsUri: string | null; photosUri: string | null;
   } | null;
   regularOpeningHours: {
-    openNow: boolean;
+    openNow: boolean | null; secondaryHoursType: string | null;
+    specialDays: { date: PlaceDateParts | null }[];
+    periods: { open: PlaceTimePoint | null; close: PlaceTimePoint | null }[];
     weekdayDescriptions: string[];
-    nextOpenTime?: string;
-    nextCloseTime?: string;
+    nextOpenTime: string | null; nextCloseTime: string | null;
   } | null;
-  reviewSummary: string | null;
+  /** Legacy optional field, absent from the backend GET/resolve DTO. */
+  reviewSummary?: string | null;
   reviews: PlaceReview[];
 };
 

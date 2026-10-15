@@ -74,7 +74,7 @@ export function ReviewsTab({
         {reviews.map((review, i) => (
           <div key={i} className="flex gap-2.5">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
-              {review.authorDisplayName.charAt(0)}
+              {review.authorDisplayName?.charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
@@ -85,7 +85,7 @@ export function ReviewsTab({
                   {review.relativePublishTimeDescription}
                 </span>
               </div>
-              <StarRow rating={review.rating} />
+              {review.rating != null ? <StarRow rating={review.rating} /> : null}
               <p className="mt-1 text-body-xs-regular leading-relaxed text-dark-gray">
                 {review.text}
               </p>

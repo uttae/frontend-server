@@ -13,19 +13,21 @@
  */
 @custom-variant mobile (&:where(.is-mobile-device, .is-mobile-device *));
 
+/* 검색 말풍선은 Google 기본 여백·스크롤바 대신 본문에서 사방 12px을 확보한다. */
+.gm-style-iw-c:has([data-search-place-preview]) {
+  padding: 0 !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 padding을 검색 말풍선에서만 재정의한다. */
+}
+
+.gm-style-iw-d:has([data-search-place-preview]) {
+  overflow: auto !important; /* NOSONAR: S9423 — Google Maps의 인라인 overflow:scroll에 의한 불필요한 스크롤바를 제거한다. */
+}
+
 @layer base {
   html {
     @apply font-sans;
   }
 
-  /**
-   * 세로 스크롤 컨테이너가 넘치기 전부터 scrollbar 공간을 확보해
-   * 스크롤 활성화 시 내부 버튼·카드 너비가 변하지 않게 한다.
-   * textarea는 입력 영역이 상시 좁아지는 것을 피하기 위해 제외한다.
-   */
-  :where(.overflow-y-auto:not(textarea)) {
-    scrollbar-gutter: stable;
-  }
+  /* 스크롤바 공간 예약은 폭 유지가 필요한 본문·목록에서만 개별 지정한다. */
 }
 
 /* 모바일 하단 탭바(메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */

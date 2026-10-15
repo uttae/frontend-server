@@ -1,101 +1,136 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-
-import { MobilePlaceSearchScreen } from "@/components/search/MobilePlaceSearchScreen";
+import { useEffect, useRef } from "react";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
+import { MobilePlaceSearchScreen } from "@/components/search/MobilePlaceSearchScreen";
 import type { MapSearchPlaceEntry } from "@/lib/map-search-history";
-import { fetchPlaceDetail } from "@/lib/places/place-queries";
+import { fetchPlaceDetail, normalizePreviewLocation } from "@/lib/places/place-queries";
+import type { SearchConfirmation } from "@/lib/places/search-session";
+import {
+  placeSearchResultsToMapPins,
+  setActiveSearchMapPins,
+} from "@/lib/active-search-map-pins";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
+import { usePlaceSearchStore } from "@/stores/place-search-store";
+import { useSearchRecenterStore } from "@/stores/search-recenter-store";
+import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 
-import { useMobileMapTextSearch } from "./useMobileMapTextSearch";
-
-function reopenSearch() {
-  useMobileMapSearchStore.getState().openSearch();
-}
-
-/**
- * 모바일 지도 전체 화면 검색
- * - 자동완성 결과를 누르면 지도가 그 장소로 이동하고 바텀 시트가 열린다.
- * - 엔터로 확정하면 현재 지도 영역을 텍스트 검색해 결과 핀을 여러 개 띄운다.
- * 닫혀도 언마운트하지 않아 바텀 시트에서 뒤로가기로 돌아오면 입력·결과가 그대로 남는다.
- */
-export function MobileMapSearch() {
+type Props = {
+  confirm: (confirmation: SearchConfirmation) => Promise<boolean>;
+  invalidate: () => void;
+  clearSearch: () => void;
+  scopeKey: string;
+  initialQuery?: string;
+};
+/** Existing mobile entry, with session-connected confirmation and cached result cards. */
+export function MobileMapSearch({
+  confirm,
+  invalidate,
+  clearSearch,
+  scopeKey,
+  initialQuery,
+}: Readonly<Props>) {
+  const textSearchNonce = useMobileMapSearchStore((s) => s.textSearchNonce);
+  const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const open = useMobileMapSearchStore((s) => s.open);
   const closeSearch = useMobileMapSearchStore((s) => s.closeSearch);
   const setFocusInput = useMobileMapSearchStore((s) => s.setFocusInput);
-  const submitTextSearch = useMobileMapSearchStore((s) => s.submitTextSearch);
-  const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const { setSelectedPlace } = useSelectedPlace();
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useMobileMapTextSearch();
-
-  // 지도 검색바에서 검색어를 지우면 입력창도 비운다
-  const [resetKey, setResetKey] = useState(0);
-  const [previousTextQuery, setPreviousTextQuery] = useState(textQuery);
-  if (previousTextQuery !== textQuery) {
-    setPreviousTextQuery(textQuery);
-    if (!textQuery) setResetKey((k) => k + 1);
-  }
-
+  useEffect(() => {
+    if (initialQuery) useMobileMapSearchStore.getState().openSearch();
+  }, [initialQuery]);
   useEffect(() => {
     setFocusInput(() => inputRef.current?.focus());
     return () => {
       setFocusInput(null);
-      // 지도 화면을 떠나면 닫아 둔다 — 다시 들어왔을 때 검색 화면이 떠 있지 않도록
       closeSearch();
     };
   }, [closeSearch, setFocusInput]);
-
-  async function handleSelectPlace(
+  async function handleConfirm(confirmation: SearchConfirmation) {
+    const success = await confirm(confirmation);
+    if (success) closeSearch();
+    return success;
+  }
+  async function handleSelectHistory(
     entry: MapSearchPlaceEntry,
   ): Promise<MapSearchPlaceEntry | null> {
+    const generation = usePlaceSearchStore.getState().invalidate();
+    // Saved-place selection owns the mobile result surface just like a new confirmation.
+    setSelectedPlace(null);
+    usePlaceSearchStore.setState({
+      query: entry.name,
+      confirmationKind: "specific",
+      status: "pending",
+      error: null,
+    });
     try {
       const detail = await fetchPlaceDetail(entry.googlePlaceId);
-      closeSearch();
-      setSelectedPlace(
-        {
-          name: detail.name || entry.name,
-          category: detail.primaryTypeDisplayName,
-          rating: detail.rating,
-          userRatingCount: detail.userRatingCount,
-          googlePlaceId: entry.googlePlaceId,
-          location: detail.location,
-          address: detail.formattedAddress || entry.address,
-        },
-        { itinerarySource: "search", analyticsSource: "search", onBack: reopenSearch },
-      );
-      return {
-        type: "place",
+      const state = usePlaceSearchStore.getState();
+      if (state.generation !== generation || state.scope !== scopeKey)
+        return null;
+      const location = normalizePreviewLocation(detail.location);
+      if (!location) throw new Error("장소 좌표를 확인할 수 없어요.");
+      const item = {
         googlePlaceId: entry.googlePlaceId,
         name: detail.name || entry.name,
         address: detail.formattedAddress || entry.address,
+        category: detail.primaryTypeDisplayName || detail.primaryType || "",
+        rating: detail.rating,
+        userRatingCount: detail.userRatingCount,
+        isOpen: detail.regularOpeningHours?.openNow ?? null,
+        location,
+      };
+      useMapPinsFocusStore.getState().claimFocus("search");
+      usePlaceSearchStore.setState({
+        items: [item],
+        searchRankBuckets: {},
+        selectedId: item.googlePlaceId,
+        expanded: false,
+        status: "done",
+        error: null,
+        fallback: false,
+        termination: "not-requested",
+        resolution: null,
+        query: item.name,
+        confirmationKind: "specific",
+      });
+      useSearchRecenterStore.getState().clearSearchSnapshot();
+      setActiveSearchMapPins(placeSearchResultsToMapPins([item]));
+      setSelectedPlace(item, {
+        itinerarySource: "search",
+        analyticsSource: "search",
+      });
+      useMobileMapSearchStore.setState({ textQuery: item.name });
+      closeSearch();
+      return {
+        type: "place",
+        googlePlaceId: item.googlePlaceId,
+        name: item.name,
+        address: item.address,
       };
     } catch {
-      toast.error("장소 정보를 불러오지 못했어요.");
+      if (usePlaceSearchStore.getState().generation === generation)
+        usePlaceSearchStore.setState({
+          status: "error",
+          error: "장소 정보를 불러오지 못했어요.",
+        });
       return null;
     }
   }
-
-  /** 엔터 검색 — 지도에 결과 핀을 띄운다 */
-  function handleSubmitQuery(query: string) {
-    closeSearch();
-    // 열려 있던 장소 시트가 결과 핀을 가리지 않도록 닫는다
-    setSelectedPlace(null);
-    submitTextSearch(query);
-  }
-
   return (
     <MobilePlaceSearchScreen
       open={open}
       onClose={closeSearch}
       inputRef={inputRef}
       backLabel="지도로 돌아가기"
-      onSelectPlace={handleSelectPlace}
-      onSubmitQuery={handleSubmitQuery}
-      resetKey={resetKey}
+      onSelectPlace={handleSelectHistory}
+      onConfirm={handleConfirm}
+      onInvalidate={invalidate}
+      onClear={clearSearch}
+      scopeKey={scopeKey}
+      initialQuery={textSearchNonce === 0 ? initialQuery : undefined}
+      resetKey={!textQuery ? textSearchNonce : 0}
     />
   );
 }
