@@ -317,14 +317,14 @@ export function MapPlaceSearchInput({
             "bg-fill-subtle",
             mobile
               ? "min-h-0 overflow-y-auto overscroll-contain"
-              : "absolute inset-x-0 top-full mt-1.5 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-md border border-border-subtle",
+              : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
           )}
         >
           <SuggestionRow
             id={`${listId}-0`}
             active={active === 0}
-            compact={!mobile}
-            title={`${value.trim()} 모든 결과보기`}
+            iconSize={mobile ? 20 : 16}
+            title={`'${value.trim()}' 모든 결과보기`}
             onClick={() => void confirm(0)}
           />
           {rows.map((prediction, index) => (
@@ -332,7 +332,7 @@ export function MapPlaceSearchInput({
               key={prediction.placeId}
               id={`${listId}-${index + 1}`}
               active={active === index + 1}
-              compact={!mobile}
+              iconSize={mobile ? 20 : 16}
               title={prediction.structuredFormat?.mainText?.text != null
                 ? prediction.structuredFormat.mainText
                 : prediction.text}
@@ -361,7 +361,7 @@ function SuggestionRow({
   active,
   onClick,
   place = false,
-  compact = false,
+  iconSize,
 }: {
   id: string;
   title: string | PredictionText | null;
@@ -369,7 +369,7 @@ function SuggestionRow({
   active: boolean;
   onClick: () => void;
   place?: boolean;
-  compact?: boolean;
+  iconSize: number;
 }) {
   const Icon = place ? LocationIcon : SearchIcon;
   return (
@@ -377,21 +377,21 @@ function SuggestionRow({
       role="option"
       id={id}
       aria-selected={active}
-      className={cn("border-b-[0.5px] border-border-subtle last:border-b-0", compact ? (place ? "h-11" : "h-9") : "h-14", active && "bg-fill")}
+      className={cn("h-14 border-b-[0.5px] border-border-subtle last:border-b-0", active && "bg-fill")}
     >
       <button
         type="button"
         onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
-        className={cn("flex h-full w-full cursor-pointer items-center text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none", compact ? "gap-2 px-2.5" : "gap-2.5 pl-3.5 pr-4")}
+        className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none"
       >
-        <Icon size={compact ? 16 : 20} className="shrink-0 text-icon-subtle" />
+        <Icon size={iconSize} className="shrink-0 text-icon-subtle" />
         <span className="flex min-w-0 flex-1 flex-col">
-          <span className={cn("truncate text-text", compact ? "text-caption-m-emphasis" : "text-body-s-emphasis")}>
+          <span className="truncate text-body-s-emphasis text-text">
             {typeof title === "string" ? title : <HighlightedText value={title} />}
           </span>
           {subtitle ? (
-            <span className={cn("truncate text-text-subtle", compact ? "text-[11px] leading-4" : "text-caption-m-regular")}>
+            <span className="truncate text-caption-m-regular text-text-subtle">
               {subtitle}
             </span>
           ) : null}

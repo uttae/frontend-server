@@ -69,7 +69,7 @@ it("puts all results first; unselected Enter retains original query and first pr
   await type("원래");
   await wait();
   expect(host.querySelector('[role="option"]')?.textContent).toContain(
-    "원래 모든 결과보기",
+    "'원래' 모든 결과보기",
   );
   await key("Enter");
   expect(confirm).toHaveBeenCalledWith(
