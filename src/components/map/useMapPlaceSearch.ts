@@ -115,8 +115,9 @@ export function useMapPlaceSearch(mobile: boolean) {
       termination: "not-requested",
       resolution: null,
     });
+    setSelectedPlace(null);
+    if (!mobile) usePlaceSearchStore.setState({ selectedId: null });
     if (mobile) {
-      setSelectedPlace(null);
       useMobileMapSearchStore.setState({ textQuery: query });
     }
     const toAnchor = (anchor: ResolvedSearchAnchor): PlaceSearchResult => ({
@@ -132,7 +133,6 @@ export function useMapPlaceSearch(mobile: boolean) {
       isOpen: anchor.detail.regularOpeningHours?.openNow ?? null,
       location: anchor.location,
     });
-    let anchoredSelection: PlaceSearchResult | null = null;
     try {
       const result = await confirmPlaceSearch({
         ...confirmation,
@@ -148,20 +148,6 @@ export function useMapPlaceSearch(mobile: boolean) {
               termination: resolved.termination,
             },
           });
-        },
-        onAnchor: (anchor) => {
-          usePlaceSearchStore.setState({
-            termination: anchor.termination,
-            ...(!mobile ? { selectedId: anchor.googlePlaceId } : {}),
-          });
-          if (!mobile) {
-            anchoredSelection = toAnchor(anchor);
-            setSelectedPlace(anchoredSelection, {
-              itinerarySource: "search",
-              analyticsSource: "search",
-              analyticsRankPending: confirmation.kind === "whole",
-            });
-          }
         },
         search: async (params) => {
           useSearchRecenterStore.getState().setSearchSnapshot({
@@ -191,19 +177,10 @@ export function useMapPlaceSearch(mobile: boolean) {
       if (confirmation.kind === "specific" && result.anchor) {
         items = [toAnchor(result.anchor)];
         useSearchRecenterStore.getState().clearSearchSnapshot();
-      } else if (
-        !mobile &&
-        result.anchor &&
-        !items.some(
-          (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
-        )
-      ) {
-        items = [toAnchor(result.anchor), ...items];
       }
-      const selectedId =
-        !mobile && result.anchor
-          ? result.anchor.googlePlaceId
-          : (items[0]?.googlePlaceId ?? null);
+      const selectedId = mobile || confirmation.kind === "specific"
+        ? (items[0]?.googlePlaceId ?? null)
+        : null;
       usePlaceSearchStore.setState({
         items,
         searchRankBuckets,
@@ -213,7 +190,7 @@ export function useMapPlaceSearch(mobile: boolean) {
         termination: result.termination,
       });
       setActiveSearchMapPins(placeSearchResultsToMapPins(items));
-      if (!mobile || confirmation.kind === "specific") {
+      if (confirmation.kind === "specific") {
         const selected = result.anchor
           ? (items.find(
               (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
@@ -225,7 +202,6 @@ export function useMapPlaceSearch(mobile: boolean) {
           analyticsRankBucket: selected
             ? searchRankBuckets[selected.googlePlaceId]
             : undefined,
-          ...(!mobile && result.anchor ? { skipMapRecenter: true } : {}),
         });
       }
       if (confirmation.kind === "whole") {
@@ -238,12 +214,6 @@ export function useMapPlaceSearch(mobile: boolean) {
       return true;
     } catch (error) {
       if (!isCurrent()) return false;
-      if (anchoredSelection)
-        setSelectedPlace(anchoredSelection, {
-          itinerarySource: "search",
-          analyticsSource: "search",
-          skipMapRecenter: true,
-        });
       usePlaceSearchStore.setState({
         status: "error",
         termination:

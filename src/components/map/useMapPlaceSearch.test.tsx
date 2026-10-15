@@ -103,21 +103,13 @@ afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
 });
-it("web retains first prediction selection absent from text results, preserving result metadata", async () => {
-  await act(async () => {
-    await api.confirm(confirmation());
-  });
-  expect(network.select).toHaveBeenCalledWith(
-    expect.objectContaining({
-      googlePlaceId: "first",
-      location: { lat: 37, lng: 127 },
-    }),
-    expect.objectContaining({ analyticsSource: "search" }),
-  );
-  expect(
-    usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId),
-  ).toEqual(["first", "other"]);
-  expect(usePlaceSearchStore.getState().items[1].rating).toBe(4.2);
+it("web whole search publishes only Text Search pins without selecting a detail or recommendation", async () => {
+  await act(async () => { await api.confirm(confirmation()); });
+  expect(network.select).toHaveBeenLastCalledWith(null);
+  expect(usePlaceSearchStore.getState().selectedId).toBeNull();
+  expect(usePlaceSearchStore.getState().items.map(x => x.googlePlaceId)).toEqual(["other"]);
+  expect(usePlaceSearchStore.getState().items[0].rating).toBe(4.2);
+  expect(client.getQueryData(placeDetailQueryKey("first"))).toEqual(rawDetail);
 });
 it("mobile whole search keeps cards collapsed and reuses resolved full detail without GET supplement", async () => {
   await act(async () => root.render(<Harness mobile />));
@@ -231,25 +223,16 @@ it.each(["room", "account"])(
   },
 );
 
-it("editing while Text Search is pending retains already resolved complete selection", async () => {
+it("editing during Text Search never exposes the resolved anchor or late results", async () => {
   let finish!: (value: unknown) => void;
-  network.page.mockReturnValue(
-    new Promise((resolve) => {
-      finish = resolve;
-    }),
-  );
+  network.page.mockReturnValue(new Promise(resolve => { finish = resolve; }));
   const pending = api.confirm(confirmation());
   await vi.waitFor(() => expect(network.page).toHaveBeenCalled());
-  expect(network.select).toHaveBeenLastCalledWith(
-    expect.objectContaining({ googlePlaceId: "first" }),
-    expect.any(Object),
-  );
+  expect(network.select).toHaveBeenLastCalledWith(null);
   await act(async () => api.invalidate(false));
-  expect(network.select).toHaveBeenLastCalledWith(expect.objectContaining({ googlePlaceId: "first" }), expect.any(Object));
-  await act(async () => {
-    finish({ items: [], nextPageToken: null });
-    await pending;
-  });
+  await act(async () => { finish({ items: [], nextPageToken: null }); await pending; });
+  expect(network.select).toHaveBeenLastCalledWith(null);
+  expect(usePlaceSearchStore.getState().items).toEqual([]);
 });
 
 it("scope loss during resolve cannot seed cache or display stale detail", async () => {

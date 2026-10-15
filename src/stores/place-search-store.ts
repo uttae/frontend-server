@@ -20,7 +20,7 @@ type PlaceSearchState = {
   resolution: Omit<PlaceResolveResponse, "detail"> | null;
   setScope: (scope: string) => void;
   invalidate: () => number;
-  select: (id: string) => void;
+  select: (id: string | null) => void;
   setExpanded: (expanded: boolean) => void;
   clear: () => void;
 };

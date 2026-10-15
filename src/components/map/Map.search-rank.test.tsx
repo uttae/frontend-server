@@ -52,6 +52,9 @@ vi.mock("@/lib/analytics/track", () => ({
   trackAnalyticsEvent: boundary.track,
 }));
 vi.mock("@vis.gl/react-google-maps", () => ({
+  InfoWindow: ({ children }: { children: ReactNode }) => (
+    <div role="dialog" aria-label="검색 장소 미리보기">{children}</div>
+  ),
   useMap: () => null,
   useMapsLibrary: () => null,
   Map: ({
@@ -207,7 +210,38 @@ function expectPrivateFieldsAbsent(properties: Record<string, unknown>) {
   ])
     expect(properties).not.toHaveProperty(field);
 }
-it("web prepended absent anchor remains unranked while original results keep third/fourth/eleventh buckets", async () => {
+it("web preview closes independently and switching pins never fetches or opens detail", async () => {
+  await render(false);
+  boundary.page.mockResolvedValue({ items, nextPageToken: null });
+  await act(async () => { await controller.confirm({ query: "원문", kind: "whole", generation: 0, session: null }); });
+  const pin = (name: string) => [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(b => b.textContent === name)!;
+  const calls = vi.mocked(apiFetch).mock.calls.length;
+  await act(async () => pin("결과3").click());
+  expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과3");
+  await act(async () => pin("결과4").click());
+  expect(host.querySelectorAll('[role="dialog"]')).toHaveLength(1);
+  expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과4");
+  expect(views()).toHaveLength(0);
+  expect(apiFetch).toHaveBeenCalledTimes(calls);
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="미리보기 닫기"]')!.click());
+  expect(host.querySelector('[role="dialog"]')).toBeNull();
+  expect(usePlaceSearchStore.getState().items).toHaveLength(11);
+  await act(async () => pin("결과4").click());
+  expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과4");
+});
+it("web specific autocomplete selection retains direct detail behavior when its pin is reopened", async () => {
+  await render(false);
+  await act(async () => { await controller.confirm({ query: "원문", kind: "specific", generation: 0,
+    session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") }); });
+  expect(views()).toHaveLength(1);
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="닫기"]')!.click());
+  const marker = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(b => b.textContent === "결과4")!;
+  await act(async () => marker.click());
+  expect(host.querySelector('[aria-label="검색 장소 미리보기"]')).toBeNull();
+  expect(views()).toHaveLength(2);
+  expect(views().at(-1)![1].rank_bucket).toBeUndefined();
+});
+it("web pins preview Text Search data without fetching detail; arrow opens detail with original rank", async () => {
   await render(false);
   boundary.page.mockResolvedValue({ items, nextPageToken: null });
   await act(async () => {
@@ -219,8 +253,8 @@ it("web prepended absent anchor remains unranked while original results keep thi
       prediction: prediction(),
     });
   });
-  expect(usePlaceSearchStore.getState().items[0].googlePlaceId).toBe("anchor");
-  expect(views().at(-1)![1].rank_bucket).toBeUndefined();
+  expect(usePlaceSearchStore.getState().items[0].googlePlaceId).toBe("result-1");
+  expect(views()).toHaveLength(0);
   for (const [number, rank] of [
     [3, "1_3"],
     [4, "4_10"],
@@ -229,7 +263,14 @@ it("web prepended absent anchor remains unranked while original results keep thi
     const marker = [
       ...host.querySelectorAll<HTMLButtonElement>("[data-marker]"),
     ].find((button) => button.textContent === `결과${number}`)!;
+    const viewCount = views().length;
+    const requestCount = vi.mocked(apiFetch).mock.calls.length;
     await act(async () => marker.click());
+    expect(views()).toHaveLength(viewCount);
+    expect(apiFetch).toHaveBeenCalledTimes(requestCount);
+    expect(host.querySelector('[role="dialog"]')?.textContent).toContain(`결과${number}`);
+    expect(host.querySelector('[role="dialog"]')?.textContent).toContain("4.3");
+    await act(async () => host.querySelector<HTMLButtonElement>(`[aria-label="결과${number} 상세정보 보기"]`)!.click());
     expect(views().at(-1)![1]).toMatchObject({
       interaction_source: "search",
       rank_bucket: rank,
@@ -237,7 +278,7 @@ it("web prepended absent anchor remains unranked while original results keep thi
     expectPrivateFieldsAbsent(views().at(-1)![1]);
   }
 });
-it("web first-place view waits for Text Search membership and keeps its original eleventh rank", async () => {
+it("web resolved recommendation never auto-opens even when it is a Text Search result", async () => {
   await render(false);
   let finish!: (page: unknown) => void;
   boundary.page.mockReturnValue(
@@ -261,14 +302,10 @@ it("web first-place view waits for Text Search membership and keeps its original
     finish({ items, nextPageToken: null });
     await pending;
   });
-  expect(views()).toHaveLength(1);
-  expect(views()[0][1]).toMatchObject({
-    rank_bucket: "11_plus",
-    interaction_source: "search",
-  });
-  expectPrivateFieldsAbsent(views()[0][1]);
+  expect(views()).toHaveLength(0);
+  expect(usePlaceSearchStore.getState().selectedId).toBeNull();
 });
-it("web map-center fallback auto-selection retains the first result bucket", async () => {
+it("web map-center fallback shows only pins without auto-selection", async () => {
   await render(false);
   boundary.page.mockResolvedValue({ items, nextPageToken: null });
   await act(async () => {
@@ -279,8 +316,8 @@ it("web map-center fallback auto-selection retains the first result bucket", asy
       session: { sessionToken: "token", expiresAt: Date.now()+60000 },
     });
   });
-  expect(views()).toHaveLength(1);
-  expect(views()[0][1].rank_bucket).toBe("1_3");
+  expect(views()).toHaveLength(0);
+  expect(usePlaceSearchStore.getState().selectedId).toBeNull();
 });
 it("mobile expanded result emits original fourth/eleventh rank while specific prediction stays unranked", async () => {
   await render(true);
@@ -329,7 +366,7 @@ it("mobile expanded result emits original fourth/eleventh rank while specific pr
   expect(boundary.page).toHaveBeenCalledTimes(1);
 });
 
-it("failed Text Search settles the already visible recommendation as one unranked view", async () => {
+it("failed Text Search does not expose its anchor or emit a detail view", async () => {
   await render(false);
   boundary.page.mockRejectedValue(new Error("검색 실패"));
   await act(async () => {
@@ -341,12 +378,10 @@ it("failed Text Search settles the already visible recommendation as one unranke
       prediction: prediction(),
     });
   });
-  expect(views()).toHaveLength(1);
-  expect(views()[0][1].rank_bucket).toBeUndefined();
-  expectPrivateFieldsAbsent(views()[0][1]);
+  expect(views()).toHaveLength(0);
 });
 
-it("cancelling rank lookup keeps complete visible data and cannot add late rank/view events", async () => {
+it("cancelling pending search cannot add late pins or detail views", async () => {
   await render(false);
   let finish!: (page: unknown) => void;
   boundary.page.mockReturnValue(
@@ -367,13 +402,12 @@ it("cancelling rank lookup keeps complete visible data and cannot add late rank/
   await vi.waitFor(() => expect(boundary.page).toHaveBeenCalled());
   expect(views()).toHaveLength(0);
   await act(async () => controller.invalidate(false));
-  expect(views()).toHaveLength(1);
-  expect(views()[0][1].rank_bucket).toBeUndefined();
+  expect(views()).toHaveLength(0);
   await act(async () => {
     finish({ items, nextPageToken: null });
     await pending;
   });
-  expect(views()).toHaveLength(1);
+  expect(views()).toHaveLength(0);
   expect(usePlaceSearchStore.getState().items).toEqual([]);
 });
 
@@ -392,6 +426,7 @@ it("ordinary POI selection does not inherit a previous Text Search rank", async 
     ...host.querySelectorAll<HTMLButtonElement>("[data-marker]"),
   ].find((button) => button.textContent === "결과4")!;
   await act(async () => fourth.click());
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="결과4 상세정보 보기"]')!.click());
   expect(views().at(-1)![1].rank_bucket).toBe("4_10");
   await act(async () =>
     host.querySelector<HTMLButtonElement>("[data-general-poi]")!.click(),
@@ -401,7 +436,7 @@ it("ordinary POI selection does not inherit a previous Text Search rank", async 
   expectPrivateFieldsAbsent(views().at(-1)![1]);
 });
 
-it("discover ownership settles still-visible complete recommendation once without late rank/view", async () => {
+it("discover ownership cancels pending search without showing its anchor", async () => {
   await render(false);
   let finish!: (page: unknown) => void;
   boundary.page.mockReturnValue(
@@ -421,17 +456,15 @@ it("discover ownership settles still-visible complete recommendation once withou
   });
   await vi.waitFor(() => expect(boundary.page).toHaveBeenCalled());
   expect(views()).toHaveLength(0);
-  expect(host.textContent).toContain("결과1");
+  expect(host.textContent).not.toContain("결과1");
   await act(async () => useMapPinsFocusStore.getState().claimFocus("discover"));
-  expect(views()).toHaveLength(1);
-  expect(views()[0][1].rank_bucket).toBeUndefined();
-  expectPrivateFieldsAbsent(views()[0][1]);
-  expect(host.textContent).toContain("결과1");
+  expect(views()).toHaveLength(0);
+  expect(host.textContent).not.toContain("결과1");
   await act(async () => {
     finish({ items, nextPageToken: null });
     await pending;
   });
-  expect(views()).toHaveLength(1);
+  expect(views()).toHaveLength(0);
   expect(usePlaceSearchStore.getState().items).toEqual([]);
   expect(
     boundary.track.mock.calls.filter(

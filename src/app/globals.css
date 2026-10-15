@@ -13,6 +13,15 @@
  */
 @custom-variant mobile (&:where(.is-mobile-device, .is-mobile-device *));
 
+/* 검색 말풍선은 Google 기본 여백·스크롤바 대신 본문에서 사방 12px을 확보한다. */
+.gm-style-iw-c:has([data-search-place-preview]) {
+  padding: 0 !important;
+}
+
+.gm-style-iw-d:has([data-search-place-preview]) {
+  overflow: auto !important;
+}
+
 @layer base {
   html {
     @apply font-sans;

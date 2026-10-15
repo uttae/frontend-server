@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import {
   AdvancedMarker,
+  InfoWindow,
   Map as GoogleMap,
   useMap,
   useMapsLibrary,
@@ -54,6 +55,7 @@ import {
   mapPinBodyBorderProps,
 } from "./map-pin-stroke";
 import { MapSearchHereButton } from "./MapSearchHereButton";
+import { SearchPlacePreview } from "./SearchPlacePreview";
 import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
 import { RouteViewCameraController } from "./RouteViewCameraController";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
@@ -292,13 +294,37 @@ function releaseSearchForMapSelection() {
   useSearchRecenterStore.getState().clearSearchSnapshot();
 }
 
+const SEARCH_PREVIEW_OFFSET: [number, number] = [0, -40];
+
 function MapSearchResultPins() {
+  const map = useMap();
   const pins = useSearchMapPinsStore((s) => s.pins);
   const pinsFocus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
   const searchSelectedId = usePlaceSearchStore((s) => s.selectedId);
+  const items = usePlaceSearchStore((s) => s.items);
+  const status = usePlaceSearchStore((s) => s.status);
+  const kind = usePlaceSearchStore((s) => s.confirmationKind);
+  const fittedItemsRef = useRef<typeof items | null>(null);
+  const preview = !isMobileDevice && kind === "whole" && !selectedPlace
+    ? items.find((item) => item.googlePlaceId === searchSelectedId)
+    : undefined;
   const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
+
+  // 전체 검색 결과가 준비되면 첫 추천 대신 실제 결과들이 보이도록 맞춘다.
+  useEffect(() => {
+    if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
+    fittedItemsRef.current = items;
+    if (items.length === 1) {
+      panToWithinWorld(map, items[0].location);
+      map.setZoom(16);
+    } else {
+      const bounds = new google.maps.LatLngBounds();
+      items.forEach((item) => bounds.extend(item.location));
+      map.fitBounds(bounds, 80);
+    }
+  }, [map, isMobileDevice, pinsFocus, kind, status, items]);
 
   if (pinsFocus !== "search") return null;
 
@@ -315,8 +341,11 @@ function MapSearchResultPins() {
               const result = usePlaceSearchStore.getState().items.find((item) => item.googlePlaceId === pin.googlePlaceId);
               if (result) {
                 usePlaceSearchStore.getState().select(result.googlePlaceId);
-                if (isMobileDevice) { setSelectedPlace(null); return; }
-                setSelectedPlace(result, { itinerarySource: "search", analyticsSource: "search", analyticsRankBucket: usePlaceSearchStore.getState().searchRankBuckets[result.googlePlaceId], preserveMapZoom: true });
+                if (!isMobileDevice && kind === "specific") {
+                  setSelectedPlace(result, { itinerarySource: "search", analyticsSource: "search", preserveMapZoom: true });
+                } else {
+                  setSelectedPlace(null);
+                }
                 return;
               }
               releaseSearchForMapSelection();
@@ -335,6 +364,22 @@ function MapSearchResultPins() {
             <MapPinWithPlaceName name={pin.name} />
           </AdvancedMarker>
         ))}
+      {preview ? (
+        <InfoWindow key={preview.googlePlaceId} position={preview.location} pixelOffset={SEARCH_PREVIEW_OFFSET}
+          maxWidth={280} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
+          onClose={() => {
+            if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
+              usePlaceSearchStore.getState().select(null);
+          }}>
+          <SearchPlacePreview place={preview} onClose={() => usePlaceSearchStore.getState().select(null)} onOpenDetail={() => {
+            setSelectedPlace(preview, {
+              itinerarySource: "search", analyticsSource: "search",
+              analyticsRankBucket: usePlaceSearchStore.getState().searchRankBuckets[preview.googlePlaceId],
+              preserveMapZoom: true,
+            });
+          }} />
+        </InfoWindow>
+      ) : null}
     </>
   );
 }
@@ -483,6 +528,7 @@ export default function TripMap({
     }
     // 빈 곳은 완료된 검색 핀·카드를 유지한다. 진행 중인 응답만 무효화하고 상세·일정 강조를 닫는다.
     if (usePlaceSearchStore.getState().status === "pending") usePlaceSearchStore.getState().invalidate();
+    if (!isMobileDevice) usePlaceSearchStore.getState().select(null);
     setSelectedPlace(null);
     clearPlanFocus();
   };
