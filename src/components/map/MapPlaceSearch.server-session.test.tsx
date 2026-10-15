@@ -55,7 +55,7 @@ it.each(["MISS", "HIT"] as const)("%s selected card and panels reuse complete re
   function App() {
     const controller = useMapPlaceSearch(true);
     const state = usePlaceSearchStore();
-    return <><MapPlaceSearchInput mobile onConfirm={controller.confirm} onInvalidate={controller.invalidate} scopeKey={controller.scopeKey}/><div data-card>{state.items[0]?.name}</div>{state.expanded && state.selectedId ? <Panel id={state.selectedId}/> : null}</>;
+    return <><MapPlaceSearchInput mobile onConfirm={controller.confirm} onInvalidate={controller.invalidate} onClear={controller.clearSearch} scopeKey={controller.scopeKey}/><div data-card>{state.items[0]?.name}</div>{state.expanded && state.selectedId ? <Panel id={state.selectedId}/> : null}</>;
   }
   const host = document.createElement("div"); const root = createRoot(host);
   cleanup = async () => { await act(async () => root.unmount()); client.clear(); };

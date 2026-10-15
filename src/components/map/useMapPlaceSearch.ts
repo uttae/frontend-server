@@ -58,38 +58,89 @@ export function useMapPlaceSearch(mobile: boolean) {
     }
   }, [scopeKey, setSelectedPlace]);
 
-  function invalidate(clear: boolean) {
-    if (clear) {
-      usePlaceSearchStore.getState().clear();
-      clearActiveSearchMapPins();
-      useSearchRecenterStore.getState().clearSearchSnapshot();
-      useMapPinsFocusStore.getState().releaseSearchFocusIfActive();
+  function clearSearch() {
+    usePlaceSearchStore.getState().clear();
+    clearActiveSearchMapPins();
+    useSearchRecenterStore.getState().clearSearchSnapshot();
+    useMapPinsFocusStore.getState().releaseSearchFocusIfActive();
+    setSelectedPlace(null);
+  }
+
+  function invalidate() {
+    const selectedId = usePlaceSearchStore.getState().selectedId;
+    // Keep complete visible data, but unmount an unfinished detail selection so its late
+    // request can populate the public cache without changing the edited search UI.
+    if (selectedId && !getQueryClient()?.getQueryData(placeDetailQueryKey(selectedId)))
       setSelectedPlace(null);
-    } else {
-      const selectedId = usePlaceSearchStore.getState().selectedId;
-      // Keep complete visible data, but unmount an unfinished detail selection so its late
-      // request can populate the public cache without changing the edited search UI.
-      if (
-        selectedId &&
-        !getQueryClient()?.getQueryData(placeDetailQueryKey(selectedId))
-      )
-        setSelectedPlace(null);
-      else if (analyticsRankPending && selectedPlace)
-        setSelectedPlace(selectedPlace, {
-          itinerarySource: "search",
-          analyticsSource: "search",
-          skipMapRecenter: true,
-        });
-      usePlaceSearchStore.getState().invalidate();
-    }
+    else if (analyticsRankPending && selectedPlace)
+      setSelectedPlace(selectedPlace, {
+        itinerarySource: "search",
+        analyticsSource: "search",
+        skipMapRecenter: true,
+      });
+    usePlaceSearchStore.getState().invalidate();
   }
 
   const settleOwnershipLoss = useEffectEvent(() => {
-    if (usePlaceSearchStore.getState().status === "pending") invalidate(false);
+    if (usePlaceSearchStore.getState().status === "pending") invalidate();
   });
   useEffect(() => {
     if (pinsFocus !== "search") settleOwnershipLoss();
   }, [pinsFocus]);
+
+  function applySearchResult(
+    result: NonNullable<Awaited<ReturnType<typeof confirmPlaceSearch<PlaceSearchResult>>>>,
+    confirmation: SearchConfirmation,
+    mode: "text" | "map_recenter",
+  ) {
+    const searchRankBuckets: Record<string, SearchRankBucket> =
+      confirmation.kind === "whole"
+        ? Object.fromEntries(
+            result.items.map((item, index) => [
+              item.googlePlaceId,
+              bucketSearchRank(index),
+            ]),
+          )
+        : {};
+    let items = result.items;
+    if (confirmation.kind === "specific" && result.anchor) {
+      items = [toAnchor(result.anchor, confirmation)];
+      useSearchRecenterStore.getState().clearSearchSnapshot();
+    }
+    const selectedId = mobile || confirmation.kind === "specific"
+      ? (items[0]?.googlePlaceId ?? null)
+      : null;
+    usePlaceSearchStore.setState({
+      items,
+      searchRankBuckets,
+      selectedId,
+      status: "done",
+      fallback: result.fallback,
+      termination: result.termination,
+    });
+    setActiveSearchMapPins(placeSearchResultsToMapPins(items));
+    if (confirmation.kind === "specific") {
+      const selected = result.anchor
+        ? (items.find(
+            (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
+          ) ?? toAnchor(result.anchor, confirmation))
+        : (items[0] ?? null);
+      setSelectedPlace(selected, {
+        itinerarySource: "search",
+        analyticsSource: "search",
+        analyticsRankBucket: selected
+          ? searchRankBuckets[selected.googlePlaceId]
+          : undefined,
+      });
+    }
+    if (confirmation.kind === "whole") {
+      trackAnalyticsEvent(AnalyticsEvents.search, {
+        result_count_bucket: bucketResultCount(result.items.length),
+        search_mode: mode,
+        ...(roomId ? { room_id: roomId } : {}),
+      });
+    }
+  }
 
   async function confirm(
     confirmation: SearchConfirmation,
@@ -120,19 +171,6 @@ export function useMapPlaceSearch(mobile: boolean) {
     if (mobile) {
       useMobileMapSearchStore.setState({ textQuery: query });
     }
-    const toAnchor = (anchor: ResolvedSearchAnchor): PlaceSearchResult => ({
-      googlePlaceId: anchor.googlePlaceId,
-      name:
-        anchor.detail.name ??
-        confirmation.prediction?.structuredFormat?.mainText?.text ??
-        confirmation.prediction?.text?.text ?? "",
-      address: anchor.detail.formattedAddress ?? "",
-      category: anchor.detail.primaryTypeDisplayName ?? anchor.detail.primaryType ?? "",
-      rating: anchor.detail.rating,
-      userRatingCount: anchor.detail.userRatingCount,
-      isOpen: anchor.detail.regularOpeningHours?.openNow ?? null,
-      location: anchor.location,
-    });
     try {
       const result = await confirmPlaceSearch({
         ...confirmation,
@@ -164,66 +202,13 @@ export function useMapPlaceSearch(mobile: boolean) {
         },
       });
       if (!result || !isCurrent()) return false;
-      const searchRankBuckets: Record<string, SearchRankBucket> =
-        confirmation.kind === "whole"
-          ? Object.fromEntries(
-              result.items.map((item, index) => [
-                item.googlePlaceId,
-                bucketSearchRank(index),
-              ]),
-            )
-          : {};
-      let items = result.items;
-      if (confirmation.kind === "specific" && result.anchor) {
-        items = [toAnchor(result.anchor)];
-        useSearchRecenterStore.getState().clearSearchSnapshot();
-      }
-      const selectedId = mobile || confirmation.kind === "specific"
-        ? (items[0]?.googlePlaceId ?? null)
-        : null;
-      usePlaceSearchStore.setState({
-        items,
-        searchRankBuckets,
-        selectedId,
-        status: "done",
-        fallback: result.fallback,
-        termination: result.termination,
-      });
-      setActiveSearchMapPins(placeSearchResultsToMapPins(items));
-      if (confirmation.kind === "specific") {
-        const selected = result.anchor
-          ? (items.find(
-              (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
-            ) ?? toAnchor(result.anchor))
-          : (items[0] ?? null);
-        setSelectedPlace(selected, {
-          itinerarySource: "search",
-          analyticsSource: "search",
-          analyticsRankBucket: selected
-            ? searchRankBuckets[selected.googlePlaceId]
-            : undefined,
-        });
-      }
-      if (confirmation.kind === "whole") {
-        trackAnalyticsEvent(AnalyticsEvents.search, {
-          result_count_bucket: bucketResultCount(result.items.length),
-          search_mode: mode,
-          ...(roomId ? { room_id: roomId } : {}),
-        });
-      }
+      applySearchResult(result, confirmation, mode);
       return true;
     } catch (error) {
       if (!isCurrent()) return false;
       usePlaceSearchStore.setState({
         status: "error",
-        termination:
-          usePlaceSearchStore.getState().termination === "SUCCEEDED"
-            ? "SUCCEEDED"
-            : usePlaceSearchStore.getState().termination === "NOT_TERMINATED"
-              ? "NOT_TERMINATED"
-              : confirmation.prediction
-                ? "failed"
-                : "not-requested",
+        termination: failedTermination(confirmation),
         error:
           error instanceof Error
             ? error.message
@@ -248,7 +233,7 @@ export function useMapPlaceSearch(mobile: boolean) {
   }, [recenterId]);
   const clearLegacy = useEffectEvent(() => {
     if (!legacyQuery && mobile && usePlaceSearchStore.getState().query)
-      invalidate(true);
+      clearSearch();
   });
   useEffect(() => {
     if (seenLegacyNonce.current !== legacyNonce) {
@@ -257,5 +242,30 @@ export function useMapPlaceSearch(mobile: boolean) {
     }
   }, [legacyNonce, legacyQuery]);
 
-  return { confirm, invalidate, scopeKey };
+  return { confirm, invalidate, clearSearch, scopeKey };
+}
+
+function toAnchor(
+  anchor: ResolvedSearchAnchor,
+  confirmation: SearchConfirmation,
+): PlaceSearchResult {
+  return {
+    googlePlaceId: anchor.googlePlaceId,
+    name:
+      anchor.detail.name ??
+      confirmation.prediction?.structuredFormat?.mainText?.text ??
+      confirmation.prediction?.text?.text ?? "",
+    address: anchor.detail.formattedAddress ?? "",
+    category: anchor.detail.primaryTypeDisplayName ?? anchor.detail.primaryType ?? "",
+    rating: anchor.detail.rating,
+    userRatingCount: anchor.detail.userRatingCount,
+    isOpen: anchor.detail.regularOpeningHours?.openNow ?? null,
+    location: anchor.location,
+  };
+}
+
+function failedTermination(confirmation: SearchConfirmation) {
+  const termination = usePlaceSearchStore.getState().termination;
+  if (termination === "SUCCEEDED" || termination === "NOT_TERMINATED") return termination;
+  return confirmation.prediction ? "failed" : "not-requested";
 }

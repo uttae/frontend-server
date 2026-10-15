@@ -15,11 +15,11 @@
 
 /* 검색 말풍선은 Google 기본 여백·스크롤바 대신 본문에서 사방 12px을 확보한다. */
 .gm-style-iw-c:has([data-search-place-preview]) {
-  padding: 0 !important;
+  padding: 0 !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 padding을 검색 말풍선에서만 재정의한다. */
 }
 
 .gm-style-iw-d:has([data-search-place-preview]) {
-  overflow: auto !important;
+  overflow: auto !important; /* NOSONAR: S9423 — Google Maps의 인라인 overflow:scroll에 의한 불필요한 스크롤바를 제거한다. */
 }
 
 @layer base {

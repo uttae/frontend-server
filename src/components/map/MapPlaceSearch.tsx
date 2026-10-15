@@ -14,8 +14,8 @@ import { MobileSearchResultCarousel } from "./MobileSearchResultCarousel";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 
-export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
-  const { confirm, invalidate, scopeKey } = useMapPlaceSearch(mobile);
+export function MapPlaceSearch({ mobile }: Readonly<{ mobile: boolean }>) {
+  const { confirm, invalidate, clearSearch, scopeKey } = useMapPlaceSearch(mobile);
   const initialQuery = useSearchParams().get("q")?.trim() ?? "";
   const status = usePlaceSearchStore((s) => s.status);
   const error = usePlaceSearchStore((s) => s.error);
@@ -27,51 +27,32 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
   const focus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace } = useSelectedPlace();
   const confirmation = (value: SearchConfirmation) => confirm(value);
-  const feedback =
-    status === "pending" ? (
-      <LoadingIndicator label="장소 검색 중" />
-    ) : status === "error" ? (
-      <div
-        role="alert"
-        className="flex items-center gap-2 text-body-s-regular text-text"
-      >
-        <span>{error}</span>
-        <button
-          type="button"
-          className="shrink-0 cursor-pointer text-primary underline hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary"
-          onClick={() => {
-            if (confirmationKind === "specific") {
-              // A failed server session must be replaced by fresh predictions.
-              // Return to the chosen-place input instead of changing its intent to whole search.
-              if (mobile) {
-                flushSync(() =>
-                  useMobileMapSearchStore.getState().openSearch(),
-                );
-                useMobileMapSearchStore.getState().focusInput?.();
-              } else inputRef.current?.focus();
-              return;
-            }
-            void confirm({ query, kind: "whole", session: null, generation: 0 });
-          }}
-        >
-          다시 시도
-        </button>
-      </div>
-    ) : status === "done" && !items.length ? (
-      <p role="status" className="text-body-s-regular text-text-subtle">
-        검색 결과가 없어요.
-      </p>
-    ) : status === "done" && fallback ? (
-      <p role="status" className="text-caption-m-regular text-text-subtle">
-        현재 지도 주변의 검색 결과입니다.
-      </p>
-    ) : null;
+  const retry = () => {
+    if (confirmationKind === "specific") {
+      // A failed server session must be replaced by fresh predictions.
+      // Return to the chosen-place input instead of changing its intent to whole search.
+      if (mobile) {
+        flushSync(() =>
+          useMobileMapSearchStore.getState().openSearch(),
+        );
+        useMobileMapSearchStore.getState().focusInput?.();
+      } else inputRef.current?.focus();
+      return;
+    }
+    void confirm({ query, kind: "whole", session: null, generation: 0 });
+  };
+  const hasFeedback = status === "pending" || status === "error" ||
+    (status === "done" && (!items.length || fallback));
+  const feedback = hasFeedback ? (
+    <SearchFeedback status={status} error={error} fallback={fallback} hasItems={items.length > 0} retry={retry} />
+  ) : null;
   return (
     <>
       {mobile ? (
         <MobileMapSearch
           confirm={confirmation}
           invalidate={invalidate}
+          clearSearch={clearSearch}
           scopeKey={scopeKey}
           initialQuery={initialQuery}
         />
@@ -88,6 +69,7 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
             scopeKey={scopeKey}
             onConfirm={confirmation}
             onInvalidate={invalidate}
+            onClear={clearSearch}
           />
           {feedback ? (
             <div className="mt-2 rounded-lg border border-border-subtle bg-fill-subtle p-3">
@@ -106,4 +88,26 @@ export function MapPlaceSearch({ mobile }: { mobile: boolean }) {
       ) : null}
     </>
   );
+}
+
+function SearchFeedback({ status, error, fallback, hasItems, retry }: Readonly<{
+  status: string;
+  error: string | null;
+  fallback: boolean;
+  hasItems: boolean;
+  retry: () => void;
+}>) {
+  if (status === "pending") return <LoadingIndicator label="장소 검색 중" />;
+  if (status === "error") return (
+    <div role="alert" className="flex items-center gap-2 text-body-s-regular text-text">
+      <span>{error}</span>
+      <button type="button" className="shrink-0 cursor-pointer text-primary underline hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary" onClick={retry}>
+        다시 시도
+      </button>
+    </div>
+  );
+  if (status !== "done") return null;
+  if (!hasItems) return <output className="text-body-s-regular text-text-subtle">검색 결과가 없어요.</output>;
+  if (fallback) return <output className="text-caption-m-regular text-text-subtle">현재 지도 주변의 검색 결과입니다.</output>;
+  return null;
 }

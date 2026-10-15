@@ -20,6 +20,19 @@ export type ResolvedSearchAnchor = PlaceResolveResponse & {
 const resolutions = new WeakMap<PlaceSession, {
   googlePlaceId: string; promise: Promise<PlaceResolveResponse>;
 }>();
+async function resolveWithInProgressRetry(
+  session: PlaceSession, googlePlaceId: string, isCurrent: () => boolean,
+): Promise<PlaceResolveResponse> {
+  try {
+    return await resolvePlaceSession(session.sessionToken, googlePlaceId);
+  } catch (error) {
+    // Only IN_PROGRESS is known to permit a bounded delayed same-token/place retry.
+    if (!(error instanceof PlaceSessionError) || error.code !== "PLACE_SESSION_IN_PROGRESS") throw error;
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (!isCurrent()) throw new DOMException("Search abandoned", "AbortError");
+  }
+  return resolvePlaceSession(session.sessionToken, googlePlaceId);
+}
 /** Errors remain tied to this operation; cancel/timeout never prove Google was not called. */
 export function terminatePredictionSession(
   prediction: PlacePrediction, session: PlaceSession | null, isCurrent: () => boolean = () => true,
@@ -29,53 +42,55 @@ export function terminatePredictionSession(
   const existing = resolutions.get(session);
   if (existing) return existing.googlePlaceId === prediction.placeId ? existing.promise
     : Promise.reject(new PlaceSessionError(409, "PLACE_SESSION_CONFLICT", "이미 확인한 검색 세션입니다. 다시 검색해주세요."));
-  const promise = (async () => {
-    // Only IN_PROGRESS is known to permit a bounded delayed same-token/place retry.
-    for (let attempt = 0; ; attempt++) {
-      try { return await resolvePlaceSession(session.sessionToken, prediction.placeId); }
-      catch (error) {
-        if (!(error instanceof PlaceSessionError) || error.code !== "PLACE_SESSION_IN_PROGRESS" || attempt >= 1) throw error;
-        await new Promise(r => setTimeout(r, 300));
-        if (!isCurrent()) throw new DOMException("Search abandoned", "AbortError");
-      }
-    }
-  })();
+  const promise = resolveWithInProgressRetry(session, prediction.placeId, isCurrent);
   resolutions.set(session, { googlePlaceId: prediction.placeId, promise });
   return promise;
 }
-export async function confirmPlaceSearch<T>(args: Omit<SearchConfirmation, "generation"> & {
+type ConfirmPlaceSearchArgs<T> = Omit<SearchConfirmation, "generation"> & {
   mapCenter: google.maps.LatLngLiteral | null;
   isCurrent: () => boolean;
   onAnchor?: (anchor: ResolvedSearchAnchor) => void;
   onResolved?: (resolved: PlaceResolveResponse) => void;
   search: (params: { query: string; latitude: number; longitude: number; radius: number }) => Promise<T[]>;
-}): Promise<{
-  anchor: ResolvedSearchAnchor | null; items: T[]; fallback: boolean;
+};
+type SearchResolution = {
+  anchor: ResolvedSearchAnchor | null;
   termination: PlaceResolveResponse["termination"] | "failed" | "not-requested";
-} | null> {
+};
+async function resolveSearchPrediction<T>(
+  args: ConfirmPlaceSearchArgs<T>, prediction: PlacePrediction,
+): Promise<SearchResolution | null> {
+  let anchor: ResolvedSearchAnchor | null = null;
+  let termination: SearchResolution["termination"] = "not-requested";
+  try {
+    const resolved = await terminatePredictionSession(prediction, args.session, args.isCurrent);
+    if (!args.isCurrent()) return null;
+    termination = resolved.termination;
+    // Seed the complete untouched server DTO BEFORE a detail consumer mounts.
+    getQueryClient()?.setQueryData(placeDetailQueryKey(resolved.detail.googlePlaceId), resolved.detail);
+    args.onResolved?.(resolved);
+    const location = normalizePreviewLocation(resolved.detail.location);
+    if (location && Math.abs(location.lat) <= 90 && Math.abs(location.lng) <= 180)
+      anchor = { ...resolved, googlePlaceId: resolved.detail.googlePlaceId, location };
+    else if (args.kind === "specific") throw new Error("장소 좌표를 확인할 수 없어요.");
+  } catch (error) {
+    // Coordinate absence does not erase a verified server termination.
+    if (termination === "not-requested") termination = "failed";
+    if (args.kind === "specific" && args.isCurrent()) throw error;
+  }
+  return { anchor, termination };
+}
+export async function confirmPlaceSearch<T>(args: ConfirmPlaceSearchArgs<T>): Promise<
+  SearchResolution & { items: T[]; fallback: boolean } | null
+> {
   const query = args.query.trim();
   if (!query) throw new Error("검색어를 입력해주세요.");
   if (!args.isCurrent()) return null;
-  let anchor: ResolvedSearchAnchor | null = null;
-  let termination: PlaceResolveResponse["termination"] | "failed" | "not-requested" = "not-requested";
-  if (args.prediction) {
-    try {
-      const resolved = await terminatePredictionSession(args.prediction, args.session, args.isCurrent);
-      if (!args.isCurrent()) return null;
-      termination = resolved.termination;
-      // Seed the complete untouched server DTO BEFORE a detail consumer mounts.
-      getQueryClient()?.setQueryData(placeDetailQueryKey(resolved.detail.googlePlaceId), resolved.detail);
-      args.onResolved?.(resolved);
-      const location = normalizePreviewLocation(resolved.detail.location);
-      if (location && Math.abs(location.lat) <= 90 && Math.abs(location.lng) <= 180)
-        anchor = { ...resolved, googlePlaceId: resolved.detail.googlePlaceId, location };
-      else if (args.kind === "specific") throw new Error("장소 좌표를 확인할 수 없어요.");
-    } catch (error) {
-      // Coordinate absence does not erase a verified server termination.
-      if (termination === "not-requested") termination = "failed";
-      if (args.kind === "specific" && args.isCurrent()) throw error;
-    }
-  }
+  const resolution = args.prediction
+    ? await resolveSearchPrediction(args, args.prediction)
+    : { anchor: null, termination: "not-requested" as const };
+  if (!resolution) return null;
+  const { anchor, termination } = resolution;
   if (!args.isCurrent()) return null;
   if (anchor) args.onAnchor?.(anchor);
   if (args.kind === "specific") {

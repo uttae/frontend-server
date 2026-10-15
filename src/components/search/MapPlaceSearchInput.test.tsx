@@ -35,6 +35,7 @@ beforeEach(async () => {
       <MapPlaceSearchInput
         onConfirm={confirm}
         onInvalidate={invalidate}
+        onClear={vi.fn()}
         scopeKey="a"
       />,
     ),

@@ -4,11 +4,13 @@ import { ArrowRight, Star, X } from "lucide-react";
 import type { PlaceSearchResult } from "@/hooks/usePlacesSearch";
 
 /** Text Search 응답만 표시한다. 상세 조회는 화살표를 누른 뒤 기존 패널이 담당한다. */
-export function SearchPlacePreview({ place, onOpenDetail, onClose }: {
+export function SearchPlacePreview({ place, onOpenDetail, onClose }: Readonly<{
   place: PlaceSearchResult;
   onOpenDetail: () => void;
   onClose: () => void;
-}) {
+}>) {
+  let openingStatus = "";
+  if (place.isOpen != null) openingStatus = place.isOpen ? "영업 중" : "영업 종료";
   return (
     <div data-search-place-preview className="w-[264px] max-w-full p-3 font-sans text-text">
       <div className="flex items-start gap-2">
@@ -28,7 +30,7 @@ export function SearchPlacePreview({ place, onOpenDetail, onClose }: {
       ) : null}
       <div className="mt-2 flex items-center justify-between gap-3">
         <span className="text-caption-m-regular text-text-subtle">
-          {place.isOpen == null ? "" : place.isOpen ? "영업 중" : "영업 종료"}
+          {openingStatus}
         </span>
         <button type="button" onClick={onOpenDetail} aria-label={`${place.name} 상세정보 보기`}
           className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-text-inverse hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">

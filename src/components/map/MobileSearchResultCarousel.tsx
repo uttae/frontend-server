@@ -66,14 +66,14 @@ function SearchPlaceCard({
   active,
   onExpand,
   onCollapse,
-}: {
+}: Readonly<{
   item: PlaceSearchResult;
   analyticsRankBucket?: SearchRankBucket;
   expanded: boolean;
   active: boolean;
   onExpand: () => void;
   onCollapse: () => void;
-}) {
+}>) {
   const [modal, setModal] = useState<"bookmark" | "schedule" | null>(null);
   const { canSend, sendPlaceMessage } = useChatActions();
   const summary = (

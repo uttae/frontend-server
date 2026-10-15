@@ -31,6 +31,25 @@ export class PlaceSessionError extends Error {
   ) { super(message); this.name = "PlaceSessionError"; }
 }
 const bucketWaits = { search: 0, read: 0 };
+function parseRetryAfterMs(retryAfter: string | null): number | null {
+  if (retryAfter === null) return null;
+  const milliseconds = /^\d+$/.test(retryAfter)
+    ? Number(retryAfter) * 1000
+    : Math.max(0, Date.parse(retryAfter) - Date.now());
+  return Number.isFinite(milliseconds) ? milliseconds : null;
+}
+async function responseError(res: Response, bucket: keyof typeof bucketWaits): Promise<PlaceSessionError> {
+  const raw = await tryParseJson(res);
+  const error = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+  const retryAfterMs = parseRetryAfterMs(res.headers.get("Retry-After"));
+  if (res.status === 429) bucketWaits[bucket] = Date.now() + (retryAfterMs ?? 60000);
+  return new PlaceSessionError(
+    res.status,
+    typeof error.code === "string" ? error.code : "UNKNOWN",
+    typeof error.message === "string" ? error.message : "장소 검색에 실패했어요. 다시 입력해주세요.",
+    retryAfterMs,
+  );
+}
 async function post<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const bucket = path === "/places/resolve" ? "read" : "search";
   if (bucketWaits[bucket] > Date.now())
@@ -38,17 +57,7 @@ async function post<T>(path: string, body?: unknown, signal?: AbortSignal): Prom
   const res = await apiFetch(apiUrl(path), {
     method: "POST", ...(body === undefined ? {} : jsonBody(body)), signal,
   });
-  if (!res.ok) {
-    const raw = await tryParseJson(res);
-    const error = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
-    const retryAfter = res.headers.get("Retry-After");
-    const retryAfterMs = retryAfter == null ? null : /^\d+$/.test(retryAfter)
-      ? Number(retryAfter) * 1000 : Math.max(0, Date.parse(retryAfter) - Date.now());
-    if (res.status === 429) bucketWaits[bucket] = Date.now() + (retryAfterMs != null && Number.isFinite(retryAfterMs) ? retryAfterMs : 60000);
-    throw new PlaceSessionError(res.status, typeof error.code === "string" ? error.code : "UNKNOWN",
-      typeof error.message === "string" ? error.message : "장소 검색에 실패했어요. 다시 입력해주세요.",
-      retryAfterMs != null && Number.isFinite(retryAfterMs) ? retryAfterMs : null);
-  }
+  if (!res.ok) throw await responseError(res, bucket);
   return res.json() as Promise<T>;
 }
 export function issuePlaceSession(signal?: AbortSignal) {

@@ -3,7 +3,7 @@ import { autocompletePlaces, issuePlaceSession, type PlaceSession } from "@/lib/
 export const MAP_AUTOCOMPLETE_DEBOUNCE_MS = 250;
 /** One input flow: lazy issuance, serialized autocomplete and explicit abandonment. */
 export class AutocompleteSearchSession {
-  private controller = new AbortController();
+  private readonly controller = new AbortController();
   private issued: Promise<PlaceSession> | null = null;
   private session: PlaceSession | null = null;
   private queue: Promise<unknown> = Promise.resolve();

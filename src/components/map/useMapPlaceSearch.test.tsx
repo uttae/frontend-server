@@ -42,7 +42,7 @@ function Harness({ mobile = false }: { mobile?: boolean }) {
   return (
     <MapPlaceSearchInput
       onConfirm={controller.confirm}
-      onInvalidate={controller.invalidate}
+      onInvalidate={controller.invalidate} onClear={controller.clearSearch}
       scopeKey={controller.scopeKey}
     />
   );
@@ -147,7 +147,7 @@ it("editing input suppresses a late response and analytics", async () => {
   );
   const pending = api.confirm(confirmation());
   await vi.waitFor(() => expect(network.page).toHaveBeenCalled());
-  await act(async () => api.invalidate(false));
+  await act(async () => api.invalidate());
   await act(async () => {
     finish({ items: [], nextPageToken: null });
     await pending;
@@ -229,7 +229,7 @@ it("editing during Text Search never exposes the resolved anchor or late results
   const pending = api.confirm(confirmation());
   await vi.waitFor(() => expect(network.page).toHaveBeenCalled());
   expect(network.select).toHaveBeenLastCalledWith(null);
-  await act(async () => api.invalidate(false));
+  await act(async () => api.invalidate());
   await act(async () => { finish({ items: [], nextPageToken: null }); await pending; });
   expect(network.select).toHaveBeenLastCalledWith(null);
   expect(usePlaceSearchStore.getState().items).toEqual([]);

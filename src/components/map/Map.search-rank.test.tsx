@@ -401,7 +401,7 @@ it("cancelling pending search cannot add late pins or detail views", async () =>
   });
   await vi.waitFor(() => expect(boundary.page).toHaveBeenCalled());
   expect(views()).toHaveLength(0);
-  await act(async () => controller.invalidate(false));
+  await act(async () => controller.invalidate());
   expect(views()).toHaveLength(0);
   await act(async () => {
     finish({ items, nextPageToken: null });

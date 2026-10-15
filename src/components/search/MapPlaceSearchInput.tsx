@@ -15,9 +15,10 @@ import type { SearchConfirmation } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { cn } from "@/lib/utils";
 
-export type MapPlaceSearchInputProps = {
+export type MapPlaceSearchInputProps = Readonly<{
   onConfirm: (confirmation: SearchConfirmation) => Promise<boolean>;
-  onInvalidate: (clear: boolean) => void;
+  onInvalidate: () => void;
+  onClear: () => void;
   scopeKey: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   mobile?: boolean;
@@ -27,7 +28,7 @@ export type MapPlaceSearchInputProps = {
   onQueryChange?: (query: string) => void;
   onBack?: () => void;
   backLabel?: string;
-};
+}>;
 type Suggestions = {
   query: string;
   items: PlacePrediction[];
@@ -36,10 +37,30 @@ type Suggestions = {
   error?: string;
 };
 
+const INPUT_STYLES = {
+  mobile: {
+    container: "flex min-h-0 w-full flex-col",
+    form: "shrink-0 px-5 pb-2 pt-4",
+    field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
+    text: "text-body-m-regular",
+    clear: "w-8",
+    iconSize: 20,
+  },
+  desktop: {
+    container: "w-[280px] max-w-[calc(100vw-32px)]",
+    form: undefined,
+    field: "h-9 gap-1.5 rounded-md px-2.5",
+    text: "text-body-s-regular",
+    clear: "w-6",
+    iconSize: 16,
+  },
+} as const;
+
 /** Shared web/mobile map search. Original input and prediction/token identity survive confirmation. */
 export function MapPlaceSearchInput({
   onConfirm,
   onInvalidate,
+  onClear,
   scopeKey,
   inputRef,
   mobile = false,
@@ -134,7 +155,8 @@ export function MapPlaceSearchInput({
 
   function update(query: string) {
     autoQuery.current = null;
-    onInvalidate(!query.trim());
+    if (query.trim()) onInvalidate();
+    else onClear();
     setValue(query);
     onQueryChange?.(query);
     setOpen(Boolean(query.trim()));
@@ -202,16 +224,17 @@ export function MapPlaceSearchInput({
   }, [suggestions]);
   const rows = suggestions?.query === value ? suggestions.items : [];
   const showDropdown = open && Boolean(value.trim());
+  const appearance = INPUT_STYLES[mobile ? "mobile" : "desktop"];
   return (
     <div
       ref={containerRef}
       className={cn(
         "relative",
-        mobile ? "flex min-h-0 w-full flex-col" : "w-[280px] max-w-[calc(100vw-32px)]",
+        appearance.container,
       )}
     >
       <form
-        className={mobile ? "shrink-0 px-5 pb-2 pt-4" : undefined}
+        className={appearance.form}
         onSubmit={(event) => {
           event.preventDefault();
           void confirm(active);
@@ -219,13 +242,13 @@ export function MapPlaceSearchInput({
       >
         <div className={cn(
           "flex items-center border border-border bg-fill-subtle focus-within:border-primary",
-          mobile ? "h-12 gap-2 rounded-lg pl-3.5 pr-2.5" : "h-9 gap-1.5 rounded-md px-2.5",
+          appearance.field,
         )}>
           {onBack ? (
             <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
               <ChevronLeftIcon size={20} className="text-icon-subtle" />
             </button>
-          ) : <SearchIcon size={mobile ? 20 : 16} className="shrink-0 text-icon-subtle" />}
+          ) : <SearchIcon size={appearance.iconSize} className="shrink-0 text-icon-subtle" />}
           <input
             ref={fieldRef}
             type="search"
@@ -260,7 +283,7 @@ export function MapPlaceSearchInput({
               cancel();
               token.current?.abandon(); token.current = null;
               setSuggestions(null);
-              onInvalidate(false);
+              onInvalidate();
               setOpen(false);
             }}
             onKeyDown={(event) => {
@@ -282,7 +305,7 @@ export function MapPlaceSearchInput({
                 cancel();
                 token.current?.abandon(); token.current = null;
                 setSuggestions(null);
-                onInvalidate(false);
+                onInvalidate();
                 setOpen(false);
               }
             }}
@@ -290,7 +313,7 @@ export function MapPlaceSearchInput({
             autoComplete="off"
             className={cn(
               "min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
-              mobile ? "text-body-m-regular" : "text-body-s-regular",
+              appearance.text,
             )}
           />
           {value ? (
@@ -301,59 +324,74 @@ export function MapPlaceSearchInput({
                 update("");
                 fieldRef.current?.focus();
               }}
-              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", mobile ? "w-8" : "w-6")}
+              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear)}
             >
-              <CircleCancelIcon size={mobile ? 20 : 16} className="text-icon-subtle" />
+              <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" />
             </button>
           ) : null}
         </div>
       </form>
-      {showDropdown ? (
-        <ul
-          id={listId}
-          role="listbox"
-          aria-label="검색 추천"
-          className={cn(
-            "bg-fill-subtle",
-            mobile
-              ? "min-h-0 overflow-y-auto overscroll-contain"
-              : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
-          )}
-        >
-          <SuggestionRow
-            id={`${listId}-0`}
-            active={active === 0}
-            iconSize={mobile ? 20 : 16}
-            title={`'${value.trim()}' 모든 결과보기`}
-            onClick={() => void confirm(0)}
-          />
-          {rows.map((prediction, index) => (
-            <SuggestionRow
-              key={prediction.placeId}
-              id={`${listId}-${index + 1}`}
-              active={active === index + 1}
-              iconSize={mobile ? 20 : 16}
-              title={prediction.structuredFormat?.mainText?.text != null
-                ? prediction.structuredFormat.mainText
-                : prediction.text}
-              subtitle={prediction.structuredFormat?.secondaryText?.text ?? undefined}
-              onClick={() => void confirm(index + 1)}
-              place
-            />
-          ))}
-          {suggestions?.status === "error" ? (
-            <li
-              role="status"
-              className="px-3.5 py-3 text-caption-m-regular text-text-subtle"
-            >
-              {suggestions.error ?? "검색 추천을 불러오지 못했어요. 다시 입력해주세요."}
-            </li>
-          ) : null}
-        </ul>
-      ) : null}
+      {showDropdown ? <SearchSuggestions listId={listId} active={active} value={value} rows={rows}
+        suggestions={suggestions} mobile={mobile} onConfirm={confirm} /> : null}
     </div>
   );
 }
+function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, onConfirm }: Readonly<{
+  listId: string;
+  active: number;
+  value: string;
+  rows: PlacePrediction[];
+  suggestions: Suggestions | null;
+  mobile: boolean;
+  onConfirm: (index: number) => Promise<void>;
+}>) {
+  const iconSize = mobile ? 20 : 16;
+  // Editable combobox popup: native select/datalist cannot preserve the rich rows and whole-search action.
+  // https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
+  return (
+    <ul // NOSONAR: S6819 — aria-controls/aria-activedescendant로 연결된 커스텀 combobox의 listbox.
+      id={listId}
+      role="listbox"
+      aria-label="검색 추천"
+      className={cn(
+        "bg-fill-subtle",
+        mobile
+          ? "min-h-0 overflow-y-auto overscroll-contain"
+          : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
+      )}
+    >
+      <SuggestionRow
+        id={`${listId}-0`}
+        active={active === 0}
+        iconSize={iconSize}
+        title={`'${value.trim()}' 모든 결과보기`}
+        onClick={() => void onConfirm(0)}
+      />
+      {rows.map((prediction, index) => (
+        <SuggestionRow
+          key={prediction.placeId}
+          id={`${listId}-${index + 1}`}
+          active={active === index + 1}
+          iconSize={iconSize}
+          title={prediction.structuredFormat?.mainText?.text != null
+            ? prediction.structuredFormat.mainText
+            : prediction.text}
+          subtitle={prediction.structuredFormat?.secondaryText?.text ?? undefined}
+          onClick={() => void onConfirm(index + 1)}
+          place
+        />
+      ))}
+      {suggestions?.status === "error" ? (
+        <li
+          className="px-3.5 py-3 text-caption-m-regular text-text-subtle"
+        >
+          <output>{suggestions.error ?? "검색 추천을 불러오지 못했어요. 다시 입력해주세요."}</output>
+        </li>
+      ) : null}
+    </ul>
+  );
+}
+
 function SuggestionRow({
   id,
   title,
@@ -362,7 +400,7 @@ function SuggestionRow({
   onClick,
   place = false,
   iconSize,
-}: {
+}: Readonly<{
   id: string;
   title: string | PredictionText | null;
   subtitle?: string;
@@ -370,10 +408,10 @@ function SuggestionRow({
   onClick: () => void;
   place?: boolean;
   iconSize: number;
-}) {
+}>) {
   const Icon = place ? LocationIcon : SearchIcon;
   return (
-    <li
+    <li // NOSONAR: S6819 — 위 listbox의 option이며 네이티브 select 내부의 option이 아니다.
       role="option"
       id={id}
       aria-selected={active}
@@ -381,6 +419,7 @@ function SuggestionRow({
     >
       <button
         type="button"
+        tabIndex={-1}
         onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
         className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none"
@@ -402,11 +441,19 @@ function SuggestionRow({
 }
 
 /** Backend offsets count Unicode code points, not UTF-16 code units. */
-function HighlightedText({ value }: { value: PredictionText | null }) {
+function HighlightedText({ value }: Readonly<{ value: PredictionText | null }>) {
   if (!value?.text) return null;
-  const points = Array.from(value.text);
-  const matches = value.matches ?? [];
-  return points.map((point, index) => matches.some(match => index >= match.startOffset && index < match.endOffset)
-    ? <mark key={index} className="bg-transparent font-semibold text-inherit">{point}</mark>
-    : point);
+  const segments: { id: string; text: string; highlighted: boolean }[] = [];
+  for (const [offset, point] of Array.from(value.text).entries()) {
+    const highlighted = value.matches?.some(match => offset >= match.startOffset && offset < match.endOffset) ?? false;
+    const previous = segments.at(-1);
+    if (previous?.highlighted === highlighted) {
+      previous.text += point;
+    } else {
+      segments.push({ id: `${value.text}:${offset}`, text: point, highlighted });
+    }
+  }
+  return segments.map(segment => segment.highlighted
+    ? <mark key={segment.id} className="bg-transparent font-semibold text-inherit">{segment.text}</mark>
+    : segment.text);
 }

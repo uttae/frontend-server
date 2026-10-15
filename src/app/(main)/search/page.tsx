@@ -10,7 +10,9 @@ export default function SearchPage() {
   const params = useSearchParams();
   const { isMobileDevice } = useMobileView();
   const query = params.get("q")?.trim() ?? "";
-  const target = `${isMobileDevice ? "/map" : "/plan"}${query ? `?q=${encodeURIComponent(query)}` : ""}`;
+  const pathname = isMobileDevice ? "/map" : "/plan";
+  const search = query ? `?q=${encodeURIComponent(query)}` : "";
+  const target = `${pathname}${search}`;
   useEffect(() => {
     router.replace(target);
   }, [router, target]);

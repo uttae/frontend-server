@@ -27,7 +27,8 @@ export type MapMobileSearchProps = {
   inputRef: RefObject<HTMLInputElement | null>;
   backLabel: string;
   onConfirm: (confirmation: SearchConfirmation) => Promise<boolean>;
-  onInvalidate: (clear: boolean) => void;
+  onInvalidate: () => void;
+  onClear: () => void;
   onSelectPlace: (
     entry: MapSearchPlaceEntry,
   ) => Promise<MapSearchPlaceEntry | null>;
@@ -43,6 +44,7 @@ export function MapMobileSearchScreen({
   backLabel,
   onConfirm,
   onInvalidate,
+  onClear,
   onSelectPlace,
   scopeKey,
   initialQuery = "",
@@ -87,7 +89,7 @@ export function MapMobileSearchScreen({
     return success;
   }
   function close() {
-    onInvalidate(false);
+    onInvalidate();
     inputRef.current?.blur();
     onClose();
   }
@@ -132,6 +134,7 @@ export function MapMobileSearchScreen({
             scopeKey={scopeKey}
             onConfirm={confirm}
             onInvalidate={onInvalidate}
+            onClear={onClear}
             onQueryChange={setQuery}
             onBack={close}
             backLabel={backLabel}

@@ -17,7 +17,8 @@ import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 
 type Props = {
   confirm: (confirmation: SearchConfirmation) => Promise<boolean>;
-  invalidate: (clear: boolean) => void;
+  invalidate: () => void;
+  clearSearch: () => void;
   scopeKey: string;
   initialQuery?: string;
 };
@@ -25,9 +26,10 @@ type Props = {
 export function MobileMapSearch({
   confirm,
   invalidate,
+  clearSearch,
   scopeKey,
   initialQuery,
-}: Props) {
+}: Readonly<Props>) {
   const textSearchNonce = useMobileMapSearchStore((s) => s.textSearchNonce);
   const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const open = useMobileMapSearchStore((s) => s.open);
@@ -125,6 +127,7 @@ export function MobileMapSearch({
       onSelectPlace={handleSelectHistory}
       onConfirm={handleConfirm}
       onInvalidate={invalidate}
+      onClear={clearSearch}
       scopeKey={scopeKey}
       initialQuery={textSearchNonce === 0 ? initialQuery : undefined}
       resetKey={!textQuery ? textSearchNonce : 0}
