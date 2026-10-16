@@ -64,6 +64,7 @@ async function pickDates(edge: "start" | "end", ...days: string[]) {
   await click("확인", picker()!);
 }
 beforeEach(async () => {
+  Object.assign(state.room, { title: "가을 여행", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12" });
   state.room.role = "HOST"; state.isHost = true; state.isLoading = false; state.missing = false; state.pending = false;
   state.update.mockReset();
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
@@ -101,13 +102,44 @@ it("retains the original date floor, date ordering and required destination vali
   await pickDates("start", "2026-10-09");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
   expect(button("적용하기", dialog()!).disabled).toBe(true);
-  // 시작일보다 이른 종료일을 고르면 기간을 거꾸로 만들지 않고 새 시작일로 다시 고른다
+  // 종료 칸에서 시작일보다 이른 날짜를 고르면 기간을 거꾸로 만들지 않고 새 시작일이 되며, 종료일은 그대로다
   await pickDates("start", "2026-10-11", "2026-10-12");
   await pickDates("end", "2026-10-10");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 10일");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
   await click("서울 삭제", dialog()!);
   expect(button("적용하기", dialog()!).disabled).toBe(true);
+  expect(state.update).not.toHaveBeenCalled();
+});
+
+it("changes only the picked date and leaves the other one", async () => {
+  await open();
+  await pickDates("start", "2026-10-11");
+  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
+  await pickDates("end", "2026-10-13");
+  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 13일");
+  // 아무것도 고르지 않고 닫으면 바꾸지 않는다
+  await pickDates("start");
+  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
+});
+
+it("keeps the opened values while the server changes, shows the change outside, and reflects it on reopen", async () => {
+  await open();
+  await act(async () => dateField("end").click());
+  // 모달과 달력을 열어 둔 사이 다른 멤버가 제목과 종료일을 바꿨다
+  Object.assign(state.room, { title: "겨울 여행", endDate: "2026-10-14" });
+  await act(async () => root.render(<HeaderBar />));
+  await click("확인", picker()!);
+  expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("가을 여행");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
+  expect(button("적용하기", dialog()!).disabled).toBe(true);
+  expect(button("여행 정보 수정", host).parentElement?.textContent).toContain("겨울 여행");
+  await click("여행 정보 수정 닫기", dialog()!);
+  await open();
+  expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("겨울 여행");
+  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 14일");
   expect(state.update).not.toHaveBeenCalled();
 });
 

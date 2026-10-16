@@ -113,7 +113,7 @@ function DateCell({
 }
 
 type DatePickerProps = Readonly<{
-  /** `range`: 한 달력에서 시작·종료를 고른다(하나만 고르면 하루). `single`은 `value.start`만 쓴다 */
+  /** `range`: 한 달력에서 시작·종료를 고른다(고른 쪽만 바뀐다). `single`은 `value.start`만 쓴다 */
   mode?: "single" | "range";
   value: DateRange;
   /** 이보다 이른 날짜는 고를 수 없다 (`YYYY-MM-DD`) */

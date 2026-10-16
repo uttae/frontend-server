@@ -10,6 +10,7 @@ export type DatePickerPresentation = "anchored" | "popup";
  * 달력 표시 방식 — `anchored`는 `relative` 입력 칸 아래에 붙고, `popup`은 화면 가운데에 띄운다.
  * 모바일과 스크롤되는 모달 안에서는 `popup`을 쓴다 (Figma Date Picker Usage).
  * `anchored`는 입력 칸 폭에 맞춰 달력 전체를 같은 비율로 줄이거나 늘린다.
+ * `popup`은 가로 최소 300px이고, 화면보다 높으면(6주짜리 달·가로 모드) 달력 안에서 세로로 스크롤한다.
  */
 export function DatePickerLayer({
   presentation,
@@ -102,7 +103,11 @@ export function DatePickerLayer({
         const next = event.relatedTarget;
         if (next && !boundaryRef?.current?.contains(next)) onDismiss();
       }}
-      className={presentation === "anchored" ? "absolute inset-x-0 top-full z-30 mt-3" : "w-full max-w-[353px]"}
+      className={
+        presentation === "anchored"
+          ? "absolute inset-x-0 top-full z-30 mt-3"
+          : "max-h-full w-full min-w-[300px] max-w-[353px] overflow-y-auto overscroll-contain rounded-[12px]"
+      }
     >
       {presentation === "anchored" ? <div style={{ zoom }}>{children}</div> : children}
     </div>
@@ -113,7 +118,8 @@ export function DatePickerLayer({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[220] flex items-center justify-center bg-black/40 px-4"
+      // 화면 폭이 300px+여백보다 좁으면 가운데 정렬이 양옆을 자르지 않게 왼쪽부터 놓고 가로로 스크롤한다
+      className="fixed inset-0 z-[220] flex items-center justify-center-safe overflow-x-auto bg-black/40 p-4"
       onPointerDown={(event) => {
         if (event.target === event.currentTarget) onDismiss();
       }}

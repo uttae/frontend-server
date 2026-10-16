@@ -44,16 +44,38 @@ export function buildMonthWeeks({ year, month }: YearMonth): (string | null)[][]
   return weeks;
 }
 
-/** 시작 칸에서는 새 기간을 시작하고, 종료 칸에서는 시작일 이후 날짜로 기간을 닫는다 */
+/** 달력에서 이번에 고른 날짜 — 고르지 않은 쪽은 비어 있어 바깥 값을 그대로 쓴다 */
+export type PickedRange = Partial<DateRange>;
+
+/** 달력에 보일 기간 — 고른 날짜를 바깥 값 위에 얹고, 새 시작일보다 앞선 기존 종료일은 다시 고를 때까지 비워 보인다 */
+export function displayPickedRange(value: DateRange, picked: PickedRange): DateRange {
+  const start = picked.start ?? value.start;
+  const end = picked.end ?? value.end;
+  return { start, end: start && end && end < start ? "" : end };
+}
+
+/**
+ * 시작 칸에서는 시작일을, 종료 칸에서는 종료일을 고른다. 종료 칸에서 시작일보다 앞선 날짜를 누르면 새 시작일이 된다.
+ * 고른 쪽만 바뀌고 다른 쪽은 그대로다. 다음 클릭은 반대쪽 칸을 채운다.
+ */
 export function pickRangeDate(
-  range: DateRange,
+  value: DateRange,
+  picked: PickedRange,
   edge: RangeEdge,
   ymd: string,
-): { range: DateRange; edge: RangeEdge } {
-  if (edge === "start" || !range.start || ymd < range.start) {
-    return { range: { start: ymd, end: "" }, edge: "end" };
+): { picked: PickedRange; edge: RangeEdge } {
+  const { start } = displayPickedRange(value, picked);
+  if (edge === "start" || !start || ymd < start) {
+    const keepPickedEnd = picked.end !== undefined && picked.end >= ymd;
+    return { picked: keepPickedEnd ? { start: ymd, end: picked.end } : { start: ymd }, edge: "end" };
   }
-  return { range: { start: range.start, end: ymd }, edge: "start" };
+  return { picked: { ...picked, end: ymd }, edge: "start" };
+}
+
+/** 닫을 때 반영할 기간 — 고르지 않은 쪽은 바깥 값 그대로이고, 고른 날짜가 없으면 `null`(아무것도 바꾸지 않는다) */
+export function confirmPickedRange(value: DateRange, picked: PickedRange): DateRange | null {
+  if (picked.start === undefined && picked.end === undefined) return null;
+  return { start: picked.start ?? value.start, end: picked.end ?? value.end };
 }
 
 /** `2026-09-20` → `26/09/20` */
