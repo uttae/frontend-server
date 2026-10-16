@@ -1,5 +1,5 @@
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
@@ -14,7 +14,16 @@ import { chromium, devices, webkit } from "playwright";
 const TARGET_NAMES = ["pc-chrome", "pc-safari", "android", "iphone"];
 const PC_VIEWPORT = { width: 1440, height: 900 };
 const AUTH_FILE = path.join(homedir(), ".cache/uttae/check-screens/storage-state.json");
+const SCREENS_ROOT = path.resolve(".screens");
 const XCODE_DEVELOPER_DIR = "/Applications/Xcode.app/Contents/Developer";
+// PATH에 의존하지 않도록 macOS 기본 위치의 실행 파일을 직접 부른다
+const BIN = {
+  git: "/usr/bin/git",
+  lsof: "/usr/sbin/lsof",
+  open: "/usr/bin/open",
+  xcodeSelect: "/usr/bin/xcode-select",
+  xcrun: "/usr/bin/xcrun",
+};
 
 const { values: args, positionals } = parseArgs({
   allowPositionals: true,
@@ -32,16 +41,24 @@ const { values: args, positionals } = parseArgs({
   },
 });
 
+/** 사용법 오류 — 아래 실행부에서 `✖ 메시지`로 출력하고 끝낸다 */
+class UsageError extends Error {}
+
 const command = positionals[0] ?? "shot";
-const baseUrl = new URL(args.base);
+const baseUrl = parseBaseUrl(args.base);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-if (command === "login") {
-  await login();
-} else if (command === "shot") {
-  await shot();
-} else {
-  fail(`알 수 없는 명령: ${command} (login 또는 shot)`);
+try {
+  if (command === "login") {
+    await login();
+  } else if (command === "shot") {
+    await shot();
+  } else {
+    fail(`알 수 없는 명령: ${command} (login 또는 shot)`);
+  }
+} catch (error) {
+  if (error instanceof UsageError) fail(error.message);
+  throw error;
 }
 
 function fail(message) {
@@ -49,13 +66,60 @@ function fail(message) {
   process.exit(1);
 }
 
+/** 백엔드 CORS·구글 로그인이 localhost만 허용하고 이 값이 크롬 실행 인자로도 넘어가므로, 로컬 http 주소만 받는다 */
+function parseBaseUrl(value) {
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    fail(`--base가 주소 형식이 아닙니다: ${value}`);
+  }
+  const localOrigin =
+    url.protocol === "http:" &&
+    (url.hostname === "localhost" || url.hostname === "127.0.0.1") &&
+    url.pathname === "/" &&
+    !url.search &&
+    !url.hash &&
+    !url.username &&
+    !url.password;
+  if (!localOrigin) fail(`--base는 http://localhost:<포트> 형식만 쓸 수 있습니다: ${value}`);
+  // 받은 문자열을 그대로 쓰지 않고, 허용한 호스트 이름과 숫자 포트로 다시 만든다(크롬 실행 인자로 넘어간다)
+  const host = url.hostname === "127.0.0.1" ? "127.0.0.1" : "localhost";
+  const port = Number.parseInt(url.port || "80", 10);
+  return new URL(`http://${host}:${port}`);
+}
+
+/** `--path`는 앱 안 경로만 — `//다른곳`, `/\다른곳`처럼 다른 origin으로 바뀌는 값을 막는다 */
+function appUrl(pagePath) {
+  const url = new URL(pagePath, baseUrl);
+  if (!pagePath.startsWith("/") || url.origin !== baseUrl.origin) fail(`--path는 /로 시작하는 앱 안 경로만 쓸 수 있습니다: ${pagePath}`);
+  return url;
+}
+
+/** 결과 폴더는 `.screens` 바로 아래 한 단계 — `--label ../src`처럼 다른 위치에 쓰지 않게 막는다 */
+function screensOutDir(label) {
+  if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(label)) {
+    throw new UsageError(`--label은 영문·숫자·. - _ 만 쓸 수 있습니다(첫 글자는 영문·숫자): ${label}`);
+  }
+  return path.resolve(SCREENS_ROOT, label);
+}
+
+/** 결과 파일을 쓰기 직전에 `.screens` 안인지 다시 확인한다 */
+function screensFile(outDir, ...parts) {
+  const file = path.resolve(outDir, ...parts);
+  if (!file.startsWith(SCREENS_ROOT + path.sep)) {
+    throw new UsageError(`결과 파일이 .screens 밖을 가리킵니다: ${file}`);
+  }
+  return file;
+}
+
 /** 포트를 점유한 dev 서버의 작업 폴더 — 다른 worktree 코드를 찍는 실수를 막는다 */
 function readServerCwd(port) {
-  const pids = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], {
+  const pids = spawnSync(BIN.lsof, ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN", "-t"], {
     encoding: "utf8",
   }).stdout.trim();
   if (!pids) return null;
-  const cwd = spawnSync("lsof", ["-a", "-p", pids.split("\n")[0], "-d", "cwd", "-Fn"], {
+  const cwd = spawnSync(BIN.lsof, ["-a", "-p", pids.split("\n")[0], "-d", "cwd", "-Fn"], {
     encoding: "utf8",
   }).stdout;
   return cwd.split("\n").find((line) => line.startsWith("n"))?.slice(1) ?? null;
@@ -65,7 +129,7 @@ function assertServerServesThisRepo() {
   const port = baseUrl.port || "80";
   const serverCwd = readServerCwd(port);
   if (!serverCwd) fail(`${baseUrl.origin}에 dev 서버가 없습니다. 이 폴더에서 npm run dev를 먼저 실행하세요.`);
-  const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+  const repoRoot = execFileSync(BIN.git, ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
   if (path.resolve(serverCwd) !== path.resolve(repoRoot) && !args["allow-other-server"]) {
     fail(
       `${port}번 dev 서버가 다른 폴더(${serverCwd})의 코드입니다. 그 서버를 끄고 이 폴더(${repoRoot})에서 npm run dev를 실행하세요.`,
@@ -97,25 +161,39 @@ async function readDebuggerPages(port) {
   return (await response.json()).filter((target) => target.type === "page");
 }
 
+/** 크롬이 전용 프로필 폴더에 적는 디버깅 포트 — 이 프로필로 띄운 크롬의 포트만 나온다 */
+async function waitForDevToolsPort(portFile) {
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    const port = existsSync(portFile) ? Number(readFileSync(portFile, "utf8").split("\n")[0]) : 0;
+    if (Number.isInteger(port) && port > 0) return port;
+    await sleep(300);
+  }
+  fail("전용 프로필 크롬의 디버깅 포트를 찾지 못했습니다. 이 프로필로 열린 크롬 창이 남아 있으면 닫고 다시 실행하세요.");
+}
+
 async function login() {
   // 구글은 Playwright가 띄운 브라우저의 로그인을 거부한다(signin/rejected).
   // 일반 크롬을 전용 프로필로 띄워 사람이 로그인하고, /home 도착 뒤에만 CDP로 붙어 쿠키를 읽는다.
+  // 고정 포트는 이미 떠 있던 다른 디버깅 크롬에 붙을 수 있어 빈 포트(0)로 띄우고, 이 프로필 폴더에 적힌 포트만 쓴다.
   const profileDir = path.join(path.dirname(AUTH_FILE), "chrome-profile");
-  const port = 9333;
+  const portFile = path.join(profileDir, "DevToolsActivePort");
+  rmSync(portFile, { force: true });
   spawn(
-    "open",
+    BIN.open,
     [
       "-na",
       "Google Chrome",
       "--args",
       `--user-data-dir=${profileDir}`,
-      `--remote-debugging-port=${port}`,
+      "--remote-debugging-port=0",
       "--no-first-run",
       "--no-default-browser-check",
       new URL("/login", baseUrl).href,
     ],
     { detached: true, stdio: "ignore" },
   ).unref();
+  const port = await waitForDevToolsPort(portFile);
   console.log("새 크롬 창에서 구글 로그인을 끝내 주세요. /home으로 이동하면 자동으로 저장하고 닫습니다.");
 
   const isHome = (url) => url.startsWith(baseUrl.origin) && new URL(url).pathname.startsWith("/home");
@@ -170,7 +248,7 @@ async function shootWithPlaywright(name, pages, outDir) {
     page.on("console", (message) => {
       if (message.type() === "error") errors.push(message.text());
     });
-    const url = new URL(pagePath, baseUrl);
+    const url = appUrl(pagePath);
     await page.goto(url.href, { waitUntil: "load" });
     // Next dev 배지가 화면 하단을 가리지 않게 숨긴다
     await page.addStyleTag({ content: "nextjs-portal { display: none !important; }" });
@@ -180,7 +258,7 @@ async function shootWithPlaywright(name, pages, outDir) {
       .waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 5000 })
       .catch(() => {});
     await page.waitForTimeout(Number(args.wait));
-    const file = path.join(outDir, slugify(pagePath), `${name}.png`);
+    const file = screensFile(outDir, slugify(pagePath), `${name}.png`);
     mkdirSync(path.dirname(file), { recursive: true });
     await page.screenshot({ path: file, fullPage: args.full });
     const redirectedToLogin = url.pathname !== "/login" && new URL(page.url()).pathname === "/login";
@@ -194,7 +272,7 @@ async function shootWithPlaywright(name, pages, outDir) {
 
 function simctlEnv() {
   if (process.env.DEVELOPER_DIR) return process.env;
-  const selected = spawnSync("xcode-select", ["-p"], { encoding: "utf8" }).stdout.trim();
+  const selected = spawnSync(BIN.xcodeSelect, ["-p"], { encoding: "utf8" }).stdout.trim();
   // xcode-select가 Command Line Tools를 가리키면 simctl이 없다
   if (selected.includes("CommandLineTools") && existsSync(XCODE_DEVELOPER_DIR)) {
     return { ...process.env, DEVELOPER_DIR: XCODE_DEVELOPER_DIR };
@@ -204,21 +282,21 @@ function simctlEnv() {
 
 async function shootWithSimulator(pages, outDir) {
   const env = simctlEnv();
-  const simctl = (...simArgs) => execFileSync("xcrun", ["simctl", ...simArgs], { env, encoding: "utf8" });
+  const simctl = (...simArgs) => execFileSync(BIN.xcrun, ["simctl", ...simArgs], { env, encoding: "utf8" });
   // 여러 시뮬레이터(iPad 등)가 켜져 있으면 "booted"가 아무 기기나 고르므로 이름으로 UDID를 찾는다
   const available = Object.values(JSON.parse(simctl("list", "devices", "available", "-j")).devices).flat();
   const device = available.find((candidate) => candidate.name === args.iphone);
   if (!device) fail(`시뮬레이터 목록에 없는 기기: ${args.iphone}`);
   if (device.state !== "Booted") {
     simctl("boot", device.udid);
-    spawn("open", ["-a", "Simulator"], { env, detached: true, stdio: "ignore" }).unref();
+    spawn(BIN.open, ["-a", "Simulator"], { env, detached: true, stdio: "ignore" }).unref();
     simctl("bootstatus", device.udid, "-b");
   }
   const results = [];
   for (const pagePath of pages) {
-    simctl("openurl", device.udid, new URL(pagePath, baseUrl).href);
+    simctl("openurl", device.udid, appUrl(pagePath).href);
     await sleep(Number(args["iphone-wait"]));
-    const file = path.join(outDir, slugify(pagePath), "iphone.png");
+    const file = screensFile(outDir, slugify(pagePath), "iphone.png");
     mkdirSync(path.dirname(file), { recursive: true });
     simctl("io", device.udid, "screenshot", file);
     // 시뮬레이터 Safari는 리다이렉트를 읽을 수 없으므로 로그인 화면 여부는 스크린샷으로 확인한다
@@ -232,10 +310,11 @@ async function shot() {
   const targets = args.targets.split(",").map((name) => name.trim());
   const unknown = targets.filter((name) => !TARGET_NAMES.includes(name));
   if (unknown.length > 0) fail(`알 수 없는 대상: ${unknown.join(", ")} (가능: ${TARGET_NAMES.join(", ")})`);
+  args.path.forEach(appUrl);
+  const outDir = screensOutDir(args.label ?? timestampLabel());
   assertServerServesThisRepo();
   if (!readAuthState()) console.warn(`! 로그인 상태가 없습니다. 로그인이 필요한 화면은 npm run screens -- login 후 다시 찍으세요.`);
 
-  const outDir = path.join(".screens", args.label ?? timestampLabel());
   const results = [];
   // refresh 토큰 회전이 겹치지 않도록 대상별로 순서대로 실행한다
   for (const target of targets) {
@@ -248,6 +327,7 @@ async function shot() {
     if (result.errors.length > 0) notes.push(`콘솔 에러 ${result.errors.length}개`);
     console.log(`${result.target.padEnd(9)} ${result.path.padEnd(24)} ${result.file}${notes.length ? `  (${notes.join(", ")})` : ""}`);
   }
-  writeFileSync(path.join(outDir, "results.json"), JSON.stringify(results, null, 2));
-  console.log(`\n결과: ${path.join(outDir, "results.json")}`);
+  const resultsFile = screensFile(outDir, "results.json");
+  writeFileSync(resultsFile, JSON.stringify(results, null, 2));
+  console.log(`\n결과: ${resultsFile}`);
 }
