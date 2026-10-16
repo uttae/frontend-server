@@ -41,16 +41,24 @@ const { values: args, positionals } = parseArgs({
   },
 });
 
+/** 사용법 오류 — 아래 실행부에서 `✖ 메시지`로 출력하고 끝낸다 */
+class UsageError extends Error {}
+
 const command = positionals[0] ?? "shot";
 const baseUrl = parseBaseUrl(args.base);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-if (command === "login") {
-  await login();
-} else if (command === "shot") {
-  await shot();
-} else {
-  fail(`알 수 없는 명령: ${command} (login 또는 shot)`);
+try {
+  if (command === "login") {
+    await login();
+  } else if (command === "shot") {
+    await shot();
+  } else {
+    fail(`알 수 없는 명령: ${command} (login 또는 shot)`);
+  }
+} catch (error) {
+  if (error instanceof UsageError) fail(error.message);
+  throw error;
 }
 
 function fail(message) {
@@ -75,7 +83,10 @@ function parseBaseUrl(value) {
     !url.username &&
     !url.password;
   if (!localOrigin) fail(`--base는 http://localhost:<포트> 형식만 쓸 수 있습니다: ${value}`);
-  return url;
+  // 받은 문자열을 그대로 쓰지 않고, 허용한 호스트 이름과 숫자 포트로 다시 만든다(크롬 실행 인자로 넘어간다)
+  const host = url.hostname === "127.0.0.1" ? "127.0.0.1" : "localhost";
+  const port = Number.parseInt(url.port || "80", 10);
+  return new URL(`http://${host}:${port}`);
 }
 
 /** `--path`는 앱 안 경로만 — `//다른곳`, `/\다른곳`처럼 다른 origin으로 바뀌는 값을 막는다 */
@@ -88,11 +99,18 @@ function appUrl(pagePath) {
 /** 결과 폴더는 `.screens` 바로 아래 한 단계 — `--label ../src`처럼 다른 위치에 쓰지 않게 막는다 */
 function screensOutDir(label) {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(label)) {
-    fail(`--label은 영문·숫자·. - _ 만 쓸 수 있습니다(첫 글자는 영문·숫자): ${label}`);
+    throw new UsageError(`--label은 영문·숫자·. - _ 만 쓸 수 있습니다(첫 글자는 영문·숫자): ${label}`);
   }
-  const outDir = path.resolve(SCREENS_ROOT, label);
-  if (path.dirname(outDir) !== SCREENS_ROOT) fail(`--label이 .screens 밖을 가리킵니다: ${label}`);
-  return outDir;
+  return path.resolve(SCREENS_ROOT, label);
+}
+
+/** 결과 파일을 쓰기 직전에 `.screens` 안인지 다시 확인한다 */
+function screensFile(outDir, ...parts) {
+  const file = path.resolve(outDir, ...parts);
+  if (!file.startsWith(SCREENS_ROOT + path.sep)) {
+    throw new UsageError(`결과 파일이 .screens 밖을 가리킵니다: ${file}`);
+  }
+  return file;
 }
 
 /** 포트를 점유한 dev 서버의 작업 폴더 — 다른 worktree 코드를 찍는 실수를 막는다 */
@@ -240,7 +258,7 @@ async function shootWithPlaywright(name, pages, outDir) {
       .waitForFunction(() => !document.querySelector('[aria-busy="true"]'), null, { timeout: 5000 })
       .catch(() => {});
     await page.waitForTimeout(Number(args.wait));
-    const file = path.join(outDir, slugify(pagePath), `${name}.png`);
+    const file = screensFile(outDir, slugify(pagePath), `${name}.png`);
     mkdirSync(path.dirname(file), { recursive: true });
     await page.screenshot({ path: file, fullPage: args.full });
     const redirectedToLogin = url.pathname !== "/login" && new URL(page.url()).pathname === "/login";
@@ -278,7 +296,7 @@ async function shootWithSimulator(pages, outDir) {
   for (const pagePath of pages) {
     simctl("openurl", device.udid, appUrl(pagePath).href);
     await sleep(Number(args["iphone-wait"]));
-    const file = path.join(outDir, slugify(pagePath), "iphone.png");
+    const file = screensFile(outDir, slugify(pagePath), "iphone.png");
     mkdirSync(path.dirname(file), { recursive: true });
     simctl("io", device.udid, "screenshot", file);
     // 시뮬레이터 Safari는 리다이렉트를 읽을 수 없으므로 로그인 화면 여부는 스크린샷으로 확인한다
@@ -309,6 +327,7 @@ async function shot() {
     if (result.errors.length > 0) notes.push(`콘솔 에러 ${result.errors.length}개`);
     console.log(`${result.target.padEnd(9)} ${result.path.padEnd(24)} ${result.file}${notes.length ? `  (${notes.join(", ")})` : ""}`);
   }
-  writeFileSync(path.join(outDir, "results.json"), JSON.stringify(results, null, 2));
-  console.log(`\n결과: ${path.join(outDir, "results.json")}`);
+  const resultsFile = screensFile(outDir, "results.json");
+  writeFileSync(resultsFile, JSON.stringify(results, null, 2));
+  console.log(`\n결과: ${resultsFile}`);
 }
