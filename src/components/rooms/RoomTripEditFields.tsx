@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 
 import { CloseIcon } from "@/assets/icons";
+import { DateRangeField } from "@/components/date-picker/DateRangeField";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
 import {
   isTripScheduleDayLimitExceeded,
@@ -29,7 +30,6 @@ type Props = {
   values: TripFormValues;
   readOnly?: boolean;
   startDateMin?: string;
-  endDateMin?: string;
   onTitleChange: (value: string) => void;
   onDestinationsChange: (next: string[]) => void;
   onStartDateChange: (value: string) => void;
@@ -48,50 +48,12 @@ function Field({ label, htmlFor, className, children }: Readonly<{ label: string
   );
 }
 
-/** `2026-10-09` → `2026. 10. 09.` */
-function formatYmd(ymd: string): string {
-  const [y, m, d] = ymd.split("-");
-  return y && m && d ? `${y}. ${m}. ${d}.` : "";
-}
-
-function DateBox({ id, label, value, min, onChange }: Readonly<{ id: string; label: string; value: string; min?: string; onChange: (value: string) => void }>) {
-  return (
-    <label
-      htmlFor={id}
-      className={cn(FIELD_BOX_CLASS, "relative cursor-pointer focus-within:border-primary")}
-    >
-      <span aria-hidden className={value ? undefined : "text-text-disabled"}>{formatYmd(value) || "날짜 선택"}</span>
-      <input
-        id={id}
-        aria-label={label}
-        type="date"
-        value={value}
-        min={min}
-        max="9999-12-31"
-        onClick={(event) => {
-          event.preventDefault();
-          event.currentTarget.focus();
-          event.currentTarget.showPicker?.();
-        }}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          event.currentTarget.showPicker?.();
-        }}
-        onChange={(event) => onChange(event.target.value)}
-        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-      />
-    </label>
-  );
-}
-
 /** 여행 정보 수정 모달 전용 입력 필드 — 새 여행 만들기(`TripFormFields`)와 분리 */
 export function RoomTripEditFields({
   idPrefix,
   values,
   readOnly = false,
   startDateMin,
-  endDateMin,
   onTitleChange,
   onDestinationsChange,
   onStartDateChange,
@@ -135,10 +97,12 @@ export function RoomTripEditFields({
         <Field label="목적지">
           <p className={FIELD_BOX_CLASS}><span className="truncate">{destinations.join(", ") || "—"}</span></p>
         </Field>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="시작일"><p className={FIELD_BOX_CLASS}>{formatYmd(startDate) || "—"}</p></Field>
-          <Field label="종료일"><p className={FIELD_BOX_CLASS}>{formatYmd(endDate) || "—"}</p></Field>
-        </div>
+        <DateRangeField
+          idPrefix={idPrefix}
+          value={{ start: startDate, end: endDate }}
+          readOnly
+          onChange={() => {}}
+        />
       </div>
     );
   }
@@ -200,14 +164,17 @@ export function RoomTripEditFields({
       </Field>
 
       <div className="flex min-w-0 flex-col gap-2">
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="시작일" htmlFor={`${idPrefix}-start`}>
-            <DateBox id={`${idPrefix}-start`} label="여행 시작일" value={startDate} min={startDateMin} onChange={onStartDateChange} />
-          </Field>
-          <Field label="종료일" htmlFor={`${idPrefix}-end`}>
-            <DateBox id={`${idPrefix}-end`} label="여행 종료일" value={endDate} min={endDateMin} onChange={onEndDateChange} />
-          </Field>
-        </div>
+        {/* 스크롤되는 모달이고 칸 폭(약 176px)에 맞추면 달력이 절반 크기가 되어 팝업으로 띄운다 */}
+        <DateRangeField
+          idPrefix={idPrefix}
+          value={{ start: startDate, end: endDate }}
+          min={startDateMin}
+          popupOnly
+          onChange={(next) => {
+            onStartDateChange(next.start);
+            onEndDateChange(next.end);
+          }}
+        />
         {dateMessage ? <p className={MESSAGE_CLASS}>{dateMessage}</p> : null}
       </div>
     </div>
