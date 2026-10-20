@@ -22,6 +22,8 @@ import type { OpenValue, RatingValue } from "./map-filters";
 import { mapToolbarPanelMotion } from "./map-toolbar-motion";
 
 type MapDiscoverToolbarProps = {
+  /** 웹 동선보기에서 숨김 — 상세 패널은 최솟값(필터 한 줄 아래) 자리로 간다 */
+  hidden?: boolean;
   selectedCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
   rating: RatingValue;
@@ -31,6 +33,7 @@ type MapDiscoverToolbarProps = {
 };
 
 export function MapDiscoverToolbar({
+  hidden = false,
   selectedCategoryId,
   onSelectCategory,
   rating,
@@ -51,6 +54,7 @@ export function MapDiscoverToolbar({
   return (
     <div
       ref={setToolbarRef}
+      hidden={hidden}
       className={cn(
         "pointer-events-none absolute left-0 right-[312px] top-3 flex min-h-12 max-w-full flex-col justify-center overflow-visible px-4 mobile:right-0 mobile:block mobile:px-5",
         ratingDropdownOpen ? MAP_TOOLBAR_ELEVATED_Z_CLASS : MAP_TOOLBAR_Z_CLASS,

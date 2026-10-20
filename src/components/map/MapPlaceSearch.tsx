@@ -14,7 +14,11 @@ import { MobileSearchResultCarousel } from "./MobileSearchResultCarousel";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 
-export function MapPlaceSearch({ mobile }: Readonly<{ mobile: boolean }>) {
+export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
+  mobile: boolean;
+  /** PC 검색창 숨김(웹 동선보기) — 입력값·자동완성을 지키려고 언마운트하지 않는다 */
+  hidden?: boolean;
+}>) {
   const { confirm, invalidate, clearSearch, scopeKey } = useMapPlaceSearch(mobile);
   const initialQuery = useSearchParams().get("q")?.trim() ?? "";
   const status = usePlaceSearchStore((s) => s.status);
@@ -59,6 +63,7 @@ export function MapPlaceSearch({ mobile }: Readonly<{ mobile: boolean }>) {
       ) : (
         <div
           data-tutorial-target="search"
+          hidden={hidden}
           className="absolute right-4 top-[18px] z-30"
         >
           <MapPlaceSearchInput

@@ -64,6 +64,7 @@ import { RouteViewCameraController } from "./RouteViewCameraController";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
 import { PlanItineraryMapRoutes, type PlanItineraryRouteDay } from "./PlanItineraryMapRoutes";
 import { PlanRouteStepper } from "./PlanRouteStepper";
+import { useWebPlanRouteMode } from "./useWebPlanRouteMode";
 import type { OpenValue, RatingValue } from "./map-filters";
 
 /** 모바일 경로 보기 — 고른 일차만 그리고, 카드 선택에 맞춰 지도를 옮긴다 */
@@ -410,6 +411,7 @@ export default function TripMap({
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
+  const planRouteMode = useWebPlanRouteMode();
   const setMapCamera = useMapCenterStore((s) => s.setMapCamera);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -628,8 +630,10 @@ export default function TripMap({
         )}
       </div>
 
+      {/* 웹 동선보기는 숨기기만 한다 — 상세 패널 위치를 계속 재서 필터 한 줄 아래(최솟값)에 두고, 풀면 고른 카테고리·필터 그대로 보인다 */}
       {routeView ? null : (
         <MapDiscoverToolbar
+          hidden={planRouteMode}
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={setSelectedCategoryId}
           rating={rating}
@@ -659,7 +663,7 @@ export default function TripMap({
 
       {!bootstrap.ready || routeView ? null : (
         <>
-          <MapSearchHereButton discoverCategoryId={selectedCategoryId} />
+          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} />}
           {isMobileDevice ? (
             <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
               {onOpenRouteView ? (
