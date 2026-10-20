@@ -14,6 +14,8 @@ module.exports = {
         heading: ["var(--font-sans)"],
       },
       colors: {
+        /* 레거시 별칭 — 신규 코드에서 쓰지 않는다(semantic으로 대체).
+         * gray-300은 primitive --gray-300과 값이 다르다. */
         "light-gray": "#d9d9d9",
         "dark-gray": "#6a7282",
         "gray-border": "#e5e7eb",
@@ -27,7 +29,8 @@ module.exports = {
         /* ===== Figma 디자인 시스템 — Semantic =====
          * primitive(gray/blue/lime…)는 Tailwind 기본 팔레트와 이름이 겹쳐
          * 일부러 등록하지 않는다. globals.css 의 CSS 변수로만 존재한다.
-         * 신규 코드는 아래 semantic 만 사용할 것. */
+         * 신규 코드는 아래 semantic을 쓰고, 맞는 semantic이 없을 때만
+         * primitive를 bg-[var(--gray-800)]처럼 쓴다(Design.md 1-1). */
         primary: {
           subtle: "var(--color-primary-subtle)",
           DEFAULT: "var(--color-primary-default)",
