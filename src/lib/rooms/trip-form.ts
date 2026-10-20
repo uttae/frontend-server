@@ -2,9 +2,6 @@ export const ROOM_TRIP_TITLE_MAX_LENGTH = 20;
 export const TRIP_DESTINATIONS_MAX_COUNT = 5;
 export const TRIP_DESTINATION_MAX_LENGTH = 100;
 
-export const TRIP_DATE_INPUT_CLASS =
-  "relative w-full cursor-pointer border-0 bg-transparent p-0 pl-7 text-body-m-regular outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:left-0 [&::-webkit-calendar-picker-indicator]:top-1/2 [&::-webkit-calendar-picker-indicator]:h-4 [&::-webkit-calendar-picker-indicator]:w-4 [&::-webkit-calendar-picker-indicator]:-translate-y-1/2 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-datetime-edit]:text-inherit";
-
 export const TRIP_FORM_FIELD_CLASS =
   "rounded-2xl border-2 border-gray-border bg-white px-5 py-4 transition focus-within:border-primary";
 
@@ -16,14 +13,6 @@ export const TRIP_DATE_RANGE_INVALID_MESSAGE =
 
 export const TRIP_START_BEFORE_MIN_MESSAGE =
   "시작일은 최초 여행 시작일 이전으로 바꿀 수 없어요." as const;
-
-/** 종료일 date input `min` — floor 이전·시작일 이전 선택 방지 */
-export function tripEndDateMinYmd(startDate: string, floorYmd: string): string {
-  const floor = floorYmd.trim();
-  if (!floor) return startDate.trim();
-  if (startDate.trim() && startDate > floor) return startDate;
-  return floor;
-}
 
 export function isTripStartBeforeMin(
   startDate: string,
