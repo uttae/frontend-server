@@ -21,6 +21,7 @@ import {
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   MAP_PAN_RESTRICTION,
+  moveMapTo,
   normalizeGooglePlaceResourceId,
   panToWithinWorld,
   readDestinationLatLngFromSession,
@@ -96,7 +97,10 @@ export type MapRouteView = PlanItineraryRouteDay & {
 
 // ─── 웹 일정에서 고른 장소로 지도 이동 ─────────────────────────────────────────
 
-/** 일정 카드·핀으로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동) */
+/**
+ * 일정 카드·핀·장소 이동 스테퍼로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동).
+ * 지도 핀으로 고르면 함께 연 상세(`SelectedPlaceController`)도 같은 곳으로 옮기는데, 같은 곳으로 가는 이동은 하나로 이어진다
+ */
 function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null }>) {
   const map = useMap();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -106,7 +110,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
   useEffect(() => {
     if (!map || focusSeq === null || lat === undefined || lng === undefined) return;
-    panToWithinWorld(map, { lat, lng });
+    return moveMapTo(map, { lat, lng });
   }, [map, focusSeq, lat, lng]);
 
   return null;
@@ -116,6 +120,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
 function SelectedPlaceController() {
   const map = useMap();
+  const { isMobileDevice } = useMobileView();
   const { selectedPlace, placeSelectionCameraRef } = useSelectedPlace();
 
   useEffect(() => {
@@ -124,11 +129,15 @@ function SelectedPlaceController() {
     placeSelectionCameraRef.current = "full";
 
     if (mode === "none") return;
-    panToWithinWorld(map, selectedPlace.location);
-    if (mode === "full") {
-      map.setZoom(16);
+    const zoom = mode === "full" ? 16 : undefined;
+    // 모바일은 아직 구글 이동(`panTo`)을 그대로 쓴다
+    if (isMobileDevice) {
+      panToWithinWorld(map, selectedPlace.location);
+      if (zoom !== undefined) map.setZoom(zoom);
+      return;
     }
-  }, [map, selectedPlace?.location, placeSelectionCameraRef]);
+    moveMapTo(map, selectedPlace.location, { zoom });
+  }, [map, isMobileDevice, selectedPlace?.location, placeSelectionCameraRef]);
 
   return null;
 }
@@ -191,9 +200,13 @@ function MapBootstrapSync({
   return null;
 }
 
-/** 가로 월드 래핑(지도 타일 무한 복제) 시 마지막 유효 중심으로 되돌림 */
+/**
+ * 가로 월드 래핑(지도 타일 무한 복제) 시 마지막 유효 중심으로 되돌림.
+ * 되돌리는 동안에도 `center_changed`가 계속 오지만 같은 곳으로 가는 이동은 새로 시작하지 않는다(`moveMapTo`)
+ */
 function MapPreventHorizontalWrap() {
   const map = useMap();
+  const { isMobileDevice } = useMobileView();
   const lastValidCenterRef = useRef<google.maps.LatLngLiteral | null>(null);
 
   useEffect(() => {
@@ -214,9 +227,10 @@ function MapPreventHorizontalWrap() {
       }
 
       const last = lastValidCenterRef.current;
-      if (last) {
-        panToWithinWorld(map, last);
-      }
+      if (!last) return;
+      // 모바일은 아직 구글 이동(`panTo`)을 그대로 쓴다
+      if (isMobileDevice) panToWithinWorld(map, last);
+      else moveMapTo(map, last);
     });
 
     const c = map.getCenter();
@@ -227,7 +241,7 @@ function MapPreventHorizontalWrap() {
     return () => {
       google.maps.event.removeListener(listener);
     };
-  }, [map]);
+  }, [map, isMobileDevice]);
 
   return null;
 }
@@ -325,8 +339,7 @@ function MapSearchResultPins() {
     if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
     fittedItemsRef.current = items;
     if (items.length === 1) {
-      panToWithinWorld(map, items[0].location);
-      map.setZoom(16);
+      moveMapTo(map, items[0].location, { zoom: 16 });
     } else {
       const bounds = new google.maps.LatLngBounds();
       items.forEach((item) => bounds.extend(item.location));
