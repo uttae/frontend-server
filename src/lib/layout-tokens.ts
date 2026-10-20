@@ -67,6 +67,7 @@ export const PLAN_PLACE_CARD_TW = {
   /** 메모 버튼만 Button Base 좌우 여백이 4다(디자인) */
   actionButtonTrailing: "px-1",
   actionIcon: "shrink-0 text-primary",
+  actionIconEmpty: "shrink-0 text-text",
   editorModule:
     "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular mobile:text-body-xs-regular text-gray-900",
   editorSideLabelWrapper:

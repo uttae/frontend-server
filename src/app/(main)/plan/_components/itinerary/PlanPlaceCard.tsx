@@ -284,7 +284,7 @@ export function PlanPlaceCard({
       aria-label={hasTime ? `시간 ${timeRange} 수정` : "시간 설정"}
       className={cn(PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
     >
-      <TimeClockIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
+      <TimeClockIcon size={16} className={hasTime ? PLAN_PLACE_CARD_TW.actionIcon : PLAN_PLACE_CARD_TW.actionIconEmpty} />
       <span>{timeRange || "시간"}</span>
     </button>
   ) : null;
@@ -420,7 +420,8 @@ export function PlanPlaceCard({
                     label="비용"
                     // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
                     className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
-                    icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
+                    // 금액이 있을 때만 파랑 — 버튼의 `data-filled`로 바꾼다
+                    icon={<CoinIcon size={16} className={cn(PLAN_PLACE_CARD_TW.actionIconEmpty, "group-data-filled:text-primary")} />}
                   />
                 )}
               </div>

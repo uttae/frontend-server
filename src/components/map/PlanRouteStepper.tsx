@@ -71,7 +71,7 @@ export function PlanRouteStepper({ roomId }: Readonly<{ roomId: string | null }>
       >
         <ChevronLeftIcon size={20} />
       </button>
-      <p aria-live="polite" className="whitespace-nowrap text-text tabular-nums">
+      <p aria-live="polite" className="whitespace-nowrap text-text">
         <span aria-hidden className="flex items-center gap-1">
           <span className="text-label-l-emphasis">{current}</span>
           <span className="text-label-m-regular">/</span>
