@@ -21,6 +21,7 @@ import {
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   MAP_PAN_RESTRICTION,
+  moveMapTo,
   normalizeGooglePlaceResourceId,
   panToWithinWorld,
   readDestinationLatLngFromSession,
@@ -35,6 +36,7 @@ import {
   readRoomMapViewport,
   writeRoomMapViewport,
 } from "@/lib/map-room-viewport-storage";
+import { MAP_DETAIL_PANEL_COVER_WIDTH_PX } from "@/lib/layout-tokens";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
@@ -62,6 +64,8 @@ import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
 import { RouteViewCameraController } from "./RouteViewCameraController";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
 import { PlanItineraryMapRoutes, type PlanItineraryRouteDay } from "./PlanItineraryMapRoutes";
+import { PlanRouteStepper } from "./PlanRouteStepper";
+import { useWebPlanRouteMode } from "./useWebPlanRouteMode";
 import type { OpenValue, RatingValue } from "./map-filters";
 
 /** 모바일 경로 보기 — 고른 일차만 그리고, 카드 선택에 맞춰 지도를 옮긴다 */
@@ -93,7 +97,10 @@ export type MapRouteView = PlanItineraryRouteDay & {
 
 // ─── 웹 일정에서 고른 장소로 지도 이동 ─────────────────────────────────────────
 
-/** 일정 카드·핀으로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동) */
+/**
+ * 일정 카드·핀·장소 이동 스테퍼로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동).
+ * 지도 핀으로 고르면 함께 연 상세(`SelectedPlaceController`)도 같은 곳으로 옮기는데, 같은 곳으로 가는 이동은 하나로 이어진다
+ */
 function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null }>) {
   const map = useMap();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -103,7 +110,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
   useEffect(() => {
     if (!map || focusSeq === null || lat === undefined || lng === undefined) return;
-    panToWithinWorld(map, { lat, lng });
+    return moveMapTo(map, { lat, lng });
   }, [map, focusSeq, lat, lng]);
 
   return null;
@@ -113,6 +120,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
 function SelectedPlaceController() {
   const map = useMap();
+  const { isMobileDevice } = useMobileView();
   const { selectedPlace, placeSelectionCameraRef } = useSelectedPlace();
 
   useEffect(() => {
@@ -121,16 +129,23 @@ function SelectedPlaceController() {
     placeSelectionCameraRef.current = "full";
 
     if (mode === "none") return;
-    panToWithinWorld(map, selectedPlace.location);
-    if (mode === "full") {
-      map.setZoom(16);
+    const zoom = mode === "full" ? 16 : undefined;
+    // 모바일은 아직 구글 이동(`panTo`)을 그대로 쓴다
+    if (isMobileDevice) {
+      panToWithinWorld(map, selectedPlace.location);
+      if (zoom !== undefined) map.setZoom(zoom);
+      return;
     }
-  }, [map, selectedPlace?.location, placeSelectionCameraRef]);
+    moveMapTo(map, selectedPlace.location, { zoom });
+  }, [map, isMobileDevice, selectedPlace?.location, placeSelectionCameraRef]);
 
   return null;
 }
 
 const VIEWPORT_PERSIST_DEBOUNCE_MS = 400;
+
+/** 오른쪽 아래 확대·축소(+/−) 자리 — 지도 끝 24 + 버튼 40 + 간격 12. 장소 이동 스테퍼가 이보다 오른쪽으로 가지 않는다 */
+const ZOOM_CONTROL_CLEARANCE_PX = 24 + 40 + 12;
 
 /** bootstrap 복원 직후 Zustand `mapCenter`·줌을 검색/일정 UI와 맞춤 */
 function MapBootstrapSync({
@@ -185,9 +200,13 @@ function MapBootstrapSync({
   return null;
 }
 
-/** 가로 월드 래핑(지도 타일 무한 복제) 시 마지막 유효 중심으로 되돌림 */
+/**
+ * 가로 월드 래핑(지도 타일 무한 복제) 시 마지막 유효 중심으로 되돌림.
+ * 되돌리는 동안에도 `center_changed`가 계속 오지만 같은 곳으로 가는 이동은 새로 시작하지 않는다(`moveMapTo`)
+ */
 function MapPreventHorizontalWrap() {
   const map = useMap();
+  const { isMobileDevice } = useMobileView();
   const lastValidCenterRef = useRef<google.maps.LatLngLiteral | null>(null);
 
   useEffect(() => {
@@ -208,9 +227,10 @@ function MapPreventHorizontalWrap() {
       }
 
       const last = lastValidCenterRef.current;
-      if (last) {
-        panToWithinWorld(map, last);
-      }
+      if (!last) return;
+      // 모바일은 아직 구글 이동(`panTo`)을 그대로 쓴다
+      if (isMobileDevice) panToWithinWorld(map, last);
+      else moveMapTo(map, last);
     });
 
     const c = map.getCenter();
@@ -221,7 +241,7 @@ function MapPreventHorizontalWrap() {
     return () => {
       google.maps.event.removeListener(listener);
     };
-  }, [map]);
+  }, [map, isMobileDevice]);
 
   return null;
 }
@@ -319,8 +339,7 @@ function MapSearchResultPins() {
     if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
     fittedItemsRef.current = items;
     if (items.length === 1) {
-      panToWithinWorld(map, items[0].location);
-      map.setZoom(16);
+      moveMapTo(map, items[0].location, { zoom: 16 });
     } else {
       const bounds = new google.maps.LatLngBounds();
       items.forEach((item) => bounds.extend(item.location));
@@ -402,9 +421,10 @@ export default function TripMap({
   const isPlanPage = isPlanPath(pathname ?? "") || isMobileMapPathname(pathname ?? "");
   const planStopPlaceIds = usePlanItineraryStopNormalizedPlaceIds(isPlanPage);
 
-  const { setSelectedPlace } = useSelectedPlace();
+  const { selectedPlace, setSelectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
+  const planRouteMode = useWebPlanRouteMode();
   const setMapCamera = useMapCenterStore((s) => s.setMapCamera);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -557,7 +577,7 @@ export default function TripMap({
   );
 
   return (
-    <div className="relative h-full min-h-0 w-full min-w-0">
+    <div className="relative h-full min-h-0 w-full min-w-0" data-map-controls-inset={isMobileDevice ? undefined : ""}>
       <div className="absolute inset-0 min-h-0 overflow-hidden">
         {!bootstrap.ready ? (
           <div
@@ -612,18 +632,21 @@ export default function TripMap({
 
           {!routeView && <SelectedPlaceMarker />}
 
-          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다 */}
+          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다.
+              오른쪽은 +/−와 같이 지도 끝에서 24px(globals.css `[data-map-controls-inset]`) */}
           {routeView || isMobileDevice ? null : (
             <MapControl position={ControlPosition.RIGHT_BOTTOM}>
-              <div className="mr-2.5">{bookmarkToggle}</div>
+              <div className="mr-6">{bookmarkToggle}</div>
             </MapControl>
           )}
           </GoogleMap>
         )}
       </div>
 
+      {/* 웹 동선보기는 숨기기만 한다 — 상세 패널 위치를 계속 재서 필터 한 줄 아래(최솟값)에 두고, 풀면 고른 카테고리·필터 그대로 보인다 */}
       {routeView ? null : (
         <MapDiscoverToolbar
+          hidden={planRouteMode}
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={setSelectedCategoryId}
           rating={rating}
@@ -633,9 +656,27 @@ export default function TripMap({
         />
       )}
 
+      {/* 웹 동선보기 장소 이동 — 지도 아래 가운데, 다른 지도 버튼처럼 아래 24px.
+          상세 패널이 열리면 패널 오른쪽 끝~지도 오른쪽 끝의 가운데로 옮긴다.
+          오른쪽 칸은 +/− 자리만큼 줄어들지 않아, 지도가 좁아지면 +/−에 밀려 왼쪽으로 넘치고(justify-end)
+          z-[16]이 상세 패널(`MapWithDetailPanel` z-20)보다 낮아 패널 뒤로 가려진다 */}
+      {bootstrap.ready && !routeView && !isMobileDevice && isPlanPage ? (
+        <div
+          style={{
+            paddingLeft: selectedPlace ? MAP_DETAIL_PANEL_COVER_WIDTH_PX : 0,
+            gridTemplateColumns: `minmax(0, 1fr) auto minmax(${ZOOM_CONTROL_CLEARANCE_PX}px, 1fr)`,
+          }}
+          className="pointer-events-none absolute inset-x-0 bottom-6 z-[16] grid justify-end transition-[padding] duration-300 ease-out"
+        >
+          <div className="col-start-2">
+            <PlanRouteStepper roomId={currentRoomId} />
+          </div>
+        </div>
+      ) : null}
+
       {!bootstrap.ready || routeView ? null : (
         <>
-          <MapSearchHereButton discoverCategoryId={selectedCategoryId} />
+          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} />}
           {isMobileDevice ? (
             <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
               {onOpenRouteView ? (

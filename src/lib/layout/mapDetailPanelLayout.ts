@@ -1,8 +1,11 @@
-/** 패널 `top` 실측 전·초기값 — 기존 `top-15`(3.75rem) */
-export const MAP_DETAIL_PANEL_TOP_FALLBACK_PX = 60;
-
 /** 툴바 하단 ~ 패널 상단 간격(px) */
 export const MAP_DETAIL_PANEL_BELOW_TOOLBAR_GAP_PX = 12;
+
+/**
+ * 패널 `top` 최솟값·초기값(px) — 필터 한 줄 아래 자리(`MapDiscoverToolbar`의 `top-3` 12 + `min-h-12` 48 + 간격).
+ * 필터를 숨겨도(웹 동선보기) 이 자리를 지키고, 필터가 두 줄로 늘어날 때만 그 아래로 내려간다
+ */
+export const MAP_DETAIL_PANEL_MIN_TOP_PX = 12 + 48 + MAP_DETAIL_PANEL_BELOW_TOOLBAR_GAP_PX;
 
 /** PlaceDetailPanel(`z-20`) 위 — 평점 드롭다운 열림 시 툴바 스택 */
 export const MAP_TOOLBAR_ELEVATED_Z_CLASS = "z-[25]" as const;

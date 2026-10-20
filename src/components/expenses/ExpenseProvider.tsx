@@ -446,6 +446,7 @@ export function ExpenseEntryButton({
       aria-label={`${scopeLabel} ${context.list.isSuccess && !scoped.length ? "비용 추가" : "비용 목록 열기"}`}
       aria-describedby={scheduleItemId === undefined ? undefined : summaryId}
       aria-haspopup="dialog"
+      data-filled={context.list.isSuccess && scoped.length > 0 ? "" : undefined}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => {
         e.stopPropagation();
@@ -457,7 +458,7 @@ export function ExpenseEntryButton({
           context.openScope(scope);
         }
       }}
-      className={cn(className, "min-w-0 max-w-full text-left", "disabled:cursor-not-allowed disabled:opacity-50")}
+      className={cn(className, "group min-w-0 max-w-full text-left", "disabled:cursor-not-allowed disabled:opacity-50")}
     >
       {icon}<span id={scheduleItemId === undefined ? undefined : summaryId} className="min-w-0 truncate" title={scheduleItemId === undefined ? undefined : summaryLabel}>{summaryLabel}</span>
     </button>

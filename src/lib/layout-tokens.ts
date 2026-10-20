@@ -15,6 +15,9 @@ export const CHAT_PANEL_DOCKED_WIDTH = width.s1;
  */
 export const MAIN_MAP_MIN_WIDTH_PX = 380 as const;
 
+/** 데스크톱 장소 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5`(10) + `w-[360px]`와 같게 유지 */
+export const MAP_DETAIL_PANEL_COVER_WIDTH_PX = 370 as const;
+
 /** 데스크톱 준비물 상세 패널 폭 — `PackingPage.module.css`의 `.detail`과 같게 유지 */
 export const PACKING_DETAIL_WIDTH_PX = 440 as const;
 
@@ -64,6 +67,7 @@ export const PLAN_PLACE_CARD_TW = {
   /** 메모 버튼만 Button Base 좌우 여백이 4다(디자인) */
   actionButtonTrailing: "px-1",
   actionIcon: "shrink-0 text-primary",
+  actionIconEmpty: "shrink-0 text-text",
   editorModule:
     "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular mobile:text-body-xs-regular text-gray-900",
   editorSideLabelWrapper:
