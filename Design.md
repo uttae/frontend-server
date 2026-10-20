@@ -5,8 +5,8 @@
 ## 1. 공통 원칙
 
 ### 1-1. 토큰 우선순위
-1. 시맨틱 토큰 — `primary`, `surface`, `border`, `danger` …
-2. 원시 토큰 — `blue-100` 등. 1에 마땅한 게 없을 때만
+1. 시맨틱 토큰 — `primary`, `text`, `fill`, `border`, `status-negative` …
+2. 원시 토큰 — `--blue-100` 같은 CSS 변수. 1에 마땅한 게 없을 때만 `bg-[var(--blue-100)]`처럼 쓴다(`bg-blue-100`은 Tailwind 기본 팔레트라 색이 다르다)
 3. 임의값 — `text-[17px]`, `#3B82F6`
 
 - 값의 정의는 전부 `tailwind.config.js`(+ `src/app/globals.css`)에 있다. 이 문서에 값을 적지 않는다.
@@ -17,9 +17,10 @@
 예를들어서 피그마 페이지에 폰트가 17px이고 시멘틱 토큰과 css변수가 없다면 임의값을 사용한다.
 
 ### 1-3. 컴포넌트
-- 공통 컴포넌트는 `src/components/<도메인>/`(`layout`, `place`, `map`, `settings` …)에 있다. 있으면 쓴다
-- 특정 페이지 전용 컴포넌트는 `src/app/**/_components/`에 둔다
-- 없으면 Tailwind로 직접 작업한다
+목표는 shadcn이다. 아직 설치 전이라 기존 공용 컴포넌트와 병행하고, 무엇을 쓸지는 [핵심 원칙 1-1](docs/code-conventions/principles.md)을 따른다.
+- 공용: `src/components/<도메인>/`(`layout`, `place`, `map`, `settings` …)
+- shadcn: 설치 후 `src/components/ui/`
+- 특정 페이지 전용: `src/app/**/_components/`
 
 ### 1-4. Figma 디자인 시스템
 [Design System](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System) 파일은 확정된 내용만 모아 둔 곳이다. 퍼블리싱할 때 해당 페이지의 컴포넌트·토큰을 기준으로 맞춘다.
@@ -102,19 +103,16 @@ import { MapPinIcon } from "@/assets/icons";
 
 ### 3-1. 상태
 - 서버 상태 → TanStack Query
-- 클라이언트 상태 → Zustand
-- 서버에서 온 데이터를 Zustand에 복사해두지 않는다
+- 클라이언트 상태 → 둘 곳은 [핵심 원칙 2-2](docs/code-conventions/principles.md)의 표를 따른다
+- 서버에서 온 데이터를 `useState`·Zustand·Context에 복사해두지 않는다
 
 ### 3-2. 필수 상태 처리
-데이터를 다루는 화면은 다음을 빠짐없이:
-- loading
-- error
-- empty
+데이터를 다루는 화면은 로딩·오류·빈 상태·재조회를 빠짐없이 그린다. 판정 순서와 상태별 UI는 [핵심 원칙 2-4](docs/code-conventions/principles.md) 표를 따른다(`data`부터 판정).
 
 ### 3-3. 이벤트 피드백
 - 사용자 액션에는 결과 피드백이 있어야 한다
-- 현재 alert 는 toast를 사용하고, confirm은 시스템confirm 과 dialog가 혼용되고 있는 상태이다. 새로 작성하는 코드는 dialog를 우선시하되 요구조건에 맞춰서 해라
-- 비동기 동작 중 중복 실행 방지
+- alert는 toast, confirm은 `ConfirmDialog`를 쓰고 요구조건에 맞춘다(shadcn 설치 후 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
+- 비동기 동작 중 중복 실행 방지(핵심 원칙 2-4)
 
 
 ---

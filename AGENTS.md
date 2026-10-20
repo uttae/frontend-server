@@ -9,6 +9,11 @@
 
 브랜치 생성, PR 작성, 병합 작업은 반드시 [CONTRIBUTING.md](./CONTRIBUTING.md)를 따른다.
 
+## 프론트엔드 코드 작성 원칙
+
+- 프론트엔드·퍼블리싱 코드를 쓰기 전에 [핵심 원칙](docs/code-conventions/principles.md)을 읽는다.
+- 마치기 전에 변경한 코드를 [안티패턴](docs/code-conventions/anti-patterns.md)에 대어 보고 고친다.
+
 ## 로딩 UI 원칙
 
 - 화면 전환과 데이터 조회 중에 `불러오는 중…`, `확인 중…` 같은 문장형 로딩 안내를 화면에 노출하지 않는다.
