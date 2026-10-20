@@ -31,11 +31,8 @@ SERVICE_CONTEXT.md
 # Local git worktrees used for isolated feature development
 .worktrees/
 
-# Claude Code personal settings (project skills in .claude/skills are committed)
+# Claude Code personal settings
 .claude/settings.local.json
-
-# check-screens 스크린샷 결과 (npm run screens)
-.screens/
 
 # misc
 .DS_Store

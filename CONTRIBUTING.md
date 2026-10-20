@@ -75,7 +75,6 @@ docs: 개발자 온보딩 보완
 
 - 사파리 주의 CSS: `fixed`·`sticky`, `h-screen`·`dvh`·`svh`, `safe-area`, `backdrop-filter`, 날짜·시간 input, 스크롤 동작, 16px 미만 글자의 input
 - 앱은 User-Agent로 모바일 화면을 판단한다. 크롬 창 크기만 줄이면 모바일 화면이 나오지 않으므로 기기 에뮬레이션을 쓴다.
-- `npm run screens -- --path /home --targets pc-chrome,android --label after`로 찍으면 `.screens/after/`에 저장된다. 처음에는 `npm run screens -- login`으로 로그인 상태를 저장하고, 아이폰 시뮬레이터 Safari에서도 한 번 로그인한다.
 - 백엔드 CORS와 구글 로그인이 `localhost:3000`만 허용하므로, 여러 worktree를 쓸 때도 확인할 폴더의 dev 서버 하나만 3000번으로 띄운다.
 
 ## 작업 공유
@@ -87,13 +86,3 @@ docs: 개발자 온보딩 보완
 | 디스코드 | PR을 열면 GitHub Actions가 자동으로 알린다. 작업 내역을 따로 보내지 않는다. |
 
 - 노션 페이지가 없는 작은 작업은 PR 본문의 `노션` 칸을 지운다.
-
-## Claude Code 스킬
-
-저장소의 `.claude/skills/`에 위 규칙을 따르는 스킬이 있다. 사용하려면 [GitHub CLI](https://cli.github.com/)를 설치하고 `gh auth login`으로 로그인한다.
-
-| 명령 | 하는 일 |
-| :-- | :-- |
-| `/start-work <작업 설명>` | 브랜치 종류·이름을 정하고 최신 기준 브랜치에서 브랜치를 만든다. |
-| `/check-screens [경로...] [before\|after]` | 위 `화면 확인 기준`대로 환경을 골라 스크린샷을 찍고 깨짐을 확인한다. |
-| `/open-pr [노션 링크]` | 대상 브랜치 반영 → lint·test·build·화면 확인 → 템플릿 작성 → 확인 후 PR을 연다. 병합은 하지 않는다. |

@@ -95,11 +95,12 @@ html:has([data-mobile-main-tabs]) {
 
 /* ============================================================
  * 디자인 토큰 — Figma "🐰디자인-디자인 시스템"(node 161:9) 기반
- * 정본: docs/design/tokens/tokens.css (손으로 관리 중)
+ * 값의 정본은 이 파일과 tailwind.config.js다. 쓰는 순서는 Design.md 1-1을 따른다.
  *
  * primitive(--gray-*, --blue-* …)는 semantic이 참조하는 원천 값이다.
- * 컴포넌트에서 직접 쓰지 말고 semantic(--color-*)만 사용할 것.
- * tailwind.config.js 에는 semantic만 등록되어 있다.
+ * 컴포넌트는 semantic(--color-*)을 쓰고, 맞는 semantic이 없을 때만
+ * primitive를 bg-[var(--gray-800)]처럼 직접 쓴다.
+ * tailwind.config.js 에는 semantic과 레거시 별칭(신규 사용 금지)이 등록되어 있다.
  * ============================================================ */
 :root {
   /* ---------- 1. PRIMITIVE ---------- */
