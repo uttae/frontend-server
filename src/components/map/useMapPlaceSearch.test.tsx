@@ -250,3 +250,11 @@ it("cache HIT never falsely marks termination completed", async () => {
   await act(async () => { await api.confirm(confirmation("specific")); });
   expect(usePlaceSearchStore.getState().termination).toBe("NOT_TERMINATED");
 });
+
+it("desktop specific selection publishes the balloon selection without opening the detail panel", async () => {
+  await act(async () => { await api.confirm(confirmation("specific")); });
+  expect(usePlaceSearchStore.getState().selectedId).toBe("first");
+  expect(usePlaceSearchStore.getState().items[0].name).toBe("추천");
+  expect(network.select).toHaveBeenLastCalledWith(null);
+  expect(network.page).not.toHaveBeenCalled();
+});

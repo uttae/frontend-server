@@ -108,7 +108,7 @@ function LoginPageContent() {
   );
 }
 
-export function LoginFallback() {
+function LoginFallback() {
   return (
     <LoginShell>
       <button

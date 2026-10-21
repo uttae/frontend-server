@@ -16,11 +16,18 @@ vi.mock("@/lib/google-oauth", () => ({
   saveOAuthPendingSession: vi.fn(),
 }));
 
-import { LoginFallback } from "@/app/login/page";
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => {
+    // Exercise the page's real Suspense fallback while navigation data is pending.
+    throw new Promise<never>(() => {});
+  },
+}));
+
+import LoginPage from "@/app/login/page";
 
 describe("LoginFallback", () => {
   it("renders meaningful non-interactive login HTML", () => {
-    const html = renderToStaticMarkup(<LoginFallback />);
+    const html = renderToStaticMarkup(<LoginPage />);
 
     expect(html).toContain("로그인하고 여행 계획을 이어가세요");
     expect(html).toContain("Google로 계속하기");

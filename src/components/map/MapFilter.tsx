@@ -1,5 +1,3 @@
-import { Check } from "lucide-react";
-
 import { FilterDropdown } from "@/components/filter-dropdown";
 import { MAP_FILTER_DROPDOWN_MENU_Z_CLASS } from "@/lib/layout/mapDetailPanelLayout";
 import {
@@ -34,7 +32,7 @@ export default function MapFilter({
   const isOpenOnly = openNow === "open";
 
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
+    <div className={cn("flex flex-nowrap gap-1.5", className)}>
       <FilterDropdown
         label="평점"
         options={RATING_OPTIONS}
@@ -54,13 +52,6 @@ export default function MapFilter({
             : mapFilterChipInactiveClassName(),
         )}
       >
-        {isOpenOnly ? (
-          <Check
-            className="h-3.5 w-3.5 shrink-0"
-            strokeWidth={2.5}
-            aria-hidden
-          />
-        ) : null}
         영업 중
       </button>
     </div>

@@ -13,13 +13,38 @@
  */
 @custom-variant mobile (&:where(.is-mobile-device, .is-mobile-device *));
 
-/* 검색 말풍선은 Google 기본 여백·스크롤바 대신 본문에서 사방 12px을 확보한다. */
+/* 검색 말풍선의 여백·표면·그림자는 Figma 6156:14635 기준으로 맞춘다. */
 .gm-style-iw-c:has([data-search-place-preview]) {
+  border-radius: 8px;
+  background: var(--color-fill-subtle);
+  box-shadow: 0 2px 10px #0000001a;
   padding: 0 !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 padding을 검색 말풍선에서만 재정의한다. */
 }
 
 .gm-style-iw-d:has([data-search-place-preview]) {
   overflow: auto !important; /* NOSONAR: S9423 — Google Maps의 인라인 overflow:scroll에 의한 불필요한 스크롤바를 제거한다. */
+}
+
+/* 검색 추천은 기존 상세 패널(z-20) 위에서 선택할 수 있어야 한다. */
+.map-discover-toolbar:has(input[aria-expanded="true"]) {
+  z-index: 25;
+}
+
+/* 원본 말풍선 꼬리(14×12)를 Google 기본 삼각형 대신 사용한다. */
+.gm-style-iw-t:has([data-search-place-preview]) > .gm-style-iw-tc {
+  width: 14px;
+  height: 12px;
+  filter: drop-shadow(0 2px 5px #0000001a);
+}
+
+.gm-style-iw-t:has([data-search-place-preview]) > .gm-style-iw-tc::after {
+  inset: 0;
+  width: 14px;
+  height: 12px;
+  clip-path: none;
+  background: url("/map-search/pointer.svg") center / contain no-repeat;
+  transform: rotate(180deg);
+  box-shadow: none;
 }
 
 /* PC 지도 버튼은 지도 끝에서 아래·좌우 모두 24px — 확대·축소(+/−)의 아래는 저작권 줄과 기본 여백으로 이미 24px이라 오른쪽만 넓힌다. */

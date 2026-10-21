@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
-import { useOnClickOutside } from "@/hooks/useOnClickOutside";
+import { createPortal } from "react-dom";
+import { MapSearchIcon } from "@/components/map/MapSearchIcon";
 import { cn } from "@/lib/utils";
 
 import {
@@ -29,14 +30,41 @@ export function FilterDropdown<T extends string>({
   onOpenChange,
   menuClassName,
 }: FilterDropdownProps<T>) {
+  const menuId = useId();
+  const focusMenuOnOpen = useRef(false);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
 
   useEffect(() => {
     onOpenChange?.(open);
   }, [open, onOpenChange]);
 
-  useOnClickOutside(ref, () => setOpen(false));
+  useEffect(() => {
+    if (!open) return;
+    if (focusMenuOnOpen.current) menuRef.current?.querySelector("button")?.focus();
+    const dismissOutside = (event: MouseEvent) => {
+      if (!ref.current?.contains(event.target as Node) && !menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const dismissOnMove = (event: Event) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { setOpen(false); triggerRef.current?.focus(); }
+    };
+    document.addEventListener("mousedown", dismissOutside);
+    document.addEventListener("keydown", escape);
+    window.addEventListener("scroll", dismissOnMove, true);
+    window.addEventListener("resize", dismissOnMove);
+    return () => {
+      document.removeEventListener("mousedown", dismissOutside);
+      document.removeEventListener("keydown", escape);
+      window.removeEventListener("scroll", dismissOnMove, true);
+      window.removeEventListener("resize", dismissOnMove);
+    };
+  }, [open]);
 
   const isActive = value !== "all";
   const selectedLabel = options.find((o) => o.value === value)?.label ?? label;
@@ -44,7 +72,20 @@ export function FilterDropdown<T extends string>({
   return (
     <div ref={ref} className="relative shrink-0">
       <button
-        onClick={() => setOpen((prev) => !prev)}
+        ref={triggerRef}
+        type="button"
+        aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
+        onKeyDown={(event) => {
+          if (event.key === "ArrowDown" && !open) { event.preventDefault(); triggerRef.current?.click(); }
+        }}
+        aria-label={`${label} 필터`}
+        onClick={(event) => {
+          focusMenuOnOpen.current = event.detail === 0;
+          const rect = triggerRef.current?.getBoundingClientRect();
+          if (rect) setPosition({ top: rect.bottom + 4, left: Math.max(8, Math.min(rect.left, window.innerWidth - 144)) });
+          setOpen((prev) => !prev);
+        }}
         className={cn(
           "flex items-center gap-1",
           isActive
@@ -53,23 +94,16 @@ export function FilterDropdown<T extends string>({
         )}
       >
         <span>{isActive ? selectedLabel : label}</span>
-        <svg
-          className={cn("h-3 w-3 transition-transform", open && "rotate-180")}
-          viewBox="0 0 12 12"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M2 4l4 4 4-4" />
-        </svg>
+        <MapSearchIcon name="chevron-down" className={cn("shrink-0 transition-transform", open && "rotate-180")}/>
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
+          ref={menuRef}
+          id={menuId}
+          style={position}
           className={cn(
-            "absolute left-0 top-full mt-1.5 min-w-[136px] overflow-hidden rounded-xl border border-gray-border bg-white shadow-lg",
+            "fixed min-w-[136px] overflow-hidden rounded-xl border border-gray-border bg-white shadow-lg",
             menuClassName ?? "z-30",
           )}
         >
@@ -79,6 +113,7 @@ export function FilterDropdown<T extends string>({
               onClick={() => {
                 onChange(opt.value);
                 setOpen(false);
+                triggerRef.current?.focus();
               }}
               className={cn(
                 "w-full cursor-pointer px-3 py-2 text-left text-label-m-regular mobile:text-label-s-regular transition hover:bg-gray-50",
@@ -90,7 +125,7 @@ export function FilterDropdown<T extends string>({
               {opt.label}
             </button>
           ))}
-        </div>
+        </div>, document.body,
       )}
     </div>
   );

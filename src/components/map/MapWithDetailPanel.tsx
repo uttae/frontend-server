@@ -56,7 +56,8 @@ export function MapWithDetailPanel({
       )}
     >
       <MapToolbarLayoutProvider setToolbarRef={setToolbarRef}>
-        <Map routeView={routeView} onOpenRouteView={onOpenRouteView} />
+        <Map routeView={routeView} onOpenRouteView={onOpenRouteView}
+          search={!mobileInline && !routeView ? <MapPlaceSearch mobile={false} hidden={planRouteMode} /> : undefined} />
       </MapToolbarLayoutProvider>
 
       {children}
@@ -90,7 +91,7 @@ export function MapWithDetailPanel({
       </div>
 
       {/* 웹 동선보기에서는 숨기기만 한다 — 다시 마운트하면 입력값이 사라지고 주소의 검색어(`?q=`)로 다시 검색한다 */}
-      {!routeView ? <MapPlaceSearch mobile={mobileInline} hidden={planRouteMode} /> : null}
+      {!routeView && mobileInline ? <MapPlaceSearch mobile hidden={planRouteMode} /> : null}
     </section>
   );
 }

@@ -8,6 +8,7 @@ import { useMapCenterStore } from "@/stores/map-center-store";
 vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 const sdk = { fetch: vi.mocked(apiFetch) };
 let issued = 0;
+let testTime = Date.now();
 function autocompleteCalls() { return sdk.fetch.mock.calls.filter(([url]) => String(url).endsWith("/places/autocomplete")); }
 let root: Root, host: HTMLDivElement;
 const confirm = vi.fn(),
@@ -20,6 +21,8 @@ const p = {
 beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.useFakeTimers();
+  // Keep fake time monotonic so the real shared Retry-After bucket cannot leak into the next test.
+  vi.setSystemTime(testTime += 3600000);
   issued = 0;
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
   sdk.fetch.mockReset().mockImplementation(async (url) => String(url).endsWith("/places/sessions")
@@ -173,12 +176,12 @@ it("nullable structured main text falls back to actual complete prediction text"
   expect(host.querySelectorAll('[role="option"]')[1]?.textContent).toContain("전체 실제 이름");
 });
 
-it.each(["whole", "specific"])("clears successful desktop %s input without invalidating published results", async kind => {
+it.each(["whole", "specific"])("retains successful desktop %s input without invalidating published results", async kind => {
   await type("원래"); await wait();
   const invalidations = invalidate.mock.calls.length;
   if (kind === "specific") { await key("ArrowDown"); await key("ArrowDown"); }
   await key("Enter");
-  expect(host.querySelector("input")!.value).toBe("");
+  expect(host.querySelector("input")!.value).toBe(kind === "specific" ? "추천" : "원래");
   expect(host.querySelector('[role="listbox"]')).toBeNull();
   expect(invalidate).toHaveBeenCalledTimes(invalidations);
 });
@@ -192,4 +195,24 @@ it("retains failed input for retry and never clears a newer draft after a late s
   await type("새 입력");
   await act(async () => finish(true));
   expect(host.querySelector("input")!.value).toBe("새 입력");
+});
+
+it("opens from an icon with focus, clears back to an empty field, and Escape restores the icon", async () => {
+  const clear = vi.fn();
+  await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="a"/>));
+  // A fresh scope resets even an already-mounted search to its icon state.
+  await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="b"/>));
+  expect(host.querySelector("input")).toBeNull();
+  await act(async () => (host.querySelector('button[aria-label="장소 검색 열기"]') as HTMLButtonElement).click());
+  expect(document.activeElement).toBe(host.querySelector("input"));
+  await type("원래"); await wait();
+  await act(async () => (host.querySelector('button[aria-label="검색어 지우기"]') as HTMLButtonElement).click());
+  expect(host.querySelector("input")!.value).toBe("");
+  expect(host.querySelector('[role="listbox"]')).toBeNull();
+  expect(clear).toHaveBeenCalledOnce();
+  expect(document.activeElement).not.toBe(host.querySelector("input"));
+  await act(async () => host.querySelector("input")!.focus());
+  await key("Escape");
+  expect(host.querySelector("input")).toBeNull();
+  expect(document.activeElement).toBe(host.querySelector('button[aria-label="장소 검색 열기"]'));
 });

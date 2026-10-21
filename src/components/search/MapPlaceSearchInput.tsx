@@ -8,7 +8,9 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { ChevronLeftIcon, CircleCancelIcon, LocationIcon, SearchIcon } from "@/assets/icons";
+import { flushSync } from "react-dom";
+import { MapSearchIcon } from "@/components/map/MapSearchIcon";
+import { ChevronLeftIcon, CircleCancelIcon, SearchIcon } from "@/assets/icons";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
 import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
@@ -22,6 +24,7 @@ export type MapPlaceSearchInputProps = Readonly<{
   scopeKey: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   mobile?: boolean;
+  collapsible?: boolean;
   initialQuery?: string;
   active?: boolean;
   autoConfirm?: boolean;
@@ -47,12 +50,12 @@ const INPUT_STYLES = {
     iconSize: 20,
   },
   desktop: {
-    container: "w-[280px] max-w-[calc(100vw-32px)]",
+    container: "w-[353px] max-w-full",
     form: undefined,
-    field: "h-9 gap-1.5 rounded-md px-2.5",
-    text: "text-body-s-regular",
-    clear: "w-6",
-    iconSize: 16,
+    field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
+    text: "text-body-m-regular",
+    clear: "w-8",
+    iconSize: 20,
   },
 } as const;
 
@@ -64,6 +67,7 @@ export function MapPlaceSearchInput({
   scopeKey,
   inputRef,
   mobile = false,
+  collapsible = false,
   initialQuery = "",
   active: enabled = true,
   autoConfirm = false,
@@ -72,6 +76,8 @@ export function MapPlaceSearchInput({
   backLabel = "지도로 돌아가기",
 }: MapPlaceSearchInputProps) {
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
+  const [expanded, setExpanded] = useState(!collapsible || Boolean(initialQuery));
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [value, setValue] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
   const [active, setActive] = useState(-1);
@@ -99,6 +105,7 @@ export function MapPlaceSearchInput({
     token.current = null;
     confirmGeneration.current = null;
     setValue("");
+    setExpanded(!collapsible);
     setSuggestions(null);
     setActive(-1);
     setOpen(false);
@@ -195,12 +202,15 @@ export function MapPlaceSearchInput({
         generation: requestGeneration,
       });
       if (success && !mobile && generation.current === requestGeneration) {
-        // 입력창만 비운다. update("")는 이미 표시한 검색 결과까지 지우므로 호출하지 않는다.
-        setValue("");
+        // 결과는 유지하고 선택한 추천 이름을 Filled 상태로 보여준다.
+        const confirmedValue = index > 0
+          ? prediction?.structuredFormat?.mainText?.text ?? prediction?.text?.text ?? value
+          : value;
+        setValue(confirmedValue);
         setSuggestions(null);
         setActive(-1);
         autoQuery.current = null;
-        onQueryChange?.("");
+        onQueryChange?.(confirmedValue);
       }
     } finally {
       if (generation.current === requestGeneration) {
@@ -225,6 +235,16 @@ export function MapPlaceSearchInput({
   const rows = suggestions?.query === value ? suggestions.items : [];
   const showDropdown = open && Boolean(value.trim());
   const appearance = INPUT_STYLES[mobile ? "mobile" : "desktop"];
+  if (collapsible && !expanded) return (
+    <button ref={triggerRef} type="button" aria-label="장소 검색 열기"
+      onClick={() => {
+        flushSync(() => setExpanded(true));
+        fieldRef.current?.focus();
+      }}
+      className="flex size-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary shadow-[0_2px_10px_#0000001a] hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      <MapSearchIcon name="search-white" size={20}/>
+    </button>
+  );
   return (
     <div
       ref={containerRef}
@@ -248,7 +268,7 @@ export function MapPlaceSearchInput({
             <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
               <ChevronLeftIcon size={20} className="text-icon-subtle" />
             </button>
-          ) : <SearchIcon size={appearance.iconSize} className="shrink-0 text-icon-subtle" />}
+          ) : mobile ? <SearchIcon size={appearance.iconSize} className="shrink-0 text-icon-subtle" /> : <MapSearchIcon name="search" size={20} />}
           <input
             ref={fieldRef}
             type="search"
@@ -307,6 +327,10 @@ export function MapPlaceSearchInput({
                 setSuggestions(null);
                 onInvalidate();
                 setOpen(false);
+                if (collapsible && !value.trim()) {
+                  flushSync(() => setExpanded(false));
+                  triggerRef.current?.focus();
+                }
               }
             }}
             placeholder="장소 검색"
@@ -322,11 +346,12 @@ export function MapPlaceSearchInput({
               aria-label="검색어 지우기"
               onClick={() => {
                 update("");
-                fieldRef.current?.focus();
+                if (mobile) fieldRef.current?.focus();
+                else fieldRef.current?.blur();
               }}
               className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear)}
             >
-              <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" />
+              {mobile ? <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" /> : <MapSearchIcon name="clear" size={20}/>}
             </button>
           ) : null}
         </div>
@@ -345,7 +370,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
   mobile: boolean;
   onConfirm: (index: number) => Promise<void>;
 }>) {
-  const iconSize = mobile ? 20 : 16;
+  const iconSize = 20;
   // Editable combobox popup: native select/datalist cannot preserve the rich rows and whole-search action.
   // https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
   return (
@@ -357,7 +382,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
         "bg-fill-subtle",
         mobile
           ? "min-h-0 overflow-y-auto overscroll-contain"
-          : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
+          : "absolute inset-x-0 top-full mt-1 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border",
       )}
     >
       <SuggestionRow
@@ -409,7 +434,6 @@ function SuggestionRow({
   place?: boolean;
   iconSize: number;
 }>) {
-  const Icon = place ? LocationIcon : SearchIcon;
   return (
     <li // NOSONAR: S6819 — 위 listbox의 option이며 네이티브 select 내부의 option이 아니다.
       role="option"
@@ -424,7 +448,7 @@ function SuggestionRow({
         onClick={onClick}
         className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none"
       >
-        <Icon size={iconSize} className="shrink-0 text-icon-subtle" />
+        <MapSearchIcon name={place ? "location" : "search"} size={iconSize} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-body-s-emphasis text-text">
             {typeof title === "string" ? title : <HighlightedText value={title} />}

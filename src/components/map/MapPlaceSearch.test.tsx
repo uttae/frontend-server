@@ -66,6 +66,7 @@ it("specific Details failure retry returns to that input with a fresh session an
     host.remove();
   };
   await act(async () => root.render(<MapPlaceSearch mobile={false} />));
+  await act(async () => (host.querySelector('button[aria-label="장소 검색 열기"]') as HTMLButtonElement).click());
   const input = host.querySelector("input")!;
   await act(async () => {
     Object.getOwnPropertyDescriptor(

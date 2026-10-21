@@ -23,7 +23,6 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   const initialQuery = useSearchParams().get("q")?.trim() ?? "";
   const status = usePlaceSearchStore((s) => s.status);
   const error = usePlaceSearchStore((s) => s.error);
-  const fallback = usePlaceSearchStore((s) => s.fallback);
   const items = usePlaceSearchStore((s) => s.items);
   const inputRef = useRef<HTMLInputElement>(null);
   const confirmationKind = usePlaceSearchStore((s) => s.confirmationKind);
@@ -46,9 +45,9 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
     void confirm({ query, kind: "whole", session: null, generation: 0 });
   };
   const hasFeedback = status === "pending" || status === "error" ||
-    (status === "done" && (!items.length || fallback));
+    (status === "done" && !items.length);
   const feedback = hasFeedback ? (
-    <SearchFeedback status={status} error={error} fallback={fallback} hasItems={items.length > 0} retry={retry} />
+    <SearchFeedback status={status} error={error} hasItems={items.length > 0} retry={retry} />
   ) : null;
   return (
     <>
@@ -64,12 +63,13 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
         <div
           data-tutorial-target="search"
           hidden={hidden}
-          className="absolute right-4 top-[18px] z-30"
+          className="pointer-events-auto relative min-w-0 max-w-[calc(100%-60px)] shrink-0"
         >
           <MapPlaceSearchInput
             key={`${scopeKey}:${initialQuery}`}
             initialQuery={initialQuery}
             inputRef={inputRef}
+            collapsible
             autoConfirm
             scopeKey={scopeKey}
             onConfirm={confirmation}
@@ -77,7 +77,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
             onClear={clearSearch}
           />
           {feedback ? (
-            <div className="mt-2 rounded-lg border border-border-subtle bg-fill-subtle p-3">
+            <div className="absolute right-0 top-full mt-1 w-[353px] max-w-full rounded-lg border border-border-subtle bg-fill-subtle p-3">
               {feedback}
             </div>
           ) : null}
@@ -95,10 +95,9 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   );
 }
 
-function SearchFeedback({ status, error, fallback, hasItems, retry }: Readonly<{
+function SearchFeedback({ status, error, hasItems, retry }: Readonly<{
   status: string;
   error: string | null;
-  fallback: boolean;
   hasItems: boolean;
   retry: () => void;
 }>) {
@@ -113,6 +112,5 @@ function SearchFeedback({ status, error, fallback, hasItems, retry }: Readonly<{
   );
   if (status !== "done") return null;
   if (!hasItems) return <output className="text-body-s-regular text-text-subtle">검색 결과가 없어요.</output>;
-  if (fallback) return <output className="text-caption-m-regular text-text-subtle">현재 지도 주변의 검색 결과입니다.</output>;
   return null;
 }

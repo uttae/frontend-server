@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import {
@@ -52,7 +52,7 @@ import { useRoomDetail } from "@/hooks/useRoomDetail";
 import { useRoomsList } from "@/hooks/useRooms";
 import { RouteIcon } from "@/assets/icons";
 import { MapPinIcon } from "@/components/icons";
-import { MapPinWithPlaceName } from "@/components/map/MapPinWithPlaceName";
+import { MapPinWithPlaceName, MapPlaceName } from "@/components/map/MapPinWithPlaceName";
 import { MapBookmarkPins } from "./MapBookmarkPins";
 import {
   MAP_PIN_SELECTED_DISPLAY_SIZE_PX,
@@ -329,10 +329,14 @@ function MapSearchResultPins() {
   const status = usePlaceSearchStore((s) => s.status);
   const kind = usePlaceSearchStore((s) => s.confirmationKind);
   const fittedItemsRef = useRef<typeof items | null>(null);
-  const preview = !isMobileDevice && kind === "whole" && !selectedPlace
+  const preview = pinsFocus === "search" && !isMobileDevice && !selectedPlace
     ? items.find((item) => item.googlePlaceId === searchSelectedId)
     : undefined;
   const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
+
+  useEffect(() => {
+    if (map && preview) panToWithinWorld(map, preview.location);
+  }, [map, preview]);
 
   // 전체 검색 결과가 준비되면 첫 추천 대신 실제 결과들이 보이도록 맞춘다.
   useEffect(() => {
@@ -356,17 +360,15 @@ function MapSearchResultPins() {
         .map((pin) => (
           <AdvancedMarker
             key={pin.googlePlaceId}
+            zIndex={pin.googlePlaceId === searchSelectedId ? 1000 : 0}
+            title={pin.name}
             position={{ lat: pin.lat, lng: pin.lng }}
             onClick={(e) => {
               e.stop();
               const result = usePlaceSearchStore.getState().items.find((item) => item.googlePlaceId === pin.googlePlaceId);
               if (result) {
                 usePlaceSearchStore.getState().select(result.googlePlaceId);
-                if (!isMobileDevice && kind === "specific") {
-                  setSelectedPlace(result, { itinerarySource: "search", analyticsSource: "search", preserveMapZoom: true });
-                } else {
-                  setSelectedPlace(null);
-                }
+                setSelectedPlace(null);
                 return;
               }
               releaseSearchForMapSelection();
@@ -387,7 +389,7 @@ function MapSearchResultPins() {
         ))}
       {preview ? (
         <InfoWindow key={preview.googlePlaceId} position={preview.location} pixelOffset={SEARCH_PREVIEW_OFFSET}
-          maxWidth={280} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
+          maxWidth={260} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
           onClose={() => {
             if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
               usePlaceSearchStore.getState().select(null);
@@ -410,9 +412,11 @@ function MapSearchResultPins() {
 export default function TripMap({
   routeView,
   onOpenRouteView,
+  search,
 }: {
   /** 있으면 경로 보기 — 검색·필터, 북마크·탐색 핀, 다른 일차 경로를 숨긴다 */
   routeView?: MapRouteView;
+  search?: ReactNode;
   /** 있으면 지도 왼쪽 아래에 경로 보기 버튼을 둔다(모바일 지도) */
   onOpenRouteView?: () => void;
 } = {}) {
@@ -647,6 +651,7 @@ export default function TripMap({
       {routeView ? null : (
         <MapDiscoverToolbar
           hidden={planRouteMode}
+          search={search}
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={setSelectedCategoryId}
           rating={rating}
@@ -744,8 +749,11 @@ function SelectedPlaceMarker() {
           {selectedPlace?.location && !selectedIsPlanFocus && (
             <AdvancedMarker
               position={selectedPlace.location}
+              zIndex={1000}
+              title={selectedPlace.name}
               onClick={(e) => e.stop()}
             >
+              <div className="flex flex-col items-center">
               <span
                 className={`block drop-shadow-md ${colorClass}`}
                 style={bookmarkColor ? { color: bookmarkColor } : undefined}
@@ -755,6 +763,8 @@ function SelectedPlaceMarker() {
                   {...mapPinBodyBorderProps}
                 />
               </span>
+              {!isMobileDevice ? <MapPlaceName name={selectedPlace.name}/> : null}
+              </div>
             </AdvancedMarker>
           )}
   </>;
