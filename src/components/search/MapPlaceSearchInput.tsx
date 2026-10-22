@@ -94,6 +94,17 @@ export function MapPlaceSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const currentScope = useRef(scopeKey);
 
+  // Default can be unfocused after clearing Filled, so blur alone cannot dismiss it.
+  useEffect(() => {
+    if (!collapsible || mobile || !expanded || value.trim()) return;
+    const dismissOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !containerRef.current?.contains(event.target))
+        setExpanded(false);
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    return () => document.removeEventListener("pointerdown", dismissOutside);
+  }, [collapsible, mobile, expanded, value]);
+
   function cancel() {
     generation.current += 1;
     if (timer.current) clearTimeout(timer.current);
@@ -348,10 +359,6 @@ export function MapPlaceSearchInput({
               onClick={() => {
                 update("");
                 if (mobile) fieldRef.current?.focus();
-                else if (collapsible) {
-                  flushSync(() => setExpanded(false));
-                  triggerRef.current?.focus();
-                }
                 else fieldRef.current?.blur();
               }}
               className={cn("flex shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear, !mobile && "peer-focus:hidden")}

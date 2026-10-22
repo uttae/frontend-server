@@ -197,7 +197,7 @@ it("retains failed input for retry and never clears a newer draft after a late s
   expect(host.querySelector("input")!.value).toBe("새 입력");
 });
 
-it("opens from an icon with focus, clears Filled back to its icon, and Escape restores the icon", async () => {
+it("opens from an icon with focus, clears Filled to an expanded Default field, and Escape restores the icon", async () => {
   const clear = vi.fn();
   await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="a"/>));
   // A fresh scope resets even an already-mounted search to its icon state.
@@ -208,11 +208,14 @@ it("opens from an icon with focus, clears Filled back to its icon, and Escape re
   await type("원래"); await wait();
   await key("Enter");
   await act(async () => (host.querySelector('button[aria-label="검색어 지우기"]') as HTMLButtonElement).click());
-  expect(host.querySelector("input")).toBeNull();
+  expect(host.querySelector("input")!.value).toBe("");
+  expect(host.querySelector('[aria-label="장소 검색 열기"]')).toBeNull();
   expect(host.querySelector('[role="listbox"]')).toBeNull();
   expect(clear).toHaveBeenCalledOnce();
-  expect(document.activeElement).toBe(host.querySelector('button[aria-label="장소 검색 열기"]'));
-  await act(async () => (host.querySelector('button[aria-label="장소 검색 열기"]') as HTMLButtonElement).click());
+  expect(document.activeElement).not.toBe(host.querySelector("input"));
+  await act(async () => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
+  expect(host.querySelector("input")).toBeNull();
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="장소 검색 열기"]')!.click());
   await key("Escape");
   expect(host.querySelector("input")).toBeNull();
   expect(document.activeElement).toBe(host.querySelector('button[aria-label="장소 검색 열기"]'));
