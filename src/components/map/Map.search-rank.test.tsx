@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { apiFetch } from "@/lib/api/client";
 vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
-import { act, useEffect, type ReactNode } from "react";
+import { act, useEffect, type ReactNode, type Ref } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, expect, it, vi } from "vitest";
@@ -52,8 +52,8 @@ vi.mock("@/lib/analytics/track", () => ({
   trackAnalyticsEvent: boundary.track,
 }));
 vi.mock("@vis.gl/react-google-maps", () => ({
-  InfoWindow: ({ children }: { children: ReactNode }) => (
-    <div role="dialog" aria-label="검색 장소 미리보기">{children}</div>
+  InfoWindow: ({ children, anchor }: { children: ReactNode; anchor?: HTMLElement }) => (
+    <div role="dialog" aria-label="검색 장소 미리보기" data-anchor-name={anchor?.textContent}>{children}</div>
   ),
   MapControl: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ControlPosition: { RIGHT_BOTTOM: 9 },
@@ -87,11 +87,15 @@ vi.mock("@vis.gl/react-google-maps", () => ({
   AdvancedMarker: ({
     children,
     onClick,
+    zIndex,
+    ref,
   }: {
     children: ReactNode;
+    zIndex?: number;
+    ref?: Ref<HTMLButtonElement>;
     onClick?: (event: { stop: () => void }) => void;
   }) => (
-    <button data-marker onClick={() => onClick?.({ stop: () => {} })}>
+    <button ref={ref} data-marker data-priority={zIndex} onClick={() => onClick?.({ stop: () => {} })}>
       {children}
     </button>
   ),
@@ -223,6 +227,9 @@ it("web preview closes independently and switching pins never fetches or opens d
   await act(async () => pin("결과4").click());
   expect(host.querySelectorAll('[role="dialog"]')).toHaveLength(1);
   expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과4");
+  expect(host.querySelector('[role="dialog"]')?.getAttribute("data-anchor-name")).toBe("결과4");
+  await act(async () => pin("결과5").click());
+  expect(host.querySelector('[role="dialog"]')?.getAttribute("data-anchor-name")).toBe("결과5");
   expect(views()).toHaveLength(0);
   expect(apiFetch).toHaveBeenCalledTimes(calls);
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="미리보기 닫기"]')!.click());
@@ -231,18 +238,23 @@ it("web preview closes independently and switching pins never fetches or opens d
   await act(async () => pin("결과4").click());
   expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과4");
 });
-it("web specific autocomplete selection retains direct detail behavior when its pin is reopened", async () => {
+it("web specific autocomplete opens detail directly and its pin reopens detail", async () => {
   await render(false);
   await act(async () => { await controller.confirm({ query: "원문", kind: "specific", generation: 0,
     session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") }); });
+  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
+  expect(host.querySelector('[aria-label="닫기"]')).not.toBeNull();
   expect(views()).toHaveLength(1);
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="닫기"]')!.click());
+  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
   const marker = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(b => b.textContent === "결과4")!;
   await act(async () => marker.click());
-  expect(host.querySelector('[aria-label="검색 장소 미리보기"]')).toBeNull();
+  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
+  expect(host.querySelector('[aria-label="닫기"]')).not.toBeNull();
   expect(views()).toHaveLength(2);
   expect(views().at(-1)![1].rank_bucket).toBeUndefined();
 });
+
 it("web pins preview Text Search data without fetching detail; arrow opens detail with original rank", async () => {
   await render(false);
   boundary.page.mockResolvedValue({ items, nextPageToken: null });
@@ -473,4 +485,43 @@ it("discover ownership cancels pending search without showing its anchor", async
       ([event]) => event === "view_search_results",
     ),
   ).toHaveLength(0);
+});
+
+it("selected preview label receives marker priority and transfers it to the next selection", async () => {
+  await render(false);
+  boundary.page.mockResolvedValue({ items, nextPageToken: null });
+  await act(async () => { await controller.confirm({ query: "카페", kind: "whole", session: null, generation: 0 }); });
+  const markers = () => [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")];
+  const first = () => markers().find(el => el.textContent === "결과1")!;
+  const second = () => markers().find(el => el.textContent === "결과2")!;
+  await act(async () => first().click());
+  expect(Number(first().dataset.priority)).toBeGreaterThan(Number(second().dataset.priority || 0));
+  expect(host.querySelector("[data-search-place-preview]")?.textContent).toContain("결과1");
+  await act(async () => second().click());
+  expect(Number(second().dataset.priority)).toBeGreaterThan(Number(first().dataset.priority || 0));
+  expect(host.querySelector("[data-search-place-preview]")?.textContent).toContain("결과2");
+});
+
+it.each(["whole", "specific"] as const)("%s search resets discover filters without losing search ownership or results", async kind => {
+  await render(false);
+  const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === text)!;
+  await act(async () => button("음식점").click());
+  await act(async () => button("영업 중").click());
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!.click());
+  await act(async () => button("4.5 이상").click());
+  await act(async () => { useMapPinsFocusStore.getState().claimFocus("discover"); });
+  boundary.page.mockResolvedValue({ items, nextPageToken: null });
+  await act(async () => {
+    await controller.confirm({ query: "원문", kind, generation: 0,
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") });
+  });
+  expect(host.querySelector('[aria-label="카테고리 필터 초기화"]')).toBeNull();
+  expect(button("호텔")).toBeDefined();
+  expect(useMapPinsFocusStore.getState().focus).toBe("search");
+  expect(usePlaceSearchStore.getState().status).toBe("done");
+  expect(useSearchMapPinsStore.getState().pins.length).toBeGreaterThan(0);
+  expect(host.querySelectorAll('[data-marker]').length).toBeGreaterThan(0);
+  await act(async () => button("음식점").click());
+  expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("평점");
+  expect(button("영업 중").getAttribute("aria-pressed")).toBe("false");
 });

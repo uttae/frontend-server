@@ -1,41 +1,47 @@
 "use client";
 
-import { ArrowRight, Star, X } from "lucide-react";
 import type { PlaceSearchResult } from "@/hooks/usePlacesSearch";
+import { MapSearchIcon } from "./MapSearchIcon";
 
-/** Text Search 응답만 표시한다. 상세 조회는 화살표를 누른 뒤 기존 패널이 담당한다. */
+/** Preview uses available result data; only the arrow opens the existing detail panel. */
 export function SearchPlacePreview({ place, onOpenDetail, onClose }: Readonly<{
   place: PlaceSearchResult;
   onOpenDetail: () => void;
   onClose: () => void;
 }>) {
-  let openingStatus = "";
-  if (place.isOpen != null) openingStatus = place.isOpen ? "영업 중" : "영업 종료";
+  const openingStatus = place.isOpen == null ? null : place.isOpen ? "영업 중" : "영업 종료";
   return (
-    <div data-search-place-preview className="w-[264px] max-w-full p-3 font-sans text-text">
-      <div className="flex items-start gap-2">
-        <h3 className="min-w-0 flex-1 text-body-m-emphasis break-words">{place.name}</h3>
-        <button type="button" onClick={onClose} aria-label="미리보기 닫기"
-          className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded text-icon-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
-          <X size={18} aria-hidden />
-        </button>
-      </div>
-      {place.category ? <p className="mt-1 text-caption-m-regular text-text-subtle">{place.category}</p> : null}
-      {place.rating != null ? (
-        <div className="mt-2 flex items-center gap-1 text-caption-m-regular">
-          <Star size={14} aria-hidden className="fill-amber-400 text-amber-400" />
-          <span className="font-semibold">{place.rating.toFixed(1)}</span>
-          {place.userRatingCount != null ? <span className="text-text-subtle">({place.userRatingCount.toLocaleString()}개)</span> : null}
+    <div data-search-place-preview className="w-[260px] max-w-full rounded-lg bg-fill-subtle px-4 pb-4 pt-3.5 font-sans text-text">
+      <div className="flex items-start justify-between">
+        <h3 title={place.name} className="min-w-0 flex-1 truncate text-title-s">{place.name}</h3>
+        <div className="relative size-[26px] shrink-0">
+          <button type="button" onClick={onClose} aria-label="미리보기 닫기"
+            className="absolute -right-1 -top-1 flex size-6 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
+            <MapSearchIcon name="close"/>
+          </button>
         </div>
-      ) : null}
-      <div className="mt-2 flex items-center justify-between gap-3">
-        <span className="text-caption-m-regular text-text-subtle">
-          {openingStatus}
-        </span>
-        <button type="button" onClick={onOpenDetail} aria-label={`${place.name} 상세정보 보기`}
-          className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary text-text-inverse hover:bg-primary/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-          <ArrowRight size={18} aria-hidden />
-        </button>
+      </div>
+      <div className="flex items-end gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
+          {place.category || openingStatus ? (
+            <p className="truncate text-caption-l-regular text-text-subtle">
+              {[place.category, openingStatus].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
+          {place.rating != null ? (
+            <div className="flex items-center gap-px text-caption-l-regular">
+              <MapSearchIcon name="star"/>
+              <span className="text-caption-l-emphasis">{place.rating.toFixed(1)}</span>
+              {place.userRatingCount != null ? <span className="ml-px text-text-subtle">({place.userRatingCount.toLocaleString()}개)</span> : null}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex size-11 shrink-0 items-end justify-end">
+          <button type="button" onClick={onOpenDetail} aria-label={`${place.name} 상세정보 보기`}
+            className="flex size-8 cursor-pointer items-center justify-center rounded-full bg-primary shadow-[0_2px_10px_#0000001a] hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+            <MapSearchIcon name="arrow-right"/>
+          </button>
+        </div>
       </div>
     </div>
   );

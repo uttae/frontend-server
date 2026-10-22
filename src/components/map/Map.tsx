@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Bookmark } from "lucide-react";
 import {
@@ -21,6 +21,7 @@ import {
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   MAP_PAN_RESTRICTION,
+  moveMapTo,
   normalizeGooglePlaceResourceId,
   panToWithinWorld,
   readDestinationLatLngFromSession,
@@ -35,6 +36,7 @@ import {
   readRoomMapViewport,
   writeRoomMapViewport,
 } from "@/lib/map-room-viewport-storage";
+import { MAP_DETAIL_PANEL_COVER_WIDTH_PX } from "@/lib/layout-tokens";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
@@ -50,7 +52,7 @@ import { useRoomDetail } from "@/hooks/useRoomDetail";
 import { useRoomsList } from "@/hooks/useRooms";
 import { RouteIcon } from "@/assets/icons";
 import { MapPinIcon } from "@/components/icons";
-import { MapPinWithPlaceName } from "@/components/map/MapPinWithPlaceName";
+import { MapPinWithPlaceName, MapPlaceName } from "@/components/map/MapPinWithPlaceName";
 import { MapBookmarkPins } from "./MapBookmarkPins";
 import {
   MAP_PIN_SELECTED_DISPLAY_SIZE_PX,
@@ -62,6 +64,8 @@ import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
 import { RouteViewCameraController } from "./RouteViewCameraController";
 import { MapDiscoverPlaces } from "./MapDiscoverPlaces";
 import { PlanItineraryMapRoutes, type PlanItineraryRouteDay } from "./PlanItineraryMapRoutes";
+import { PlanRouteStepper } from "./PlanRouteStepper";
+import { useWebPlanRouteMode } from "./useWebPlanRouteMode";
 import type { OpenValue, RatingValue } from "./map-filters";
 
 /** 모바일 경로 보기 — 고른 일차만 그리고, 카드 선택에 맞춰 지도를 옮긴다 */
@@ -93,7 +97,10 @@ export type MapRouteView = PlanItineraryRouteDay & {
 
 // ─── 웹 일정에서 고른 장소로 지도 이동 ─────────────────────────────────────────
 
-/** 일정 카드·핀으로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동) */
+/**
+ * 일정 카드·핀·장소 이동 스테퍼로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동).
+ * 지도 핀으로 고르면 함께 연 상세(`SelectedPlaceController`)도 같은 곳으로 옮기는데, 같은 곳으로 가는 이동은 하나로 이어진다
+ */
 function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null }>) {
   const map = useMap();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -103,7 +110,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
   useEffect(() => {
     if (!map || focusSeq === null || lat === undefined || lng === undefined) return;
-    panToWithinWorld(map, { lat, lng });
+    return moveMapTo(map, { lat, lng });
   }, [map, focusSeq, lat, lng]);
 
   return null;
@@ -113,6 +120,7 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
 
 function SelectedPlaceController() {
   const map = useMap();
+  const { isMobileDevice } = useMobileView();
   const { selectedPlace, placeSelectionCameraRef } = useSelectedPlace();
 
   useEffect(() => {
@@ -121,16 +129,23 @@ function SelectedPlaceController() {
     placeSelectionCameraRef.current = "full";
 
     if (mode === "none") return;
-    panToWithinWorld(map, selectedPlace.location);
-    if (mode === "full") {
-      map.setZoom(16);
+    const zoom = mode === "full" ? 16 : undefined;
+    // 모바일은 아직 구글 이동(`panTo`)을 그대로 쓴다
+    if (isMobileDevice) {
+      panToWithinWorld(map, selectedPlace.location);
+      if (zoom !== undefined) map.setZoom(zoom);
+      return;
     }
-  }, [map, selectedPlace?.location, placeSelectionCameraRef]);
+    moveMapTo(map, selectedPlace.location, { zoom });
+  }, [map, isMobileDevice, selectedPlace?.location, placeSelectionCameraRef]);
 
   return null;
 }
 
 const VIEWPORT_PERSIST_DEBOUNCE_MS = 400;
+
+/** 오른쪽 아래 확대·축소(+/−) 자리 — 지도 끝 24 + 버튼 40 + 간격 12. 장소 이동 스테퍼가 이보다 오른쪽으로 가지 않는다 */
+const ZOOM_CONTROL_CLEARANCE_PX = 24 + 40 + 12;
 
 /** bootstrap 복원 직후 Zustand `mapCenter`·줌을 검색/일정 UI와 맞춤 */
 function MapBootstrapSync({
@@ -255,10 +270,12 @@ function releaseSearchForMapSelection() {
   useSearchRecenterStore.getState().clearSearchSnapshot();
 }
 
-const SEARCH_PREVIEW_OFFSET: [number, number] = [0, -40];
+// Keep a small visual gap between the preview tail and the selected pin.
+const SEARCH_PREVIEW_GAP_OFFSET: [number, number] = [0, -4];
 
 function MapSearchResultPins() {
   const map = useMap();
+  const [previewMarker, setPreviewMarker] = useState<google.maps.marker.AdvancedMarkerElement | null>(null);
   const pins = useSearchMapPinsStore((s) => s.pins);
   const pinsFocus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
@@ -268,18 +285,21 @@ function MapSearchResultPins() {
   const status = usePlaceSearchStore((s) => s.status);
   const kind = usePlaceSearchStore((s) => s.confirmationKind);
   const fittedItemsRef = useRef<typeof items | null>(null);
-  const preview = !isMobileDevice && kind === "whole" && !selectedPlace
+  const preview = pinsFocus === "search" && !isMobileDevice && kind === "whole" && !selectedPlace
     ? items.find((item) => item.googlePlaceId === searchSelectedId)
     : undefined;
   const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
+
+  useEffect(() => {
+    if (map && preview) panToWithinWorld(map, preview.location);
+  }, [map, preview]);
 
   // 전체 검색 결과가 준비되면 첫 추천 대신 실제 결과들이 보이도록 맞춘다.
   useEffect(() => {
     if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
     fittedItemsRef.current = items;
     if (items.length === 1) {
-      panToWithinWorld(map, items[0].location);
-      map.setZoom(16);
+      moveMapTo(map, items[0].location, { zoom: 16 });
     } else {
       const bounds = new google.maps.LatLngBounds();
       items.forEach((item) => bounds.extend(item.location));
@@ -296,6 +316,9 @@ function MapSearchResultPins() {
         .map((pin) => (
           <AdvancedMarker
             key={pin.googlePlaceId}
+            ref={pin.googlePlaceId === preview?.googlePlaceId ? setPreviewMarker : undefined}
+            zIndex={pin.googlePlaceId === searchSelectedId ? 1000 : 0}
+            title={pin.name}
             position={{ lat: pin.lat, lng: pin.lng }}
             onClick={(e) => {
               e.stop();
@@ -326,8 +349,8 @@ function MapSearchResultPins() {
           </AdvancedMarker>
         ))}
       {preview ? (
-        <InfoWindow key={preview.googlePlaceId} position={preview.location} pixelOffset={SEARCH_PREVIEW_OFFSET}
-          maxWidth={280} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
+        <InfoWindow key={preview.googlePlaceId} anchor={previewMarker} pixelOffset={SEARCH_PREVIEW_GAP_OFFSET}
+          maxWidth={260} shouldFocus={false} headerDisabled ariaLabel={`${preview.name} 미리보기`}
           onClose={() => {
             if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
               usePlaceSearchStore.getState().select(null);
@@ -350,9 +373,11 @@ function MapSearchResultPins() {
 export default function TripMap({
   routeView,
   onOpenRouteView,
+  search,
 }: {
   /** 있으면 경로 보기 — 검색·필터, 북마크·탐색 핀, 다른 일차 경로를 숨긴다 */
   routeView?: MapRouteView;
+  search?: ReactNode;
   /** 있으면 지도 왼쪽 아래에 경로 보기 버튼을 둔다(모바일 지도) */
   onOpenRouteView?: () => void;
 } = {}) {
@@ -361,9 +386,10 @@ export default function TripMap({
   const isPlanPage = isPlanPath(pathname ?? "") || isMobileMapPathname(pathname ?? "");
   const planStopPlaceIds = usePlanItineraryStopNormalizedPlaceIds(isPlanPage);
 
-  const { setSelectedPlace } = useSelectedPlace();
+  const { selectedPlace, setSelectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
+  const planRouteMode = useWebPlanRouteMode();
   const setMapCamera = useMapCenterStore((s) => s.setMapCamera);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -371,6 +397,14 @@ export default function TripMap({
   const [rating, setRating] = useState<RatingValue>("all");
   const [openNow, setOpenNow] = useState<OpenValue>("all");
   const [showBookmarkPins, setShowBookmarkPins] = useState(true);
+
+  // Text search takes over the map at request start, including autocomplete selection.
+  useEffect(() => useMapPinsFocusStore.subscribe((state, previous) => {
+    if (state.focus !== "search" || state.writeEpoch === previous.writeEpoch) return;
+    setSelectedCategoryId(null);
+    setRating("all");
+    setOpenNow("all");
+  }), []);
 
   const currentRoomId = useSessionStore((s) => s.currentRoomId);
   const { data: roomsData, isFetched: roomsFetched } = useRoomsList();
@@ -516,7 +550,7 @@ export default function TripMap({
   );
 
   return (
-    <div className="relative h-full min-h-0 w-full min-w-0">
+    <div className="relative h-full min-h-0 w-full min-w-0" data-map-controls-inset={isMobileDevice ? undefined : ""}>
       <div className="absolute inset-0 min-h-0 overflow-hidden">
         {!bootstrap.ready ? (
           <div
@@ -570,18 +604,22 @@ export default function TripMap({
 
           {!routeView && <SelectedPlaceMarker />}
 
-          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다 */}
+          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다.
+              오른쪽은 +/−와 같이 지도 끝에서 24px(globals.css `[data-map-controls-inset]`) */}
           {routeView || isMobileDevice ? null : (
             <MapControl position={ControlPosition.RIGHT_BOTTOM}>
-              <div className="mr-2.5">{bookmarkToggle}</div>
+              <div className="mr-6">{bookmarkToggle}</div>
             </MapControl>
           )}
           </GoogleMap>
         )}
       </div>
 
+      {/* 웹 동선보기는 숨기기만 한다 — 상세 패널 위치를 계속 재서 필터 한 줄 아래(최솟값)에 두고, 풀면 고른 카테고리·필터 그대로 보인다 */}
       {routeView ? null : (
         <MapDiscoverToolbar
+          hidden={planRouteMode}
+          search={search}
           selectedCategoryId={selectedCategoryId}
           onSelectCategory={setSelectedCategoryId}
           rating={rating}
@@ -591,9 +629,27 @@ export default function TripMap({
         />
       )}
 
+      {/* 웹 동선보기 장소 이동 — 지도 아래 가운데, 다른 지도 버튼처럼 아래 24px.
+          상세 패널이 열리면 패널 오른쪽 끝~지도 오른쪽 끝의 가운데로 옮긴다.
+          오른쪽 칸은 +/− 자리만큼 줄어들지 않아, 지도가 좁아지면 +/−에 밀려 왼쪽으로 넘치고(justify-end)
+          z-[16]이 상세 패널(`MapWithDetailPanel` z-20)보다 낮아 패널 뒤로 가려진다 */}
+      {bootstrap.ready && !routeView && !isMobileDevice && isPlanPage ? (
+        <div
+          style={{
+            paddingLeft: selectedPlace ? MAP_DETAIL_PANEL_COVER_WIDTH_PX : 0,
+            gridTemplateColumns: `minmax(0, 1fr) auto minmax(${ZOOM_CONTROL_CLEARANCE_PX}px, 1fr)`,
+          }}
+          className="pointer-events-none absolute inset-x-0 bottom-6 z-[16] grid justify-end transition-[padding] duration-300 ease-out"
+        >
+          <div className="col-start-2">
+            <PlanRouteStepper roomId={currentRoomId} />
+          </div>
+        </div>
+      ) : null}
+
       {!bootstrap.ready || routeView ? null : (
         <>
-          <MapSearchHereButton discoverCategoryId={selectedCategoryId} />
+          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} />}
           {isMobileDevice ? (
             <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
               {onOpenRouteView ? (
@@ -661,8 +717,11 @@ function SelectedPlaceMarker() {
           {selectedPlace?.location && !selectedIsPlanFocus && (
             <AdvancedMarker
               position={selectedPlace.location}
+              zIndex={1000}
+              title={selectedPlace.name}
               onClick={(e) => e.stop()}
             >
+              <div className="flex flex-col items-center">
               <span
                 className={`block drop-shadow-md ${colorClass}`}
                 style={bookmarkColor ? { color: bookmarkColor } : undefined}
@@ -672,6 +731,8 @@ function SelectedPlaceMarker() {
                   {...mapPinBodyBorderProps}
                 />
               </span>
+              {!isMobileDevice ? <MapPlaceName name={selectedPlace.name}/> : null}
+              </div>
             </AdvancedMarker>
           )}
   </>;

@@ -31,6 +31,9 @@ SERVICE_CONTEXT.md
 # Local git worktrees used for isolated feature development
 .worktrees/
 
+# Claude Code personal settings
+.claude/settings.local.json
+
 # misc
 .DS_Store
 .idea/

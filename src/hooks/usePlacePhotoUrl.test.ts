@@ -51,6 +51,30 @@ beforeEach(() => {
 });
 
 describe("usePlacePhotoUrlQuery", () => {
+  it("requests a cold single photo directly and reuses the shared cache", async () => {
+    const queryClient = new QueryClient();
+    registerQueryClient(queryClient);
+    requestPlacePhotoUrlsBatchMock.mockResolvedValue([]);
+    requestPlacePhotoUrlMock.mockResolvedValue("https://cdn.example/single.jpg");
+    usePlacePhotoUrlQuery(" ChIJ-single ");
+    const options = useQueryMock.mock.lastCall![0];
+    await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/single.jpg");
+    await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/single.jpg");
+    expect(requestPlacePhotoUrlMock).toHaveBeenCalledExactlyOnceWith("ChIJ-single");
+    expect(requestPlacePhotoUrlsBatchMock).not.toHaveBeenCalled();
+  });
+
+  it("reuses a batch-seeded photo without issuing a single request", async () => {
+    const queryClient = new QueryClient();
+    registerQueryClient(queryClient);
+    requestPlacePhotoUrlsBatchMock.mockResolvedValue([{status:"OK",googlePlaceId:"ChIJ-seeded",photoUrl:"https://cdn.example/seeded.jpg"}]);
+    await fetchAndSeedPlacePhotoUrls(["ChIJ-seeded"],queryClient);
+    usePlacePhotoUrlQuery("ChIJ-seeded");
+    await expect(queryClient.fetchQuery(useQueryMock.mock.lastCall![0])).resolves.toBe("https://cdn.example/seeded.jpg");
+    expect(requestPlacePhotoUrlMock).not.toHaveBeenCalled();
+    expect(requestPlacePhotoUrlsBatchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("authoritative empty 항목만 캐시하고 per-item FAILED는 cache miss로 남긴다", async () => {
     const queryClient = new QueryClient();
     registerQueryClient(queryClient);
@@ -115,17 +139,10 @@ describe("usePlacePhotoUrlQuery", () => {
     );
   });
 
-  it("FAILED 뒤 단건 GET 재시도에서는 batch 요청을 증폭하지 않는다", async () => {
+  it("단건 GET 실패 재시도에서는 batch 요청을 보내지 않는다", async () => {
     const queryClient = new QueryClient();
     registerQueryClient(queryClient);
     const failedId = "ChIJ-single-retry";
-    requestPlacePhotoUrlsBatchMock.mockResolvedValueOnce([
-      {
-        status: "FAILED",
-        googlePlaceId: failedId,
-        errorCode: "UPSTREAM_TIMEOUT",
-      },
-    ]);
     requestPlacePhotoUrlMock
       .mockRejectedValueOnce(new Error("single request failed once"))
       .mockRejectedValueOnce(new Error("single request failed twice"))
@@ -137,7 +154,7 @@ describe("usePlacePhotoUrlQuery", () => {
     await expect(queryClient.fetchQuery(queryOptions)).resolves.toBe(
       "https://cdn.example/retried.jpg",
     );
-    expect(requestPlacePhotoUrlsBatchMock).toHaveBeenCalledTimes(1);
+    expect(requestPlacePhotoUrlsBatchMock).not.toHaveBeenCalled();
     expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(3);
   });
 
@@ -213,42 +230,25 @@ describe("usePlacePhotoUrlQuery", () => {
     }
   });
 
-  it("명시적 no-photo 결과는 5분만 캐시한 뒤 batch로 다시 조회한다", async () => {
+  it("single no-photo is cached for five minutes then retried with a single GET", async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-02T00:00:00.000Z"));
-
     try {
       const queryClient = new QueryClient();
       registerQueryClient(queryClient);
       const id = "ChIJ-no-photo";
-      requestPlacePhotoUrlsBatchMock.mockResolvedValueOnce([
-        { status: "OK", googlePlaceId: id, photoUrl: null },
-      ]);
-
+      requestPlacePhotoUrlMock.mockResolvedValueOnce("").mockResolvedValueOnce("https://cdn.example/available-later.jpg");
       usePlacePhotoUrlQuery(id);
-      const queryOptions = useQueryMock.mock.lastCall?.[0];
-
-      await expect(queryClient.fetchQuery(queryOptions)).resolves.toBe("");
-      expect(requestPlacePhotoUrlMock).not.toHaveBeenCalled();
-      expect(requestPlacePhotoUrlsBatchMock).toHaveBeenCalledTimes(1);
-
-      vi.advanceTimersByTime(5 * 60 * 1000 + 1);
-      requestPlacePhotoUrlsBatchMock.mockResolvedValueOnce([
-        {
-          status: "OK",
-          googlePlaceId: id,
-          photoUrl: "https://cdn.example/available-later.jpg",
-        },
-      ]);
-
-      await expect(queryClient.fetchQuery(queryOptions)).resolves.toBe(
-        "https://cdn.example/available-later.jpg",
-      );
-      expect(requestPlacePhotoUrlsBatchMock).toHaveBeenCalledTimes(2);
-      expect(requestPlacePhotoUrlMock).not.toHaveBeenCalled();
-    } finally {
-      vi.useRealTimers();
-    }
+      const options = useQueryMock.mock.lastCall![0];
+      await expect(queryClient.fetchQuery(options)).resolves.toBe("");
+      vi.advanceTimersByTime(4 * 60 * 1000);
+      await expect(queryClient.fetchQuery(options)).resolves.toBe("");
+      expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(60 * 1000 + 1);
+      await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/available-later.jpg");
+      expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(2);
+      expect(requestPlacePhotoUrlsBatchMock).not.toHaveBeenCalled();
+    } finally { vi.useRealTimers(); }
   });
 
   it("만료된 no-photo 뒤 batch FAILED면 낡은 빈 값을 쓰지 않고 단건 fallback한다", async () => {
@@ -274,11 +274,13 @@ describe("usePlacePhotoUrlQuery", () => {
         "https://cdn.example/single-fallback.jpg",
       );
 
+      await fetchAndSeedPlacePhotoUrls([id], queryClient);
       usePlacePhotoUrlQuery(id);
       const queryOptions = useQueryMock.mock.lastCall?.[0];
       await expect(queryClient.fetchQuery(queryOptions)).resolves.toBe("");
 
       vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+      await fetchAndSeedPlacePhotoUrls([id], queryClient);
 
       await expect(queryClient.fetchQuery(queryOptions)).resolves.toBe(
         "https://cdn.example/single-fallback.jpg",

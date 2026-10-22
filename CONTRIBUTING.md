@@ -14,8 +14,22 @@ docs: 개발자 온보딩 보완
 
 - `main`은 배포 기준 브랜치입니다. 직접 push하지 않고 모든 변경을 PR로 병합합니다.
 - `dev`는 기능을 통합하고 릴리스 전에 함께 검증하는 브랜치입니다.
-- 일반 작업은 최신 `dev`에서 `feature/<topic>` 브랜치를 만들고 `dev`를 대상으로 PR을 엽니다. 브랜치는 하나의 작업 단위로 짧게 유지하며, squash 병합이 끝난 feature 브랜치는 다시 사용하지 않습니다.
-- 긴급 수정은 최신 `main`에서 `hotfix/<topic>` 브랜치를 만들고 `main`을 대상으로 PR을 엽니다.
+- 작업 브랜치는 아래 `브랜치 종류` 표의 기준 브랜치 최신 상태에서 만들고, 같은 표의 PR 대상으로 PR을 엽니다.
+- 브랜치는 하나의 작업 단위로 짧게 유지하며, squash 병합이 끝난 브랜치는 다시 사용하지 않습니다.
+
+## 브랜치 종류
+
+| 브랜치 | 용도 | 기준 브랜치 | PR 대상 | 커밋·PR 타입 |
+| :-- | :-- | :-- | :-- | :-- |
+| `feature/<topic>` | 새 기능, 화면·디자인 변경 | `dev` | `dev` | `feat` |
+| `fix/<topic>` | 다음 배포에 함께 나가도 되는 버그 수정 | `dev` | `dev` | `fix` |
+| `refactor/<topic>` | 동작이 바뀌지 않는 구조 개선 | `dev` | `dev` | `refactor` |
+| `chore/<topic>` | 빌드·설정·의존성·개발 도구 | `dev` | `dev` | `chore` |
+| `docs/<topic>` | 문서만 변경 | `dev` | `dev` | `docs` |
+| `hotfix/<topic>` | 운영 장애처럼 바로 배포해야 하는 수정 | `main` | `main` | `fix` |
+
+- `<topic>`은 영어 소문자 kebab-case로 짧게 씁니다. 예: `feature/calendar-design`, `fix/logout-session`
+- 표에 없는 접두사(`feat/`, `codex/` 등)로 새 브랜치를 만들지 않습니다.
 
 ## 공통 브랜치 흐름
 
@@ -23,7 +37,7 @@ docs: 개발자 온보딩 보완
 
 | 병합 방향 | 방식 |
 | :-- | :-- |
-| `feature/*` → `dev` | Squash and merge |
+| `feature/*`, `fix/*`, `refactor/*`, `chore/*`, `docs/*` → `dev` | Squash and merge |
 | `dev` → `main` | Create a merge commit |
 | `hotfix/*` → `main` | Squash and merge |
 | `main` → `dev` 백머지 | Create a merge commit |
@@ -39,3 +53,21 @@ docs: 개발자 온보딩 보완
 - main으로 직접 merge 전 최소 1명의 리뷰가 필요하다.
 - PR 본문은 .github/pull_request_template.md 형식을 그대로 따른다.
 - PR 본문에 변경 이유와 테스트 방법을 간략히 적는다.
+- PR을 열기 전에 대상 브랜치의 최신 상태를 작업 브랜치에 merge로 반영한다. 이미 push한 작업 브랜치는 rebase하거나 force-push하지 않는다.
+- 병합은 리뷰어가 확인한 뒤 위 `공통 브랜치 흐름`의 방식으로 한다.
+
+## PR 전 검증
+
+- 작업 중에는 전체 테스트를 돌리지 않는다. 필요한 확인만 한다.
+- PR을 열기 전에 `npm run lint` → `npm test` → `npm run build`를 한 번 실행하고, 결과를 PR 본문 테스트 칸에 체크한다.
+- 문서(`*.md`)·`.claude/`·`.github/`만 바뀐 PR은 생략할 수 있다. 생략하면 테스트 칸에 생략했다고 적는다.
+
+## 작업 공유
+
+| 위치 | 내용 |
+| :-- | :-- |
+| 노션 작업 페이지 | 작업 배경(왜 시작했는지), 논의 내용, 전후 스크린샷, 개발 메모 |
+| PR | 변경 내용, 짧은 변경 이유, 테스트 결과, 노션 페이지 링크 |
+| 디스코드 | PR을 열면 GitHub Actions가 자동으로 알린다. 작업 내역을 따로 보내지 않는다. |
+
+- 노션 페이지가 없는 작은 작업은 PR 본문의 `노션` 칸을 지운다.

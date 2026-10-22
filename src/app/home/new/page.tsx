@@ -18,7 +18,6 @@ import {
   isTripDateRangeInvalid,
   isTripDestinationsValid,
   ROOM_TRIP_TITLE_MAX_LENGTH,
-  tripEndDateMinYmd,
 } from "@/lib/rooms/trip-form";
 import { roomDetailQueryKey } from "@/lib/query-keys";
 import { useSessionStore } from "@/stores/session-store";
@@ -35,7 +34,6 @@ export default function NewTripPage() {
   const { mutate: createRoom, isPending, error } = useCreateRoom();
 
   const todayYmd = formatDateYmd(new Date());
-  const endDateMin = tripEndDateMinYmd(startDate, todayYmd);
   const dateRangeInvalid = isTripDateRangeInvalid(startDate, endDate);
 
   const canSubmit =
@@ -96,7 +94,6 @@ export default function NewTripPage() {
           values={{ title, destinations, startDate, endDate }}
           autoFocusTitle
           startDateMin={todayYmd}
-          endDateMin={endDateMin}
           onTitleChange={setTitle}
           onDestinationsChange={setDestinations}
           onStartDateChange={setStartDate}

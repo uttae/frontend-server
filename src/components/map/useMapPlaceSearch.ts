@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useEffectEvent, useRef } from "react";
+import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
@@ -48,6 +48,7 @@ export function useMapPlaceSearch(mobile: boolean) {
   const legacyNonce = useMobileMapSearchStore((s) => s.textSearchNonce);
   const seenLegacyNonce = useRef(legacyNonce);
   const seenRecenter = useRef(recenterId);
+  const [inputResetKey, setInputResetKey] = useState(0);
 
   useEffect(() => {
     if (usePlaceSearchStore.getState().scope !== scopeKey) {
@@ -65,6 +66,16 @@ export function useMapPlaceSearch(mobile: boolean) {
     useMapPinsFocusStore.getState().releaseSearchFocusIfActive();
     setSelectedPlace(null);
   }
+
+  const switchToDiscover = useEffectEvent(() => {
+    clearSearch();
+    useMobileMapSearchStore.getState().clearTextSearch();
+    setInputResetKey((key) => key + 1);
+  });
+  useEffect(() => useMapPinsFocusStore.subscribe((state, previous) => {
+    if (state.focus === "discover" && state.writeEpoch !== previous.writeEpoch)
+      switchToDiscover();
+  }), []);
 
   function invalidate() {
     const selectedId = usePlaceSearchStore.getState().selectedId;
@@ -242,7 +253,7 @@ export function useMapPlaceSearch(mobile: boolean) {
     }
   }, [legacyNonce, legacyQuery]);
 
-  return { confirm, invalidate, clearSearch, scopeKey };
+  return { confirm, invalidate, clearSearch, scopeKey, inputResetKey };
 }
 
 function toAnchor(

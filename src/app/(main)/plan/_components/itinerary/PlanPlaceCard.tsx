@@ -27,7 +27,11 @@ import {
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
-import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
+import {
+  PLAN_MAP_FOCUS_NO_LOCATION_MESSAGE,
+  planPlaceFocusTarget,
+  usePlanMapFocusStore,
+} from "@/stores/plan-map-focus-store";
 
 import { PlanItemMemoEditor, PlanItemMemoReadOnly } from "./PlanItemMemoForm";
 import { PlanItemTimeEditor } from "./PlanItemTimeForm";
@@ -80,9 +84,10 @@ export function PlanPlaceCard({
       s.focus.scheduleId === focusScheduleId &&
       s.focus.itemId === place.itemId,
   );
-  /** 지도 핀으로 고른 경우에만 값이 있다 — 그때 일정 목록을 이 카드로 스크롤한다 */
-  const focusSeqFromMap = usePlanMapFocusStore((s) =>
-    s.focus?.source === "map" &&
+  /** 카드가 아닌 곳(지도 핀·장소 이동 스테퍼)에서 고른 경우에만 값이 있다 — 그때 일정 목록을 이 카드로 스크롤한다 */
+  const focusSeqToReveal = usePlanMapFocusStore((s) =>
+    s.focus !== null &&
+    s.focus.source !== "card" &&
     s.focus.roomId === focusRoomId &&
     s.focus.scheduleId === focusScheduleId &&
     s.focus.itemId === place.itemId
@@ -91,10 +96,10 @@ export function PlanPlaceCard({
   );
   const articleRef = useRef<HTMLElement>(null);
   useEffect(() => {
-    if (focusSeqFromMap === null) return;
+    if (focusSeqToReveal === null) return;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     articleRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "center" });
-  }, [focusSeqFromMap]);
+  }, [focusSeqToReveal]);
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const blockCardDragRef = useRef(false);
   const [thumbnailRef, thumbnailInViewport] = useInViewport<HTMLElement>();
@@ -202,24 +207,12 @@ export function PlanPlaceCard({
         setSelectedPlace(null);
         return;
       }
-      const loc = place.location;
-      const hasLocation =
-        loc != null &&
-        typeof loc.lat === "number" &&
-        typeof loc.lng === "number" &&
-        Number.isFinite(loc.lat) &&
-        Number.isFinite(loc.lng);
+      const target = planPlaceFocusTarget(place, focusRoomId, focusScheduleId, "card");
+      if (!target) return;
       // 일정에 넣은 장소는 상세를 보려는 게 아니라 위치를 보려는 것 — 상세(조회 포함) 대신 카드·지도 핀만 강조한다
       setSelectedPlace(null);
-      focusPlace({
-        roomId: focusRoomId,
-        scheduleId: focusScheduleId,
-        itemId: place.itemId,
-        googlePlaceId: place.googlePlaceId?.trim() || null,
-        location: hasLocation ? { lat: loc.lat, lng: loc.lng } : null,
-        source: "card",
-      });
-      if (!hasLocation) toast.info("지도에 표시할 위치 정보가 없어요.");
+      focusPlace(target);
+      if (!target.location) toast.info(PLAN_MAP_FOCUS_NO_LOCATION_MESSAGE);
     },
     [
       clearFocus,
@@ -227,9 +220,7 @@ export function PlanPlaceCard({
       focusRoomId,
       focusScheduleId,
       focused,
-      place.googlePlaceId,
-      place.itemId,
-      place.location,
+      place,
       setSelectedPlace,
     ],
   );
@@ -293,7 +284,7 @@ export function PlanPlaceCard({
       aria-label={hasTime ? `시간 ${timeRange} 수정` : "시간 설정"}
       className={cn(PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
     >
-      <TimeClockIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
+      <TimeClockIcon size={16} className={hasTime ? PLAN_PLACE_CARD_TW.actionIcon : PLAN_PLACE_CARD_TW.actionIconEmpty} />
       <span>{timeRange || "시간"}</span>
     </button>
   ) : null;
@@ -429,7 +420,8 @@ export function PlanPlaceCard({
                     label="비용"
                     // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
                     className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
-                    icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
+                    // 금액이 있을 때만 파랑 — 버튼의 `data-filled`로 바꾼다
+                    icon={<CoinIcon size={16} className={cn(PLAN_PLACE_CARD_TW.actionIconEmpty, "group-data-filled:text-primary")} />}
                   />
                 )}
               </div>

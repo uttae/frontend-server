@@ -13,13 +13,43 @@
  */
 @custom-variant mobile (&:where(.is-mobile-device, .is-mobile-device *));
 
-/* 검색 말풍선은 Google 기본 여백·스크롤바 대신 본문에서 사방 12px을 확보한다. */
+/* 검색 말풍선의 여백·표면·그림자는 Figma 6156:14635 기준으로 맞춘다. */
 .gm-style-iw-c:has([data-search-place-preview]) {
+  border-radius: 8px;
+  background: var(--color-fill-subtle);
+  box-shadow: 0 2px 10px #0000001a;
   padding: 0 !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 padding을 검색 말풍선에서만 재정의한다. */
 }
 
 .gm-style-iw-d:has([data-search-place-preview]) {
   overflow: auto !important; /* NOSONAR: S9423 — Google Maps의 인라인 overflow:scroll에 의한 불필요한 스크롤바를 제거한다. */
+}
+
+/* 검색 추천은 기존 상세 패널(z-20) 위에서 선택할 수 있어야 한다. */
+.map-discover-toolbar:has(input[aria-expanded="true"]) {
+  z-index: 25;
+}
+
+/* 원본 말풍선 꼬리(14×12)를 Google 기본 삼각형 대신 사용한다. */
+.gm-style-iw-t:has([data-search-place-preview]) > .gm-style-iw-tc {
+  width: 14px;
+  height: 12px;
+  filter: drop-shadow(0 2px 5px #0000001a);
+}
+
+.gm-style-iw-t:has([data-search-place-preview]) > .gm-style-iw-tc::after {
+  inset: 0;
+  width: 14px;
+  height: 12px;
+  clip-path: none;
+  background: url("/map-search/pointer.svg") center / contain no-repeat;
+  transform: rotate(180deg);
+  box-shadow: none;
+}
+
+/* PC 지도 버튼은 지도 끝에서 아래·좌우 모두 24px — 확대·축소(+/−)의 아래는 저작권 줄과 기본 여백으로 이미 24px이라 오른쪽만 넓힌다. */
+[data-map-controls-inset] .gm-bundled-control {
+  margin-right: 24px !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 margin(10px)을 재정의한다. */
 }
 
 @layer base {
@@ -90,11 +120,12 @@ html:has([data-mobile-main-tabs]) {
 
 /* ============================================================
  * 디자인 토큰 — Figma "🐰디자인-디자인 시스템"(node 161:9) 기반
- * 정본: docs/design/tokens/tokens.css (손으로 관리 중)
+ * 값의 정본은 이 파일과 tailwind.config.js다. 쓰는 순서는 Design.md 1-1을 따른다.
  *
  * primitive(--gray-*, --blue-* …)는 semantic이 참조하는 원천 값이다.
- * 컴포넌트에서 직접 쓰지 말고 semantic(--color-*)만 사용할 것.
- * tailwind.config.js 에는 semantic만 등록되어 있다.
+ * 컴포넌트는 semantic(--color-*)을 쓰고, 맞는 semantic이 없을 때만
+ * primitive를 bg-[var(--gray-800)]처럼 직접 쓴다.
+ * tailwind.config.js 에는 semantic과 레거시 별칭(신규 사용 금지)이 등록되어 있다.
  * ============================================================ */
 :root {
   /* ---------- 1. PRIMITIVE ---------- */

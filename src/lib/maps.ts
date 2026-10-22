@@ -170,6 +170,92 @@ export function panToWithinWorld(
   map.panTo(target);
 }
 
+/** `panTo`가 애니메이션으로 옮기는 최대 거리 — 지도 한 화면(가로·세로) 대비 거리, 실측 1.5화면 */
+const PAN_ANIMATION_MAX_SCREENS = 1.5;
+/** `panTo`와 같은 이동 시간 — 화면 대비 거리에 비례한다(실측 0.66화면 약 0.55초, 1.4화면 약 1.1초) */
+const PAN_ANIMATION_BASE_MS = 100;
+const PAN_ANIMATION_MS_PER_SCREEN = 690;
+
+/** 지도마다 진행 중인 이동 — 새 이동이 오면 멈추고, 같은 곳으로 가는 중이면 이어서 둔다 */
+const activeMoves = new WeakMap<google.maps.Map, { target: google.maps.LatLngLiteral; stop: () => void }>();
+
+function isSameLatLng(a: google.maps.LatLngLiteral, b: google.maps.LatLngLiteral): boolean {
+  return Math.abs(a.lat - b.lat) < 1e-9 && Math.abs(a.lng - b.lng) < 1e-9;
+}
+
+/**
+ * PC 지도 이동은 모두 이 함수로 한다. 돌려준 함수로 멈춘다.
+ * - 줌을 바꾸면 구글 이동(`panTo` + `setZoom`)을 그대로 쓴다. 래스터 지도는 줌을 소수로 못 바꿔 직접 그릴 수 없다.
+ * - 경도 180도를 넘거나 1.5화면보다 멀면 바로 옮긴다({@link panToWithinWorld}, `panTo`와 같은 기준).
+ * - 그 밖에는 매 프레임 `moveCamera`로 옮긴다. `panTo` 애니메이션 중에는 지도가 화면 밖에서 숨겨 둔 Advanced Marker를
+ *   다시 보이지 않아 멀리 있던 핀이 도착한 뒤에야 켜지는데, 프레임마다 바로 옮기면 화면에 들어오는 대로 보인다.
+ *   범위·시간은 `panTo`와 같고, 사용자가 끌거나 확대·축소하거나 다른 곳에서 지도를 옮기면 멈춘다.
+ */
+export function moveMapTo(
+  map: google.maps.Map,
+  target: google.maps.LatLngLiteral,
+  { zoom }: { zoom?: number } = {},
+): () => void {
+  const currentZoom = map.getZoom();
+  const zoomChanges = zoom !== undefined && zoom !== currentZoom;
+  const active = activeMoves.get(map);
+  if (active && !zoomChanges && isSameLatLng(active.target, target)) return active.stop;
+  active?.stop();
+
+  const center = map.getCenter();
+  const projection = map.getProjection();
+  const from = center && projection ? projection.fromLatLngToPoint(center) : null;
+  const to = projection ? projection.fromLatLngToPoint(target) : null;
+  if (zoomChanges || currentZoom === undefined || !center || !projection || !from || !to || Math.abs(target.lng - center.lng()) > 180) {
+    panToWithinWorld(map, target);
+    // 같은 줌으로 `setZoom`하면 `panTo` 애니메이션이 끊겨 바로 옮겨지므로 줌이 바뀔 때만 부른다
+    if (zoomChanges) map.setZoom(zoom);
+    return () => {};
+  }
+  const div = map.getDiv();
+  const scale = 2 ** currentZoom;
+  const screens = Math.hypot(
+    ((to.x - from.x) * scale) / div.clientWidth,
+    ((to.y - from.y) * scale) / div.clientHeight,
+  );
+  // 숨겨진 지도(크기 0)면 NaN·무한대라 함께 바로 옮긴다
+  if (!(screens <= PAN_ANIMATION_MAX_SCREENS)) {
+    map.setCenter(target);
+    return () => {};
+  }
+  const duration = PAN_ANIMATION_BASE_MS + PAN_ANIMATION_MS_PER_SCREEN * screens;
+  const start = performance.now();
+  let frame = 0;
+  // 마지막으로 옮긴 위치 — 다음 프레임에 지도가 여기서 벗어나 있으면 다른 곳에서 옮긴 것
+  let placed = from;
+  const move = { target, stop: () => {} };
+  const stop = () => {
+    cancelAnimationFrame(frame);
+    listeners.forEach((listener) => listener.remove());
+    if (activeMoves.get(map) === move) activeMoves.delete(map);
+  };
+  move.stop = stop;
+  const step = (now: number) => {
+    const current = map.getCenter();
+    const at = current ? projection.fromLatLngToPoint(current) : null;
+    if (!at || Math.hypot(at.x - placed.x, at.y - placed.y) * scale > 2) {
+      stop();
+      return;
+    }
+    const t = Math.min(1, (now - start) / duration);
+    // 거의 일정하게 가다 끝에서 멈춘다(`panTo`의 감속과 비슷하게). 화면에서 직선으로 가도록 지도 좌표로 나눈다
+    const eased = 1 - (1 - t) ** 1.5;
+    placed = t < 1 ? new google.maps.Point(from.x + (to.x - from.x) * eased, from.y + (to.y - from.y) * eased) : to;
+    map.moveCamera({ center: t < 1 ? (projection.fromPointToLatLng(placed) ?? target) : target });
+    if (t < 1) frame = requestAnimationFrame(step);
+    else stop();
+  };
+  const listeners = [map.addListener("dragstart", stop), map.addListener("zoom_changed", stop)];
+  activeMoves.set(map, move);
+  frame = requestAnimationFrame(step);
+  return stop;
+}
+
 /** Google Places 리소스 id(`places/…`) 접두를 제거한 레거시 id */
 export function normalizeGooglePlaceResourceId(id: string): string {
   const prefix = "places/";

@@ -1,8 +1,10 @@
 import ArrowSortSvg from "@/assets/icons/arrow-sort.svg";
 import CalendarAddSvg from "@/assets/icons/calendar-add.svg";
+import CalendarSvg from "@/assets/icons/calendar.svg";
 import ChatSvg from "@/assets/icons/chat.svg";
 import ChevronDownSvg from "@/assets/icons/chevron-down.svg";
 import ChevronLeftSvg from "@/assets/icons/chevron-left.svg";
+import ChevronRightSvg from "@/assets/icons/chevron-right.svg";
 import CircleCancelSvg from "@/assets/icons/circle-cancel.svg";
 import CloseSvg from "@/assets/icons/close.svg";
 import CoinSvg from "@/assets/icons/coin.svg";
@@ -39,9 +41,11 @@ export type { IconProps } from "./create-icon";
 
 export const ArrowSortIcon = createIcon(ArrowSortSvg, "ArrowSortIcon");
 export const CalendarAddIcon = createIcon(CalendarAddSvg, "CalendarAddIcon");
+export const CalendarIcon = createIcon(CalendarSvg, "CalendarIcon");
 export const ChatIcon = createIcon(ChatSvg, "ChatIcon");
 export const ChevronDownIcon = createIcon(ChevronDownSvg, "ChevronDownIcon");
 export const ChevronLeftIcon = createIcon(ChevronLeftSvg, "ChevronLeftIcon");
+export const ChevronRightIcon = createIcon(ChevronRightSvg, "ChevronRightIcon");
 export const CircleCancelIcon = createIcon(CircleCancelSvg, "CircleCancelIcon");
 export const CloseIcon = createIcon(CloseSvg, "CloseIcon");
 export const CoinIcon = createIcon(CoinSvg, "CoinIcon");
