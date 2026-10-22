@@ -185,47 +185,6 @@ function MapBootstrapSync({
   return null;
 }
 
-/** 가로 월드 래핑(지도 타일 무한 복제) 시 마지막 유효 중심으로 되돌림 */
-function MapPreventHorizontalWrap() {
-  const map = useMap();
-  const lastValidCenterRef = useRef<google.maps.LatLngLiteral | null>(null);
-
-  useEffect(() => {
-    if (!map) return;
-
-    const listener = map.addListener("center_changed", () => {
-      const bounds = map.getBounds();
-      if (!bounds) return;
-
-      const ne = bounds.getNorthEast();
-      const sw = bounds.getSouthWest();
-      if (ne.lng() > sw.lng()) {
-        const c = map.getCenter();
-        if (c) {
-          lastValidCenterRef.current = { lat: c.lat(), lng: c.lng() };
-        }
-        return;
-      }
-
-      const last = lastValidCenterRef.current;
-      if (last) {
-        panToWithinWorld(map, last);
-      }
-    });
-
-    const c = map.getCenter();
-    if (c) {
-      lastValidCenterRef.current = { lat: c.lat(), lng: c.lng() };
-    }
-
-    return () => {
-      google.maps.event.removeListener(listener);
-    };
-  }, [map]);
-
-  return null;
-}
-
 // ─── 방 destination 변경 시 지도 동기화(설정 수정 등)·캐시 갱신 ───────────────
 
 function DestinationPanController({
@@ -590,7 +549,6 @@ export default function TripMap({
             zoom={bootstrap.zoom}
             roomId={currentRoomId}
           />
-          <MapPreventHorizontalWrap />
           <SelectedPlaceController />
           {!routeView && isMobileDevice ? <MobileSearchSelection /> : null}
           {/* 웹 일정에서 고른 장소로 이동 — 모바일(일반 지도·경로 보기)은 쓰지 않는다 */}
