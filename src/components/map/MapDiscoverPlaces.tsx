@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
 import {
   AdvancedMarker,
   useMap,
@@ -128,6 +128,8 @@ export function MapDiscoverPlaces({
 
   const searchSeqRef = useRef(0);
   const prevCategoryIdRef = useRef<string | null>(null);
+  // 요청 ID는 0으로 돌아가지 않는다. 마운트 때 값은 이미 처리한 요청으로 보고 새로 누른 요청만 검색한다
+  const seenRecenterIdRef = useRef(discoverRecenterRequestId);
 
   const runDiscoverSearch = useCallback(
     async (
@@ -312,8 +314,7 @@ export function MapDiscoverPlaces({
   ]);
 
   /** `현 위치 검색` 버튼 → discover 스냅샷 갱신·재조회 */
-  useEffect(() => {
-    if (discoverRecenterRequestId === 0) return;
+  const recenterDiscover = useEffectEvent(() => {
     if (!selectedCategoryId || !map || !placesLib) return;
     const snapshot = buildDiscoverSnapshotFromGoogleMap(map);
     if (!snapshot) return;
@@ -329,15 +330,13 @@ export function MapDiscoverPlaces({
         epochRecenter,
       );
     });
-  }, [
-    discoverRecenterRequestId,
-    selectedCategoryId,
-    rating,
-    openNow,
-    map,
-    placesLib,
-    runDiscoverSearch,
-  ]);
+  });
+  useEffect(() => {
+    if (seenRecenterIdRef.current !== discoverRecenterRequestId) {
+      seenRecenterIdRef.current = discoverRecenterRequestId;
+      recenterDiscover();
+    }
+  }, [discoverRecenterRequestId]);
 
   const selectedNormalized = selectedPlace?.googlePlaceId
     ? normalizeGooglePlaceResourceId(selectedPlace.googlePlaceId)
