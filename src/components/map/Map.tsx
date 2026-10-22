@@ -316,6 +316,9 @@ function releaseSearchForMapSelection() {
   useSearchRecenterStore.getState().clearSearchSnapshot();
 }
 
+// Keep a small visual gap between the preview tail and the selected pin.
+const SEARCH_PREVIEW_GAP_OFFSET: [number, number] = [0, -4];
+
 function MapSearchResultPins() {
   const map = useMap();
   const [previewMarker, setPreviewMarker] = useState<google.maps.marker.AdvancedMarkerElement | null>(null);
@@ -388,7 +391,7 @@ function MapSearchResultPins() {
           </AdvancedMarker>
         ))}
       {preview ? (
-        <InfoWindow key={preview.googlePlaceId} anchor={previewMarker}
+        <InfoWindow key={preview.googlePlaceId} anchor={previewMarker} pixelOffset={SEARCH_PREVIEW_GAP_OFFSET}
           maxWidth={260} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
           onClose={() => {
             if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
