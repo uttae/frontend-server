@@ -143,6 +143,11 @@ export const MAP_WORLD_LAT_LNG_BOUNDS: google.maps.LatLngBoundsLiteral = {
   east: 179.999,
 };
 
+/**
+ * 가로 래핑도 이 restriction만으로 막는다. `center_changed`에서 bounds를 보고 되돌리지 않는다 —
+ * 휠·트랙패드 확대는 `setCenter` 뒤에 `setZoom`이 와서 그 사이 bounds(새 중심·이전 줌)가 날짜변경선을 넘은 것처럼 보이고,
+ * 이때 되돌리면 확대가 끊겨 줌 값만 바뀌고 화면은 멈춘다.
+ */
 export const MAP_PAN_RESTRICTION: google.maps.MapRestriction = {
   latLngBounds: MAP_WORLD_LAT_LNG_BOUNDS,
   strictBounds: true,
