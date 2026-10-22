@@ -336,7 +336,7 @@ export function MapPlaceSearchInput({
             placeholder="장소 검색"
             autoComplete="off"
             className={cn(
-              "min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
+              "peer min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
               appearance.text,
             )}
           />
@@ -349,7 +349,7 @@ export function MapPlaceSearchInput({
                 if (mobile) fieldRef.current?.focus();
                 else fieldRef.current?.blur();
               }}
-              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear)}
+              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear, !mobile && "peer-focus:hidden")}
             >
               {mobile ? <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" /> : <MapSearchIcon name="clear" size={20}/>}
             </button>
