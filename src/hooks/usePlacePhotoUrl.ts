@@ -4,7 +4,6 @@ import { useQueries, useQuery } from "@tanstack/react-query";
 import { requestPlacePhotoUrl } from "@/lib/api/places";
 import { fetchAndSeedPlacePhotoUrls } from "@/lib/places/place-batch-cache";
 import {
-  PLACE_PHOTO_EMPTY_STALE_MS,
   PLACE_PHOTO_QUERY_GC_MS,
   placePhotoUrlQueryDefaults,
   placePhotoUrlQueryKey,
@@ -20,33 +19,7 @@ export function usePlacePhotoUrlQuery(
   const queryKey = placePhotoUrlQueryKey(id);
   return useQuery({
     queryKey,
-    queryFn: async () => {
-      const queryClient = getQueryClient();
-      if (!queryClient) {
-        return requestPlacePhotoUrl(id);
-      }
-      const cached = queryClient.getQueryData<string>(queryKey);
-      if (typeof cached === "string" && cached.trim().length > 0) {
-        return cached.trim();
-      }
-      const stateBeforeFetch = queryClient.getQueryState<string>(queryKey);
-      if ((stateBeforeFetch?.fetchFailureCount ?? 0) === 0) {
-        await fetchAndSeedPlacePhotoUrls([id], queryClient);
-      }
-      const seededState = queryClient.getQueryState<string>(queryKey);
-      const seeded = seededState?.data;
-      if (typeof seeded === "string") {
-        const trimmed = seeded.trim();
-        if (
-          trimmed.length > 0 ||
-          Date.now() - (seededState?.dataUpdatedAt ?? 0) <
-            PLACE_PHOTO_EMPTY_STALE_MS
-        ) {
-          return trimmed;
-        }
-      }
-      return requestPlacePhotoUrl(id);
-    },
+    queryFn: () => requestPlacePhotoUrl(id),
     enabled: id.length > 0 && (options?.enabled ?? true),
     ...placePhotoUrlQueryDefaults,
   });
