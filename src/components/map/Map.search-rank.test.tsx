@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { apiFetch } from "@/lib/api/client";
 vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
-import { act, useEffect, type ReactNode } from "react";
+import { act, useEffect, type ReactNode, type Ref } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, expect, it, vi } from "vitest";
@@ -52,8 +52,8 @@ vi.mock("@/lib/analytics/track", () => ({
   trackAnalyticsEvent: boundary.track,
 }));
 vi.mock("@vis.gl/react-google-maps", () => ({
-  InfoWindow: ({ children }: { children: ReactNode }) => (
-    <div role="dialog" aria-label="검색 장소 미리보기">{children}</div>
+  InfoWindow: ({ children, anchor }: { children: ReactNode; anchor?: HTMLElement }) => (
+    <div role="dialog" aria-label="검색 장소 미리보기" data-anchor-name={anchor?.textContent}>{children}</div>
   ),
   MapControl: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ControlPosition: { RIGHT_BOTTOM: 9 },
@@ -88,12 +88,14 @@ vi.mock("@vis.gl/react-google-maps", () => ({
     children,
     onClick,
     zIndex,
+    ref,
   }: {
     children: ReactNode;
     zIndex?: number;
+    ref?: Ref<HTMLButtonElement>;
     onClick?: (event: { stop: () => void }) => void;
   }) => (
-    <button data-marker data-priority={zIndex} onClick={() => onClick?.({ stop: () => {} })}>
+    <button ref={ref} data-marker data-priority={zIndex} onClick={() => onClick?.({ stop: () => {} })}>
       {children}
     </button>
   ),
@@ -225,6 +227,9 @@ it("web preview closes independently and switching pins never fetches or opens d
   await act(async () => pin("결과4").click());
   expect(host.querySelectorAll('[role="dialog"]')).toHaveLength(1);
   expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과4");
+  expect(host.querySelector('[role="dialog"]')?.getAttribute("data-anchor-name")).toBe("결과4");
+  await act(async () => pin("결과5").click());
+  expect(host.querySelector('[role="dialog"]')?.getAttribute("data-anchor-name")).toBe("결과5");
   expect(views()).toHaveLength(0);
   expect(apiFetch).toHaveBeenCalledTimes(calls);
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="미리보기 닫기"]')!.click());

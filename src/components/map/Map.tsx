@@ -316,10 +316,9 @@ function releaseSearchForMapSelection() {
   useSearchRecenterStore.getState().clearSearchSnapshot();
 }
 
-const SEARCH_PREVIEW_OFFSET: [number, number] = [0, -40];
-
 function MapSearchResultPins() {
   const map = useMap();
+  const [previewMarker, setPreviewMarker] = useState<google.maps.marker.AdvancedMarkerElement | null>(null);
   const pins = useSearchMapPinsStore((s) => s.pins);
   const pinsFocus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
@@ -360,6 +359,7 @@ function MapSearchResultPins() {
         .map((pin) => (
           <AdvancedMarker
             key={pin.googlePlaceId}
+            ref={pin.googlePlaceId === preview?.googlePlaceId ? setPreviewMarker : undefined}
             zIndex={pin.googlePlaceId === searchSelectedId ? 1000 : 0}
             title={pin.name}
             position={{ lat: pin.lat, lng: pin.lng }}
@@ -388,7 +388,7 @@ function MapSearchResultPins() {
           </AdvancedMarker>
         ))}
       {preview ? (
-        <InfoWindow key={preview.googlePlaceId} position={preview.location} pixelOffset={SEARCH_PREVIEW_OFFSET}
+        <InfoWindow key={preview.googlePlaceId} anchor={previewMarker}
           maxWidth={260} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
           onClose={() => {
             if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
