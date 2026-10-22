@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/api/client";
 import { QueryClient } from "@tanstack/react-query";
 import { registerQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
+import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { useSessionStore } from "@/stores/session-store";
 const network = vi.hoisted(() => ({
   page: vi.fn(),
@@ -43,7 +44,7 @@ function Harness({ mobile = false }: { mobile?: boolean }) {
     <MapPlaceSearchInput
       onConfirm={controller.confirm}
       onInvalidate={controller.invalidate} onClear={controller.clearSearch}
-      scopeKey={controller.scopeKey}
+      scopeKey={`${controller.scopeKey}:${controller.inputResetKey}`}
     />
   );
 }
@@ -249,4 +250,30 @@ it("cache HIT never falsely marks termination completed", async () => {
   vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: rawDetail, source: "CACHE", cacheStatus: "HIT", googleDetailsRequested: false, termination: "NOT_TERMINATED" }));
   await act(async () => { await api.confirm(confirmation("specific")); });
   expect(usePlaceSearchStore.getState().termination).toBe("NOT_TERMINATED");
+});
+
+it("desktop specific selection opens the chosen place detail directly", async () => {
+  await act(async () => { await api.confirm(confirmation("specific")); });
+  expect(usePlaceSearchStore.getState().selectedId).toBe("first");
+  expect(usePlaceSearchStore.getState().items[0].name).toBe("추천");
+  expect(network.select).toHaveBeenLastCalledWith(expect.objectContaining({googlePlaceId:"first",name:"추천"}), expect.objectContaining({itinerarySource:"search",analyticsSource:"search"}));
+  expect(network.page).not.toHaveBeenCalled();
+});
+
+ it("switching to discover clears text and ignores an in-flight text response", async () => {
+  let resolve!: (value: {items: unknown[]; nextPageToken: null}) => void;
+  network.page.mockReturnValue(new Promise(done => { resolve = done; }));
+  await act(async () => {
+    const input = host.querySelector("input")!;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")!.set!.call(input,"원래 검색어");
+    input.dispatchEvent(new Event("input",{bubbles:true}));
+  });
+  let pending!: Promise<boolean>;
+  await act(async () => { pending = api.confirm(confirmation()); });
+  await act(async () => { useMapPinsFocusStore.getState().claimFocus("discover"); });
+  expect(usePlaceSearchStore.getState()).toMatchObject({query:"",items:[],selectedId:null,status:"idle"});
+  expect(host.querySelector("input")!.value).toBe("");
+  await act(async () => { resolve({items:[],nextPageToken:null}); await pending; });
+  expect(useMapPinsFocusStore.getState().focus).toBe("discover");
+  expect(usePlaceSearchStore.getState()).toMatchObject({query:"",items:[],status:"idle"});
 });

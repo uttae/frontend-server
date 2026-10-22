@@ -8,7 +8,9 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { ChevronLeftIcon, CircleCancelIcon, LocationIcon, SearchIcon } from "@/assets/icons";
+import { flushSync } from "react-dom";
+import { MapSearchIcon } from "@/components/map/MapSearchIcon";
+import { ChevronLeftIcon, CircleCancelIcon, SearchIcon } from "@/assets/icons";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
 import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
@@ -22,6 +24,7 @@ export type MapPlaceSearchInputProps = Readonly<{
   scopeKey: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   mobile?: boolean;
+  collapsible?: boolean;
   initialQuery?: string;
   active?: boolean;
   autoConfirm?: boolean;
@@ -43,16 +46,16 @@ const INPUT_STYLES = {
     form: "shrink-0 px-5 pb-2 pt-4",
     field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
     text: "text-body-m-regular",
-    clear: "w-8",
+    clear: "h-full w-8",
     iconSize: 20,
   },
   desktop: {
-    container: "w-[280px] max-w-[calc(100vw-32px)]",
+    container: "w-[353px] max-w-full",
     form: undefined,
-    field: "h-9 gap-1.5 rounded-md px-2.5",
-    text: "text-body-s-regular",
-    clear: "w-6",
-    iconSize: 16,
+    field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
+    text: "text-body-m-regular",
+    clear: "size-8",
+    iconSize: 20,
   },
 } as const;
 
@@ -64,6 +67,7 @@ export function MapPlaceSearchInput({
   scopeKey,
   inputRef,
   mobile = false,
+  collapsible = false,
   initialQuery = "",
   active: enabled = true,
   autoConfirm = false,
@@ -72,6 +76,8 @@ export function MapPlaceSearchInput({
   backLabel = "지도로 돌아가기",
 }: MapPlaceSearchInputProps) {
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
+  const [expanded, setExpanded] = useState(!collapsible || Boolean(initialQuery));
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const [value, setValue] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
   const [active, setActive] = useState(-1);
@@ -88,6 +94,17 @@ export function MapPlaceSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const currentScope = useRef(scopeKey);
 
+  // Default can be unfocused after clearing Filled, so blur alone cannot dismiss it.
+  useEffect(() => {
+    if (!collapsible || mobile || !expanded || value.trim()) return;
+    const dismissOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !containerRef.current?.contains(event.target))
+        setExpanded(false);
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    return () => document.removeEventListener("pointerdown", dismissOutside);
+  }, [collapsible, mobile, expanded, value]);
+
   function cancel() {
     generation.current += 1;
     if (timer.current) clearTimeout(timer.current);
@@ -99,6 +116,7 @@ export function MapPlaceSearchInput({
     token.current = null;
     confirmGeneration.current = null;
     setValue("");
+    setExpanded(!collapsible);
     setSuggestions(null);
     setActive(-1);
     setOpen(false);
@@ -195,12 +213,15 @@ export function MapPlaceSearchInput({
         generation: requestGeneration,
       });
       if (success && !mobile && generation.current === requestGeneration) {
-        // 입력창만 비운다. update("")는 이미 표시한 검색 결과까지 지우므로 호출하지 않는다.
-        setValue("");
+        // 결과는 유지하고 선택한 추천 이름을 Filled 상태로 보여준다.
+        const confirmedValue = index > 0
+          ? prediction?.structuredFormat?.mainText?.text ?? prediction?.text?.text ?? value
+          : value;
+        setValue(confirmedValue);
         setSuggestions(null);
         setActive(-1);
         autoQuery.current = null;
-        onQueryChange?.("");
+        onQueryChange?.(confirmedValue);
       }
     } finally {
       if (generation.current === requestGeneration) {
@@ -225,6 +246,16 @@ export function MapPlaceSearchInput({
   const rows = suggestions?.query === value ? suggestions.items : [];
   const showDropdown = open && Boolean(value.trim());
   const appearance = INPUT_STYLES[mobile ? "mobile" : "desktop"];
+  if (collapsible && !expanded) return (
+    <button ref={triggerRef} type="button" aria-label="장소 검색 열기"
+      onClick={() => {
+        flushSync(() => setExpanded(true));
+        fieldRef.current?.focus();
+      }}
+      className="flex size-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary shadow-[0_2px_10px_#0000001a] hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+      <MapSearchIcon name="search-white" size={20}/>
+    </button>
+  );
   return (
     <div
       ref={containerRef}
@@ -248,7 +279,7 @@ export function MapPlaceSearchInput({
             <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
               <ChevronLeftIcon size={20} className="text-icon-subtle" />
             </button>
-          ) : <SearchIcon size={appearance.iconSize} className="shrink-0 text-icon-subtle" />}
+          ) : mobile ? <SearchIcon size={appearance.iconSize} className="shrink-0 text-icon-subtle" /> : <MapSearchIcon name="search" size={20} />}
           <input
             ref={fieldRef}
             type="search"
@@ -285,6 +316,7 @@ export function MapPlaceSearchInput({
               setSuggestions(null);
               onInvalidate();
               setOpen(false);
+              if (collapsible && !mobile && !value.trim()) setExpanded(false);
             }}
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
@@ -307,12 +339,16 @@ export function MapPlaceSearchInput({
                 setSuggestions(null);
                 onInvalidate();
                 setOpen(false);
+                if (collapsible && !value.trim()) {
+                  flushSync(() => setExpanded(false));
+                  triggerRef.current?.focus();
+                }
               }
             }}
             placeholder="장소 검색"
             autoComplete="off"
             className={cn(
-              "min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
+              "peer min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
               appearance.text,
             )}
           />
@@ -322,21 +358,22 @@ export function MapPlaceSearchInput({
               aria-label="검색어 지우기"
               onClick={() => {
                 update("");
-                fieldRef.current?.focus();
+                if (mobile) fieldRef.current?.focus();
+                else fieldRef.current?.blur();
               }}
-              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear)}
+              className={cn("flex shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear, !mobile && "peer-focus:hidden")}
             >
-              <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" />
+              {mobile ? <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" /> : <MapSearchIcon name="clear" size={20}/>}
             </button>
           ) : null}
         </div>
       </form>
       {showDropdown ? <SearchSuggestions listId={listId} active={active} value={value} rows={rows}
-        suggestions={suggestions} mobile={mobile} onConfirm={confirm} /> : null}
+        suggestions={suggestions} mobile={mobile} onConfirm={confirm} onActiveChange={setActive} /> : null}
     </div>
   );
 }
-function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, onConfirm }: Readonly<{
+function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, onConfirm, onActiveChange }: Readonly<{
   listId: string;
   active: number;
   value: string;
@@ -344,8 +381,9 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
   suggestions: Suggestions | null;
   mobile: boolean;
   onConfirm: (index: number) => Promise<void>;
+  onActiveChange: (index: number) => void;
 }>) {
-  const iconSize = mobile ? 20 : 16;
+  const iconSize = 20;
   // Editable combobox popup: native select/datalist cannot preserve the rich rows and whole-search action.
   // https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
   return (
@@ -357,7 +395,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
         "bg-fill-subtle",
         mobile
           ? "min-h-0 overflow-y-auto overscroll-contain"
-          : "absolute inset-x-0 top-full mt-2 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border-subtle",
+          : "absolute inset-x-0 top-full mt-1 max-h-[calc(100dvh-96px)] overflow-y-auto rounded-lg border border-border",
       )}
     >
       <SuggestionRow
@@ -366,6 +404,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
         iconSize={iconSize}
         title={`'${value.trim()}' 모든 결과보기`}
         onClick={() => void onConfirm(0)}
+        onMouseMove={() => onActiveChange(0)}
       />
       {rows.map((prediction, index) => (
         <SuggestionRow
@@ -378,6 +417,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
             : prediction.text}
           subtitle={prediction.structuredFormat?.secondaryText?.text ?? undefined}
           onClick={() => void onConfirm(index + 1)}
+          onMouseMove={() => onActiveChange(index + 1)}
           place
         />
       ))}
@@ -398,6 +438,7 @@ function SuggestionRow({
   subtitle,
   active,
   onClick,
+  onMouseMove,
   place = false,
   iconSize,
 }: Readonly<{
@@ -406,10 +447,10 @@ function SuggestionRow({
   subtitle?: string;
   active: boolean;
   onClick: () => void;
+  onMouseMove: () => void;
   place?: boolean;
   iconSize: number;
 }>) {
-  const Icon = place ? LocationIcon : SearchIcon;
   return (
     <li // NOSONAR: S6819 — 위 listbox의 option이며 네이티브 select 내부의 option이 아니다.
       role="option"
@@ -422,9 +463,10 @@ function SuggestionRow({
         tabIndex={-1}
         onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
-        className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none"
+        onMouseMove={onMouseMove}
+        className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors active:bg-fill-strong focus-visible:outline-none"
       >
-        <Icon size={iconSize} className="shrink-0 text-icon-subtle" />
+        <MapSearchIcon name={place ? "location" : "search"} size={iconSize} />
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate text-body-s-emphasis text-text">
             {typeof title === "string" ? title : <HighlightedText value={title} />}

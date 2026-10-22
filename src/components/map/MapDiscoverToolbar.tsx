@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode } from "react";
 import { flushSync } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
 
 import { CircleCancelIcon, SearchIcon } from "@/assets/icons";
 import { useMobileView } from "@/contexts/MobileViewContext";
@@ -10,20 +9,21 @@ import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 
 import { useMapToolbarLayout } from "@/contexts/MapToolbarLayoutContext";
 import {
-  MAP_TOOLBAR_ELEVATED_Z_CLASS,
   MAP_TOOLBAR_Z_CLASS,
 } from "@/lib/layout/mapDetailPanelLayout";
 import { cn } from "@/lib/utils";
 
 import MapFilter from "./MapFilter";
-import { MapCloseButton } from "./MapCloseButton";
+import { MapSearchIcon } from "./MapSearchIcon";
+import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
+import { mapChipButtonClassName } from "./map-chip-button";
 import { MapCategoryChips } from "./MapCategoryChips";
 import type { OpenValue, RatingValue } from "./map-filters";
-import { mapToolbarPanelMotion } from "./map-toolbar-motion";
 
 type MapDiscoverToolbarProps = {
   /** 웹 동선보기에서 숨김 — 상세 패널은 최솟값(필터 한 줄 아래) 자리로 간다 */
   hidden?: boolean;
+  search?: ReactNode;
   selectedCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
   rating: RatingValue;
@@ -34,6 +34,7 @@ type MapDiscoverToolbarProps = {
 
 export function MapDiscoverToolbar({
   hidden = false,
+  search,
   selectedCategoryId,
   onSelectCategory,
   rating,
@@ -43,54 +44,36 @@ export function MapDiscoverToolbar({
 }: MapDiscoverToolbarProps) {
   const { setToolbarRef } = useMapToolbarLayout();
   const { isMobileDevice } = useMobileView();
-  const [ratingDropdownOpen, setRatingDropdownOpen] = useState(false);
-
-  const [previousCategoryId, setPreviousCategoryId] = useState(selectedCategoryId);
-  if (previousCategoryId !== selectedCategoryId) {
-    setPreviousCategoryId(selectedCategoryId);
-    if (selectedCategoryId == null) setRatingDropdownOpen(false);
+  const category = MAP_PLACE_CATEGORIES.find((item) => item.id === selectedCategoryId);
+  function resetCategory() {
+    onSelectCategory(null);
+    setRating("all");
+    setOpenNow("all");
   }
 
   return (
-    <div
-      ref={setToolbarRef}
-      hidden={hidden}
-      className={cn(
-        "pointer-events-none absolute left-0 right-[312px] top-3 flex min-h-12 max-w-full flex-col justify-center overflow-visible px-4 mobile:right-0 mobile:block mobile:px-5",
-        ratingDropdownOpen ? MAP_TOOLBAR_ELEVATED_Z_CLASS : MAP_TOOLBAR_Z_CLASS,
-      )}
-    >
+    <div ref={setToolbarRef} hidden={hidden}
+      className={cn("map-discover-toolbar pointer-events-none absolute inset-x-0 top-0 px-6 py-3 mobile:px-5", MAP_TOOLBAR_Z_CLASS)}>
       {isMobileDevice ? <MobileMapSearchBar /> : null}
-      <AnimatePresence mode="wait" initial={false}>
-        {selectedCategoryId == null ? (
-          <motion.div
-            key="chips"
-            className="w-full min-w-0 max-w-full"
-            {...mapToolbarPanelMotion}
-          >
-            <MapCategoryChips
-              className="flex-nowrap overflow-x-auto px-1 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              selectedCategoryId={selectedCategoryId}
-              onSelectCategory={onSelectCategory}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="filter"
-            className="pointer-events-auto -mx-1 flex min-w-0 max-w-full flex-wrap items-center gap-2 pb-0.5"
-            {...mapToolbarPanelMotion}
-          >
-            <MapFilter
-              rating={rating}
-              openNow={openNow}
-              setRating={setRating}
-              setOpenNow={setOpenNow}
-              onRatingDropdownOpenChange={setRatingDropdownOpen}
-            />
-            <MapCloseButton label="카테고리 닫기" onClick={() => onSelectCategory(null)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="flex min-h-12 min-w-0 flex-nowrap items-center gap-6">
+        <div className="pointer-events-auto min-w-0 flex-1">
+          <div className="-my-2 overflow-x-auto py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {category ? (
+              <div className="flex w-max flex-nowrap items-center gap-1.5">
+                <button type="button" aria-pressed onClick={resetCategory} className={mapChipButtonClassName(true)}>
+                  <MapSearchIcon name={category.icon}/><span>{category.label}</span>
+                </button>
+                <MapFilter rating={rating} openNow={openNow} setRating={setRating} setOpenNow={setOpenNow}/>
+                <button type="button" aria-label="카테고리 필터 초기화" onClick={resetCategory}
+                  className={cn(mapChipButtonClassName(false), "w-9 px-0")}>
+                  <MapSearchIcon name="reset"/>
+                </button>
+              </div>
+            ) : <MapCategoryChips selectedCategoryId={selectedCategoryId} onSelectCategory={onSelectCategory}/>}
+          </div>
+        </div>
+        {!isMobileDevice ? search : null}
+      </div>
     </div>
   );
 }
