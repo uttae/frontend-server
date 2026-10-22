@@ -392,7 +392,7 @@ function MapSearchResultPins() {
         ))}
       {preview ? (
         <InfoWindow key={preview.googlePlaceId} anchor={previewMarker} pixelOffset={SEARCH_PREVIEW_GAP_OFFSET}
-          maxWidth={260} shouldFocus headerDisabled ariaLabel={`${preview.name} 미리보기`}
+          maxWidth={260} shouldFocus={false} headerDisabled ariaLabel={`${preview.name} 미리보기`}
           onClose={() => {
             if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
               usePlaceSearchStore.getState().select(null);
@@ -439,6 +439,14 @@ export default function TripMap({
   const [rating, setRating] = useState<RatingValue>("all");
   const [openNow, setOpenNow] = useState<OpenValue>("all");
   const [showBookmarkPins, setShowBookmarkPins] = useState(true);
+
+  // Text search takes over the map at request start, including autocomplete selection.
+  useEffect(() => useMapPinsFocusStore.subscribe((state, previous) => {
+    if (state.focus !== "search" || state.writeEpoch === previous.writeEpoch) return;
+    setSelectedCategoryId(null);
+    setRating("all");
+    setOpenNow("all");
+  }), []);
 
   const currentRoomId = useSessionStore((s) => s.currentRoomId);
   const { data: roomsData, isFetched: roomsFetched } = useRoomsList();

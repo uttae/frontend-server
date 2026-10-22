@@ -502,3 +502,27 @@ it("selected preview label receives marker priority and transfers it to the next
   expect(Number(second().dataset.priority)).toBeGreaterThan(Number(first().dataset.priority || 0));
   expect(host.querySelector("[data-search-place-preview]")?.textContent).toContain("결과2");
 });
+
+it.each(["whole", "specific"] as const)("%s search resets discover filters without losing search ownership or results", async kind => {
+  await render(false);
+  const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === text)!;
+  await act(async () => button("음식점").click());
+  await act(async () => button("영업 중").click());
+  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!.click());
+  await act(async () => button("4.5 이상").click());
+  await act(async () => { useMapPinsFocusStore.getState().claimFocus("discover"); });
+  boundary.page.mockResolvedValue({ items, nextPageToken: null });
+  await act(async () => {
+    await controller.confirm({ query: "원문", kind, generation: 0,
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") });
+  });
+  expect(host.querySelector('[aria-label="카테고리 필터 초기화"]')).toBeNull();
+  expect(button("호텔")).toBeDefined();
+  expect(useMapPinsFocusStore.getState().focus).toBe("search");
+  expect(usePlaceSearchStore.getState().status).toBe("done");
+  expect(useSearchMapPinsStore.getState().pins.length).toBeGreaterThan(0);
+  expect(host.querySelectorAll('[data-marker]').length).toBeGreaterThan(0);
+  await act(async () => button("음식점").click());
+  expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("평점");
+  expect(button("영업 중").getAttribute("aria-pressed")).toBe("false");
+});

@@ -258,7 +258,9 @@ export function MapDiscoverPlaces({
         setMarkers([]);
       });
       useSearchRecenterStore.getState().clearDiscoverSnapshot();
-      useMapPinsFocusStore.getState().releaseFocus();
+      // Clearing a category must not release a newer text search or invalidate its response.
+      const focusState = useMapPinsFocusStore.getState();
+      if (focusState.focus === "discover") focusState.releaseFocus();
       return;
     }
 

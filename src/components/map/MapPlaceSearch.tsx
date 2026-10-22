@@ -19,7 +19,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   /** PC 검색창 숨김(웹 동선보기) — 입력값·자동완성을 지키려고 언마운트하지 않는다 */
   hidden?: boolean;
 }>) {
-  const { confirm, invalidate, clearSearch, scopeKey } = useMapPlaceSearch(mobile);
+  const { confirm, invalidate, clearSearch, scopeKey, inputResetKey } = useMapPlaceSearch(mobile);
   const initialQuery = useSearchParams().get("q")?.trim() ?? "";
   const status = usePlaceSearchStore((s) => s.status);
   const error = usePlaceSearchStore((s) => s.error);
@@ -71,7 +71,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
             inputRef={inputRef}
             collapsible
             autoConfirm
-            scopeKey={scopeKey}
+            scopeKey={`${scopeKey}:discover-reset:${inputResetKey}`}
             onConfirm={confirmation}
             onInvalidate={invalidate}
             onClear={clearSearch}

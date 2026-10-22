@@ -46,7 +46,7 @@ const INPUT_STYLES = {
     form: "shrink-0 px-5 pb-2 pt-4",
     field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
     text: "text-body-m-regular",
-    clear: "w-8",
+    clear: "h-full w-8",
     iconSize: 20,
   },
   desktop: {
@@ -54,7 +54,7 @@ const INPUT_STYLES = {
     form: undefined,
     field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
     text: "text-body-m-regular",
-    clear: "w-8",
+    clear: "size-8",
     iconSize: 20,
   },
 } as const;
@@ -305,6 +305,7 @@ export function MapPlaceSearchInput({
               setSuggestions(null);
               onInvalidate();
               setOpen(false);
+              if (collapsible && !mobile && !value.trim()) setExpanded(false);
             }}
             onKeyDown={(event) => {
               if (event.nativeEvent.isComposing) return;
@@ -347,9 +348,13 @@ export function MapPlaceSearchInput({
               onClick={() => {
                 update("");
                 if (mobile) fieldRef.current?.focus();
+                else if (collapsible) {
+                  flushSync(() => setExpanded(false));
+                  triggerRef.current?.focus();
+                }
                 else fieldRef.current?.blur();
               }}
-              className={cn("flex h-full shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear, !mobile && "peer-focus:hidden")}
+              className={cn("flex shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear, !mobile && "peer-focus:hidden")}
             >
               {mobile ? <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" /> : <MapSearchIcon name="clear" size={20}/>}
             </button>
@@ -357,11 +362,11 @@ export function MapPlaceSearchInput({
         </div>
       </form>
       {showDropdown ? <SearchSuggestions listId={listId} active={active} value={value} rows={rows}
-        suggestions={suggestions} mobile={mobile} onConfirm={confirm} /> : null}
+        suggestions={suggestions} mobile={mobile} onConfirm={confirm} onActiveChange={setActive} /> : null}
     </div>
   );
 }
-function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, onConfirm }: Readonly<{
+function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, onConfirm, onActiveChange }: Readonly<{
   listId: string;
   active: number;
   value: string;
@@ -369,6 +374,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
   suggestions: Suggestions | null;
   mobile: boolean;
   onConfirm: (index: number) => Promise<void>;
+  onActiveChange: (index: number) => void;
 }>) {
   const iconSize = 20;
   // Editable combobox popup: native select/datalist cannot preserve the rich rows and whole-search action.
@@ -391,6 +397,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
         iconSize={iconSize}
         title={`'${value.trim()}' 모든 결과보기`}
         onClick={() => void onConfirm(0)}
+        onMouseMove={() => onActiveChange(0)}
       />
       {rows.map((prediction, index) => (
         <SuggestionRow
@@ -403,6 +410,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
             : prediction.text}
           subtitle={prediction.structuredFormat?.secondaryText?.text ?? undefined}
           onClick={() => void onConfirm(index + 1)}
+          onMouseMove={() => onActiveChange(index + 1)}
           place
         />
       ))}
@@ -423,6 +431,7 @@ function SuggestionRow({
   subtitle,
   active,
   onClick,
+  onMouseMove,
   place = false,
   iconSize,
 }: Readonly<{
@@ -431,6 +440,7 @@ function SuggestionRow({
   subtitle?: string;
   active: boolean;
   onClick: () => void;
+  onMouseMove: () => void;
   place?: boolean;
   iconSize: number;
 }>) {
@@ -446,7 +456,8 @@ function SuggestionRow({
         tabIndex={-1}
         onMouseDown={(event) => event.preventDefault()}
         onClick={onClick}
-        className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors hover:bg-fill active:bg-fill-strong focus-visible:bg-fill focus-visible:outline-none"
+        onMouseMove={onMouseMove}
+        className="flex h-full w-full cursor-pointer items-center gap-2.5 pl-3.5 pr-4 text-left transition-colors active:bg-fill-strong focus-visible:outline-none"
       >
         <MapSearchIcon name={place ? "location" : "search"} size={iconSize} />
         <span className="flex min-w-0 flex-1 flex-col">

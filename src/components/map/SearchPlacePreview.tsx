@@ -14,10 +14,12 @@ export function SearchPlacePreview({ place, onOpenDetail, onClose }: Readonly<{
     <div data-search-place-preview className="w-[260px] max-w-full rounded-lg bg-fill-subtle px-4 pb-4 pt-3.5 font-sans text-text">
       <div className="flex items-start justify-between">
         <h3 title={place.name} className="min-w-0 flex-1 truncate text-title-s">{place.name}</h3>
-        <button type="button" onClick={onClose} aria-label="미리보기 닫기"
-          className="flex size-[26px] shrink-0 cursor-pointer items-start justify-end rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
-          <MapSearchIcon name="close"/>
-        </button>
+        <div className="relative size-[26px] shrink-0">
+          <button type="button" onClick={onClose} aria-label="미리보기 닫기"
+            className="absolute -right-1 -top-1 flex size-6 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
+            <MapSearchIcon name="close"/>
+          </button>
+        </div>
       </div>
       <div className="flex items-end gap-4">
         <div className="flex min-w-0 flex-1 flex-col gap-3">

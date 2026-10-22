@@ -55,7 +55,7 @@ export function MapDiscoverToolbar({
     <div ref={setToolbarRef} hidden={hidden}
       className={cn("map-discover-toolbar pointer-events-none absolute inset-x-0 top-0 px-6 py-3 mobile:px-5", MAP_TOOLBAR_Z_CLASS)}>
       {isMobileDevice ? <MobileMapSearchBar /> : null}
-      <div className="flex min-h-[46px] min-w-0 flex-nowrap items-center gap-6">
+      <div className="flex min-h-12 min-w-0 flex-nowrap items-center gap-6">
         <div className="pointer-events-auto min-w-0 flex-1">
           <div className="-my-2 overflow-x-auto py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {category ? (
