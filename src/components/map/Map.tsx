@@ -331,7 +331,7 @@ function MapSearchResultPins() {
   const status = usePlaceSearchStore((s) => s.status);
   const kind = usePlaceSearchStore((s) => s.confirmationKind);
   const fittedItemsRef = useRef<typeof items | null>(null);
-  const preview = pinsFocus === "search" && !isMobileDevice && !selectedPlace
+  const preview = pinsFocus === "search" && !isMobileDevice && kind === "whole" && !selectedPlace
     ? items.find((item) => item.googlePlaceId === searchSelectedId)
     : undefined;
   const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
@@ -371,7 +371,11 @@ function MapSearchResultPins() {
               const result = usePlaceSearchStore.getState().items.find((item) => item.googlePlaceId === pin.googlePlaceId);
               if (result) {
                 usePlaceSearchStore.getState().select(result.googlePlaceId);
-                setSelectedPlace(null);
+                if (!isMobileDevice && kind === "specific") {
+                  setSelectedPlace(result, { itinerarySource: "search", analyticsSource: "search", preserveMapZoom: true });
+                } else {
+                  setSelectedPlace(null);
+                }
                 return;
               }
               releaseSearchForMapSelection();

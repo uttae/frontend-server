@@ -130,7 +130,7 @@ export function useMapPlaceSearch(mobile: boolean) {
       termination: result.termination,
     });
     setActiveSearchMapPins(placeSearchResultsToMapPins(items));
-    if (mobile && confirmation.kind === "specific") {
+    if (confirmation.kind === "specific") {
       const selected = result.anchor
         ? (items.find(
             (item) => item.googlePlaceId === result.anchor!.googlePlaceId,

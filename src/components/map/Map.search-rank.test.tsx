@@ -238,20 +238,19 @@ it("web preview closes independently and switching pins never fetches or opens d
   await act(async () => pin("결과4").click());
   expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과4");
 });
-it("web specific autocomplete opens preview, then detail only through its arrow, including reopen", async () => {
+it("web specific autocomplete opens detail directly and its pin reopens detail", async () => {
   await render(false);
   await act(async () => { await controller.confirm({ query: "원문", kind: "specific", generation: 0,
     session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") }); });
-  expect(views()).toHaveLength(0);
-  expect(host.querySelector('[data-search-place-preview]')?.textContent).toContain("결과4");
-  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="결과4 상세정보 보기"]')!.click());
+  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
+  expect(host.querySelector('[aria-label="닫기"]')).not.toBeNull();
   expect(views()).toHaveLength(1);
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="닫기"]')!.click());
+  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
   const marker = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(b => b.textContent === "결과4")!;
   await act(async () => marker.click());
-  expect(host.querySelector('[data-search-place-preview]')).not.toBeNull();
-  expect(views()).toHaveLength(1);
-  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="결과4 상세정보 보기"]')!.click());
+  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
+  expect(host.querySelector('[aria-label="닫기"]')).not.toBeNull();
   expect(views()).toHaveLength(2);
   expect(views().at(-1)![1].rank_bucket).toBeUndefined();
 });

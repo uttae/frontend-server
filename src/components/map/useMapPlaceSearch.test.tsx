@@ -252,11 +252,11 @@ it("cache HIT never falsely marks termination completed", async () => {
   expect(usePlaceSearchStore.getState().termination).toBe("NOT_TERMINATED");
 });
 
-it("desktop specific selection publishes the balloon selection without opening the detail panel", async () => {
+it("desktop specific selection opens the chosen place detail directly", async () => {
   await act(async () => { await api.confirm(confirmation("specific")); });
   expect(usePlaceSearchStore.getState().selectedId).toBe("first");
   expect(usePlaceSearchStore.getState().items[0].name).toBe("추천");
-  expect(network.select).toHaveBeenLastCalledWith(null);
+  expect(network.select).toHaveBeenLastCalledWith(expect.objectContaining({googlePlaceId:"first",name:"추천"}), expect.objectContaining({itinerarySource:"search",analyticsSource:"search"}));
   expect(network.page).not.toHaveBeenCalled();
 });
 
