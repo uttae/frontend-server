@@ -1,20 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import type {
-  PlacePhotoUrlBatchItem,
-  PlacePreview,
-  PlacePreviewBatchItem,
-} from "@/lib/api/places";
-import {
-  requestPlacePhotoUrlsBatch,
-  requestPlacePreviewsBatch,
-} from "@/lib/api/places";
+import type { PlacePreview, PlacePreviewBatchItem } from "@/lib/api/places";
+import { requestPlacePreviewsBatch } from "@/lib/api/places";
 import { isBatchItemError, isBatchItemOk } from "@/lib/api/batch-types";
-import {
-  PLACE_PHOTO_EMPTY_STALE_MS,
-  placePhotoUrlQueryDefaults,
-  placePhotoUrlQueryKey,
-} from "@/lib/place-photo-query";
 import {
   normalizePlacePreview,
   placePreviewQueryDefaults,
@@ -29,7 +17,6 @@ const PLAN_PLACE_PREVIEW_ERROR_TITLE = "장소 정보를 불러올 수 없음";
 
 /** 동일 googlePlaceId에 대한 in-flight batch 요청 공유 */
 const inFlightPreviewSeedByPlaceId = new Map<string, Promise<void>>();
-const inFlightPhotoSeedByPlaceId = new Map<string, Promise<void>>();
 
 function isUsablePreviewBatchItem(item: PlacePreviewBatchItem): boolean {
   if (isBatchItemError(item)) return false;
@@ -156,22 +143,6 @@ export function reconcileSchedulePlanPlacesAfterPreviewSeed(
   }
 }
 
-export function seedPlacePhotoUrlCaches(
-  queryClient: QueryClient,
-  items: readonly PlacePhotoUrlBatchItem[],
-): void {
-  for (const item of items) {
-    if (!isBatchItemOk(item)) continue;
-    const id =
-      typeof item.googlePlaceId === "string" ? item.googlePlaceId.trim() : "";
-    const url = typeof item.photoUrl === "string" ? item.photoUrl.trim() : "";
-    if (!id.length) continue;
-    queryClient.setQueryData(placePhotoUrlQueryKey(id), url, {
-      updatedAt: Date.now(),
-    });
-  }
-}
-
 function uncachedPreviewIds(
   queryClient: QueryClient,
   googlePlaceIds: readonly string[],
@@ -182,28 +153,6 @@ function uncachedPreviewIds(
     if (!id.length) continue;
     const cached = queryClient.getQueryData(placePreviewQueryKey(id));
     if (cached != null) continue;
-    out.push(id);
-  }
-  return [...new Set(out)];
-}
-
-function uncachedPhotoPlaceIds(
-  queryClient: QueryClient,
-  googlePlaceIds: readonly string[],
-): string[] {
-  const out: string[] = [];
-  for (const raw of googlePlaceIds) {
-    const id = typeof raw === "string" ? raw.trim() : "";
-    if (!id.length) continue;
-    const state = queryClient.getQueryState<string>(placePhotoUrlQueryKey(id));
-    const cached = state?.data;
-    if (typeof cached === "string" && cached.trim().length > 0) continue;
-    if (
-      typeof cached === "string" &&
-      Date.now() - (state?.dataUpdatedAt ?? 0) < PLACE_PHOTO_EMPTY_STALE_MS
-    ) {
-      continue;
-    }
     out.push(id);
   }
   return [...new Set(out)];
@@ -285,68 +234,4 @@ export async function fetchAndSeedPlacePreviews(
   }
 }
 
-export async function fetchAndSeedPlacePhotoUrls(
-  googlePlaceIds: readonly string[],
-  queryClient?: QueryClient | null,
-): Promise<void> {
-  const qc = queryClient ?? getQueryClient();
-  if (!qc) return;
-
-  const missing = uncachedPhotoPlaceIds(qc, googlePlaceIds);
-  if (!missing.length) return;
-
-  const toFetch: string[] = [];
-  const waits: Promise<void>[] = [];
-
-  for (const id of missing) {
-    const inFlight = inFlightPhotoSeedByPlaceId.get(id);
-    if (inFlight) {
-      waits.push(inFlight);
-      continue;
-    }
-    if (!toFetch.includes(id)) {
-      toFetch.push(id);
-    }
-  }
-
-  let fetchPromise: Promise<void> | null = null;
-  if (toFetch.length) {
-    fetchPromise = (async () => {
-      try {
-        const results = await requestPlacePhotoUrlsBatch(toFetch);
-        seedPlacePhotoUrlCaches(qc, results);
-      } finally {
-        for (const id of toFetch) {
-          inFlightPhotoSeedByPlaceId.delete(id);
-        }
-      }
-    })();
-    for (const id of toFetch) {
-      inFlightPhotoSeedByPlaceId.set(id, fetchPromise);
-    }
-  }
-
-  const pending = [
-    ...(fetchPromise ? [fetchPromise] : []),
-    ...waits.filter((promise) => promise !== fetchPromise),
-  ];
-  if (pending.length) {
-    await Promise.all(pending);
-  }
-}
-
-/** 미캐시·만료된 장소 사진 URL을 batch로 시딩 */
-export async function ensurePlacePhotoUrlsCached(
-  googlePlaceIds: readonly string[],
-  queryClient?: QueryClient | null,
-): Promise<void> {
-  const qc = queryClient ?? getQueryClient();
-  if (!qc) return;
-
-  await fetchAndSeedPlacePhotoUrls(googlePlaceIds, qc);
-}
-
-export {
-  placePhotoUrlQueryDefaults,
-  placePreviewQueryDefaults,
-};
+export { placePreviewQueryDefaults };

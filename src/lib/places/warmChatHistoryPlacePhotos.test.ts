@@ -1,15 +1,18 @@
 import { QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const fetchAndSeedPlacePhotoUrls = vi.fn();
+const requestPlacePhotoUrl = vi.fn();
+const requestPlacePhotoUrlsBatch = vi.fn();
 
-vi.mock("@/lib/places/place-batch-cache", () => ({
-  fetchAndSeedPlacePhotoUrls,
+vi.mock("@/lib/api/places", () => ({
+  requestPlacePhotoUrl,
+  requestPlacePhotoUrlsBatch,
 }));
 
 describe("warmPlacePhotoQueriesFromChatHistory", () => {
   beforeEach(() => {
-    fetchAndSeedPlacePhotoUrls.mockReset();
+    requestPlacePhotoUrl.mockReset();
+    requestPlacePhotoUrlsBatch.mockReset();
   });
 
   it("does not warm photo URLs before place cards enter the viewport", async () => {
@@ -57,6 +60,7 @@ describe("warmPlacePhotoQueriesFromChatHistory", () => {
       },
     ]);
 
-    expect(fetchAndSeedPlacePhotoUrls).not.toHaveBeenCalled();
+    expect(requestPlacePhotoUrl).not.toHaveBeenCalled();
+    expect(requestPlacePhotoUrlsBatch).not.toHaveBeenCalled();
   });
 });

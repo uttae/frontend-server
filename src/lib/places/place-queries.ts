@@ -1,6 +1,5 @@
 import {
   requestPlaceDetail,
-  requestPlacePhotoUrl,
   requestPlacePreview,
   type PlaceDetail,
   type PlacePreview,
@@ -8,10 +7,6 @@ import {
 } from "@/lib/api/places";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import { getQueryClient } from "@/lib/query-client";
-import {
-  placePhotoUrlQueryDefaults,
-  placePhotoUrlQueryKey,
-} from "@/lib/place-photo-query";
 
 export const placeDetailQueryDefaults = {
   staleTime: Infinity,
@@ -170,23 +165,5 @@ export async function fetchPlacePreview(googlePlaceId: string): Promise<PlacePre
     queryKey: placePreviewQueryKey(id),
     queryFn: () => loadPlacePreview(id),
     ...placePreviewQueryDefaults,
-  });
-}
-
-export async function fetchPlacePhotoUrl(googlePlaceId: string): Promise<string> {
-  const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
-  if (!id.length) {
-    throw new Error("fetchPlacePhotoUrl: empty googlePlaceId");
-  }
-
-  const queryClient = getQueryClient();
-  if (!queryClient) {
-    return requestPlacePhotoUrl(id);
-  }
-
-  return queryClient.fetchQuery({
-    queryKey: placePhotoUrlQueryKey(id),
-    queryFn: () => requestPlacePhotoUrl(id),
-    ...placePhotoUrlQueryDefaults,
   });
 }
