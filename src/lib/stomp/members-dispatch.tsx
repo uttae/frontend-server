@@ -80,15 +80,22 @@ export function dispatchRoomMemberEvent(
   if (!rid) return;
   void queryClient.invalidateQueries({ queryKey: expenseKeys.members(rid) });
 
+  // 무효화돼 다시 받을 목록은 패치하지 않는다 — setQueryData가 '갱신 필요' 표시를 지워 재조회가 사라진다.
+  // 방 목록 역할(HOST_DELEGATED)은 따로 맞춘다
+  const membersAwaitingRefetch =
+    queryClient.getQueryState(roomMembersQueryKey(rid))?.isInvalidated === true;
+
   switch (event.type) {
     case "MEMBER_JOINED": {
       const d = event.detail;
-      if (!d) return;
+      if (!d || membersAwaitingRefetch) return;
 
       queryClient.setQueryData<RoomMemberListResponse>(
         roomMembersQueryKey(rid),
         (prev) => {
-          const members = prev?.members ?? [];
+          // 목록을 받은 적이 없으면 한 명짜리 목록을 만들지 않고 처음 조회에 맡긴다
+          if (!prev) return prev;
+          const members = prev.members;
           const joinedAt =
             event.createdAt.trim().length > 0
               ? event.createdAt
@@ -111,7 +118,7 @@ export function dispatchRoomMemberEvent(
               isOnline: true,
             },
           );
-          return prev ? { ...prev, members: next } : { members: next };
+          return { ...prev, members: next };
         },
       );
       break;
@@ -120,12 +127,13 @@ export function dispatchRoomMemberEvent(
     case "MEMBER_LEFT":
     case "MEMBER_KICKED": {
       const d = event.detail;
-      if (!d) return;
+      if (!d || membersAwaitingRefetch) return;
 
       queryClient.setQueryData<RoomMemberListResponse>(
         roomMembersQueryKey(rid),
         (prev) => {
-          const members = prev?.members ?? [];
+          if (!prev) return prev;
+          const members = prev.members;
           const idx = members.findIndex((m) => m.userId === d.userId);
           const display = memberDisplayPatch(d);
 
@@ -138,7 +146,7 @@ export function dispatchRoomMemberEvent(
               status: "LEFT",
               isOnline: false,
             };
-            return prev ? { ...prev, members: next } : { members: next };
+            return { ...prev, members: next };
           }
 
           const leftMember: RoomMember = {
@@ -153,9 +161,7 @@ export function dispatchRoomMemberEvent(
                 : new Date().toISOString(),
             isOnline: false,
           };
-          return {
-            members: [...members, leftMember],
-          };
+          return { ...prev, members: [...members, leftMember] };
         },
       );
       break;
@@ -165,22 +171,24 @@ export function dispatchRoomMemberEvent(
       const d = event.detail;
       if (!d) return;
 
-      queryClient.setQueryData<RoomMemberListResponse>(
-        roomMembersQueryKey(rid),
-        (prev) => {
-          if (!prev?.members?.length) return prev;
-          const members = prev.members.map((m) => {
-            if (m.userId === d.previousHostUserId) {
-              return { ...m, role: "MEMBER" as const };
-            }
-            if (m.userId === d.newHostUserId) {
-              return { ...m, role: "HOST" as const };
-            }
-            return m;
-          });
-          return { ...prev, members };
-        },
-      );
+      if (!membersAwaitingRefetch) {
+        queryClient.setQueryData<RoomMemberListResponse>(
+          roomMembersQueryKey(rid),
+          (prev) => {
+            if (!prev?.members?.length) return prev;
+            const members = prev.members.map((m) => {
+              if (m.userId === d.previousHostUserId) {
+                return { ...m, role: "MEMBER" as const };
+              }
+              if (m.userId === d.newHostUserId) {
+                return { ...m, role: "HOST" as const };
+              }
+              return m;
+            });
+            return { ...prev, members };
+          },
+        );
+      }
 
       patchRoomsRoleForHostDelegation(
         queryClient,
