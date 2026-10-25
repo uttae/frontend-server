@@ -62,6 +62,7 @@ import {
   applyScheduleItemDeletedOnClient,
   createScheduleItemAtPlanIndex,
   ensureSchedulePlanPlacesEnriched,
+  setSchedulePlanPlaces,
   syncAfterCrossScheduleItemMove,
   syncPlanPlacesAfterReorderSuccess,
 } from "@/lib/plan/scheduleItemPlaces";
@@ -84,6 +85,7 @@ import {
 } from "@/lib/query-keys";
 import {
   hydrateRoomSchedulesFromServer,
+  refreshRoomSchedules,
   syncRoomDetailFromServer,
 } from "@/lib/rooms";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -153,7 +155,7 @@ export function useCreateRoom() {
         });
       }
       queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
-      await hydrateRoomSchedulesFromServer(queryClient, room.id);
+      await refreshRoomSchedules(queryClient, room.id);
       await syncRoomDetailFromServer(queryClient, room.id);
     },
   });
@@ -164,7 +166,8 @@ export function useRoomSchedules(roomId: string | null) {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: roomSchedulesQueryKey(id || null),
-    queryFn: () => hydrateRoomSchedulesFromServer(queryClient, id),
+    queryFn: ({ signal }) =>
+      hydrateRoomSchedulesFromServer(queryClient, id, signal),
     enabled: id.length > 0,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -210,7 +213,7 @@ export function useDeleteRoomSchedule() {
       const id = roomId.trim();
       if (!id.length) return;
 
-      const sorted = await hydrateRoomSchedulesFromServer(queryClient, id);
+      const sorted = await refreshRoomSchedules(queryClient, id);
       const scheduleStillExists = sorted.some((s) => s.scheduleId === scheduleId);
       if (scheduleStillExists) {
         await invalidateScheduleItemRouteForWholeSchedule(
@@ -242,7 +245,7 @@ export function useCreateRoomSchedule() {
     onSuccess: async (_created, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
-      await hydrateRoomSchedulesFromServer(queryClient, id);
+      await refreshRoomSchedules(queryClient, id);
       await syncRoomDetailFromServer(queryClient, id);
     },
   });
@@ -265,7 +268,7 @@ export function useMoveRoomSchedule() {
       const id = roomId.trim();
       if (!id.length) return;
       await invalidateExpenses(queryClient, id);
-      await hydrateRoomSchedulesFromServer(queryClient, id);
+      await refreshRoomSchedules(queryClient, id);
     },
   });
 }
@@ -385,7 +388,7 @@ export function useUpdateScheduleItem() {
         memoTouched: Object.prototype.hasOwnProperty.call(body, "memo"),
       });
       if (merged) {
-        queryClient.setQueryData(key, merged);
+        setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
       } else {
         void queryClient.invalidateQueries({
           queryKey: key,
@@ -423,7 +426,7 @@ export function useUpdateScheduleItemTravelMode() {
       const prev = queryClient.getQueryData<PlanPlace[]>(key);
       const merged = applyRoomScheduleItemToPlanPlaces(prev, updated);
       if (merged) {
-        queryClient.setQueryData(key, merged);
+        setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
       } else {
         void queryClient.invalidateQueries({
           queryKey: key,
@@ -557,7 +560,7 @@ export function useUpdateRoom() {
 
       if (datesChanged) {
         await invalidateExpenses(queryClient, roomId);
-        await hydrateRoomSchedulesFromServer(queryClient, roomId);
+        await refreshRoomSchedules(queryClient, roomId);
       }
     },
   });
