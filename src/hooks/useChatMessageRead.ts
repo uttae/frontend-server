@@ -29,15 +29,22 @@ export function useChatMessageRead({
   const lastPublishedReadIdRef = useRef<string | null>(null);
   const panelOpenRef = useRef(panelOpen);
   const markMessagesReadRef = useRef<(messageId?: string) => void>(() => {});
+  // 연결 상태는 보낼 때 읽는다 — 함수가 연결마다 바뀌면 이 함수에 기대는 기록 조회가 다시 시작된다
+  const stompRef = useRef({ client, connected });
 
   useLayoutEffect(() => {
     panelOpenRef.current = panelOpen;
   }, [panelOpen]);
 
+  useLayoutEffect(() => {
+    stompRef.current = { client, connected };
+  }, [client, connected]);
+
   const markMessagesRead = useCallback(
     (messageId?: string) => {
       const rid = roomId?.trim();
-      if (!rid || !client || !connected) return;
+      const stomp = stompRef.current;
+      if (!rid || !stomp.client || !stomp.connected) return;
 
       const id =
         messageId?.trim() ||
@@ -45,10 +52,10 @@ export function useChatMessageRead({
       if (!id || id === lastPublishedReadIdRef.current) return;
 
       lastPublishedReadIdRef.current = id;
-      publishRoomMessageRead(client, rid, id);
+      publishRoomMessageRead(stomp.client, rid, id);
       optimisticallyClearRoomUnreadCount(queryClient, rid);
     },
-    [client, connected, roomId, queryClient, rawMessagesRef],
+    [roomId, queryClient, rawMessagesRef],
   );
 
   useLayoutEffect(() => {
