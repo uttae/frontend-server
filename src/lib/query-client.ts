@@ -1,12 +1,19 @@
 import { QueryClient } from "@tanstack/react-query";
 
+import { isNetworkError } from "@/lib/api/errors";
+
 let registeredQueryClient: QueryClient | null = null;
+
+/** 일시적 네트워크 오류만 한 번 더 보낸다 — Google 429도 백엔드에서 502로 오므로 HTTP 오류는 재시도하지 않는다 */
+export function shouldRetryQuery(failureCount: number, error: unknown): boolean {
+  return failureCount < 1 && isNetworkError(error);
+}
 
 export function createQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        retry: 1,
+        retry: shouldRetryQuery,
         refetchOnWindowFocus: false,
         staleTime: 60_000,
       },

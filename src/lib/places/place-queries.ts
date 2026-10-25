@@ -124,7 +124,6 @@ export function placePreviewQueryOptions(googlePlaceId: string) {
     queryFn: () => loadPlacePreview(id),
     enabled: id.length > 0,
     ...placePreviewQueryDefaults,
-    retry: 1,
   };
 }
 

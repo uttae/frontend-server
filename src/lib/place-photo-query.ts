@@ -34,7 +34,6 @@ export const placePhotoUrlQueryDefaults = {
   refetchOnMount: true,
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
-  retry: 2,
 } as const;
 
 /** batch 시딩 후 구독 — 항목별 실패로 캐시 miss이면 단건 GET fallback */

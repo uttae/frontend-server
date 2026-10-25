@@ -31,6 +31,8 @@ let ensurePlacePhotoUrlsCached: typeof import("@/lib/places/place-batch-cache").
 let placePhotoUrlQueryKey: typeof import("@/lib/place-photo-query").placePhotoUrlQueryKey;
 let seededPlacePhotoUrlQueryOptions: typeof import("@/lib/place-photo-query").seededPlacePhotoUrlQueryOptions;
 let registerQueryClient: typeof import("@/lib/query-client").registerQueryClient;
+let createQueryClient: typeof import("@/lib/query-client").createQueryClient;
+let HttpError: typeof import("@/lib/api/errors").HttpError;
 let usePlacePhotoUrlQuery: typeof import("@/hooks/usePlacePhotoUrl").usePlacePhotoUrlQuery;
 
 beforeAll(async () => {
@@ -40,7 +42,8 @@ beforeAll(async () => {
   ({ placePhotoUrlQueryKey, seededPlacePhotoUrlQueryOptions } = await import(
     "@/lib/place-photo-query"
   ));
-  ({ registerQueryClient } = await import("@/lib/query-client"));
+  ({ registerQueryClient, createQueryClient } = await import("@/lib/query-client"));
+  ({ HttpError } = await import("@/lib/api/errors"));
   ({ usePlacePhotoUrlQuery } = await import("@/hooks/usePlacePhotoUrl"));
 });
 
@@ -139,23 +142,33 @@ describe("usePlacePhotoUrlQuery", () => {
     );
   });
 
-  it("단건 GET 실패 재시도에서는 batch 요청을 보내지 않는다", async () => {
-    const queryClient = new QueryClient();
+  it.each([429, 404, 500, 502])("단건 GET이 %i면 다시 보내지 않는다", async (status) => {
+    const queryClient = createQueryClient();
     registerQueryClient(queryClient);
-    const failedId = "ChIJ-single-retry";
-    requestPlacePhotoUrlMock
-      .mockRejectedValueOnce(new Error("single request failed once"))
-      .mockRejectedValueOnce(new Error("single request failed twice"))
-      .mockResolvedValueOnce("https://cdn.example/retried.jpg");
+    requestPlacePhotoUrlMock.mockRejectedValueOnce(new HttpError(status, "Place photo failed"));
 
-    usePlacePhotoUrlQuery(failedId);
+    usePlacePhotoUrlQuery("ChIJ-http-error");
     const queryOptions = useQueryMock.mock.lastCall?.[0];
 
-    await expect(queryClient.fetchQuery(queryOptions)).resolves.toBe(
+    await expect(queryClient.fetchQuery(queryOptions)).rejects.toThrow("Place photo failed");
+    expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(1);
+    expect(requestPlacePhotoUrlsBatchMock).not.toHaveBeenCalled();
+  });
+
+  it("일시적 네트워크 오류만 한 번 더 보낸다", async () => {
+    const queryClient = createQueryClient();
+    registerQueryClient(queryClient);
+    requestPlacePhotoUrlMock
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce("https://cdn.example/retried.jpg");
+
+    usePlacePhotoUrlQuery("ChIJ-network-error");
+    const queryOptions = useQueryMock.mock.lastCall?.[0];
+
+    await expect(queryClient.fetchQuery({ ...queryOptions, retryDelay: 0 })).resolves.toBe(
       "https://cdn.example/retried.jpg",
     );
-    expect(requestPlacePhotoUrlsBatchMock).not.toHaveBeenCalled();
-    expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(3);
+    expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(2);
   });
 
   it("seeded multi-photo query도 FAILED 캐시 miss를 빈 URL 성공으로 바꾸지 않는다", async () => {
