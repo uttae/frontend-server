@@ -10,6 +10,22 @@ export const PLAN_ITEM_DND_ITEM_ID_MIME = "application/x-plan-item-id";
 
 export const PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR = "data-plan-itinerary-drop-zone";
 
+/**
+ * 드래그하는 동안 목록이 바뀌면(다른 사람의 변경·재조회) 사용자가 보던 자리와 서버 자리가 달라진다.
+ * 재정렬 API는 절대 위치만 받으므로 그대로 보내면 의도와 다른 순서가 저장된다 — 저장하지 않고 알린다.
+ */
+export const PLAN_ORDER_CHANGED_MESSAGE = "일정이 바뀌어서 옮기지 않았어요. 다시 옮겨 주세요.";
+
+/** 드래그를 시작할 때와 놓을 때의 id 순서가 같은지 */
+export function sameIdOrder(
+  before: readonly unknown[],
+  after: readonly unknown[],
+): boolean {
+  return (
+    before.length === after.length && before.every((id, i) => id === after[i])
+  );
+}
+
 export const PLAN_ITEM_REORDER_ROW_TRANSITION =
   "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
 

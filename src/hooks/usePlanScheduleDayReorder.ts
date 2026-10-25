@@ -15,7 +15,9 @@ import type { RoomSchedule } from "@/lib/api/rooms";
 import {
   computeRowTranslateY,
   getPlanItemRowReorderStyle,
+  PLAN_ORDER_CHANGED_MESSAGE,
   PlanItemRowLayoutSnapshot,
+  sameIdOrder,
 } from "@/lib/plan/planItemReorder";
 import {
   beginPlanScheduleDayDrag,
@@ -43,6 +45,8 @@ export function usePlanScheduleDayReorder({
   const layoutSnapshotRef = useRef(new PlanItemRowLayoutSnapshot());
   const pointerYRef = useRef(0);
   const dragOverRafRef = useRef(0);
+  /** 드래그를 시작할 때의 일차 순서 */
+  const dayOrderRef = useRef<number[] | null>(null);
 
   const dragLocked =
     interactionLocked || isMovePending || schedules.length < 2;
@@ -54,6 +58,7 @@ export function usePlanScheduleDayReorder({
     setDragFromIndex(null);
     setPreviewIndex(null);
     layoutSnapshotRef.current.clear();
+    dayOrderRef.current = null;
   }, []);
 
   const setSectionRef = useCallback(
@@ -96,6 +101,7 @@ export function usePlanScheduleDayReorder({
         beginPlanScheduleDayDrag(e.nativeEvent, sectionEl, index);
       }
       layoutSnapshotRef.current.capture(sectionRefs.current);
+      dayOrderRef.current = schedules.map((s) => s.scheduleId);
       setDragFromIndex(index);
       setPreviewIndex(index);
     },
@@ -141,8 +147,17 @@ export function usePlanScheduleDayReorder({
       const toIndex =
         previewIndex ??
         (Number.isFinite(fromIndex) ? fromIndex : null);
+      const dayOrderAtDragStart = dayOrderRef.current;
 
       resetDragPreview();
+
+      if (
+        dayOrderAtDragStart &&
+        !sameIdOrder(dayOrderAtDragStart, schedules.map((s) => s.scheduleId))
+      ) {
+        toast.error(PLAN_ORDER_CHANGED_MESSAGE);
+        return;
+      }
 
       if (
         !Number.isFinite(fromIndex) ||
