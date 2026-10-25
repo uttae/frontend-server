@@ -71,6 +71,7 @@ export function PlanPageView() {
     data: schedules,
     isPending,
     isError,
+    isLoadingError,
   } = useRoomSchedules(roomIdForQueries);
   const { mutate: deleteSchedule, isPending: isDeletingSchedule } =
     useDeleteRoomSchedule();
@@ -200,7 +201,8 @@ export function PlanPageView() {
           roomId={roomId}
           schedules={sortedSchedules}
           isLoading={showInitialLoading}
-          isError={isError}
+          // 재조회 실패는 보이던 일정을 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류로 바꾼다
+          isError={isLoadingError}
           menuDisabled={isCreatingSchedule || isDeletingSchedule || isMovePending}
           onRequestDeleteDay={handleDeleteScheduleDay}
         />
