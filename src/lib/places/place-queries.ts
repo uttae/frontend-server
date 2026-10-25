@@ -1,11 +1,19 @@
+import { isBatchItemError, isBatchItemOk } from "@/lib/api/batch-types";
+import { HttpError } from "@/lib/api/errors";
 import {
   requestPlaceDetail,
   requestPlacePreview,
+  requestPlacePreviewsBatch,
   type PlaceDetail,
   type PlacePreview,
+  type PlacePreviewBatchItem,
   type PlacePreviewResponse,
 } from "@/lib/api/places";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
+import {
+  createPlaceBatchLoader,
+  type PlaceBatchResult,
+} from "@/lib/places/place-batch-loader";
 import { getQueryClient } from "@/lib/query-client";
 
 export const placeDetailQueryDefaults = {
@@ -99,6 +107,33 @@ export function resolvePreviewGooglePlaceId(googlePlaceId: string): string {
   return raw.length ? normalizeGooglePlaceResourceId(raw) : "";
 }
 
+function previewBatchItemResult(
+  item: PlacePreviewBatchItem,
+): PlaceBatchResult<PlacePreview> | null {
+  if (isBatchItemOk(item)) return { ok: true, value: normalizePlacePreview(item) };
+  if (isBatchItemError(item)) {
+    // 항목 실패는 외부 API 실패(EXTERNAL_API_ERROR)일 때만 온다 — 단건으로 보냈으면 502였을 실패다
+    return {
+      ok: false,
+      error: new HttpError(502, `장소 미리보기 조회 실패: ${item.errorCode ?? item.status}`),
+    };
+  }
+  return null;
+}
+
+/** 같은 커밋에 요청된 미리보기를 모아 받는다 — 1곳이면 단건, 2곳 이상이면 batch */
+const loadPlacePreviewInBatch = createPlaceBatchLoader<PlacePreview>({
+  fetchOne: async (id) => normalizePlacePreview(await requestPlacePreview(id)),
+  fetchMany: async (ids) => {
+    const results = new Map<string, PlaceBatchResult<PlacePreview>>();
+    for (const item of await requestPlacePreviewsBatch(ids)) {
+      const result = previewBatchItemResult(item);
+      if (result) results.set(resolvePreviewGooglePlaceId(item.googlePlaceId), result);
+    }
+    return results;
+  },
+});
+
 /** useQueries queryFn 등 중첩 fetchQuery 없이 preview API만 호출 */
 export async function loadPlacePreview(googlePlaceId: string): Promise<PlacePreview> {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
@@ -111,12 +146,13 @@ export async function loadPlacePreview(googlePlaceId: string): Promise<PlacePrev
 
 /**
  * 북마크·일정 카드 등 `useQueries`용 — `fetchPlacePreview`와 동일 `placePreviewQueryKey`·60s 캐시.
+ * 같은 커밋에 마운트된 미리보기(북마크 목록·지도 핀)는 batch 하나로 모은다.
  */
 export function placePreviewQueryOptions(googlePlaceId: string) {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
   return {
     queryKey: placePreviewQueryKey(id),
-    queryFn: () => loadPlacePreview(id),
+    queryFn: () => loadPlacePreviewInBatch(id),
     enabled: id.length > 0,
     ...placePreviewQueryDefaults,
   };
