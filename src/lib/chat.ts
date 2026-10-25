@@ -610,8 +610,8 @@ function preferNewerServerMessage(
   return before !== undefined && after !== undefined && after < before ? a : b;
 }
 
-/** 방별 sequence 순서. sequence가 없는 옛 메시지는 작성 시각으로 비교한다 */
-function compareServerMessageOrder(
+/** 커서 판단용 방별 sequence 순서. sequence가 없는 옛 메시지는 작성 시각으로 비교한다 */
+function compareBySequence(
   x: ServerChatMessage,
   y: ServerChatMessage,
 ): number {
@@ -619,7 +619,10 @@ function compareServerMessageOrder(
   return x.createdAt.localeCompare(y.createdAt);
 }
 
-/** 같은 id는 하나만 유지하고 서버 순서로 정렬한다 */
+/**
+ * 같은 id는 하나만 유지하고 작성 시각 순으로 정렬한다.
+ * 거의 동시에 저장된 메시지는 서버가 충돌을 재시도한 순서로 sequence를 받아 보낸 순서와 다를 수 있다.
+ */
 export function mergeServerMessageLists(
   ...lists: ServerChatMessage[][]
 ): ServerChatMessage[] {
@@ -634,7 +637,7 @@ export function mergeServerMessageLists(
       map.set(m.id, preferNewerServerMessage(prev, m));
     }
   }
-  return [...map.values()].sort(compareServerMessageOrder);
+  return [...map.values()].sort((x, y) => x.createdAt.localeCompare(y.createdAt));
 }
 
 /** 목록에 이미 있는 id만 새 내용으로 바꾼다. 새 id는 붙이지 않는다 */
@@ -691,7 +694,7 @@ export function partitionLiveMessages(
   const updates: ServerChatMessage[] = [];
   let next = cursor;
   let hasGap = false;
-  for (const msg of [...msgs].sort(compareServerMessageOrder)) {
+  for (const msg of [...msgs].sort(compareBySequence)) {
     const seq = msg.sequence;
     if (!atTail) {
       updates.push(msg);

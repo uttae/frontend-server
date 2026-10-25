@@ -84,15 +84,17 @@ async function loadRoomHistorySnapshot(roomId: string) {
     lastReadMessageId,
     CHAT_MESSAGE_PAGE_SIZE,
   );
+  // 서버는 페이지를 sequence·문서 id 순으로 준다 — 화면은 작성 시각 순으로 맞춘다
+  const serverSlice = mergeServerMessageLists(out.serverSlice);
   if (!out.lastReadMessageId) {
-    return { ...out, slice: out.serverSlice, placementBeforeSlice: out.serverSlice };
+    return { ...out, slice: serverSlice, placementBeforeSlice: serverSlice };
   }
 
   const bridged = await mergeSliceWithReadBridge(
     roomId,
     out.lastReadMessageId,
-    out.serverSlice,
-    out.serverSlice,
+    serverSlice,
+    serverSlice,
   );
   return {
     ...out,
@@ -800,7 +802,7 @@ export function useChatMessages(
         clearSessionReadBoundary(rid);
         setHasMore(more);
         setHasMoreNewer(false);
-        setRawMessages(normalized);
+        setRawMessages(mergeServerMessageLists(normalized));
         publishScrollToAnchor(undefined);
         void warmPlacePhotoQueriesFromChatHistory(queryClient, normalized);
         finishTailSync(rid, true);

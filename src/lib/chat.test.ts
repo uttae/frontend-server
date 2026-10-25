@@ -85,9 +85,14 @@ describe("partitionLiveMessages", () => {
 });
 
 describe("mergeServerMessageLists", () => {
-  it("orders by sequence even when timestamps disagree", () => {
-    const late = { ...msg(41), createdAt: "2026-10-25T01:00:00Z" };
-    expect(ids(mergeServerMessageLists([msg(42)], [late]))).toEqual(["m41", "m42"]);
+  it("keeps the written order when sequences were assigned out of order", () => {
+    // 거의 동시에 저장되면 먼저 쓴 메시지가 더 큰 sequence를 받을 수 있다
+    const writtenFirst = { ...msg(42), createdAt: "2026-10-25T00:00:00.118Z" };
+    const writtenLater = { ...msg(41), createdAt: "2026-10-25T00:00:00.139Z" };
+    expect(ids(mergeServerMessageLists([writtenLater], [writtenFirst]))).toEqual([
+      "m42",
+      "m41",
+    ]);
   });
 
   it("keeps the later copy of the same message", () => {
