@@ -167,7 +167,6 @@ export function useRoomSchedules(roomId: string | null) {
     queryFn: () => hydrateRoomSchedulesFromServer(queryClient, id),
     enabled: id.length > 0,
     staleTime: Infinity,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 }
@@ -613,7 +612,6 @@ export function useRoomMembers(roomId: string | null) {
     queryFn: () => getRoomMembers(roomId!),
     enabled: !!roomId && (!waitForStompBeforeMembers || stompConnected),
     staleTime: Infinity,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 }

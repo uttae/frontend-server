@@ -16,7 +16,6 @@ export function useRoomUnreadCount(roomId: string | null) {
     /** 패널 열림 중에는 GET 없음 — STOMP read + optimistic 캐시만 사용 */
     enabled: id.length > 0 && !chatPanelOpen,
     staleTime: Number.POSITIVE_INFINITY,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });
