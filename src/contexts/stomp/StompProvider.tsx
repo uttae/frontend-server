@@ -34,7 +34,6 @@ import {
 import type { ServerChatMessage } from "@/types/chat";
 
 import { StompConnectionBanner } from "@/components/stomp/StompConnectionBanner";
-import { handleStompReconnect } from "@/lib/stomp/stomp-session-recovery";
 import { useStompConnectionStore } from "@/stores/stomp-connection-store";
 
 import {
@@ -91,6 +90,7 @@ export function StompProvider({ children }: { children: ReactNode }) {
   const lastSubscribedRoomIdRef = useRef<string | null>(null);
   const forcedExitConsumedRef = useRef(false);
   const suppressCloseRecoveryRef = useRef(false);
+  const retryConnectionRef = useRef<(() => void) | null>(null);
   const [connectionState, setConnectionState] = useState<StompConnectionState>({
     client: null,
     connected: false,
@@ -102,19 +102,8 @@ export function StompProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const retryStompConnection = useCallback(() => {
-    const client = clientRef.current;
-    if (!client) return;
-
-    useStompConnectionStore.getState().resumeAutoRecovery();
-    setConnectionState((prev) => ({ ...prev, connected: false }));
-    invalidateRoomTopics();
-    void handleStompReconnect({
-      client,
-      queryClient: queryClientRef.current,
-      isSuppressed: () => suppressCloseRecoveryRef.current,
-      isActive: () => clientRef.current === client,
-    });
-  }, [invalidateRoomTopics]);
+    retryConnectionRef.current?.();
+  }, []);
 
   const detachRoomTopicsOnly = useCallback(() => {
     roomTopicsUnsubRef.current?.();
@@ -247,6 +236,7 @@ export function StompProvider({ children }: { children: ReactNode }) {
     forcedExitConsumedRef,
     queryClientRef,
     setConnectionState,
+    retryConnectionRef,
   });
 
   const roomTopicsDeferred = pathDefersRoomStompRoomTopics(pathname);

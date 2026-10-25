@@ -9,13 +9,17 @@ import type { Client } from "@stomp/stompjs";
 import { createStompClient, getStompBrokerURL } from "@/lib/stomp/client";
 import { pathDefersRoomStompRoomTopics } from "@/lib/stomp/stompPathPolicy";
 import {
-  handleStompReconnect,
+  refreshSessionBeforeReconnect,
   STOMP_ACCESS_TOKEN_EXPIRED_CLOSE_CODE,
 } from "@/lib/stomp/stomp-session-recovery";
 import { startSessionPresencePing } from "@/lib/stomp/sessionPresencePing";
 import { subscribeUserRoomsQueue } from "@/lib/stomp/subscribe-user-rooms-queue";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
-import { useStompConnectionStore } from "@/stores/stomp-connection-store";
+import {
+  STOMP_CONNECTION_ISSUE_DELAY_MS,
+  STOMP_CONNECTION_ISSUE_MESSAGE,
+  useStompConnectionStore,
+} from "@/stores/stomp-connection-store";
 
 export type StompConnectionState = {
   client: Client | null;
@@ -40,10 +44,13 @@ type LifecycleOpts = {
   forcedExitConsumedRef: MutableRefObject<boolean>;
   queryClientRef: MutableRefObject<QueryClient>;
   setConnectionState: Dispatch<SetStateAction<StompConnectionState>>;
+  /** 연결 문제 배너의 '다시 시도'가 부르는 즉시 재연결 */
+  retryConnectionRef: MutableRefObject<(() => void) | null>;
 };
 
 /**
  * 로그인·경로 조건으로 STOMP 클라이언트 1개를 유지하고, 재연결 시 유저 방 큐 구독을 세팅합니다.
+ * 재연결 간격은 stompjs(`createStompClient`)가 맡고, 이 effect는 재연결 직전 세션 갱신과 연결 상태 표시만 합니다.
  */
 export function useStompClientLifecycleEffect({
   stompEligible,
@@ -59,6 +66,7 @@ export function useStompClientLifecycleEffect({
   forcedExitConsumedRef,
   queryClientRef,
   setConnectionState,
+  retryConnectionRef,
 }: LifecycleOpts): void {
   useEffect(() => {
     if (!stompEligible) {
@@ -72,36 +80,51 @@ export function useStompClientLifecycleEffect({
 
     const stopPingRef: { current: (() => void) | null } = { current: null };
     let effectActive = true;
+    // 첫 연결은 proxy가 세션을 확인했으므로, 한 번이라도 끊긴 뒤의 시도에서만 세션을 갱신한다
+    let connectionDropped = false;
+    // 연결 시도(세션 확인~CONNECTED·close) 중에 다시 시도하면 연결이 둘로 갈라진다
+    let attemptInFlight = false;
+    let connectionIssueTimer: ReturnType<typeof setTimeout> | null = null;
 
     const stopAppPing = () => {
       stopPingRef.current?.();
       stopPingRef.current = null;
     };
 
+    const clearConnectionIssueTimer = () => {
+      if (connectionIssueTimer === null) return;
+      clearTimeout(connectionIssueTimer);
+      connectionIssueTimer = null;
+    };
+
     const client = createStompClient(getStompBrokerURL());
     clientRef.current = client;
     setConnectionState({ client, connected: false });
 
-    const isActive = () => effectActive;
-    const isSuppressed = () => suppressCloseRecoveryRef.current;
+    const isActive = () => effectActive && !suppressCloseRecoveryRef.current;
 
-    const requestStompRecovery = () => {
-      if (!effectActive || suppressCloseRecoveryRef.current) return;
-
-      stopAppPing();
-      setConnectionState((prev) => ({ ...prev, connected: false }));
-      invalidateRoomTopics();
-
-      void handleStompReconnect({
+    client.beforeConnect = async () => {
+      attemptInFlight = true;
+      if (!connectionDropped) return;
+      await refreshSessionBeforeReconnect({
         client,
         queryClient: queryClientRef.current,
-        isSuppressed,
         isActive,
+      });
+    };
+
+    retryConnectionRef.current = () => {
+      if (!isActive() || attemptInFlight || client.connected) return;
+      // deactivate→activate는 예약된 재연결을 지우고 간격을 처음 값으로 되돌린 뒤 바로 시도한다
+      void client.deactivate().then(() => {
+        if (isActive()) client.activate();
       });
     };
 
     client.onConnect = () => {
       if (!effectActive) return;
+      attemptInFlight = false;
+      clearConnectionIssueTimer();
       useStompConnectionStore.getState().clearConnectionIssue();
       setConnectionState({ client, connected: true });
       forcedExitConsumedRef.current = false;
@@ -121,31 +144,42 @@ export function useStompClientLifecycleEffect({
       }
     };
 
-    client.onDisconnect = () => {
-      if (!effectActive) return;
-      requestStompRecovery();
-    };
-
     client.onStompError = () => {
       if (!effectActive) return;
       setConnectionState((prev) => ({ ...prev, connected: false }));
     };
 
     client.onWebSocketClose = (event) => {
-      if (!effectActive) return;
-      if (suppressCloseRecoveryRef.current) return;
+      attemptInFlight = false;
+      if (!isActive()) return;
 
       if (event.code === STOMP_ACCESS_TOKEN_EXPIRED_CLOSE_CODE) {
         console.debug("[stomp] WebSocket closed: ACCESS_TOKEN_EXPIRED (4001)");
       }
 
-      requestStompRecovery();
+      connectionDropped = true;
+      stopAppPing();
+      setConnectionState((prev) => ({ ...prev, connected: false }));
+      invalidateRoomTopics();
+
+      // 재연결은 stompjs가 예약한다. 여기서는 끊긴 상태가 이어질 때만 배너를 띄운다
+      if (connectionIssueTimer === null) {
+        connectionIssueTimer = setTimeout(() => {
+          connectionIssueTimer = null;
+          if (!isActive() || client.connected) return;
+          useStompConnectionStore
+            .getState()
+            .setConnectionIssue(STOMP_CONNECTION_ISSUE_MESSAGE);
+        }, STOMP_CONNECTION_ISSUE_DELAY_MS);
+      }
     };
 
     client.activate();
 
     return () => {
       effectActive = false;
+      retryConnectionRef.current = null;
+      clearConnectionIssueTimer();
       stopAppPing();
       teardownConnectedClient();
     };
@@ -154,6 +188,7 @@ export function useStompClientLifecycleEffect({
     forcedExitConsumedRef,
     pathnameRef,
     queryClientRef,
+    retryConnectionRef,
     setConnectionState,
     userRoomsQueueUnsubRef,
     getResolvedRoomId,
