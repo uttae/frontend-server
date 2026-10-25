@@ -229,6 +229,12 @@ function batchRouteItemToResponse(
 const inFlightScheduleRoutesBatch = new Map<string, Promise<void>>();
 
 /**
+ * 실패가 아니라 "경로 없음"이라는 답인 batch 항목 — 단건으로 다시 물어도 같은 답(204·404)이 오므로
+ * 경로 없음(`null`)으로 시딩하고 다시 묻지 않는다.
+ */
+const ROUTE_ANSWER_ERROR_CODES = new Set(["NO_ROUTE", "LAST_ITEM", "SCHEDULE_ITEM_NOT_FOUND"]);
+
+/**
  * in-flight dedup 키 — 일정 지문(`itemId` 순서·장소 정체성)을 포함해
  * 목적지만 바뀐 일정(`[A,B]`→`[A,C]`)이 이전 batch Promise를 공유하지 않게 합니다.
  */
@@ -351,17 +357,17 @@ export async function hydrateScheduleRoutesBatch(
   if (!snapshotFp.length || snapshotFp !== currentFp) return;
 
   for (const result of results) {
-    if (!isBatchItemOk(result)) continue;
-    const route = batchRouteItemToResponse(result);
     const itemId = result.itemId;
     const mode = canonicalScheduleTravelMode(result.travelMode);
     if (!mode) continue;
     if (typeof itemId !== "number" || !Number.isFinite(itemId)) continue;
 
-    queryClient.setQueryData(
-      scheduleItemRouteQueryKey(rid, scheduleId, itemId, mode),
-      route,
-    );
+    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, mode);
+    if (isBatchItemOk(result)) {
+      queryClient.setQueryData(routeKey, batchRouteItemToResponse(result));
+    } else if (result.errorCode && ROUTE_ANSWER_ERROR_CODES.has(result.errorCode)) {
+      queryClient.setQueryData(routeKey, null);
+    }
   }
 }
 
