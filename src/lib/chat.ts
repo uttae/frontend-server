@@ -589,16 +589,37 @@ function formatQuotePreview(content: string, maxLen = 96): string {
   return `${oneLine.slice(0, maxLen).trimEnd()}…`;
 }
 
+/** AI 요청 상태는 대기(QUEUED)에서 처리(PROCESSING)나 취소(CANCELED)로만 바뀐다 */
+function aiRequestStatusRank(msg: ServerChatMessage): number | undefined {
+  if (normalizeMessageKind(msg.messageType) !== "AI_REQUEST") return undefined;
+  const status = normalizeAiStatus(msg.metadata?.aiStatus ?? msg.metadata?.aistatus);
+  if (status === undefined) return undefined;
+  return status === "QUEUED" ? 0 : 1;
+}
+
+/**
+ * 같은 id는 나중에 받은 것(b)을 쓴다. AI 요청만은 대기 상태로 되돌리지 않는다 —
+ * 상태가 바뀌기 전에 서버가 만든 조회 응답이 실시간으로 받은 처리·취소 상태를 덮지 않게.
+ */
 function preferNewerServerMessage(
   a: ServerChatMessage,
   b: ServerChatMessage,
 ): ServerChatMessage {
-  if (!a.createdAt) return b;
-  if (!b.createdAt) return a;
-  return b.createdAt >= a.createdAt ? b : a;
+  const before = aiRequestStatusRank(a);
+  const after = aiRequestStatusRank(b);
+  return before !== undefined && after !== undefined && after < before ? a : b;
 }
 
-/** 같은 id 는 하나만 유지(타임스탬프가 더 최신인 행). */
+/** 방별 sequence 순서. sequence가 없는 옛 메시지는 작성 시각으로 비교한다 */
+function compareServerMessageOrder(
+  x: ServerChatMessage,
+  y: ServerChatMessage,
+): number {
+  if (x.sequence != null && y.sequence != null) return x.sequence - y.sequence;
+  return x.createdAt.localeCompare(y.createdAt);
+}
+
+/** 같은 id는 하나만 유지하고 서버 순서로 정렬한다 */
 export function mergeServerMessageLists(
   ...lists: ServerChatMessage[][]
 ): ServerChatMessage[] {
@@ -613,7 +634,94 @@ export function mergeServerMessageLists(
       map.set(m.id, preferNewerServerMessage(prev, m));
     }
   }
-  return [...map.values()].sort((x, y) => x.createdAt.localeCompare(y.createdAt));
+  return [...map.values()].sort(compareServerMessageOrder);
+}
+
+/** 목록에 이미 있는 id만 새 내용으로 바꾼다. 새 id는 붙이지 않는다 */
+export function replaceExistingServerMessages(
+  list: ServerChatMessage[],
+  updates: readonly ServerChatMessage[],
+): ServerChatMessage[] {
+  if (updates.length === 0) return list;
+  const byId = new Map<string, ServerChatMessage>();
+  for (const m of updates) {
+    const prev = byId.get(m.id);
+    byId.set(m.id, prev ? preferNewerServerMessage(prev, m) : m);
+  }
+  let changed = false;
+  const next = list.map((m) => {
+    const update = byId.get(m.id);
+    if (!update) return m;
+    const kept = preferNewerServerMessage(m, update);
+    if (kept !== m) changed = true;
+    return kept;
+  });
+  return changed ? next : list;
+}
+
+export type LiveMessagePartition = {
+  /** 커서 다음 번호부터 이어지는 새 메시지 — 목록 끝에 붙인다 */
+  appended: ServerChatMessage[];
+  /** 이미 반영한 번호거나 중간 창에서 받은 메시지 — 목록에 있는 id만 바꾼다 */
+  updates: ServerChatMessage[];
+  cursor: number | undefined;
+  /** 커서 다음 번호가 비었다 — 서버에서 따라잡아야 한다 */
+  hasGap: boolean;
+};
+
+/**
+ * 실시간 메시지를 sequence 커서로 나눈다. 커서는 목록 끝까지 빠짐없이 반영한 마지막 번호다.
+ * - 목록이 최신 끝이 아니면(중간 창) 새 메시지를 붙이지 않는다. 붙이면 그 사이가 빈다
+ * - 커서+1만 붙이고, 그보다 큰 번호는 빈 번호를 따라잡을 때 함께 받는다
+ * - sequence가 없는 옛 메시지는 id로만 판단한다
+ */
+export function partitionLiveMessages(
+  msgs: readonly ServerChatMessage[],
+  {
+    cursor,
+    atTail,
+    list,
+  }: {
+    cursor: number | undefined;
+    atTail: boolean;
+    list: readonly ServerChatMessage[];
+  },
+): LiveMessagePartition {
+  const appended: ServerChatMessage[] = [];
+  const updates: ServerChatMessage[] = [];
+  let next = cursor;
+  let hasGap = false;
+  for (const msg of [...msgs].sort(compareServerMessageOrder)) {
+    const seq = msg.sequence;
+    if (!atTail) {
+      updates.push(msg);
+    } else if (seq == null || next == null) {
+      if (list.some((m) => m.id === msg.id)) {
+        updates.push(msg);
+      } else {
+        appended.push(msg);
+        if (seq != null) next = seq;
+      }
+    } else if (seq <= next) {
+      updates.push(msg);
+    } else if (seq === next + 1) {
+      appended.push(msg);
+      next = seq;
+    } else {
+      hasGap = true;
+    }
+  }
+  return { appended, updates, cursor: next, hasGap };
+}
+
+/**
+ * 최신 끝까지 받은 스냅샷의 커서. 빈 방은 0(첫 메시지가 1번)이고,
+ * sequence가 없는 옛 메시지뿐이면 커서를 둘 수 없다.
+ */
+export function tailCursorOf(
+  snapshot: readonly ServerChatMessage[],
+): number | undefined {
+  return snapshot.length === 0 ? 0 : maxSequenceInMessages(snapshot);
 }
 
 /** GET /messages (페이징) 응답 행 → 토픽과 동일한 `ServerChatMessage[]` */
@@ -661,19 +769,6 @@ export function maxSequenceInMessages(
     max = max == null ? m.sequence : Math.max(max, m.sequence);
   }
   return max;
-}
-
-/**
- * 초기 히스토리 GET 동안 패널에서만 잠깐 쌓이는 메시지(STOMP 등) —
- * 병합 시 서버 페이지와 함께 유지.
- */
-export function transientMessagesDuringRoomHistoryFetch(
-  prev: ServerChatMessage[],
-): ServerChatMessage[] {
-  return prev.filter((m) => {
-    const k = normalizeMessageKind(m.messageType);
-    return k === "SYSTEM" || k === "PLACE_SHARE" || k === "AI_REQUEST";
-  });
 }
 
 function buildAiRequestReplyLookup(

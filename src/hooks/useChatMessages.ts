@@ -16,8 +16,10 @@ import {
   normalizeFetchedRoomMessages,
   oldestServerMessageByCreatedAt,
   parseFiniteNumber,
+  partitionLiveMessages,
+  replaceExistingServerMessages,
   serverMessageToChatMessage,
-  transientMessagesDuringRoomHistoryFetch,
+  tailCursorOf,
 } from "@/lib/chat";
 import { useStompContext } from "@/contexts/StompContext";
 import { useSessionUser } from "@/hooks/useSessionUser";
@@ -32,6 +34,10 @@ import {
   loadInitialRoomHistory,
 } from "@/lib/chat/initialRoomHistory";
 import {
+  fetchRoomMessagesAfter,
+  retryChatHistoryRequest,
+} from "@/lib/chat/messageCatchUp";
+import {
   CHAT_MESSAGE_PAGE_SIZE,
   EMPTY_READ_DIVIDER_PLACEMENT,
   mergeSliceWithReadBridge,
@@ -44,9 +50,23 @@ export type UseChatMessagesOptions = {
   /**
    * `false`: 패널 닫힘 — GET 없음. STOMP만 유지.
    * `true`: 이 `roomId`에 대해 **이번 페이지 수명 내 아직 GET을 한 적 없을 때만** 히스토리 GET.
-   * (닫았다 다시 열 때는 같은 방이면 히스토리 GET 없이 read-status로 마커·스크롤만 복원.)
+   * (닫았다 다시 열 때는 같은 방이면 놓친 메시지만 따라잡고 read-status로 마커·스크롤을 복원.)
    */
   fetchHistory: boolean;
+};
+
+/**
+ * 빈 번호를 따라잡는 이유 — 따라잡은 뒤 화면 처리가 다르다.
+ * - gap: 실시간 수신 중 번호가 비었다. 받은 메시지는 실시간 메시지처럼 읽음 처리한다
+ * - reconnect: 끊긴 동안 놓쳤다. 새로 붙은 메시지 앞에 구분선을 두고 그 자리로 스크롤한다
+ * - reopen: 다른 방에 다녀왔거나 패널을 다시 열었다. 읽음 경계를 서버 기준으로 복원한다
+ */
+type CatchUpReason = "gap" | "reconnect" | "reopen";
+
+const CATCH_UP_REASON_PRIORITY: Record<CatchUpReason, number> = {
+  gap: 0,
+  reconnect: 1,
+  reopen: 2,
 };
 
 function chatHistoryGateKey(
@@ -56,44 +76,33 @@ function chatHistoryGateKey(
   return `${uid ?? "anon"}:${roomId.trim()}`;
 }
 
-function bumpRoomLastSequence(
-  map: Map<string, number>,
-  rid: string,
-  msgs: readonly ServerChatMessage[],
-) {
-  const mx = maxSequenceInMessages(msgs);
-  if (mx == null) return;
-  const prev = map.get(rid);
-  map.set(rid, prev != null ? Math.max(prev, mx) : mx);
-}
-
-function applyBridgedSlice(
-  roomId: string,
-  bridged: Awaited<ReturnType<typeof mergeSliceWithReadBridge>>,
-  refs: {
-    hasMoreNewerByRoom: Map<string, boolean>;
-    lastSequenceByRoom: Map<string, number>;
-  },
-  setters: {
-    setHasMoreNewer: (v: boolean) => void;
-    setRawMessages: (msgs: ServerChatMessage[]) => void;
-  },
-  queryClient: ReturnType<typeof useQueryClient>,
-) {
-  if (bridged.bridgedHasMoreNewer == null) return;
-
-  refs.hasMoreNewerByRoom.set(roomId, bridged.bridgedHasMoreNewer);
-  setters.setHasMoreNewer(bridged.bridgedHasMoreNewer);
-  setters.setRawMessages(bridged.slice);
-
-  if (bridged.bridgedSlice?.length) {
-    bumpRoomLastSequence(
-      refs.lastSequenceByRoom,
-      roomId,
-      bridged.bridgedSlice,
-    );
-    void warmPlacePhotoQueriesFromChatHistory(queryClient, bridged.bridgedSlice);
+/** 패널 최초 기록 — 읽음 위치 앞 페이지에, 읽음 위치부터 이어지는 페이지를 붙인다 */
+async function loadRoomHistorySnapshot(roomId: string) {
+  const { lastReadMessageId } = await getRoomMessageReadStatus(roomId);
+  const out = await loadInitialRoomHistory(
+    roomId,
+    lastReadMessageId,
+    CHAT_MESSAGE_PAGE_SIZE,
+  );
+  if (!out.lastReadMessageId) {
+    return { ...out, slice: out.serverSlice, placementBeforeSlice: out.serverSlice };
   }
+
+  const bridged = await mergeSliceWithReadBridge(
+    roomId,
+    out.lastReadMessageId,
+    out.serverSlice,
+    out.serverSlice,
+  );
+  return {
+    ...out,
+    slice: bridged.slice,
+    placementBeforeSlice: bridged.placementBeforeSlice,
+    hasMoreNewer: bridged.bridgedHasMoreNewer ?? out.hasMoreNewer,
+    warmHistory: bridged.bridgedSlice?.length
+      ? mergeServerMessageLists(out.warmHistory, bridged.bridgedSlice)
+      : out.warmHistory,
+  };
 }
 
 export function useChatMessages(
@@ -159,17 +168,27 @@ export function useChatMessages(
   const readBoundaryRestoreVersionRef = useRef(0);
   const activeRoomIdRef = useRef("");
   const fetchHistoryRef = useRef(fetchHistory);
-  const hasObservedConnectedRef = useRef(false);
-  const disconnectedAfterConnectionRef = useRef(false);
+  /** 마운트 때 이미 연결돼 있었으면 구독이 최초 기록 조회보다 먼저다 — 그 뒤의 재연결만 따라잡는다 */
+  const wasConnectedRef = useRef(connected);
   const historyFetchedRoomIdsRef = useRef<Set<string>>(new Set());
   const hasMoreByRoomRef = useRef<Map<string, boolean>>(new Map());
   const hasMoreNewerByRoomRef = useRef<Map<string, boolean>>(new Map());
-  const lastSequenceByRoomRef = useRef<Map<string, number>>(new Map());
+  /** 목록 끝까지 빠짐없이 반영한 마지막 sequence. 목록이 최신 끝일 때만 둔다 */
+  const cursorByRoomRef = useRef<Map<string, number>>(new Map());
   const lastReadMarkerByRoomRef = useRef<Map<string, string>>(new Map());
   const readDividerPlacementByRoomRef = useRef<Map<string, ReadDividerPlacement>>(
     new Map(),
   );
-  const recoveringSequenceRoomsRef = useRef<Set<string>>(new Set());
+  /**
+   * 목록 끝을 바꾸는 조회(최초 기록·최신으로 이동·아래 페이지·따라잡기)는 마지막에 시작한 하나만 반영한다.
+   * 조회 중 받은 실시간 메시지는 모았다가, 조회 결과를 반영한 뒤 같은 커서 규칙으로 처리한다.
+   */
+  const tailSyncTokenRef = useRef(0);
+  const liveBufferRef = useRef<ServerChatMessage[] | null>(null);
+  const pendingCatchUpRef = useRef<CatchUpReason | null>(null);
+  const requestCatchUpRef = useRef<(rid: string, reason: CatchUpReason) => void>(
+    () => {},
+  );
   const isFetchingOlderRef = useRef(false);
   const isFetchingNewerRef = useRef(false);
   const rawMessagesRef = useRef<ServerChatMessage[]>([]);
@@ -179,6 +198,8 @@ export function useChatMessages(
     roomLifetimeRef.current += 1;
     isFetchingOlderRef.current = false;
     isFetchingNewerRef.current = false;
+    liveBufferRef.current = null;
+    pendingCatchUpRef.current = null;
     return () => { roomLifetimeRef.current += 1; };
   }, [roomId, userId]);
 
@@ -324,22 +345,28 @@ export function useChatMessages(
         );
         if (!isCurrentRequest()) return;
 
-        applyBridgedSlice(
-          targetRoomId,
-          bridged,
-          {
-            hasMoreNewerByRoom: hasMoreNewerByRoomRef.current,
-            lastSequenceByRoom: lastSequenceByRoomRef.current,
-          },
-          { setHasMoreNewer, setRawMessages },
-          queryClient,
-        );
+        const bridgedSlice = bridged.bridgedSlice;
+        const bridgedHasMoreNewer = bridged.bridgedHasMoreNewer;
+        if (bridgedSlice && bridgedHasMoreNewer != null) {
+          hasMoreNewerByRoomRef.current.set(rid, bridgedHasMoreNewer);
+          setHasMoreNewer(bridgedHasMoreNewer);
+          // 그사이 붙은 실시간 메시지를 지우지 않게 현재 목록에 합친다
+          setRawMessages((prev) => mergeServerMessageLists(prev, bridgedSlice));
+          const last = maxSequenceInMessages(bridgedSlice);
+          const cursor = cursorByRoomRef.current.get(rid);
+          if (bridgedHasMoreNewer) {
+            cursorByRoomRef.current.delete(rid);
+          } else if (last != null) {
+            cursorByRoomRef.current.set(rid, Math.max(cursor ?? last, last));
+          }
+          void warmPlacePhotoQueriesFromChatHistory(queryClient, bridgedSlice);
+        }
 
         const placement = resolveReadDividerPlacement(
           bridged.slice,
           lastReadMessageId,
           bridged.placementBeforeSlice,
-          hasMoreNewerByRoomRef.current.get(targetRoomId) === true,
+          hasMoreNewerByRoomRef.current.get(rid) === true,
         );
         applySessionReadBoundary(rid, lastReadMessageId, placement);
 
@@ -370,6 +397,228 @@ export function useChatMessages(
     ],
   );
 
+  /** 목록 끝을 바꾸는 조회를 시작한다. 돌려받은 함수가 거짓이면 그 결과는 버린다 */
+  const beginTailSync = useCallback(() => {
+    tailSyncTokenRef.current += 1;
+    liveBufferRef.current ??= [];
+    const token = tailSyncTokenRef.current;
+    const lifetime = roomLifetimeRef.current;
+    return () =>
+      tailSyncTokenRef.current === token &&
+      roomLifetimeRef.current === lifetime;
+  }, []);
+
+  const applyLiveMessages = useCallback(
+    (rid: string, msgs: readonly ServerChatMessage[], catchUpOnGap: boolean) => {
+      // 첫 기록을 받기 전에는 그 조회가 이 메시지까지 가져온다
+      if (
+        msgs.length === 0 ||
+        !historyFetchedRoomIdsRef.current.has(chatHistoryGateKey(userId, rid))
+      ) {
+        return;
+      }
+
+      const { appended, updates, cursor, hasGap } = partitionLiveMessages(msgs, {
+        cursor: cursorByRoomRef.current.get(rid),
+        atTail: hasMoreNewerByRoomRef.current.get(rid) !== true,
+        list: rawMessagesRef.current,
+      });
+      if (cursor != null) cursorByRoomRef.current.set(rid, cursor);
+      if (appended.length > 0 || updates.length > 0) {
+        setRawMessages((prev) => {
+          const updated = replaceExistingServerMessages(prev, updates);
+          return appended.length > 0
+            ? mergeServerMessageLists(updated, appended)
+            : updated;
+        });
+      }
+      if (hasGap && catchUpOnGap) requestCatchUpRef.current(rid, "gap");
+
+      const newest = appended[appended.length - 1];
+      if (newest) onIncomingMessage(newest, true);
+    },
+    [userId, onIncomingMessage],
+  );
+
+  /** 조회 결과를 반영한 뒤 모아 둔 실시간 메시지를 처리하고, 미뤄 둔 따라잡기를 잇는다 */
+  const finishTailSync = useCallback(
+    (rid: string, succeeded: boolean) => {
+      const buffered = liveBufferRef.current ?? [];
+      liveBufferRef.current = null;
+      // 조회가 실패했으면 빈 번호를 바로 다시 요청하지 않는다 — 다음 수신·재연결이 다시 맞춘다
+      applyLiveMessages(rid, buffered, succeeded);
+      const pending = pendingCatchUpRef.current;
+      pendingCatchUpRef.current = null;
+      if (pending) requestCatchUpRef.current(rid, pending);
+    },
+    [applyLiveMessages],
+  );
+
+  const showCaughtUpMessages = useCallback(
+    (
+      rid: string,
+      reason: CatchUpReason,
+      appended: readonly ServerChatMessage[],
+      newestBefore: ServerChatMessage | null,
+    ) => {
+      if (reason === "reopen") {
+        void restoreSessionReadBoundary(rid);
+        return;
+      }
+      const newest = appended[appended.length - 1];
+      if (!newest) return;
+      if (reason === "gap") {
+        onIncomingMessage(newest, true);
+        return;
+      }
+      // 끊긴 동안 온 메시지는 읽지 않은 메시지로 보여 준다
+      if (!newestBefore || !fetchHistoryRef.current) return;
+      applySessionReadBoundary(rid, newestBefore.id, {
+        afterMessageId: newestBefore.id,
+        beforeFirst: false,
+      });
+      publishScrollToAnchor(newestBefore.id);
+    },
+    [
+      restoreSessionReadBoundary,
+      onIncomingMessage,
+      applySessionReadBoundary,
+      publishScrollToAnchor,
+    ],
+  );
+
+  const requestCatchUp = useCallback(
+    (rid: string, reason: CatchUpReason) => {
+      if (liveBufferRef.current) {
+        // 목록 끝을 바꾸는 다른 조회가 진행 중이다 — 끝난 뒤(finishTailSync) 이어서 따라잡는다
+        const pending = pendingCatchUpRef.current;
+        if (
+          !pending ||
+          CATCH_UP_REASON_PRIORITY[reason] > CATCH_UP_REASON_PRIORITY[pending]
+        ) {
+          pendingCatchUpRef.current = reason;
+        }
+        return;
+      }
+      if (!historyFetchedRoomIdsRef.current.has(chatHistoryGateKey(userId, rid))) {
+        return;
+      }
+      if (hasMoreNewerByRoomRef.current.get(rid) === true) {
+        // 중간 창은 아래 페이지 조회가 최신 끝까지 맞춘다
+        if (reason === "reopen") void restoreSessionReadBoundary(rid);
+        return;
+      }
+
+      const isCurrent = beginTailSync();
+      const cursor = cursorByRoomRef.current.get(rid);
+      const newestBefore = newestServerMessageByCreatedAt(rawMessagesRef.current);
+      void fetchRoomMessagesAfter(rid, cursor, isCurrent)
+        .then((rows) => {
+          if (!isCurrent()) return;
+          const known = new Set(rawMessagesRef.current.map((m) => m.id));
+          const appended = rows.filter((m) => !known.has(m.id));
+          setRawMessages((prev) => mergeServerMessageLists(prev, rows));
+          const last = maxSequenceInMessages(rows);
+          if (last != null) {
+            cursorByRoomRef.current.set(rid, Math.max(cursor ?? last, last));
+          }
+          if (cursor === 0) {
+            // 빈 방에서 최신 페이지를 받았다 — 그 앞 기록은 위로 스크롤해 받는다
+            const more = hasOlderHistoryPage(rows.length, CHAT_MESSAGE_PAGE_SIZE);
+            hasMoreByRoomRef.current.set(rid, more);
+            setHasMore(more);
+          }
+          void warmPlacePhotoQueriesFromChatHistory(queryClient, rows);
+          // 모아 둔 실시간 메시지가 더 새것이다 — 읽음 위치가 뒤로 가지 않게 따라잡은 메시지를 먼저 처리한다
+          showCaughtUpMessages(rid, reason, appended, newestBefore);
+          finishTailSync(rid, true);
+        })
+        .catch(() => {
+          // 재시도 뒤에도 실패하면 커서를 그대로 둔다 — 다음 빈 번호 수신·재연결 때 같은 커서로 다시 받는다
+          if (!isCurrent()) return;
+          finishTailSync(rid, false);
+          if (reason === "reopen") void restoreSessionReadBoundary(rid);
+        });
+    },
+    [
+      userId,
+      queryClient,
+      beginTailSync,
+      finishTailSync,
+      showCaughtUpMessages,
+      restoreSessionReadBoundary,
+    ],
+  );
+
+  useLayoutEffect(() => {
+    requestCatchUpRef.current = requestCatchUp;
+  }, [requestCatchUp]);
+
+  const startHistoryLoad = useCallback(
+    (targetRoomId: string) => {
+      const rid = targetRoomId.trim();
+      const isCurrent = beginTailSync();
+      void retryChatHistoryRequest(
+        () => loadRoomHistorySnapshot(targetRoomId),
+        isCurrent,
+      )
+        .then((out) => {
+          if (!isCurrent()) return;
+          hasMoreByRoomRef.current.set(rid, out.hasMoreOlder);
+          hasMoreNewerByRoomRef.current.set(rid, out.hasMoreNewer);
+          setHasMore(out.hasMoreOlder);
+          setHasMoreNewer(out.hasMoreNewer);
+
+          const placement = out.lastReadMessageId
+            ? resolveReadDividerPlacement(
+                out.slice,
+                out.lastReadMessageId,
+                out.placementBeforeSlice,
+                out.hasMoreNewer,
+              )
+            : EMPTY_READ_DIVIDER_PLACEMENT;
+          applySessionReadBoundary(rid, out.lastReadMessageId, placement);
+
+          setRawMessages(out.slice);
+          // 최신 끝까지 받았으면 그 마지막 번호 다음부터 실시간 메시지를 붙인다
+          const cursor = out.hasMoreNewer ? undefined : tailCursorOf(out.slice);
+          if (cursor == null) cursorByRoomRef.current.delete(rid);
+          else cursorByRoomRef.current.set(rid, cursor);
+          historyFetchedRoomIdsRef.current.add(chatHistoryGateKey(userId, rid));
+          void warmPlacePhotoQueriesFromChatHistory(queryClient, out.warmHistory);
+
+          const newest = newestServerMessageByCreatedAt(out.slice);
+          if (newest && !out.hasMoreNewer) {
+            resetReadDedup();
+            markMessagesRead(newest.id);
+          }
+
+          if (
+            out.lastReadMessageId &&
+            canRenderReadDivider(out.slice, placement)
+          ) {
+            publishScrollToAnchor(out.lastReadMessageId);
+          }
+          finishTailSync(rid, true);
+        })
+        .catch(() => {
+          // gate를 세우지 않는다 — 재연결되거나 패널을 다시 열 때 다시 받는다
+          if (isCurrent()) finishTailSync(rid, false);
+        });
+    },
+    [
+      userId,
+      queryClient,
+      beginTailSync,
+      finishTailSync,
+      applySessionReadBoundary,
+      canRenderReadDivider,
+      publishScrollToAnchor,
+      markMessagesRead,
+      resetReadDedup,
+    ],
+  );
+
   useEffect(() => {
     if (!roomId) {
       readBoundaryRestoreVersionRef.current += 1;
@@ -378,10 +627,9 @@ export function useChatMessages(
       historyFetchedRoomIdsRef.current.clear();
       hasMoreByRoomRef.current.clear();
       hasMoreNewerByRoomRef.current.clear();
-      lastSequenceByRoomRef.current.clear();
+      cursorByRoomRef.current.clear();
       lastReadMarkerByRoomRef.current.clear();
       readDividerPlacementByRoomRef.current.clear();
-      recoveringSequenceRoomsRef.current.clear();
       return;
     }
 
@@ -397,138 +645,43 @@ export function useChatMessages(
     prevRoomForHistoryGateRef.current = roomId;
     if (userId == null) return;
 
-    const gateKey = chatHistoryGateKey(userId, roomId);
-    const ridTrim = roomId.trim();
-    if (historyFetchedRoomIdsRef.current.has(gateKey)) {
-      if (reopened) void restoreSessionReadBoundary(roomId);
+    const rid = roomId.trim();
+    if (historyFetchedRoomIdsRef.current.has(chatHistoryGateKey(userId, rid))) {
+      if (!reopened) return;
+      // 다른 방에 있던 동안은 이 방 메시지를 구독하지 않았다 — 다시 구독(부모 effect)을 보낸 뒤 따라잡는다
+      queueMicrotask(() => {
+        if (activeRoomIdRef.current === rid) requestCatchUp(rid, "reopen");
+      });
       return;
     }
-
-    let cancelled = false;
-    const restoreVersion = ++readBoundaryRestoreVersionRef.current;
-    const isCurrentRequest = () =>
-      !cancelled &&
-      readBoundaryRestoreVersionRef.current === restoreVersion &&
-      fetchHistoryRef.current &&
-      activeRoomIdRef.current === ridTrim;
-
-    void (async () => {
-      try {
-        const { lastReadMessageId } = await getRoomMessageReadStatus(roomId);
-        if (!isCurrentRequest()) return;
-
-        const out = await loadInitialRoomHistory(
-          roomId,
-          lastReadMessageId,
-          CHAT_MESSAGE_PAGE_SIZE,
-        );
-        if (!isCurrentRequest()) return;
-
-        let slice = mergeServerMessageLists(
-          out.serverSlice,
-          transientMessagesDuringRoomHistoryFetch(rawMessagesRef.current),
-        );
-        let hasMoreNewer = out.hasMoreNewer;
-        let warmHistory = [...out.warmHistory];
-        let placementBeforeSlice: readonly ServerChatMessage[] = out.serverSlice;
-
-        if (out.lastReadMessageId) {
-          const bridged = await mergeSliceWithReadBridge(
-            roomId,
-            out.lastReadMessageId,
-            slice,
-            out.serverSlice,
-          );
-          if (!isCurrentRequest()) return;
-          slice = bridged.slice;
-          placementBeforeSlice = bridged.placementBeforeSlice;
-          if (bridged.bridgedHasMoreNewer != null) {
-            hasMoreNewer = bridged.bridgedHasMoreNewer;
-          }
-          if (bridged.bridgedSlice?.length) {
-            warmHistory = mergeServerMessageLists(
-              warmHistory,
-              bridged.bridgedSlice,
-            );
-          }
-        }
-
-        hasMoreByRoomRef.current.set(roomId, out.hasMoreOlder);
-        hasMoreNewerByRoomRef.current.set(roomId, hasMoreNewer);
-        setHasMore(out.hasMoreOlder);
-        setHasMoreNewer(hasMoreNewer);
-
-        const placement = out.lastReadMessageId
-          ? resolveReadDividerPlacement(
-              slice,
-              out.lastReadMessageId,
-              placementBeforeSlice,
-              hasMoreNewer,
-            )
-          : EMPTY_READ_DIVIDER_PLACEMENT;
-        applySessionReadBoundary(ridTrim, out.lastReadMessageId, placement);
-
-        setRawMessages(slice);
-        bumpRoomLastSequence(lastSequenceByRoomRef.current, roomId, slice);
-        historyFetchedRoomIdsRef.current.add(gateKey);
-        void warmPlacePhotoQueriesFromChatHistory(queryClient, warmHistory);
-
-        const newest = newestServerMessageByCreatedAt(slice);
-        if (newest && !hasMoreNewer) {
-          resetReadDedup();
-          markMessagesRead(newest.id);
-        }
-
-        if (
-          out.lastReadMessageId &&
-          canRenderReadDivider(slice, placement)
-        ) {
-          publishScrollToAnchor(out.lastReadMessageId);
-        }
-      } catch {
-        /* 실패 시 Set에 넣지 않음 → 다음 패널 오픈 시 재시도 */
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    roomId,
-    fetchHistory,
-    queryClient,
-    userId,
-    markMessagesRead,
-    resetReadDedup,
-    publishScrollToAnchor,
-    applySessionReadBoundary,
-    canRenderReadDivider,
-    restoreSessionReadBoundary,
-  ]);
+    // 진행 중인 최초 조회가 있으면 그 결과를 쓴다
+    if (!liveBufferRef.current) startHistoryLoad(roomId);
+  }, [roomId, fetchHistory, userId, requestCatchUp, startHistoryLoad]);
 
   useEffect(() => {
-    if (!connected) {
-      if (hasObservedConnectedRef.current) {
-        disconnectedAfterConnectionRef.current = true;
+    const wasConnected = wasConnectedRef.current;
+    wasConnectedRef.current = connected;
+    if (!connected || wasConnected || !roomId || userId == null) return;
+
+    const rid = roomId.trim();
+    // 다시 구독한 토픽은 끊긴 동안의 메시지를 주지 않는다 — 구독(부모 effect)을 보낸 뒤 따라잡는다
+    queueMicrotask(() => {
+      if (activeRoomIdRef.current !== rid) return;
+      if (
+        liveBufferRef.current ||
+        historyFetchedRoomIdsRef.current.has(chatHistoryGateKey(userId, rid))
+      ) {
+        requestCatchUp(rid, "reconnect");
+      } else if (fetchHistoryRef.current) {
+        // 끊긴 동안 최초 기록 조회가 끝내 실패했다 — 연결이 돌아온 지금 다시 받는다
+        startHistoryLoad(roomId);
       }
-      return;
-    }
-
-    if (!hasObservedConnectedRef.current) {
-      hasObservedConnectedRef.current = true;
-      return;
-    }
-
-    if (!disconnectedAfterConnectionRef.current) return;
-    disconnectedAfterConnectionRef.current = false;
-
-    if (!fetchHistory || !roomId) return;
-    queueMicrotask(() => void restoreSessionReadBoundary(roomId));
-  }, [connected, fetchHistory, roomId, restoreSessionReadBoundary]);
+    });
+  }, [connected, roomId, userId, requestCatchUp, startHistoryLoad]);
 
   const fetchOlderMessages = useCallback(() => {
-    const rid = roomId;
-    if (!rid || activeRoomIdRef.current !== rid.trim()) return;
+    const rid = roomId?.trim();
+    if (!rid || activeRoomIdRef.current !== rid) return;
     if (isFetchingOlderRef.current) return;
     if (hasMoreByRoomRef.current.get(rid) === false) return;
 
@@ -555,7 +708,6 @@ export function useChatMessages(
         setRawMessages((prev) =>
           mergeServerMessageLists(normalizedHistory, prev),
         );
-        bumpRoomLastSequence(lastSequenceByRoomRef.current, rid, normalizedHistory);
         void warmPlacePhotoQueriesFromChatHistory(
           queryClient,
           normalizedHistory,
@@ -572,8 +724,8 @@ export function useChatMessages(
   }, [roomId, queryClient]);
 
   const fetchNewerMessages = useCallback(() => {
-    const rid = roomId;
-    if (!rid || activeRoomIdRef.current !== rid.trim()) return;
+    const rid = roomId?.trim();
+    if (!rid || activeRoomIdRef.current !== rid) return;
     if (isFetchingNewerRef.current) return;
     if (hasMoreNewerByRoomRef.current.get(rid) !== true) return;
 
@@ -583,13 +735,14 @@ export function useChatMessages(
     isFetchingNewerRef.current = true;
     const lifetime = roomLifetimeRef.current;
     setIsFetchingNewer(true);
+    const isCurrent = beginTailSync();
 
     void getRoomMessages(rid, {
       afterId: newest.id,
       size: CHAT_MESSAGE_PAGE_SIZE,
     })
       .then((history) => {
-        if (roomLifetimeRef.current !== lifetime) return;
+        if (!isCurrent()) return;
         const normalizedHistory = normalizeFetchedRoomMessages(history);
         const more = hasOlderHistoryPage(
           normalizedHistory.length,
@@ -600,57 +753,40 @@ export function useChatMessages(
         setRawMessages((prev) =>
           mergeServerMessageLists(prev, normalizedHistory),
         );
-        bumpRoomLastSequence(lastSequenceByRoomRef.current, rid, normalizedHistory);
+        if (!more) {
+          // 최신 끝에 닿았다 — 이 페이지의 마지막 번호 다음부터 실시간 메시지를 붙인다
+          const last = maxSequenceInMessages([
+            ...rawMessagesRef.current,
+            ...normalizedHistory,
+          ]);
+          if (last == null) cursorByRoomRef.current.delete(rid);
+          else cursorByRoomRef.current.set(rid, last);
+        }
         void warmPlacePhotoQueriesFromChatHistory(
           queryClient,
           normalizedHistory,
         );
+        finishTailSync(rid, true);
       })
       .catch(() => {
-        /* 유지: hasMoreNewer 그대로, 다음 스크롤에서 재시도 가능 */
+        // 유지: hasMoreNewer 그대로, 다음 스크롤에서 다시 받는다
+        if (isCurrent()) finishTailSync(rid, false);
       })
       .finally(() => {
         if (roomLifetimeRef.current !== lifetime) return;
         isFetchingNewerRef.current = false;
         setIsFetchingNewer(false);
       });
-  }, [roomId, queryClient]);
-
-  const recoverMissingMessages = useCallback(
-    (rid: string, afterSeq: number) => {
-      if (recoveringSequenceRoomsRef.current.has(rid)) return;
-      recoveringSequenceRoomsRef.current.add(rid);
-      const lifetime = roomLifetimeRef.current;
-
-      void getRoomMessages(rid, {
-        afterSequence: String(afterSeq),
-        size: CHAT_MESSAGE_PAGE_SIZE,
-      })
-        .then((rows) => {
-          if (roomLifetimeRef.current !== lifetime) return;
-          const normalized = normalizeFetchedRoomMessages(rows);
-          setRawMessages((prev) => mergeServerMessageLists(prev, normalized));
-          bumpRoomLastSequence(lastSequenceByRoomRef.current, rid, normalized);
-          void warmPlacePhotoQueriesFromChatHistory(queryClient, normalized);
-        })
-        .catch(() => {
-          /* 다음 STOMP 수신 시 재감지 */
-        })
-        .finally(() => {
-          recoveringSequenceRoomsRef.current.delete(rid);
-        });
-    },
-    [queryClient],
-  );
+  }, [roomId, queryClient, beginTailSync, finishTailSync]);
 
   const jumpToLatest = useCallback(() => {
-    const rid = roomId;
-    if (!rid || activeRoomIdRef.current !== rid.trim()) return;
+    const rid = roomId?.trim();
+    if (!rid || activeRoomIdRef.current !== rid) return;
 
-    const lifetime = roomLifetimeRef.current;
+    const isCurrent = beginTailSync();
     void getRoomMessages(rid, { size: CHAT_MESSAGE_PAGE_SIZE })
       .then((history) => {
-        if (roomLifetimeRef.current !== lifetime) return;
+        if (!isCurrent()) return;
         const normalized = normalizeFetchedRoomMessages(history);
         const more = hasOlderHistoryPage(
           normalized.length,
@@ -658,22 +794,29 @@ export function useChatMessages(
         );
         hasMoreByRoomRef.current.set(rid, more);
         hasMoreNewerByRoomRef.current.set(rid, false);
-        clearSessionReadBoundary(rid.trim());
+        const cursor = tailCursorOf(normalized);
+        if (cursor == null) cursorByRoomRef.current.delete(rid);
+        else cursorByRoomRef.current.set(rid, cursor);
+        clearSessionReadBoundary(rid);
         setHasMore(more);
         setHasMoreNewer(false);
-        lastSequenceByRoomRef.current.delete(rid);
-        setRawMessages([]);
-        queueMicrotask(() => {
-          if (roomLifetimeRef.current !== lifetime) return;
-          setRawMessages(normalized);
-          bumpRoomLastSequence(lastSequenceByRoomRef.current, rid, normalized);
-          void warmPlacePhotoQueriesFromChatHistory(queryClient, normalized);
-        });
+        setRawMessages(normalized);
+        publishScrollToAnchor(undefined);
+        void warmPlacePhotoQueriesFromChatHistory(queryClient, normalized);
+        finishTailSync(rid, true);
       })
       .catch(() => {
-        /* noop */
+        // 중간 창을 그대로 둔다 — 버튼을 다시 누르면 다시 받는다
+        if (isCurrent()) finishTailSync(rid, false);
       });
-  }, [roomId, queryClient, clearSessionReadBoundary]);
+  }, [
+    roomId,
+    queryClient,
+    beginTailSync,
+    finishTailSync,
+    clearSessionReadBoundary,
+    publishScrollToAnchor,
+  ]);
 
   useEffect(() => {
     if (!roomId) {
@@ -681,44 +824,18 @@ export function useChatMessages(
       return;
     }
 
+    const rid = roomId.trim();
     const handler = (msg: ServerChatMessage) => {
-      const rid = roomId.trim();
       if (activeRoomIdRef.current !== rid) return;
-      const lastSeq = lastSequenceByRoomRef.current.get(rid);
-      const seq = msg.sequence;
-      const isNew = !rawMessagesRef.current.some((m) => m.id === msg.id);
-
-      setRawMessages((prev) => {
-        const i = prev.findIndex((m) => m.id === msg.id);
-        if (i < 0) return [...prev, msg];
-        const next = [...prev];
-        next[i] = msg;
-        return next;
-      });
-
-      const atTail = hasMoreNewerByRoomRef.current.get(rid) !== true;
-      if (
-        atTail &&
-        seq != null &&
-        lastSeq != null &&
-        seq > lastSeq + 1 &&
-        !recoveringSequenceRoomsRef.current.has(rid)
-      ) {
-        recoverMissingMessages(rid, lastSeq);
+      if (liveBufferRef.current) {
+        liveBufferRef.current.push(msg);
+        return;
       }
-
-      if (seq != null) {
-        lastSequenceByRoomRef.current.set(
-          rid,
-          Math.max(lastSeq ?? seq, seq),
-        );
-      }
-
-      onIncomingMessage(msg, isNew);
+      applyLiveMessages(rid, [msg], true);
     };
     setRoomChatMessageHandler(handler);
     return () => setRoomChatMessageHandler(null);
-  }, [roomId, setRoomChatMessageHandler, onIncomingMessage, recoverMissingMessages]);
+  }, [roomId, setRoomChatMessageHandler, applyLiveMessages]);
 
   const rid = roomId?.trim() ?? "";
   const effectiveReadMarkerMessageId =
