@@ -38,6 +38,7 @@ import { useStompConnectionStore } from "@/stores/stomp-connection-store";
 
 import {
   useStompClientLifecycleEffect,
+  useStompOnlineRetryEffect,
   useStompRoomTopicsResyncEffect,
   type StompConnectionState,
 } from "./use-stomp-provider-effects";
@@ -238,6 +239,8 @@ export function StompProvider({ children }: { children: ReactNode }) {
     setConnectionState,
     retryConnectionRef,
   });
+
+  useStompOnlineRetryEffect(retryConnectionRef);
 
   const roomTopicsDeferred = pathDefersRoomStompRoomTopics(pathname);
 

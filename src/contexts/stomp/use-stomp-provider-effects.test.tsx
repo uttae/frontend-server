@@ -11,6 +11,7 @@ import {
 } from "@/stores/stomp-connection-store";
 import {
   useStompClientLifecycleEffect,
+  useStompOnlineRetryEffect,
   useStompRoomTopicsResyncEffect,
 } from "./use-stomp-provider-effects";
 const mocks = vi.hoisted(() => ({
@@ -222,4 +223,18 @@ it("retries immediately unless a connection attempt is in flight", async () => {
 
   await hook.unmount();
   expect(opts.retryConnectionRef.current).toBeNull();
+});
+
+it("reconnects right away when the browser reports the network is back", async () => {
+  const retry = vi.fn();
+  const retryConnectionRef = { current: retry as (() => void) | null };
+  const hook = hookHarness(() => useStompOnlineRetryEffect(retryConnectionRef));
+  await hook.render(undefined);
+
+  window.dispatchEvent(new Event("online"));
+  expect(retry).toHaveBeenCalledTimes(1);
+
+  await hook.unmount();
+  window.dispatchEvent(new Event("online"));
+  expect(retry).toHaveBeenCalledTimes(1);
 });

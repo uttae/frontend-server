@@ -201,6 +201,17 @@ export function useStompClientLifecycleEffect({
   ]);
 }
 
+/** 브라우저가 네트워크 복귀를 알리면 다음 재연결 예약(최대 5초)을 기다리지 않고 바로 다시 연결합니다. */
+export function useStompOnlineRetryEffect(
+  retryConnectionRef: MutableRefObject<(() => void) | null>,
+): void {
+  useEffect(() => {
+    const retry = () => retryConnectionRef.current?.();
+    window.addEventListener("online", retry);
+    return () => window.removeEventListener("online", retry);
+  }, [retryConnectionRef]);
+}
+
 type RoomTopicsOpts = {
   /** `/home` 등 방 토픽을 미루는 경로 여부 — plan↔bookmark 탭 전환과 분리 */
   roomTopicsDeferred: boolean;
