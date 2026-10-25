@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
+import { useScheduleResyncPending } from "@/hooks/useScheduleResyncPending";
 import {
   useMoveScheduleItemToSchedule,
   useReorderScheduleItem,
@@ -25,6 +26,7 @@ import {
   getPlanItemRowReorderStyle,
   isPlanItemDrag,
   PLAN_ORDER_CHANGED_MESSAGE,
+  PLAN_ORDER_RESYNCING_MESSAGE,
   type PlanItemRowPreviewMode,
   PlanItemRowLayoutSnapshot,
   readPlanItemDragIndex,
@@ -85,6 +87,7 @@ export function usePlanItineraryReorder({
 
   const mutationLocked =
     interactionLocked || isReorderSettling || isMovePending;
+  const scheduleResyncPending = useScheduleResyncPending(roomId);
   const isDraggingActive = dragFromIndex !== null || incomingExternalDrag;
 
   useDragAutoScroll({ active: isDraggingActive });
@@ -174,7 +177,9 @@ export function usePlanItineraryReorder({
   const handleDragStart = useCallback(
     (index: number) => (e: DragEvent<Element>) => {
       const itemId = places[index]?.itemId;
-      if (mutationLocked || typeof itemId !== "number") return;
+      if (mutationLocked || scheduleResyncPending || typeof itemId !== "number") {
+        return;
+      }
       const target = e.currentTarget;
       if (!(target instanceof HTMLElement)) return;
       beginPlanItemDrag(e.nativeEvent, target, index, {
@@ -190,7 +195,7 @@ export function usePlanItineraryReorder({
       setDragFromIndex(index);
       setPreviewIndex(index);
     },
-    [beginItemDrag, mutationLocked, places, scheduleId],
+    [beginItemDrag, mutationLocked, places, scheduleId, scheduleResyncPending],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -269,6 +274,13 @@ export function usePlanItineraryReorder({
         previewIndex ??
         (Number.isFinite(fromIndex) ? fromIndex : null);
 
+      // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
+      if (scheduleResyncPending) {
+        resetDragPreview();
+        toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
+        return;
+      }
+
       const orderAtDragStart = dragOrderRef.current;
       if (
         orderAtDragStart &&
@@ -343,6 +355,7 @@ export function usePlanItineraryReorder({
       resetDragPreview,
       roomId,
       scheduleId,
+      scheduleResyncPending,
     ],
   );
 
@@ -397,7 +410,9 @@ export function usePlanItineraryReorder({
           displayOrderIndex,
           isDragging,
           dragDisabled:
-            mutationLocked || typeof places[index]?.itemId !== "number",
+            mutationLocked ||
+            scheduleResyncPending ||
+            typeof places[index]?.itemId !== "number",
           onDragStart: handleDragStart(index),
           onDragEnd: handleDragEnd,
         },
@@ -412,6 +427,7 @@ export function usePlanItineraryReorder({
       mutationLocked,
       places,
       previewIndex,
+      scheduleResyncPending,
       setRowRef,
     ],
   );

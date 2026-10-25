@@ -14,6 +14,8 @@ vi.mock("@/lib/api/rooms", async (original) => ({ ...await original<object>(), r
 vi.mock("@/lib/analytics/track", () => ({ AnalyticsEvents: { reorderItinerary: "reorder_itinerary" }, trackAnalyticsEvent: vi.fn() }));
 const toastError = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast: { error: toastError } }));
+const stomp = vi.hoisted(() => ({ connected: true }));
+vi.mock("@/contexts/StompContext", () => ({ useStompContext: () => stomp }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 it("attributes a completed drag reorder to the request's room after the hook switches rooms", async () => {
@@ -98,6 +100,51 @@ it("does not save a drop when the day's list changed during the drag", async () 
     expect(api.reorder).not.toHaveBeenCalled();
     expect(toastError).toHaveBeenCalledOnce();
   } finally {
+    document.dispatchEvent(new Event("dragend"));
+    await hook.unmount();
+    client.clear();
+  }
+});
+
+it("does not save a drop made while the connection is down", async () => {
+  api.reorder.mockClear();
+  toastError.mockClear();
+  const places = [{ id: "item-1", itemId: 1, title: "One" }, { id: "item-2", itemId: 2, title: "Two" }];
+  const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+  const hook = hookHarness((connected: boolean) => {
+    stomp.connected = connected;
+    return usePlanItineraryReorder({ roomId: "room-a", scheduleId: 1, places });
+  }, (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>);
+  const data = new Map<string, string>();
+  const dataTransfer = {
+    setData: (key: string, value: string) => data.set(key, value),
+    getData: (key: string) => data.get(key) ?? "",
+    setDragImage: () => {},
+    get types() { return Array.from(data.keys()); },
+  } as unknown as DataTransfer;
+  const rows = [0, 1].map((index) => {
+    const row = document.createElement("div");
+    row.getBoundingClientRect = () => ({ top: index * 100, left: 0, width: 200, height: 100, bottom: index * 100 + 100, right: 200, x: 0, y: index * 100, toJSON: () => ({}) });
+    return row;
+  });
+  const event = { dataTransfer, currentTarget: rows[0], clientX: 10, clientY: 10, preventDefault: () => {} };
+  try {
+    await hook.render(true);
+    rows.forEach((row, index) => hook.current.getRowProps(index, false).ref(row));
+    await act(async () => hook.current.getRowProps(0, false).placeCardDragProps.onDragStart({ ...event, nativeEvent: event } as unknown as DragEvent<Element>));
+    await act(async () => {
+      hook.current.listContainerProps.onDragOver!({ ...event, clientY: 190 } as unknown as DragEvent<Element>);
+      await new Promise((yes) => requestAnimationFrame(yes));
+    });
+    // 드래그하는 동안 연결이 끊겼다
+    await hook.render(false);
+    expect(hook.current.getRowProps(1, false).placeCardDragProps.dragDisabled).toBe(true);
+    await act(async () => { await hook.current.listContainerProps.onDrop!(event as unknown as DragEvent<Element>); });
+
+    expect(api.reorder).not.toHaveBeenCalled();
+    expect(toastError).toHaveBeenCalledOnce();
+  } finally {
+    stomp.connected = true;
     document.dispatchEvent(new Event("dragend"));
     await hook.unmount();
     client.clear();

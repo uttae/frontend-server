@@ -16,6 +16,10 @@ export const PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR = "data-plan-itinerary-drop-zone
  */
 export const PLAN_ORDER_CHANGED_MESSAGE = "일정이 바뀌어서 옮기지 않았어요. 다시 옮겨 주세요.";
 
+/** 연결이 끊긴 동안이나 놓친 변경을 다시 받는 동안 놓은 경우 */
+export const PLAN_ORDER_RESYNCING_MESSAGE =
+  "일정을 다시 맞추는 중이라 옮기지 않았어요. 잠시 후 다시 옮겨 주세요.";
+
 /** 드래그를 시작할 때와 놓을 때의 id 순서가 같은지 */
 export function sameIdOrder(
   before: readonly unknown[],

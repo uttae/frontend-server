@@ -17,11 +17,13 @@ import {
   useMoveScheduleItemToSchedule,
   useReorderScheduleItem,
 } from "@/hooks/useRooms";
+import { useScheduleResyncPending } from "@/hooks/useScheduleResyncPending";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import {
   clampCrossDayTargetOrderIndex,
   PLAN_ORDER_CHANGED_MESSAGE,
+  PLAN_ORDER_RESYNCING_MESSAGE,
   sameIdOrder,
 } from "@/lib/plan/planItemReorder";
 import { newOrderIndexAfterMove } from "@/lib/plan/scheduleItemPlaces";
@@ -169,7 +171,9 @@ export function useMobilePlanDragController({
 
   const { mutateAsync: reorderMutate, isReorderSettling } = useReorderScheduleItem();
   const { mutateAsync: moveMutate, isPending: isMovePending } = useMoveScheduleItemToSchedule();
-  const dragDisabled = isReorderSettling || isMovePending || pending !== null;
+  const scheduleResyncPending = useScheduleResyncPending(roomId);
+  const dragDisabled =
+    isReorderSettling || isMovePending || pending !== null || scheduleResyncPending;
 
   const updateActive = useCallback((next: ActiveDrag | null) => {
     activeRef.current = next;
@@ -242,6 +246,12 @@ export function useMobilePlanDragController({
     if (typeof itemId !== "number") return;
     const sourcePlaces = placesBySchedule.current.get(sourceScheduleId) ?? [];
 
+    // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
+    if (scheduleResyncPending) {
+      toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
+      return;
+    }
+
     const orderChanged = [sourceScheduleId, targetScheduleId].some(
       (sid) =>
         !sameIdOrder(
@@ -298,7 +308,7 @@ export function useMobilePlanDragController({
     } finally {
       setPending(null);
     }
-  }, [moveMutate, reorderMutate, roomId, updateActive]);
+  }, [moveMutate, reorderMutate, roomId, scheduleResyncPending, updateActive]);
 
   const startDrag = useCallback(
     (scheduleId: number, index: number, e: ReactPointerEvent<HTMLElement>) => {
