@@ -39,6 +39,14 @@ export function showRoomLeftToast(roomId: string): void {
   toast.success("방에서 나갔어요.", { id: `room-left-${roomId.trim()}` });
 }
 
+/** 끊긴 동안 강퇴·방 삭제·다른 기기의 나가기를 놓쳐 접근을 잃은 경우 — 사유를 알 수 없어 중립 문구로 알린다 */
+export function showRoomAccessLostToast(roomId: string): void {
+  toast.error("방에 더 이상 접근할 수 없어요.", {
+    id: `room-access-lost-${roomId.trim()}`,
+    duration: FORCED_ROOM_EXIT_TOAST_MS,
+  });
+}
+
 /** 강퇴·방 삭제 시 홈 목록·방 단위 React Query 캐시에서 해당 roomId 제거 */
 export function evictRoomFromClientCaches(
   queryClient: QueryClient,

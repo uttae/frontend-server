@@ -17,6 +17,7 @@ import {
   evictRoomFromClientCaches,
   refreshRoomsList,
   showForcedExitToast,
+  showRoomAccessLostToast,
   showRoomLeftToast,
 } from "@/lib/stomp/forced-room-exit-dispatch";
 import {
@@ -174,6 +175,30 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
+  /** 끊긴 동안 접근을 잃은 방에 다시 구독하다 거부됐을 때 — 놓친 개인 큐 알림 대신 HTTP 확인 결과로 내보낸다 */
+  const notifyRoomAccessLost = useCallback(
+    (roomId: string) => {
+      const rid = roomId.trim();
+      if (!rid) return;
+
+      evictRoomFromClientCaches(queryClientRef.current, rid);
+      refreshRoomsList(queryClientRef.current);
+      showRoomAccessLostToast(rid);
+
+      if ((getResolvedRoomId()?.trim() ?? "") === rid) {
+        if (forcedExitConsumedRef.current) return;
+        forcedExitConsumedRef.current = true;
+        handleForcedRoomExit();
+        return;
+      }
+
+      if (useSessionStore.getState().currentRoomId?.trim() === rid) {
+        useSessionStore.getState().clearCurrentRoomId();
+      }
+    },
+    [getResolvedRoomId, handleForcedRoomExit],
+  );
+
   const roomChatMessageHandlerRef = useRef<
     ((msg: ServerChatMessage) => void) | null
   >(null);
@@ -227,6 +252,7 @@ export function StompProvider({ children }: { children: ReactNode }) {
     stompEligible,
     suppressCloseRecoveryRef,
     notifyForcedRoomExit,
+    notifyRoomAccessLost,
     subscribeToRoomTopics,
     invalidateRoomTopics,
     teardownConnectedClient,

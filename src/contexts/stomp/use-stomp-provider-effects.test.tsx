@@ -20,10 +20,15 @@ const mocks = vi.hoisted(() => ({
   queue: vi.fn(),
   stop: vi.fn(),
   refresh: vi.fn(),
+  validate: vi.fn(),
 }));
 vi.mock("@/lib/stomp/client", () => ({
   createStompClient: mocks.create,
   getStompBrokerURL: () => "http://fixture.invalid/ws",
+  STOMP_MAX_RECONNECT_DELAY_MS: 5_000,
+}));
+vi.mock("@/lib/rooms", () => ({
+  validateRoomAccess: mocks.validate,
 }));
 vi.mock("@/lib/stomp/sessionPresencePing", () => ({
   startSessionPresencePing: mocks.ping,
@@ -45,6 +50,8 @@ const CONNECTED_FRAME = {
   binaryBody: new Uint8Array(),
 };
 const ABNORMAL_CLOSE = { code: 1006 };
+const PROTOCOL_ERROR_CLOSE = { code: 1002 };
+const RECONNECT_CAP_MS = 5_000;
 
 type FakeClient = {
   activate: ReturnType<typeof vi.fn>;
@@ -52,6 +59,7 @@ type FakeClient = {
   connected: boolean;
   beforeConnect: () => Promise<void>;
   onConnect: (frame: typeof CONNECTED_FRAME) => void;
+  onStompError: () => void;
   onWebSocketClose: (event: { code: number }) => void;
 };
 
@@ -62,6 +70,7 @@ function fakeClient(connected = false): FakeClient {
     connected,
     beforeConnect: () => Promise.resolve(),
     onConnect: () => {},
+    onStompError: () => {},
     onWebSocketClose: () => {},
   };
 }
@@ -74,6 +83,7 @@ function lifecycleOpts(client: FakeClient) {
     stompEligible: true,
     suppressCloseRecoveryRef: { current: false },
     notifyForcedRoomExit: vi.fn(),
+    notifyRoomAccessLost: vi.fn(),
     subscribeToRoomTopics: vi.fn(),
     invalidateRoomTopics: vi.fn(),
     teardownConnectedClient: vi.fn(),
@@ -237,4 +247,79 @@ it("reconnects right away when the browser reports the network is back", async (
   await hook.unmount();
   window.dispatchEvent(new Event("online"));
   expect(retry).toHaveBeenCalledTimes(1);
+});
+
+it("exits the room when a subscription error turns out to be lost access", async () => {
+  mocks.validate.mockResolvedValue("forbidden");
+  const client = fakeClient();
+  const opts = lifecycleOpts(client);
+  const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+  await hook.render(undefined);
+
+  client.onStompError();
+  client.onStompError();
+  await hook.flush();
+
+  expect(mocks.validate).toHaveBeenCalledTimes(1);
+  expect(mocks.validate).toHaveBeenCalledWith("a");
+  expect(opts.notifyRoomAccessLost).toHaveBeenCalledWith("a");
+  await hook.unmount();
+});
+
+it("keeps the room when access is still valid after a subscription error", async () => {
+  mocks.validate.mockResolvedValue("ok");
+  const client = fakeClient();
+  const opts = lifecycleOpts(client);
+  const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+  await hook.render(undefined);
+
+  client.onStompError();
+  await hook.flush();
+
+  expect(opts.notifyRoomAccessLost).not.toHaveBeenCalled();
+  await hook.unmount();
+});
+
+it("waits the capped delay before reconnecting after the server closes on a subscription error", async () => {
+  vi.useFakeTimers();
+  try {
+    mocks.validate.mockResolvedValue("ok");
+    const client = fakeClient();
+    const opts = lifecycleOpts(client);
+    const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+    await hook.render(undefined);
+
+    client.onStompError();
+    client.onWebSocketClose(PROTOCOL_ERROR_CLOSE);
+    // 라이브러리 재연결을 멈춰야 CONNECTED 때 초기화되는 1초 간격으로 반복하지 않는다
+    expect(client.deactivate).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(RECONNECT_CAP_MS - 1);
+    expect(client.activate).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(client.activate).toHaveBeenCalledTimes(2);
+    await hook.unmount();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("leaves an ordinary close to the stompjs reconnect", async () => {
+  vi.useFakeTimers();
+  try {
+    const client = fakeClient();
+    const opts = lifecycleOpts(client);
+    const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+    await hook.render(undefined);
+
+    client.onWebSocketClose(ABNORMAL_CLOSE);
+    await vi.advanceTimersByTimeAsync(RECONNECT_CAP_MS);
+
+    expect(client.deactivate).not.toHaveBeenCalled();
+    expect(client.activate).toHaveBeenCalledTimes(1);
+    expect(mocks.validate).not.toHaveBeenCalled();
+    await hook.unmount();
+  } finally {
+    vi.useRealTimers();
+  }
 });

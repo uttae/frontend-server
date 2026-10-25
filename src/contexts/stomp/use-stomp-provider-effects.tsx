@@ -6,7 +6,12 @@ import { useEffect } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import type { Client } from "@stomp/stompjs";
 
-import { createStompClient, getStompBrokerURL } from "@/lib/stomp/client";
+import { validateRoomAccess } from "@/lib/rooms";
+import {
+  createStompClient,
+  getStompBrokerURL,
+  STOMP_MAX_RECONNECT_DELAY_MS,
+} from "@/lib/stomp/client";
 import { pathDefersRoomStompRoomTopics } from "@/lib/stomp/stompPathPolicy";
 import {
   refreshSessionBeforeReconnect,
@@ -34,6 +39,7 @@ type LifecycleOpts = {
     eventRoomId: string,
     message?: string,
   ) => void;
+  notifyRoomAccessLost: (roomId: string) => void;
   subscribeToRoomTopics: (client: Client, roomId: string) => void;
   invalidateRoomTopics: () => void;
   teardownConnectedClient: () => void;
@@ -56,6 +62,7 @@ export function useStompClientLifecycleEffect({
   stompEligible,
   suppressCloseRecoveryRef,
   notifyForcedRoomExit,
+  notifyRoomAccessLost,
   subscribeToRoomTopics,
   invalidateRoomTopics,
   teardownConnectedClient,
@@ -85,6 +92,10 @@ export function useStompClientLifecycleEffect({
     // 연결 시도(세션 확인~CONNECTED·close) 중에 다시 시도하면 연결이 둘로 갈라진다
     let attemptInFlight = false;
     let connectionIssueTimer: ReturnType<typeof setTimeout> | null = null;
+    // 서버는 구독 거부 등으로 ERROR를 보낸 뒤 연결을 닫는다(Spring 기본 동작)
+    let closingAfterStompError = false;
+    let stompErrorReconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let accessCheckRoomId: string | null = null;
 
     const stopAppPing = () => {
       stopPingRef.current?.();
@@ -97,11 +108,28 @@ export function useStompClientLifecycleEffect({
       connectionIssueTimer = null;
     };
 
+    const clearStompErrorReconnectTimer = () => {
+      if (stompErrorReconnectTimer === null) return;
+      clearTimeout(stompErrorReconnectTimer);
+      stompErrorReconnectTimer = null;
+    };
+
     const client = createStompClient(getStompBrokerURL());
     clientRef.current = client;
     setConnectionState({ client, connected: false });
 
     const isActive = () => effectActive && !suppressCloseRecoveryRef.current;
+
+    // ERROR 프레임은 원인과 상관없이 같은 문구라 강퇴인지 서버 장애인지 알 수 없다. 그래서 방 접근을 HTTP로 확인한다
+    const confirmRoomAccess = (roomId: string) => {
+      if (accessCheckRoomId === roomId) return;
+      accessCheckRoomId = roomId;
+      void validateRoomAccess(roomId).then((verdict) => {
+        accessCheckRoomId = null;
+        if (!isActive() || verdict !== "forbidden") return;
+        notifyRoomAccessLost(roomId);
+      });
+    };
 
     client.beforeConnect = async () => {
       attemptInFlight = true;
@@ -115,6 +143,7 @@ export function useStompClientLifecycleEffect({
 
     retryConnectionRef.current = () => {
       if (!isActive() || attemptInFlight || client.connected) return;
+      clearStompErrorReconnectTimer();
       // deactivate→activate는 예약된 재연결을 지우고 간격을 처음 값으로 되돌린 뒤 바로 시도한다
       void client.deactivate().then(() => {
         if (isActive()) client.activate();
@@ -124,6 +153,7 @@ export function useStompClientLifecycleEffect({
     client.onConnect = () => {
       if (!effectActive) return;
       attemptInFlight = false;
+      closingAfterStompError = false;
       clearConnectionIssueTimer();
       useStompConnectionStore.getState().clearConnectionIssue();
       setConnectionState({ client, connected: true });
@@ -146,7 +176,11 @@ export function useStompClientLifecycleEffect({
 
     client.onStompError = () => {
       if (!effectActive) return;
+      closingAfterStompError = true;
       setConnectionState((prev) => ({ ...prev, connected: false }));
+      // 끊긴 동안 강퇴·방 삭제 알림을 놓친 방에 다시 구독하면 서버가 ERROR로 거부한다
+      const rid = getResolvedRoomId()?.trim();
+      if (rid) confirmRoomAccess(rid);
     };
 
     client.onWebSocketClose = (event) => {
@@ -162,7 +196,19 @@ export function useStompClientLifecycleEffect({
       setConnectionState((prev) => ({ ...prev, connected: false }));
       invalidateRoomTopics();
 
-      // 재연결은 stompjs가 예약한다. 여기서는 끊긴 상태가 이어질 때만 배너를 띄운다
+      // stompjs는 CONNECTED를 받을 때마다 간격을 처음 값으로 되돌려, 구독 오류로 닫히는 연결은 1초마다 다시 붙는다.
+      // 이 경우만 라이브러리 재연결을 멈추고 상한 간격 뒤에 다시 연결한다(문서 밖 보강)
+      if (closingAfterStompError) {
+        closingAfterStompError = false;
+        void client.deactivate();
+        clearStompErrorReconnectTimer();
+        stompErrorReconnectTimer = setTimeout(() => {
+          stompErrorReconnectTimer = null;
+          if (isActive()) client.activate();
+        }, STOMP_MAX_RECONNECT_DELAY_MS);
+      }
+
+      // 끊긴 상태가 이어질 때만 배너를 띄운다
       if (connectionIssueTimer === null) {
         connectionIssueTimer = setTimeout(() => {
           connectionIssueTimer = null;
@@ -180,6 +226,7 @@ export function useStompClientLifecycleEffect({
       effectActive = false;
       retryConnectionRef.current = null;
       clearConnectionIssueTimer();
+      clearStompErrorReconnectTimer();
       stopAppPing();
       teardownConnectedClient();
     };
@@ -194,6 +241,7 @@ export function useStompClientLifecycleEffect({
     getResolvedRoomId,
     invalidateRoomTopics,
     notifyForcedRoomExit,
+    notifyRoomAccessLost,
     stompEligible,
     subscribeToRoomTopics,
     suppressCloseRecoveryRef,
