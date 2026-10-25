@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { awaitRoomSchedulesHydrated } from "@/lib/rooms";
+import { awaitRoomSchedulesHydrated, waitForRoomSchedulesHydration } from "@/lib/rooms";
 
 import {
   createScheduleItem,
@@ -379,8 +379,10 @@ export async function ensureSchedulePlanPlacesEnriched(
   const rid = roomId.trim();
   if (!rid.length) return [];
   const key = scheduleItemsQueryKey(rid, scheduleId);
+  // 일정 불러오기가 진행 중이면 그 결과를 쓴다 — 방금 batch로 받은 장소를 일차마다 다시 받지 않는다
+  const waitedForHydration = await waitForRoomSchedulesHydration(queryClient, rid);
   const cached = queryClient.getQueryData<PlanPlace[]>(key);
-  if (cached != null && !planPlacesNeedPreviewEnrich(cached)) {
+  if (cached != null && (waitedForHydration || !planPlacesNeedPreviewEnrich(cached))) {
     return cached;
   }
 

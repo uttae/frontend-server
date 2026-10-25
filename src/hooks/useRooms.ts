@@ -319,19 +319,16 @@ export function useSchedulePlanPlaces(
   const rid = roomId?.trim() ?? "";
   const sid = scheduleId;
   const queryClient = useQueryClient();
-  const { isSuccess: schedulesHydrated, isFetching: schedulesFetching } =
-    useRoomSchedules(rid || null);
+  const { isSuccess: schedulesHydrated } = useRoomSchedules(rid || null);
 
   return useQuery({
     queryKey: scheduleItemsQueryKey(rid || null, sid),
     queryFn: () => ensureSchedulePlanPlacesEnriched(queryClient, rid, sid!),
-    // 일정 불러오기가 끝난 뒤에 켠다 — 진행 중에 켜지면 같은 장소의 미리보기를 일차마다 다시 받는다
     enabled:
       rid.length > 0 &&
       typeof sid === "number" &&
       Number.isFinite(sid) &&
-      schedulesHydrated &&
-      !schedulesFetching,
+      schedulesHydrated,
     staleTime: Infinity,
     refetchOnMount: (query) => {
       const data = query.state.data;

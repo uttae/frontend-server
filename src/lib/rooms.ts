@@ -160,6 +160,28 @@ export async function awaitRoomSchedulesHydrated(
   });
 }
 
+/**
+ * `useRoomSchedules`의 일정 불러오기가 진행 중이면 끝날 때까지 기다리고 true를 돌려줍니다.
+ * 진행 중인 요청에 합류할 뿐 새로 보내지 않습니다 — 진행 중이 아니면 바로 false입니다.
+ */
+export async function waitForRoomSchedulesHydration(
+  queryClient: QueryClient,
+  roomId: string,
+): Promise<boolean> {
+  const rid = roomId.trim();
+  const queryKey = roomSchedulesQueryKey(rid);
+  if (!rid.length || queryClient.isFetching({ queryKey, exact: true }) === 0) {
+    return false;
+  }
+
+  await queryClient.fetchQuery({
+    queryKey,
+    queryFn: () => hydrateRoomSchedulesFromServer(queryClient, rid),
+    staleTime: 0,
+  });
+  return true;
+}
+
 /** `GET /rooms/{roomId}` 결과로 room-detail·방 목록 캐시를 맞춥니다. */
 export async function syncRoomDetailFromServer(
   queryClient: QueryClient,

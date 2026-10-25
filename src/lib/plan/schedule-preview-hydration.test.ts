@@ -19,17 +19,22 @@ vi.mock("@/lib/api/places", async (importOriginal) => {
 });
 
 let hydrateScheduleItemsFromSchedulesWithItems: typeof import("@/lib/plan/schedule-bulk-hydration").hydrateScheduleItemsFromSchedulesWithItems;
+let ensureSchedulePlanPlacesEnriched: typeof import("@/lib/plan/scheduleItemPlaces").ensureSchedulePlanPlacesEnriched;
 let PLAN_PLACE_PREVIEW_ERROR_TITLE: string;
 let createQueryClient: typeof import("@/lib/query-client").createQueryClient;
 let scheduleItemsQueryKey: typeof import("@/lib/query-keys").scheduleItemsQueryKey;
+let roomSchedulesQueryKey: typeof import("@/lib/query-keys").roomSchedulesQueryKey;
+let placePreviewQueryKey: typeof import("@/lib/places/place-queries").placePreviewQueryKey;
 let HttpError: typeof import("@/lib/api/errors").HttpError;
 
 beforeAll(async () => {
   ({ hydrateScheduleItemsFromSchedulesWithItems, PLAN_PLACE_PREVIEW_ERROR_TITLE } = await import(
     "@/lib/plan/schedule-bulk-hydration"
   ));
+  ({ ensureSchedulePlanPlacesEnriched } = await import("@/lib/plan/scheduleItemPlaces"));
   ({ createQueryClient } = await import("@/lib/query-client"));
-  ({ scheduleItemsQueryKey } = await import("@/lib/query-keys"));
+  ({ scheduleItemsQueryKey, roomSchedulesQueryKey } = await import("@/lib/query-keys"));
+  ({ placePreviewQueryKey } = await import("@/lib/places/place-queries"));
   ({ HttpError } = await import("@/lib/api/errors"));
 });
 
@@ -111,5 +116,62 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
       PLAN_PLACE_PREVIEW_ERROR_TITLE,
       PLAN_PLACE_PREVIEW_ERROR_TITLE,
     ]);
+  });
+});
+
+describe("ensureSchedulePlanPlacesEnriched", () => {
+  const placeholder = (googlePlaceId: string, itemId: number): PlanPlace => ({
+    id: `item-${itemId}`,
+    itemId,
+    googlePlaceId,
+    title: PLAN_PLACE_PREVIEW_ERROR_TITLE,
+    subtitle: googlePlaceId,
+  });
+
+  it("일정 불러오기가 진행 중이면 끝날 때까지 기다려 그 결과를 쓰고, 미리보기를 다시 받지 않는다", async () => {
+    const queryClient = createQueryClient();
+    let finishHydration: (schedules: RoomScheduleWithItems[]) => void = () => {};
+    const hydration = queryClient.fetchQuery({
+      queryKey: roomSchedulesQueryKey(ROOM_ID),
+      queryFn: () =>
+        new Promise<RoomScheduleWithItems[]>((resolve) => {
+          finishHydration = resolve;
+        }),
+    });
+
+    const enriching = ensureSchedulePlanPlacesEnriched(queryClient, ROOM_ID, 1);
+    const hydratedPlaces = [placeholder("a", 100)];
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), hydratedPlaces);
+    finishHydration([schedule(1, ["a"])]);
+    await hydration;
+
+    await expect(enriching).resolves.toBe(hydratedPlaces);
+    expect(requestPlacePreviewsBatch).not.toHaveBeenCalled();
+    expect(requestPlacePreview).not.toHaveBeenCalled();
+  });
+
+  it("불러오기가 끝난 뒤 다시 들어오면 자리표시자인 장소만 다시 받는다", async () => {
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a", "b"])]);
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [placeholder("a", 100)]);
+    queryClient.setQueryData(placePreviewQueryKey("b"), {
+      googlePlaceId: "b",
+      name: "이름 b",
+      formattedAddress: "서울",
+    });
+    requestPlacePreview.mockResolvedValueOnce({
+      googlePlaceId: "a",
+      name: "이름 a",
+      formattedAddress: "서울",
+      location: { latitude: 37.5, longitude: 127.0 },
+      primaryType: "cafe",
+      primaryTypeDisplayName: "카페",
+    });
+
+    const places = await ensureSchedulePlanPlacesEnriched(queryClient, ROOM_ID, 1);
+
+    expect(places.map((place) => place.title)).toEqual(["이름 a", "이름 b"]);
+    expect(requestPlacePreview).toHaveBeenCalledExactlyOnceWith("a");
+    expect(requestPlacePreviewsBatch).not.toHaveBeenCalled();
   });
 });
