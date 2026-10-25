@@ -13,7 +13,6 @@ import {
 } from "@/lib/places/place-batch-cache";
 import type { PlacePreview } from "@/lib/api/places";
 import {
-  fetchPlacePreview,
   placePreviewQueryKey,
   resolvePreviewGooglePlaceId,
 } from "@/lib/places/place-queries";
@@ -146,33 +145,19 @@ function buildPlanPlacesFromItemsWithCache(
   );
 }
 
-/** batch 시딩 후 preview 캐시 miss 항목만 GET `/preview`로 보강합니다. */
+/** preview 캐시 miss 항목만 batch로 받아 채웁니다 — 그래도 없는 장소는 단건으로 다시 받지 않고 자리표시자로 둡니다. */
 export async function buildPlanPlacesFromItemsWithPreviewEnrichment(
   queryClient: QueryClient,
   items: RoomScheduleItem[],
 ): Promise<PlanPlace[]> {
-  const sorted = sortRoomScheduleItemsByOrder(items);
-  const placeIds = sorted
+  const placeIds = items
     .map((item) => item.googlePlaceId)
     .filter((id) => typeof id === "string" && id.trim().length > 0);
 
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
   }
-
-  const out: PlanPlace[] = [];
-  for (const item of sorted) {
-    let preview = readCachedPreview(queryClient, item.googlePlaceId);
-    if (!preview) {
-      try {
-        preview = await fetchPlacePreview(item.googlePlaceId);
-      } catch {
-        preview = null;
-      }
-    }
-    out.push(planPlaceFromItemAndPreview(item, preview));
-  }
-  return out;
+  return buildPlanPlacesFromItemsWithCache(queryClient, items);
 }
 
 function collectGooglePlaceIdsFromSchedules(
@@ -197,6 +182,7 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return;
 
+  // 모든 일차의 장소를 batch 한 번(실패한 곳만 한 번 더)으로 받고, 일차별로는 캐시에서만 채운다
   const placeIds = collectGooglePlaceIdsFromSchedules(schedules);
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
@@ -207,11 +193,10 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
     if (typeof sid !== "number" || !Number.isFinite(sid)) continue;
 
     const items = Array.isArray(schedule.items) ? schedule.items : [];
-    const places = await buildPlanPlacesFromItemsWithPreviewEnrichment(
-      queryClient,
-      items,
+    queryClient.setQueryData(
+      scheduleItemsQueryKey(rid, sid),
+      buildPlanPlacesFromItemsWithCache(queryClient, items),
     );
-    queryClient.setQueryData(scheduleItemsQueryKey(rid, sid), places);
   }
 }
 

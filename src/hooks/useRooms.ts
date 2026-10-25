@@ -319,20 +319,25 @@ export function useSchedulePlanPlaces(
   const rid = roomId?.trim() ?? "";
   const sid = scheduleId;
   const queryClient = useQueryClient();
-  const { isSuccess: schedulesHydrated } = useRoomSchedules(rid || null);
+  const { isSuccess: schedulesHydrated, isFetching: schedulesFetching } =
+    useRoomSchedules(rid || null);
 
   return useQuery({
     queryKey: scheduleItemsQueryKey(rid || null, sid),
     queryFn: () => ensureSchedulePlanPlacesEnriched(queryClient, rid, sid!),
+    // 일정 불러오기가 끝난 뒤에 켠다 — 진행 중에 켜지면 같은 장소의 미리보기를 일차마다 다시 받는다
     enabled:
       rid.length > 0 &&
       typeof sid === "number" &&
       Number.isFinite(sid) &&
-      schedulesHydrated,
+      schedulesHydrated &&
+      !schedulesFetching,
     staleTime: Infinity,
     refetchOnMount: (query) => {
       const data = query.state.data;
-      return !Array.isArray(data) || planPlacesNeedPreviewEnrich(data);
+      if (!Array.isArray(data)) return true;
+      // 자리표시자('장소 정보를 불러올 수 없음')가 남은 일차는 다시 들어올 때 그 장소만 batch로 다시 받는다
+      return planPlacesNeedPreviewEnrich(data) ? "always" : false;
     },
     refetchOnWindowFocus: false,
   });
