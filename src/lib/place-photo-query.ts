@@ -7,6 +7,7 @@ import {
   requestPlacePhotoUrlsBatch,
   type PlacePhotoUrlBatchItem,
 } from "@/lib/api/places";
+import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import {
   createPlaceBatchLoader,
   type PlaceBatchResult,
@@ -59,16 +60,26 @@ function photoBatchItemResult(item: PlacePhotoUrlBatchItem): PlaceBatchResult<st
   };
 }
 
+/** 응답 id는 요청과 형식(`places/` 접두)이 다르거나 비어 있을 수 있어 같은 기준으로 맞춘다 */
+function placeKey(googlePlaceId: unknown): string {
+  return typeof googlePlaceId === "string"
+    ? normalizeGooglePlaceResourceId(googlePlaceId.trim())
+    : "";
+}
+
 /** 같은 커밋에 보이는 카드 사진을 모아 받는다 — 1장이면 단건, 2장 이상이면 batch */
 export const loadPlacePhotoUrl = createPlaceBatchLoader<string>({
   fetchOne: (id) => requestPlacePhotoUrl(id),
-  fetchMany: async (ids) =>
-    new Map(
-      (await requestPlacePhotoUrlsBatch(ids)).map(
-        (item): [string, PlaceBatchResult<string>] => [
-          item.googlePlaceId.trim(),
-          photoBatchItemResult(item),
-        ],
-      ),
-    ),
+  fetchMany: async (ids) => {
+    const byPlace = new Map<string, PlaceBatchResult<string>>();
+    for (const item of await requestPlacePhotoUrlsBatch(ids)) {
+      byPlace.set(placeKey(item.googlePlaceId), photoBatchItemResult(item));
+    }
+    const results = new Map<string, PlaceBatchResult<string>>();
+    for (const id of ids) {
+      const result = byPlace.get(placeKey(id));
+      if (result) results.set(id, result);
+    }
+    return results;
+  },
 });

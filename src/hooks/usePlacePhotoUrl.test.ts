@@ -95,6 +95,38 @@ describe("usePlacePhotoUrlQuery", () => {
     expect(requestPlacePhotoUrlMock).not.toHaveBeenCalled();
   });
 
+  it("batch 응답 id의 형식이 요청과 달라도 같은 장소로 맞춘다", async () => {
+    const queryClient = createQueryClient();
+    requestPlacePhotoUrlsBatchMock.mockResolvedValueOnce([ok("ChIJ-a"), ok("places/ChIJ-b")]);
+
+    const results = await fetchCards(queryClient, ["places/ChIJ-a", "ChIJ-b"]);
+
+    expect(results).toEqual([
+      { status: "fulfilled", value: "https://cdn.example/ChIJ-a.jpg" },
+      { status: "fulfilled", value: "https://cdn.example/places/ChIJ-b.jpg" },
+    ]);
+    expect(requestPlacePhotoUrlsBatchMock).toHaveBeenCalledTimes(1);
+    expect(requestPlacePhotoUrlMock).not.toHaveBeenCalled();
+  });
+
+  it("batch 응답에 id가 빈 항목이 있어도 나머지 장은 받고, 빠진 장만 한 번 더 받는다", async () => {
+    const queryClient = createQueryClient();
+    requestPlacePhotoUrlsBatchMock.mockResolvedValueOnce([
+      ok("ChIJ-a"),
+      { status: "OK", googlePlaceId: null, photoUrl: "https://cdn.example/unknown.jpg" },
+    ]);
+    requestPlacePhotoUrlMock.mockResolvedValueOnce("https://cdn.example/ChIJ-b.jpg");
+
+    const results = await fetchCards(queryClient, ["ChIJ-a", "ChIJ-b"]);
+
+    expect(results).toEqual([
+      { status: "fulfilled", value: "https://cdn.example/ChIJ-a.jpg" },
+      { status: "fulfilled", value: "https://cdn.example/ChIJ-b.jpg" },
+    ]);
+    expect(requestPlacePhotoUrlsBatchMock).toHaveBeenCalledTimes(1);
+    expect(requestPlacePhotoUrlMock).toHaveBeenCalledExactlyOnceWith("ChIJ-b");
+  });
+
   it("batch 항목이 실패하면 실패한 장만 batch로 한 번 더 받고, 그래도 실패하면 끝낸다", async () => {
     const queryClient = createQueryClient();
     requestPlacePhotoUrlsBatchMock
