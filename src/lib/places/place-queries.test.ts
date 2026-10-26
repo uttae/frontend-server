@@ -52,6 +52,17 @@ describe("placePreviewQueryOptions", () => {
     expect(requestPlacePreview).not.toHaveBeenCalled();
   });
 
+  it("status 없이 온 항목도 id와 이름이 있으면 받는다", async () => {
+    requestPlacePreviewsBatch.mockResolvedValueOnce([previewItem("ChIJ-a"), previewItem("ChIJ-b")]);
+
+    const [a, b] = await loadPreviews(["ChIJ-a", "ChIJ-b"]);
+
+    expect(a).toMatchObject({ status: "fulfilled", value: { name: "이름 ChIJ-a" } });
+    expect(b).toMatchObject({ status: "fulfilled", value: { name: "이름 ChIJ-b" } });
+    expect(requestPlacePreviewsBatch).toHaveBeenCalledTimes(1);
+    expect(requestPlacePreview).not.toHaveBeenCalled();
+  });
+
   it("FAILED 항목은 실패한 곳만 batch로 한 번 더 받고, 그래도 실패하면 502로 끝낸다", async () => {
     const { HttpError } = await import("@/lib/api/errors");
     requestPlacePreviewsBatch

@@ -107,16 +107,34 @@ export function resolvePreviewGooglePlaceId(googlePlaceId: string): string {
   return raw.length ? normalizeGooglePlaceResourceId(raw) : "";
 }
 
+/** status 없이 오는 응답(레거시 `items`)도 id와 이름이 있으면 받은 것으로 본다 */
+function hasPreviewIdAndName({
+  googlePlaceId,
+  name,
+}: {
+  googlePlaceId?: unknown;
+  name?: unknown;
+}): boolean {
+  return (
+    typeof googlePlaceId === "string" &&
+    googlePlaceId.trim().length > 0 &&
+    typeof name === "string" &&
+    name.trim().length > 0
+  );
+}
+
 function previewBatchItemResult(
   item: PlacePreviewBatchItem,
 ): PlaceBatchResult<PlacePreview> | null {
-  if (isBatchItemOk(item)) return { ok: true, value: normalizePlacePreview(item) };
   if (isBatchItemError(item)) {
     // 항목 실패는 외부 API 실패(EXTERNAL_API_ERROR)일 때만 온다 — 단건으로 보냈으면 502였을 실패다
     return {
       ok: false,
       error: new HttpError(502, `장소 미리보기 조회 실패: ${item.errorCode ?? item.status}`),
     };
+  }
+  if (isBatchItemOk(item) || hasPreviewIdAndName(item)) {
+    return { ok: true, value: normalizePlacePreview(item) };
   }
   return null;
 }
