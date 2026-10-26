@@ -1,6 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-const useQueryMock = vi.hoisted(() => vi.fn((options) => options));
 const requestPlacePhotoUrlMock = vi.hoisted(() => vi.fn());
 const requestPlacePhotoUrlsBatchMock = vi.hoisted(() => vi.fn());
 
@@ -9,11 +8,6 @@ vi.hoisted(() => {
   process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID = "test-client";
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
-});
-
-vi.mock("@tanstack/react-query", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@tanstack/react-query")>();
-  return { ...actual, useQuery: useQueryMock };
 });
 
 vi.mock("@/lib/api/places", async (importOriginal) => {
@@ -27,30 +21,22 @@ vi.mock("@/lib/api/places", async (importOriginal) => {
 
 let createQueryClient: typeof import("@/lib/query-client").createQueryClient;
 let HttpError: typeof import("@/lib/api/errors").HttpError;
-let usePlacePhotoUrlQuery: typeof import("@/hooks/usePlacePhotoUrl").usePlacePhotoUrlQuery;
+let placePhotoUrlQueryOptions: typeof import("@/hooks/usePlacePhotoUrl").placePhotoUrlQueryOptions;
 
 beforeAll(async () => {
   ({ createQueryClient } = await import("@/lib/query-client"));
   ({ HttpError } = await import("@/lib/api/errors"));
-  ({ usePlacePhotoUrlQuery } = await import("@/hooks/usePlacePhotoUrl"));
+  ({ placePhotoUrlQueryOptions } = await import("@/hooks/usePlacePhotoUrl"));
 });
 
 beforeEach(() => {
-  useQueryMock.mockClear();
   requestPlacePhotoUrlMock.mockReset();
   requestPlacePhotoUrlsBatchMock.mockReset();
 });
 
-function photoQueryOptions(googlePlaceId: string) {
-  usePlacePhotoUrlQuery(googlePlaceId);
-  const options = useQueryMock.mock.lastCall?.[0];
-  if (!options) throw new Error("useQuery was not called");
-  return options;
-}
-
 /** 같은 커밋에 카드 여러 장이 마운트된 것처럼 한 태스크 안에서 조회를 시작한다 */
 function fetchCards(queryClient: ReturnType<typeof createQueryClient>, ids: string[]) {
-  return Promise.allSettled(ids.map((id) => queryClient.fetchQuery(photoQueryOptions(id))));
+  return Promise.allSettled(ids.map((id) => queryClient.fetchQuery(placePhotoUrlQueryOptions(id))));
 }
 
 const ok = (googlePlaceId: string) => ({
@@ -64,11 +50,11 @@ const failed = (googlePlaceId: string) => ({
   errorCode: "EXTERNAL_API_ERROR",
 });
 
-describe("usePlacePhotoUrlQuery", () => {
+describe("placePhotoUrlQueryOptions", () => {
   it("사진 1장은 단건 API로 받고 같은 캐시를 다시 쓴다", async () => {
     const queryClient = createQueryClient();
     requestPlacePhotoUrlMock.mockResolvedValue("https://cdn.example/single.jpg");
-    const options = photoQueryOptions(" ChIJ-single ");
+    const options = placePhotoUrlQueryOptions(" ChIJ-single ");
 
     await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/single.jpg");
     await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/single.jpg");
@@ -173,7 +159,7 @@ describe("usePlacePhotoUrlQuery", () => {
     const queryClient = createQueryClient();
     requestPlacePhotoUrlMock.mockRejectedValueOnce(new HttpError(status, "Place photo failed"));
 
-    await expect(queryClient.fetchQuery(photoQueryOptions("ChIJ-http-error"))).rejects.toThrow(
+    await expect(queryClient.fetchQuery(placePhotoUrlQueryOptions("ChIJ-http-error"))).rejects.toThrow(
       "Place photo failed",
     );
     expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(1);
@@ -186,7 +172,7 @@ describe("usePlacePhotoUrlQuery", () => {
       .mockResolvedValueOnce("https://cdn.example/retried.jpg");
 
     await expect(
-      queryClient.fetchQuery({ ...photoQueryOptions("ChIJ-network-error"), retryDelay: 0 }),
+      queryClient.fetchQuery({ ...placePhotoUrlQueryOptions("ChIJ-network-error"), retryDelay: 0 }),
     ).resolves.toBe("https://cdn.example/retried.jpg");
     expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(2);
   });
@@ -200,7 +186,7 @@ describe("usePlacePhotoUrlQuery", () => {
       requestPlacePhotoUrlMock
         .mockResolvedValueOnce("")
         .mockResolvedValueOnce("https://cdn.example/available-later.jpg");
-      const options = photoQueryOptions("ChIJ-no-photo");
+      const options = placePhotoUrlQueryOptions("ChIJ-no-photo");
 
       await expect(queryClient.fetchQuery(options)).resolves.toBe("");
       vi.setSystemTime(now + 4 * 60 * 1000);
