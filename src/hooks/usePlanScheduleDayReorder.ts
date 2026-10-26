@@ -16,10 +16,8 @@ import type { RoomSchedule } from "@/lib/api/rooms";
 import {
   computeRowTranslateY,
   getPlanItemRowReorderStyle,
-  PLAN_ORDER_CHANGED_MESSAGE,
   PLAN_ORDER_RESYNCING_MESSAGE,
   PlanItemRowLayoutSnapshot,
-  sameIdOrder,
 } from "@/lib/plan/planItemReorder";
 import {
   beginPlanScheduleDayDrag,
@@ -47,8 +45,6 @@ export function usePlanScheduleDayReorder({
   const layoutSnapshotRef = useRef(new PlanItemRowLayoutSnapshot());
   const pointerYRef = useRef(0);
   const dragOverRafRef = useRef(0);
-  /** 드래그를 시작할 때의 일차 순서 */
-  const dayOrderRef = useRef<number[] | null>(null);
 
   const scheduleResyncPending = useScheduleResyncPending(roomId);
   const dragLocked =
@@ -61,7 +57,6 @@ export function usePlanScheduleDayReorder({
     setDragFromIndex(null);
     setPreviewIndex(null);
     layoutSnapshotRef.current.clear();
-    dayOrderRef.current = null;
   }, []);
 
   const setSectionRef = useCallback(
@@ -104,7 +99,6 @@ export function usePlanScheduleDayReorder({
         beginPlanScheduleDayDrag(e.nativeEvent, sectionEl, index);
       }
       layoutSnapshotRef.current.capture(sectionRefs.current);
-      dayOrderRef.current = schedules.map((s) => s.scheduleId);
       setDragFromIndex(index);
       setPreviewIndex(index);
     },
@@ -150,21 +144,12 @@ export function usePlanScheduleDayReorder({
       const toIndex =
         previewIndex ??
         (Number.isFinite(fromIndex) ? fromIndex : null);
-      const dayOrderAtDragStart = dayOrderRef.current;
 
       resetDragPreview();
 
       // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
       if (scheduleResyncPending) {
         toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
-        return;
-      }
-
-      if (
-        dayOrderAtDragStart &&
-        !sameIdOrder(dayOrderAtDragStart, schedules.map((s) => s.scheduleId))
-      ) {
-        toast.error(PLAN_ORDER_CHANGED_MESSAGE);
         return;
       }
 

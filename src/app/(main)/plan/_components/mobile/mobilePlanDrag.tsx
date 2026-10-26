@@ -22,9 +22,7 @@ import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import {
   clampCrossDayTargetOrderIndex,
-  PLAN_ORDER_CHANGED_MESSAGE,
   PLAN_ORDER_RESYNCING_MESSAGE,
-  sameIdOrder,
 } from "@/lib/plan/planItemReorder";
 import { newOrderIndexAfterMove } from "@/lib/plan/scheduleItemPlaces";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -52,8 +50,6 @@ type ActiveDrag = {
   dy: number;
   targetScheduleId: number;
   targetIndex: number;
-  /** 드래그를 시작할 때 일차별 `itemId` 순서 */
-  orders: Map<number, (number | undefined)[]>;
 };
 
 /** 서버 반영 전 먼저 보여줄 이동 */
@@ -252,18 +248,6 @@ export function useMobilePlanDragController({
       return;
     }
 
-    const orderChanged = [sourceScheduleId, targetScheduleId].some(
-      (sid) =>
-        !sameIdOrder(
-          drag.orders.get(sid) ?? [],
-          (placesBySchedule.current.get(sid) ?? []).map((p) => p.itemId),
-        ),
-    );
-    if (orderChanged) {
-      toast.error(PLAN_ORDER_CHANGED_MESSAGE);
-      return;
-    }
-
     if (targetScheduleId === sourceScheduleId) {
       if (targetIndex === sourceIndex) return;
       const order = sourcePlaces.map((p) => p.id);
@@ -342,12 +326,6 @@ export function useMobilePlanDragController({
         dy: 0,
         targetScheduleId: scheduleId,
         targetIndex: index,
-        orders: new Map(
-          [...placesBySchedule.current].map(([sid, places]) => [
-            sid,
-            places.map((p) => p.itemId),
-          ]),
-        ),
       });
     },
     [dragDisabled, editing, toContentY, updateActive],

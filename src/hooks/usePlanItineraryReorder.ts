@@ -25,13 +25,11 @@ import {
   executePlanItemCrossDayMove,
   getPlanItemRowReorderStyle,
   isPlanItemDrag,
-  PLAN_ORDER_CHANGED_MESSAGE,
   PLAN_ORDER_RESYNCING_MESSAGE,
   type PlanItemRowPreviewMode,
   PlanItemRowLayoutSnapshot,
   readPlanItemDragIndex,
   readPlanItemDragItemId,
-  sameIdOrder,
 } from "@/lib/plan/planItemReorder";
 import { newOrderIndexAfterMove } from "@/lib/plan/scheduleItemPlaces";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -82,8 +80,6 @@ export function usePlanItineraryReorder({
   const pointerYRef = useRef(0);
   const dragOverRafRef = useRef(0);
   const externalCaptureRafRef = useRef(0);
-  /** 드래그를 시작(다른 일차에서 들어온 경우 이 목록에 들어온) 때의 이 일차 순서 */
-  const dragOrderRef = useRef<(number | undefined)[] | null>(null);
 
   const mutationLocked =
     interactionLocked || isReorderSettling || isMovePending;
@@ -97,7 +93,6 @@ export function usePlanItineraryReorder({
     setPreviewIndex(null);
     setIncomingExternalDrag(false);
     layoutSnapshotRef.current.clear();
-    dragOrderRef.current = null;
     if (externalCaptureRafRef.current) {
       cancelAnimationFrame(externalCaptureRafRef.current);
       externalCaptureRafRef.current = 0;
@@ -139,7 +134,6 @@ export function usePlanItineraryReorder({
 
         if (rowsReady || attempt >= 8) {
           layoutSnapshotRef.current.capture(rowRefs.current);
-          dragOrderRef.current = places.map((p) => p.itemId);
           setIncomingExternalDrag(true);
           setPreviewIndex(
             places.length > 0
@@ -160,7 +154,7 @@ export function usePlanItineraryReorder({
       }
       tryCapture();
     },
-    [places],
+    [places.length],
   );
 
   useEffect(() => {
@@ -187,7 +181,6 @@ export function usePlanItineraryReorder({
         itemId,
       });
       layoutSnapshotRef.current.capture(rowRefs.current);
-      dragOrderRef.current = places.map((p) => p.itemId);
       const rowHeight =
         layoutSnapshotRef.current.heights()[index] ??
         target.getBoundingClientRect().height;
@@ -249,7 +242,6 @@ export function usePlanItineraryReorder({
         setIncomingExternalDrag(false);
         setPreviewIndex(null);
         layoutSnapshotRef.current.clear();
-        dragOrderRef.current = null;
         if (externalCaptureRafRef.current) {
           cancelAnimationFrame(externalCaptureRafRef.current);
           externalCaptureRafRef.current = 0;
@@ -278,16 +270,6 @@ export function usePlanItineraryReorder({
       if (scheduleResyncPending) {
         resetDragPreview();
         toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
-        return;
-      }
-
-      const orderAtDragStart = dragOrderRef.current;
-      if (
-        orderAtDragStart &&
-        !sameIdOrder(orderAtDragStart, places.map((p) => p.itemId))
-      ) {
-        resetDragPreview();
-        toast.error(PLAN_ORDER_CHANGED_MESSAGE);
         return;
       }
 

@@ -64,9 +64,8 @@ it("attributes a completed drag reorder to the request's room after the hook swi
   }
 });
 
-it("does not save a drop when the day's list changed during the drag", async () => {
+it("saves the dragged item at the dropped index even when the day's list changed during the drag", async () => {
   api.reorder.mockClear();
-  toastError.mockClear();
   type Place = { id: string; itemId: number; title: string };
   const placesAtStart: Place[] = [{ id: "item-1", itemId: 1, title: "One" }, { id: "item-2", itemId: 2, title: "Two" }];
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
@@ -97,8 +96,7 @@ it("does not save a drop when the day's list changed during the drag", async () 
     await hook.render([{ id: "item-3", itemId: 3, title: "Three" }, ...placesAtStart]);
     await act(async () => { await hook.current.listContainerProps.onDrop!(event as unknown as DragEvent<Element>); });
 
-    expect(api.reorder).not.toHaveBeenCalled();
-    expect(toastError).toHaveBeenCalledOnce();
+    expect(api.reorder).toHaveBeenCalledWith("room-a", 1, 1, { newOrderIndex: 1 });
   } finally {
     document.dispatchEvent(new Event("dragend"));
     await hook.unmount();
