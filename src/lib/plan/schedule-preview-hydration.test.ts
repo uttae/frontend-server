@@ -150,6 +150,33 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
     expect(requestPlacePreview).not.toHaveBeenCalled();
   });
 
+  it("기다리던 일정 불러오기가 취소되고 다시 시작되면 새 불러오기를 기다려 그 결과를 쓴다", async () => {
+    const queryClient = createQueryClient();
+    // 이미 받은 일정을 다시 받는 중에 또 다시 받으면 TanStack이 진행 중인 불러오기를 취소한다
+    queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a"])]);
+    const finishHydrations: Array<(schedules: RoomScheduleWithItems[]) => void> = [];
+    const queryFn = () =>
+      new Promise<RoomScheduleWithItems[]>((resolve) => {
+        finishHydrations.push(resolve);
+      });
+    void queryClient.fetchQuery({ queryKey: roomSchedulesQueryKey(ROOM_ID), queryFn, staleTime: 0 });
+
+    const enriching = ensureSchedulePlanPlacesEnriched(queryClient, ROOM_ID, 1);
+    const refetching = queryClient.refetchQueries({
+      queryKey: roomSchedulesQueryKey(ROOM_ID),
+      exact: true,
+    });
+    const hydratedPlaces = [placeholder("a", 100)];
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), hydratedPlaces);
+    finishHydrations[1]([schedule(1, ["a"])]);
+    await refetching;
+
+    await expect(enriching).resolves.toBe(hydratedPlaces);
+    expect(finishHydrations).toHaveLength(2);
+    expect(requestPlacePreviewsBatch).not.toHaveBeenCalled();
+    expect(requestPlacePreview).not.toHaveBeenCalled();
+  });
+
   it("불러오기가 끝난 뒤 다시 들어오면 자리표시자인 장소만 다시 받는다", async () => {
     const queryClient = createQueryClient();
     queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a", "b"])]);

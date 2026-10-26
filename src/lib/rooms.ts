@@ -1,4 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query";
+import { isCancelledError, type QueryClient } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api/client";
 import type {
@@ -163,6 +163,7 @@ export async function awaitRoomSchedulesHydrated(
 /**
  * `useRoomSchedules`의 일정 불러오기가 진행 중이면 끝날 때까지 기다리고 true를 돌려줍니다.
  * 진행 중인 요청에 합류할 뿐 새로 보내지 않습니다 — 진행 중이 아니면 바로 false입니다.
+ * 기다리던 불러오기가 취소되고 새로 시작되면 새 불러오기를 기다립니다.
  */
 export async function waitForRoomSchedulesHydration(
   queryClient: QueryClient,
@@ -174,11 +175,20 @@ export async function waitForRoomSchedulesHydration(
     return false;
   }
 
-  await queryClient.fetchQuery({
-    queryKey,
-    queryFn: () => hydrateRoomSchedulesFromServer(queryClient, rid),
-    staleTime: 0,
-  });
+  // 합류한 불러오기가 취소되면 그 promise는 CancelledError로 끝난다. 그대로 던지면 이 함수를 부른
+  // 일차 조회가 성공도 실패도 아닌 '조회 중'으로 남는다(TanStack이 취소 에러는 상태로 남기지 않음)
+  while (queryClient.isFetching({ queryKey, exact: true }) > 0) {
+    try {
+      await queryClient.fetchQuery({
+        queryKey,
+        queryFn: () => hydrateRoomSchedulesFromServer(queryClient, rid),
+        staleTime: 0,
+      });
+      return true;
+    } catch (error) {
+      if (!isCancelledError(error)) throw error;
+    }
+  }
   return true;
 }
 
