@@ -40,7 +40,7 @@ describe("fetchRoomMessagesAfter", () => {
 
     const result = await fetchRoomMessagesAfter("room", 40, active);
 
-    expect(result).toHaveLength(450);
+    expect(result).toHaveLength(410);
     expect(mocks.getRoomMessages.mock.calls).toEqual([
       ["room", { afterSequence: "40", size: CHAT_CATCH_UP_PAGE_SIZE }],
       ["room", { afterSequence: "240", size: CHAT_CATCH_UP_PAGE_SIZE }],
