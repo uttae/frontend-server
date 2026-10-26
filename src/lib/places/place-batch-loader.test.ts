@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { PLACE_BATCH_MAX_SIZE } from "@/lib/api/batch-chunk";
 import { createPlaceBatchLoader, type PlaceBatchResult } from "@/lib/places/place-batch-loader";
 
 type Outcome = "ok" | "failed" | "missing";
@@ -133,5 +134,73 @@ describe("createPlaceBatchLoader", () => {
       { status: "rejected", reason: failure },
       { status: "rejected", reason: failure },
     ]);
+  });
+
+  describe("서버 한도를 넘으면", () => {
+    const ids = Array.from({ length: PLACE_BATCH_MAX_SIZE + 20 }, (_, index) => `p${index}`);
+    const head = ids.slice(0, PLACE_BATCH_MAX_SIZE);
+    const tail = ids.slice(PLACE_BATCH_MAX_SIZE);
+    const fulfilled = (id: string) => ({ status: "fulfilled", value: `many:${id}` });
+
+    it("나눠 차례로 보내고, 뒤 묶음 요청이 실패해도 앞 묶음에서 받은 값은 쓴다", async () => {
+      const failure = new Error("rate limited");
+      const fetchMany = vi
+        .fn()
+        .mockResolvedValueOnce(batchResponse(head, () => "ok"))
+        .mockRejectedValueOnce(failure);
+      const fetchOne = vi.fn(async (id: string) => `one:${id}`);
+      const load = createPlaceBatchLoader<string>({ fetchOne, fetchMany });
+
+      const settled = await Promise.allSettled(ids.map((id) => load(id)));
+
+      expect(fetchMany.mock.calls).toEqual([[head], [tail]]);
+      expect(settled).toEqual([
+        ...head.map(fulfilled),
+        ...tail.map(() => ({ status: "rejected", reason: failure })),
+      ]);
+    });
+
+    it("앞 묶음 요청이 실패하면 남은 묶음은 보내지 않고 모두 같은 에러로 실패한다", async () => {
+      const failure = new Error("rate limited");
+      const fetchMany = vi.fn().mockRejectedValueOnce(failure);
+      const fetchOne = vi.fn(async (id: string) => `one:${id}`);
+      const load = createPlaceBatchLoader<string>({ fetchOne, fetchMany });
+
+      const settled = await Promise.allSettled(ids.map((id) => load(id)));
+
+      expect(fetchMany).toHaveBeenCalledTimes(1);
+      expect(settled).toEqual(ids.map(() => ({ status: "rejected", reason: failure })));
+    });
+
+    it("묶음마다 실패한 항목을 모아 한 번에 다시 보낸다", async () => {
+      const { fetchMany, load } = createLoader((id, call) =>
+        call <= 2 && (id === head[0] || id === tail[0]) ? "failed" : "ok",
+      );
+
+      const settled = await Promise.allSettled(ids.map((id) => load(id)));
+
+      expect(fetchMany.mock.calls).toEqual([[head], [tail], [[head[0], tail[0]]]]);
+      expect(settled).toEqual(ids.map(fulfilled));
+    });
+
+    it("요청이 실패한 묶음이 있으면 앞 묶음의 실패 항목도 다시 보내지 않는다", async () => {
+      const failure = new Error("rate limited");
+      const fetchMany = vi
+        .fn()
+        .mockResolvedValueOnce(batchResponse(head, (id) => (id === head[0] ? "failed" : "ok")))
+        .mockRejectedValueOnce(failure);
+      const fetchOne = vi.fn(async (id: string) => `one:${id}`);
+      const load = createPlaceBatchLoader<string>({ fetchOne, fetchMany });
+
+      const settled = await Promise.allSettled(ids.map((id) => load(id)));
+
+      expect(fetchMany).toHaveBeenCalledTimes(2);
+      expect(fetchOne).not.toHaveBeenCalled();
+      expect(settled).toEqual([
+        { status: "rejected", reason: new Error(`failed:${head[0]}`) },
+        ...head.slice(1).map(fulfilled),
+        ...tail.map(() => ({ status: "rejected", reason: failure })),
+      ]);
+    });
   });
 });
