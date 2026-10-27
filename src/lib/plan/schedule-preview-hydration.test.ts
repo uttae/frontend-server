@@ -24,7 +24,6 @@ let PLAN_PLACE_PREVIEW_ERROR_TITLE: string;
 let createQueryClient: typeof import("@/lib/query-client").createQueryClient;
 let scheduleItemsQueryKey: typeof import("@/lib/query-keys").scheduleItemsQueryKey;
 let roomSchedulesQueryKey: typeof import("@/lib/query-keys").roomSchedulesQueryKey;
-let placePreviewQueryKey: typeof import("@/lib/places/place-queries").placePreviewQueryKey;
 let HttpError: typeof import("@/lib/api/errors").HttpError;
 
 beforeAll(async () => {
@@ -34,7 +33,6 @@ beforeAll(async () => {
   ({ ensureSchedulePlanPlacesEnriched } = await import("@/lib/plan/scheduleItemPlaces"));
   ({ createQueryClient } = await import("@/lib/query-client"));
   ({ scheduleItemsQueryKey, roomSchedulesQueryKey } = await import("@/lib/query-keys"));
-  ({ placePreviewQueryKey } = await import("@/lib/places/place-queries"));
   ({ HttpError } = await import("@/lib/api/errors"));
 });
 
@@ -177,15 +175,14 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
     expect(requestPlacePreview).not.toHaveBeenCalled();
   });
 
-  it("불러오기가 끝난 뒤 다시 들어오면 자리표시자인 장소만 다시 받는다", async () => {
+  it("다시 들어오면 지금 일차 목록은 그대로 두고 자리표시자 장소만 다시 받는다 — 지운 장소가 되살아나지 않는다", async () => {
     const queryClient = createQueryClient();
-    queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a", "b"])]);
-    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [placeholder("a", 100)]);
-    queryClient.setQueryData(placePreviewQueryKey("b"), {
-      googlePlaceId: "b",
-      name: "이름 b",
-      formattedAddress: "서울",
-    });
+    // 일정을 불러온 뒤 c를 지웠다 — room-schedules의 items에는 c가 아직 남아 있다
+    queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a", "b", "c"])]);
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [
+      placeholder("a", 100),
+      { id: "item-101", itemId: 101, googlePlaceId: "b", title: "이름 b", subtitle: "서울" },
+    ]);
     requestPlacePreview.mockResolvedValueOnce({
       googlePlaceId: "a",
       name: "이름 a",
