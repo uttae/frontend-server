@@ -1,13 +1,23 @@
 import type { Query } from "@tanstack/react-query";
 
-import { requestPlacePhotoUrl } from "@/lib/api/places";
-import { getQueryClient } from "@/lib/query-client";
+import { isBatchItemOk } from "@/lib/api/batch-types";
+import { HttpError } from "@/lib/api/errors";
+import {
+  requestPlacePhotoUrl,
+  requestPlacePhotoUrlsBatch,
+  type PlacePhotoUrlBatchItem,
+} from "@/lib/api/places";
+import { normalizeGooglePlaceResourceId } from "@/lib/maps";
+import {
+  createPlaceBatchLoader,
+  type PlaceBatchResult,
+} from "@/lib/places/place-batch-loader";
 
 /**
  * `usePlacePhotoUrlQuery` — 같은 `googlePlaceId`에 대해 불필요한 `GET /places/photos` 재호출 방지.
  */
-export const PLACE_PHOTO_QUERY_GC_MS = 7 * 24 * 60 * 60 * 1000;
-export const PLACE_PHOTO_EMPTY_STALE_MS = 5 * 60 * 1000;
+const PLACE_PHOTO_QUERY_GC_MS = 7 * 24 * 60 * 60 * 1000;
+const PLACE_PHOTO_EMPTY_STALE_MS = 5 * 60 * 1000;
 
 export function placePhotoUrlQueryKey(googlePlaceId: string) {
   const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
@@ -34,35 +44,42 @@ export const placePhotoUrlQueryDefaults = {
   refetchOnMount: true,
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
-  retry: 2,
 } as const;
 
-/** batch 시딩 후 구독 — 항목별 실패로 캐시 miss이면 단건 GET fallback */
-export function seededPlacePhotoUrlQueryOptions(
-  googlePlaceId: string,
-  options?: { enabled?: boolean },
-) {
-  const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
-  const enabled = (options?.enabled ?? true) && id.length > 0;
+function photoBatchItemResult(item: PlacePhotoUrlBatchItem): PlaceBatchResult<string> {
+  if (isBatchItemOk(item)) {
+    return {
+      ok: true,
+      value: typeof item.photoUrl === "string" ? item.photoUrl.trim() : "",
+    };
+  }
+  // 항목 실패는 외부 API 실패(EXTERNAL_API_ERROR)일 때만 온다 — 단건으로 보냈으면 502였을 실패다
   return {
-    queryKey: placePhotoUrlQueryKey(id),
-    queryFn: (): string | Promise<string> => {
-      const state = getQueryClient()?.getQueryState<string>(
-        placePhotoUrlQueryKey(id),
-      );
-      const cached = state?.data;
-      if (typeof cached === "string") {
-        const trimmed = cached.trim();
-        if (
-          trimmed.length > 0 ||
-          Date.now() - (state?.dataUpdatedAt ?? 0) < PLACE_PHOTO_EMPTY_STALE_MS
-        ) {
-          return trimmed;
-        }
-      }
-      return requestPlacePhotoUrl(id);
-    },
-    enabled,
-    ...placePhotoUrlQueryDefaults,
+    ok: false,
+    error: new HttpError(502, `장소 사진 URL 조회 실패: ${item.errorCode ?? item.status}`),
   };
 }
+
+/** 응답 id는 요청과 형식(`places/` 접두)이 다르거나 비어 있을 수 있어 같은 기준으로 맞춘다 */
+function placeKey(googlePlaceId: unknown): string {
+  return typeof googlePlaceId === "string"
+    ? normalizeGooglePlaceResourceId(googlePlaceId.trim())
+    : "";
+}
+
+/** 같은 커밋에 보이는 카드 사진을 모아 받는다 — 1장이면 단건, 2장 이상이면 batch */
+export const loadPlacePhotoUrl = createPlaceBatchLoader<string>({
+  fetchOne: (id) => requestPlacePhotoUrl(id),
+  fetchMany: async (ids) => {
+    const byPlace = new Map<string, PlaceBatchResult<string>>();
+    for (const item of await requestPlacePhotoUrlsBatch(ids)) {
+      byPlace.set(placeKey(item.googlePlaceId), photoBatchItemResult(item));
+    }
+    const results = new Map<string, PlaceBatchResult<string>>();
+    for (const id of ids) {
+      const result = byPlace.get(placeKey(id));
+      if (result) results.set(id, result);
+    }
+    return results;
+  },
+});

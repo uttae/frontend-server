@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { awaitRoomSchedulesHydrated } from "@/lib/rooms";
+import { awaitRoomSchedulesHydrated, waitForRoomSchedulesHydration } from "@/lib/rooms";
 
 import {
   createScheduleItem,
@@ -10,9 +10,14 @@ import {
   type CreateScheduleItemResponse,
   type RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
+import {
+  fetchAndSeedPlacePreviews,
+  reconcileSchedulePlanPlacesAfterPreviewSeed,
+} from "@/lib/places/place-batch-cache";
 import { fetchPlacePreview } from "@/lib/places/place-queries";
 import {
   buildPlanPlacesFromItemsWithPreviewEnrichment,
+  PLAN_PLACE_PREVIEW_ERROR_TITLE,
   planPlacesNeedPreviewEnrich,
   resolveScheduleItemsFromCacheOrHydrate,
 } from "@/lib/plan/schedule-bulk-hydration";
@@ -379,9 +384,21 @@ export async function ensureSchedulePlanPlacesEnriched(
   const rid = roomId.trim();
   if (!rid.length) return [];
   const key = scheduleItemsQueryKey(rid, scheduleId);
+  // 일정 불러오기가 진행 중이면 그 결과를 쓴다 — 방금 batch로 받은 장소를 일차마다 다시 받지 않는다
+  const waitedForHydration = await waitForRoomSchedulesHydration(queryClient, rid);
   const cached = queryClient.getQueryData<PlanPlace[]>(key);
-  if (cached != null && !planPlacesNeedPreviewEnrich(cached)) {
+  if (cached != null && (waitedForHydration || !planPlacesNeedPreviewEnrich(cached))) {
     return cached;
+  }
+  if (cached != null) {
+    // 지금 일차 목록(삭제·수정·순서가 반영됨)은 그대로 두고 자리표시자 장소의 미리보기만 채운다 —
+    // room-schedules의 items는 장소 단위 변경을 따라가지 않아, 거기서 다시 만들면 지운 장소가 되살아난다
+    const placeholderIds = cached
+      .filter((place) => place.title === PLAN_PLACE_PREVIEW_ERROR_TITLE)
+      .flatMap((place) => (place.googlePlaceId ? [place.googlePlaceId] : []));
+    await fetchAndSeedPlacePreviews(placeholderIds, queryClient);
+    reconcileSchedulePlanPlacesAfterPreviewSeed(queryClient, rid);
+    return queryClient.getQueryData<PlanPlace[]>(key) ?? cached;
   }
 
   const items = await resolveScheduleItemsFromCacheOrHydrate(

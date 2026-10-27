@@ -13,7 +13,6 @@ import {
 } from "@/lib/places/place-batch-cache";
 import type { PlacePreview } from "@/lib/api/places";
 import {
-  fetchPlacePreview,
   placePreviewQueryKey,
   resolvePreviewGooglePlaceId,
 } from "@/lib/places/place-queries";
@@ -146,33 +145,19 @@ function buildPlanPlacesFromItemsWithCache(
   );
 }
 
-/** batch 시딩 후 preview 캐시 miss 항목만 GET `/preview`로 보강합니다. */
+/** preview 캐시 miss 항목만 batch로 받아 채웁니다 — 그래도 없는 장소는 단건으로 다시 받지 않고 자리표시자로 둡니다. */
 export async function buildPlanPlacesFromItemsWithPreviewEnrichment(
   queryClient: QueryClient,
   items: RoomScheduleItem[],
 ): Promise<PlanPlace[]> {
-  const sorted = sortRoomScheduleItemsByOrder(items);
-  const placeIds = sorted
+  const placeIds = items
     .map((item) => item.googlePlaceId)
     .filter((id) => typeof id === "string" && id.trim().length > 0);
 
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
   }
-
-  const out: PlanPlace[] = [];
-  for (const item of sorted) {
-    let preview = readCachedPreview(queryClient, item.googlePlaceId);
-    if (!preview) {
-      try {
-        preview = await fetchPlacePreview(item.googlePlaceId);
-      } catch {
-        preview = null;
-      }
-    }
-    out.push(planPlaceFromItemAndPreview(item, preview));
-  }
-  return out;
+  return buildPlanPlacesFromItemsWithCache(queryClient, items);
 }
 
 function collectGooglePlaceIdsFromSchedules(
@@ -197,6 +182,7 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return;
 
+  // 모든 일차의 장소를 batch 한 번(실패한 곳만 한 번 더)으로 받고, 일차별로는 캐시에서만 채운다
   const placeIds = collectGooglePlaceIdsFromSchedules(schedules);
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
@@ -207,11 +193,10 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
     if (typeof sid !== "number" || !Number.isFinite(sid)) continue;
 
     const items = Array.isArray(schedule.items) ? schedule.items : [];
-    const places = await buildPlanPlacesFromItemsWithPreviewEnrichment(
-      queryClient,
-      items,
+    queryClient.setQueryData(
+      scheduleItemsQueryKey(rid, sid),
+      buildPlanPlacesFromItemsWithCache(queryClient, items),
     );
-    queryClient.setQueryData(scheduleItemsQueryKey(rid, sid), places);
   }
 }
 
@@ -227,6 +212,12 @@ function batchRouteItemToResponse(
 }
 
 const inFlightScheduleRoutesBatch = new Map<string, Promise<void>>();
+
+/**
+ * 실패가 아니라 "경로 없음"이라는 답인 batch 항목 — 단건으로 다시 물어도 같은 답(204·404)이 오므로
+ * 경로 없음(`null`)으로 시딩하고 다시 묻지 않는다.
+ */
+const ROUTE_ANSWER_ERROR_CODES = new Set(["NO_ROUTE", "LAST_ITEM", "SCHEDULE_ITEM_NOT_FOUND"]);
 
 /**
  * in-flight dedup 키 — 일정 지문(`itemId` 순서·장소 정체성)을 포함해
@@ -351,17 +342,17 @@ export async function hydrateScheduleRoutesBatch(
   if (!snapshotFp.length || snapshotFp !== currentFp) return;
 
   for (const result of results) {
-    if (!isBatchItemOk(result)) continue;
-    const route = batchRouteItemToResponse(result);
     const itemId = result.itemId;
     const mode = canonicalScheduleTravelMode(result.travelMode);
     if (!mode) continue;
     if (typeof itemId !== "number" || !Number.isFinite(itemId)) continue;
 
-    queryClient.setQueryData(
-      scheduleItemRouteQueryKey(rid, scheduleId, itemId, mode),
-      route,
-    );
+    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, mode);
+    if (isBatchItemOk(result)) {
+      queryClient.setQueryData(routeKey, batchRouteItemToResponse(result));
+    } else if (result.errorCode && ROUTE_ANSWER_ERROR_CODES.has(result.errorCode)) {
+      queryClient.setQueryData(routeKey, null);
+    }
   }
 }
 

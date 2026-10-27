@@ -332,7 +332,9 @@ export function useSchedulePlanPlaces(
     staleTime: Infinity,
     refetchOnMount: (query) => {
       const data = query.state.data;
-      return !Array.isArray(data) || planPlacesNeedPreviewEnrich(data);
+      if (!Array.isArray(data)) return true;
+      // 자리표시자('장소 정보를 불러올 수 없음')가 남은 일차는 다시 들어올 때 그 장소만 batch로 다시 받는다
+      return planPlacesNeedPreviewEnrich(data) ? "always" : false;
     },
     refetchOnWindowFocus: false,
   });
