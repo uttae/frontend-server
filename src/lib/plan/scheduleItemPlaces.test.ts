@@ -166,20 +166,4 @@ describe("end time cache and reorder", () => {
     });
     expect(next?.[0]).toMatchObject({ startTime: "00:00", endTime: "23:59" });
   });
-  it("chains reorder while retaining overnight duration, zero and unset ends", async () => {
-    const { buildChainedStartPatchesForReorder } =
-      await import("./scheduleItemPlaces");
-    const items = [
-      { ...scheduleItem(1, 0), startTime: "23:00", endTime: "01:00" },
-      { ...scheduleItem(2, 1), startTime: "09:00", endTime: "09:00" },
-      { ...scheduleItem(3, 2), startTime: null, endTime: null },
-      { ...scheduleItem(4, 3), startTime: "00:00", endTime: "23:59" },
-    ];
-    expect(buildChainedStartPatchesForReorder(items)).toEqual([
-      { itemId: 1, startTime: "00:00", endTime: "02:00" },
-      { itemId: 2, startTime: "02:00", endTime: "02:00" },
-      { itemId: 3, startTime: "02:00", endTime: null },
-      { itemId: 4, startTime: "02:00", endTime: "01:59" },
-    ]);
-  });
 });

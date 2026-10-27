@@ -7,10 +7,10 @@ import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
-  addMinutesToHm,
   computeDurationMinutesFromRange,
   normalizeStartTimeToHm,
   validateScheduleTimeDraft,
+  type ScheduleTimeDraftValidation,
 } from "@/lib/plan/scheduleTime";
 import { cn } from "@/lib/utils";
 
@@ -30,10 +30,9 @@ type MobileTimeSheetProps = Readonly<{
   onClose: () => void;
 }>;
 
-const DEFAULT_HM = "10:00";
-
 /** "13:05" → "오후 1:05" — 휠과 같이 시를 0~11로 표기 */
-function formatHm12h(hm: string): string {
+function formatHm12h(hm: string | null): string {
+  if (hm === null) return "선택 중";
   if (!hm) return "";
   const [h, m] = hm.split(":").map(Number);
   return `${h < 12 ? "오전" : "오후"} ${h % 12}:${String(m).padStart(2, "0")}`;
@@ -52,28 +51,29 @@ export function MobileTimeSheet({
 }: MobileTimeSheetProps) {
   const serverStart = normalizeStartTimeToHm(startTime ?? "");
   const serverEnd = normalizeStartTimeToHm(endTime ?? "");
-  const [start, setStart] = useState(serverStart || DEFAULT_HM);
-  const [end, setEnd] = useState(serverEnd);
+  const [draftStart, setStart] = useState<string | null>();
+  const [draftEnd, setEnd] = useState<string | null>();
+  const start = draftStart === undefined ? serverStart : draftStart;
+  const end = draftEnd === undefined ? serverEnd : draftEnd;
   const [activeField, setActiveField] = useState<Field | null>("start");
   const { mutateAsync, isPending } = useUpdateScheduleItem();
 
   const dirty = start !== serverStart || end !== serverEnd;
-  const duration = computeDurationMinutesFromRange(start, end);
+  const duration = computeDurationMinutesFromRange(start ?? "", end ?? "");
   const subtitle = [
     dateLabel,
-    duration != null && end < start ? "다음 날 종료(+1일)" : null,
+    duration != null && end !== null && start !== null && end < start ? "다음 날 종료(+1일)" : null,
     duration != null ? `${Math.floor(duration / 60)}시간 ${duration % 60}분` : null,
   ]
     .filter(Boolean)
     .join(" · ");
-  const validation = validateScheduleTimeDraft(start, end);
+  const validation: ScheduleTimeDraftValidation = start === null || end === null
+    ? { valid: false, message: "오전/오후, 시, 분을 모두 선택해 주세요." }
+    : validateScheduleTimeDraft(start, end);
 
   function openField(field: Field) {
     if (field === "end" && !start) return;
     setActiveField((current) => (current === field ? null : field));
-    // 비어 있는 칸을 처음 열면 휠 기본값으로 채운다
-    if (field === "start" && !start) setStart(DEFAULT_HM);
-    if (field === "end" && !end) setEnd(addMinutesToHm(start, 60));
   }
 
   async function handleSave() {
@@ -99,7 +99,7 @@ export function MobileTimeSheet({
     }
   }
 
-  const fields: { key: Field; label: string; value: string }[] = [
+  const fields: { key: Field; label: string; value: string | null }[] = [
     { key: "start", label: "시작 시간", value: start },
     { key: "end", label: "종료 시간", value: end },
   ];
@@ -149,7 +149,8 @@ export function MobileTimeSheet({
       {activeField ? (
         <div inert={isPending} className={cn(isPending && "opacity-60")}>
           <TimeWheelPicker
-            value={(activeField === "start" ? start : end) || DEFAULT_HM}
+            key={activeField}
+            value={activeField === "start" ? start : end}
             onChange={activeField === "start" ? setStart : setEnd}
             active
             onInteract={() => {}}
@@ -157,7 +158,7 @@ export function MobileTimeSheet({
         </div>
       ) : null}
 
-      {start || end ? (
+      {start !== "" || end !== "" ? (
         <div className="flex justify-end">
           <button
             type="button"

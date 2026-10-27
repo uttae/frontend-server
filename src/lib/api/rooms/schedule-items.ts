@@ -21,7 +21,7 @@ export type RoomScheduleItem = {
 };
 
 export type UpdateTravelModeRequest = {
-  /** `DRIVING` | `WALKING` | `BICYCLING` | `TRANSIT` */
+  /** 서버 원본 수단. 프론트 지원 여부는 소비 경계에서 검증합니다. */
   travelMode: string;
 };
 

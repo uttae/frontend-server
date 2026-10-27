@@ -9,7 +9,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 
 import { useStompContext } from "@/contexts/StompContext";
 
@@ -176,7 +175,7 @@ export function useScheduleItemRoute(
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
-  travelMode: ScheduleTravelModeValue,
+  travelMode: ScheduleTravelModeValue | null,
   /** 일정 장소 목록상 구간 소스 아이디가 존재·목록 안정 후에만 true */
   routeQueryEnabled = true,
   /** 빈 문자열이면 LS 미사용 — `scheduleFingerprint` 지문 필요 */
@@ -457,8 +456,6 @@ export function useDeleteScheduleItem() {
 
 export function useReorderScheduleItem() {
   const queryClient = useQueryClient();
-  const [isChainedTimeSyncPending, setIsChainedTimeSyncPending] =
-    useState(false);
   const mutation = useMutation({
     mutationFn: (vars: {
       roomId: string;
@@ -472,32 +469,15 @@ export function useReorderScheduleItem() {
         vars.itemId,
         vars.body,
       ),
-    onMutate: () => {
-      setIsChainedTimeSyncPending(true);
-    },
-    onError: () => {
-      setIsChainedTimeSyncPending(false);
-    },
-    onSuccess: async (items, { roomId, scheduleId, itemId }) => {
-      try {
-        await syncPlanPlacesAfterReorderSuccess(
-          queryClient,
-          roomId,
-          scheduleId,
-          items,
-          itemId,
-        );
-      } finally {
-        setIsChainedTimeSyncPending(false);
-      }
-    },
+    onSuccess: (items, { roomId, scheduleId, itemId }) =>
+      syncPlanPlacesAfterReorderSuccess(queryClient, roomId, scheduleId, items, itemId),
   });
 
   return {
     ...mutation,
-    /** 리오더 요청 + 시작 시각 연쇄 PATCH까지(캐시가 일관될 때까지) */
+    /** 순서 응답과 경로 캐시 반영이 끝날 때까지 잠급니다. */
     isReorderSettling:
-      mutation.isPending || isChainedTimeSyncPending,
+      mutation.isPending,
   };
 }
 

@@ -229,3 +229,15 @@ describe("web time editing", () => {
     expect(mocks.error).toHaveBeenCalledWith("synthetic failure");
   });
 });
+
+
+it("opening and focusing unset desktop fields never enables saving or sends a PATCH", async () => {
+  props = { ...props, startTime: "", endTime: null };
+  await render();
+  await act(async () => { input(0).focus(); input(1).focus(); });
+  expect(fields.map((_, i) => selected(i))).toEqual(["", "", "", ""]);
+  const apply = [...container.querySelectorAll("button")].find(b => b.textContent === "적용")!;
+  expect(apply.disabled).toBe(true);
+  await click("적용");
+  expect(mocks.mutateAsync).not.toHaveBeenCalled();
+});

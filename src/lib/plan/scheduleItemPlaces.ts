@@ -1,12 +1,10 @@
 import type { QueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { awaitRoomSchedulesHydrated } from "@/lib/rooms";
 
 import {
   createScheduleItem,
   getScheduleItems,
-  updateScheduleItem,
   type CreateScheduleItemResponse,
   type RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
@@ -28,13 +26,6 @@ import {
   removeRouteQueriesForDeletedItemSource,
 } from "@/lib/plan/scheduleStompRouteScope";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
-import {
-  addMinutesToHm,
-  computeDurationMinutesFromRange,
-  hmToMinutesSinceMidnight,
-  minutesSinceMidnightToHm,
-  normalizeStartTimeToHm,
-} from "@/lib/plan/scheduleTime";
 import type { PlanPlace } from "@/lib/plan/types";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
 
@@ -435,58 +426,7 @@ export async function fetchSchedulePlanPlacesFromCacheOrApi(
   return fetchScheduleItemsAsPlanPlaces(rid, scheduleId);
 }
 
-/** 새 항목 POST 시 `startTime` — `HH:mm` (로컬 슬롯: 08:00부터 번호당 1시간, 최대 22:00) */
-export function slotStartTimeHm(itemIndex: number): string {
-  const hour = Math.min(8 + itemIndex, 22);
-  return `${String(hour).padStart(2, "0")}:00`;
-}
-
-/** 일차 항목들 중 유효한 시작 시각이 가장 이른 `HH:mm` — 리오더 시 1번 칸 기준이 뒷줄로 밀려 올라가지 않도록 앵커로 씁니다. */
-function earliestAnchoredHmFromScheduleItems(items: RoomScheduleItem[]): string {
-  let minM: number | null = null;
-  for (const it of items) {
-    const hm = normalizeStartTimeToHm(it.startTime ?? "");
-    if (!hm) continue;
-    const m = hmToMinutesSinceMidnight(hm);
-    if (m === null) continue;
-    if (minM === null || m < minM) minM = m;
-  }
-  if (minM === null) return slotStartTimeHm(0);
-  return minutesSinceMidnightToHm(minM);
-}
-
-/**
- * 기존 순서 변경 동작을 유지하되, 시각 범위로 계산한 길이만큼 종료도 함께 옮깁니다.
- * 가장 이른 시작을 앵커로 사용하며 미정 종료는 null로 보존합니다.
- */
-export function buildChainedStartPatchesForReorder(
-  items: RoomScheduleItem[],
-): Array<{ itemId: number; startTime: string; endTime: string | null }> {
-  const sorted = sortRoomScheduleItemsByOrder(items);
-  if (sorted.length === 0) return [];
-  let targetHm = earliestAnchoredHmFromScheduleItems(sorted);
-  const patches: Array<{
-    itemId: number;
-    startTime: string;
-    endTime: string | null;
-  }> = [];
-  for (const item of sorted) {
-    const duration = computeDurationMinutesFromRange(
-      item.startTime ?? "",
-      item.endTime ?? "",
-    );
-    const endTime = duration === null ? null : addMinutesToHm(targetHm, duration);
-    if (normalizeStartTimeToHm(item.startTime ?? "") !== targetHm) {
-      patches.push({ itemId: item.itemId, startTime: targetHm, endTime });
-    }
-    targetHm = endTime ?? targetHm;
-  }
-  return patches;
-}
-
-/**
- * 리오더 API 성공 직후: 순서를 캐시에 반영한 뒤, 필요하면 시작 시각 연쇄 PATCH 후 최종 머지.
- */
+/** 순서 응답을 반영하고 변경된 구간의 경로 캐시만 무효화합니다. */
 export async function syncPlanPlacesAfterReorderSuccess(
   queryClient: QueryClient,
   roomId: string,
@@ -510,60 +450,13 @@ export async function syncPlanPlacesAfterReorderSuccess(
     items,
   );
 
-  const patches = buildChainedStartPatchesForReorder(items);
-  if (patches.length === 0) {
-    await invalidateScheduleItemRoutesAfterReorder(
-      queryClient,
-      rid,
-      scheduleId,
-      movedItemId,
-      oldOrderedIds,
-      items,
-    );
-    return;
-  }
-
-  const snapshot = sortRoomScheduleItemsByOrder(items);
-  const byItemId = new Map(snapshot.map((it) => [it.itemId, it]));
-
-  try {
-    for (const p of patches) {
-      const updated = await updateScheduleItem(rid, scheduleId, p.itemId, {
-        startTime: p.startTime,
-        endTime: p.endTime,
-      });
-      byItemId.set(updated.itemId, updated);
-    }
-  } catch {
-    toast.error("순서에 맞게 시작 시간을 바꾸지 못했어요.");
-    try {
-      const fresh = await getScheduleItems(rid, scheduleId);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        roomId,
-        scheduleId,
-        fresh,
-      );
-    } catch {
-      //
-    }
-    return;
-  }
-
-  const finalItems = sortRoomScheduleItemsByOrder([...byItemId.values()]);
-  await mergeOrRefetchSchedulePlanPlacesFromItems(
-    queryClient,
-    roomId,
-    scheduleId,
-    finalItems,
-  );
   await invalidateScheduleItemRoutesAfterReorder(
     queryClient,
     rid,
     scheduleId,
     movedItemId,
     oldOrderedIds,
-    finalItems,
+    items,
   );
 }
 
