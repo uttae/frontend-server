@@ -1,5 +1,6 @@
 import type {
   OmitKeyof,
+  QueryClient,
   QueryKey,
   UseQueryOptions,
 } from "@tanstack/react-query";
@@ -102,4 +103,19 @@ export function persistedScheduleItemRouteQueryOptions(
     refetchOnWindowFocus: false,
     retry: false,
   };
+}
+
+/**
+ * 지도 구간 경로 — 목록과 같은 경로 쿼리를 쓴다(진행 중이면 합류). 방금 받다가 실패한 구간은 다시 보내지 않고
+ * 가진 값(없으면 null)을 쓴다 — 실패(429·5xx) 직후 같은 구간을 지도가 또 요청하지 않게 한다.
+ */
+export async function loadScheduleItemRouteForMap(
+  queryClient: QueryClient,
+  options: ReturnType<typeof persistedScheduleItemRouteQueryOptions>,
+): Promise<RouteCached> {
+  const state = queryClient.getQueryState<RouteCached>(options.queryKey);
+  if (state?.status === "error" && state.fetchStatus === "idle") {
+    return state.data ?? null;
+  }
+  return queryClient.fetchQuery(options);
 }

@@ -16,7 +16,10 @@ import {
   decodeOrientedPlanItinerarySegmentPath,
   normalizeGooglePlaceResourceId,
 } from "@/lib/maps";
-import { persistedScheduleItemRouteQueryOptions } from "@/lib/plan/scheduleItemRoutePersistedQuery";
+import {
+  loadScheduleItemRouteForMap,
+  persistedScheduleItemRouteQueryOptions,
+} from "@/lib/plan/scheduleItemRoutePersistedQuery";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { readSchedulePlanPlacesFromCache } from "@/lib/plan/scheduleItemPlaces";
 import {
@@ -196,11 +199,12 @@ export function PlanItineraryMapRoutes({
           segmentEpoch,
         ),
         /**
-         * 구간 경로는 일정 리스트와 같은 쿼리를 통해 가져옵니다. `fetchQuery`에 맡겨야
+         * 구간 경로는 일정 리스트와 같은 쿼리를 통해 가져옵니다. 그 쿼리에 맡겨야
          * in-flight 합치기와 재정렬 중 뒤늦게 온 응답 폐기를 React Query가 처리합니다.
          */
         queryFn: async () => {
-          const route = await queryClient.fetchQuery(
+          const route = await loadScheduleItemRouteForMap(
+            queryClient,
             persistedScheduleItemRouteQueryOptions(
               rid,
               seg.scheduleId,
