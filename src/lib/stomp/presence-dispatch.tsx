@@ -21,6 +21,11 @@ function patchMemberOnline(
   const rid = roomId.trim();
   if (!rid.length) return false;
 
+  // 무효화돼 다시 받을 목록은 패치하지 않는다 — setQueryData가 '갱신 필요' 표시를 지워 재조회가 사라진다
+  if (queryClient.getQueryState(roomMembersQueryKey(rid))?.isInvalidated) {
+    return false;
+  }
+
   const cached = queryClient.getQueryData<RoomMemberListResponse>(
     roomMembersQueryKey(rid),
   );

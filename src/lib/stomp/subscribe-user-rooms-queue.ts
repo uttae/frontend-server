@@ -3,6 +3,7 @@ import type { MutableRefObject } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 
 import { dispatchHostJoinRequestFromStomp } from "@/lib/stomp/join-requests-dispatch";
+import { resyncUserQueueDataAfterSubscribe } from "@/lib/stomp/room-resync-dispatch";
 import {
   parseUserRoomQueueMessage,
   type ForcedRoomExitReason,
@@ -44,6 +45,7 @@ export function subscribeUserRoomsQueue(
       parsed.nickname,
     );
   });
+  resyncUserQueueDataAfterSubscribe(options.queryClientRef.current);
 
   return () => {
     sub.unsubscribe();

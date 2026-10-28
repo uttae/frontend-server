@@ -10,11 +10,13 @@ import {
 import { toast } from "sonner";
 
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
+import { useScheduleResyncPending } from "@/hooks/useScheduleResyncPending";
 import { useMoveRoomSchedule } from "@/hooks/useRooms";
 import type { RoomSchedule } from "@/lib/api/rooms";
 import {
   computeRowTranslateY,
   getPlanItemRowReorderStyle,
+  PLAN_ORDER_RESYNCING_MESSAGE,
   PlanItemRowLayoutSnapshot,
 } from "@/lib/plan/planItemReorder";
 import {
@@ -44,6 +46,7 @@ export function usePlanScheduleDayReorder({
   const pointerYRef = useRef(0);
   const dragOverRafRef = useRef(0);
 
+  const scheduleResyncPending = useScheduleResyncPending(roomId);
   const dragLocked =
     interactionLocked || isMovePending || schedules.length < 2;
   const isDraggingActive = dragFromIndex !== null;
@@ -90,7 +93,7 @@ export function usePlanScheduleDayReorder({
 
   const handleDragStart = useCallback(
     (index: number) => (e: DragEvent<Element>) => {
-      if (dragLocked || schedules[index] == null) return;
+      if (dragLocked || scheduleResyncPending || schedules[index] == null) return;
       const sectionEl = sectionRefs.current[index];
       if (sectionEl instanceof HTMLElement) {
         beginPlanScheduleDayDrag(e.nativeEvent, sectionEl, index);
@@ -99,7 +102,7 @@ export function usePlanScheduleDayReorder({
       setDragFromIndex(index);
       setPreviewIndex(index);
     },
-    [dragLocked, schedules],
+    [dragLocked, scheduleResyncPending, schedules],
   );
 
   const handleDragEnd = useCallback(() => {
@@ -144,6 +147,12 @@ export function usePlanScheduleDayReorder({
 
       resetDragPreview();
 
+      // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
+      if (scheduleResyncPending) {
+        toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
+        return;
+      }
+
       if (
         !Number.isFinite(fromIndex) ||
         fromIndex < 0 ||
@@ -175,7 +184,7 @@ export function usePlanScheduleDayReorder({
         );
       }
     },
-    [moveMutate, previewIndex, resetDragPreview, roomId, schedules],
+    [moveMutate, previewIndex, resetDragPreview, roomId, scheduleResyncPending, schedules],
   );
 
   const getSectionProps = useCallback(
@@ -209,7 +218,8 @@ export function usePlanScheduleDayReorder({
           motionEnabled: isDraggingActive,
         }),
         dragHandleProps: {
-          dragDisabled: dragLocked || schedules[index] == null,
+          dragDisabled:
+            dragLocked || scheduleResyncPending || schedules[index] == null,
           isDragging,
           onDragStart: handleDragStart(index),
           onDragEnd: handleDragEnd,
@@ -223,6 +233,7 @@ export function usePlanScheduleDayReorder({
       handleDragStart,
       isDraggingActive,
       previewIndex,
+      scheduleResyncPending,
       schedules,
       setSectionRef,
     ],

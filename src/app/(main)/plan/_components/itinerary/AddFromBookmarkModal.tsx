@@ -54,7 +54,7 @@ export function AddFromBookmarkModal({
   const {
     data: categories,
     isPending: categoriesLoading,
-    isError: categoriesError,
+    isLoadingError: categoriesError,
     error: categoriesErr,
     refetch: refetchCategories,
   } = useBookmarkCategories(roomId);
@@ -82,7 +82,7 @@ export function AddFromBookmarkModal({
   const {
     data: bookmarkRows,
     isPending: bookmarksLoading,
-    isError: bookmarksError,
+    isLoadingError: bookmarksError,
     error: bookmarksErr,
     refetch: refetchBookmarks,
   } = useRoomBookmarks(roomId, selectedCategoryId);

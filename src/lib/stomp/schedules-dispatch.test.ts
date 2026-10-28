@@ -45,7 +45,6 @@ vi.mock("@/lib/plan/scheduleStompRouteScope", () => ({
 }));
 
 vi.mock("@/lib/rooms", () => ({
-  hydrateRoomSchedulesFromServer: vi.fn(),
   syncRoomDetailFromServer: vi.fn(),
 }));
 

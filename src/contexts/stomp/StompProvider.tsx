@@ -17,6 +17,7 @@ import {
   evictRoomFromClientCaches,
   refreshRoomsList,
   showForcedExitToast,
+  showRoomAccessLostToast,
   showRoomLeftToast,
 } from "@/lib/stomp/forced-room-exit-dispatch";
 import {
@@ -34,11 +35,11 @@ import {
 import type { ServerChatMessage } from "@/types/chat";
 
 import { StompConnectionBanner } from "@/components/stomp/StompConnectionBanner";
-import { handleStompReconnect } from "@/lib/stomp/stomp-session-recovery";
 import { useStompConnectionStore } from "@/stores/stomp-connection-store";
 
 import {
   useStompClientLifecycleEffect,
+  useStompOnlineRetryEffect,
   useStompRoomTopicsResyncEffect,
   type StompConnectionState,
 } from "./use-stomp-provider-effects";
@@ -91,6 +92,7 @@ export function StompProvider({ children }: { children: ReactNode }) {
   const lastSubscribedRoomIdRef = useRef<string | null>(null);
   const forcedExitConsumedRef = useRef(false);
   const suppressCloseRecoveryRef = useRef(false);
+  const retryConnectionRef = useRef<(() => void) | null>(null);
   const [connectionState, setConnectionState] = useState<StompConnectionState>({
     client: null,
     connected: false,
@@ -102,19 +104,8 @@ export function StompProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const retryStompConnection = useCallback(() => {
-    const client = clientRef.current;
-    if (!client) return;
-
-    useStompConnectionStore.getState().resumeAutoRecovery();
-    setConnectionState((prev) => ({ ...prev, connected: false }));
-    invalidateRoomTopics();
-    void handleStompReconnect({
-      client,
-      queryClient: queryClientRef.current,
-      isSuppressed: () => suppressCloseRecoveryRef.current,
-      isActive: () => clientRef.current === client,
-    });
-  }, [invalidateRoomTopics]);
+    retryConnectionRef.current?.();
+  }, []);
 
   const detachRoomTopicsOnly = useCallback(() => {
     roomTopicsUnsubRef.current?.();
@@ -184,6 +175,30 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
+  /** 끊긴 동안 접근을 잃은 방에 다시 구독하다 거부됐을 때 — 놓친 개인 큐 알림 대신 HTTP 확인 결과로 내보낸다 */
+  const notifyRoomAccessLost = useCallback(
+    (roomId: string) => {
+      const rid = roomId.trim();
+      if (!rid) return;
+
+      evictRoomFromClientCaches(queryClientRef.current, rid);
+      refreshRoomsList(queryClientRef.current);
+      showRoomAccessLostToast(rid);
+
+      if ((getResolvedRoomId()?.trim() ?? "") === rid) {
+        if (forcedExitConsumedRef.current) return;
+        forcedExitConsumedRef.current = true;
+        handleForcedRoomExit();
+        return;
+      }
+
+      if (useSessionStore.getState().currentRoomId?.trim() === rid) {
+        useSessionStore.getState().clearCurrentRoomId();
+      }
+    },
+    [getResolvedRoomId, handleForcedRoomExit],
+  );
+
   const roomChatMessageHandlerRef = useRef<
     ((msg: ServerChatMessage) => void) | null
   >(null);
@@ -237,6 +252,7 @@ export function StompProvider({ children }: { children: ReactNode }) {
     stompEligible,
     suppressCloseRecoveryRef,
     notifyForcedRoomExit,
+    notifyRoomAccessLost,
     subscribeToRoomTopics,
     invalidateRoomTopics,
     teardownConnectedClient,
@@ -247,7 +263,10 @@ export function StompProvider({ children }: { children: ReactNode }) {
     forcedExitConsumedRef,
     queryClientRef,
     setConnectionState,
+    retryConnectionRef,
   });
+
+  useStompOnlineRetryEffect(retryConnectionRef);
 
   const roomTopicsDeferred = pathDefersRoomStompRoomTopics(pathname);
 

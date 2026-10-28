@@ -27,7 +27,7 @@ import {
   readOrderedItemIdsFromScheduleItemsCache,
   removeRouteQueriesForDeletedItemSource,
 } from "@/lib/plan/scheduleStompRouteScope";
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 import {
   addMinutesToHm,
   computeDurationMinutesFromRange,
@@ -176,6 +176,25 @@ async function buildPlanPlacesFromScheduleItems(
   return Promise.all(sorted.map((item) => planPlaceFromScheduleItem(item)));
 }
 
+/**
+ * 일차 장소 목록을 씁니다. 그사이 일정 전체 재조회가 진행 중이면 그 응답은 이 변경 전 스냅샷이라
+ * 끝나는 대로 방금 쓴 일차를 되돌립니다. 진행 중인 조회를 취소하고 다시 받게 합니다.
+ */
+export function setSchedulePlanPlaces(
+  queryClient: QueryClient,
+  roomId: string,
+  scheduleId: number,
+  places: PlanPlace[],
+): void {
+  const rid = roomId.trim();
+  queryClient.setQueryData(scheduleItemsQueryKey(rid, scheduleId), places);
+
+  const roomSchedulesKey = roomSchedulesQueryKey(rid);
+  if (queryClient.isFetching({ queryKey: roomSchedulesKey, exact: true }) > 0) {
+    void queryClient.refetchQueries({ queryKey: roomSchedulesKey, exact: true });
+  }
+}
+
 /** DELETE 직후 `schedule-items`에서 항목만 제거(Preview·Photo 재조회 없음). */
 export function removeScheduleItemFromPlanPlacesCache(
   queryClient: QueryClient,
@@ -190,7 +209,7 @@ export function removeScheduleItemFromPlanPlacesCache(
   if (!prev?.length) return false;
   const next = prev.filter((p) => p.itemId !== deletedItemId);
   if (next.length === prev.length) return false;
-  queryClient.setQueryData(key, next);
+  setSchedulePlanPlaces(queryClient, rid, scheduleId, next);
   return true;
 }
 
@@ -264,11 +283,11 @@ export async function mergeOrRefetchSchedulePlanPlacesFromItems(
   const prev = queryClient.getQueryData<PlanPlace[]>(key);
   const merged = await mergeScheduleItemsIntoPlanPlaces(prev, items);
   if (merged) {
-    queryClient.setQueryData(key, merged);
+    setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
     return;
   }
   const places = await buildPlanPlacesFromScheduleItems(items);
-  queryClient.setQueryData(key, places);
+  setSchedulePlanPlaces(queryClient, rid, scheduleId, places);
 }
 
 /** cross-day item 이동 후 source/target 일차 items·route 캐시 동기화 */
@@ -708,7 +727,7 @@ export async function createScheduleItemAtPlanIndex(
     const createdPlace = await planPlaceFromScheduleItem(response.createdItem);
     const merged = mergeCreatedScheduleItemDelta(prev, createdPlace, response);
     if (merged) {
-      queryClient.setQueryData(key, merged);
+      setSchedulePlanPlaces(queryClient, rid, args.scheduleId, merged);
     } else {
       const fresh = await getScheduleItems(rid, args.scheduleId);
       await mergeOrRefetchSchedulePlanPlacesFromItems(

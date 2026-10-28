@@ -20,6 +20,7 @@ export async function getRoomMessages(
 
   return requestJson(url.toString(), undefined, {
     errorMessage: "메시지 목록 조회 실패",
+    useHttpError: true,
   });
 }
 
@@ -31,6 +32,7 @@ export async function getRoomMessageReadStatus(
     undefined,
     {
       errorMessage: "읽음 위치 조회 실패",
+      useHttpError: true,
     },
   );
 }

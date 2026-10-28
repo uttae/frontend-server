@@ -1,3 +1,4 @@
+import { QueryClient } from "@tanstack/react-query";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import type {
@@ -181,5 +182,47 @@ describe("end time cache and reorder", () => {
       { itemId: 3, startTime: "02:00", endTime: null },
       { itemId: 4, startTime: "02:00", endTime: "01:59" },
     ]);
+  });
+});
+
+describe("setSchedulePlanPlaces", () => {
+  it("restarts an in-flight whole-room refetch so its older snapshot cannot overwrite the new day list", async () => {
+    const { setSchedulePlanPlaces } = await import("@/lib/plan/scheduleItemPlaces");
+    const { roomSchedulesQueryKey, scheduleItemsQueryKey } = await import("@/lib/query-keys");
+    const client = new QueryClient();
+    const roomKey = roomSchedulesQueryKey("room-1");
+    client.setQueryData(roomKey, []);
+    let fetches = 0;
+    const queryFn = () => {
+      fetches += 1;
+      return new Promise<never[]>(() => {});
+    };
+    void client.fetchQuery({ queryKey: roomKey, queryFn, staleTime: 0 }).catch(() => null);
+    expect(fetches).toBe(1);
+
+    setSchedulePlanPlaces(client, "room-1", 10, [planPlace(1)]);
+
+    expect(fetches).toBe(2);
+    expect(client.getQueryData(scheduleItemsQueryKey("room-1", 10))).toEqual([planPlace(1)]);
+    client.clear();
+  });
+
+  it("does not refetch the whole room when nothing is in flight", async () => {
+    const { setSchedulePlanPlaces } = await import("@/lib/plan/scheduleItemPlaces");
+    const { roomSchedulesQueryKey } = await import("@/lib/query-keys");
+    const client = new QueryClient();
+    let fetches = 0;
+    client.setQueryDefaults(roomSchedulesQueryKey("room-1"), {
+      queryFn: () => {
+        fetches += 1;
+        return [];
+      },
+    });
+    client.setQueryData(roomSchedulesQueryKey("room-1"), []);
+
+    setSchedulePlanPlaces(client, "room-1", 10, [planPlace(1)]);
+
+    expect(fetches).toBe(0);
+    client.clear();
   });
 });

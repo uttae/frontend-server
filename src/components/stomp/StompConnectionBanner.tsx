@@ -26,7 +26,7 @@ export function StompConnectionBanner({ onRetry }: StompConnectionBannerProps) {
       animate={{ height: "auto", opacity: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.2 }}
-      className="fixed top-0 right-0 left-0 z-50 overflow-hidden border-b border-primary/25 bg-primary/[0.06] shadow-sm"
+      className="fixed top-0 right-0 left-0 z-50 overflow-hidden border-b border-primary/25 bg-primary-subtle shadow-sm"
     >
       <div className="mx-auto flex max-w-screen-xl items-center gap-2 px-4 py-2.5 text-primary">
         <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
