@@ -10,6 +10,7 @@ import { validateRoomAccess } from "@/lib/rooms";
 import {
   createStompClient,
   getStompBrokerURL,
+  STOMP_MAX_RECONNECT_ATTEMPTS,
   STOMP_MAX_RECONNECT_DELAY_MS,
 } from "@/lib/stomp/client";
 import { pathDefersRoomStompRoomTopics } from "@/lib/stomp/stompPathPolicy";
@@ -21,7 +22,6 @@ import { startSessionPresencePing } from "@/lib/stomp/sessionPresencePing";
 import { subscribeUserRoomsQueue } from "@/lib/stomp/subscribe-user-rooms-queue";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
 import {
-  STOMP_CONNECTION_ISSUE_DELAY_MS,
   STOMP_CONNECTION_ISSUE_MESSAGE,
   useStompConnectionStore,
 } from "@/stores/stomp-connection-store";
@@ -50,13 +50,13 @@ type LifecycleOpts = {
   forcedExitConsumedRef: MutableRefObject<boolean>;
   queryClientRef: MutableRefObject<QueryClient>;
   setConnectionState: Dispatch<SetStateAction<StompConnectionState>>;
-  /** 연결 문제 배너의 '다시 시도'가 부르는 즉시 재연결 */
+  /** 연결 문제 배너의 '다시 시도'가 부르는 즉시 재연결. 시도 횟수를 처음부터 다시 센다 */
   retryConnectionRef: MutableRefObject<(() => void) | null>;
 };
 
 /**
  * 로그인·경로 조건으로 STOMP 클라이언트 1개를 유지하고, 재연결 시 유저 방 큐 구독을 세팅합니다.
- * 재연결 간격은 stompjs(`createStompClient`)가 맡고, 이 effect는 재연결 직전 세션 갱신과 연결 상태 표시만 합니다.
+ * 재연결 간격은 stompjs(`createStompClient`)가 맡고, 이 effect는 재연결 직전 세션 갱신·시도 횟수 제한·연결 상태 표시를 합니다.
  */
 export function useStompClientLifecycleEffect({
   stompEligible,
@@ -91,7 +91,8 @@ export function useStompClientLifecycleEffect({
     let connectionDropped = false;
     // 연결 시도(세션 확인~CONNECTED·close) 중에 다시 시도하면 연결이 둘로 갈라진다
     let attemptInFlight = false;
-    let connectionIssueTimer: ReturnType<typeof setTimeout> | null = null;
+    // 끊긴 뒤 연결에 성공하기 전까지의 재연결 시도 수
+    let reconnectAttempts = 0;
     // 서버는 구독 거부 등으로 ERROR를 보낸 뒤 연결을 닫는다(Spring 기본 동작)
     let closingAfterStompError = false;
     let stompErrorReconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -100,12 +101,6 @@ export function useStompClientLifecycleEffect({
     const stopAppPing = () => {
       stopPingRef.current?.();
       stopPingRef.current = null;
-    };
-
-    const clearConnectionIssueTimer = () => {
-      if (connectionIssueTimer === null) return;
-      clearTimeout(connectionIssueTimer);
-      connectionIssueTimer = null;
     };
 
     const clearStompErrorReconnectTimer = () => {
@@ -134,6 +129,7 @@ export function useStompClientLifecycleEffect({
     client.beforeConnect = async () => {
       attemptInFlight = true;
       if (!connectionDropped) return;
+      reconnectAttempts += 1;
       await refreshSessionBeforeReconnect({
         client,
         queryClient: queryClientRef.current,
@@ -144,6 +140,7 @@ export function useStompClientLifecycleEffect({
     retryConnectionRef.current = () => {
       if (!isActive() || attemptInFlight || client.connected) return;
       clearStompErrorReconnectTimer();
+      reconnectAttempts = 0;
       // deactivate→activate는 예약된 재연결을 지우고 간격을 처음 값으로 되돌린 뒤 바로 시도한다
       void client.deactivate().then(() => {
         if (isActive()) client.activate();
@@ -154,7 +151,7 @@ export function useStompClientLifecycleEffect({
       if (!effectActive) return;
       attemptInFlight = false;
       closingAfterStompError = false;
-      clearConnectionIssueTimer();
+      reconnectAttempts = 0;
       useStompConnectionStore.getState().clearConnectionIssue();
       setConnectionState({ client, connected: true });
       forcedExitConsumedRef.current = false;
@@ -196,6 +193,17 @@ export function useStompClientLifecycleEffect({
       setConnectionState((prev) => ({ ...prev, connected: false }));
       invalidateRoomTopics();
 
+      // 정해진 횟수를 모두 실패하면 재연결을 멈추고 배너로 알린다. 다시 시작은 '다시 시도'가 맡는다
+      if (reconnectAttempts >= STOMP_MAX_RECONNECT_ATTEMPTS) {
+        closingAfterStompError = false;
+        clearStompErrorReconnectTimer();
+        void client.deactivate();
+        useStompConnectionStore
+          .getState()
+          .setConnectionIssue(STOMP_CONNECTION_ISSUE_MESSAGE);
+        return;
+      }
+
       // stompjs는 CONNECTED를 받을 때마다 간격을 처음 값으로 되돌려, 구독 오류로 닫히는 연결은 1초마다 다시 붙는다.
       // 이 경우만 라이브러리 재연결을 멈추고 상한 간격 뒤에 다시 연결한다(문서 밖 보강)
       if (closingAfterStompError) {
@@ -207,17 +215,6 @@ export function useStompClientLifecycleEffect({
           if (isActive()) client.activate();
         }, STOMP_MAX_RECONNECT_DELAY_MS);
       }
-
-      // 끊긴 상태가 이어질 때만 배너를 띄운다
-      if (connectionIssueTimer === null) {
-        connectionIssueTimer = setTimeout(() => {
-          connectionIssueTimer = null;
-          if (!isActive() || client.connected) return;
-          useStompConnectionStore
-            .getState()
-            .setConnectionIssue(STOMP_CONNECTION_ISSUE_MESSAGE);
-        }, STOMP_CONNECTION_ISSUE_DELAY_MS);
-      }
     };
 
     client.activate();
@@ -225,7 +222,6 @@ export function useStompClientLifecycleEffect({
     return () => {
       effectActive = false;
       retryConnectionRef.current = null;
-      clearConnectionIssueTimer();
       clearStompErrorReconnectTimer();
       stopAppPing();
       teardownConnectedClient();
@@ -249,12 +245,18 @@ export function useStompClientLifecycleEffect({
   ]);
 }
 
-/** 브라우저가 네트워크 복귀를 알리면 다음 재연결 예약(최대 5초)을 기다리지 않고 바로 다시 연결합니다. */
+/**
+ * 브라우저가 네트워크 복귀를 알리면 다음 재연결 예약(최대 30초)을 기다리지 않고 바로 다시 연결합니다.
+ * 횟수를 다 써서 멈춘 뒤(배너 표시 중)에는 다시 시작하지 않습니다.
+ */
 export function useStompOnlineRetryEffect(
   retryConnectionRef: MutableRefObject<(() => void) | null>,
 ): void {
   useEffect(() => {
-    const retry = () => retryConnectionRef.current?.();
+    const retry = () => {
+      if (useStompConnectionStore.getState().connectionIssue) return;
+      retryConnectionRef.current?.();
+    };
     window.addEventListener("online", retry);
     return () => window.removeEventListener("online", retry);
   }, [retryConnectionRef]);

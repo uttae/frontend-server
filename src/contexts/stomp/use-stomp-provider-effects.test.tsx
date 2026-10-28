@@ -5,7 +5,6 @@ import type { Client } from "@stomp/stompjs";
 import { afterEach, expect, it, vi } from "vitest";
 import { hookHarness } from "@/test/hook-harness";
 import {
-  STOMP_CONNECTION_ISSUE_DELAY_MS,
   STOMP_CONNECTION_ISSUE_MESSAGE,
   useStompConnectionStore,
 } from "@/stores/stomp-connection-store";
@@ -25,7 +24,8 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/stomp/client", () => ({
   createStompClient: mocks.create,
   getStompBrokerURL: () => "http://fixture.invalid/ws",
-  STOMP_MAX_RECONNECT_DELAY_MS: 5_000,
+  STOMP_MAX_RECONNECT_ATTEMPTS: 7,
+  STOMP_MAX_RECONNECT_DELAY_MS: 30_000,
 }));
 vi.mock("@/lib/rooms", () => ({
   validateRoomAccess: mocks.validate,
@@ -51,7 +51,8 @@ const CONNECTED_FRAME = {
 };
 const ABNORMAL_CLOSE = { code: 1006 };
 const PROTOCOL_ERROR_CLOSE = { code: 1002 };
-const RECONNECT_CAP_MS = 5_000;
+const RECONNECT_CAP_MS = 30_000;
+const MAX_RECONNECT_ATTEMPTS = 7;
 
 type FakeClient = {
   activate: ReturnType<typeof vi.fn>;
@@ -167,52 +168,73 @@ it("refreshes the session only before attempts that follow a dropped connection"
   expect(mocks.refresh.mock.lastCall?.[0].isActive()).toBe(false);
 });
 
-it("shows the connection banner only after staying disconnected and clears it on connect", async () => {
-  vi.useFakeTimers();
-  try {
-    const client = fakeClient();
-    const opts = lifecycleOpts(client);
-    const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
-    await hook.render(undefined);
-
+/** 끊긴 뒤 재연결 시도와 실패를 count번 겪게 한다 */
+async function failReconnects(client: FakeClient, count: number) {
+  for (let i = 0; i < count; i += 1) {
+    await client.beforeConnect();
     client.onWebSocketClose(ABNORMAL_CLOSE);
-    // 재연결 시도가 다시 실패해도 배너 기준 시각은 처음 끊긴 때다
-    await vi.advanceTimersByTimeAsync(STOMP_CONNECTION_ISSUE_DELAY_MS / 2);
-    client.onWebSocketClose(ABNORMAL_CLOSE);
-    await vi.advanceTimersByTimeAsync(STOMP_CONNECTION_ISSUE_DELAY_MS / 2 - 1);
-    expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
-
-    await vi.advanceTimersByTimeAsync(1);
-    expect(useStompConnectionStore.getState().connectionIssue).toBe(
-      STOMP_CONNECTION_ISSUE_MESSAGE,
-    );
-
-    client.onConnect(CONNECTED_FRAME);
-    expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
-    await hook.unmount();
-  } finally {
-    vi.useRealTimers();
   }
+}
+
+it("stops reconnecting and shows the banner once the last allowed attempt fails", async () => {
+  const client = fakeClient();
+  const opts = lifecycleOpts(client);
+  const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+  await hook.render(undefined);
+
+  client.onWebSocketClose(ABNORMAL_CLOSE);
+  await failReconnects(client, MAX_RECONNECT_ATTEMPTS - 1);
+  expect(client.deactivate).not.toHaveBeenCalled();
+  expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
+
+  await failReconnects(client, 1);
+  expect(client.deactivate).toHaveBeenCalledTimes(1);
+  expect(useStompConnectionStore.getState().connectionIssue).toBe(
+    STOMP_CONNECTION_ISSUE_MESSAGE,
+  );
+
+  client.onConnect(CONNECTED_FRAME);
+  expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
+  await hook.unmount();
 });
 
-it("does not show the banner when the connection recovers in time", async () => {
-  vi.useFakeTimers();
-  try {
-    const client = fakeClient();
-    const opts = lifecycleOpts(client);
-    const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
-    await hook.render(undefined);
+it("counts attempts again from zero after the connection recovers", async () => {
+  const client = fakeClient();
+  const opts = lifecycleOpts(client);
+  const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+  await hook.render(undefined);
 
-    client.onWebSocketClose(ABNORMAL_CLOSE);
-    await vi.advanceTimersByTimeAsync(1_000);
-    client.onConnect(CONNECTED_FRAME);
-    await vi.advanceTimersByTimeAsync(STOMP_CONNECTION_ISSUE_DELAY_MS);
+  client.onWebSocketClose(ABNORMAL_CLOSE);
+  await failReconnects(client, MAX_RECONNECT_ATTEMPTS - 1);
+  await client.beforeConnect();
+  client.onConnect(CONNECTED_FRAME);
 
-    expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
-    await hook.unmount();
-  } finally {
-    vi.useRealTimers();
-  }
+  client.onWebSocketClose(ABNORMAL_CLOSE);
+  await failReconnects(client, MAX_RECONNECT_ATTEMPTS - 1);
+
+  expect(client.deactivate).not.toHaveBeenCalled();
+  expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
+  await hook.unmount();
+});
+
+it("gives the retry button a fresh round of attempts after reconnecting stopped", async () => {
+  const client = fakeClient();
+  const opts = lifecycleOpts(client);
+  const hook = hookHarness(() => useStompClientLifecycleEffect(opts));
+  await hook.render(undefined);
+
+  client.onWebSocketClose(ABNORMAL_CLOSE);
+  await failReconnects(client, MAX_RECONNECT_ATTEMPTS);
+  expect(client.deactivate).toHaveBeenCalledTimes(1);
+
+  opts.retryConnectionRef.current?.();
+  await hook.flush();
+  expect(client.deactivate).toHaveBeenCalledTimes(2);
+  expect(client.activate).toHaveBeenCalledTimes(2);
+
+  await failReconnects(client, MAX_RECONNECT_ATTEMPTS - 1);
+  expect(client.deactivate).toHaveBeenCalledTimes(2);
+  await hook.unmount();
 });
 
 it("retries immediately unless a connection attempt is in flight", async () => {
@@ -247,6 +269,19 @@ it("reconnects right away when the browser reports the network is back", async (
   await hook.unmount();
   window.dispatchEvent(new Event("online"));
   expect(retry).toHaveBeenCalledTimes(1);
+});
+
+it("does not restart reconnecting on online once it stopped and the banner is shown", async () => {
+  const retry = vi.fn();
+  const retryConnectionRef = { current: retry as (() => void) | null };
+  const hook = hookHarness(() => useStompOnlineRetryEffect(retryConnectionRef));
+  await hook.render(undefined);
+  useStompConnectionStore.setState({ connectionIssue: STOMP_CONNECTION_ISSUE_MESSAGE });
+
+  window.dispatchEvent(new Event("online"));
+
+  expect(retry).not.toHaveBeenCalled();
+  await hook.unmount();
 });
 
 it("exits the room when a subscription error turns out to be lost access", async () => {

@@ -3,8 +3,11 @@ import SockJS from "sockjs-client";
 
 import { clientEnv } from "@/lib/client-env";
 
-/** 재연결 간격 상한. 기존 오프라인 재시도 간격(세션 확인 5초)에 맞춘다 */
-export const STOMP_MAX_RECONNECT_DELAY_MS = 5_000;
+/** 재연결 간격 상한 */
+export const STOMP_MAX_RECONNECT_DELAY_MS = 30_000;
+
+/** 끊긴 뒤 다시 연결을 이만큼 실패하면 멈춘다. 간격 합으로 약 1분 30초~2분 */
+export const STOMP_MAX_RECONNECT_ATTEMPTS = 7;
 
 /**
  * NEXT_PUBLIC_API_BASE_URL 기반으로 SockJS HTTP URL을 반환합니다.
@@ -14,7 +17,7 @@ export function getStompBrokerURL(): string {
   return `${clientEnv.NEXT_PUBLIC_API_BASE_URL}/ws`;
 }
 
-/** 끊기면 stompjs가 지수 간격(1→2→4…초, 상한 5초)으로 다시 연결한다 */
+/** 끊기면 stompjs가 지수 간격(1→2→4…초, 상한 30초)으로 다시 연결한다. 횟수 제한은 연결 effect가 맡는다 */
 export function createStompClient(httpURL: string): Client {
   return new Client({
     webSocketFactory: () => new SockJS(httpURL),
