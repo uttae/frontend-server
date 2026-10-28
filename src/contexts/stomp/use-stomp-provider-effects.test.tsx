@@ -271,7 +271,7 @@ it("reconnects right away when the browser reports the network is back", async (
   expect(retry).toHaveBeenCalledTimes(1);
 });
 
-it("does not restart reconnecting on online once it stopped and the banner is shown", async () => {
+it("restarts reconnecting on online even after it stopped and the banner is shown", async () => {
   const retry = vi.fn();
   const retryConnectionRef = { current: retry as (() => void) | null };
   const hook = hookHarness(() => useStompOnlineRetryEffect(retryConnectionRef));
@@ -280,7 +280,7 @@ it("does not restart reconnecting on online once it stopped and the banner is sh
 
   window.dispatchEvent(new Event("online"));
 
-  expect(retry).not.toHaveBeenCalled();
+  expect(retry).toHaveBeenCalledTimes(1);
   await hook.unmount();
 });
 

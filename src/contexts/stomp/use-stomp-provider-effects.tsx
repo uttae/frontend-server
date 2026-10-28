@@ -50,7 +50,7 @@ type LifecycleOpts = {
   forcedExitConsumedRef: MutableRefObject<boolean>;
   queryClientRef: MutableRefObject<QueryClient>;
   setConnectionState: Dispatch<SetStateAction<StompConnectionState>>;
-  /** 연결 문제 배너의 '다시 시도'가 부르는 즉시 재연결. 시도 횟수를 처음부터 다시 센다 */
+  /** 배너의 '다시 시도'와 online 이벤트가 부르는 즉시 재연결. 시도 횟수를 처음부터 다시 센다 */
   retryConnectionRef: MutableRefObject<(() => void) | null>;
 };
 
@@ -193,7 +193,7 @@ export function useStompClientLifecycleEffect({
       setConnectionState((prev) => ({ ...prev, connected: false }));
       invalidateRoomTopics();
 
-      // 정해진 횟수를 모두 실패하면 재연결을 멈추고 배너로 알린다. 다시 시작은 '다시 시도'가 맡는다
+      // 정해진 횟수를 모두 실패하면 재연결을 멈추고 배너로 알린다. 다시 시작은 '다시 시도'·online이 맡는다
       if (reconnectAttempts >= STOMP_MAX_RECONNECT_ATTEMPTS) {
         closingAfterStompError = false;
         clearStompErrorReconnectTimer();
@@ -247,16 +247,13 @@ export function useStompClientLifecycleEffect({
 
 /**
  * 브라우저가 네트워크 복귀를 알리면 다음 재연결 예약(최대 30초)을 기다리지 않고 바로 다시 연결합니다.
- * 횟수를 다 써서 멈춘 뒤(배너 표시 중)에는 다시 시작하지 않습니다.
+ * 횟수를 다 써서 멈춘 뒤에도 다시 시작하며, 이때 시도 횟수를 처음부터 다시 셉니다.
  */
 export function useStompOnlineRetryEffect(
   retryConnectionRef: MutableRefObject<(() => void) | null>,
 ): void {
   useEffect(() => {
-    const retry = () => {
-      if (useStompConnectionStore.getState().connectionIssue) return;
-      retryConnectionRef.current?.();
-    };
+    const retry = () => retryConnectionRef.current?.();
     window.addEventListener("online", retry);
     return () => window.removeEventListener("online", retry);
   }, [retryConnectionRef]);
