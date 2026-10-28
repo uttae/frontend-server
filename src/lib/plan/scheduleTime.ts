@@ -70,22 +70,3 @@ export function hmToMinutesSinceMidnight(hm: string): number | null {
   if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
   return h * 60 + m;
 }
-
-/** 0..1439 분을 같은 날 기준 `HH:mm`으로. */
-export function minutesSinceMidnightToHm(totalMinutes: number): string {
-  const wrapped =
-    ((totalMinutes % MINUTES_PER_DAY) + MINUTES_PER_DAY) % MINUTES_PER_DAY;
-  const h = Math.floor(wrapped / 60);
-  const m = wrapped % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
-/** `HH:mm`(또는 `normalizeStartTimeToHm` 가능한 문자열)에 분을 더한 같은 날 래핑 결과. 입력이 빈 문자열이면 분만 적용합니다. */
-export function addMinutesToHm(hm: string, minutesToAdd: number): string {
-  if (!Number.isFinite(minutesToAdd)) minutesToAdd = 0;
-  const base = hmToMinutesSinceMidnight(hm);
-  if (base === null) {
-    return minutesSinceMidnightToHm(minutesToAdd);
-  }
-  return minutesSinceMidnightToHm(base + minutesToAdd);
-}

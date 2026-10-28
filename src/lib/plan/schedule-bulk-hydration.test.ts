@@ -31,6 +31,7 @@ function place(itemId: number, googlePlaceId: string): PlanPlace {
     itemId,
     googlePlaceId,
     title: googlePlaceId,
+    travelMode: "DRIVING",
   };
 }
 
@@ -93,7 +94,7 @@ describe("hydrateScheduleRoutesBatch", () => {
     });
   });
 
-  it("자전거로 저장된 구간만 화면에 보이는 수단(자동차)으로 계산해 달라고 지정한다", async () => {
+  it("미지원 수단 구간은 제외하고 지원하는 구간만 조회한다", async () => {
     const queryClient = new QueryClient();
     const places = [
       { ...place(1, "places/a"), travelMode: "BICYCLING" },
@@ -106,7 +107,6 @@ describe("hydrateScheduleRoutesBatch", () => {
     await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
 
     expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledWith(ROOM_ID, SCHEDULE_ID, [
-      { itemId: 1, travelMode: "DRIVING" },
       { itemId: 2 },
     ]);
   });

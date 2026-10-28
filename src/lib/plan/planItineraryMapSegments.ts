@@ -2,7 +2,6 @@
 
 import type { PlanPlace } from "@/lib/plan/types";
 import {
-  SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
   type ScheduleTravelModeValue,
 } from "@/lib/plan/scheduleTravelMode";
@@ -39,14 +38,14 @@ export function flattenPlanItinerarySegmentsFromPlaces(
       if (typeof a.itemId !== "number" || !o.length || !d.length) {
         continue;
       }
+      const travelModeCanon = canonicalScheduleTravelMode(a.travelMode);
+      if (!travelModeCanon) continue;
       segments.push({
         scheduleId,
         segmentSourceItemId: a.itemId,
         originPlaceId: o,
         destPlaceId: d,
-        travelModeCanon:
-          canonicalScheduleTravelMode(a.travelMode) ??
-          SCHEDULE_TRAVEL_MODE_DEFAULT,
+        travelModeCanon,
         originLocation: a.location,
         destLocation: b.location,
       });

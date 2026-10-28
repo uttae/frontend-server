@@ -1,16 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
+import { formatTimePickerValue, timePartsFromHm, timePartsToHm, type TimeParts } from "@/lib/plan/timePickerDraft";
 import { toast } from "sonner";
 
 import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
-  addMinutesToHm,
   computeDurationMinutesFromRange,
   normalizeStartTimeToHm,
   validateScheduleTimeDraft,
+  type ScheduleTimeDraftValidation,
 } from "@/lib/plan/scheduleTime";
 import { cn } from "@/lib/utils";
 
@@ -30,15 +32,6 @@ type MobileTimeSheetProps = Readonly<{
   onClose: () => void;
 }>;
 
-const DEFAULT_HM = "10:00";
-
-/** "13:05" → "오후 1:05" — 휠과 같이 시를 0~11로 표기 */
-function formatHm12h(hm: string): string {
-  if (!hm) return "";
-  const [h, m] = hm.split(":").map(Number);
-  return `${h < 12 ? "오전" : "오후"} ${h % 12}:${String(m).padStart(2, "0")}`;
-}
-
 /** 방문 시간 시트 — 시작·종료 칸을 누르면 휠 피커로 고른다 */
 export function MobileTimeSheet({
   roomId,
@@ -52,32 +45,36 @@ export function MobileTimeSheet({
 }: MobileTimeSheetProps) {
   const serverStart = normalizeStartTimeToHm(startTime ?? "");
   const serverEnd = normalizeStartTimeToHm(endTime ?? "");
-  const [start, setStart] = useState(serverStart || DEFAULT_HM);
-  const [end, setEnd] = useState(serverEnd);
-  const [activeField, setActiveField] = useState<Field | null>("start");
+  const [draftStart, setStart] = useState<TimeParts>();
+  const [draftEnd, setEnd] = useState<TimeParts>();
+  const startParts = draftStart ?? timePartsFromHm(serverStart);
+  const endParts = draftEnd ?? timePartsFromHm(serverEnd);
+  const start = timePartsToHm(startParts);
+  const end = timePartsToHm(endParts);
+  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : serverStart ? "start" : null);
+  const [isWheelSettling, setWheelSettling] = useState(false);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
 
   const dirty = start !== serverStart || end !== serverEnd;
-  const duration = computeDurationMinutesFromRange(start, end);
+  const duration = computeDurationMinutesFromRange(start ?? "", end ?? "");
   const subtitle = [
     dateLabel,
-    duration != null && end < start ? "다음 날 종료(+1일)" : null,
+    duration != null && end !== null && start !== null && end < start ? "다음 날 종료(+1일)" : null,
     duration != null ? `${Math.floor(duration / 60)}시간 ${duration % 60}분` : null,
   ]
     .filter(Boolean)
     .join(" · ");
-  const validation = validateScheduleTimeDraft(start, end);
+  const validation: ScheduleTimeDraftValidation = start === null || end === null
+    ? { valid: false, message: "오전/오후, 시, 분을 모두 선택해 주세요." }
+    : validateScheduleTimeDraft(start, end);
 
   function openField(field: Field) {
     if (field === "end" && !start) return;
     setActiveField((current) => (current === field ? null : field));
-    // 비어 있는 칸을 처음 열면 휠 기본값으로 채운다
-    if (field === "start" && !start) setStart(DEFAULT_HM);
-    if (field === "end" && !end) setEnd(addMinutesToHm(start, 60));
   }
 
   async function handleSave() {
-    if (isPending || !dirty) return;
+    if (isPending || isWheelSettling || !dirty) return;
     if (!validation.valid) {
       toast.error(validation.message);
       return;
@@ -99,7 +96,7 @@ export function MobileTimeSheet({
     }
   }
 
-  const fields: { key: Field; label: string; value: string }[] = [
+  const fields: { key: Field; label: string; value: string | null }[] = [
     { key: "start", label: "시작 시간", value: start },
     { key: "end", label: "종료 시간", value: end },
   ];
@@ -112,21 +109,48 @@ export function MobileTimeSheet({
       subtitle={subtitle || undefined}
       variant="form"
       closeDisabled={isPending}
+      footer={
+      <div className="flex h-11 w-full items-center gap-4 px-1">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isPending}
+          className="flex-1 rounded-lg bg-fill-subtle px-2.5 py-2 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:hover:text-text-subtle enabled:active:bg-fill-strong enabled:active:text-text disabled:bg-fill disabled:text-text-disabled"
+        >
+          취소
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={isPending || isWheelSettling || !dirty || !validation.valid}
+          aria-busy={isPending}
+          className={cn(
+            "flex flex-1 items-center justify-center rounded-lg px-2.5 py-2 text-label-m-emphasis text-text-inverse transition-colors",
+            isPending
+              ? "bg-[var(--gray-900)]"
+              : "bg-[var(--gray-800)] enabled:hover:bg-[var(--gray-700)] enabled:active:bg-[var(--gray-900)] disabled:bg-fill disabled:text-text-disabled",
+          )}
+        >
+          {isPending ? <LoadingIndicator label="저장 중" className="text-text-inverse" /> : "확인"}
+        </button>
+      </div>
+      }
     >
-      <div className="flex w-full items-end gap-2">
+      <div className="flex w-full flex-col gap-3">
+      <div className="flex h-[70px] w-full items-end gap-2">
         {fields.map(({ key, label, value }) => {
           const active = activeField === key;
-          const display = formatHm12h(value);
+          const display = formatTimePickerValue(value);
           return (
             <button
               key={key}
               type="button"
               onClick={() => openField(key)}
-              disabled={isPending || (key === "end" && !start)}
+              disabled={isPending || isWheelSettling || (key === "end" && !start)}
               aria-expanded={active}
               aria-label={`${label} ${display || "미설정"}`}
               className={cn(
-                "flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg border bg-fill-subtle px-2 pb-1.5 pt-3 disabled:opacity-40",
+                "flex min-w-0 flex-1 flex-col gap-0.5 h-[70px] rounded-md border bg-fill-subtle px-2 pb-1.5 pt-3",
                 active ? "border-primary" : "border-border",
               )}
             >
@@ -146,58 +170,33 @@ export function MobileTimeSheet({
         })}
       </div>
 
-      {activeField ? (
-        <div inert={isPending} className={cn(isPending && "opacity-60")}>
-          <TimeWheelPicker
-            value={(activeField === "start" ? start : end) || DEFAULT_HM}
-            onChange={activeField === "start" ? setStart : setEnd}
-            active
-            onInteract={() => {}}
-          />
-        </div>
-      ) : null}
-
-      {start || end ? (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              setStart("");
-              setEnd("");
-              setActiveField(null);
-            }}
-            disabled={isPending}
-            className="text-caption-l-regular text-text-subtle underline underline-offset-2 disabled:opacity-40"
-          >
-            시간 지우기
-          </button>
-        </div>
-      ) : null}
-
-      <div className="flex h-11 w-full items-center gap-4 px-1">
+      <div inert={isPending}>
+        <TimeWheelPicker
+          key={activeField ?? "idle"}
+          value={activeField === "end" ? endParts : startParts}
+          onChange={activeField === "end" ? setEnd : setStart}
+          active={activeField !== null}
+          onSettlingChange={setWheelSettling}
+        />
+      </div>
+      <div className="flex h-8 items-center justify-end px-1">
         <button
           type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="flex-1 rounded-lg bg-fill-subtle px-2.5 py-2 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:hover:text-text-subtle enabled:active:bg-fill-strong enabled:active:text-text disabled:bg-fill disabled:text-text-disabled"
+          disabled={isPending || (activeField === null && start === "" && end === "")}
+          onClick={() => {
+            setStart(timePartsFromHm(""));
+            setEnd(timePartsFromHm(""));
+            setActiveField(null);
+            setWheelSettling(false);
+          }}
+          className="relative flex h-8 items-center gap-1 text-label-xs-regular text-text-subtle disabled:text-text-disabled before:absolute before:-inset-y-1.5 before:inset-x-0 focus-visible:outline-2 focus-visible:outline-primary"
         >
-          취소
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={isPending || !dirty || !validation.valid}
-          aria-busy={isPending}
-          className={cn(
-            "flex flex-1 items-center justify-center rounded-lg px-2.5 py-2 text-label-m-emphasis text-text-inverse transition-colors",
-            isPending
-              ? "bg-[var(--gray-900)]"
-              : "bg-[var(--gray-800)] enabled:hover:bg-[var(--gray-700)] enabled:active:bg-[var(--gray-900)] disabled:bg-fill disabled:text-text-disabled",
-          )}
-        >
-          {isPending ? <LoadingIndicator label="저장 중" className="text-text-inverse" /> : "확인"}
+          <Image src={activeField === null && start === "" && end === "" ? "/icons/time-picker/reset-disabled.svg" : "/icons/time-picker/reset-active.svg"} width={16} height={16} alt="" />
+          초기화
         </button>
       </div>
+      </div>
+
     </MobileBottomSheet>
   );
 }

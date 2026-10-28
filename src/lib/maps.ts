@@ -73,14 +73,12 @@ export const MAP_MAX_ZOOM = 21;
 type GoogleMapsDirectionsTravelMode =
   | "WALKING"
   | "TRANSIT"
-  | "DRIVING"
-  | "BICYCLING";
+  | "DRIVING";
 
 const GOOGLE_MAPS_DIRECTIONS_TRAVEL_MODE = {
   WALKING: "walking",
   TRANSIT: "transit",
   DRIVING: "driving",
-  BICYCLING: "bicycling",
 } as const satisfies Record<GoogleMapsDirectionsTravelMode, string>;
 
 /** Place ID로 Google Maps 장소 상세 URL을 만든다. */

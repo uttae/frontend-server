@@ -19,6 +19,8 @@ type MobileBottomSheetProps = Readonly<{
   /** 저장 중 등 닫기를 막아야 할 때 */
   closeDisabled?: boolean;
   children: ReactNode;
+  /** Actions outside the scrollable body. */
+  footer?: ReactNode;
 }>;
 
 /** 모바일 하단 시트 — 딤 배경, 핸들, 제목·닫기 줄로 구성된다 */
@@ -35,6 +37,7 @@ function MobileBottomSheetContent({
   variant = "menu",
   closeDisabled = false,
   children,
+  footer,
 }: MobileBottomSheetProps) {
   const titleId = useId();
   const drag = useSheetDrag(onClose, closeDisabled, false);
@@ -99,6 +102,7 @@ function MobileBottomSheetContent({
         ) : null}
         </BottomSheetDragHandle>
         <div className={cn("-m-1 flex min-h-0 flex-col overflow-y-auto overscroll-contain p-1", variant === "menu" ? "gap-2" : "gap-4")}>{children}</div>
+        {footer ? <div className="shrink-0">{footer}</div> : null}
       </dialog>
     </div>,
     document.body,
