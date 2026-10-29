@@ -1,8 +1,8 @@
 "use client";
 
+import { UserAvatar } from "@/components/user/UserAvatar";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/chat";
-import { ChatMemberAvatarRing } from "./ChatMemberAvatarRing";
 
 export const PLACE_SHARE_PREVIEW_TEXT = "장소를 공유했습니다.";
 
@@ -36,15 +36,16 @@ export function NewMessagePreviewButton({
           isMinimized && "gap-1.5 py-1 pl-1 pr-3",
         )}
       >
-        <ChatMemberAvatarRing
-          chromeAvatarClassName={cn(
-            "shrink-0 overflow-hidden rounded-lg ring-1 ring-border",
-            isMinimized ? "h-6 w-6" : "h-7 w-7",
-          )}
-          avatarUrl={message.avatar}
-          alt=""
-          senderNotInRoom={message.senderNotInRoom}
-          reduceMotion
+        <UserAvatar
+          // 방을 나간 사람은 사진이 있어도 사람 아이콘을 보인다
+          user={{
+            nickname: message.sender ?? "",
+            profileImageUrl: message.senderNotInRoom ? null : (message.avatar ?? null),
+          }}
+          size={isMinimized ? 24 : 28}
+          shape="rounded"
+          tone="icon"
+          ring="default"
         />
         <span
           className={cn(

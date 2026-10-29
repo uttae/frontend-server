@@ -90,8 +90,8 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Readonl
       <UserAvatar
         user={{ nickname: member.name, profileImageUrl: member.profileImageUrl ?? null }}
         size={36}
-        className={isOnline ? "bg-primary-subtle ring-2 ring-status-positive" : "bg-fill ring-1 ring-border-subtle"}
-        initialClassName={cn("font-medium", isOnline ? "text-primary" : "text-text-subtle")}
+        tone={isOnline ? "primary" : "neutral"}
+        ring={isOnline ? "online" : "offline"}
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">

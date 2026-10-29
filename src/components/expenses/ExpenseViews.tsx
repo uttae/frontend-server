@@ -26,7 +26,7 @@ import {
   roleOptions,
   type MemberQueryStatus,
 } from "@/lib/expenses/expense-policy";
-import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
+import { UserAvatar } from "@/components/user/UserAvatar";
 
 export const expenseButtonClass =
   "min-h-10 rounded-lg border border-gray-border px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
@@ -71,12 +71,13 @@ export function ExpensePerson({
       title={person.label}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 align-middle"
     >
-      {person.imageUrl ? <ChatMemberAvatarRing
-        avatarUrl={person.imageUrl ?? undefined}
-        alt=""
-        chromeAvatarClassName="h-6 w-6 shrink-0 overflow-hidden rounded-full border-[1.5px] border-white"
-        reduceMotion={true}
-      /> : <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-white bg-primary-subtle text-[12px] leading-4 text-primary">{person.label.slice(0, 1)}</span>}
+      {/* tone이 대체를 정한다: 사진을 못 받으면 사람 아이콘, 사진이 없으면 라벨 첫 글자 */}
+      <UserAvatar
+        user={{ nickname: person.label, profileImageUrl: person.imageUrl }}
+        size={24}
+        tone={person.imageUrl ? "icon" : "primary"}
+        ring="cutout"
+      />
       <span
         className={compact || memberStatus === "pending" ? "sr-only" : "min-w-0 [overflow-wrap:anywhere]"}
       >

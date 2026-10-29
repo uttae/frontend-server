@@ -7,10 +7,9 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { placePhotoUrlQueryKey } from "@/lib/place-photo-query";
 import { getQueryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
-import { chatMessageChrome } from "@/components/chat/chat-message-chrome";
 import { resolveChatMessageTypography } from "@/components/chat/chat-typography";
 import type { ChatMessage } from "@/types/chat";
-import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
+import { UserAvatar } from "@/components/user/UserAvatar";
 
 export function PlaceShareCard({
   message,
@@ -82,12 +81,16 @@ export function PlaceShareCard({
   return (
     <div className="flex gap-2">
       <div className="flex flex-col items-center gap-1">
-        <ChatMemberAvatarRing
-          chromeAvatarClassName={chatMessageChrome.avatarSm}
-          avatarUrl={message.avatar}
-          alt={message.sender ?? ""}
-          senderNotInRoom={message.senderNotInRoom}
-          reduceMotion
+        <UserAvatar
+          // 방을 나간 사람은 사진이 있어도 사람 아이콘을 보인다
+          user={{
+            nickname: message.sender ?? "",
+            profileImageUrl: message.senderNotInRoom ? null : (message.avatar ?? null),
+          }}
+          size={40}
+          shape="rounded"
+          tone="icon"
+          ring="subtle"
         />
         <span
           className={cn("max-w-[4rem] truncate text-center", typo.metaMuted)}

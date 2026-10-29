@@ -3,9 +3,10 @@ import { ChatMarkdownContent } from "@/components/chat/ChatMarkdownContent";
 import type { ChatMarkdownVariant } from "@/components/chat/chat-markdown-components";
 import { getChatPanelLook } from "@/components/chat/chat-panel-look";
 import { AiResponseBubble } from "@/components/chat/messages/AiResponseBubble";
-import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
 import type { ChatMessageTextTypography } from "@/components/chat/chat-typography";
+import { Avatar } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
+import { UserAvatar } from "@/components/user/UserAvatar";
 import { cn } from "@/lib/utils";
 import type { AiRequestStatus, ChatMessage } from "@/types/chat";
 
@@ -153,12 +154,16 @@ export function OtherMessageGroup({
   return (
     <div className="flex gap-2">
       <div className="flex flex-col items-center gap-1">
-        <ChatMemberAvatarRing
-          chromeAvatarClassName={chrome.avatarSm}
-          avatarUrl={first.avatar}
-          alt={first.sender ?? ""}
-          senderNotInRoom={first.senderNotInRoom}
-          reduceMotion
+        <UserAvatar
+          // 방을 나간 사람은 사진이 있어도 사람 아이콘을 보인다
+          user={{
+            nickname: first.sender ?? "",
+            profileImageUrl: first.senderNotInRoom ? null : (first.avatar ?? null),
+          }}
+          size={40}
+          shape="rounded"
+          tone="icon"
+          ring="subtle"
         />
         <span className={typo.metaMuted}>{first.sender}</span>
       </div>
@@ -268,18 +273,15 @@ export function AiMessageGroup({
   return (
     <div className="flex gap-2">
       <div className="flex shrink-0 flex-col items-center gap-0.5">
-        <div
-          className={cn(chrome.avatarSm, "bg-white")}
-          role="img"
-          aria-label="WOORI"
-        >
+        {/* 아래에 보이는 'WOORI' 라벨이 이름을 알리므로 그림은 장식으로 숨긴다 */}
+        <Avatar size={40} shape="rounded" tone="elevate" ring="subtle" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element -- public 정적 SVG(내장 래스터) */}
           <img
             src={chrome.wooriIconSrc}
-            alt="WOORI"
+            alt=""
             className="h-full w-full object-contain p-1"
           />
-        </div>
+        </Avatar>
         <span className={typo.wooriSenderLabel}>WOORI</span>
       </div>
 

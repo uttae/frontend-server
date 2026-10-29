@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 // Figma DS에 Avatar 컴포넌트가 없어 지금 화면들의 아바타 모양을 옮긴다. Figma 근거는 Header Profile(5219:10776)의
 // 36px·fill/strong 원뿐이라 이것을 기본값으로 둔다. 크기는 글자 설정을 따라 커지지 않게 px로 둔다(원칙 3-2).
 // 대체 글자는 화면별 지금 크기·굵기(24 가계부, 28 헤더 미리보기, 32 리뷰, 36 구성원, 56 내 정보)에 가장 가까운 토큰이고,
-// 글자를 쓰는 곳이 없는 40은 UserAvatar 규칙(크기의 44%)을 따른다. 대체 아이콘은 채팅 아바타 규칙(크기의 58%)에 가장 가까운 Figma 아이콘 크기다.
+// 글자를 쓰는 곳이 없는 40은 크기의 44%(18px)다. 대체 아이콘은 지금 채팅 아바타처럼 크기의 58%에 가장 가까운 Figma 아이콘 크기다.
 const avatarVariants = cva("relative flex shrink-0 select-none items-center justify-center overflow-hidden", {
   variants: {
     size: {

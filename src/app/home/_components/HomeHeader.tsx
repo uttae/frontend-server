@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { BrandLogo } from "@/components/BrandLogo";
+import { Avatar } from "@/components/ui/avatar";
 import { UserAvatar } from "@/components/user/UserAvatar";
 
 import { useQueryClient } from "@tanstack/react-query";
@@ -68,7 +69,7 @@ export function HomeHeader() {
             {user?.profileImageUrl ? (
               <UserAvatar user={user} size={36} />
             ) : (
-              <span className="size-9 rounded-full bg-fill-strong" aria-hidden />
+              <Avatar size={36} aria-hidden />
             )}
           </button>
 

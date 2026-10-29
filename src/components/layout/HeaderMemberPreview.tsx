@@ -7,6 +7,7 @@ import { MemberList } from "@/app/(main)/member-settings/_components/MemberList"
 import { useMemberActions } from "@/app/(main)/member-settings/_components/useMemberActions";
 import { ChevronDownIcon, SendIcon } from "@/assets/icons";
 import { InviteRoomDialog } from "@/components/rooms/InviteRoomDialog";
+import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
 import { selectHeaderMemberPreview } from "@/lib/rooms/member-preview";
@@ -78,35 +79,29 @@ export function HeaderMemberPreview() {
             onClick={() => setDropdownOpen((open) => !open)}
             className="isolate flex cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <span className="flex items-center">
+            <AvatarGroup>
               {visible.map(({ member, isOnline }, index) => (
-                <span
+                <UserAvatar
                   key={member.userId}
-                  aria-hidden
+                  user={member}
+                  size={28}
+                  tone={isOnline ? "primary" : "neutral"}
+                  ring={isOnline ? "online" : "offline"}
+                  // 앞사람(본인)이 위에 온다. +N(z-1)·화살표(z-0)보다 위 층이다
                   style={{ zIndex: visible.length - index + 1 }}
-                  className={index > 0 ? "relative -ml-1.5" : "relative"}
-                >
-                  <UserAvatar
-                    user={member}
-                    size={28}
-                    className={isOnline ? "bg-primary-subtle ring-2 ring-status-positive" : "bg-fill ring-2 ring-border grayscale brightness-110 contrast-75"}
-                    initialClassName={cn("font-medium", isOnline ? "text-primary" : "text-text-subtle")}
-                  />
-                </span>
+                />
               ))}
               {restCount > 0 ? (
-                <span
-                  aria-hidden
-                  className="relative z-[1] -ml-1.5 flex size-7 items-center justify-center rounded-full bg-fill text-label-m-regular text-text-subtle"
-                >
+                <AvatarGroupCount aria-hidden className="z-1">
                   +{restCount}
-                </span>
+                </AvatarGroupCount>
               ) : null}
-              <span aria-hidden className="relative z-0 -ml-1.5 flex size-7 items-center justify-center rounded-full bg-fill">
+              {/* 묶음(isolate) 밖에 두면 마지막 아바타를 덮으므로 안에서 가장 아래 층에 둔다 */}
+              <span aria-hidden className="relative z-0 flex size-7 items-center justify-center rounded-full bg-fill">
                 <ChevronDownIcon size={16} className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")} />
                 {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="-right-1 -top-1" /> : null}
               </span>
-            </span>
+            </AvatarGroup>
           </button>
 
           {dropdownOpen ? (
