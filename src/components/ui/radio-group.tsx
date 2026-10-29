@@ -1,37 +1,41 @@
-"use client"
+import { Radio as RadioPrimitive } from "@base-ui/react/radio";
+import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 
-import { Radio as RadioPrimitive } from "@base-ui/react/radio"
-import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
-import { cn } from "cn"
+import { RadioButtonIcon } from "@/assets/icons";
+import { cn } from "@/lib/utils";
 
-function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
+// Base UI는 상태 함수 className도 받지만 cn이 버리므로 배치용 문자열만 받는다
+type RadioGroupProps = Omit<RadioGroupPrimitive.Props, "className"> & { className?: string };
+type RadioGroupItemProps = Omit<RadioPrimitive.Root.Props, "className"> & { className?: string };
+
+/** 항목 사이 간격은 쓰는 쪽이 className으로 정한다 */
+function RadioGroup({ className, ...props }: Readonly<RadioGroupProps>) {
   return (
-    <RadioGroupPrimitive
-      data-slot="radio-group"
-      className={cn("grid w-full gap-2", className)}
-      {...props}
-    />
-  )
+    <RadioGroupPrimitive data-slot="radio-group" className={cn("flex flex-col", className)} {...props} />
+  );
 }
 
-function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
+// Figma ❸ Icon의 radio button(5024:68)으로 그린다. Default(5024:67)는 border/default 원, Activated(5024:65)는 primary/subtle 원과 10px primary 점이다.
+// Activated 원: Figma primary/subtle은 blue/50인데 코드 primary-subtle은 blue-100이라 원시 변수로 Figma 값에 맞춘다.
+// 비활성 모양은 Figma에 없어 커서만 바꾼다. 누르는 영역은 감싸는 label 행이 맡는다
+function RadioGroupItem({ className, ...props }: Readonly<RadioGroupItemProps>) {
   return (
     <RadioPrimitive.Root
       data-slot="radio-group-item"
       className={cn(
-        "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input outline-none group-has-[:focus-visible]/field-label:ring-0 group-has-[:focus-visible]/field-label:not-data-checked:border-input after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground group-has-[:focus-visible]/field-label:data-checked:border-primary dark:data-checked:bg-primary",
-        className
+        "relative inline-flex shrink-0 cursor-pointer rounded-full text-border select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-checked:text-[var(--blue-50)] aria-disabled:cursor-not-allowed",
+        className,
       )}
       {...props}
     >
+      {/* size 속성만 주면 shadcn 부모의 [&_svg:not([class*='size-'])]:size-* 규칙에 덮여서 같은 px 클래스로도 준다 */}
+      <RadioButtonIcon size={24} className="size-[24px]" />
       <RadioPrimitive.Indicator
         data-slot="radio-group-indicator"
-        className="flex size-4 items-center justify-center"
-      >
-        <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground" />
-      </RadioPrimitive.Indicator>
+        className="absolute inset-0 m-auto size-[10px] rounded-full bg-primary"
+      />
     </RadioPrimitive.Root>
-  )
+  );
 }
 
-export { RadioGroup, RadioGroupItem }
+export { RadioGroup, RadioGroupItem };
