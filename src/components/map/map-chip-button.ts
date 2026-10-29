@@ -1,21 +1,10 @@
 import { cn } from "@/lib/utils";
 
+// FilterDropdown 트리거 전용이다. Dropdown 단계에서 ui 부품으로 옮기기 전까지 같은 줄의 Chip(outline md)과 같은 값으로 둔다.
+// 값을 고른 모양은 트리거에 aria-pressed가 없어 chipVariants가 그리지 못하므로 active로 테두리·글자 색을 준다.
 const mapChipButtonBaseClass =
-  "inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full border bg-fill-elevate px-4 text-label-m-emphasis shadow-[0_2px_10px_#0000001a] transition-colors hover:bg-fill active:bg-fill-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+  "inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-full border bg-fill-subtle px-4 text-label-m-emphasis transition-colors duration-120 ease-out active:bg-fill-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none";
 
-export function mapFilterChipInactiveClassName() {
-  return cn(mapChipButtonBaseClass, "border-border text-text");
-}
-
-export function mapFilterChipActiveRingClassName() {
-  return cn(mapChipButtonBaseClass, "border-primary-strong text-primary-strong");
-}
-
-export function mapFilterChipActiveFilledClassName() {
-  return mapFilterChipActiveRingClassName();
-}
-
-/** Chip / Outline / md, including the selected category. */
 export function mapChipButtonClassName(active: boolean) {
-  return active ? mapFilterChipActiveRingClassName() : mapFilterChipInactiveClassName();
+  return cn(mapChipButtonBaseClass, active ? "border-primary-strong text-primary-strong" : "border-border text-text");
 }

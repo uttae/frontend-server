@@ -1,9 +1,6 @@
 import { FilterDropdown } from "@/components/filter-dropdown";
+import { Chip } from "@/components/ui/chip";
 import { MAP_FILTER_DROPDOWN_MENU_Z_CLASS } from "@/lib/layout/mapDetailPanelLayout";
-import {
-  mapFilterChipActiveFilledClassName,
-  mapFilterChipInactiveClassName,
-} from "./map-chip-button";
 
 import {
   RATING_OPTIONS,
@@ -41,19 +38,14 @@ export default function MapFilter({
         onOpenChange={onRatingDropdownOpenChange}
         menuClassName={MAP_FILTER_DROPDOWN_MENU_Z_CLASS}
       />
-      <button
-        type="button"
-        aria-pressed={isOpenOnly}
-        onClick={() => setOpenNow(isOpenOnly ? "all" : "open")}
-        className={cn(
-          "inline-flex items-center gap-1",
-          isOpenOnly
-            ? mapFilterChipActiveFilledClassName()
-            : mapFilterChipInactiveClassName(),
-        )}
+      <Chip
+        variant="outline"
+        size="md"
+        pressed={isOpenOnly}
+        onPressedChange={(pressed) => setOpenNow(pressed ? "open" : "all")}
       >
         영업 중
-      </button>
+      </Chip>
     </div>
   );
 }

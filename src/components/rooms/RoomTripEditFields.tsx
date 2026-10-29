@@ -5,6 +5,7 @@ import { useState, type ReactNode } from "react";
 import { CloseIcon } from "@/assets/icons";
 import { DateRangeField } from "@/components/date-picker/DateRangeField";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
+import { chipVariants } from "@/components/ui/chip";
 import {
   isTripScheduleDayLimitExceeded,
   TRIP_SCHEDULE_DAY_LIMIT_MESSAGE,
@@ -142,9 +143,9 @@ export function RoomTripEditFields({
             {destinations.map((destination, index) => (
               <span
                 key={`${destination}-${index}`}
-                className="inline-flex items-center gap-1 rounded-full bg-primary-subtle py-1 pl-3 pr-1.5 text-label-m-regular text-primary"
+                className={cn(chipVariants({ variant: "outline", size: "md" }), "max-w-full")}
               >
-                {destination}
+                <span className="min-w-0 truncate">{destination}</span>
                 <button
                   type="button"
                   onClick={() => {
@@ -152,7 +153,7 @@ export function RoomTripEditFields({
                     setDestinationWarning(null);
                   }}
                   aria-label={`${destination} 삭제`}
-                  className="rounded-full p-0.5 transition-colors hover:bg-primary/20"
+                  className="-m-3.5 grid size-11 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary"
                 >
                   <CloseIcon size={16} />
                 </button>

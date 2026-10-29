@@ -1,11 +1,9 @@
 "use client";
 
-import { MapSearchIcon } from "./MapSearchIcon";
-
+import { Chip } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
 
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
-import { mapChipButtonClassName } from "./map-chip-button";
 
 type MapCategoryChipsProps = {
   selectedCategoryId: string | null;
@@ -19,11 +17,6 @@ export function MapCategoryChips({
   onSelectCategory,
   className,
 }: MapCategoryChipsProps) {
-  function handleChipClick(categoryId: string) {
-    if (selectedCategoryId === categoryId) onSelectCategory(null);
-    else onSelectCategory(categoryId);
-  }
-
   return (
     <div
       className={cn(
@@ -31,24 +24,18 @@ export function MapCategoryChips({
         className,
       )}
     >
-      {MAP_PLACE_CATEGORIES.map((cat) => {
-        const active = selectedCategoryId === cat.id;
-        return (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => handleChipClick(cat.id)}
-            aria-pressed={active}
-            className={cn(
-              "flex items-center gap-1.5",
-              mapChipButtonClassName(active),
-            )}
-          >
-            <MapSearchIcon name={cat.icon}/>
-            <span>{cat.label}</span>
-          </button>
-        );
-      })}
+      {MAP_PLACE_CATEGORIES.map((cat) => (
+        <Chip
+          key={cat.id}
+          variant="outline"
+          size="md"
+          pressed={selectedCategoryId === cat.id}
+          onPressedChange={(pressed) => onSelectCategory(pressed ? cat.id : null)}
+        >
+          <cat.icon />
+          <span>{cat.label}</span>
+        </Chip>
+      ))}
     </div>
   );
 }

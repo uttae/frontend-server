@@ -3,7 +3,8 @@
 import { type ReactNode } from "react";
 import { flushSync } from "react-dom";
 
-import { CircleCancelIcon, SearchIcon } from "@/assets/icons";
+import { CircleCancelIcon, CloseIcon, SearchIcon } from "@/assets/icons";
+import { Chip, chipVariants } from "@/components/ui/chip";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 
@@ -14,9 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import MapFilter from "./MapFilter";
-import { MapSearchIcon } from "./MapSearchIcon";
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
-import { mapChipButtonClassName } from "./map-chip-button";
 import { MapCategoryChips } from "./MapCategoryChips";
 import type { OpenValue, RatingValue } from "./map-filters";
 
@@ -57,16 +56,17 @@ export function MapDiscoverToolbar({
       {isMobileDevice ? <MobileMapSearchBar /> : null}
       <div className="flex min-h-12 min-w-0 flex-nowrap items-center gap-6">
         <div className="pointer-events-auto min-w-0 flex-1">
-          <div className="-my-2 overflow-x-auto py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {/* Figma Chip에는 그림자가 없어 지도 위에 뜨는 그림자를 칩마다 주지 않고 이 줄에 준다. 색은 검색 말풍선과 같은 #0000001a, drop-shadow 5px는 box-shadow 10px와 같은 퍼짐이다 */}
+          <div className="-my-2 overflow-x-auto py-2 drop-shadow-[0_2px_5px_#0000001a] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {category ? (
               <div className="flex w-max flex-nowrap items-center gap-1.5">
-                <button type="button" aria-pressed onClick={resetCategory} className={mapChipButtonClassName(true)}>
-                  <MapSearchIcon name={category.icon}/><span>{category.label}</span>
-                </button>
+                <Chip variant="outline" size="md" pressed onPressedChange={resetCategory}>
+                  <category.icon/><span>{category.label}</span>
+                </Chip>
                 <MapFilter rating={rating} openNow={openNow} setRating={setRating} setOpenNow={setOpenNow}/>
                 <button type="button" aria-label="카테고리 필터 초기화" onClick={resetCategory}
-                  className={cn(mapChipButtonClassName(false), "w-9 px-0")}>
-                  <MapSearchIcon name="reset"/>
+                  className={cn(chipVariants({ variant: "outline", size: "md" }), "w-9 cursor-pointer px-0")}>
+                  <CloseIcon/>
                 </button>
               </div>
             ) : <MapCategoryChips selectedCategoryId={selectedCategoryId} onSelectCategory={onSelectCategory}/>}

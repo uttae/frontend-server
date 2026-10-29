@@ -1,9 +1,11 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useState } from "react";
 
+import { CloseIcon } from "@/assets/icons";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
+import { chipVariants } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 
 type Props = {
   values: string[];
@@ -75,16 +77,16 @@ export function DestinationChipsField({
           {values.map((v, i) => (
             <span
               key={`${v}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1.5 pl-3 pr-1.5 text-body-s-regular mobile:text-body-xs-regular text-primary"
+              className={cn(chipVariants({ variant: "outline", size: "md" }), "max-w-full")}
             >
-              {v}
+              <span className="min-w-0 truncate">{v}</span>
               <button
                 type="button"
                 onClick={() => remove(i)}
                 aria-label={`${v} 삭제`}
-                className="rounded-full p-0.5 transition hover:bg-primary/20"
+                className="-m-3.5 grid size-11 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary"
               >
-                <X size={14} />
+                <CloseIcon size={16} />
               </button>
             </span>
           ))}

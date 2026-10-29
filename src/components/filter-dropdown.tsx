@@ -6,10 +6,7 @@ import { createPortal } from "react-dom";
 import { MapSearchIcon } from "@/components/map/MapSearchIcon";
 import { cn } from "@/lib/utils";
 
-import {
-  mapFilterChipActiveRingClassName,
-  mapFilterChipInactiveClassName,
-} from "@/components/map/map-chip-button";
+import { mapChipButtonClassName } from "@/components/map/map-chip-button";
 
 export type FilterOption<T extends string> = { label: string; value: T };
 
@@ -88,9 +85,7 @@ export function FilterDropdown<T extends string>({
         }}
         className={cn(
           "flex items-center gap-1",
-          isActive
-            ? mapFilterChipActiveRingClassName()
-            : mapFilterChipInactiveClassName(),
+          mapChipButtonClassName(isActive),
         )}
       >
         <span>{isActive ? selectedLabel : label}</span>
