@@ -35,7 +35,8 @@
 - 11 [Tabs](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5138-2632) — Tabs Line, Tabs Chip, Tab Item
 - 12 [Toast](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5285-4979) — Toast
 - 13 [Alert Dialog](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5619-553) — Alert Dialog
-- 14·15 [Chip · Badge](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5624-159) — Chip(Solid·Outline), Badge(Weak·Solid·Outline, 톤 6종)
+- 14 [Chips](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5624-159) — Chip(Solid·Outline)
+- 15 [Badges](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5864-12983) — Badge(Weak·Solid·Outline, 톤 6종)
 - [Update Log](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5635-11) — 디자인 시스템 변경 기록
 
 ---

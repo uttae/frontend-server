@@ -19,7 +19,7 @@
 
 | 상황 | 할 일 |
 | :-- | :-- |
-| 맞는 공용 부품이 있다(`src/components/<도메인>/`의 `ConfirmDialog`·`SettingsDialog`·`MobileBottomSheet`·`LoadingIndicator`·`SettingsActionButton` 등) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳만 그쪽을 쓰고 기존 사용처는 둔다 |
+| 맞는 부품이 있다(`src/components/ui/`의 shadcn 부품, `src/components/<도메인>/`의 `ConfirmDialog`·`SettingsDialog`·`MobileBottomSheet`·`SettingsActionButton` 등) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳은 그쪽을 쓰고, 기존 사용처는 아래 4행대로 따로 옮긴다 |
 | 맞는 공용 부품이 없는 동작 부품(드롭다운·팝오버·탭·셀렉트)이 필요하다 | shadcn으로 만든다. `src/components/ui/`에 아직 없는 부품이면 받기 전에 묻는다(새 파일·의존성이 생긴다). 미루면 공용 셸에서 동작 처리(portal·포커스 가두기·Escape·aria)만 가져오고, 클래스·토큰·아이콘은 3-6과 Design.md를 따른다 |
 | 동작 없는 표시 부품이 필요하다 | Tailwind로 만든다 |
 | 기존 공용 부품이나 그 사용처를 shadcn으로 바꾼다 | 기능·버그 작업에 섞지 않고 따로 한다 |
@@ -298,7 +298,7 @@ kick({ roomId, userId }, { onError: () => toast.error("내보내지 못했어요
 | 임시 결과 | `data` + `isPlaceholderData` | 이전 결과 유지. 확정 결과가 필요한 동작만 막는다 |
 | 최초 실패 | `error` | 그 영역의 오류 안내 + 재시도 |
 | 조회 안 함 | `fetchStatus === "idle"`(`enabled: false`) | 곧 채워질 조건(STOMP 연결 등)을 기다리면 스켈레톤. 채워지지 않을 조건(방 미선택)이면 그 이유에 맞는 자리 |
-| 최초 로딩 | 그 밖 | 완료 화면과 같은 배치의 스켈레톤. 작은 영역은 `LoadingIndicator` |
+| 최초 로딩 | 그 밖 | 완료 화면과 같은 배치의 스켈레톤. 작은 영역은 `Spinner` |
 
 - `isPending`·`isLoading` 하나로 로딩을 판정하지 않는다. `enabled: false`면 `isPending`이 계속 true이고, `isLoading`은 오프라인으로 멈춘 첫 조회(`fetchStatus === "paused"`)를 놓친다.
 - 조회가 여럿이면 영역마다 따로 분기한다. 로딩을 합쳐(`a.isLoading || b.isLoading`) 화면 전체를 바꾸지 않는다.
