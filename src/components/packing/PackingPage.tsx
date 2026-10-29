@@ -6,6 +6,7 @@ import { usePackingList } from "@/hooks/usePackingList";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 import { SetSectionSideDetailWidth } from "@/contexts/SectionWidthContext";
 import { PACKING_DETAIL_WIDTH_PX } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
@@ -221,10 +222,10 @@ function PackingContent({context}: {context:Context}) {
             {loading && <span aria-hidden="true" className={styles.loadingProgress}/>}
           </div>
         </header>
-        {state.message && <div role="alert" className={styles.alert}>
-          {state.message}
-          {["sync-error","uncertain","error"].includes(state.status) && <button type="button" onClick={()=>void coordinator?.refresh(true)}>다시 확인</button>}
-        </div>}
+        {state.message && <div className="pb-4"><Alert tone="warning" orientation="horizontal">
+          <AlertTitle>{state.message}</AlertTitle>
+          {["sync-error","uncertain","error"].includes(state.status) && <AlertAction><button type="button" className="underline" onClick={()=>void coordinator?.refresh(true)}>다시 확인</button></AlertAction>}
+        </Alert></div>}
         {!state.data ? emptyBoard : (
           <div className={styles.columns} aria-label="준비물 카테고리">
             {parts.map((part:PackingPart)=><section className={styles.part} key={part.id} aria-label={part.name}>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 
 import { ChevronRight } from "lucide-react";
@@ -62,34 +63,34 @@ export function AgreementConsentSection({ onStateChange }: Props) {
 
   if (isError) {
     return (
-      <div className="w-full rounded-xl border border-primary/35 bg-primary/[0.06] px-4 py-3 text-left">
-        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">
-          약관을 불러오지 못했습니다
-        </p>
-        <p className="mt-1 text-body-m-regular mobile:text-body-s-regular text-muted-brown">
+      <Alert tone="brand" size="lg" className="self-stretch">
+        <AlertTitle>약관을 불러오지 못했습니다</AlertTitle>
+        <AlertDescription>
           {error instanceof Error
             ? error.message
             : "잠시 후 다시 시도해 주세요."}
-        </p>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="mt-2 text-label-l-regular mobile:text-label-m-regular font-medium text-primary underline-offset-2 hover:underline"
-        >
-          다시 시도
-        </button>
-      </div>
+        </AlertDescription>
+        <AlertAction>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="text-label-l-regular mobile:text-label-m-regular text-primary underline-offset-2 hover:underline"
+          >
+            다시 시도
+          </button>
+        </AlertAction>
+      </Alert>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="w-full rounded-xl border border-gray-border bg-bubble-gray/30 px-4 py-3 text-left">
-        <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">
+      <Alert size="lg" role="status" className="self-stretch">
+        <AlertDescription>
           현재 동의할 약관 정보를 불러올 수 없습니다. 잠시 후 다시 시도해
           주세요.
-        </p>
-      </div>
+        </AlertDescription>
+      </Alert>
     );
   }
 
