@@ -7,6 +7,7 @@ import { HeroImage, HeroSkeleton } from "@/components/place/HeroSection";
 import { PlaceDetailTabs } from "@/components/place/PlaceDetailTabs";
 import { usePlaceDetailData } from "@/components/place/usePlaceDetailData";
 import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AnalyticsEvents, trackAnalyticsEvent, type AnalyticsSource } from "@/lib/analytics/track";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import type { SearchRankBucket } from "@/lib/analytics/context";
@@ -62,8 +63,8 @@ export function MobileRoutePlaceDetail({
     );
     if (showSkeleton) return (
       <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
-        <span className="h-5 w-24 animate-pulse rounded bg-fill-strong" />
-        <span className="h-16 w-full animate-pulse rounded-md bg-fill" />
+        <Skeleton render={<span />} className="h-5 w-24" />
+        <Skeleton render={<span />} tone="subtle" className="h-16 w-full rounded-md" />
       </output>
     );
     return (
