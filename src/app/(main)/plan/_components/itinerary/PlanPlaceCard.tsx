@@ -9,6 +9,7 @@ import { MapPin } from "lucide-react";
 
 import { CoinIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -374,9 +375,9 @@ export function PlanPlaceCard({
                 {place.title}
               </h3>
               {place.primaryTypeDisplayName ? (
-                <span className={PLAN_PLACE_CARD_TW.primaryTypeBadge}>
-                  {place.primaryTypeDisplayName}
-                </span>
+                <Badge size="md">
+                  <span className="truncate">{place.primaryTypeDisplayName}</span>
+                </Badge>
               ) : null}
             </div>
             {deleteButton ? (

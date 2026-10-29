@@ -55,8 +55,6 @@ export const PLAN_PLACE_CARD_TW = {
     "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular mobile:text-body-xs-regular shadow-md",
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
   title: "truncate text-body-l-emphasis mobile:text-body-s-emphasis text-text",
-  primaryTypeBadge:
-    "w-fit max-w-full shrink-0 truncate rounded-full bg-fill px-1.5 py-0.5 text-body-xs-regular text-text-subtle",
   deleteButtonCompact: "p-1 @min-[370px]/plan:p-1.5",
   deleteIconSize: 16,
   /** 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄 — 버튼 배경이 카드 안쪽 여백보다 바깥에 오도록 좌우를 넓힌다 */

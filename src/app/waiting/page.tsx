@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
+import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 
 import { useCheckJoinStatus } from "@/hooks/useRooms";
@@ -72,13 +73,9 @@ function WaitingContent() {
       <BrandLogo variant="symbol" size="S" alt="우때 로고" />
 
       <div className="flex w-full max-w-[480px] flex-col gap-6 rounded-xl bg-fill-elevate p-6 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-        <span
-          className={`self-start rounded p-1 text-label-xs-regular ${
-            isRejected ? "bg-fill text-text-subtle" : "bg-primary-subtle text-primary"
-          }`}
-        >
+        <Badge tone={isRejected ? "neutral" : "brand"} size="md">
           {isRejected ? "참여 거절" : "승인 대기"}
-        </span>
+        </Badge>
 
         <h1 className="text-title-l text-text">
           {isRejected ? "참여 요청이 거절됐어요" : "참여 요청을 보냈어요"}

@@ -1,4 +1,5 @@
 "use client";
+import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import { expenseTitle } from "@/lib/expenses/expense-name";
@@ -292,9 +293,9 @@ export function ExpenseList({
                       expenseDayLabel("TRIP_DAY", Number(key), schedules))}
                 </h3>
                 {day && (
-                  <span className="rounded-full bg-primary-subtle px-2 py-1 text-label-xs-emphasis text-primary">
+                  <Badge tone="brand" size="md">
                     {day.dayNumber}일차
-                  </span>
+                  </Badge>
                 )}
                 <span className="text-[14px] leading-5 text-text-subtle"><ExpenseKrwAmount total={krwSummary?.days?.find((d) => key === "PREPARATION" ? d.expenseGroup === "PREPARATION" : d.expenseGroup === "TRIP_DAY" && String(d.scheduleId) === key)?.total} /></span>
                 {!krwSummary && <span className="text-body-xs-regular text-text-subtle">

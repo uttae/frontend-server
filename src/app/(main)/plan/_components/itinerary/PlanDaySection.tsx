@@ -1,6 +1,7 @@
 "use client";
 
 import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
+import { Badge } from "@/components/ui/badge";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
@@ -214,10 +215,9 @@ export function PlanDaySection({
                 {subtitle || title}
               </h2>
               {subtitle ? (
-                // 디자인 시스템 Badge / Weak / Brand / md — 배경색은 시맨틱 토큰이 없어 원시 토큰을 쓴다
-                <span className="inline-flex h-5 shrink-0 items-center rounded bg-[var(--blue-50)] px-1.5 text-label-xs-regular text-primary">
+                <Badge tone="brand" size="md">
                   {title}
-                </span>
+                </Badge>
               ) : null}
             </div>
             <span className="shrink-0 text-dark-gray" aria-hidden>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { MenuDotHorizontalIcon, UserEditIcon, UserXIcon } from "@/assets/icons";
+import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import type { RoomMemberStatus } from "@/lib/api/rooms";
 import { cn } from "@/lib/utils";
@@ -99,14 +100,9 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Readonl
           {member.isCurrentUser ? " (나)" : ""}
         </span>
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "rounded px-1.5 py-0.5 text-label-xs-regular",
-              member.role === "HOST" ? "bg-primary-subtle text-primary" : "bg-fill text-text-subtle",
-            )}
-          >
+          <Badge tone={member.role === "HOST" ? "brand" : "neutral"} size="md">
             {member.role === "HOST" ? "방장" : "참여자"}
-          </span>
+          </Badge>
           <MemberConnectionStatus member={member} />
         </div>
       </div>
