@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -132,7 +132,7 @@ export function AddToScheduleModal({
 
           {rid && schedulesLoading ? (
             <div className="flex justify-center py-6">
-              <LoadingIndicator label="일정 불러오는 중" />
+              <Spinner aria-label="일정 불러오는 중" />
             </div>
           ) : null}
 

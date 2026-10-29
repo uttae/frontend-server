@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -55,7 +55,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   if (isPending) {
     return (
       <div className="w-full rounded-xl border border-gray-border bg-bubble-gray/40 px-4 py-3 text-left">
-        <LoadingIndicator label="약관 불러오는 중" />
+        <Spinner aria-label="약관 불러오는 중" />
       </div>
     );
   }

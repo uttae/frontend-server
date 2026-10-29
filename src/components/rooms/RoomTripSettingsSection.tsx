@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { DeleteConfirmModal } from "@/app/home/_components/DeleteConfirmModal";
 import { RoomTripEditForm } from "@/components/rooms/RoomTripEditForm";
+import { Spinner } from "@/components/ui/spinner";
 import { useCurrentRoomMembership } from "@/hooks/useCurrentRoomMembership";
 import { isRoomMemberRole } from "@/lib/rooms";
 import { useSessionStore } from "@/stores/session-store";
@@ -54,7 +55,7 @@ export function RoomTripSettingsSection({ onSaved }: { onSaved?: () => void }) {
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
+          <Spinner aria-label="여행 정보 불러오는 중" size={32} />
         </div>
       ) : !roomSource || !roomId ? (
         <p className="py-10 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">

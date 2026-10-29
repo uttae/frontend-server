@@ -5,10 +5,11 @@ import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
 import type { DragEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Loader2, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 import { CoinIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 import { useInViewport } from "@/hooks/useInViewport";
@@ -316,8 +317,8 @@ export function PlanPlaceCard({
 
         {(() => {
           const media = photoLoading ? (
-            <Loader2
-              className="absolute inset-0 m-auto h-5 w-5 animate-spin text-primary-strong"
+            <Spinner
+              className="absolute inset-0 m-auto h-5 w-5"
               aria-hidden
             />
           ) : resolvedPhotoUrl ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import Link from "next/link";
 import { ArrowLeft, ChevronRight } from "lucide-react";
@@ -100,7 +100,7 @@ export default function MyInfoPage() {
 
           {isLoading && (
             <div className="flex items-center justify-center py-20">
-              <LoadingIndicator label="내 정보 불러오는 중" size={32} />
+              <Spinner aria-label="내 정보 불러오는 중" size={32} />
             </div>
           )}
 

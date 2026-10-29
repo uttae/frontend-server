@@ -1,6 +1,6 @@
 "use client";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -51,7 +51,7 @@ function ExpenseDeleteConflict({
   if (deleting) message = "최신 비용 확인 중…";
   else if (conflict.failed)
     message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
-  const unavailable = deleting ? <LoadingIndicator label={message} /> : <p>{message}</p>;
+  const unavailable = deleting ? <Spinner aria-label={message} /> : <p>{message}</p>;
   return (
     <div
       role="alert"
@@ -465,7 +465,7 @@ export function ExpensePanel() {
             )}
           </div>
           {context.filteredKrwSummary?.isError && <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>}
-          {context.list.isPending ? <LoadingIndicator label="비용 목록 불러오는 중" className="flex min-h-40 w-full" /> : context.list.isSuccess && (
+          {context.list.isPending ? <Spinner aria-label="비용 목록 불러오는 중" className="flex min-h-40 w-full" /> : context.list.isSuccess && (
             <>
               <div aria-busy={categoryPending}>
                 <ExpenseList
@@ -523,7 +523,7 @@ export function ExpensePanel() {
           }
         >
           {context.summary.isPending && (
-            <LoadingIndicator label="정산 불러오는 중" className="flex min-h-32 w-full" />
+            <Spinner aria-label="정산 불러오는 중" className="flex min-h-32 w-full" />
           )}
           {context.summary.isError && (
             <div className="space-y-3">

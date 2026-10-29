@@ -1,5 +1,5 @@
 "use client";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -527,7 +527,7 @@ function SettlementContent({
 }: Readonly<SettlementProps>) {
   if (scope === "mine" && currentUserId === undefined) {
     return (
-      <LoadingIndicator label="내 정산 사용자 정보 불러오는 중" className="flex w-full py-4" />
+      <Spinner aria-label="내 정산 사용자 정보 불러오는 중" className="flex w-full py-4" />
     );
   }
   if (!summary.currencies.length) {

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCheckJoinStatus } from "@/hooks/useRooms";
 import { getRoomDetail, HttpError } from "@/lib/api/rooms";
@@ -114,7 +114,7 @@ function WaitingContent() {
             aria-busy={isChecking}
             className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-primary text-label-l-emphasis text-text-inverse transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed"
           >
-            {isChecking ? <LoadingIndicator label="승인 상태 확인 중" className="text-text-inverse" /> : "승인 상태 확인"}
+            {isChecking ? <Spinner aria-label="승인 상태 확인 중" variant="inverse" /> : "승인 상태 확인"}
           </button>
         )}
       </div>
@@ -133,7 +133,7 @@ export default function WaitingPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-fill-elevate">
-          <LoadingIndicator label="승인 대기 화면 준비 중" size={32} />
+          <Spinner aria-label="승인 대기 화면 준비 중" size={32} />
         </div>
       }
     >

@@ -1,5 +1,5 @@
 "use client";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
@@ -53,7 +53,7 @@ function ExpenseEditorConflict({
   let message = "비용이 삭제되었어요. 입력 내용은 복사할 수 있어요.";
   if (pending) message = "최신 비용 확인 중…";
   else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 저장은 중단돼요.";
-  const unavailable = pending ? <LoadingIndicator label={message} /> : <p>{message}</p>;
+  const unavailable = pending ? <Spinner aria-label={message} /> : <p>{message}</p>;
   return (
     <div
       role="alert"
@@ -326,7 +326,7 @@ export function ExpenseEditor({
   }
   const memberFallback = context.memberStatus === "error"
               ? <output className="block text-body-s-regular mobile:text-body-xs-regular text-dark-gray">멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.</output>
-              : <LoadingIndicator label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />;
+              : <Spinner aria-label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />;
   return (
     <dialog
       ref={dialog}

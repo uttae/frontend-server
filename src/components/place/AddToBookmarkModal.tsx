@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { Check, Plus } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -256,7 +256,7 @@ export function AddToBookmarkModal({
 
           {categoriesLoading && (
             <div className="flex justify-center py-6">
-              <LoadingIndicator label="북마크 불러오는 중" />
+              <Spinner aria-label="북마크 불러오는 중" />
             </div>
           )}
 

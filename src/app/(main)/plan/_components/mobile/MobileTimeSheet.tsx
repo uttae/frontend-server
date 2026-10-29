@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
 import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
+import { Spinner } from "@/components/ui/spinner";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
   addMinutesToHm,
@@ -195,7 +195,7 @@ export function MobileTimeSheet({
               : "bg-[var(--gray-800)] enabled:hover:bg-[var(--gray-700)] enabled:active:bg-[var(--gray-900)] disabled:bg-fill disabled:text-text-disabled",
           )}
         >
-          {isPending ? <LoadingIndicator label="저장 중" className="text-text-inverse" /> : "확인"}
+          {isPending ? <Spinner aria-label="저장 중" variant="inverse" /> : "확인"}
         </button>
       </div>
     </MobileBottomSheet>

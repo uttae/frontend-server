@@ -5,9 +5,9 @@ import { getChatPanelLook } from "@/components/chat/chat-panel-look";
 import { AiResponseBubble } from "@/components/chat/messages/AiResponseBubble";
 import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
 import type { ChatMessageTextTypography } from "@/components/chat/chat-typography";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import type { AiRequestStatus, ChatMessage } from "@/types/chat";
-import { Loader2 } from "lucide-react";
 
 function labelForAiStatus(status: AiRequestStatus): string {
   const labels: Record<AiRequestStatus, string> = {
@@ -64,8 +64,9 @@ function AiRequestMetaRow({
         {ar.aiStatus === "PROCESSING" ? (
           <span className="inline-flex items-center gap-1.5">
             <span>{labelForAiStatus(ar.aiStatus)}</span>
-            <Loader2
-              className="h-3.5 w-3.5 shrink-0 animate-spin text-primary-strong"
+            <Spinner
+              size={16}
+              className="shrink-0"
               aria-hidden
             />
           </span>

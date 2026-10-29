@@ -1,7 +1,7 @@
 "use client";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
 import { useQueries } from "@tanstack/react-query";
@@ -269,7 +269,7 @@ export function AddFromBookmarkModal({
 
         </BottomSheetDragHandle>
         {categoriesLoading ? (
-          <div className="px-5 py-6 text-center"><LoadingIndicator label="북마크 불러오는 중" /></div>
+          <div className="px-5 py-6 text-center"><Spinner aria-label="북마크 불러오는 중" /></div>
         ) : categoriesError ? (
           <div className="space-y-2 px-5 py-6 text-center">
             <p className="text-body-m-regular mobile:text-body-s-regular text-primary">

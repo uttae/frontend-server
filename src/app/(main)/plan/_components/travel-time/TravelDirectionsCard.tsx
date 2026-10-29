@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronDown, ExternalLink, EyeOff, Loader2 } from "lucide-react";
+import { ChevronDown, ExternalLink, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
+import { Spinner } from "@/components/ui/spinner";
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
 import {
   formatRouteDistance,
@@ -146,9 +147,7 @@ export function TravelDirectionsCard({
                     {formatRouteDistance(rowSummary.distanceMeters)}
                   </>
                 ) : modeRouteRowLoading[value] ? (
-                  <span className="inline-flex items-center gap-1 text-dark-gray">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  </span>
+                  <Spinner aria-label="이동 시간 불러오는 중" size={16} className="align-top" />
                 ) : null; // 고르지 않은 수단은 골라야 계산한다(미리 조회하지 않음)
               const rowClass = cn(
                 "col-span-3 grid grid-cols-subgrid items-center rounded-md px-1.5 py-1.5 text-left text-body-s-regular mobile:text-body-xs-regular",
