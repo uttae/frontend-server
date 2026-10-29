@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 
 import { ChevronRight } from "lucide-react";
@@ -96,13 +97,8 @@ export function AgreementConsentSection({ onStateChange }: Props) {
 
   return (
     <div className="w-full rounded-xl border border-gray-border bg-bubble-gray/25 px-4 py-4 text-left">
-      <label className="flex cursor-pointer items-start gap-3">
-        <input
-          type="checkbox"
-          className="mt-0.5 h-[18px] w-[18px] shrink-0 rounded accent-primary"
-          checked={allAccepted}
-          onChange={(event) => toggleAll(event.target.checked)}
-        />
+      <label className="flex cursor-pointer items-center gap-3">
+        <Checkbox checked={allAccepted} onCheckedChange={toggleAll} />
         <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-neutral-900">
           필수 약관 전체 동의
         </span>
@@ -117,11 +113,10 @@ export function AgreementConsentSection({ onStateChange }: Props) {
               className="flex items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-white/80"
             >
               <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 shrink-0 rounded accent-primary"
+                <Checkbox
+                  size="sm"
                   checked={acceptedIds.has(id)}
-                  onChange={(event) => toggleItem(id, event.target.checked)}
+                  onCheckedChange={(checked) => toggleItem(id, checked)}
                 />
                 <span className="inline-flex h-[18px] shrink-0 items-center rounded px-1 text-body-xs-emphasis font-semibold leading-none text-primary">
                   필수

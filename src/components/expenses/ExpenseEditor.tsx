@@ -503,6 +503,7 @@ export function ExpenseEditor({
                 currentUserId={context.currentUserId}
                 selected={body.payerUserIds}
                 original={original?.payerUserIds ?? []}
+                disabled={pending}
                 onChange={(ids) => change("payerUserIds", ids)}
               />
               <ExpenseRolePicker
@@ -511,6 +512,7 @@ export function ExpenseEditor({
                 currentUserId={context.currentUserId}
                 selected={body.participantUserIds}
                 original={original?.participantUserIds ?? []}
+                disabled={pending}
                 onChange={(ids) => change("participantUserIds", ids)}
               />
             </div>

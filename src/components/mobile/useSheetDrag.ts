@@ -33,7 +33,8 @@ export function useSheetDrag(onClose: () => void, disabled = false, mobileOnly =
       onPointerDown(event: PointerEvent<HTMLElement>) {
         if (disabled || !event.isPrimary || event.button !== 0 || gesture.current) return;
         if (mobileOnly && !document.documentElement.classList.contains("is-mobile-device")) return;
-        if ((event.target as Element).closest("button, input, textarea, select, a, [role='button'], [contenteditable='true']")) return;
+        // Base UI 체크박스·스위치·라디오는 기본으로 role을 단 span이라(숨김 input은 따로 있다) 감싼 label과 role로도 제외한다
+        if ((event.target as Element).closest("button, input, textarea, select, a, label, [role='button'], [role='checkbox'], [role='switch'], [role='radio'], [contenteditable='true']")) return;
         gesture.current = { id: event.pointerId, x: event.clientX, y: event.clientY, distance: 0 };
         event.currentTarget.setPointerCapture(event.pointerId);
         setHasDragged(true);

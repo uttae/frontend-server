@@ -2,6 +2,7 @@
 
 import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
@@ -120,10 +121,6 @@ export function PlanDaySection({
   const setRouteVisible = usePlanScheduleRouteVisibilityStore(
     (s) => s.setRouteVisible,
   );
-  const toggleRouteVisible = useCallback(() => {
-    if (trackedSid === undefined) return;
-    setRouteVisible(trackedSid, !routeVisible);
-  }, [trackedSid, routeVisible, setRouteVisible]);
 
   const toggle = useCallback(() => {
     if (trackedSid !== undefined) {
@@ -320,27 +317,17 @@ export function PlanDaySection({
           )}>
             <div className="min-w-0 flex-1">{summaryAction}</div>
             {trackedSid !== undefined ? (
-              <button
-                type="button"
-                role="switch"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  toggleRouteVisible();
-                }}
-                aria-checked={routeVisible}
-                className="flex min-h-8 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-xs-regular text-text-subtle transition-colors hover:bg-bubble-gray/60 focus-visible:outline-2 focus-visible:outline-primary"
+              <label
+                onClick={(event) => event.stopPropagation()}
+                className="flex min-h-8 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-xs-regular text-text-subtle transition-colors select-none hover:bg-fill"
               >
                 지도에 경로 표시
-                <span aria-hidden="true" className={cn(
-                  "relative h-5 w-9 rounded-full transition-colors",
-                  routeVisible ? "bg-primary" : "bg-gray-300",
-                )}>
-                  <span className={cn(
-                    "absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-sm transition-transform",
-                    routeVisible && "translate-x-4",
-                  )} />
-                </span>
-              </button>
+                <Switch
+                  size="sm"
+                  checked={routeVisible}
+                  onCheckedChange={(checked) => setRouteVisible(trackedSid, checked)}
+                />
+              </label>
             ) : null}
           </div>
         ) : null}

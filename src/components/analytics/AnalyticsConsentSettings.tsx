@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useState, useSyncExternalStore } from "react";
 
 import { SettingsActionButton } from "@/components/settings/SettingsActionButton";
+import { Switch } from "@/components/ui/switch";
 import {
   denyAnalyticsConsent,
   grantAnalyticsConsent,
@@ -66,26 +67,14 @@ export function AnalyticsConsentSettingsView({
             Google Analytics로 방문과 기능 사용 통계를 분석합니다.
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={allowed}
+        <Switch
+          checked={allowed}
+          onCheckedChange={(checked) => (checked ? onGrant() : onDeny())}
           aria-labelledby={categoryId}
           aria-describedby={
             consent === "pending" ? `${descriptionId} ${hintId}` : descriptionId
           }
-          onClick={allowed ? onDeny : onGrant}
-          className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-1 py-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-        >
-          <span
-            aria-hidden="true"
-            className={`flex h-7 w-12 items-center rounded-full p-1 transition-colors motion-reduce:transition-none ${allowed ? "bg-primary" : "bg-neutral-400"}`}
-          >
-            <span
-              className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${allowed ? "translate-x-5" : "translate-x-0"}`}
-            />
-          </span>
-        </button>
+        />
       </div>
       {consent === "pending" && (
         <p id={hintId} className="mt-3 text-body-xs-regular leading-relaxed text-dark-gray">

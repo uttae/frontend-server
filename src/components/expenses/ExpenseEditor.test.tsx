@@ -5,6 +5,7 @@ import { ExpenseSelect } from "./ExpenseSelect";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ExpenseEditor, type ExpenseEntry } from "./ExpenseEditor";
 import { ExpenseCurrencyPicker } from "./ExpenseCurrencyPicker";
 import { ExpenseRolePicker } from "./ExpenseViews";
@@ -187,10 +188,9 @@ it("preselects self in both roles for new expenses and keeps self first", async 
         )
         .map((node) => node.props["data-user-id"]),
     ).toEqual([2, 1]);
+    // Base UI Checkbox의 숨김 input onChange는 event.nativeEvent를 읽어 가짜 이벤트 대신 onCheckedChange를 부른다
     await act(async () =>
-      picker
-        .findAllByType("input")[0]
-        .props.onChange({ target: { checked: false } }),
+      picker.findAllByType(Checkbox)[0].props.onCheckedChange(false),
     );
   }
   await act(async () =>
@@ -427,11 +427,9 @@ it.each([
       amount.props.onChange(changeEvent("100")),
     );
     for (const checkbox of renderer.root
-      .findAllByType("input")
-      .filter((i) => i.props.type === "checkbox" && !i.props.checked))
-      await act(async () =>
-        checkbox.props.onChange({ target: { checked: true } }),
-      );
+      .findAllByType(Checkbox)
+      .filter((i) => !i.props.checked))
+      await act(async () => checkbox.props.onCheckedChange(true));
     await act(async () => categorySelect().props.onChange("OTHER"));
     await act(async () =>
       renderer.root
@@ -463,7 +461,7 @@ it("cannot re-add an unknown payer after deselection and keeps input on server r
     .filter((i) => i.props.type === "checkbox");
   expect(checkboxes).toHaveLength(3);
   await act(async () =>
-    checkboxes[1].props.onChange({ target: { checked: false } }),
+    renderer.root.findAllByType(Checkbox)[1].props.onCheckedChange(false),
   );
   expect(
     renderer.root
@@ -505,11 +503,9 @@ async function fillNewExpense() {
     .find((i) => i.props.inputMode === "decimal")!;
   await act(async () => amount.props.onChange(changeEvent("100")));
   for (const checkbox of renderer.root
-    .findAllByType("input")
-    .filter((i) => i.props.type === "checkbox" && !i.props.checked)) {
-    await act(async () =>
-      checkbox.props.onChange({ target: { checked: true } }),
-    );
+    .findAllByType(Checkbox)
+    .filter((i) => !i.props.checked)) {
+    await act(async () => checkbox.props.onCheckedChange(true));
   }
 }
 it("requires explicit selection and offers exactly seven labeled categories in approved order", async () => {

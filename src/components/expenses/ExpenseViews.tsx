@@ -1,5 +1,6 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import { expenseTitle } from "@/lib/expenses/expense-name";
@@ -103,6 +104,7 @@ export function ExpenseRolePicker({
   currentUserId,
   selected,
   original,
+  disabled,
   onChange,
 }: Readonly<{
   title: string;
@@ -110,6 +112,8 @@ export function ExpenseRolePicker({
   currentUserId?: number;
   selected: number[];
   original: number[];
+  // 감싼 <fieldset disabled>는 Base UI Checkbox(span)에 전달되지 않아 따로 받는다
+  disabled?: boolean;
   onChange: (ids: number[]) => void;
 }>) {
   const titleId = useId();
@@ -140,19 +144,19 @@ export function ExpenseRolePicker({
       {options.map((option) => (
         <label
           key={option.userId}
-          className="flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-3 text-[16px] leading-5 font-medium mobile:min-h-11 mobile:px-2 mobile:text-[12px] max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed focus-within:ring-2 focus-within:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30 mobile:has-[:checked]:ring-0 max-sm:has-[:checked]:ring-0"
+          className="flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-3 text-[16px] leading-5 font-medium mobile:min-h-11 mobile:px-2 mobile:text-[12px] max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30 mobile:has-[:checked]:ring-0 max-sm:has-[:checked]:ring-0"
         >
-          <input
-            type="checkbox"
+          <Checkbox
+            size="sm"
             checked={selected.includes(option.userId)}
-            onChange={(e) =>
+            disabled={disabled}
+            onCheckedChange={(checked) =>
               onChange(
-                e.target.checked
+                checked
                   ? [...selected, option.userId]
                   : selected.filter((id) => id !== option.userId),
               )
             }
-            className="size-5 shrink-0 cursor-pointer appearance-none bg-[url(/expenses/checkbox.svg)] bg-contain bg-center bg-no-repeat checked:bg-[url(/expenses/checkbox-checked.svg)] disabled:cursor-not-allowed"
           />
           <ExpensePerson
             userId={option.userId}

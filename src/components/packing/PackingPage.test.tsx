@@ -42,8 +42,9 @@ it('changes the selected item check state from the detail panel', async () => {
   await mount();
   await act(async () => button('준비물 선택: 여권').props.onClick());
   const detail = renderer.root.findByProps({'aria-label':'준비물 상세'});
-  const checkbox = detail.findByProps({type:'checkbox'});
-  await act(async () => checkbox.props.onChange({target:{checked:true}}));
+  // Base UI Checkbox의 숨김 input onChange는 event.nativeEvent를 읽어 가짜 이벤트 대신 onCheckedChange를 부른다
+  const checkbox = detail.findByProps({'aria-label':'상세: 여권 준비 완료'});
+  await act(async () => checkbox.props.onCheckedChange(true));
   expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem', id:11, checked:true});
   expect(renderer.root.findByProps({'aria-label':'선택한 준비물 이름'}).children.join('')).toBe('여권');
 });
@@ -56,7 +57,7 @@ it('renders added categories after the four defaults even when they share backen
   ]);
 });
 it('selects an item and shows only its server supplied tips',async()=>{await mount();await selectFirstItem();expect(JSON.stringify(renderer.toJSON())).toContain('유효기간을 확인하세요.');expect(JSON.stringify(renderer.toJSON())).toContain('사본을 준비하세요.');await act(async()=>button('준비물 선택: 항공권 예약 내역').props.onClick());expect(JSON.stringify(renderer.toJSON())).not.toContain('유효기간을 확인하세요.');expect(JSON.stringify(renderer.toJSON())).not.toContain('우때의 여행 팁');});
-it('keeps checkbox independent from item selection',async()=>{await mount();await selectFirstItem();await act(async()=>input('항공권 예약 내역 준비 완료').props.onChange({target:{checked:false}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:12,checked:false});expect(renderer.root.findByProps({'aria-label':'선택한 준비물 이름'}).children.join('')).toBe('여권');});
+it('keeps checkbox independent from item selection',async()=>{await mount();await selectFirstItem();await act(async()=>renderer.root.findByProps({'aria-label':'항공권 예약 내역 준비 완료'}).props.onCheckedChange(false));expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:12,checked:false});expect(renderer.root.findByProps({'aria-label':'선택한 준비물 이름'}).children.join('')).toBe('여권');});
 it('opens the category menu and sends validated create and rename commands',async()=>{await mount();await act(async()=>button('카테고리 메뉴: 여권·예약·결제').props.onClick());await act(async()=>button('카테고리 이름 수정').props.onClick());await act(async()=>input('카테고리 이름').props.onChange(changeEvent('새 카테고리')));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'renamePart',id:1,name:'새 카테고리'});});
 it('closes a category menu with Escape',async()=>{await mount();const trigger=button('카테고리 메뉴: 여권·예약·결제');await act(async()=>trigger.props.onClick());const menu=renderer.root.findByProps({role:'menu'});await act(async()=>menu.props.onKeyDown({key:'Escape',preventDefault(){},stopPropagation(){}}));expect(renderer.root.findAllByProps({role:'menu'})).toHaveLength(0);});
 it('opens an item add dialog for the selected category',async()=>{await mount();await act(async()=>button('준비물 추가: 여권·예약·결제').props.onClick());await act(async()=>input('준비물 이름').props.onChange(changeEvent('비상 연락처')));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'createItem',partId:1,name:'비상 연락처'});});

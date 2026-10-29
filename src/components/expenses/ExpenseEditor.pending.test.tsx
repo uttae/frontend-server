@@ -3,6 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { Expense } from "@/lib/api/rooms/expenses";
 import type { RoomMember } from "@/lib/api/rooms/types";
 import type { MemberQueryStatus } from "@/lib/expenses/expense-policy";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ExpenseEditor } from "./ExpenseEditor";
 import { ExpenseRolePicker } from "./ExpenseViews";
 
@@ -181,9 +182,10 @@ it("preserves unknown roles, disallows copying/readding unknowns, and still sele
   await submit();
   expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1, 98] }), 10, 0);
   const labels = picker("결제자").findAllByType("label");
-  await act(async () => labels.find((l) => text(l).includes("#99"))!.findByType("input").props.onChange({ target: { checked: false } }));
+  // Base UI Checkbox의 숨김 input onChange는 event.nativeEvent를 읽어 가짜 이벤트 대신 onCheckedChange를 부른다
+  await act(async () => labels.find((l) => text(l).includes("#99"))!.findByType(Checkbox).props.onCheckedChange(false));
   expect(text(picker("결제자"))).not.toContain("#99");
-  await act(async () => labels.find((l) => text(l).includes("나간 멤버"))!.findByType("input").props.onChange({ target: { checked: true } }));
+  await act(async () => labels.find((l) => text(l).includes("나간 멤버"))!.findByType(Checkbox).props.onCheckedChange(true));
   await submit();
   expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 3], participantUserIds: [1, 98] }), 10, 0);
 });

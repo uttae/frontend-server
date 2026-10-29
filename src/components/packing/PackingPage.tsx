@@ -7,6 +7,7 @@ import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldCount, FieldError, FieldFooter, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,10 +34,9 @@ function PackingIcon({name, size = 24}: {name:keyof typeof packingIcons; size?:n
 
 function PackingCheckbox({item,context,detail = false}: {item:PackingItem;context:Context;detail?:boolean}) {
   return <label className={styles.checkbox}>
-    <input type="checkbox" aria-label={`${detail ? "상세: " : ""}${item.name} 준비 완료`}
+    <Checkbox aria-label={`${detail ? "상세: " : ""}${item.name} 준비 완료`}
       checked={item.checked} disabled={context.state.status!=="ready"}
-      onChange={event=>void context.coordinator?.execute({type:"checkItem",id:item.id,checked:event.target.checked})}/>
-    <PackingIcon name={item.checked ? "checkboxChecked" : "checkbox"}/>
+      onCheckedChange={checked=>void context.coordinator?.execute({type:"checkItem",id:item.id,checked})}/>
   </label>;
 }
 
