@@ -17,9 +17,9 @@
 예를들어서 피그마 페이지에 폰트가 17px이고 시멘틱 토큰과 css변수가 없다면 임의값을 사용한다.
 
 ### 1-3. 컴포넌트
-목표는 shadcn이다. 아직 설치 전이라 기존 공용 컴포넌트와 병행하고, 무엇을 쓸지는 [핵심 원칙 1-1](docs/code-conventions/principles.md)을 따른다.
+목표는 shadcn(Base UI)이다. 옮기는 동안 기존 공용 컴포넌트와 병행하고, 무엇을 쓸지는 [핵심 원칙 1-1](docs/code-conventions/principles.md)을 따른다.
 - 공용: `src/components/<도메인>/`(`layout`, `place`, `map`, `settings` …)
-- shadcn: 설치 후 `src/components/ui/`
+- shadcn: `src/components/ui/`
 - 특정 페이지 전용: `src/app/**/_components/`
 
 ### 1-4. Figma 디자인 시스템
@@ -111,7 +111,7 @@ import { MapPinIcon } from "@/assets/icons";
 
 ### 3-3. 이벤트 피드백
 - 사용자 액션에는 결과 피드백이 있어야 한다
-- alert는 toast, confirm은 `ConfirmDialog`를 쓰고 요구조건에 맞춘다(shadcn 설치 후 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
+- alert는 toast, confirm은 `ConfirmDialog`를 쓰고 요구조건에 맞춘다(shadcn 부품으로 옮기는 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
 - 비동기 동작 중 중복 실행 방지(핵심 원칙 2-4)
 
 

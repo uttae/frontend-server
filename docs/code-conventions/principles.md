@@ -15,22 +15,23 @@
 
 ### 1-1. 부품은 한 번 만들고 조립한다 (Headless UI)
 
-목표는 동작(포커스 가두기·키보드·aria·포털)은 shadcn(Radix) 프리미티브가, 모양은 디자인 시스템 토큰이 맡는 것이다. 둘을 합친 부품을 `src/components/ui/`에 한 번 두고 화면은 조립만 한다. shadcn은 아직 설치 전이라, 옮기는 동안 기존 공용 부품과 병행한다.
+목표는 동작(포커스 가두기·키보드·aria·포털)은 shadcn(Base UI) 프리미티브가, 모양은 디자인 시스템 토큰이 맡는 것이다. 둘을 합친 부품을 `src/components/ui/`에 한 번 두고 화면은 조립만 한다. shadcn은 `base-nova` 스타일(`components.json`)로 받고, 옮기는 동안 기존 공용 부품과 병행한다.
 
 | 상황 | 할 일 |
 | :-- | :-- |
 | 맞는 공용 부품이 있다(`src/components/<도메인>/`의 `ConfirmDialog`·`SettingsDialog`·`MobileBottomSheet`·`LoadingIndicator`·`SettingsActionButton` 등) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳만 그쪽을 쓰고 기존 사용처는 둔다 |
-| 맞는 공용 부품이 없는 동작 부품(드롭다운·팝오버·탭·셀렉트)이 필요하다 | shadcn으로 만든다. 설치 전이면 만들기 전에 도입할지 묻는다. 미루면 공용 셸에서 동작 처리(portal·포커스 가두기·Escape·aria)만 가져오고, 클래스·토큰·아이콘은 3-6과 Design.md를 따른다 |
+| 맞는 공용 부품이 없는 동작 부품(드롭다운·팝오버·탭·셀렉트)이 필요하다 | shadcn으로 만든다. `src/components/ui/`에 아직 없는 부품이면 받기 전에 묻는다(새 파일·의존성이 생긴다). 미루면 공용 셸에서 동작 처리(portal·포커스 가두기·Escape·aria)만 가져오고, 클래스·토큰·아이콘은 3-6과 Design.md를 따른다 |
 | 동작 없는 표시 부품이 필요하다 | Tailwind로 만든다 |
 | 기존 공용 부품이나 그 사용처를 shadcn으로 바꾼다 | 기능·버그 작업에 섞지 않고 따로 한다 |
 
-- 변형은 `variant`·`size` 같은 유니온 prop으로 받고, 값은 Figma 컴포넌트 속성 값에 맞춘다.
+- 변형은 `variant`·`size` 같은 유니온 prop으로 받고, 값은 Figma 컴포넌트 속성 값에 맞춘다. 변형별 클래스는 cva로 정의한다(3-6).
 - 화면은 부품의 색·글자를 덮지 않는다. 바깥에서 주는 `className`은 배치(폭·정렬·위치)에만 쓴다.
 - 공용 Button은 사이즈 기획이 끝나지 않아 보류 중이다. 범용 Button 부품을 새로 만들지 않는다.
 - shadcn 코드를 받으면 디자인 시스템에 맞춘다.
   - 색·그림자·포커스 클래스(`secondary`·`*-foreground`·`muted`·`accent`·`input`·`ring`·`shadow-*`)는 시맨틱 토큰으로 바꾼다. 이름이 같아도 뜻이 다르고(`secondary`는 라임), 없는 이름은 CSS가 생기지 않는다.
-  - 설치 때 shadcn이 `globals.css`에 넣는 색 변수(`:root`·`@theme inline`)는 받지 않는다. 기존 `primary`·`border`·`background` 토큰을 앱 전체에서 덮는다.
-  - 아이콘은 `lucide-react` 대신 `@/assets/icons`, `cn`은 `@/lib/utils`의 것을 쓴다.
+  - `shadcn init`은 하지 않고 `add`로만 받는다. init이 `globals.css`에 넣는 색 변수(`:root`·`@theme inline`)는 기존 `primary`·`border`·`background` 토큰을 앱 전체에서 덮는다.
+  - 아이콘은 `lucide-react` 대신 `@/assets/icons`, `cn`은 `@/lib/utils`의 것을 쓴다. 받은 코드의 `import { cn } from "cn"`은 CLI가 바꾸지 않는다. `cn` 패키지는 타이포 토큰을 색으로 보고 지운다.
+  - `dark:` 클래스는 지운다. 다크 모드 설정이 없어 OS가 다크 모드면 적용된다.
   - z값은 같은 역할의 공용 셸(대화상자 `SettingsDialog`, 시트 `MobileBottomSheet`)에 맞추고, 그 안에서 여는 팝오버·셀렉트는 셸보다 위에 둔다.
 
 ```tsx
@@ -40,12 +41,14 @@
 // ✓ 지금: 공용 셸을 쓴다(포커스 가두기·ESC·aria 포함)
 {isInviteOpen && <SettingsDialog title="초대" onClose={closeInvite}>…</SettingsDialog>}
 
-// ✓ shadcn 설치 후: 동작은 shadcn, 모양은 토큰을 입힌 ui 부품
+// ✓ shadcn으로 옮긴 뒤: 동작은 Base UI, 모양은 토큰을 입힌 ui 부품
 <Dialog>
-  <DialogTrigger asChild><button type="button" className="…">초대</button></DialogTrigger>
+  <DialogTrigger className="…">초대</DialogTrigger>
   <DialogContent>…</DialogContent>
 </Dialog>
 ```
+
+- Base UI 부품은 기본 요소(Trigger는 `<button type="button">`)를 그린다. 다른 요소로 그려야 하면 `asChild` 대신 `render` prop을 쓴다.
 
 ### 1-2. 로직은 화면 훅, 그리기는 컴포넌트 (Custom Hook · Container / Presentational)
 
@@ -534,7 +537,7 @@ z-index는 같은 스태킹 컨텍스트 안에서만 비교된다. 그래서 �
 - 타이포는 토큰 하나로 쓴다. display·heading·title은 `text-<역할>-<크기>`(`text-title-m`), body·label·caption은 굵기까지 붙인다(`text-body-s-regular`). `text-body-s`처럼 없는 이름은 CSS가 생기지 않는다.
 - 타이포 토큰에 `font-*`·`leading-*`·`tracking-*`·`/N`을 덧붙이지 않는다(토큰 값을 덮거나 굵기·자간이 빠진다). 맞는 토큰이 없으면 Figma 값대로 크기·줄 높이·굵기를 함께 임의값으로 쓰고(`text-[17px]/[24px] font-semibold`) 근거 주석을 단다(Design.md 1-2).
 - radius는 재정의된 토큰을 쓴다(`rounded-md` = 8px, Tailwind 기본과 다르다). 그림자 토큰은 아직 없다. `shadow-sm` 같은 Tailwind 기본값 대신 Figma 값을 임의값과 근거 주석으로 쓴다. 같은 임의값이 반복되면 토큰 추가를 요청한다.
-- 클래스는 `cn()`으로만 합친다. 템플릿 리터럴은 겹친 클래스(`px-2`와 바깥 `px-4`)를 정리하지 못하고, 조립한 이름(`` `bg-${tone}` ``)은 Tailwind가 소스에서 찾지 못한다. 변형은 `as const` 클래스 맵에 모은다.
+- 클래스는 `cn()`으로만 합친다. 템플릿 리터럴은 겹친 클래스(`px-2`와 바깥 `px-4`)를 정리하지 못하고, 조립한 이름(`` `bg-${tone}` ``)은 Tailwind가 소스에서 찾지 못한다. 변형은 cva(`class-variance-authority`)로 모은다.
 - 상태 스타일은 aria 속성을 variant로 읽는다(`aria-expanded:bg-fill`, `aria-current="page"`는 `aria-[current=page]:`). aria가 없는 상태만 `data-*`로 둔다. 여러 하위가 함께 따르는 루트 상태(채팅 최소화·밀도)는 하위마다 prop으로 내리지 않고, 루트의 `data-minimized`를 하위가 `group-data-minimized/chat:`처럼 읽는다.
 - 전역 요소 스타일은 `@layer base`에 둔다. 레이어 밖 CSS는 모든 유틸리티를 이긴다.
 
@@ -542,12 +545,17 @@ z-index는 같은 스태킹 컨텍스트 안에서만 비교된다. 그래서 �
 // ✗ 문자열 결합과 조립한 클래스 이름
 <span className={`rounded-full px-2 ${className} bg-${tone}`}>{label}</span>
 
-// ✓ 완성된 클래스 맵과 cn
-const TONE_CLASS = {
-  neutral: "bg-fill text-text",
-  brand: "bg-primary-subtle text-primary",
-} as const;
-<span className={cn("rounded-full px-2", TONE_CLASS[tone], className)}>{label}</span>
+// ✓ 변형은 cva, 합치기는 cn
+const tagVariants = cva("rounded-full px-2", {
+  variants: {
+    tone: {
+      neutral: "bg-fill text-text",
+      brand: "bg-primary-subtle text-primary",
+    },
+  },
+  defaultVariants: { tone: "neutral" },
+});
+<span className={cn(tagVariants({ tone }), className)}>{label}</span>
 ```
 
 ### 3-7. 시맨틱 마크업과 접근성 (Semantic HTML)
@@ -575,7 +583,7 @@ const TONE_CLASS = {
 | 원칙 | 출처 |
 | :-- | :-- |
 | 0 | React [Thinking in React](https://react.dev/learn/thinking-in-react)·[Keeping Components Pure](https://react.dev/learn/keeping-components-pure), Josh Comeau [Understanding Layout Algorithms](https://www.joshwcomeau.com/css/understanding-layout-algorithms/) |
-| 1-1 | [shadcn/ui](https://ui.shadcn.com/docs) |
+| 1-1 | [shadcn/ui](https://ui.shadcn.com/docs), [Base UI](https://base-ui.com/react/overview/quick-start) |
 | 1-3 | React [Thinking in React](https://react.dev/learn/thinking-in-react), Matt Pocock [codebase-design](https://github.com/mattpocock/skills)(삭제 테스트) |
 | 1-4 | Vercel [composition-patterns](https://github.com/vercel-labs/agent-skills/tree/main/skills/composition-patterns) `architecture-avoid-boolean-props`·`patterns-explicit-variants`·`patterns-children-over-render-props` |
 | 2-1 | React [Choosing the State Structure](https://react.dev/learn/choosing-the-state-structure), Vercel [react-best-practices](https://github.com/vercel-labs/agent-skills/tree/main/skills/react-best-practices) `rerender-derived-state-no-effect` |
@@ -590,4 +598,4 @@ const TONE_CLASS = {
 | 3-2 | Josh Comeau [The Height Enigma](https://www.joshwcomeau.com/css/height-enigma/), [Defensive CSS](https://defensivecss.dev/), web.dev [Viewport units](https://web.dev/blog/viewport-units) |
 | 3-3 | Josh Comeau [The Surprising Truth About Pixels and Accessibility](https://www.joshwcomeau.com/css/surprising-truth-about-pixels-and-accessibility/) |
 | 3-5 | Josh Comeau [What The Heck, z-index??](https://www.joshwcomeau.com/css/stacking-contexts/) |
-| 3-6 | Tailwind [Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files) |
+| 3-6 | Tailwind [Detecting classes in source files](https://tailwindcss.com/docs/detecting-classes-in-source-files), [cva](https://cva.style/docs) |

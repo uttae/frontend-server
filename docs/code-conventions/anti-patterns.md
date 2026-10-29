@@ -87,7 +87,7 @@
 
 ### 17. 토큰 우회
 - 신호: 토큰에 있는 값을 `text-[16px] leading-6`·`rounded-[8px]`·`#333`으로 쓴다. `bg-gray-800`·`shadow-md`(Tailwind 기본값), `dark-gray`(레거시 별칭), `text-body-s`(없는 토큰 이름), 타이포 토큰에 붙인 `font-semibold`, 템플릿 리터럴 className, 조립한 클래스 이름(`` `bg-${tone}` ``)
-- ✓ `text-body-m-regular`, `rounded-md`, `text-text`, 클래스는 `cn("…", TONE_CLASS[tone], className)`(원칙 3-6).
+- ✓ `text-body-m-regular`, `rounded-md`, `text-text`, 변형은 cva로 두고 `cn(tagVariants({ tone }), className)`(원칙 3-6).
 
 ### 18. div 버튼과 지운 포커스
 - 신호: `<div onClick>`, 단순 이동을 `router.push` 버튼으로 만든다. 아이콘 버튼에 `aria-label`이 없다. placeholder만 있는 입력, `outline-none`으로 지운 포커스 표시
