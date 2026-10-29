@@ -1,5 +1,8 @@
 "use client";
+import { Field, FieldCount, FieldFooter, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { Textarea } from "@/components/ui/textarea";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
@@ -26,7 +29,6 @@ import {
   ExpenseList,
   ExpenseRolePicker,
   expenseButtonClass,
-  expenseInputClass,
 } from "./ExpenseViews";
 export type ExpenseEntry = {
   expense?: Expense;
@@ -193,6 +195,9 @@ export function ExpenseEditor({
   const titleId = useId();
   const heading = useRef<HTMLHeadingElement>(null);
   const errorId = useId();
+  const nameId = useId();
+  const amountId = useId();
+  const memoId = useId();
   const places = useSchedulePlanPlaces(context.roomId, body.scheduleId);
   useEffect(() => {
     const element = dialog.current;
@@ -377,12 +382,12 @@ export function ExpenseEditor({
         </BottomSheetDragHandle>
         <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-8 py-6 [scrollbar-gutter:auto] mobile:px-5 mobile:pt-0">
         <fieldset disabled={pending} className="min-w-0 space-y-5 mobile:space-y-4">
-          <label className="block text-[12px] leading-4">
-            <span>제목 (선택)</span>
-            <input name="expense-title" aria-label="제목 (선택)" className={`${expenseInputClass} text-[16px] placeholder:text-text-subtle`} maxLength={100}
+          <Field>
+            <FieldLabel htmlFor={nameId}>제목 (선택)</FieldLabel>
+            <Input id={nameId} name="expense-title" aria-label="제목 (선택)" maxLength={100}
               placeholder="제목 없음"
               value={body.name ?? ""} onChange={(event) => change("name", event.target.value)} />
-          </label>
+          </Field>
           {/* 통화 이름이 숨는 조건(ExpenseCurrencyPicker의 mobile·max-sm)에서는 통화 칸을 코드 3글자 + ▼ 폭으로 줄여 금액 칸을 넓힌다 */}
           <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[96px_minmax(0,1fr)] max-sm:grid-cols-[96px_minmax(0,1fr)] mobile:gap-3 mobile:p-3">
             <ExpenseCurrencyPicker
@@ -394,15 +399,16 @@ export function ExpenseEditor({
                 change("currency", value);
               }}
             />
-            <label className="block min-w-0 text-[12px] leading-4 font-medium">
-              <span className="block text-[12px] leading-4 font-medium">금액</span>
+            <Field>
+              <FieldLabel htmlFor={amountId}>금액</FieldLabel>
               <ExpenseAmountInput
+                id={amountId}
                 value={body.totalAmount}
                 fractionDigits={currency?.fractionDigits}
                 onChange={(value) => change("totalAmount", value)}
                 placeholder={amountPlaceholder(currency)}
               />
-            </label>
+            </Field>
           </div>
           {!context.currencies.isSuccess && (
             <output className={context.currencies.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
@@ -511,19 +517,19 @@ export function ExpenseEditor({
           ) : (
             memberFallback
           )}
-          <label className="block text-[12px] leading-4 font-medium">
-            메모 (선택)
-            <textarea
-              className={`${expenseInputClass} min-h-24 resize-none text-[16px]`}
+          <Field>
+            <FieldLabel htmlFor={memoId}>메모 (선택)</FieldLabel>
+            <Textarea
+              id={memoId}
               rows={3}
               maxLength={1000}
               value={body.memo ?? ""}
               onChange={(e) => change("memo", e.target.value)}
             />
-            <span className="block text-right text-body-xs-regular text-dark-gray">
-              {body.memo?.length ?? 0}/1000
-            </span>
-          </label>
+            <FieldFooter>
+              <FieldCount>{body.memo?.length ?? 0}/1000</FieldCount>
+            </FieldFooter>
+          </Field>
         </fieldset>
         {!context.canManage && context.memberStatus === "success" && (
           <p role="alert">

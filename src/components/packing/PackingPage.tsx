@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { usePackingList } from "@/hooks/usePackingList";
 import { useSheetDrag } from "@/components/mobile/useSheetDrag";
 import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 import { SettingsDialog } from "@/components/settings/SettingsDialog";
 import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
+import { Field, FieldCount, FieldError, FieldFooter, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { SetSectionSideDetailWidth } from "@/contexts/SectionWidthContext";
 import { PACKING_DETAIL_WIDTH_PX } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
@@ -45,6 +48,8 @@ function NameDialog({editor,context,onClose}: {editor:Editor;context:Context;onC
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
   const [error,setError]=useState("");
   const [saving,setSaving]=useState(false);
+  const inputId=useId();
+  const errorId=useId();
   const kind=editor.kind.includes("Part") ? "part" : "item";
   const noun=kind==="part" ? "카테고리" : "준비물";
   const title=`${noun} ${editor.kind.startsWith("create") ? "추가" : "이름 수정"}`;
@@ -57,8 +62,8 @@ function NameDialog({editor,context,onClose}: {editor:Editor;context:Context;onC
     try {const result=await context.coordinator.execute(command);if(mounted.current && (result.kind==="missing" || (result.kind==="success" && latestValue.current===value))) onClose();} finally {if(mounted.current)setSaving(false);}
   }
   return <SettingsDialog title={title} onClose={onClose} size="compact" className={styles.dialog} overlayClassName={styles.dialogOverlay} showCloseButton={false}><form onSubmit={submit}>
-    <label className={styles.fieldLabel}>{noun} 이름<input aria-label={`${noun} 이름`} value={value} onChange={event=>{latestValue.current=event.target.value;setValue(event.target.value);setError("");}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={event=>{if(event.key==="Enter" && (composing.current || event.nativeEvent.isComposing || event.keyCode===229)) event.preventDefault();}} className={styles.field}/></label>
-    {error && <p role="alert" className={styles.error}>{error}</p>}
+    <Field><FieldLabel htmlFor={inputId}>{noun} 이름</FieldLabel><Input id={inputId} aria-label={`${noun} 이름`} aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} value={value} onChange={event=>{latestValue.current=event.target.value;setValue(event.target.value);setError("");}} onCompositionStart={()=>{composing.current=true;}} onCompositionEnd={()=>{composing.current=false;}} onKeyDown={event=>{if(event.key==="Enter" && (composing.current || event.nativeEvent.isComposing || event.keyCode===229)) event.preventDefault();}}/>
+    <FieldError id={errorId}>{error}</FieldError></Field>
     <div className={styles.dialogActions}><button type="button" className={actionButton} onClick={onClose}>취소</button><button type="submit" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} data-waiting={!saving && context.state.status==="writing"}>{editor.kind.startsWith("create") ? "추가" : "저장"}</button></div>
   </form></SettingsDialog>;
 }
@@ -82,6 +87,7 @@ function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Con
   const [value,setValue]=useState(item.memo?.content ?? "");
   const [saving,setSaving]=useState(false);
   const [error,setError]=useState("");
+  const errorId=useId();
   const latestValue=useRef(value);
   const mounted=useRef(true);
   const completionVersion=useRef(0);
@@ -113,11 +119,10 @@ function MemoPanel({item,context,open,onComplete}: {item:PackingItem;context:Con
   }
   return <section className={styles.memoPanel} aria-label="내 메모">
     <label htmlFor={`packing-memo-${item.id}`} className={styles.sectionTitle}>내 메모</label>
-    <textarea id={`packing-memo-${item.id}`} aria-label="준비물 메모" value={value}
+    <Field><Textarea id={`packing-memo-${item.id}`} aria-label="준비물 메모" aria-invalid={Boolean(error)} aria-describedby={error ? errorId : undefined} value={value}
       onChange={event=>{latestValue.current=event.target.value;setValue(event.target.value);setError("");}}
-      placeholder="준비물에 대한 메모를 남겨 주세요." maxLength={2000} rows={3} className={styles.memoField}/>
-    <div className={styles.memoFooter}>({value.length}/2000)</div>
-    {error && <p role="alert" className={styles.error}>{error}</p>}
+      placeholder="준비물에 대한 메모를 남겨 주세요." maxLength={2000} rows={3}/>
+    <FieldFooter><FieldError id={errorId}>{error}</FieldError><FieldCount>({value.length}/2000)</FieldCount></FieldFooter></Field>
     <div className={`${styles.dialogActions} ${styles.memoActions}`}>
       <button type="button" className={actionButton} onClick={cancel}>취소</button>
       <button type="button" className={`${actionButton} ${styles.primary}`} disabled={saving || context.state.status!=="ready"} data-waiting={!saving && context.state.status==="writing"} onClick={()=>void save()}>저장</button>

@@ -117,7 +117,8 @@ it.each(["memo", "amount", "unchanged"])("retains PENDING and rejects %s edits u
   if (edit === "memo") {
     await act(async () => renderer.root.findByType("textarea").props.onChange({ target: { value: "edited" } }));
   } else if (edit === "amount") {
-    await act(async () => renderer.root.findAllByType("input").find((i) => i.props.inputMode === "decimal")!.props.onChange({ target: { value: "200" } }));
+    // Base UI Input은 사용자 onChange 다음에 event.currentTarget.value를 읽는다
+    await act(async () => renderer.root.findAllByType("input").find((i) => i.props.inputMode === "decimal")!.props.onChange({ target: { value: "200" }, currentTarget: { value: "200" } }));
   }
   await submit();
   expect(mocks.save).not.toHaveBeenCalled();

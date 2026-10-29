@@ -30,8 +30,6 @@ import { UserAvatar } from "@/components/user/UserAvatar";
 
 export const expenseButtonClass =
   "min-h-10 rounded-lg border border-gray-border px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
-export const expenseInputClass =
-  "mt-1 min-h-12 w-full min-w-0 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-body-s-regular focus:outline-primary";
 // Group the integer string directly so large amounts and trailing decimals stay exact.
 import { formatExpenseAmount } from "@/lib/expenses/format-expense-amount";
 

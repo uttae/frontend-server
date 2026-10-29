@@ -5,6 +5,7 @@ import { MemoIcon } from "@/components/icons";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
@@ -224,17 +225,17 @@ export function PlanItemMemoEditor({
         </div>
 
         <div className={PLAN_PLACE_CARD_TW.editorBody}>
-          <textarea
+          <Textarea
             aria-label="일정 메모"
             value={draft}
             maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH}
-            rows={4}
             placeholder="여기에 메모를 작성하세요"
             disabled={isPending}
             onMouseDown={stopCardActivation}
             onClick={stopCardActivation}
             onChange={(e) => setDraft(e.target.value)}
-            className={cn(PLAN_PLACE_CARD_TW.memoTextarea, "select-text cursor-text")}
+            // 카드(article)의 select-none과 잡기·기본 커서를 물려받지 않게 글자 선택·글자 커서로 되돌린다
+            className="select-text cursor-text"
           />
           <div className={PLAN_PLACE_CARD_TW.editorFooterRow}>
             <span className="mr-auto text-caption-s-regular tabular-nums text-dark-gray/60">

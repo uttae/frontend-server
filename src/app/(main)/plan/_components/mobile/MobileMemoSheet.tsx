@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 
 const MEMO_MAX_LENGTH = 2000;
@@ -30,6 +32,8 @@ export function MobileMemoSheet({
   const [draft, setDraft] = useState(initial);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const memoId = useId();
+  const descriptionId = useId();
 
   // 시트가 열리면 바로 입력할 수 있게 포커스하고 커서를 기존 메모 끝에 둔다
   useEffect(() => {
@@ -60,24 +64,24 @@ export function MobileMemoSheet({
       variant="form"
       closeDisabled={isPending}
     >
-      <label className="flex flex-col gap-4">
-        <span className="text-label-m-regular text-text">메모</span>
-        <div className="h-36 rounded-[12px] bg-fill py-3 focus-within:ring-2 focus-within:ring-primary/30">
-          <textarea
-            ref={textareaRef}
-            value={draft}
-            maxLength={MEMO_MAX_LENGTH}
-            onChange={(e) => setDraft(e.target.value)}
-            disabled={isPending}
-            rows={5}
-            placeholder="메모를 입력하세요"
-            className="block size-full resize-none bg-transparent px-3 text-body-m-regular text-text outline-none [scrollbar-color:var(--color-border-default)_transparent] [scrollbar-width:thin] placeholder:text-text-subtle"
-          />
-        </div>
-      </label>
-      <p className="text-caption-l-regular text-text-subtle">
-        예약 정보나 함께 기억할 내용을 남겨보세요.
-      </p>
+      <Field>
+        <FieldLabel htmlFor={memoId}>메모</FieldLabel>
+        <Textarea
+          id={memoId}
+          ref={textareaRef}
+          value={draft}
+          maxLength={MEMO_MAX_LENGTH}
+          onChange={(e) => setDraft(e.target.value)}
+          disabled={isPending}
+          rows={5}
+          placeholder="메모를 입력하세요"
+          aria-describedby={descriptionId}
+          className="h-36"
+        />
+        <FieldDescription id={descriptionId}>
+          예약 정보나 함께 기억할 내용을 남겨보세요.
+        </FieldDescription>
+      </Field>
       <div className="flex gap-2">
         {hasMemo ? (
           <button

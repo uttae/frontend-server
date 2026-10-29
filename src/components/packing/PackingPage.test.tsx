@@ -20,6 +20,8 @@ async function mount(){await act(async()=>{renderer=create(<PackingPage/>);});}
 function button(label:string){const scope=renderer.root.findAllByType('dialog').at(-1) ?? renderer.root;return scope.findAllByType('button').find(node=>node.props['aria-label']===label || node.children.join('')===label)!;}
 async function selectFirstItem(){await act(async()=>button('준비물 선택: 여권').props.onClick());}
 function input(label:string){return renderer.root.findAllByType('input').find(node=>node.props['aria-label']===label)!;}
+// Base UI Input은 사용자 핸들러 다음에 event.currentTarget을 읽는다(onChange는 value, Enter onKeyDown은 tagName·value·form)
+function changeEvent(value:string){const element={value};return {target:element,currentTarget:element};}
 it('starts on the full board without selecting an item or showing detail controls', async () => {
   await mount();
   expect(renderer.root.findByProps({'aria-label':'준비물 상세'}).props.hidden).toBe(true);
@@ -55,35 +57,35 @@ it('renders added categories after the four defaults even when they share backen
 });
 it('selects an item and shows only its server supplied tips',async()=>{await mount();await selectFirstItem();expect(JSON.stringify(renderer.toJSON())).toContain('유효기간을 확인하세요.');expect(JSON.stringify(renderer.toJSON())).toContain('사본을 준비하세요.');await act(async()=>button('준비물 선택: 항공권 예약 내역').props.onClick());expect(JSON.stringify(renderer.toJSON())).not.toContain('유효기간을 확인하세요.');expect(JSON.stringify(renderer.toJSON())).not.toContain('우때의 여행 팁');});
 it('keeps checkbox independent from item selection',async()=>{await mount();await selectFirstItem();await act(async()=>input('항공권 예약 내역 준비 완료').props.onChange({target:{checked:false}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'checkItem',id:12,checked:false});expect(renderer.root.findByProps({'aria-label':'선택한 준비물 이름'}).children.join('')).toBe('여권');});
-it('opens the category menu and sends validated create and rename commands',async()=>{await mount();await act(async()=>button('카테고리 메뉴: 여권·예약·결제').props.onClick());await act(async()=>button('카테고리 이름 수정').props.onClick());await act(async()=>input('카테고리 이름').props.onChange({target:{value:'새 카테고리'}}));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'renamePart',id:1,name:'새 카테고리'});});
+it('opens the category menu and sends validated create and rename commands',async()=>{await mount();await act(async()=>button('카테고리 메뉴: 여권·예약·결제').props.onClick());await act(async()=>button('카테고리 이름 수정').props.onClick());await act(async()=>input('카테고리 이름').props.onChange(changeEvent('새 카테고리')));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'renamePart',id:1,name:'새 카테고리'});});
 it('closes a category menu with Escape',async()=>{await mount();const trigger=button('카테고리 메뉴: 여권·예약·결제');await act(async()=>trigger.props.onClick());const menu=renderer.root.findByProps({role:'menu'});await act(async()=>menu.props.onKeyDown({key:'Escape',preventDefault(){},stopPropagation(){}}));expect(renderer.root.findAllByProps({role:'menu'})).toHaveLength(0);});
-it('opens an item add dialog for the selected category',async()=>{await mount();await act(async()=>button('준비물 추가: 여권·예약·결제').props.onClick());await act(async()=>input('준비물 이름').props.onChange({target:{value:'비상 연락처'}}));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'createItem',partId:1,name:'비상 연락처'});});
-it('creates a category without replacing the existing list',async()=>{await mount();await act(async()=>button('카테고리 추가').props.onClick());await act(async()=>input('카테고리 이름').props.onChange({target:{value:'추가 준비'}}));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'createPart',name:'추가 준비'});expect(state.data!.parts).toHaveLength(4);});
-it('retains a failed name draft and clears it on scope change',async()=>{coordinator.execute.mockResolvedValue({kind:'error'});await mount();await act(async()=>button('카테고리 추가').props.onClick());await act(async()=>input('카테고리 이름').props.onChange({target:{value:'개인용'}}));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(input('카테고리 이름').props.value).toBe('개인용');mocks.context={state,coordinator,scopeKey:'other:user'};await act(async()=>renderer.update(<PackingPage/>));expect(renderer.root.findAllByProps({'aria-label':'카테고리 이름'})).toHaveLength(0);});
+it('opens an item add dialog for the selected category',async()=>{await mount();await act(async()=>button('준비물 추가: 여권·예약·결제').props.onClick());await act(async()=>input('준비물 이름').props.onChange(changeEvent('비상 연락처')));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'createItem',partId:1,name:'비상 연락처'});});
+it('creates a category without replacing the existing list',async()=>{await mount();await act(async()=>button('카테고리 추가').props.onClick());await act(async()=>input('카테고리 이름').props.onChange(changeEvent('추가 준비')));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(coordinator.execute).toHaveBeenCalledWith({type:'createPart',name:'추가 준비'});expect(state.data!.parts).toHaveLength(4);});
+it('retains a failed name draft and clears it on scope change',async()=>{coordinator.execute.mockResolvedValue({kind:'error'});await mount();await act(async()=>button('카테고리 추가').props.onClick());await act(async()=>input('카테고리 이름').props.onChange(changeEvent('개인용')));await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));expect(input('카테고리 이름').props.value).toBe('개인용');mocks.context={state,coordinator,scopeKey:'other:user'};await act(async()=>renderer.update(<PackingPage/>));expect(renderer.root.findAllByProps({'aria-label':'카테고리 이름'})).toHaveLength(0);});
 it('does not submit a Korean name while IME composition is active',async()=>{
   await mount();await act(async()=>button('카테고리 추가').props.onClick());
-  const name=input('카테고리 이름');await act(async()=>name.props.onChange({target:{value:'여권'}}));
+  const name=input('카테고리 이름');await act(async()=>name.props.onChange(changeEvent('여권')));
   name.props.onCompositionStart();
-  const preventDefault=vi.fn();name.props.onKeyDown({key:'Enter',nativeEvent:{isComposing:false},keyCode:229,preventDefault});
+  const preventDefault=vi.fn();name.props.onKeyDown({key:'Enter',nativeEvent:{isComposing:false},keyCode:229,preventDefault,currentTarget:{tagName:'INPUT',value:'여권',form:null}});
   expect(preventDefault).toHaveBeenCalledOnce();
   await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));
   expect(coordinator.execute).not.toHaveBeenCalled();
 });
 it('rejects an overlong raw name and permits a duplicate after correction',async()=>{
   await mount();await act(async()=>button('준비물 추가: 여권·예약·결제').props.onClick());
-  await act(async()=>input('준비물 이름').props.onChange({target:{value:' '.repeat(100)+'x'}}));
+  await act(async()=>input('준비물 이름').props.onChange(changeEvent(' '.repeat(100)+'x')));
   await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));
   expect(coordinator.execute).not.toHaveBeenCalled();expect(renderer.root.findAllByProps({role:'alert'})).toHaveLength(1);
-  await act(async()=>input('준비물 이름').props.onChange({target:{value:'여권'}}));
+  await act(async()=>input('준비물 이름').props.onChange(changeEvent('여권')));
   await act(async()=>renderer.root.findByType('form').props.onSubmit({preventDefault(){}}));
   expect(coordinator.execute).toHaveBeenCalledWith({type:'createItem',partId:1,name:'여권'});
 });
 it('keeps later name edits when an earlier save succeeds',async()=>{
   let finish!:(value:{kind:string})=>void;coordinator.execute.mockReturnValue(new Promise(resolve=>{finish=resolve;}));await mount();await selectFirstItem();
   await act(async()=>button('준비물 이름 수정: 여권').props.onClick());
-  await act(async()=>input('준비물 이름').props.onChange({target:{value:'첫 번째 이름'}}));
+  await act(async()=>input('준비물 이름').props.onChange(changeEvent('첫 번째 이름')));
   let pending!:Promise<void>;act(()=>{pending=renderer.root.findByType('form').props.onSubmit({preventDefault(){}});});
-  await act(async()=>input('준비물 이름').props.onChange({target:{value:'두 번째 이름'}}));
+  await act(async()=>input('준비물 이름').props.onChange(changeEvent('두 번째 이름')));
   await act(async()=>{finish({kind:'success'});await pending;});
   expect(input('준비물 이름').props.value).toBe('두 번째 이름');
 });
@@ -93,7 +95,7 @@ it('does not close a reopened name dialog when an old save resolves',async()=>{
   let pending!:Promise<void>;act(()=>{pending=renderer.root.findByType('form').props.onSubmit({preventDefault(){}});});
   await act(async()=>button('취소').props.onClick());
   await act(async()=>button('준비물 이름 수정: 여권').props.onClick());
-  await act(async()=>input('준비물 이름').props.onChange({target:{value:'새 초안'}}));
+  await act(async()=>input('준비물 이름').props.onChange(changeEvent('새 초안')));
   await act(async()=>{finish({kind:'success'});await pending;});
   expect(input('준비물 이름').props.value).toBe('새 초안');
 });

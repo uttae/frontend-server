@@ -6,6 +6,8 @@ import { CloseIcon } from "@/assets/icons";
 import { DateRangeField } from "@/components/date-picker/DateRangeField";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
 import { chipVariants } from "@/components/ui/chip";
+import { Field as TextField, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   isTripScheduleDayLimitExceeded,
   TRIP_SCHEDULE_DAY_LIMIT_MESSAGE,
@@ -37,13 +39,12 @@ type Props = {
   onEndDateChange: (value: string) => void;
 };
 
-function Field({ label, htmlFor, className, children }: Readonly<{ label: string; htmlFor?: string; className?: string; children: ReactNode }>) {
-  const LabelTag = htmlFor ? "label" : "p";
+function Field({ label, className, children }: Readonly<{ label: string; className?: string; children: ReactNode }>) {
   return (
     <div className={cn("flex min-w-0 flex-col gap-1", className)}>
-      <LabelTag {...(htmlFor ? { htmlFor } : {})} className="text-label-xs-regular text-text">
+      <p className="text-label-xs-regular text-text">
         {label}
-      </LabelTag>
+      </p>
       {children}
     </div>
   );
@@ -110,17 +111,17 @@ export function RoomTripEditFields({
 
   return (
     <div className="flex min-w-0 flex-col gap-6">
-      <Field label="여행 제목" htmlFor={`${idPrefix}-title`}>
-        <input
+      <TextField>
+        <FieldLabel htmlFor={`${idPrefix}-title`}>여행 제목</FieldLabel>
+        <Input
           id={`${idPrefix}-title`}
           type="text"
           value={title}
           maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
           onChange={(event) => onTitleChange(event.target.value.slice(0, ROOM_TRIP_TITLE_MAX_LENGTH))}
           placeholder="예: 봄 일본 여행, 하와이 신혼여행"
-          className={cn(FIELD_BOX_CLASS, "outline-none placeholder:text-text-disabled focus:border-primary")}
         />
-      </Field>
+      </TextField>
 
       <Field label="목적지">
         {destinationsFull ? (

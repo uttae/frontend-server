@@ -10,7 +10,7 @@
 }
 .page button:enabled,.dialogActions button:enabled {cursor:pointer}
 .page button:disabled,.dialogActions button:disabled {cursor:not-allowed;opacity:0.5}
-.page button:focus-visible,.page textarea:focus-visible,.page input:focus-visible,.dialog button:focus-visible,.dialog input:focus-visible {outline:2px solid var(--color-primary-default);outline-offset:2px}
+.page button:focus-visible,.dialog button:focus-visible {outline:2px solid var(--color-primary-default);outline-offset:2px}
 .icon {position:relative;display:inline-block;flex:none;vertical-align:middle;pointer-events:none}
 .icon img {display:block;max-width:none;transform-origin:top left}
 .boardPane {flex:1;min-width:0;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--color-border-default) transparent}
@@ -65,9 +65,6 @@
 .collapseDetail:hover {background:var(--color-icon-default)}
 .memoPanel {min-width:0}
 .sectionTitle {display:block;margin:0 0 12px;font-size:14px;line-height:20px;font-weight:700}
-.memoField {display:block;width:100%;height:96px;min-height:96px;resize:none;border:1px solid var(--color-border-default);border-radius:8px;background:var(--color-fill-subtle);padding:12px 14px;font-size:16px;line-height:24px;overflow-wrap:anywhere}
-.memoField::placeholder {color:var(--color-text-subtle)}
-.memoFooter {height:16px;margin-top:4px;text-align:right;color:var(--color-text-subtle);font-size:11px;line-height:16px}
 .dialogActions {display:flex;justify-content:flex-end;gap:8px;margin-top:24px}
 .actionButton {display:inline-flex;align-items:center;justify-content:center;min-width:80px;height:36px;border:1px solid var(--color-border-default);border-radius:8px;background:var(--color-fill-subtle);padding:8px 16px;color:var(--color-text-default);font-size:14px;line-height:20px;font-weight:700;white-space:nowrap}
 /* 다른 항목의 저장을 기다리는 잠금은 버튼의 명도를 바꾸지 않는다. */
@@ -83,9 +80,6 @@
 .tipCard h4 {margin-bottom:16px;font-weight:700;overflow-wrap:anywhere}
 .tipCard ul {display:flex;flex-direction:column;gap:16px;margin:0;padding:0;list-style:none}
 .tipCard li {color:var(--color-text-subtle);overflow-wrap:anywhere}
-.fieldLabel {display:block;font-size:12px;line-height:16px;font-weight:500}
-.field {display:block;width:100%;height:48px;margin-top:4px;border:1px solid var(--color-border-default);border-radius:8px;background:var(--color-fill-subtle);padding:12px 14px;font-size:16px;line-height:24px;font-weight:400}
-.error {margin-top:8px;color:var(--color-status-negative);font-size:12px;line-height:18px}
 .deleteCopy {margin:0;color:var(--color-text-subtle);font-size:16px;line-height:24px;overflow-wrap:anywhere}
 .dialogOverlay {padding:20px;background:#00000059;backdrop-filter:none}
 .dialog {max-width:448px;border-radius:12px;background:var(--color-fill-elevate, #fff);padding:32px;color:var(--color-text-default);letter-spacing:-0.02em;scrollbar-gutter:auto;box-shadow:0 4px 8px #0000001f}

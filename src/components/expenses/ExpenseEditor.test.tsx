@@ -45,11 +45,17 @@ function stubLocalStorage() {
   return entries;
 }
 
+// Base UI Input은 사용자 onChange 다음에 event.currentTarget.value를 읽는다
+function changeEvent(value: string) {
+  const element = { value };
+  return { target: element, currentTarget: element };
+}
+
 async function completeNewExpense() {
   const amount = renderer.root.findAllByType("input")
     .find((input) => input.props.inputMode === "decimal")!;
   const currency = renderer.root.findByType(ExpenseCurrencyPicker).props.value;
-  await act(async () => amount.props.onChange({ target: { value: currency === "USD" ? "100.00" : "100" } }));
+  await act(async () => amount.props.onChange(changeEvent(currency === "USD" ? "100.00" : "100")));
   await act(async () => categorySelect().props.onChange("OTHER"));
   await act(async () => renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }));
 }
@@ -202,7 +208,7 @@ it("formats typed amounts without changing exact submitted decimals", async () =
     .findAllByType("input")
     .find((i) => i.props.inputMode === "decimal")!;
   await act(async () =>
-    amount.props.onChange({ target: { value: "999,999,999,999,999.99" } }),
+    amount.props.onChange(changeEvent("999,999,999,999,999.99")),
   );
   expect(amount.props.value).toBe("999,999,999,999,999.99");
   await act(async () =>
@@ -361,14 +367,14 @@ it("blocks wrong currency scale without truncating and guards rapid duplicate su
     .findAllByType("input")
     .find((i) => i.props.inputMode === "decimal")!;
   await act(async () =>
-    amount.props.onChange({ target: { value: "10.001" } }),
+    amount.props.onChange(changeEvent("10.001")),
   );
   await act(async () =>
     renderer.root.findByType("form").props.onSubmit({ preventDefault() {} }),
   );
   expect(mocks.save).not.toHaveBeenCalled();
   await act(async () =>
-    amount.props.onChange({ target: { value: "10.01" } }),
+    amount.props.onChange(changeEvent("10.01")),
   );
   let finish!: () => void;
   mocks.save.mockImplementation(
@@ -418,7 +424,7 @@ it.each([
       .findAllByType("input")
       .find((i) => i.props.inputMode === "decimal")!;
     await act(async () =>
-      amount.props.onChange({ target: { value: "100" } }),
+      amount.props.onChange(changeEvent("100")),
     );
     for (const checkbox of renderer.root
       .findAllByType("input")
@@ -497,7 +503,7 @@ async function fillNewExpense() {
   const amount = renderer.root
     .findAllByType("input")
     .find((i) => i.props.inputMode === "decimal")!;
-  await act(async () => amount.props.onChange({ target: { value: "100" } }));
+  await act(async () => amount.props.onChange(changeEvent("100")));
   for (const checkbox of renderer.root
     .findAllByType("input")
     .filter((i) => i.props.type === "checkbox" && !i.props.checked)) {

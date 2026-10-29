@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Field, FieldHeader, FieldLabel, FieldSuffix } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import type { BookmarkFolder } from "@/types/bookmark";
 import { UNTITLED_BOOKMARK_CATEGORY_LABEL } from "@/lib/bookmark-untitled-category-name";
 
@@ -102,23 +104,14 @@ export function AddBookmarkModal({
         ) : null}
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-5">
-          <div>
-            <div className="mb-1.5 flex items-baseline justify-between gap-2">
-              <label
-                htmlFor="bookmark-title"
-                className="block text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900"
-              >
-                제목
-              </label>
-              <span
-                id="bookmark-title-counter"
-                className="shrink-0 text-body-s-regular mobile:text-body-xs-regular tabular-nums text-dark-gray"
-                aria-live="polite"
-              >
+          <Field>
+            <FieldHeader>
+              <FieldLabel htmlFor="bookmark-title">제목</FieldLabel>
+              <FieldSuffix id="bookmark-title-counter" aria-live="polite">
                 {title.length}/{TITLE_MAX_LENGTH}
-              </span>
-            </div>
-            <input
+              </FieldSuffix>
+            </FieldHeader>
+            <Input
               id="bookmark-title"
               type="text"
               value={title}
@@ -126,9 +119,8 @@ export function AddBookmarkModal({
               maxLength={TITLE_MAX_LENGTH}
               placeholder={untitledNameHint ?? UNTITLED_BOOKMARK_CATEGORY_LABEL}
               aria-describedby="bookmark-title-counter"
-              className="w-full rounded-xl border border-gray-border px-3 py-2.5 text-body-m-regular outline-none ring-primary/30 focus:border-primary focus:ring-2"
             />
-          </div>
+          </Field>
 
           <div>
             <span className="mb-2 block text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-neutral-900">

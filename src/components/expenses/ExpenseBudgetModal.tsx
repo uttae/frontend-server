@@ -1,4 +1,5 @@
 "use client";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 
 import { useCallback, useId, useRef, useState } from "react";
@@ -29,7 +30,9 @@ export function ExpenseBudgetModal({
   const [opened] = useState(initial);
   const [draft, setDraft] = useState(initial.budgetKrw ?? "");
   const [version, setVersion] = useState(initial.version);
+  // 저장 실패(네트워크·충돌·서버 메시지)는 칸 밖 문장으로, 입력 검증 오류만 칸의 Error 상태로 그린다
   const [error, setError] = useState("");
+  const [fieldError, setFieldError] = useState("");
   const [pending, setPending] = useState(false);
   const [conflict, setConflict] = useState<{
     latest?: ExpenseBudget;
@@ -38,6 +41,7 @@ export function ExpenseBudgetModal({
   const lock = useRef(false);
   const inputId = useId();
   const errorId = useId();
+  const fieldErrorId = useId();
   // Stable callback keeps the shared dialog's focus scope intact while typing.
   const close = useCallback(() => {
     if (!lock.current) onClose();
@@ -66,7 +70,7 @@ export function ExpenseBudgetModal({
     if (lock.current || context.budgetBusy || !context.canManage || conflict)
       return;
     if (!/^\d{1,15}$/.test(draft)) {
-      setError(
+      setFieldError(
         "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.",
       );
       return;
@@ -107,10 +111,10 @@ export function ExpenseBudgetModal({
         }}
       >
         <p className="sr-only">여행 전체의 예산을 설정해 주세요.</p>
-        <div>
-          <label htmlFor={inputId} className="text-[12px] leading-4 font-medium">
+        <Field>
+          <FieldLabel htmlFor={inputId}>
             예산 (KRW)
-          </label>
+          </FieldLabel>
           <ExpenseAmountInput
             id={inputId}
             type="text"
@@ -118,14 +122,16 @@ export function ExpenseBudgetModal({
             autoComplete="off"
             value={draft}
             disabled={busy}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : undefined}
+            aria-invalid={Boolean(fieldError)}
+            aria-describedby={fieldError ? fieldErrorId : error ? errorId : undefined}
             onChange={(value) => {
               setDraft(value);
               setError("");
+              setFieldError("");
             }}
           />
-        </div>
+          <FieldError id={fieldErrorId}>{fieldError}</FieldError>
+        </Field>
         {error && (
           <p
             id={errorId}
