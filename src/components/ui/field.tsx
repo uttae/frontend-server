@@ -1,238 +1,111 @@
-"use client"
+import type { ComponentProps } from "react";
 
-import { useMemo } from "react"
-import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+// Figma 02 Text Field: Text Field Base 5002:4415·Textarea Field Base 5002:4424(Header·입력·Footer 세로 간격 4), Header 5002:4449, Footer 5002:4440
+// 오류 라벨·보조 문구·카운트의 status/negative/strong(#c10000)은 시맨틱 토큰이 없어 원시 변수 --red-800을 쓴다
 
-function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
-  return (
-    <fieldset
-      data-slot="field-set"
-      className={cn(
-        "flex flex-col gap-4 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function FieldLegend({
-  className,
-  variant = "legend",
-  ...props
-}: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
-  return (
-    <legend
-      data-slot="field-legend"
-      data-variant={variant}
-      className={cn(
-        "mb-1.5 font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
+// shadcn의 role="group"은 두지 않는다. 입력 하나와 라벨을 묶는 배치용 div라(Base UI Field.Root도 role 없는 div) 이름 없는 그룹만 한 겹 더 읽힌다
+function Field({ className, ...props }: Readonly<ComponentProps<"div">>) {
   return (
     <div
-      data-slot="field-group"
-      className={cn(
-        "group/field-group @container/field-group flex w-full flex-col gap-5 data-[slot=checkbox-group]:gap-3 *:data-[slot=field-group]:gap-4",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-const fieldVariants = cva(
-  "group/field flex w-full gap-2 data-[invalid=true]:text-destructive",
-  {
-    variants: {
-      orientation: {
-        vertical: "flex-col *:w-full [&>.sr-only]:w-auto",
-        horizontal:
-          "flex-row items-center has-[>[data-slot=field-content]]:items-start *:data-[slot=field-label]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
-        responsive:
-          "flex-col *:w-full @md/field-group:flex-row @md/field-group:items-center @md/field-group:*:w-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:*:data-[slot=field-label]:flex-auto [&>.sr-only]:w-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px",
-      },
-    },
-    defaultVariants: {
-      orientation: "vertical",
-    },
-  }
-)
-
-function Field({
-  className,
-  orientation = "vertical",
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
-  return (
-    <div
-      role="group"
       data-slot="field"
-      data-orientation={orientation}
-      className={cn(fieldVariants({ orientation }), className)}
+      className={cn("group/field flex w-full min-w-0 flex-col gap-1", className)}
       {...props}
     />
-  )
+  );
 }
 
-function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
+// Label 프레임 Fill + Suffix Slot Hug, 간격 30
+function FieldHeader({ className, ...props }: Readonly<ComponentProps<"div">>) {
   return (
     <div
-      data-slot="field-content"
+      data-slot="field-header"
       className={cn(
-        "group/field-content flex flex-1 flex-col gap-0.5 leading-snug",
-        className
+        "flex items-center gap-7.5 *:data-[slot=field-label]:min-w-0 *:data-[slot=field-label]:flex-1",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-function FieldLabel({
-  className,
-  ...props
-}: React.ComponentProps<typeof Label>) {
+function FieldLabel({ className, ...props }: Readonly<ComponentProps<typeof Label>>) {
   return (
     <Label
       data-slot="field-label"
       className={cn(
-        "group/field-label peer/field-label flex w-fit gap-2 leading-snug group-data-[disabled=true]/field:opacity-50 has-data-checked:border-primary/30 has-data-checked:bg-primary/5 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border has-[>[data-slot=field]]:not-has-[:disabled,[data-disabled]]:hover:bg-muted/50 has-[>[data-slot=field]]:has-[:focus-visible]:border-ring has-[>[data-slot=field]]:has-[:focus-visible]:ring-3 has-[>[data-slot=field]]:has-[:focus-visible]:ring-ring/50 *:data-[slot=field]:p-2.5 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10",
-        "has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col",
-        className
+        // 비활성·읽기 전용은 입력(input·textarea)에서만 읽는다. 같은 Field 안 버튼이 비활성이어도 라벨은 그대로다
+        // 겹치면 오류 > 비활성 > 읽기 전용: 저장 중 비활성이 돼도 오류 표시를 남긴다
+        "group-has-[[aria-invalid=true]]/field:text-[var(--red-800)] group-has-[:is(input,textarea):disabled:not([aria-invalid=true])]/field:text-text-disabled group-has-[:is(input,textarea)[readonly]:enabled:not([aria-invalid=true])]/field:text-text-subtle",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
+function FieldSuffix({ className, ...props }: Readonly<ComponentProps<"span">>) {
   return (
-    <div
-      data-slot="field-label"
-      className={cn(
-        "flex w-fit items-center gap-2 text-sm font-medium group-data-[disabled=true]/field:opacity-50",
-        className
-      )}
+    <span
+      data-slot="field-suffix"
+      className={cn("shrink-0 text-caption-s-regular text-text-subtle", className)}
       {...props}
     />
-  )
+  );
 }
 
-function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
+function FieldFooter({ className, ...props }: Readonly<ComponentProps<"div">>) {
+  return <div data-slot="field-footer" className={cn("flex items-center", className)} {...props} />;
+}
+
+function FieldDescription({ className, ...props }: Readonly<ComponentProps<"p">>) {
   return (
     <p
       data-slot="field-description"
+      className={cn("min-w-0 text-caption-s-regular text-text-subtle", className)}
+      {...props}
+    />
+  );
+}
+
+// Figma Error 상태의 Helper Text
+function FieldError({ className, children, ...props }: Readonly<ComponentProps<"p">>) {
+  if (!children) return null;
+  return (
+    <p
+      role="alert"
+      data-slot="field-error"
+      className={cn("min-w-0 text-caption-s-regular text-[var(--red-800)]", className)}
+      {...props}
+    >
+      {children}
+    </p>
+  );
+}
+
+// Helper Text 없이 카운트만 있어도 오른쪽 끝에 붙도록 Footer의 space-between 대신 ms-auto로 민다
+function FieldCount({ className, ...props }: Readonly<ComponentProps<"span">>) {
+  return (
+    <span
+      data-slot="field-count"
       className={cn(
-        "text-left text-sm leading-normal font-normal text-muted-foreground group-has-data-horizontal/field:text-balance [[data-variant=legend]+&]:-mt-1.5",
-        "last:mt-0 nth-last-2:-mt-1",
-        "[&>a]:underline [&>a]:underline-offset-4 [&>a:hover]:text-primary",
-        className
+        "ms-auto shrink-0 text-caption-s-regular text-text-subtle group-has-[[aria-invalid=true]]/field:text-[var(--red-800)]",
+        className,
       )}
       {...props}
     />
-  )
-}
-
-function FieldSeparator({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<"div"> & {
-  children?: React.ReactNode
-}) {
-  return (
-    <div
-      data-slot="field-separator"
-      data-content={!!children}
-      className={cn(
-        "relative -my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2",
-        className
-      )}
-      {...props}
-    >
-      <Separator className="absolute inset-0 top-1/2" />
-      {children && (
-        <span
-          className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
-          data-slot="field-separator-content"
-        >
-          {children}
-        </span>
-      )}
-    </div>
-  )
-}
-
-function FieldError({
-  className,
-  children,
-  errors,
-  ...props
-}: React.ComponentProps<"div"> & {
-  errors?: Array<{ message?: string } | undefined>
-}) {
-  const content = useMemo(() => {
-    if (children) {
-      return children
-    }
-
-    if (!errors?.length) {
-      return null
-    }
-
-    const uniqueErrors = [
-      ...new Map(errors.map((error) => [error?.message, error])).values(),
-    ]
-
-    if (uniqueErrors?.length == 1) {
-      return uniqueErrors[0]?.message
-    }
-
-    return (
-      <ul className="ml-4 flex list-disc flex-col gap-1">
-        {uniqueErrors.map(
-          (error, index) =>
-            error?.message && <li key={index}>{error.message}</li>
-        )}
-      </ul>
-    )
-  }, [children, errors])
-
-  if (!content) {
-    return null
-  }
-
-  return (
-    <div
-      role="alert"
-      data-slot="field-error"
-      className={cn("text-sm font-normal text-destructive", className)}
-      {...props}
-    >
-      {content}
-    </div>
-  )
+  );
 }
 
 export {
   Field,
+  FieldHeader,
   FieldLabel,
+  FieldSuffix,
+  FieldFooter,
   FieldDescription,
   FieldError,
-  FieldGroup,
-  FieldLegend,
-  FieldSeparator,
-  FieldSet,
-  FieldContent,
-  FieldTitle,
-}
+  FieldCount,
+};
