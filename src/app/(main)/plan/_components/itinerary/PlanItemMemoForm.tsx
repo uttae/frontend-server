@@ -227,6 +227,7 @@ export function PlanItemMemoEditor({
         <div className={PLAN_PLACE_CARD_TW.editorBody}>
           <Textarea
             aria-label="일정 메모"
+            sizing="content"
             value={draft}
             maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH}
             placeholder="여기에 메모를 작성하세요"
