@@ -5,6 +5,7 @@ import type {
   CreateScheduleItemResponse,
   RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
+import type { PlanPlace } from "@/lib/plan/types";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 
 const mocks = vi.hoisted(() => ({
@@ -61,6 +62,7 @@ vi.mock("@/stores/plan-map-directions-epoch-store", () => ({
 }));
 
 let createScheduleItemAtPlanIndex: typeof import("@/lib/plan/scheduleItemPlaces").createScheduleItemAtPlanIndex;
+let applyCreatedScheduleItemToPlanPlaces: typeof import("@/lib/plan/scheduleItemPlaces").applyCreatedScheduleItemToPlanPlaces;
 let syncAfterCrossScheduleItemMove: typeof import("@/lib/plan/scheduleItemPlaces").syncAfterCrossScheduleItemMove;
 
 beforeAll(async () => {
@@ -69,8 +71,11 @@ beforeAll(async () => {
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
 
-  ({ createScheduleItemAtPlanIndex, syncAfterCrossScheduleItemMove } =
-    await import("@/lib/plan/scheduleItemPlaces"));
+  ({
+    createScheduleItemAtPlanIndex,
+    applyCreatedScheduleItemToPlanPlaces,
+    syncAfterCrossScheduleItemMove,
+  } = await import("@/lib/plan/scheduleItemPlaces"));
 });
 
 const scheduleItem = (itemId: number, orderIndex: number): RoomScheduleItem => ({
@@ -97,28 +102,45 @@ describe("createScheduleItemAtPlanIndex", () => {
     );
   });
 
-  it("invalidates the route IDs returned by the create response", async () => {
-    const queryClient = new QueryClient();
-    const response: CreateScheduleItemResponse = {
-      createdItem: scheduleItem(3, 1),
-      updatedItems: [scheduleItem(2, 2)],
-      affectedRouteItemIds: [777],
-    };
+  const response: CreateScheduleItemResponse = {
+    createdItem: scheduleItem(3, 1),
+    updatedItems: [scheduleItem(2, 2)],
+    affectedRouteItemIds: [777],
+  };
+  const places = [
+    { id: "item-1", itemId: 1, googlePlaceId: "place-1", title: "One" },
+    { id: "item-2", itemId: 2, googlePlaceId: "place-2", title: "Two" },
+  ];
+
+  it("sends the dropped position as the server order index", async () => {
     mocks.createScheduleItem.mockResolvedValue(response);
-    const places = [
-      { id: "item-1", itemId: 1, googlePlaceId: "place-1", title: "One" },
-      { id: "item-2", itemId: 2, googlePlaceId: "place-2", title: "Two" },
-    ];
-    queryClient.setQueryData(scheduleItemsQueryKey("room-1", 10), places);
 
-    await createScheduleItemAtPlanIndex(queryClient, {
-      roomId: "room-1",
-      scheduleId: 10,
-      places,
-      insertIndex: 1,
+    await expect(
+      createScheduleItemAtPlanIndex({
+        roomId: " room-1 ",
+        scheduleId: 10,
+        places,
+        insertIndex: 5,
+        googlePlaceId: "place-3",
+      }),
+    ).resolves.toBe(response);
+
+    expect(mocks.createScheduleItem).toHaveBeenCalledWith("room-1", 10, {
       googlePlaceId: "place-3",
+      orderIndex: 2,
     });
+  });
 
+  it("merges the create response and invalidates only the route IDs it returns", async () => {
+    const queryClient = new QueryClient();
+    const key = scheduleItemsQueryKey("room-1", 10);
+    queryClient.setQueryData(key, places);
+
+    await applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response);
+
+    expect(
+      queryClient.getQueryData<PlanPlace[]>(key)?.map((place) => place.itemId),
+    ).toEqual([1, 3, 2]);
     expect(
       mocks.invalidateScheduleItemRoutesAfterItemCreated,
     ).not.toHaveBeenCalled();
@@ -135,35 +157,17 @@ describe("createScheduleItemAtPlanIndex", () => {
     );
   });
 
-  it("returns the created item when post-create route synchronization fails", async () => {
+  it("does not fail the saved create when post-create route synchronization fails", async () => {
     const queryClient = new QueryClient();
-    const response: CreateScheduleItemResponse = {
-      createdItem: scheduleItem(3, 1),
-      updatedItems: [scheduleItem(2, 2)],
-      affectedRouteItemIds: [777],
-    };
-    mocks.createScheduleItem.mockResolvedValue(response);
     mocks.invalidateScheduleItemRouteForSources.mockRejectedValueOnce(
       new Error("route sync failed"),
     );
-    const places = [
-      { id: "item-1", itemId: 1, googlePlaceId: "place-1", title: "One" },
-      { id: "item-2", itemId: 2, googlePlaceId: "place-2", title: "Two" },
-    ];
-    const key = scheduleItemsQueryKey("room-1", 10);
-    queryClient.setQueryData(key, places);
+    queryClient.setQueryData(scheduleItemsQueryKey("room-1", 10), places);
 
     await expect(
-      createScheduleItemAtPlanIndex(queryClient, {
-        roomId: "room-1",
-        scheduleId: 10,
-        places,
-        insertIndex: 1,
-        googlePlaceId: "place-3",
-      }),
-    ).resolves.toEqual(response.createdItem);
+      applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response),
+    ).resolves.toBeUndefined();
 
-    expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
     expect(
       mocks.invalidateScheduleItemRouteForWholeSchedule,
     ).toHaveBeenCalledWith(queryClient, "room-1", 10);

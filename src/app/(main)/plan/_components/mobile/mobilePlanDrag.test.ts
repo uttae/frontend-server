@@ -25,9 +25,14 @@ describe("applyPendingPlanMove", () => {
   });
 
   it("같은 일차 순서 변경은 그 일차에만 새 순서를 적용한다", () => {
-    const pending = { kind: "reorder" as const, scheduleId: 1, order: ["item-3", "item-1", "item-2"] };
+    const pending = { kind: "reorder" as const, scheduleId: 1, itemId: 3, newOrderIndex: 0 };
     expect(ids(applyPendingPlanMove(1, day1, pending))).toEqual([3, 1, 2]);
     expect(applyPendingPlanMove(2, day2, pending)).toBe(day2);
+  });
+
+  it("서버 목록에 이미 새 순서가 반영됐으면 그대로 둔다", () => {
+    const pending = { kind: "reorder" as const, scheduleId: 1, itemId: 3, newOrderIndex: 0 };
+    expect(ids(applyPendingPlanMove(1, [place(3), place(1), place(2)], pending))).toEqual([3, 1, 2]);
   });
 
   it("다른 일차로 이동하면 원래 일차에서 빼고 대상 일차의 위치에 넣는다", () => {

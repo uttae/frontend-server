@@ -73,7 +73,7 @@ export function useMobileAddPlaceSearch({
       queryClient.getQueryData<PlanPlace[]>(scheduleItemsQueryKey(roomId.trim() || null, target.scheduleId)) ?? [];
     const insertIndex = resolveInsertIndex(latest, target.anchor);
     try {
-      const created = await createItem({
+      const { createdItem: created } = await createItem({
         roomId,
         scheduleId: target.scheduleId,
         googlePlaceId,
