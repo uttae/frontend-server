@@ -30,9 +30,8 @@ export function ExpenseBudgetModal({
   const [opened] = useState(initial);
   const [draft, setDraft] = useState(initial.budgetKrw ?? "");
   const [version, setVersion] = useState(initial.version);
-  // 저장 실패(네트워크·충돌·서버 메시지)는 칸 밖 문장으로, 입력 검증 오류만 칸의 Error 상태로 그린다
-  const [error, setError] = useState("");
-  const [fieldError, setFieldError] = useState("");
+  // 입력 검증 오류(field)는 칸의 Error 상태로, 저장 실패(save: 네트워크·충돌·서버 메시지)는 칸 밖 문장으로 그린다
+  const [error, setError] = useState<{ kind: "field" | "save"; message: string } | null>(null);
   const [pending, setPending] = useState(false);
   const [conflict, setConflict] = useState<{
     latest?: ExpenseBudget;
@@ -41,7 +40,6 @@ export function ExpenseBudgetModal({
   const lock = useRef(false);
   const inputId = useId();
   const errorId = useId();
-  const fieldErrorId = useId();
   // Stable callback keeps the shared dialog's focus scope intact while typing.
   const close = useCallback(() => {
     if (!lock.current) onClose();
@@ -70,14 +68,15 @@ export function ExpenseBudgetModal({
     if (lock.current || context.budgetBusy || !context.canManage || conflict)
       return;
     if (!/^\d{1,15}$/.test(draft)) {
-      setFieldError(
-        "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.",
-      );
+      setError({
+        kind: "field",
+        message: "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.",
+      });
       return;
     }
     lock.current = true;
     setPending(true);
-    setError("");
+    setError(null);
     try {
       await context.saveBudget({
         budgetKrw: draft,
@@ -85,7 +84,10 @@ export function ExpenseBudgetModal({
       });
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "예산 저장에 실패했어요.");
+      setError({
+        kind: "save",
+        message: e instanceof Error ? e.message : "예산 저장에 실패했어요.",
+      });
       if (
         e instanceof ExpenseApiError &&
         e.status === 409 &&
@@ -122,23 +124,23 @@ export function ExpenseBudgetModal({
             autoComplete="off"
             value={draft}
             disabled={busy}
-            aria-invalid={Boolean(fieldError)}
-            aria-describedby={fieldError ? fieldErrorId : error ? errorId : undefined}
+            aria-invalid={error?.kind === "field"}
+            aria-describedby={error ? errorId : undefined}
             onChange={(value) => {
               setDraft(value);
-              setError("");
-              setFieldError("");
+              setError(null);
             }}
           />
-          <FieldError id={fieldErrorId}>{fieldError}</FieldError>
+          {/* 두 오류는 함께 뜨지 않아 id 하나를 나눠 쓴다 */}
+          <FieldError id={errorId}>{error?.kind === "field" ? error.message : null}</FieldError>
         </Field>
-        {error && (
+        {error?.kind === "save" && (
           <p
             id={errorId}
             role="alert"
             className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
           >
-            {error}
+            {error.message}
           </p>
         )}
         {!context.canManage && (
@@ -171,7 +173,7 @@ export function ExpenseBudgetModal({
                     if (lock.current || !conflict.latest) return;
                     setVersion(conflict.latest.version);
                     setConflict(null);
-                    setError("");
+                    setError(null);
                   }}
                 >
                   최신 예산 확인 후 수정 계속
