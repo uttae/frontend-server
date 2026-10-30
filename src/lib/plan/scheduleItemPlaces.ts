@@ -26,7 +26,7 @@ import {
   readOrderedItemIdsFromScheduleItemsCache,
   removeRouteQueriesForDeletedItemSource,
 } from "@/lib/plan/scheduleStompRouteScope";
-import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
+import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import {
   addMinutesToHm,
   computeDurationMinutesFromRange,
@@ -175,41 +175,17 @@ async function buildPlanPlacesFromScheduleItems(
   return Promise.all(sorted.map((item) => planPlaceFromScheduleItem(item)));
 }
 
-/**
- * 일차 장소 목록을 씁니다. 그사이 일정 전체 재조회가 진행 중이면 그 응답은 이 변경 전 스냅샷이라
- * 끝나는 대로 방금 쓴 일차를 되돌립니다. 진행 중인 조회를 취소하고 다시 받게 합니다.
- */
-export function setSchedulePlanPlaces(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number,
-  places: PlanPlace[],
-): void {
-  const rid = roomId.trim();
-  queryClient.setQueryData(scheduleItemsQueryKey(rid, scheduleId), places);
-
-  const roomSchedulesKey = roomSchedulesQueryKey(rid);
-  if (queryClient.isFetching({ queryKey: roomSchedulesKey, exact: true }) > 0) {
-    void queryClient.refetchQueries({ queryKey: roomSchedulesKey, exact: true });
-  }
-}
-
 /** DELETE 직후 `schedule-items`에서 항목만 제거(Preview·Photo 재조회 없음). */
 export function removeScheduleItemFromPlanPlacesCache(
   queryClient: QueryClient,
   roomId: string,
   scheduleId: number,
   deletedItemId: number,
-): boolean {
-  const rid = roomId.trim();
-  if (!rid.length) return false;
-  const key = scheduleItemsQueryKey(rid, scheduleId);
-  const prev = queryClient.getQueryData<PlanPlace[]>(key);
-  if (!prev?.length) return false;
-  const next = prev.filter((p) => p.itemId !== deletedItemId);
-  if (next.length === prev.length) return false;
-  setSchedulePlanPlaces(queryClient, rid, scheduleId, next);
-  return true;
+): void {
+  queryClient.setQueryData<PlanPlace[]>(
+    scheduleItemsQueryKey(roomId.trim(), scheduleId),
+    (old) => old?.filter((p) => p.itemId !== deletedItemId),
+  );
 }
 
 /** 본인 DELETE mutation 직후 — 캐시 패치·삭제 구간 route·쿼리 정리 */
@@ -252,22 +228,24 @@ export async function applyScheduleItemDeletedOnClient(
  * STOMP·뮤테이션 동기화: 그 일차 장소 목록을 서버에서 다시 받게 합니다. 보는 화면이 있으면 바로 받고,
  * 없으면 다시 받을 목록으로 표시해 두었다가 그 화면에 들어갈 때 받습니다.
  * 같은 일차를 받는 중이면 그 조회는 이 변경 전에 보낸 요청이라 취소하고 새로 받습니다(늦게 온 옛 응답은 버려짐).
+ * 본인 저장의 반향처럼 받는 중인 조회가 이미 그 변경 뒤에 보낸 것이면 `joinInFlight`로 합류해 요청을 아낍니다.
  * 다시 받지 못하면 throw합니다 — 호출부는 목록이 바뀐 뒤에만 경로를 무효화합니다.
  */
 export async function invalidateSchedulePlanPlaces(
   queryClient: QueryClient,
   roomId: string,
   scheduleId: number,
+  { joinInFlight = false }: { joinInFlight?: boolean } = {},
 ): Promise<void> {
   const queryKey = scheduleItemsQueryKey(roomId.trim(), scheduleId);
   // 목록이 아직 없으면 TanStack은 진행 중인 첫 조회를 취소하지 않고 합류만 한다
   const state = queryClient.getQueryState(queryKey);
-  if (state?.data === undefined && state?.fetchStatus === "fetching") {
+  if (!joinInFlight && state?.data === undefined && state?.fetchStatus === "fetching") {
     await queryClient.cancelQueries({ queryKey, exact: true });
   }
   await queryClient.invalidateQueries(
     { queryKey, exact: true },
-    { throwOnError: true },
+    { throwOnError: true, cancelRefetch: !joinInFlight },
   );
 }
 
@@ -281,17 +259,14 @@ export async function mergeOrRefetchSchedulePlanPlacesFromItems(
   scheduleId: number,
   items: RoomScheduleItem[],
 ): Promise<void> {
-  const rid = roomId.trim();
-  if (!rid.length) return;
-  const key = scheduleItemsQueryKey(rid, scheduleId);
-  const prev = queryClient.getQueryData<PlanPlace[]>(key);
-  const merged = await mergeScheduleItemsIntoPlanPlaces(prev, items);
-  if (merged) {
-    setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
-    return;
-  }
-  const places = await buildPlanPlacesFromScheduleItems(items);
-  setSchedulePlanPlaces(queryClient, rid, scheduleId, places);
+  const key = scheduleItemsQueryKey(roomId.trim(), scheduleId);
+  queryClient.setQueryData(
+    key,
+    (await mergeScheduleItemsIntoPlanPlaces(
+      queryClient.getQueryData<PlanPlace[]>(key),
+      items,
+    )) ?? (await buildPlanPlacesFromScheduleItems(items)),
+  );
 }
 
 /** cross-day item 이동 후 source/target 일차 items·route 캐시 동기화 */
@@ -553,18 +528,8 @@ export async function syncPlanPlacesAfterReorderSuccess(
       byItemId.set(updated.itemId, updated);
     }
   } catch {
+    // 순서 변경은 저장됐다 — 실제 시각은 mutation이 끝날 때 그 일차를 다시 받아 맞춘다
     toast.error("순서에 맞게 시작 시간을 바꾸지 못했어요.");
-    try {
-      const fresh = await getScheduleItems(rid, scheduleId);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        roomId,
-        scheduleId,
-        fresh,
-      );
-    } catch {
-      //
-    }
     return;
   }
 
@@ -694,77 +659,55 @@ export function mergeCreatedScheduleItemDelta(
   return next;
 }
 
-/** 서버가 지정 위치 삽입과 이동수단 추천을 함께 처리하고 델타를 반환합니다. */
-export async function createScheduleItemAtPlanIndex(
-  queryClient: QueryClient,
-  args: {
-    roomId: string;
-    scheduleId: number;
-    places: PlanPlace[];
-    insertIndex: number;
-    googlePlaceId: string;
-  },
-): Promise<RoomScheduleItem> {
+/** 놓은 자리(`insertIndex`)를 서버 `orderIndex`로 바꿔 장소를 추가합니다. 서버가 이동수단 추천까지 처리하고 델타를 돌려줍니다. */
+export function createScheduleItemAtPlanIndex(args: {
+  roomId: string;
+  scheduleId: number;
+  places: PlanPlace[];
+  insertIndex: number;
+  googlePlaceId: string;
+}): Promise<CreateScheduleItemResponse> {
   const rid = args.roomId.trim();
   if (!rid.length) {
     throw new Error("createScheduleItemAtPlanIndex: empty roomId");
   }
-
-  const listLengthAfterCreate = args.places.length + 1;
-  const targetIndex = resolveInsertTargetIndex(
-    args.insertIndex,
-    listLengthAfterCreate,
-  );
-  const response = await createScheduleItem(rid, args.scheduleId, {
+  return createScheduleItem(rid, args.scheduleId, {
     googlePlaceId: args.googlePlaceId,
-    orderIndex: targetIndex,
+    orderIndex: resolveInsertTargetIndex(args.insertIndex, args.places.length + 1),
   });
+}
 
-  const key = scheduleItemsQueryKey(rid, args.scheduleId);
+/**
+ * 장소 추가 응답(추가된 항목·순서가 밀린 항목)을 일차 목록에 합치고, 응답이 알려 준 구간 경로만 무효화합니다.
+ * 추가는 이미 저장됐으므로 반영이 실패해도 던지지 않고 그 일차 경로를 모두 무효화합니다.
+ */
+export async function applyCreatedScheduleItemToPlanPlaces(
+  queryClient: QueryClient,
+  roomId: string,
+  scheduleId: number,
+  response: CreateScheduleItemResponse,
+): Promise<void> {
+  const rid = roomId.trim();
   try {
-    const prev = queryClient.getQueryData<PlanPlace[]>(key);
     const createdPlace = await planPlaceFromScheduleItem(response.createdItem);
-    const merged = mergeCreatedScheduleItemDelta(prev, createdPlace, response);
-    if (merged) {
-      setSchedulePlanPlaces(queryClient, rid, args.scheduleId, merged);
-    } else {
-      const fresh = await getScheduleItems(rid, args.scheduleId);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        args.scheduleId,
-        fresh,
-      );
-    }
-
+    // 미리보기를 기다리는 사이 다른 사람의 변경을 받았을 수 있어 그 뒤의 목록에 합친다
+    queryClient.setQueryData<PlanPlace[]>(
+      scheduleItemsQueryKey(rid, scheduleId),
+      (old) => mergeCreatedScheduleItemDelta(old, createdPlace, response) ?? old,
+    );
     await invalidateScheduleItemRouteForSources(
       queryClient,
       rid,
-      args.scheduleId,
+      scheduleId,
       response.affectedRouteItemIds,
     );
-    bumpPlanMapRouteSegments(
-      rid,
-      args.scheduleId,
-      response.affectedRouteItemIds,
-    );
+    bumpPlanMapRouteSegments(rid, scheduleId, response.affectedRouteItemIds);
   } catch {
     await Promise.allSettled([
-      queryClient.invalidateQueries({
-        queryKey: key,
-        exact: true,
-        refetchType: "active",
-      }),
-      invalidateScheduleItemRouteForWholeSchedule(
-        queryClient,
-        rid,
-        args.scheduleId,
-      ),
+      invalidateScheduleItemRouteForWholeSchedule(queryClient, rid, scheduleId),
     ]);
     usePlanMapDirectionsEpochStore.getState().bumpForDirections(rid);
   }
-
-  return response.createdItem;
 }
 
 /** 드래그를 `toIndex` 자리에 놓았을 때 PATCH에 넣을 `newOrderIndex`(0-based) */

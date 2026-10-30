@@ -118,15 +118,19 @@ const syncSchedulePlacesRouteInvalidationPending = new Map<
   string,
   DebouncedRouteInvBucket
 >();
+/** 모으는 동안 다른 사람의 변경이 하나라도 들어온 일차 */
+const syncSchedulePlacesRemoteChangePending = new Set<string>();
 const DEBOUNCE_ITEMS_GET_MS = 90;
 
 function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
   queryClient: QueryClient,
   rid: string,
   sid: number,
+  ownEcho: boolean,
   affectedRouteItemIds?: number[] | null,
 ): void {
   const mapKey = `${rid}:${sid}`;
+  if (!ownEcho) syncSchedulePlacesRemoteChangePending.add(mapKey);
   if (affectedRouteItemIds !== undefined) {
     syncSchedulePlacesRouteInvalidationPending.set(
       mapKey,
@@ -146,9 +150,14 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
       const routeBucket =
         syncSchedulePlacesRouteInvalidationPending.get(mapKey);
       syncSchedulePlacesRouteInvalidationPending.delete(mapKey);
+      // 모은 이벤트가 모두 본인 반향이면, 본인 저장이 끝나며 보낸 조회가 이미 그 변경을 담고 있어 합류한다
+      const joinInFlight = !syncSchedulePlacesRemoteChangePending.has(mapKey);
+      syncSchedulePlacesRemoteChangePending.delete(mapKey);
       void (async () => {
         try {
-          await invalidateSchedulePlanPlaces(queryClient, rid, sid);
+          await invalidateSchedulePlanPlaces(queryClient, rid, sid, {
+            joinInFlight,
+          });
           if (routeBucket?.scope === "whole") {
             await invalidateScheduleItemRouteForWholeSchedule(
               queryClient,
@@ -336,8 +345,18 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
+      const me = readSessionUserId(queryClient);
+      const actorIsMe =
+        typeof me === "number" &&
+        Number.isFinite(me) &&
+        event.actorUserId === me;
       // 같은 사용자의 다른 탭도 이 이벤트를 받으므로 HTTP 응답과 무관하게 목록을 동기화합니다.
-      enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
+      enqueueDebouncedHydratePlacesFromScheduleItemsApi(
+        queryClient,
+        rid,
+        sid,
+        actorIsMe,
+      );
       return;
     }
 
@@ -361,6 +380,7 @@ export async function dispatchRoomScheduleEvent(
         queryClient,
         rid,
         sid,
+        false,
         event.affectedRouteItemIds,
       );
       return;

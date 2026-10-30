@@ -58,11 +58,11 @@ import {
   type RoomListResponse,
 } from "@/lib/api/rooms";
 import {
+  applyCreatedScheduleItemToPlanPlaces,
   applyRoomScheduleItemToPlanPlaces,
   applyScheduleItemDeletedOnClient,
   createScheduleItemAtPlanIndex,
   schedulePlanPlacesQueryOptions,
-  setSchedulePlanPlaces,
   syncAfterCrossScheduleItemMove,
   syncPlanPlacesAfterReorderSuccess,
 } from "@/lib/plan/scheduleItemPlaces";
@@ -333,10 +333,25 @@ export function useSchedulePlanPlaces(
   });
 }
 
+/**
+ * 본인이 일정 장소를 바꾼 뒤(성공·실패 모두) 그 일차를 다시 받는다. 여러 사람이 함께 고치는 목록이라
+ * 응답을 쓰는 사이 끝난 옛 조회나 다른 사람의 변경을 서버 기준으로 맞춘다. 진행 중인 옛 조회는 TanStack이 취소한다.
+ */
+function invalidateDayPlacesAfterOwnChange(
+  queryClient: ReturnType<typeof useQueryClient>,
+  roomId: string,
+  scheduleId: number,
+) {
+  return queryClient.invalidateQueries({
+    queryKey: scheduleItemsQueryKey(roomId.trim(), scheduleId),
+    exact: true,
+  });
+}
+
 export function useCreateScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: {
+    mutationFn: (vars: {
       roomId: string;
       scheduleId: number;
       googlePlaceId: string;
@@ -344,16 +359,23 @@ export function useCreateScheduleItem() {
       placesSnapshot?: PlanPlace[];
     }) => {
       const places = vars.placesSnapshot ?? [];
-      const insertIndex = vars.insertIndex ?? places.length;
-
-      return createScheduleItemAtPlanIndex(queryClient, {
+      return createScheduleItemAtPlanIndex({
         roomId: vars.roomId,
         scheduleId: vars.scheduleId,
         places,
-        insertIndex,
+        insertIndex: vars.insertIndex ?? places.length,
         googlePlaceId: vars.googlePlaceId,
       });
     },
+    onSuccess: (response, { roomId, scheduleId }) =>
+      applyCreatedScheduleItemToPlanPlaces(
+        queryClient,
+        roomId,
+        scheduleId,
+        response,
+      ),
+    onSettled: (_response, _error, { roomId, scheduleId }) =>
+      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
@@ -373,28 +395,22 @@ export function useUpdateScheduleItem() {
         vars.body,
       ),
     onSuccess: (updated, { roomId, scheduleId, body }) => {
-      const rid = roomId.trim();
-      if (!rid.length) return;
-      const key = scheduleItemsQueryKey(rid, scheduleId);
-      const prev = queryClient.getQueryData<PlanPlace[]>(key);
-      const merged = applyRoomScheduleItemToPlanPlaces(prev, updated, {
-        memoTouched: Object.prototype.hasOwnProperty.call(body, "memo"),
-      });
-      if (merged) {
-        setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
-      } else {
-        void queryClient.invalidateQueries({
-          queryKey: key,
-          refetchType: "active",
-        });
-      }
+      queryClient.setQueryData<PlanPlace[]>(
+        scheduleItemsQueryKey(roomId.trim(), scheduleId),
+        (old) =>
+          applyRoomScheduleItemToPlanPlaces(old, updated, {
+            memoTouched: Object.prototype.hasOwnProperty.call(body, "memo"),
+          }) ?? old,
+      );
     },
+    onSettled: (_updated, _error, { roomId, scheduleId }) =>
+      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
 /**
  * 구간 공유 이동수단 변경 — 서버 DB 저장 후 `SCHEDULE_ITEM_TRAVEL_MODE_UPDATED`가
- * 브로드캐스트되며, 액터는 응답으로 `schedule-items` 캐시만 갱신합니다.
+ * 브로드캐스트되며, 액터는 응답으로 `schedule-items` 캐시를 갱신합니다.
  * 수단별 경로 캐시는 모드 키로 분리돼 있어 무효화가 필요 없습니다.
  */
 export function useUpdateScheduleItemTravelMode() {
@@ -413,20 +429,13 @@ export function useUpdateScheduleItemTravelMode() {
         { travelMode: vars.travelMode },
       ),
     onSuccess: (updated, { roomId, scheduleId }) => {
-      const rid = roomId.trim();
-      if (!rid.length) return;
-      const key = scheduleItemsQueryKey(rid, scheduleId);
-      const prev = queryClient.getQueryData<PlanPlace[]>(key);
-      const merged = applyRoomScheduleItemToPlanPlaces(prev, updated);
-      if (merged) {
-        setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
-      } else {
-        void queryClient.invalidateQueries({
-          queryKey: key,
-          refetchType: "active",
-        });
-      }
+      queryClient.setQueryData<PlanPlace[]>(
+        scheduleItemsQueryKey(roomId.trim(), scheduleId),
+        (old) => applyRoomScheduleItemToPlanPlaces(old, updated) ?? old,
+      );
     },
+    onSettled: (_updated, _error, { roomId, scheduleId }) =>
+      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
@@ -447,6 +456,8 @@ export function useDeleteScheduleItem() {
         itemId,
       );
     },
+    onSettled: (_data, _error, { roomId, scheduleId }) =>
+      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
@@ -486,6 +497,8 @@ export function useReorderScheduleItem() {
         setIsChainedTimeSyncPending(false);
       }
     },
+    onSettled: (_items, _error, { roomId, scheduleId }) =>
+      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 
   return {
