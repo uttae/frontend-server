@@ -1,6 +1,6 @@
 "use client";
 
-import { UserAvatar } from "@/components/user/UserAvatar";
+import { ChatSenderAvatar } from "@/components/chat/messages/ChatSenderAvatar";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/chat";
 
@@ -36,17 +36,7 @@ export function NewMessagePreviewButton({
           isMinimized && "gap-1.5 py-1 pl-1 pr-3",
         )}
       >
-        <UserAvatar
-          // 방을 나간 사람은 사진이 있어도 사람 아이콘을 보인다
-          user={{
-            nickname: message.sender ?? "",
-            profileImageUrl: message.senderNotInRoom ? null : (message.avatar ?? null),
-          }}
-          size={isMinimized ? 24 : 28}
-          shape="rounded"
-          tone="icon"
-          ring="default"
-        />
+        <ChatSenderAvatar message={message} size={isMinimized ? 24 : 28} ring="default" />
         <span
           className={cn(
             "shrink-0 text-primary",

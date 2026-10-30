@@ -3,10 +3,10 @@ import { ChatMarkdownContent } from "@/components/chat/ChatMarkdownContent";
 import type { ChatMarkdownVariant } from "@/components/chat/chat-markdown-components";
 import { getChatPanelLook } from "@/components/chat/chat-panel-look";
 import { AiResponseBubble } from "@/components/chat/messages/AiResponseBubble";
+import { ChatSenderAvatar } from "@/components/chat/messages/ChatSenderAvatar";
 import type { ChatMessageTextTypography } from "@/components/chat/chat-typography";
 import { Avatar } from "@/components/ui/avatar";
 import { Spinner } from "@/components/ui/spinner";
-import { UserAvatar } from "@/components/user/UserAvatar";
 import { cn } from "@/lib/utils";
 import type { AiRequestStatus, ChatMessage } from "@/types/chat";
 
@@ -154,17 +154,7 @@ export function OtherMessageGroup({
   return (
     <div className="flex gap-2">
       <div className="flex flex-col items-center gap-1">
-        <UserAvatar
-          // 방을 나간 사람은 사진이 있어도 사람 아이콘을 보인다
-          user={{
-            nickname: first.sender ?? "",
-            profileImageUrl: first.senderNotInRoom ? null : (first.avatar ?? null),
-          }}
-          size={40}
-          shape="rounded"
-          tone="icon"
-          ring="subtle"
-        />
+        <ChatSenderAvatar message={first} size={40} ring="subtle" />
         <span className={typo.metaMuted}>{first.sender}</span>
       </div>
       <div className="min-w-0">

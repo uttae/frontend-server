@@ -9,7 +9,7 @@ import { getQueryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
 import { resolveChatMessageTypography } from "@/components/chat/chat-typography";
 import type { ChatMessage } from "@/types/chat";
-import { UserAvatar } from "@/components/user/UserAvatar";
+import { ChatSenderAvatar } from "@/components/chat/messages/ChatSenderAvatar";
 
 export function PlaceShareCard({
   message,
@@ -81,17 +81,7 @@ export function PlaceShareCard({
   return (
     <div className="flex gap-2">
       <div className="flex flex-col items-center gap-1">
-        <UserAvatar
-          // 방을 나간 사람은 사진이 있어도 사람 아이콘을 보인다
-          user={{
-            nickname: message.sender ?? "",
-            profileImageUrl: message.senderNotInRoom ? null : (message.avatar ?? null),
-          }}
-          size={40}
-          shape="rounded"
-          tone="icon"
-          ring="subtle"
-        />
+        <ChatSenderAvatar message={message} size={40} ring="subtle" />
         <span
           className={cn("max-w-[4rem] truncate text-center", typo.metaMuted)}
         >
