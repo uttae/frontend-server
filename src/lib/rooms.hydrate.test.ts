@@ -70,6 +70,28 @@ describe("hydrateRoomSchedulesFromServer", () => {
     expect(client.getQueryData(roomSchedulesQueryKey(ROOM_ID))).toEqual(SERVER_SCHEDULES);
     client.clear();
   });
+
+  it("keeps a day list that changed after the whole-room fetch was sent", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: 1_000 });
+    try {
+      const client = new QueryClient();
+      const response = deferred<RoomScheduleWithItems[]>();
+      mocks.getRoomSchedules.mockReturnValueOnce(response.promise);
+      mocks.build.mockResolvedValueOnce(new Map([[1, SERVER_PLACES]]));
+
+      const pending = hydrateRoomSchedulesFromServer(client, ROOM_ID, new AbortController().signal);
+      vi.setSystemTime(2_000);
+      client.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), CACHED_PLACES);
+      response.resolve(SERVER_SCHEDULES);
+      await pending;
+
+      expect(client.getQueryData(scheduleItemsQueryKey(ROOM_ID, 1))).toBe(CACHED_PLACES);
+      expect(client.getQueryData(roomSchedulesQueryKey(ROOM_ID))).toEqual(SERVER_SCHEDULES);
+      client.clear();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe("refreshRoomSchedules", () => {
