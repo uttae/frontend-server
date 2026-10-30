@@ -183,10 +183,11 @@ export async function getScheduleItemRoutesBatch(
 export async function getScheduleItems(
   roomId: string,
   scheduleId: number,
+  signal?: AbortSignal,
 ): Promise<RoomScheduleItem[]> {
   return requestJson(
     apiUrl(`/rooms/${roomId}/schedules/${scheduleId}/items`),
-    undefined,
+    { signal },
     { errorMessage: "일정 장소 목록 조회 실패" },
   );
 }

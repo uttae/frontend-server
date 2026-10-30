@@ -2,11 +2,9 @@ import { invalidateExpenses } from "@/lib/expenses/expense-queries";
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
-  mergeOrRefetchSchedulePlanPlacesFromItems,
-  refetchSchedulePlanPlacesIntoCache,
+  invalidateSchedulePlanPlaces,
   syncAfterCrossScheduleItemMove,
 } from "@/lib/plan/scheduleItemPlaces";
-import { getScheduleItems } from "@/lib/api/rooms/schedule-items";
 import {
   invalidateScheduleItemRouteForSources,
   invalidateScheduleItemRouteForWholeSchedule,
@@ -17,14 +15,6 @@ import { syncRoomDetailFromServer } from "@/lib/rooms";
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 import { readSessionUserId } from "@/lib/session-user-cache";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
-
-async function refetchScheduleItemsPlaces(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number,
-): Promise<void> {
-  await refetchSchedulePlanPlacesIntoCache(queryClient, roomId, scheduleId);
-}
 
 function bumpMapForRouteSources(
   roomId: string,
@@ -158,13 +148,7 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
       syncSchedulePlacesRouteInvalidationPending.delete(mapKey);
       void (async () => {
         try {
-          const rows = await getScheduleItems(rid, sid);
-          await mergeOrRefetchSchedulePlanPlacesFromItems(
-            queryClient,
-            rid,
-            sid,
-            rows,
-          );
+          await invalidateSchedulePlanPlaces(queryClient, rid, sid);
           if (routeBucket?.scope === "whole") {
             await invalidateScheduleItemRouteForWholeSchedule(
               queryClient,
@@ -195,7 +179,7 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
 /**
  * Plan 화면 등이 쓰는 캐시만, 스키마의 `type`별로 갱신합니다.
  * — `ROOM_SCHEDULES_RESYNCED`: `room-schedules` 전체 재조회 + 방 상세 동기화 (원격 탭; 액터는 mutation `onSuccess`)
- * — `schedule-items`: 일차별 장소 목록
+ * — `schedule-items`: 그 일차 장소 목록을 무효화해 다시 받는다(보는 화면이 없으면 그 화면에 들어갈 때)
  * — `schedule-item-route`: `itemId`·인접 구간의 `segmentSourceItemId`만 무효화(폴백 시 일정 전체)
  * — `SCHEDULE_ITEM_UPDATED`: 일정 목록만 동기화할 때 사용(본인 이벤트 포함); 경로(`schedule-item-route`)는 무효화하지 않음
  * — `SCHEDULE_ITEM_TRAVEL_MODE_UPDATED`: 공유 이동수단 변경 — 일정 목록만 동기화(경로 캐시는 수단별 키로 유지)
@@ -279,13 +263,7 @@ export async function dispatchRoomScheduleEvent(
 
       removeRouteQueriesForDeletedItemSource(queryClient, rid, sid, itemId);
 
-      const items = await getScheduleItems(rid, sid);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        sid,
-        items,
-      );
+      await invalidateSchedulePlanPlaces(queryClient, rid, sid);
 
       const sources = event.affectedRouteItemIds;
       if (sources === null) {
@@ -313,7 +291,7 @@ export async function dispatchRoomScheduleEvent(
         return;
       }
 
-      await refetchScheduleItemsPlaces(queryClient, rid, sid);
+      await invalidateSchedulePlanPlaces(queryClient, rid, sid);
 
       const sources = event.affectedRouteItemIds;
       if (sources === null) {
@@ -341,13 +319,7 @@ export async function dispatchRoomScheduleEvent(
         return;
       }
 
-      const items = await getScheduleItems(rid, sid);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        sid,
-        items,
-      );
+      await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       const sources = event.affectedRouteItemIds;
       enqueueDebouncedInvalidateScheduleRoutes(
         queryClient,

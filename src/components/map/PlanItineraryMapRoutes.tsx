@@ -18,7 +18,7 @@ import {
 } from "@/lib/maps";
 import { persistedScheduleItemRouteQueryOptions } from "@/lib/plan/scheduleItemRoutePersistedQuery";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
-import { readSchedulePlanPlacesFromCache } from "@/lib/plan/scheduleItemPlaces";
+import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import {
   scheduleIdsToRouteColors,
   sortedScheduleIdsForRouteColors,
@@ -30,10 +30,7 @@ import {
 import {
   flattenPlanItinerarySegmentsFromPlaces,
 } from "@/lib/plan/planItineraryMapSegments";
-import {
-  planItinerarySegmentMapPathQueryKey,
-  scheduleItemsQueryKey,
-} from "@/lib/query-keys";
+import { planItinerarySegmentMapPathQueryKey } from "@/lib/query-keys";
 import {
   planMapSegmentEpochStoreKey,
   usePlanMapDirectionsEpochStore,
@@ -143,14 +140,11 @@ export function PlanItineraryMapRoutes({
 
   const placesQueries = useQueries({
     queries: orderedScheduleIdsForQueries.map((scheduleId) => ({
-      queryKey: scheduleItemsQueryKey(rid || null, scheduleId),
-      queryFn: () => readSchedulePlanPlacesFromCache(queryClient, rid, scheduleId),
+      ...schedulePlanPlacesQueryOptions(queryClient, rid, scheduleId),
       enabled:
         rid.length > 0 &&
         orderedScheduleIdsForQueries.length > 0 &&
         schedulesHydrated,
-      staleTime: Infinity,
-      refetchOnMount: false,
       refetchOnWindowFocus: false,
     })),
   });

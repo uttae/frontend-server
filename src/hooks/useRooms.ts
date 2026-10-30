@@ -61,12 +61,11 @@ import {
   applyRoomScheduleItemToPlanPlaces,
   applyScheduleItemDeletedOnClient,
   createScheduleItemAtPlanIndex,
-  ensureSchedulePlanPlacesEnriched,
+  schedulePlanPlacesQueryOptions,
   setSchedulePlanPlaces,
   syncAfterCrossScheduleItemMove,
   syncPlanPlacesAfterReorderSuccess,
 } from "@/lib/plan/scheduleItemPlaces";
-import { planPlacesNeedPreviewEnrich } from "@/lib/plan/schedule-bulk-hydration";
 import { fetchAndSeedAllRoomBookmarks } from "@/lib/bookmarks/bookmark-bulk-cache";
 import {
   appendBookmarkCategoryToCache,
@@ -324,18 +323,12 @@ export function useSchedulePlanPlaces(
   const { isSuccess: schedulesHydrated } = useRoomSchedules(rid || null);
 
   return useQuery({
-    queryKey: scheduleItemsQueryKey(rid || null, sid),
-    queryFn: () => ensureSchedulePlanPlacesEnriched(queryClient, rid, sid!),
+    ...schedulePlanPlacesQueryOptions(queryClient, rid, sid),
     enabled:
       rid.length > 0 &&
       typeof sid === "number" &&
       Number.isFinite(sid) &&
       schedulesHydrated,
-    staleTime: Infinity,
-    refetchOnMount: (query) => {
-      const data = query.state.data;
-      return !Array.isArray(data) || planPlacesNeedPreviewEnrich(data);
-    },
     refetchOnWindowFocus: false,
   });
 }

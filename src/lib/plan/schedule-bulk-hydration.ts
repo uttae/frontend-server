@@ -223,18 +223,30 @@ export async function buildSchedulePlacesFromSchedulesWithItems(
   return placesBySchedule;
 }
 
-/** 만든 일차 목록을 한 번에 씁니다. 순서가 바뀐 일차는 이웃이 바뀐 구간 경로만 무효화합니다. */
+/**
+ * 만든 일차 목록을 한 번에 씁니다. 순서가 바뀐 일차는 이웃이 바뀐 구간 경로만 무효화합니다.
+ * `startedAt`(일정 전체 조회를 보낸 시각) 뒤에 바뀐 일차는 그쪽이 더 새 상태라 덮지 않고,
+ * 그 일차를 받는 중이면 이 조회보다 먼저 보낸 요청일 수 있어 다시 받게 합니다.
+ */
 export function writeSchedulePlacesFromHydrate(
   queryClient: QueryClient,
   roomId: string,
   placesBySchedule: ReadonlyMap<number, PlanPlace[]>,
+  startedAt: number,
 ): void {
   const rid = roomId.trim();
   if (!rid.length) return;
 
   for (const [sid, places] of placesBySchedule) {
+    const key = scheduleItemsQueryKey(rid, sid);
+    const state = queryClient.getQueryState(key);
+    if (state && state.dataUpdatedAt > startedAt) continue;
+
     const before = readOrderedItemIdsFromScheduleItemsCache(queryClient, rid, sid);
-    queryClient.setQueryData(scheduleItemsQueryKey(rid, sid), places);
+    queryClient.setQueryData(key, places);
+    if (state?.fetchStatus === "fetching") {
+      void queryClient.refetchQueries({ queryKey: key, exact: true });
+    }
 
     const changed = segmentSourcesWithChangedNext(
       before,
@@ -251,6 +263,7 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
   queryClient: QueryClient,
   roomId: string,
   schedules: readonly RoomScheduleWithItems[],
+  startedAt: number,
 ): Promise<void> {
   const rid = roomId.trim();
   if (!rid.length) return;
@@ -259,6 +272,7 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
     queryClient,
     rid,
     await buildSchedulePlacesFromSchedulesWithItems(queryClient, schedules),
+    startedAt,
   );
 }
 
@@ -419,9 +433,10 @@ export async function hydrateRoomSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return [];
 
+  const startedAt = Date.now();
   const schedules = await getRoomSchedules(rid, { includeItems: true });
   const sorted = sortRoomSchedules(schedules);
-  await hydrateScheduleItemsFromSchedulesWithItems(queryClient, rid, sorted);
+  await hydrateScheduleItemsFromSchedulesWithItems(queryClient, rid, sorted, startedAt);
   return sorted;
 }
 
