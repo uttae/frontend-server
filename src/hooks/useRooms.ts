@@ -9,7 +9,6 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 
 import { useStompContext } from "@/contexts/StompContext";
 
@@ -288,6 +287,8 @@ export function useMoveScheduleItemToSchedule() {
       itemId: number;
       targetScheduleId: number;
       targetOrderIndex: number;
+      /** 저장하는 동안 대상 일차에 먼저 보여 줄 카드(모바일 편집 목록) — 요청에는 쓰지 않는다 */
+      place?: PlanPlace;
     }) => {
       if (sourceScheduleId === targetScheduleId) {
         throw new Error("같은 일차 안에서는 순서 변경만 가능해요.");
@@ -461,11 +462,10 @@ export function useDeleteScheduleItem() {
   });
 }
 
+/** 순서 변경 — 응답 반영과 시작 시각 연쇄 PATCH를 `onSuccess`에서 기다리므로 `isPending`이 그 끝까지 이어진다 */
 export function useReorderScheduleItem() {
   const queryClient = useQueryClient();
-  const [isChainedTimeSyncPending, setIsChainedTimeSyncPending] =
-    useState(false);
-  const mutation = useMutation({
+  return useMutation({
     mutationFn: (vars: {
       roomId: string;
       scheduleId: number;
@@ -478,35 +478,17 @@ export function useReorderScheduleItem() {
         vars.itemId,
         vars.body,
       ),
-    onMutate: () => {
-      setIsChainedTimeSyncPending(true);
-    },
-    onError: () => {
-      setIsChainedTimeSyncPending(false);
-    },
-    onSuccess: async (items, { roomId, scheduleId, itemId }) => {
-      try {
-        await syncPlanPlacesAfterReorderSuccess(
-          queryClient,
-          roomId,
-          scheduleId,
-          items,
-          itemId,
-        );
-      } finally {
-        setIsChainedTimeSyncPending(false);
-      }
-    },
+    onSuccess: (items, { roomId, scheduleId, itemId }) =>
+      syncPlanPlacesAfterReorderSuccess(
+        queryClient,
+        roomId,
+        scheduleId,
+        items,
+        itemId,
+      ),
     onSettled: (_items, _error, { roomId, scheduleId }) =>
       invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
-
-  return {
-    ...mutation,
-    /** 리오더 요청 + 시작 시각 연쇄 PATCH까지(캐시가 일관될 때까지) */
-    isReorderSettling:
-      mutation.isPending || isChainedTimeSyncPending,
-  };
 }
 
 export function useUpdateRoom() {

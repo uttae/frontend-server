@@ -78,18 +78,16 @@ export function PlanTravelTime({
   const serverMode =
     canonicalScheduleTravelMode(travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
 
-  const [selectedMode, setSelectedMode] =
-    useState<ScheduleTravelModeValue>(serverMode);
-
-  /** 원격 변경(STOMP → schedule-items 갱신)·본인 PATCH 성공·구간 변경을 선택 상태에 반영 */
-  const modeSyncKey = `${rid}:${scheduleId}:${segmentSourceItemId}:${serverMode}`;
-  const [prevModeSyncKey, setPrevModeSyncKey] = useState(modeSyncKey);
-  if (prevModeSyncKey !== modeSyncKey) {
-    setPrevModeSyncKey(modeSyncKey);
-    setSelectedMode(serverMode);
-  }
-
-  const { mutate: mutateTravelMode } = useUpdateScheduleItemTravelMode();
+  const {
+    mutate: mutateTravelMode,
+    variables: pendingTravelMode,
+    isPending: isTravelModePending,
+  } = useUpdateScheduleItemTravelMode();
+  // 저장하는 동안은 고른 수단을 먼저 보여 주고, 끝나면(실패 포함) 다시 받은 서버 값을 보여 준다
+  const selectedMode =
+    isTravelModePending && pendingTravelMode?.itemId === segmentSourceItemId
+      ? pendingTravelMode.travelMode
+      : serverMode;
 
   const googleMapsDirectionsUrl = buildGoogleMapsDirectionsUrl({
     originPlaceId: originGooglePlaceId ?? "",
@@ -234,9 +232,6 @@ export function PlanTravelTime({
     (mode: ScheduleTravelModeValue) => {
       setMenuOpen(false);
       if (mode === selectedMode) return;
-      /** 낙관적 반영 — 실패 시 선택 시점의 서버 저장값으로 복귀 */
-      const revertTo = serverMode;
-      setSelectedMode(mode);
       mutateTravelMode(
         {
           roomId: rid,
@@ -246,21 +241,12 @@ export function PlanTravelTime({
         },
         {
           onError: () => {
-            setSelectedMode(revertTo);
             toast.error("이동 수단을 변경하지 못했어요.");
           },
         },
       );
     },
-    [
-      rid,
-      scheduleId,
-      segmentSourceItemId,
-      selectedMode,
-      serverMode,
-      mutateTravelMode,
-      setSelectedMode,
-    ],
+    [rid, scheduleId, segmentSourceItemId, selectedMode, mutateTravelMode],
   );
 
   if (directionsHidden) {
