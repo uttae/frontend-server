@@ -62,7 +62,6 @@ export function DestinationChipsField({
           onResolvedPlace={handleResolved}
           placeholder="여행지를 검색해 선택하세요"
           selectionOnly
-          showLeadingIcon={false}
           appearance="field"
         />
       )}

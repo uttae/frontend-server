@@ -9,6 +9,7 @@ import {
   DESTINATION_INCLUDED_PRIMARY_TYPES,
   PlacePredictionInlineDescription,
 } from "@/lib/placesAutocompleteSuggest";
+import { CloseIcon, SearchIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_SELECTION_HINT =
@@ -193,12 +194,18 @@ export function DestinationSearchInput({
         <div
           className={cn(
             "flex w-full items-center gap-2",
+            // field는 Figma 02 Text Field의 Search Bar(5002:4377): 48px, padding L14 R10, gap 8, radius 8.
+            // 테두리는 Default border/default → Focused primary/default → 값이 있고 포커스가 없으면(Filled) primary/strong
             isField
-              ? "h-12 rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary"
+              ? "h-12 rounded-md border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary [&:has(input:not(:placeholder-shown)):not(:focus-within)]:border-primary-strong"
               : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
           )}
         >
-          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} />
+          {isField ? (
+            showLeadingIcon && <SearchIcon size={20} className="shrink-0 text-icon-subtle" />
+          ) : (
+            <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} />
+          )}
           <input
             ref={inputRef}
             aria-label="목적지 검색"
@@ -222,10 +229,22 @@ export function DestinationSearchInput({
             className={cn(
               "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
               selectionOnly && "bg-transparent",
-              isField && "text-text-subtle placeholder:text-text-disabled",
+              // Figma Text 프레임 오른쪽 4px, 입력 글자 text/default, 플레이스홀더 text/subtle
+              isField && "pr-1 text-text placeholder:text-text-subtle",
             )}
           />
-          {showClear ? (
+          {showClear && isField ? (
+            // Figma Trailing Icon 영역 32×48, close 20px
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label={selectionOnly ? "선택 지우기" : "지우기"}
+              className="grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
+            >
+              <CloseIcon size={20} />
+            </button>
+          ) : null}
+          {showClear && !isField ? (
             <button
               type="button"
               onClick={handleClear}
