@@ -1,7 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 
-import { CloseIcon } from "@/assets/icons";
+import { ChevronLeftIcon, CloseIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
 // Figma 02 Text Field의 Search Bar(5002:4377): 48px, padding L14 R10, gap 8, radius 8, 바탕 fill/subtle.
@@ -47,6 +47,24 @@ function SearchBarIcon({ className, ...props }: Readonly<ComponentProps<"span">>
   );
 }
 
+// 모바일 검색 전용 화면의 뒤로가기. Figma Search Bar에는 없어 Leading Icon 자리(20px)에 둔다.
+// 누르는 영역은 지우기와 같은 32px × 칸 높이이고, 음수 margin으로 줄 안에서는 아이콘 폭 20px만 차지한다(왼쪽 여백 14·간격 8 안에서 끝난다)
+function SearchBarBack({ className, ...props }: Readonly<ComponentProps<"button">>) {
+  return (
+    <button
+      type="button"
+      data-slot="search-bar-back"
+      className={cn(
+        "-mx-1.5 grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle focus-visible:outline-2 focus-visible:outline-primary",
+        className,
+      )}
+      {...props}
+    >
+      <ChevronLeftIcon size={20} />
+    </button>
+  );
+}
+
 // Figma Text 프레임 오른쪽 4px, 입력 글자 text/default, 플레이스홀더 text/subtle
 function SearchBarInput({
   className,
@@ -83,4 +101,4 @@ function SearchBarClear({ className, ...props }: Readonly<ComponentProps<"button
   );
 }
 
-export { SearchBar, SearchBarIcon, SearchBarInput, SearchBarClear };
+export { SearchBar, SearchBarBack, SearchBarIcon, SearchBarInput, SearchBarClear };

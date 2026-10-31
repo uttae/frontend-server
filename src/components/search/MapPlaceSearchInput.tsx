@@ -10,8 +10,8 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { MapSearchIcon } from "@/components/map/MapSearchIcon";
-import { ChevronLeftIcon, SearchIcon } from "@/assets/icons";
-import { SearchBar, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
+import { SearchIcon } from "@/assets/icons";
+import { SearchBar, SearchBarBack, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
 import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
@@ -266,9 +266,7 @@ export function MapPlaceSearchInput({
       >
         <SearchBar shape={mobile ? "pill" : "rounded"}>
           {onBack ? (
-            <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
-              <ChevronLeftIcon size={20} className="text-icon-subtle" />
-            </button>
+            <SearchBarBack aria-label={backLabel} onClick={onBack} />
           ) : (
             <SearchBarIcon>
               <SearchIcon size={20} />
