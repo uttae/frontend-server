@@ -68,7 +68,7 @@ function ChipRemove({ className, ...props }: Readonly<ComponentProps<"button">>)
       type="button"
       data-slot="chip-remove"
       className={cn(
-        "-mx-1.5 -my-3.5 grid h-11 w-7 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary",
+        "-mx-1.5 -my-3.5 grid h-11 w-7 shrink-0 cursor-pointer place-items-center focus-visible:outline-2 focus-visible:outline-primary",
         className,
       )}
       {...props}
