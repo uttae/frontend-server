@@ -57,6 +57,11 @@
     @apply font-sans;
   }
 
+  /* Base UI 권장: iOS 26 Safari에서 대화상자 딤(position: absolute)이 스크롤한 뒤에도 화면 전체를 덮게 한다 */
+  body {
+    position: relative;
+  }
+
   /* 스크롤바 공간 예약은 폭 유지가 필요한 본문·목록에서만 개별 지정한다. */
 }
 
