@@ -8,14 +8,14 @@ import { CloseIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
 // Figma ② Bottom Sheet 5924:13961(Height=Min·Half·BelowNav·BelowSafeArea). 모바일 기기 전용 아래 시트다. PC는 Dialog를 쓴다.
-// 손잡이만 지금 MobileBottomSheet 값(36×4 border/subtle, DECISIONS)이고 제목·간격은 Figma 값이다. 지금 시트의 menu(제목 20·간격 8)/form(18·16) 두 모양은
+// 손잡이만 옛 MobileBottomSheet 값(36×4 border/subtle, DECISIONS)이고 제목·간격은 Figma 값이다. 옛 시트의 menu(제목 20·간격 8)/form(18·16) 두 모양은
 // Figma에 없어 하나로 합쳤다(Figma Bottom Sheet는 제목 title/lg 하나, 영역 간격 20 하나).
 // 저장 중 닫힘 막기(closeDisabled)·닫기 X 자리·Esc 처리는 Dialog(ui/dialog.tsx)와 같은 API다. 반응형 대화상자가 PC Dialog ↔ 모바일 Drawer로 껍데기만 바꾼다.
-// 닫는 기준(높이 50% 또는 빠르게 튕김)·끌리는 곳·포커스·스크롤 잠금은 Base UI 기본이다. 지금 시트의 '80px 끌면 닫힘'은 없다.
+// 닫는 기준(높이 50% 또는 빠르게 튕김)·끌리는 곳·포커스·스크롤 잠금은 Base UI 기본이다. 옛 시트의 '80px 끌면 닫힘'은 없다.
 
 // 터치 스와이프는 버튼·입력 위에서도 시작한다(Base UI DrawerViewport가 터치에는 제외 목록을 쓰지 않는다: ignoreSelectorWhenTouch false).
-// 지금 시트(useSheetDrag)처럼 누르는 요소 위에서는 끌리지 않게, 터치가 닿은 요소에 Base UI 공식 제외 속성을 단다.
-// Popup의 캡처 단계라 Viewport의 터치 처리보다 먼저 실행된다. 목록은 지금 useSheetDrag의 제외 목록과 같다
+// 옛 시트(useSheetDrag)처럼 누르는 요소 위에서는 끌리지 않게, 터치가 닿은 요소에 Base UI 공식 제외 속성을 단다.
+// Popup의 캡처 단계라 Viewport의 터치 처리보다 먼저 실행된다. 목록은 옛 useSheetDrag의 제외 목록과 같다
 const SWIPE_IGNORE_TARGETS =
   "button, input, textarea, select, a, label, [role='button'], [role='checkbox'], [role='switch'], [role='radio'], [contenteditable='true']";
 
@@ -73,7 +73,7 @@ function DrawerClose({ disabled, ...props }: Readonly<DrawerPrimitive.Close.Prop
   return <DrawerPrimitive.Close data-slot="drawer-close" disabled={closeDisabled || disabled} {...props} />;
 }
 
-// 열기는 지금 시트처럼 아래에서 200ms(ease) 올라온다. 닫기는 Base UI 기본대로 내려가며 사라지고,
+// 열기는 옛 시트처럼 아래에서 200ms(ease) 올라온다. 닫기는 Base UI 기본대로 내려가며 사라지고,
 // 스와이프로 놓았을 때는 Base UI가 주는 세기(--drawer-swipe-strength 0.1~1)만큼 짧아진다(여기선 열기와 같은 200ms 기준).
 // 손으로 끄는 동안(data-swiping)은 손가락을 바로 따라가게 transition을 끈다.
 // 위로 끌면 Base UI가 조금 따라 올라가게(감쇠) 두므로, 시트 아래에 같은 색 띠(after)를 깔아 바닥과 틈이 보이지 않게 한다.
@@ -83,7 +83,7 @@ const drawerPopupVariants = cva(
   {
     variants: {
       size: {
-        // Figma Height=Min(5924:13962)·Half(5924:13989)는 내용 높이(Hug)다. 최대 90dvh는 지금 MobileBottomSheet 값
+        // Figma Height=Min(5924:13962)·Half(5924:13989)는 내용 높이(Hug)다. 최대 90dvh는 옛 MobileBottomSheet 값
         auto: "max-h-[90dvh]",
         // Figma Height=BelowNav(6211:4395): 상단 내비 아래 12px까지 채운다. 모바일 헤더는 56px(HeaderBar h-14)
         belowNav: "h-[calc(100dvh-68px)]",
@@ -134,7 +134,7 @@ function DrawerContent({
       <DrawerPrimitive.Viewport data-slot="drawer-viewport" className="fixed inset-0 z-50 flex flex-col justify-end">
         <DrawerPrimitive.Popup
           data-slot="drawer-content"
-          // 저장 중에는 시트가 끌리지도 않게 한다(지금 시트와 같음). 닫기 자체는 Drawer의 cancel이 막는다
+          // 저장 중에는 시트가 끌리지도 않게 한다(옛 시트와 같음). 닫기 자체는 Drawer의 cancel이 막는다
           data-base-ui-swipe-ignore={closeDisabled ? "" : undefined}
           onTouchStartCapture={(event) => {
             ignoreSwipeOnControl(event);
@@ -143,7 +143,7 @@ function DrawerContent({
           className={cn(drawerPopupVariants({ size }), className)}
           {...props}
         >
-          {/* 손잡이 36×4 border/subtle(지금 시트 값, DECISIONS). 위 12·아래 4는 Figma Header padding 위 12·행 간격 4(5924:13965). 장식이고 끄는 곳은 시트 전체다 */}
+          {/* 손잡이 36×4 border/subtle(옛 시트 값, DECISIONS). 위 12·아래 4는 Figma Header padding 위 12·행 간격 4(5924:13965). 장식이고 끄는 곳은 시트 전체다 */}
           <div aria-hidden data-slot="drawer-handle" className="flex shrink-0 justify-center pt-3 pb-1">
             <span className="h-1 w-9 rounded-full bg-border-subtle" />
           </div>
@@ -187,7 +187,7 @@ function DrawerHeader({ className, children, ...props }: Readonly<ComponentProps
   );
 }
 
-// Figma Title 5924:13969: title/lg text/default. h2. 한 줄로 줄인다(지금 시트와 같음)
+// Figma Title 5924:13969: title/lg text/default. h2. 한 줄로 줄인다(옛 시트와 같음)
 function DrawerTitle({ className, ...props }: Readonly<Omit<DrawerPrimitive.Title.Props, "className"> & { className?: string }>) {
   return (
     <DrawerPrimitive.Title

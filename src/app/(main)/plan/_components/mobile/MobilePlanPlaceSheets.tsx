@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { toast } from "sonner";
 
 import {
@@ -12,8 +13,8 @@ import {
   WriteIcon,
 } from "@/assets/icons";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
-import { MobileBottomSheet, MobileSheetMenuItem } from "@/components/mobile/MobileBottomSheet";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useDeleteScheduleItem } from "@/hooks/useRooms";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
@@ -23,6 +24,7 @@ import type { PlanPlace } from "@/lib/plan/types";
 
 import { AddFromBookmarkModal } from "../itinerary/AddFromBookmarkModal";
 import { MobileMemoSheet } from "./MobileMemoSheet";
+import { MobileSheetMenuItem } from "./MobileSheetMenuItem";
 import { MobileTimeSheet } from "./MobileTimeSheet";
 
 /** 장소 카드에서 여는 시트 — 일정 관리 메뉴와 그 안의 메모·시간·삭제, 북마크에서 추가 */
@@ -168,63 +170,75 @@ function PlaceActionsMenu({ place, itemId, canInsert, places, scheduleId, expens
   onInsertFromSearch: (anchor: InsertAnchor) => void;
   onChangeSheet: (sheet: MobilePlanPlaceSheet | null) => void;
 }>) {
+  // '일정 추가'는 Base UI 밖 검색 화면이 검색창에 포커스를 준다. 시트가 언마운트되며 예약하는 포커스 복귀(카드 '더보기')가
+  // 그 포커스를 빼앗지 않게, 이 경우에만 복귀를 끈다. 같은 커밋에 언마운트되므로 prop 값이 아니라 정리 시점에 부르는 함수로 읽는다
+  const skipReturnFocus = useRef(false);
+  // 조건부 마운트라 open을 고정하고 닫기 요청만 받는다. 다른 시트로 갈아끼우면(onChangeSheet) 이 시트는 닫힘 애니메이션 없이 언마운트된다(지금과 같음)
   return (
-    <MobileBottomSheet open onClose={close} title={place.title}>
-      {itemId === null ? (
-        <p className="py-2 text-body-s-regular text-text-subtle">
-          아직 저장 중인 장소예요. 잠시 후 다시 시도해 주세요.
-        </p>
-      ) : (
-        <>
-          {canInsert ? (
+    <Drawer open onOpenChange={(open) => { if (!open) close(); }}>
+      <DrawerContent closeLabel="장소 메뉴 닫기" finalFocus={() => !skipReturnFocus.current}>
+        <DrawerHeader>
+          <DrawerTitle>{place.title}</DrawerTitle>
+        </DrawerHeader>
+        <DrawerBody className="gap-2">
+          {itemId === null ? (
+            <p className="py-2 text-body-s-regular text-text-subtle">
+              아직 저장 중인 장소예요. 잠시 후 다시 시도해 주세요.
+            </p>
+          ) : (
             <>
+              {canInsert ? (
+                <>
+                  <MobileSheetMenuItem
+                    icon={LocationAddIcon}
+                    label="일정 추가"
+                    onClick={() => {
+                      skipReturnFocus.current = true;
+                      close();
+                      onInsertFromSearch(insertAnchorAfterItem(places, itemId));
+                    }}
+                  />
+                  <MobileSheetMenuItem
+                    icon={SavedAddIcon}
+                    label="북마크에서 추가"
+                    onClick={() =>
+                      onChangeSheet({ kind: "bookmark", anchor: insertAnchorAfterItem(places, itemId) })
+                    }
+                  />
+                  <hr className="my-1 shrink-0 border-border-subtle" />
+                </>
+              ) : null}
               <MobileSheetMenuItem
-                icon={LocationAddIcon}
-                label="일정 추가"
-                onClick={() => {
-                  close();
-                  onInsertFromSearch(insertAnchorAfterItem(places, itemId));
-                }}
+                icon={place.memo?.trim() ? WriteIcon : WriteAddIcon}
+                label={place.memo?.trim() ? "메모 수정" : "메모 추가"}
+                onClick={() => onChangeSheet({ kind: "memo", place })}
               />
               <MobileSheetMenuItem
-                icon={SavedAddIcon}
-                label="북마크에서 추가"
-                onClick={() =>
-                  onChangeSheet({ kind: "bookmark", anchor: insertAnchorAfterItem(places, itemId) })
-                }
+                icon={TimeClockIcon}
+                label="시간 설정"
+                onClick={() => onChangeSheet({ kind: "time", place })}
               />
-              <hr className="my-1 shrink-0 border-border-subtle" />
+              {expenses.canManage ? (
+                <MobileSheetMenuItem
+                  icon={CoinIcon}
+                  label="비용 추가"
+                  disabled={expenses.busy}
+                  onClick={() => {
+                    close();
+                    expenses.open({ scheduleId, scheduleItemId: itemId });
+                  }}
+                />
+              ) : null}
+              <MobileSheetMenuItem
+                icon={TrashIcon}
+                label="일정 삭제"
+                danger
+                onClick={() => onChangeSheet({ kind: "delete", place })}
+              />
             </>
-          ) : null}
-          <MobileSheetMenuItem
-            icon={place.memo?.trim() ? WriteIcon : WriteAddIcon}
-            label={place.memo?.trim() ? "메모 수정" : "메모 추가"}
-            onClick={() => onChangeSheet({ kind: "memo", place })}
-          />
-          <MobileSheetMenuItem
-            icon={TimeClockIcon}
-            label="시간 설정"
-            onClick={() => onChangeSheet({ kind: "time", place })}
-          />
-          {expenses.canManage ? (
-            <MobileSheetMenuItem
-              icon={CoinIcon}
-              label="비용 추가"
-              disabled={expenses.busy}
-              onClick={() => {
-                close();
-                expenses.open({ scheduleId, scheduleItemId: itemId });
-              }}
-            />
-          ) : null}
-          <MobileSheetMenuItem
-            icon={TrashIcon}
-            label="일정 삭제"
-            danger
-            onClick={() => onChangeSheet({ kind: "delete", place })}
-          />
-        </>
-      )}
-    </MobileBottomSheet>
+          )}
+        </DrawerBody>
+      </DrawerContent>
+    </Drawer>
   );
 }
