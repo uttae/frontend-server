@@ -1,15 +1,15 @@
 "use client";
 
 import { ChevronLeft, MoreHorizontal } from "lucide-react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { createPortal } from "react-dom";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { BookmarkPlacePreviewCard } from "./BookmarkPlacePreviewCard";
 import {
@@ -19,18 +19,8 @@ import {
 } from "@/hooks/useRooms";
 import type { BookmarkedPlace } from "@/types/bookmark";
 
+// '카테고리 변경'은 하위 메뉴 대신 같은 메뉴 안에서 목록으로 바꿔 보인다(지금 화면 흐름 유지, 디자이너 질문으로 남음)
 type MenuPhase = "main" | "pickCategory";
-
-type MenuPosition = {
-  top: number;
-  left: number;
-  width: number;
-};
-
-const MENU_GAP_PX = 4;
-const MENU_WIDTH_PX = 184;
-const MENU_MAX_HEIGHT_PX = 352;
-const MENU_VIEWPORT_PADDING_PX = 8;
 
 export function BookmarkPlaceRow({
   place,
@@ -54,9 +44,6 @@ export function BookmarkPlaceRow({
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPhase, setMenuPhase] = useState<MenuPhase>("main");
-  const [menuPosition, setMenuPosition] = useState<MenuPosition | null>(null);
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const menuPanelRef = useRef<HTMLDivElement>(null);
 
   const { data: categories } = useBookmarkCategories(roomId);
   const { mutate: moveBookmark, isPending: moving } = useMoveRoomBookmark();
@@ -68,78 +55,6 @@ export function BookmarkPlaceRow({
   const otherCategories =
     categories?.filter((c) => c.categoryId !== currentCategoryId) ?? [];
 
-  const closeMenu = useCallback(() => {
-    setMenuOpen(false);
-    setMenuPhase("main");
-  }, []);
-
-  const updateMenuPosition = useCallback(() => {
-    const triggerEl = triggerRef.current;
-    if (!triggerEl || !menuOpen) {
-      setMenuPosition(null);
-      return;
-    }
-    const rect = triggerEl.getBoundingClientRect();
-    const estimatedHeight =
-      menuPhase === "main"
-        ? 96
-        : Math.min(
-            64 + Math.max(otherCategories.length, 1) * 40,
-            MENU_MAX_HEIGHT_PX,
-          );
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const top =
-      spaceBelow >= estimatedHeight + MENU_GAP_PX
-        ? rect.bottom + MENU_GAP_PX
-        : Math.max(
-            MENU_VIEWPORT_PADDING_PX,
-            rect.top - MENU_GAP_PX - estimatedHeight,
-          );
-    const left = Math.min(
-      Math.max(
-        MENU_VIEWPORT_PADDING_PX,
-        rect.right - MENU_WIDTH_PX,
-      ),
-      window.innerWidth - MENU_WIDTH_PX - MENU_VIEWPORT_PADDING_PX,
-    );
-    setMenuPosition({
-      top,
-      left,
-      width: MENU_WIDTH_PX,
-    });
-  }, [menuOpen, menuPhase, otherCategories.length]);
-
-  const attachMenuPanel = useCallback((node: HTMLDivElement | null) => {
-    menuPanelRef.current = node;
-    if (node) updateMenuPosition();
-  }, [updateMenuPosition]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    window.addEventListener("scroll", updateMenuPosition, true);
-    window.addEventListener("resize", updateMenuPosition);
-    return () => {
-      window.removeEventListener("scroll", updateMenuPosition, true);
-      window.removeEventListener("resize", updateMenuPosition);
-    };
-  }, [menuOpen, updateMenuPosition]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onPointer = (e: MouseEvent | TouchEvent) => {
-      const target = e.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuPanelRef.current?.contains(target)) return;
-      closeMenu();
-    };
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("touchstart", onPointer);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("touchstart", onPointer);
-    };
-  }, [menuOpen, closeMenu]);
-
   const handleMoveTo = (targetCategoryId: number) => {
     if (!Number.isFinite(bookmarkId) || busy) return;
     moveBookmark(
@@ -149,13 +64,13 @@ export function BookmarkPlaceRow({
         categoryId: targetCategoryId,
         fromCategoryId: currentCategoryId,
       },
-      { onSuccess: () => closeMenu() },
+      // 이동 항목은 누른 뒤에도 메뉴를 열어 두고(closeOnClick={false}) 성공하면 닫는다
+      { onSuccess: () => setMenuOpen(false) },
     );
   };
 
   const handleDelete = () => {
     if (!Number.isFinite(bookmarkId) || busy) return;
-    closeMenu();
     setConfirmOpen(true);
   };
 
@@ -183,108 +98,68 @@ export function BookmarkPlaceRow({
         onClick={onOpenDetail}
         onThumbnailClick={onOpenDetail}
       />
-      <div
-        className="absolute right-[6.25rem] top-3 z-10 flex"
-        ref={triggerRef}
-      >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setMenuOpen((o) => {
-              if (o) {
-                setMenuPhase("main");
-                return false;
-              }
-              return true;
-            });
+      <div className="absolute right-[6.25rem] top-3 z-10 flex">
+        <DropdownMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          // 닫힘 애니메이션이 끝난 뒤 첫 단계로 되돌린다(닫히는 동안 내용이 바뀌어 보이지 않게)
+          onOpenChangeComplete={(open) => {
+            if (!open) setMenuPhase("main");
           }}
-          disabled={busy}
-          className={`cursor-pointer rounded-lg p-1 text-dark-gray transition-colors hover:bg-bubble-gray hover:text-neutral-900 active:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 ${
-            menuOpen ? "bg-primary/10 text-primary" : ""
-          }`}
-          aria-label="장소 메뉴"
-          aria-expanded={menuOpen}
         >
-          <MoreHorizontal className="size-5" />
-        </button>
-
-        {menuOpen &&
-          typeof document !== "undefined" &&
-          createPortal(
-            <div
-              ref={attachMenuPanel}
-              style={{
-                position: "fixed",
-                top: menuPosition?.top ?? 0,
-                left: menuPosition?.left ?? 0,
-                width: menuPosition?.width ?? MENU_WIDTH_PX,
-                zIndex: 200,
-                visibility: menuPosition ? "visible" : "hidden",
-              }}
-              className="animate-in fade-in-0 zoom-in-95 max-h-[22rem] overflow-y-auto rounded-xl border border-gray-border/80 bg-white p-1.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)] duration-150"
-              role="menu"
-            >
-              {menuPhase === "main" ? (
-                <>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="block w-full cursor-pointer rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={busy}
-                    onClick={() => setMenuPhase("pickCategory")}
-                  >
-                    카테고리 변경
-                  </button>
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="mt-0.5 block w-full cursor-pointer rounded-lg border-t border-gray-border/70 px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-status-negative transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={busy}
-                    onClick={handleDelete}
-                  >
-                    {deleting ? "삭제 중…" : "삭제"}
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className="flex w-full cursor-pointer items-center gap-1 rounded-lg px-2.5 py-2 text-left text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
-                    onClick={() => setMenuPhase("main")}
-                  >
-                    <ChevronLeft className="size-4 shrink-0" />
-                    뒤로
-                  </button>
-                  <div className="mx-1 my-1 border-t border-gray-border" />
-                  {otherCategories.length === 0 ? (
-                    <p className="rounded-lg bg-gray-50 px-3 py-3 text-center text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
-                      이동할 다른 카테고리가 없습니다.
-                    </p>
-                  ) : (
-                    otherCategories.map((c) => (
-                      <button
-                        key={c.categoryId}
-                        type="button"
-                        role="menuitem"
-                        className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
-                        disabled={busy}
-                        onClick={() => handleMoveTo(c.categoryId)}
-                      >
-                        <span
-                          className="size-3 shrink-0 rounded-full border border-black/10"
-                          style={{ backgroundColor: c.colorCode }}
-                          aria-hidden
-                        />
-                        <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                      </button>
-                    ))
-                  )}
-                </>
-              )}
-            </div>,
-            document.body,
-          )}
+          <DropdownMenuTrigger
+            disabled={busy}
+            className="cursor-pointer rounded-lg p-1 text-dark-gray transition-colors hover:bg-bubble-gray hover:text-neutral-900 active:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50 aria-expanded:bg-primary/10 aria-expanded:text-primary"
+            aria-label="장소 메뉴"
+          >
+            <MoreHorizontal className="size-5" />
+          </DropdownMenuTrigger>
+          {/* 폭 184는 지금 메뉴 값. 높이는 지금 상한 22rem과 화면에 남은 높이 중 작은 쪽 */}
+          <DropdownMenuContent align="end" className="w-46 max-h-[min(22rem,var(--available-height))]">
+            {menuPhase === "main" ? (
+              <>
+                <DropdownMenuItem
+                  closeOnClick={false}
+                  disabled={busy}
+                  onClick={() => setMenuPhase("pickCategory")}
+                >
+                  카테고리 변경
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" disabled={busy} onClick={handleDelete}>
+                  삭제
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                <DropdownMenuItem closeOnClick={false} onClick={() => setMenuPhase("main")}>
+                  <ChevronLeft className="size-4" />
+                  뒤로
+                </DropdownMenuItem>
+                {otherCategories.length === 0 ? (
+                  <p className="px-4 py-3 text-center text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
+                    이동할 다른 카테고리가 없습니다.
+                  </p>
+                ) : (
+                  otherCategories.map((c) => (
+                    <DropdownMenuItem
+                      key={c.categoryId}
+                      closeOnClick={false}
+                      disabled={busy}
+                      onClick={() => handleMoveTo(c.categoryId)}
+                    >
+                      <span
+                        className="size-3 shrink-0 rounded-full border border-black/10"
+                        style={{ backgroundColor: c.colorCode }}
+                        aria-hidden
+                      />
+                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                    </DropdownMenuItem>
+                  ))
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       {confirmOpen ? (
         <ConfirmDialog

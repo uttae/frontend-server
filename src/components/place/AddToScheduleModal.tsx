@@ -1,11 +1,21 @@
 "use client";
 
-import { Spinner } from "@/components/ui/spinner";
-
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { createPortal } from "react-dom";
+import type { SyntheticEvent } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCreateScheduleItem, useRoomSchedules } from "@/hooks/useRooms";
 import { bucketItemCount } from "@/lib/analytics/context";
@@ -22,6 +32,10 @@ import {
   parseLocalYmd,
 } from "@/lib/plan/tripRange";
 import { useSessionStore } from "@/stores/session-store";
+
+// 포털 안 클릭·터치가 React 트리를 따라 부모(지도 상세 패널·시트 드래그, 검색 결과 카드)로 올라가지 않게 Root 바깥에서 끊는다.
+// 딤은 표면 밖이라 표면 props로는 못 막는다. 감싼 요소는 display: contents라 배치에 상자를 더하지 않는다
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 
 type Props = {
   googlePlaceId: string;
@@ -55,14 +69,6 @@ export function AddToScheduleModal({
 
   const sorted = schedules ? sortRoomSchedules(schedules) : [];
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   async function pickDay(scheduleId: number) {
     if (!rid || isAdding) return;
     try {
@@ -91,109 +97,93 @@ export function AddToScheduleModal({
     }
   }
 
-  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
-  return createPortal(
+  return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-      role="presentation"
-      onMouseDown={(ev) => {
-        ev.stopPropagation();
-        if (ev.target === ev.currentTarget) onClose();
-      }}
-      onClick={(ev) => ev.stopPropagation()}
-      onPointerDown={(ev) => ev.stopPropagation()}
-      onTouchStart={(ev) => ev.stopPropagation()}
+      className="contents"
+      onClick={stopPropagation}
+      onMouseDown={stopPropagation}
+      onPointerDown={stopPropagation}
+      onTouchStart={stopPropagation}
     >
-      <div
-        className="flex max-h-[min(80vh,520px)] w-full max-w-sm flex-col rounded-2xl border border-gray-border bg-white shadow-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-schedule-modal-title"
-        onMouseDown={(e) => e.stopPropagation()}
+      <Dialog
+        open
+        closeDisabled={isAdding}
+        // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 추가 중에는 Esc·딤·닫기를 막는다
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
       >
-        <div className="shrink-0 border-b border-gray-border px-5 py-4">
-          <h2
-            id="add-schedule-modal-title"
-            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
-          >
-            일정에 추가
-          </h2>
-          <p className="mt-1 text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-            담을 여행 일차를 선택하세요.
-          </p>
-        </div>
+        <DialogContent size="sm" showCloseButton={false} className="max-h-[min(80dvh,520px)]">
+          <DialogHeader>
+            <DialogTitle>일정에 추가</DialogTitle>
+            <DialogDescription>담을 여행 일차를 선택하세요.</DialogDescription>
+          </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
-          {!rid ? (
-            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-              참여 중인 방이 없어요. 방에 입장한 뒤 다시 시도해 주세요.
-            </p>
-          ) : null}
-
-          {rid && schedulesLoading ? (
-            <div className="flex justify-center py-6">
-              <Spinner aria-label="일정 불러오는 중" />
-            </div>
-          ) : null}
-
-          {rid && schedulesError ? (
-            <div className="space-y-2 text-center">
-              <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-                {schedulesErr instanceof Error
-                  ? schedulesErr.message
-                  : "일정을 불러오지 못했습니다."}
+          <DialogBody>
+            {!rid ? (
+              <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
+                참여 중인 방이 없어요. 방에 입장한 뒤 다시 시도해 주세요.
               </p>
-              <button
-                type="button"
-                onClick={() => refetch()}
-                className="text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
-              >
-                다시 시도
-              </button>
-            </div>
-          ) : null}
+            ) : null}
 
-          {rid && !schedulesLoading && !schedulesError && sorted.length === 0 ? (
-            <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-              아직 생성된 일정이 없어요. 계획 탭에서 여행 기간을 적용한 뒤
-              다시 시도해 주세요.
-            </p>
-          ) : null}
+            {rid && schedulesLoading ? (
+              <div className="flex justify-center py-6">
+                <Spinner aria-label="일정 불러오는 중" />
+              </div>
+            ) : null}
 
-          {rid && sorted.length > 0 ? (
-            <ul className="space-y-2">
-              {sorted.map((s, i) => (
-                <li key={s.scheduleId}>
-                  <button
-                    type="button"
-                    disabled={isAdding}
-                    onClick={() => void pickDay(s.scheduleId)}
-                    className="flex w-full flex-col gap-0.5 rounded-xl border border-gray-border px-3 py-3 text-left transition-colors hover:bg-bubble-gray disabled:opacity-60"
-                  >
-                    <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-neutral-900">
-                      {`${i + 1}일차`}
-                    </span>
-                    <span className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-                      {formatKoreanDateLabel(parseLocalYmd(s.date))}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
+            {rid && schedulesError ? (
+              <div className="space-y-2 text-center">
+                <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
+                  {schedulesErr instanceof Error
+                    ? schedulesErr.message
+                    : "일정을 불러오지 못했습니다."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => refetch()}
+                  className="text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : null}
 
-        <div className="shrink-0 border-t border-gray-border px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+            {rid && !schedulesLoading && !schedulesError && sorted.length === 0 ? (
+              <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
+                아직 생성된 일정이 없어요. 계획 탭에서 여행 기간을 적용한 뒤
+                다시 시도해 주세요.
+              </p>
+            ) : null}
+
+            {rid && sorted.length > 0 ? (
+              <ul className="space-y-2">
+                {sorted.map((s, i) => (
+                  <li key={s.scheduleId}>
+                    <button
+                      type="button"
+                      disabled={isAdding}
+                      onClick={() => void pickDay(s.scheduleId)}
+                      className="flex w-full flex-col gap-0.5 rounded-xl border border-gray-border px-3 py-3 text-left transition-colors hover:bg-bubble-gray disabled:opacity-60"
+                    >
+                      <span className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-neutral-900">
+                        {`${i + 1}일차`}
+                      </span>
+                      <span className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+                        {formatKoreanDateLabel(parseLocalYmd(s.date))}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </DialogBody>
+
+          <DialogFooter>
+            <DialogClose render={<Button variant="weak" />}>닫기</DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

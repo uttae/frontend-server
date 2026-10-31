@@ -2,7 +2,6 @@ import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 
-import { ChevronRightIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
 // Figma 08 Dropdown: Dropdown Menu 5864:13084(Type=Default 5864:11039 · Profile 5864:13083), Item 5956:16861(Size=sm 5956:16698 · lg 5956:16862)
@@ -180,54 +179,6 @@ function DropdownMenuHeaderDescription({ className, ...props }: Readonly<Compone
   );
 }
 
-/**
- * 2단 메뉴(BookmarkPlaceRow '카테고리 변경 → 폴더 목록'용). Figma에 하위 메뉴가 없어 항목·표면은 위 Item·Content를 그대로 쓴다.
- * 포인터는 hover, 터치는 누르면 열리고 ← · Esc는 하위 메뉴만 닫는다.
- * 하위 메뉴와 메뉴 안 단계 전환(지금 BookmarkPlaceRow 방식) 중 무엇을 쓸지는 디자이너 질문으로 남아 있다.
- * 화면 교체 단계에서 BookmarkPlaceRow가 이 파트를 쓰지 않게 되면 Sub·SubTrigger·SubContent와 ChevronRightIcon import를 지운다
- */
-function DropdownMenuSub(props: Readonly<MenuPrimitive.SubmenuRoot.Props>) {
-  return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />;
-}
-
-type DropdownMenuSubTriggerProps = Omit<MenuPrimitive.SubmenuTrigger.Props, "className"> & {
-  className?: string;
-};
-
-// 하위 메뉴가 열려 있는 동안에도 강조 배경을 유지한다. 오른쪽 chevron 20px
-function DropdownMenuSubTrigger({ className, children, ...props }: Readonly<DropdownMenuSubTriggerProps>) {
-  return (
-    <MenuPrimitive.SubmenuTrigger
-      data-slot="dropdown-menu-sub-trigger"
-      className={cn(dropdownMenuItemVariants(), "data-popup-open:bg-fill", className)}
-      {...props}
-    >
-      {children}
-      <ChevronRightIcon size={20} className="ms-auto" />
-    </MenuPrimitive.SubmenuTrigger>
-  );
-}
-
-/** 상위 메뉴 옆(inline-end)에 첫 행 높이를 맞춰 붙인다. 화면 끝에 닿으면 Base UI가 반대쪽으로 뒤집는다 */
-function DropdownMenuSubContent({
-  align = "start",
-  alignOffset = 0,
-  side = "inline-end",
-  sideOffset = 0,
-  ...props
-}: Readonly<DropdownMenuContentProps>) {
-  return (
-    <DropdownMenuContent
-      data-slot="dropdown-menu-sub-content"
-      align={align}
-      alignOffset={alignOffset}
-      side={side}
-      sideOffset={sideOffset}
-      {...props}
-    />
-  );
-}
-
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -237,7 +188,4 @@ export {
   DropdownMenuHeader,
   DropdownMenuHeaderTitle,
   DropdownMenuHeaderDescription,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
 };

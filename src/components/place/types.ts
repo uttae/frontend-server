@@ -1,5 +1,4 @@
 export const TABS = ["홈", "리뷰"] as const;
-export type Tab = (typeof TABS)[number];
 
 export type { PlaceReview } from "@/lib/api/places";
 import type { PlaceReview } from "@/lib/api/places";

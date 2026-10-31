@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, type ComponentProps } from "react";
+import type { ComponentProps } from "react";
+
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { HomeTab } from "./HomeTab";
 import { ReviewsTab } from "./ReviewsTab";
-import { TABS, type Tab } from "./types";
+import { TABS } from "./types";
 
-/** 장소 상세의 홈·리뷰 탭 — 장소 상세 패널·시트와 지도 경로 보기 카드가 함께 쓴다 */
+/**
+ * 장소 상세의 홈·리뷰 탭 — 장소 상세 패널·시트와 지도 경로 보기 카드가 함께 쓴다.
+ * 숨은 탭 패널은 언마운트된다(Tabs 기본 keepMounted false — 지금처럼 탭을 바꾸면 패널 state·스크롤이 처음부터)
+ */
 export function PlaceDetailTabs({
   home,
   reviews,
@@ -14,30 +19,21 @@ export function PlaceDetailTabs({
   home: ComponentProps<typeof HomeTab>;
   reviews: ComponentProps<typeof ReviewsTab>;
 }>) {
-  const [activeTab, setActiveTab] = useState<Tab>("홈");
-
   return (
-    <>
-      {/* Tab navigation */}
-      <div className="flex shrink-0 border-b border-gray-border">
+    <Tabs defaultValue={TABS[0]}>
+      <TabsList aria-label="장소 정보">
         {TABS.map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-2.5 text-label-s-regular mobile:text-label-xs-regular font-medium transition-colors ${
-              activeTab === tab
-                ? "border-b-2 border-primary text-primary"
-                : "text-dark-gray hover:text-[#364153]"
-            }`}
-          >
+          <TabsTrigger key={tab} value={tab}>
             {tab}
-          </button>
+          </TabsTrigger>
         ))}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "홈" && <HomeTab {...home} />}
-      {activeTab === "리뷰" && <ReviewsTab {...reviews} />}
-    </>
+      </TabsList>
+      <TabsContent value="홈">
+        <HomeTab {...home} />
+      </TabsContent>
+      <TabsContent value="리뷰">
+        <ReviewsTab {...reviews} />
+      </TabsContent>
+    </Tabs>
   );
 }
