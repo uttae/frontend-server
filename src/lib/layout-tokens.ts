@@ -81,8 +81,6 @@ export const PLAN_PLACE_CARD_TW = {
   timeField: "flex min-w-0 w-full flex-col gap-1",
   timeInputCompact:
     "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-body-s-regular shadow-none transition focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary/30",
-  timeSaveButtonCompact:
-    "h-8 shrink-0 rounded-md px-3 text-label-xs-regular font-medium",
 } as const;
 
 /** 플랜 구간(경로) 카드 가로 고정폭(px). 좌측 패널 max(s2) 기준 본문 영역 근사 */
