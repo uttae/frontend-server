@@ -1,13 +1,11 @@
 // @vitest-environment jsdom
 import { act, create, type ReactTestRenderer } from 'react-test-renderer';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import type { ReactNode } from 'react';
 import type { PackingItem } from '@/lib/packing/types';
 import { PackingPage } from './PackingPage';
 
 const mocks = vi.hoisted(() => ({context: null as unknown}));
 vi.mock('@/hooks/usePackingList', () => ({usePackingList: () => mocks.context}));
-vi.mock('@/components/settings/SettingsDialog', () => ({SettingsDialog: ({title, children}: {title:string; children:ReactNode}) => <dialog aria-label={title}>{children}</dialog>}));
 const item: PackingItem = {id:11,partId:1,name:'여권',checked:false,position:0,memo:{id:11,itemId:11,content:'기존 메모'},tips:['유효기간을 확인하세요.','사본을 준비하세요.']};
 const second: PackingItem = {id:12,partId:1,name:'항공권 예약 내역',checked:true,position:1,memo:null,tips:[]};
 const data = {id:1,roomId:'room',ownerUserId:1,version:1,initializedAt:'2026-01-01T00:00:00Z',parts:[{id:1,name:'여권·예약·결제',column:0,position:0,items:[item,second]},{id:2,name:'통신·전자기기',column:0,position:1,items:[]},{id:3,name:'옷·가방',column:1,position:2,items:[]},{id:4,name:'세면·건강',column:2,position:3,items:[]}]};
