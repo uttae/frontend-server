@@ -3,7 +3,6 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { SettingsDialog } from "./SettingsDialog";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let host: HTMLDivElement;
@@ -76,17 +75,4 @@ it("uses current pending state without resetting focus and blocks all pending ac
   }
   await act(async () => button("삭제 닫기").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(confirm).not.toHaveBeenCalled(); expect(cancel).not.toHaveBeenCalled();
-});
-
-it.each([false, true])("SettingsDialog portal containment is opt-in (%s)", async enabled => {
-  await act(async () => root.render(
-    <div onClick={outer}>
-      <SettingsDialog title="설정" onClose={cancel} {...(enabled ? { stopPortalEventPropagation: true } : {})}>
-        <button type="button" onClick={confirm}>실행</button>
-      </SettingsDialog>
-    </div>,
-  ));
-  await act(async () => button("실행").click());
-  expect(confirm).toHaveBeenCalledTimes(1);
-  expect(outer).toHaveBeenCalledTimes(enabled ? 0 : 1);
 });

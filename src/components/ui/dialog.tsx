@@ -64,13 +64,13 @@ const dialogContentVariants = cva(
       size: {
         // Figma Modal 원본 폭(5956:24724). 날짜 선택 팝업(DatePickerLayer 최대 353)도 이 폭이다
         default: "w-[min(353px,calc(100vw-2.5rem))]",
-        // 지금 앱 max-w-sm: 북마크 추가·편집, 북마크에 담기, 일정에 추가, 시간 설정
+        // 옛 앱 max-w-sm: 북마크 추가·편집, 북마크에 담기, 일정에 추가, 시간 설정
         sm: "w-[min(384px,calc(100vw-2.5rem))]",
-        // 지금 앱 max-w-md: SettingsDialog compact(준비물 이름), 회원 탈퇴 2종, 가계부 범위 목록, 북마크에서 장소 추가
+        // 옛 앱 max-w-md: SettingsDialog compact(준비물 이름), 회원 탈퇴 2종, 가계부 범위 목록, 북마크에서 장소 추가
         md: "w-[min(448px,calc(100vw-2.5rem))]",
-        // 지금 앱 max-w-[640px]: SettingsDialog 기본(쿠키 설정), 비용 추가·수정. 여행 정보 수정(600)도 여기에 둔다
+        // 옛 앱 max-w-[640px]: SettingsDialog 기본(쿠키 설정), 비용 추가·수정. 여행 정보 수정(600)도 여기에 둔다
         lg: "w-[min(640px,calc(100vw-2.5rem))]",
-        // 지금 앱 max-w-[720px]: 정산 요약
+        // 옛 앱 max-w-[720px]: 정산 요약
         xl: "w-[min(720px,calc(100vw-2.5rem))]",
       },
     },
@@ -104,7 +104,7 @@ function DialogContent({
 }: Readonly<DialogContentProps>) {
   return (
     <DialogPrimitive.Portal data-slot="dialog-portal">
-      {/* 딤은 Figma에 정의가 없어(Modal 6038:6504) 지금 앱 대화상자에서 가장 많은 bg-black/40(SettingsDialog 등 14곳)을 쓴다.
+      {/* 딤은 Figma에 정의가 없어(Modal 6038:6504) 옛 앱 대화상자에서 가장 많던 bg-black/40(SettingsDialog 등 14곳)을 쓴다.
           iOS 26 Safari는 fixed 딤이 스크롤 뒤 화면 전체를 덮지 못해 Base UI 권장대로 absolute로 바꾸고 min-h-dvh로 채운다(body는 globals.css에서 position: relative).
           Base UI는 다른 대화상자·시트 안에서 연(nested) 대화상자의 딤을 그리지 않는다. 지금 앱처럼 뒤 대화상자도 딤으로 덮도록 forceRender로 늘 그린다 */}
       <DialogPrimitive.Backdrop
@@ -139,7 +139,7 @@ function DialogHeader({ className, children, ...props }: Readonly<ComponentProps
       {children}
       {closeLabel !== null && (
         // Figma Close 24px icon/subtle + 투명 Touch Target 44×44(6157:5576). 영역은 음수 margin으로 되돌려 제목 줄 높이를 키우지 않는다.
-        // hover는 Figma에 없어 지금 SettingsDialog의 원형 배경을 fill/default로 둔다
+        // hover는 Figma에 없어 옛 SettingsDialog의 원형 배경을 fill/default로 둔다
         <DialogPrimitive.Close
           data-slot="dialog-header-close"
           aria-label={closeLabel}

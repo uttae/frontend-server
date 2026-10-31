@@ -69,7 +69,7 @@ function AlertDialogOverlay({ closeLabel }: Readonly<{ closeLabel?: string }>) {
       data-slot="alert-dialog-overlay"
       className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-100 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"
     >
-      {/* Base UI에 AlertDialog 바깥 닫기 옵션이 없어 딤 전체를 덮는 Close 버튼으로 연다(지금 SettingsDialog의 '배경 닫기' 버튼과 같은 구조).
+      {/* Base UI에 AlertDialog 바깥 닫기 옵션이 없어 딤 전체를 덮는 Close 버튼으로 연다(옛 SettingsDialog의 '배경 닫기' 버튼과 같은 구조).
           Close라 onOpenChange(false, reason "close-press")를 거치므로 closeDisabled면 거기서 막힌다. 키보드는 Esc로 닫으니 탭 순서에서 뺀다 */}
       {closeLabel && (
         <AlertDialogPrimitive.Close
