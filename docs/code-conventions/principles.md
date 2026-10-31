@@ -19,7 +19,7 @@
 
 | 상황 | 할 일 |
 | :-- | :-- |
-| 맞는 부품이 있다(`src/components/ui/`의 `Button`·`Dialog`·`AlertDialog`·`Drawer`(바텀시트)·`DropdownMenu`·`Select`·`Combobox`·`Popover`·`Tabs`·`Field`·`Input` 등, 확인창은 `ConfirmDialog`) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳은 그쪽을 쓰고, 기존 사용처는 아래 4행대로 따로 옮긴다 |
+| 맞는 부품이 있다(`src/components/ui/`의 `Button`·`Dialog`·`AlertDialog`·`Drawer`(바텀시트)·`ResponsiveDialog`(PC는 대화상자, 모바일 기기는 바텀시트)·`DropdownMenu`·`Select`·`Combobox`·`Popover`·`Tabs`·`Field`·`Input` 등, 확인창은 `ConfirmDialog`) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳은 그쪽을 쓰고, 기존 사용처는 아래 4행대로 따로 옮긴다 |
 | 맞는 부품이 없는 동작 부품이 필요하다 | shadcn으로 만든다. `src/components/ui/`에 아직 없는 부품이면 받기 전에 묻는다(새 파일·의존성이 생긴다). 클래스·토큰·아이콘은 3-6과 Design.md를 따른다 |
 | 동작 없는 표시 부품이 필요하다 | Tailwind로 만든다 |
 | 기존 공용 부품이나 그 사용처를 shadcn으로 바꾼다 | 기능·버그 작업에 섞지 않고 따로 한다 |

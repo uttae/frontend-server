@@ -90,6 +90,7 @@ type DialogContentProps = Omit<DialogPrimitive.Popup.Props, "className"> &
 
 /**
  * 포털·딤·표면을 함께 그린다. 안에는 DialogHeader → 본문 → DialogFooter 순서로 넣는다(간격 20은 표면 gap이 준다).
+ * 본문이 높이 상한을 넘으면 표면 전체가 스크롤된다. 긴 폼처럼 제목 줄·Footer를 고정하려면 본문을 DialogBody로 감싼다.
  * 닫기 X는 DialogHeader가 제목 줄에 그린다. DialogHeader 없이 본문으로 시작하는 대화상자에는 X가 없다(DialogClose를 직접 둔다).
  * 처음 포커스는 Base UI 기본(첫 포커스 요소, 터치로 열면 표면)이고, 바꾸려면 `initialFocus`·`finalFocus`를 넘긴다.
  */
@@ -152,6 +153,20 @@ function DialogHeader({ className, children, ...props }: Readonly<ComponentProps
   );
 }
 
+/**
+ * 본문만 스크롤하는 영역. 표면 높이 상한(화면 − 32px)을 넘으면 제목 줄·Footer는 제자리에 두고 이 안만 스크롤한다(예: 비용 추가·수정 폼).
+ * 좌우는 표면 padding만큼 넓혀 스크롤 막대를 표면 가장자리에 붙이고, 위아래 4px은 첫·마지막 요소의 포커스 윤곽(2px + 띄움 2px)이 잘리지 않게 넓힌 값이다(DrawerBody와 같음)
+ */
+function DialogBody({ className, ...props }: Readonly<ComponentProps<"div">>) {
+  return (
+    <div
+      data-slot="dialog-body"
+      className={cn("-mx-5 -my-1 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-5 py-1", className)}
+      {...props}
+    />
+  );
+}
+
 // Figma Footer: 높이 48(버튼 md), 간격 8, 버튼은 각자 Fill. 두 개면 취소(Neutral Weak) → 확인(Neutral Solid), 하나면 전체 폭이다
 function DialogFooter({ className, ...props }: Readonly<ComponentProps<"div">>) {
   return (
@@ -190,6 +205,7 @@ function DialogDescription({
 
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
