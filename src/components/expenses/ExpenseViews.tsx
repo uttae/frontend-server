@@ -1,7 +1,9 @@
 "use client";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -29,8 +31,6 @@ import {
 } from "@/lib/expenses/expense-policy";
 import { UserAvatar } from "@/components/user/UserAvatar";
 
-export const expenseButtonClass =
-  "min-h-10 rounded-lg border border-gray-border px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
 // Group the integer string directly so large amounts and trailing decimals stay exact.
 import { formatExpenseAmount } from "@/lib/expenses/format-expense-amount";
 
@@ -178,16 +178,17 @@ export function ExpenseRolePicker({
             />
             <p className="text-body-xs-regular text-dark-gray">승인 대기</p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             aria-label={`${title} ${member.nickname} #${member.userId} 제외`}
-            className={`${expenseButtonClass} shrink-0`}
+            className="shrink-0"
             onClick={() =>
               onChange(selected.filter((id) => id !== member.userId))
             }
           >
             제외
-          </button>
+          </Button>
         </div>
       ))}
       {pendingMembers.length > 0 && (
@@ -676,27 +677,13 @@ export function ExpenseSummaryView({
     <div className="flex flex-col gap-6 mobile:gap-4 max-sm:gap-4">
       {showDetails && <details className="order-last text-body-xs-regular text-text-subtle">
         <summary className="cursor-pointer">정산 범위</summary>
-      <div
-        className="flex gap-1 border-b border-gray-border"
-        aria-label="정산 범위"
-      >
-        {(
-          [
-            ["mine", "내 정산"],
-            ["all", "전체 정산"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={scope === value}
-            onClick={() => onScopeChange?.(value)}
-            className={`min-h-10 cursor-pointer border-b-2 px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${scope === value ? "border-primary text-primary-strong" : "border-transparent text-dark-gray hover:text-primary-strong"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 정산 내용 범위를 바꾸는 하위 전환이라 Tabs Chip(Outline md)을 쓴다. 내용은 아래 SettlementContent가 scope로 그려 패널을 두지 않는다 */}
+      <Tabs value={scope} onValueChange={(next: "mine" | "all") => onScopeChange?.(next)}>
+        <TabsList variant="outline" size="md" aria-label="정산 범위">
+          <TabsTrigger value="mine">내 정산</TabsTrigger>
+          <TabsTrigger value="all">전체 정산</TabsTrigger>
+        </TabsList>
+      </Tabs>
       </details>}
       {krwSummary && (scope !== "all" || !summary.currencies.length) && <section aria-label="결제자별 원화 합계" className="space-y-3">
         <h3>원화 환산 결제 합계</h3>
@@ -792,27 +779,13 @@ export function ExpenseAnalysisView({
   const [groupBy, setGroupBy] = useState<"category" | "day">("category");
   return (
     <div className="space-y-6">
-      <div
-        className="flex gap-1 border-b border-gray-border"
-        aria-label="비용 분석 기준"
-      >
-        {(
-          [
-            ["category", "카테고리별"],
-            ["day", "일차별"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={groupBy === value}
-            onClick={() => setGroupBy(value)}
-            className={`min-h-10 cursor-pointer border-b-2 px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${groupBy === value ? "border-primary text-primary-strong" : "border-transparent text-dark-gray hover:text-primary-strong"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 분석 묶음 기준을 바꾸는 하위 전환이라 Tabs Chip(Outline md). 통화마다 그래프 하나를 groupBy로 고르므로 패널을 두지 않는다 */}
+      <Tabs value={groupBy} onValueChange={(next: "category" | "day") => setGroupBy(next)}>
+        <TabsList variant="outline" size="md" aria-label="비용 분석 기준">
+          <TabsTrigger value="category">카테고리별</TabsTrigger>
+          <TabsTrigger value="day">일차별</TabsTrigger>
+        </TabsList>
+      </Tabs>
       {!summary.currencies.length && (
         <p className="py-6 text-center text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           분석할 비용이 없어요.

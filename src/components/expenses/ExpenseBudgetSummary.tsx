@@ -1,7 +1,7 @@
 "use client";
 
 import { ExpenseKrwAmount } from "./ExpenseKrw";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import type { ExpenseBudget } from "@/lib/api/rooms/expenses";
 import { useExpenseContext } from "./ExpenseProvider";
 import { ExpenseBudgetModal } from "./ExpenseBudgetModal";
@@ -13,7 +13,6 @@ export function ExpenseBudgetSummary() {
   const { budget, krwSummary, canManage, budgetBusy, syncStatus } =
     useExpenseContext();
   const [opened, setOpened] = useState<ExpenseBudget | null>(null);
-  const close = useCallback(() => setOpened(null), []);
   const reference = krwSummary.data;
   const amount = budget.data?.budgetKrw;
   const converted = reference?.convertedTotalKrw;
@@ -108,7 +107,7 @@ export function ExpenseBudgetSummary() {
             : "—"}
         </p>
       </div>
-      {opened && <ExpenseBudgetModal initial={opened} onClose={close} />}
+      {opened && <ExpenseBudgetModal initial={opened} onClose={() => setOpened(null)} />}
     </div>
   );
 }
