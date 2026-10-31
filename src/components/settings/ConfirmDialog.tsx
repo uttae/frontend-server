@@ -1,28 +1,48 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useRef } from "react";
+import type { SyntheticEvent } from "react";
 
 import {
-  alertDialogButtonClass,
-  SettingsActionButton,
-  SettingsActionButtonRow,
-} from "@/components/settings/SettingsActionButton";
-import { SettingsDialog } from "@/components/settings/SettingsDialog";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   title: string;
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  /** 확인 동작 처리 중. Esc·딤·취소를 모두 막고 확인 버튼은 progress로 바뀐다 */
   isPending?: boolean;
+  /** 삭제·탈퇴·나가기 같은 위험 동작이면 true(확인 버튼 Critical Solid) */
   destructive?: boolean;
-  appearance?: "default" | "ledger" | "alert";
-  /** 확인 동작이 실패했을 때 버튼 아래에 보여줄 한 줄 안내 — `alert`에서만 쓴다 */
+  /** 확인 동작이 실패했을 때 버튼 아래에 보여줄 한 줄 안내 */
   errorMessage?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
+// 포털 안 이벤트가 React 트리를 따라 카드 클릭·드래그 호스트(PlanPlaceCard·BookmarkPlaceRow)로 올라가는 것만 막는다.
+// Base UI 포털도 React 부모로 이벤트를 올리고, 딤의 '배경 닫기' 버튼은 표면 밖이라 표면 props로는 못 막아 Root 바깥을 감싼다.
+// 감싼 요소는 display: contents라 호출부 배치에 상자를 더하지 않는다. 키 입력은 Base UI가 document에서 받으므로 막지 않는다
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+
+/**
+ * 확인창(Figma Alert Dialog 5621:3002). 마운트되면 열린 상태라 호출부는 조건부로 렌더한다.
+ * 닫기 요청(Esc·딤·취소)은 모두 onCancel이고, 처리 중에는 모두 막힌다. 성공 뒤 닫기는 호출부가 언마운트로 한다.
+ *
+ * @example
+ * {target ? (
+ *   <ConfirmDialog destructive title="이 장소를 삭제할까요?" confirmLabel="삭제"
+ *     isPending={isDeleting} onConfirm={handleDelete} onCancel={() => setTarget(null)} />
+ * ) : null}
+ */
 export function ConfirmDialog({
   title,
   description,
@@ -30,90 +50,51 @@ export function ConfirmDialog({
   cancelLabel = "취소",
   isPending = false,
   destructive = false,
-  appearance = "default",
   errorMessage,
   onConfirm,
   onCancel,
 }: Readonly<Props>) {
-  // SettingsDialog는 onClose가 바뀔 때마다 포커스·inert를 다시 잡으므로 안정된 함수를 넘긴다
-  const latest = useRef({ onCancel, isPending });
-  useLayoutEffect(() => {
-    latest.current = { onCancel, isPending };
-  });
-  const handleClose = useCallback(() => {
-    if (!latest.current.isPending) latest.current.onCancel();
-  }, []);
-
-  const confirmText = isPending ? "처리 중…" : confirmLabel;
-  const alertConfirmClass = alertDialogButtonClass[destructive ? "critical" : "brand"];
-  const ledgerButtonClass = appearance === "ledger" ? "h-12 rounded-lg text-[16px]" : undefined;
-  const descriptionClass = appearance === "ledger"
-    ? "whitespace-pre-line text-[14px] leading-5 text-text-subtle"
-    : "text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray";
-
-  if (appearance === "alert") {
-    return (
-      <SettingsDialog
-        title={title}
-        onClose={handleClose}
-        appearance="alert"
-        showCloseButton={false}
-        stopPortalEventPropagation
-      >
-        {description ? <p className="whitespace-pre-line text-body-l-regular text-text">{description}</p> : null}
-        <div className="mt-4 flex gap-2">
-          <button type="button" className={`flex-1 ${alertDialogButtonClass.secondary}`} onClick={handleClose} disabled={isPending}>
-            {cancelLabel}
-          </button>
-          <button
-            type="button"
-            className={`flex-1 ${alertConfirmClass}`}
-            onClick={onConfirm}
-            disabled={isPending}
-          >
-            {confirmText}
-          </button>
-        </div>
-        {errorMessage ? (
-          <p role="alert" className="mt-2 text-body-s-regular text-status-negative">
-            {errorMessage}
-          </p>
-        ) : null}
-      </SettingsDialog>
-    );
-  }
-
   return (
-    <SettingsDialog
-      title={title}
-      onClose={handleClose}
-      size="compact"
-      appearance={appearance}
-      stopPortalEventPropagation
+    <div
+      className="contents"
+      onClick={stopPropagation}
+      onMouseDown={stopPropagation}
+      onPointerDown={stopPropagation}
+      onTouchStart={stopPropagation}
     >
-      {description ? (
-        <p className={descriptionClass}>
-          {description}
-        </p>
-      ) : null}
-      <SettingsActionButtonRow className="mt-6">
-        <SettingsActionButton
-          variant="secondary"
-          className={ledgerButtonClass}
-          onClick={handleClose}
-          disabled={isPending}
-        >
-          {cancelLabel}
-        </SettingsActionButton>
-        <SettingsActionButton
-          variant="primary"
-          className={`${ledgerButtonClass ?? ""} ${destructive ? "bg-status-negative" : ""}`}
-          onClick={onConfirm}
-          disabled={isPending}
-        >
-          {confirmText}
-        </SettingsActionButton>
-      </SettingsActionButtonRow>
-    </SettingsDialog>
+      <AlertDialog
+        open
+        closeDisabled={isPending}
+        // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
+        onOpenChange={(open) => {
+          if (!open) onCancel();
+        }}
+      >
+        <AlertDialogContent backdropCloseLabel={`${title} 배경 닫기`}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{title}</AlertDialogTitle>
+            {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-2">
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isPending}>{cancelLabel}</AlertDialogCancel>
+              <AlertDialogAction
+                tone={destructive ? "critical" : "neutral"}
+                loading={isPending}
+                loadingLabel="처리 중"
+                onClick={onConfirm}
+              >
+                {confirmLabel}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+            {errorMessage ? (
+              <p role="alert" className="text-center text-body-s-regular text-status-negative">
+                {errorMessage}
+              </p>
+            ) : null}
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
   );
 }

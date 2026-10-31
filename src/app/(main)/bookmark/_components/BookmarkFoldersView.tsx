@@ -362,6 +362,7 @@ export function BookmarkFoldersView() {
       )}
       {folderToDelete ? (
         <ConfirmDialog
+          destructive
           title={`「${folderToDelete.title}」 북마크 목록을 삭제할까요?`}
           description="소속 북마크 항목도 함께 삭제됩니다."
           confirmLabel="삭제"

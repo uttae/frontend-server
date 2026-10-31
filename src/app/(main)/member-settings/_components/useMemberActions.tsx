@@ -97,7 +97,6 @@ export function useMemberActions() {
     <>
       {leaveDialog === "confirm" ? (
         <ConfirmDialog
-          appearance="alert"
           destructive
           title="방에서 나가시겠어요?"
           description={"방을 나가면 이 여행의 일정과 대화에\n더 이상 접근할 수 없어요."}
@@ -129,7 +128,6 @@ export function useMemberActions() {
 
       {transferTarget && roomId ? (
         <ConfirmDialog
-          appearance="alert"
           title="방장을 위임하시겠어요?"
           description={`${transferTarget.nickname}님에게 방장을 넘기면\n나는 참여자가 돼요.`}
           confirmLabel="위임"
@@ -157,7 +155,6 @@ export function useMemberActions() {
 
       {kickTarget && roomId ? (
         <ConfirmDialog
-          appearance="alert"
           destructive
           title="강제 퇴장하시겠어요?"
           description={`${kickTarget.nickname}님을 이 여행에서 내보내요.`}

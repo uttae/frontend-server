@@ -288,6 +288,7 @@ export function BookmarkPlaceRow({
       </div>
       {confirmOpen ? (
         <ConfirmDialog
+          destructive
           title="이 장소를 북마크에서 삭제할까요?"
           confirmLabel="삭제"
           isPending={deleting}

@@ -467,6 +467,7 @@ export function PlanPlaceCard({
       ) : null}
       {confirmTarget === "item" ? (
         <ConfirmDialog
+          destructive
           title="일정에서 이 장소를 삭제할까요?"
           description="이 장소와 연결된 모든 비용도 함께 삭제돼요."
           confirmLabel="삭제"
@@ -477,6 +478,7 @@ export function PlanPlaceCard({
       ) : null}
       {confirmTarget === "memo" ? (
         <ConfirmDialog
+          destructive
           title="메모를 삭제할까요?"
           confirmLabel="삭제"
           isPending={isUpdatingItem}

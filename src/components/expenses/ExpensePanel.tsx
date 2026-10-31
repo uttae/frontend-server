@@ -555,7 +555,6 @@ export function ExpensePanel() {
       {expenseToDelete ? (
         <ConfirmDialog
           title="비용을 삭제할까요?"
-          appearance="ledger"
           destructive
           description={`${expenseTitle(expenseToDelete)} 내역을 삭제해요. 삭제한 내역은 복구할 수 없어요.`}
           confirmLabel="삭제"
