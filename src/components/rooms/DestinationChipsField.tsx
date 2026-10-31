@@ -69,7 +69,7 @@ export function DestinationChipsField({
       {values.length > 0 ? (
         <div className="mt-1 flex flex-wrap gap-2">
           {values.map((v, i) => (
-            <Chip key={`${v}-${i}`} variant="outline" size="md" className="max-w-full">
+            <Chip key={`${v}-${i}`} variant="outline" size="md" selected className="max-w-full">
               <span className="min-w-0 truncate">{v}</span>
               <ChipRemove aria-label={`${v} 삭제`} onClick={() => remove(i)} />
             </Chip>

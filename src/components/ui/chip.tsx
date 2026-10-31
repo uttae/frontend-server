@@ -26,8 +26,17 @@ const chipVariants = cva(
         md: "min-h-9 px-4 text-label-m-emphasis data-disabled:text-label-m-regular",
         sm: "min-h-8 px-3 text-label-m-emphasis data-disabled:text-label-m-regular",
       },
+      // Figma Selected=True·State=Enabled. 누를 수 없는 span 칩(고른 목적지)은 aria-pressed를 둘 수 없어 이 값으로 그린다
+      selected: {
+        true: "",
+        false: "",
+      },
     },
-    defaultVariants: { variant: "solid", size: "lg" },
+    compoundVariants: [
+      { variant: "solid", selected: true, className: "bg-primary text-text-inverse" },
+      { variant: "outline", selected: true, className: "border-primary-strong text-primary-strong" },
+    ],
+    defaultVariants: { variant: "solid", size: "lg", selected: false },
   },
 );
 
@@ -39,25 +48,27 @@ function Chip({
   className,
   variant = "solid",
   size = "lg",
+  selected = false,
   render,
   ...props
 }: Readonly<useRender.ComponentProps<"span"> & VariantProps<typeof chipVariants>>) {
   return useRender({
     defaultTagName: "span",
-    props: mergeProps<"span">({ className: cn(chipVariants({ variant, size }), className) }, props),
+    props: mergeProps<"span">({ className: cn(chipVariants({ variant, size, selected }), className) }, props),
     render,
-    state: { slot: "chip", variant, size },
+    state: { slot: "chip", variant, size, selected: Boolean(selected) },
   });
 }
 
-// 칩 안 지우기 버튼. 보이는 크기는 아이콘 16px이고 음수 margin으로 누르는 영역만 44px까지 넓힌다(md 36px 칩의 좌우 여백 16px 안에서 끝난다)
+// Figma Trailing Icon(close 16px, 라벨과 간격 6px). 누르는 영역은 음수 margin으로 28×44px까지만 넓힌다.
+// 가로를 44px까지 넓히면 왼쪽이 간격 6px을 넘어 라벨 끝 8px을 덮는다(라벨 끝을 눌러도 지워짐). 오른쪽 6px은 칩 여백 16px 안이다
 function ChipRemove({ className, ...props }: Readonly<ComponentProps<"button">>) {
   return (
     <button
       type="button"
       data-slot="chip-remove"
       className={cn(
-        "-m-3.5 grid size-11 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary",
+        "-mx-1.5 -my-3.5 grid h-11 w-7 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary",
         className,
       )}
       {...props}

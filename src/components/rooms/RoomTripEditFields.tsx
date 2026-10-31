@@ -141,7 +141,7 @@ export function RoomTripEditFields({
         {destinations.length > 0 ? (
           <div className="mt-1 flex flex-wrap gap-2">
             {destinations.map((destination, index) => (
-              <Chip key={`${destination}-${index}`} variant="outline" size="md" className="max-w-full">
+              <Chip key={`${destination}-${index}`} variant="outline" size="md" selected className="max-w-full">
                 <span className="min-w-0 truncate">{destination}</span>
                 <ChipRemove
                   aria-label={`${destination} 삭제`}
