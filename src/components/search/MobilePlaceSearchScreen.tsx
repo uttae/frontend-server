@@ -14,13 +14,13 @@ import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import {
   ChevronLeftIcon,
-  CircleCancelIcon,
   CloseIcon,
   LocationErrorIcon,
   LocationIcon,
   SearchIcon,
   type IconProps,
 } from "@/assets/icons";
+import { SearchBar, SearchBarClear, SearchBarInput } from "@/components/ui/search-bar";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
   addMapSearchHistory,
@@ -247,7 +247,7 @@ function LegacyMobilePlaceSearchScreen({
       )}
     >
       <form onSubmit={handleSubmit} className="shrink-0 px-2 pb-1 pt-4">
-        <div className="flex h-12 items-center gap-2 rounded-full border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary">
+        <SearchBar shape="pill">
           <button
             type="button"
             onClick={handleClose}
@@ -256,7 +256,7 @@ function LegacyMobilePlaceSearchScreen({
           >
             <ChevronLeftIcon size={20} className="text-icon-subtle" />
           </button>
-          <input
+          <SearchBarInput
             ref={inputRef}
             type="search"
             inputMode="search"
@@ -265,19 +265,9 @@ function LegacyMobilePlaceSearchScreen({
             onChange={(e) => updateInput(e.target.value)}
             placeholder="떠나고 싶은 지역을 입력해주세요"
             autoComplete="off"
-            className="min-w-0 flex-1 bg-transparent pr-1 text-body-m-regular text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden"
           />
-          {inputValue ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label="검색어 지우기"
-              className="flex h-12 w-8 shrink-0 items-center justify-center"
-            >
-              <CircleCancelIcon size={20} className="text-icon-subtle" />
-            </button>
-          ) : null}
-        </div>
+          {inputValue ? <SearchBarClear onClick={handleClear} aria-label="검색어 지우기" /> : null}
+        </SearchBar>
       </form>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-5">
