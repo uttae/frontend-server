@@ -97,11 +97,12 @@ it("uses the existing trimmed mutation payload and closes only after save succee
   expect(dialog()).toBeNull();
 });
 
-it("retains the original date floor, date ordering and required destination validation", async () => {
+it("allows an earlier start date and keeps date ordering and required destination validation", async () => {
   await open();
+  // 저장된 시작일보다 이른 날짜로도 시작일을 앞당길 수 있다
   await pickDates("start", "2026-10-09");
-  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
-  expect(button("적용하기", dialog()!).disabled).toBe(true);
+  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 9일");
+  expect(button("적용하기", dialog()!).disabled).toBe(false);
   // 종료 칸에서 시작일보다 이른 날짜를 고르면 기간을 거꾸로 만들지 않고 새 시작일이 되며, 종료일은 그대로다
   await pickDates("start", "2026-10-11", "2026-10-12");
   await pickDates("end", "2026-10-10");
