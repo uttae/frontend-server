@@ -509,7 +509,6 @@ export function ExpensePanel() {
           title="정산 요약"
           description={context.summary.data ? `전체 여행 · ${new Set(context.summary.data.currencies.flatMap(currency => currency.individuals.map(person => person.userId))).size}명` : undefined}
           onClose={() => setTab("list")}
-          settlement
           footer={
             <div className="flex justify-end">
               <button
