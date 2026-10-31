@@ -70,7 +70,7 @@ function WaitingContent() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-fill-elevate px-4 py-12">
-      <BrandLogo variant="symbol" size="S" alt="우때 로고" />
+      <BrandLogo variant="combination" size="M" alt="우때 로고" />
 
       <div className="flex w-full max-w-[480px] flex-col gap-6 rounded-xl bg-fill-elevate p-6 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
         <Badge tone={isRejected ? "critical" : "brand"} size="md">
