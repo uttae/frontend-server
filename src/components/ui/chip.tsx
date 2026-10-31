@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 // Selected는 aria-pressed:, State=Pressed는 :active, Disabled는 data-disabled:로 그린다. Base UI의 data-pressed는 Selected라 눌림에 쓰지 않는다.
 // 비활성을 disabled:로 쓰면 Tailwind가 aria-pressed:보다 먼저 출력해 선택+비활성 칩이 선택 색으로 남는다.
 // 눌림·손가락 커서는 enabled:로 한정해 span 칩(제거용)은 누를 때 색·커서가 바뀌지 않고, button·Toggle로 그린 칩만 바뀐다.
+// 아이콘은 Figma Chip 예시(chevron 5628:50·check 5628:56)대로 16px·선 1.5px이다. 기본 아이콘 선 1.8(createIcon)을 CSS로 덮는다
 const chipVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full whitespace-nowrap transition-colors duration-120 ease-out enabled:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none [&_svg:not([class*='size-'])]:size-[16px]",
+  "inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full whitespace-nowrap transition-colors duration-120 ease-out enabled:cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary motion-reduce:transition-none [&_svg:not([class*='size-'])]:size-[16px] [&_svg_*]:[stroke-width:1.5]",
   {
     variants: {
       variant: {
