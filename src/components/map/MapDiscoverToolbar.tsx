@@ -62,7 +62,7 @@ export function MapDiscoverToolbar({
             {category ? (
               <div className="flex w-max flex-nowrap items-center gap-1.5">
                 <MapChipToggle pressed onPressedChange={resetCategory}>
-                  <category.icon/><span>{category.label}</span>
+                  <category.icon className="text-primary-strong"/><span>{category.label}</span>
                 </MapChipToggle>
                 <MapFilter rating={rating} openNow={openNow} setRating={setRating} setOpenNow={setOpenNow}/>
                 <Chip variant="outline" size="md" className="w-9 px-0"
