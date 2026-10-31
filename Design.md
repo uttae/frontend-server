@@ -112,7 +112,7 @@ import { MapPinIcon } from "@/assets/icons";
 
 ### 3-3. 이벤트 피드백
 - 사용자 액션에는 결과 피드백이 있어야 한다
-- alert는 toast, confirm은 `ConfirmDialog`를 쓰고 요구조건에 맞춘다(shadcn 부품으로 옮기는 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
+- alert는 toast, confirm은 `ConfirmDialog`(ui `AlertDialog` 위)를 쓰고 요구조건에 맞춘다(shadcn 부품으로 옮기는 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
 - 비동기 동작 중 중복 실행 방지(핵심 원칙 2-4)
 
 
