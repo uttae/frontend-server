@@ -1,7 +1,7 @@
 import { FilterDropdown } from "@/components/filter-dropdown";
-import { Chip } from "@/components/ui/chip";
 import { MAP_FILTER_DROPDOWN_MENU_Z_CLASS } from "@/lib/layout/mapDetailPanelLayout";
 
+import { MapChipToggle } from "./MapChipToggle";
 import {
   RATING_OPTIONS,
   type OpenValue,
@@ -38,14 +38,12 @@ export default function MapFilter({
         onOpenChange={onRatingDropdownOpenChange}
         menuClassName={MAP_FILTER_DROPDOWN_MENU_Z_CLASS}
       />
-      <Chip
-        variant="outline"
-        size="md"
+      <MapChipToggle
         pressed={isOpenOnly}
         onPressedChange={(pressed) => setOpenNow(pressed ? "open" : "all")}
       >
         영업 중
-      </Chip>
+      </MapChipToggle>
     </div>
   );
 }

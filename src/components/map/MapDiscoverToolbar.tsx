@@ -4,7 +4,7 @@ import { type ReactNode } from "react";
 import { flushSync } from "react-dom";
 
 import { CircleCancelIcon, CloseIcon, SearchIcon } from "@/assets/icons";
-import { Chip, chipVariants } from "@/components/ui/chip";
+import { Chip } from "@/components/ui/chip";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 
@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 
 import MapFilter from "./MapFilter";
+import { MapChipToggle } from "./MapChipToggle";
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
 import { MapCategoryChips } from "./MapCategoryChips";
 import type { OpenValue, RatingValue } from "./map-filters";
@@ -60,14 +61,14 @@ export function MapDiscoverToolbar({
           <div className="-my-2 overflow-x-auto py-2 drop-shadow-[0_2px_5px_#0000001a] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {category ? (
               <div className="flex w-max flex-nowrap items-center gap-1.5">
-                <Chip variant="outline" size="md" pressed onPressedChange={resetCategory}>
+                <MapChipToggle pressed onPressedChange={resetCategory}>
                   <category.icon/><span>{category.label}</span>
-                </Chip>
+                </MapChipToggle>
                 <MapFilter rating={rating} openNow={openNow} setRating={setRating} setOpenNow={setOpenNow}/>
-                <button type="button" aria-label="카테고리 필터 초기화" onClick={resetCategory}
-                  className={cn(chipVariants({ variant: "outline", size: "md" }), "w-9 cursor-pointer px-0")}>
+                <Chip variant="outline" size="md" className="w-9 px-0"
+                  render={<button type="button" aria-label="카테고리 필터 초기화" onClick={resetCategory}/>}>
                   <CloseIcon/>
-                </button>
+                </Chip>
               </div>
             ) : <MapCategoryChips selectedCategoryId={selectedCategoryId} onSelectCategory={onSelectCategory}/>}
           </div>

@@ -2,10 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 
-import { CloseIcon } from "@/assets/icons";
 import { DateRangeField } from "@/components/date-picker/DateRangeField";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
-import { chipVariants } from "@/components/ui/chip";
+import { Chip, ChipRemove } from "@/components/ui/chip";
 import { Field as TextField, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -142,23 +141,16 @@ export function RoomTripEditFields({
         {destinations.length > 0 ? (
           <div className="mt-1 flex flex-wrap gap-2">
             {destinations.map((destination, index) => (
-              <span
-                key={`${destination}-${index}`}
-                className={cn(chipVariants({ variant: "outline", size: "md" }), "max-w-full")}
-              >
+              <Chip key={`${destination}-${index}`} variant="outline" size="md" className="max-w-full">
                 <span className="min-w-0 truncate">{destination}</span>
-                <button
-                  type="button"
+                <ChipRemove
+                  aria-label={`${destination} 삭제`}
                   onClick={() => {
                     onDestinationsChange(destinations.filter((_, i) => i !== index));
                     setDestinationWarning(null);
                   }}
-                  aria-label={`${destination} 삭제`}
-                  className="-m-3.5 grid size-11 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary"
-                >
-                  <CloseIcon size={16} />
-                </button>
-              </span>
+                />
+              </Chip>
             ))}
           </div>
         ) : null}

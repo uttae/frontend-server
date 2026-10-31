@@ -2,10 +2,8 @@
 
 import { useState } from "react";
 
-import { CloseIcon } from "@/assets/icons";
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
-import { chipVariants } from "@/components/ui/chip";
-import { cn } from "@/lib/utils";
+import { Chip, ChipRemove } from "@/components/ui/chip";
 
 type Props = {
   values: string[];
@@ -71,20 +69,10 @@ export function DestinationChipsField({
       {values.length > 0 ? (
         <div className="mt-1 flex flex-wrap gap-2">
           {values.map((v, i) => (
-            <span
-              key={`${v}-${i}`}
-              className={cn(chipVariants({ variant: "outline", size: "md" }), "max-w-full")}
-            >
+            <Chip key={`${v}-${i}`} variant="outline" size="md" className="max-w-full">
               <span className="min-w-0 truncate">{v}</span>
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                aria-label={`${v} 삭제`}
-                className="-m-3.5 grid size-11 shrink-0 place-items-center focus-visible:outline-2 focus-visible:outline-primary"
-              >
-                <CloseIcon size={16} />
-              </button>
-            </span>
+              <ChipRemove aria-label={`${v} 삭제`} onClick={() => remove(i)} />
+            </Chip>
           ))}
         </div>
       ) : null}

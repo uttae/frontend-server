@@ -1,8 +1,8 @@
 "use client";
 
-import { Chip } from "@/components/ui/chip";
 import { cn } from "@/lib/utils";
 
+import { MapChipToggle } from "./MapChipToggle";
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
 
 type MapCategoryChipsProps = {
@@ -25,16 +25,14 @@ export function MapCategoryChips({
       )}
     >
       {MAP_PLACE_CATEGORIES.map((cat) => (
-        <Chip
+        <MapChipToggle
           key={cat.id}
-          variant="outline"
-          size="md"
           pressed={selectedCategoryId === cat.id}
           onPressedChange={(pressed) => onSelectCategory(pressed ? cat.id : null)}
         >
           <cat.icon />
           <span>{cat.label}</span>
-        </Chip>
+        </MapChipToggle>
       ))}
     </div>
   );
