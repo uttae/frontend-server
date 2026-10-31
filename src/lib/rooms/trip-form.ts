@@ -2,12 +2,6 @@ export const ROOM_TRIP_TITLE_MAX_LENGTH = 20;
 export const TRIP_DESTINATIONS_MAX_COUNT = 5;
 export const TRIP_DESTINATION_MAX_LENGTH = 100;
 
-export const TRIP_FORM_FIELD_CLASS =
-  "rounded-2xl border-2 border-gray-border bg-white px-5 py-4 transition focus-within:border-primary";
-
-export const TRIP_FORM_FIELD_READ_ONLY_CLASS =
-  "rounded-2xl border-2 border-gray-border bg-bubble-gray/30 px-5 py-4";
-
 export const TRIP_DATE_RANGE_INVALID_MESSAGE =
   "종료일은 시작일 이후여야 해요." as const;
 

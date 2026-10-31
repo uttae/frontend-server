@@ -2,6 +2,8 @@
 
 import { DateRangeField } from "@/components/date-picker/DateRangeField";
 import { DestinationChipsField } from "@/components/rooms/DestinationChipsField";
+import { Field, FieldHeader, FieldLabel, FieldSuffix } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import {
   isTripScheduleDayLimitExceeded,
   TRIP_SCHEDULE_DAY_LIMIT_MESSAGE,
@@ -13,8 +15,6 @@ import {
   TRIP_DATE_RANGE_INVALID_MESSAGE,
   TRIP_DESTINATION_MAX_LENGTH,
   TRIP_DESTINATIONS_MAX_COUNT,
-  TRIP_FORM_FIELD_CLASS,
-  TRIP_FORM_FIELD_READ_ONLY_CLASS,
   TRIP_START_BEFORE_MIN_MESSAGE,
   type TripFormValues,
 } from "@/lib/rooms/trip-form";
@@ -22,7 +22,6 @@ import {
 type Props = {
   idPrefix: string;
   values: TripFormValues;
-  readOnly?: boolean;
   autoFocusTitle?: boolean;
   startDateMin?: string;
   onTitleChange: (value: string) => void;
@@ -31,10 +30,10 @@ type Props = {
   onEndDateChange: (value: string) => void;
 };
 
+/** 새 여행 만들기 입력 필드. 칸 모양과 배치는 여행 정보 수정(`RoomTripEditFields`)과 같은 Figma Text Field이고, 글자 수만 Header Suffix로 더 보인다 */
 export function TripFormFields({
   idPrefix,
   values,
-  readOnly = false,
   autoFocusTitle = false,
   startDateMin,
   onTitleChange,
@@ -43,93 +42,60 @@ export function TripFormFields({
   onEndDateChange,
 }: Props) {
   const { title, destinations, startDate, endDate } = values;
-  const dateRangeInvalid = isTripDateRangeInvalid(startDate, endDate);
-  const startBeforeMin =
-    startDateMin != null && isTripStartBeforeMin(startDate, startDateMin);
-  const scheduleDayLimitExceeded = isTripScheduleDayLimitExceeded(
-    startDate,
-    endDate,
-  );
-  const fieldClassName = readOnly
-    ? TRIP_FORM_FIELD_READ_ONLY_CLASS
-    : TRIP_FORM_FIELD_CLASS;
+  let dateMessage = null;
+  if (startDateMin != null && isTripStartBeforeMin(startDate, startDateMin)) dateMessage = TRIP_START_BEFORE_MIN_MESSAGE;
+  else if (isTripDateRangeInvalid(startDate, endDate)) dateMessage = TRIP_DATE_RANGE_INVALID_MESSAGE;
+  else if (isTripScheduleDayLimitExceeded(startDate, endDate)) dateMessage = TRIP_SCHEDULE_DAY_LIMIT_MESSAGE;
 
   return (
-    <div className="min-w-0 space-y-3">
-      <div className={fieldClassName}>
-        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <label htmlFor={`${idPrefix}-title`} className="text-label-l-emphasis mobile:text-label-m-emphasis font-bold text-black">여행 제목</label>
-          {!readOnly && (
-            <p className="shrink-0 text-body-s-regular mobile:text-body-xs-regular tabular-nums text-light-gray">
-              {title.length}/{ROOM_TRIP_TITLE_MAX_LENGTH}
-            </p>
-          )}
-        </div>
-        {readOnly ? (
-          <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">{title.trim() || "—"}</p>
-        ) : (
-          <input
-            id={`${idPrefix}-title`}
-            type="text"
-            value={title}
-            maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
-            onChange={(e) =>
-              onTitleChange(e.target.value.slice(0, ROOM_TRIP_TITLE_MAX_LENGTH))
-            }
-            placeholder="예: 봄 일본 여행, 하와이 신혼여행"
-            className="w-full text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray"
-            autoFocus={autoFocusTitle}
-          />
-        )}
-      </div>
+    <div className="flex min-w-0 flex-col gap-6">
+      <Field>
+        <FieldHeader>
+          <FieldLabel htmlFor={`${idPrefix}-title`}>여행 제목</FieldLabel>
+          <FieldSuffix>
+            {title.length}/{ROOM_TRIP_TITLE_MAX_LENGTH}
+          </FieldSuffix>
+        </FieldHeader>
+        <Input
+          id={`${idPrefix}-title`}
+          type="text"
+          value={title}
+          maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
+          onChange={(event) => onTitleChange(event.target.value.slice(0, ROOM_TRIP_TITLE_MAX_LENGTH))}
+          placeholder="예: 봄 일본 여행, 하와이 신혼여행"
+          autoFocus={autoFocusTitle}
+        />
+      </Field>
 
-      <div className={fieldClassName}>
-        <div className="mb-1.5 flex items-baseline justify-between gap-2">
-          <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-bold text-black">목적지</p>
-          {!readOnly && (
-            <p className="shrink-0 text-body-s-regular mobile:text-body-xs-regular tabular-nums text-light-gray">
-              {destinations.length}/{TRIP_DESTINATIONS_MAX_COUNT}
-            </p>
-          )}
-        </div>
+      <Field>
+        <FieldHeader>
+          {/* 검색 입력이 DestinationSearchInput 안에 있어 label로 잇지 못한다. 입력 이름은 aria-label '목적지 검색'이다 */}
+          <p className="min-w-0 flex-1 text-label-xs-regular text-text">목적지</p>
+          <FieldSuffix>
+            {destinations.length}/{TRIP_DESTINATIONS_MAX_COUNT}
+          </FieldSuffix>
+        </FieldHeader>
         <DestinationChipsField
           values={destinations}
           onChange={onDestinationsChange}
-          readOnly={readOnly}
           maxCount={TRIP_DESTINATIONS_MAX_COUNT}
           maxLength={TRIP_DESTINATION_MAX_LENGTH}
         />
-      </div>
+      </Field>
 
-      <div>
+      <div className="flex min-w-0 flex-col gap-2">
         <DateRangeField
           idPrefix={idPrefix}
           value={{ start: startDate, end: endDate }}
           min={startDateMin}
-          readOnly={readOnly}
           onChange={(next) => {
             onStartDateChange(next.start);
             onEndDateChange(next.end);
           }}
         />
-        {!readOnly && startBeforeMin && (
-          <p className="mt-2 text-body-s-regular mobile:text-body-xs-regular text-primary">
-            {TRIP_START_BEFORE_MIN_MESSAGE}
-          </p>
-        )}
-        {!readOnly && !startBeforeMin && dateRangeInvalid && (
-          <p className="mt-2 text-body-s-regular mobile:text-body-xs-regular text-primary">
-            {TRIP_DATE_RANGE_INVALID_MESSAGE}
-          </p>
-        )}
-        {!readOnly &&
-          !startBeforeMin &&
-          !dateRangeInvalid &&
-          scheduleDayLimitExceeded && (
-          <p className="mt-2 text-body-s-regular mobile:text-body-xs-regular text-primary">
-            {TRIP_SCHEDULE_DAY_LIMIT_MESSAGE}
-          </p>
-        )}
+        {dateMessage ? (
+          <p className="text-body-s-regular mobile:text-body-xs-regular text-primary">{dateMessage}</p>
+        ) : null}
       </div>
     </div>
   );
