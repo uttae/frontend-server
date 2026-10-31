@@ -73,7 +73,7 @@ function WaitingContent() {
       <BrandLogo variant="symbol" size="S" alt="우때 로고" />
 
       <div className="flex w-full max-w-[480px] flex-col gap-6 rounded-xl bg-fill-elevate p-6 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-        <Badge tone={isRejected ? "neutral" : "brand"} size="md">
+        <Badge tone={isRejected ? "critical" : "brand"} size="md">
           {isRejected ? "참여 거절" : "승인 대기"}
         </Badge>
 
