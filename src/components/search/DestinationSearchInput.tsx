@@ -56,7 +56,7 @@ export function DestinationSearchInput({
   appearance = "default",
 }: Readonly<Props>) {
   const isField = appearance === "field";
-  const showHint = selectionOnly && !isField;
+  const showHint = selectionOnly;
   const placesLib = useMapsLibrary("places");
 
   const buildRequest = useCallback(
@@ -292,7 +292,12 @@ export function DestinationSearchInput({
       {showHint ? (
         <p
           id={selectionOnlyFooterId}
-          className="mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
+          className={
+            isField
+              ? // Figma Text Field Footer(5002:4440)의 Helper Text: 칸 아래 4px, caption/sm/regular·text/subtle
+                "mt-1 text-caption-s-regular text-text-subtle"
+              : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
+          }
         >
           {DESTINATION_SELECTION_HINT}
         </p>
