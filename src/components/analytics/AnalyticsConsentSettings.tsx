@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useId, useState, useSyncExternalStore } from "react";
 
-import { SettingsActionButton } from "@/components/settings/SettingsActionButton";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   denyAnalyticsConsent,
@@ -98,14 +98,10 @@ export function AnalyticsConsentSettingsView({
         >
           개인정보 처리방침
         </Link>
-        <SettingsActionButton
-          variant="primary"
-          flex={false}
-          className="min-h-11 min-w-24 px-6 text-body-s-regular mobile:text-body-xs-regular focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          onClick={onSave}
-        >
+        {/* 대화상자 확인 버튼(Neutral Solid md). 폭은 지금 최소 폭을 유지한다 */}
+        <Button className="min-w-24" onClick={onSave}>
           저장
-        </SettingsActionButton>
+        </Button>
       </div>
       <p
         aria-live="polite"
