@@ -11,7 +11,7 @@ import { TripDateShrinkConfirmModal } from "@/components/rooms/TripDateShrinkCon
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useRoomSchedules, useUpdateRoom } from "@/hooks/useRooms";
+import { useRoomSchedules, type useUpdateRoom } from "@/hooks/useRooms";
 import { countSchedulesTrimmedByDateChange } from "@/lib/plan/schedulePolicy";
 import {
   areDestinationsEqual,
@@ -28,6 +28,8 @@ import {
 
 type Props = {
   room: RoomTripFormSource;
+  /** 여행 정보 저장 요청. 대화상자가 저장 중에 닫히지 않게 그 isPending을 쓰므로 대화상자가 만들어 내려 준다 */
+  update: ReturnType<typeof useUpdateRoom>;
   readOnly?: boolean;
   onSaved?: () => void;
 };
@@ -36,7 +38,7 @@ export function RoomTripEditForm(props: Props) {
   return <RoomTripEditSession key={props.room.id} {...props} />;
 }
 
-function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
+function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Props) {
   /** 서버 최신 값 — 다른 멤버가 바꾸면 따라 바뀐다. 읽기 전용 표시와 저장 직전 기준(기간 축소 확인·이전 기간)에 쓴다 */
   // 저장은 화면에 보이는 폼 값 그대로 보낸다 — 열어 둔 사이 다른 멤버가 바꾼 값보다 마지막에 저장한 사람의 화면 값이 남는다
   const latest = toTripFormValues(room);
@@ -49,7 +51,7 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
   const idPrefix = `trip-${room.id}`;
 
   const { data: schedules } = useRoomSchedules(room.id);
-  const { mutate: updateRoom, isPending, error } = useUpdateRoom();
+  const { mutate: updateRoom, isPending, error } = update;
   const scheduleCount = schedules?.length ?? 0;
 
   const submitInFlight = useRef(false);

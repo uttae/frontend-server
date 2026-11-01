@@ -12,8 +12,9 @@ const state = vi.hoisted(() => ({
 }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomSchedules: () => ({ data: [{}, {}, {}] }),
-  useUpdateRoom: () => ({ mutate: state.update, isPending: false }),
 }));
+// 저장 요청은 대화상자(RoomTripEditDialog)가 만들어 내려 준다
+const update = { mutate: state.update, isPending: false, error: null } as unknown as ComponentProps<typeof RoomTripEditForm>["update"];
 // 목적지 검색(구글 장소)과 날짜 달력은 칸이 받은 값·onChange만 본다. 제목은 실제 입력 칸을 쓴다
 vi.mock("./DestinationChipsField", () => ({
   DestinationChipsField: (props: ComponentProps<typeof DestinationChipsField>) => {
@@ -56,7 +57,7 @@ it("preserves drafts on same-room refresh; reopening and room switch reset corre
     endDate: "2026-10-12",
   };
   const render = async (value: typeof room) => {
-    await act(async () => root.render(<RoomTripEditForm room={value} />));
+    await act(async () => root.render(<RoomTripEditForm update={update} room={value} />));
   };
   await render(room);
   await typeTitle(container, "draft");
@@ -91,10 +92,10 @@ it("keeps the values from when it opened while the server changes and saves the 
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-01", endDate: "2027-01-03" };
-  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
   // 열어 둔 사이 다른 멤버가 제목과 종료일을 바꿨다
   const changedByOther = { ...room, title: "B", endDate: "2027-01-05" };
-  await act(async () => root.render(<RoomTripEditForm room={changedByOther} />));
+  await act(async () => root.render(<RoomTripEditForm update={update} room={changedByOther} />));
   expect(titleInput(container).value).toBe("A");
   expect(state.dates!.value.end).toBe("2027-01-03");
   expect(applyButton(container).disabled).toBe(true);
@@ -108,8 +109,8 @@ it("keeps the values from when it opened while the server changes and saves the 
   // A가 28일로 연 사이 B가 시작일을 30일로 바꾸고, A가 제목만 고쳐 저장하면 A 화면의 28일이 저장된다
   const second = createRoot(container);
   const opened = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-28", endDate: "2027-01-31" };
-  await act(async () => second.render(<RoomTripEditForm room={opened} />));
-  await act(async () => second.render(<RoomTripEditForm room={{ ...opened, startDate: "2027-01-30" }} />));
+  await act(async () => second.render(<RoomTripEditForm update={update} room={opened} />));
+  await act(async () => second.render(<RoomTripEditForm update={update} room={{ ...opened, startDate: "2027-01-30" }} />));
   expect(state.dates!.value.start).toBe("2027-01-28");
   await typeTitle(container, "C");
   await act(async () => applyButton(container).click());
@@ -130,7 +131,7 @@ it("allows moving the start date earlier than the saved start date", async () =>
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-04", endDate: "2027-01-11" };
-  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
   expect(state.dates!.min).toBeUndefined();
   await changeDates("2027-01-02", state.dates!.value.end);
   await act(async () => applyButton(container).click());
@@ -148,7 +149,7 @@ it("does not submit draft edits and submits once for rapid apply clicks", async 
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = { id: "r", title: "old", destinations: ["서울"], startDate: "2027-01-01", endDate: "2027-01-03" };
-  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
   await typeTitle(container, "cancelled");
   expect(state.update).not.toHaveBeenCalled();
   await typeTitle(container, "new");
@@ -165,7 +166,7 @@ it("shows each field's error under that field and locks apply until it is fixed"
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-01", endDate: "2027-01-03" };
-  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
   expect(container.textContent).not.toContain("입력해 주세요");
 
   // 제목을 비우면 제목 칸이 오류 상태가 되고 칸 아래에 문장이 붙는다

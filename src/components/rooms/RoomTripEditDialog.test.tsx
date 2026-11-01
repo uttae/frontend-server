@@ -250,6 +250,27 @@ it("saves the shortened period from the confirmation and keeps it open while sav
   expect(dialog()).toBeNull();
 });
 
+it("does not close the edit dialog by Escape or X while saving", async () => {
+  await open();
+  await change("#trip-room-title", "도쿄 2");
+  await click("적용하기", dialog()!);
+  expect(state.update).toHaveBeenCalledTimes(1);
+  state.pending = true;
+  await act(async () => root.render(<HeaderBar />));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
+  expect(dialog()).not.toBeNull();
+  const close = dialog()!.querySelector<HTMLButtonElement>('[aria-label="여행 정보 수정 닫기"]')!;
+  await act(async () => close.click());
+  await nextFrame();
+  expect(dialog()).not.toBeNull();
+  state.pending = false;
+  await act(async () => root.render(<HeaderBar />));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
+  expect(dialog()).toBeNull();
+});
+
 it("names the existing title, destination and date fields", async () => {
   await open();
   const modal = dialog()!;
