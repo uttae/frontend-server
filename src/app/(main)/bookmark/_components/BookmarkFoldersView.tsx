@@ -38,7 +38,8 @@ export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const { folders } = useBookmarkFolders();
   useAllRoomBookmarks(roomId);
-  const { isPending, isError, error, refetch } = useBookmarkCategories(roomId);
+  const { isPending, isLoadingError, error, refetch } =
+    useBookmarkCategories(roomId);
   const { mutate: createCategory, isPending: isCreating } =
     useCreateBookmarkCategory();
   const {
@@ -222,7 +223,8 @@ export function BookmarkFoldersView() {
     );
   }
 
-  if (isError) {
+  // 재조회 실패는 보이던 폴더를 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
+  if (isLoadingError) {
     return (
       <div className="space-y-2.5">
         <MainPageHeader title="북마크" />

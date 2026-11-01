@@ -107,6 +107,11 @@ export function joinRequestsQueryKey(roomId: string | null) {
   return ["join-requests", roomId] as const;
 }
 
+/** 모든 방의 입장 요청 조회에 공통 접두 */
+export function joinRequestsRootQueryKey() {
+  return ["join-requests"] as const;
+}
+
 // ─── Schedule items / routes ─────────────────────────────────────────────────
 
 export const scheduleItemsQueryKey = (

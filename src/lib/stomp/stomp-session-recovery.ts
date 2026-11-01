@@ -4,17 +4,12 @@ import type { Client } from "@stomp/stompjs";
 import { expireClientSessionAndRedirect } from "@/lib/auth-session-client";
 import { fetchSessionUserRaw } from "@/lib/session-user";
 import { setSessionUserCache } from "@/lib/session-user-cache";
-import {
-  isStompAutoRecoverySuspended,
-  STOMP_CONNECTION_ISSUE_MESSAGE,
-  useStompConnectionStore,
-} from "@/stores/stomp-connection-store";
 
 /** 백엔드 access 만료 시 WebSocket close code (분기·로깅 참고용) */
 export const STOMP_ACCESS_TOKEN_EXPIRED_CLOSE_CODE = 4001;
 
-export const SESSION_PROBE_MAX_ATTEMPTS = 10;
-export const SESSION_PROBE_RETRY_DELAY_MS = 5000;
+/** 세션 확인이 응답 없이 매달리면 재연결 시도 전체가 멈추므로 시간을 제한한다 */
+const SESSION_PROBE_TIMEOUT_MS = 5_000;
 
 export type SessionProbeOutcome = "authenticated" | "unauthorized" | "transient";
 
@@ -22,31 +17,28 @@ export type SessionProbeResult = {
   outcome: SessionProbeOutcome;
 };
 
-export type HandleStompReconnectOptions = {
+export type RefreshSessionBeforeReconnectOptions = {
   client: Client;
   queryClient: QueryClient;
-  isSuppressed: () => boolean;
+  /** 세션 확인을 기다리는 동안 연결이 정리됐는지(로그아웃·경로 이탈) */
   isActive: () => boolean;
 };
 
-let reconnectPromise: Promise<void> | null = null;
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 /**
- * `GET /api/auth/session` — 200 / 401 / transient(5xx·네트워크·기타 4xx) 분기.
+ * `GET /api/auth/session` — 200 / 401 / transient(503·네트워크·시간 초과·기타) 분기.
  */
 export async function probeClientSession(): Promise<SessionProbeResult> {
   if (typeof window === "undefined") {
     return { outcome: "transient" };
   }
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), SESSION_PROBE_TIMEOUT_MS);
   try {
     const res = await fetch("/api/auth/session", {
       credentials: "include",
       cache: "no-store",
+      signal: controller.signal,
     });
 
     if (res.status === 200) {
@@ -55,26 +47,12 @@ export async function probeClientSession(): Promise<SessionProbeResult> {
     if (res.status === 401) {
       return { outcome: "unauthorized" };
     }
-    if (res.status >= 500) {
-      return { outcome: "transient" };
-    }
     return { outcome: "transient" };
   } catch {
     return { outcome: "transient" };
+  } finally {
+    clearTimeout(timeout);
   }
-}
-
-async function probeWithRetries(): Promise<SessionProbeResult> {
-  for (let attempt = 1; attempt <= SESSION_PROBE_MAX_ATTEMPTS; attempt++) {
-    const result = await probeClientSession();
-    if (result.outcome !== "transient") {
-      return result;
-    }
-    if (attempt < SESSION_PROBE_MAX_ATTEMPTS) {
-      await sleep(SESSION_PROBE_RETRY_DELAY_MS);
-    }
-  }
-  return { outcome: "transient" };
 }
 
 async function syncSessionUserCache(queryClient: QueryClient): Promise<void> {
@@ -93,66 +71,31 @@ export function handleStompSessionExpired(queryClient: QueryClient): void {
   expireClientSessionAndRedirect({ queryClient });
 }
 
-async function runStompReconnect({
+/**
+ * stompjs `beforeConnect`에서 재연결 직전에 부릅니다.
+ * `/api/auth/session`이 쿠키를 갱신해, access 만료(4001) 뒤 만료된 쿠키로 다시 붙지 않게 합니다.
+ * 재시도 간격은 stompjs가 맡으므로 한 번만 확인합니다. 안에서 부르는 함수는 예외를 던지지 않습니다.
+ * stompjs는 `beforeConnect` 예외를 잡지 않아 던지면 재연결이 멈추기 때문입니다.
+ */
+export async function refreshSessionBeforeReconnect({
   client,
   queryClient,
-  isSuppressed,
   isActive,
-}: HandleStompReconnectOptions): Promise<void> {
-  if (!isActive() || isSuppressed() || isStompAutoRecoverySuspended()) {
-    return;
-  }
-
-  const probe = await probeWithRetries();
-
-  if (!isActive() || isSuppressed()) {
+}: RefreshSessionBeforeReconnectOptions): Promise<void> {
+  const probe = await probeClientSession();
+  if (!isActive()) {
     return;
   }
 
   if (probe.outcome === "unauthorized") {
+    await client.deactivate();
     handleStompSessionExpired(queryClient);
     return;
   }
 
-  if (probe.outcome === "transient") {
-    useStompConnectionStore
-      .getState()
-      .setConnectionIssue(STOMP_CONNECTION_ISSUE_MESSAGE);
-    return;
+  if (probe.outcome === "authenticated") {
+    // 다른 탭에서 계정이 바뀌었으면 여기서 세션 사용자 캐시가 새 사용자로 바뀐다
+    await syncSessionUserCache(queryClient);
   }
-
-  useStompConnectionStore.getState().clearConnectionIssue();
-  await syncSessionUserCache(queryClient);
-
-  if (!isActive() || isSuppressed()) {
-    return;
-  }
-
-  if (client.active) {
-    await client.deactivate();
-  }
-
-  if (!isActive() || isSuppressed()) {
-    return;
-  }
-
-  client.activate();
-}
-
-/**
- * WebSocket close 후 session 검증 → deactivate/activate 재연결 또는 로그아웃·장애 UI.
- * 단일 in-flight promise로 동시 호출을 합칩니다.
- */
-export function handleStompReconnect(
-  options: HandleStompReconnectOptions,
-): Promise<void> {
-  if (reconnectPromise) {
-    return reconnectPromise;
-  }
-
-  reconnectPromise = runStompReconnect(options).finally(() => {
-    reconnectPromise = null;
-  });
-
-  return reconnectPromise;
+  // transient면 그대로 연결을 시도한다. 실패하면 stompjs가 다음 간격에 다시 부른다
 }

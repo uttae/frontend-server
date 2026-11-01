@@ -19,6 +19,13 @@ import {
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import {
+  bumpPlanMapRouteSegments,
+  invalidateScheduleItemRouteForSources,
+  orderedItemIdsFromPlanPlaces,
+  readOrderedItemIdsFromScheduleItemsCache,
+  segmentSourcesWithChangedNext,
+} from "@/lib/plan/scheduleStompRouteScope";
+import {
   SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
 } from "@/lib/plan/scheduleTravelMode";
@@ -174,6 +181,57 @@ function collectGooglePlaceIdsFromSchedules(
   return [...ids];
 }
 
+/**
+ * 일차별 장소 목록을 만들기만 합니다. 미리보기를 기다리는 동안 다른 변경이 들어올 수 있어
+ * 캐시 쓰기(`writeSchedulePlacesFromHydrate`)와 나눕니다.
+ */
+export async function buildSchedulePlacesFromSchedulesWithItems(
+  queryClient: QueryClient,
+  schedules: readonly RoomScheduleWithItems[],
+): Promise<Map<number, PlanPlace[]>> {
+  const placeIds = collectGooglePlaceIdsFromSchedules(schedules);
+  if (placeIds.length) {
+    await fetchAndSeedPlacePreviews(placeIds, queryClient);
+  }
+
+  const placesBySchedule = new Map<number, PlanPlace[]>();
+  for (const schedule of schedules) {
+    const sid = schedule.scheduleId;
+    if (typeof sid !== "number" || !Number.isFinite(sid)) continue;
+
+    const items = Array.isArray(schedule.items) ? schedule.items : [];
+    placesBySchedule.set(
+      sid,
+      buildPlanPlacesFromItemsWithCache(queryClient, items),
+    );
+  }
+  return placesBySchedule;
+}
+
+/** 만든 일차 목록을 한 번에 씁니다. 순서가 바뀐 일차는 이웃이 바뀐 구간 경로만 무효화합니다. */
+export function writeSchedulePlacesFromHydrate(
+  queryClient: QueryClient,
+  roomId: string,
+  placesBySchedule: ReadonlyMap<number, PlanPlace[]>,
+): void {
+  const rid = roomId.trim();
+  if (!rid.length) return;
+
+  for (const [sid, places] of placesBySchedule) {
+    const before = readOrderedItemIdsFromScheduleItemsCache(queryClient, rid, sid);
+    queryClient.setQueryData(scheduleItemsQueryKey(rid, sid), places);
+
+    const changed = segmentSourcesWithChangedNext(
+      before,
+      orderedItemIdsFromPlanPlaces(places),
+    );
+    if (changed.length) {
+      void invalidateScheduleItemRouteForSources(queryClient, rid, sid, changed);
+      bumpPlanMapRouteSegments(rid, sid, changed);
+    }
+  }
+}
+
 export async function hydrateScheduleItemsFromSchedulesWithItems(
   queryClient: QueryClient,
   roomId: string,
@@ -182,22 +240,11 @@ export async function hydrateScheduleItemsFromSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return;
 
-  // 모든 일차의 장소를 batch 한 번(실패한 곳만 한 번 더)으로 받고, 일차별로는 캐시에서만 채운다
-  const placeIds = collectGooglePlaceIdsFromSchedules(schedules);
-  if (placeIds.length) {
-    await fetchAndSeedPlacePreviews(placeIds, queryClient);
-  }
-
-  for (const schedule of schedules) {
-    const sid = schedule.scheduleId;
-    if (typeof sid !== "number" || !Number.isFinite(sid)) continue;
-
-    const items = Array.isArray(schedule.items) ? schedule.items : [];
-    queryClient.setQueryData(
-      scheduleItemsQueryKey(rid, sid),
-      buildPlanPlacesFromItemsWithCache(queryClient, items),
-    );
-  }
+  writeSchedulePlacesFromHydrate(
+    queryClient,
+    rid,
+    await buildSchedulePlacesFromSchedulesWithItems(queryClient, schedules),
+  );
 }
 
 function batchRouteItemToResponse(

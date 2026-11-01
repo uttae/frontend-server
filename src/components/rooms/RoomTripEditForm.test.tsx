@@ -22,7 +22,7 @@ vi.mock("./TripDateShrinkConfirmModal", () => ({
   TripDateShrinkConfirmModal: () => <div data-confirm />,
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-it("preserves drafts and original date floor on same-room refresh; reopening and room switch reset correctly", async () => {
+it("preserves drafts on same-room refresh; reopening and room switch reset correctly", async () => {
   const container = document.createElement("div");
   const root = createRoot(container);
   const room = {
@@ -50,9 +50,7 @@ it("preserves drafts and original date floor on same-room refresh; reopening and
   await render(room);
   expect(state.fields!.values.startDate).toBe("2026-10-10");
   expect(state.fields!.values.endDate).toBe("2026-10-12");
-  expect(state.fields!.startDateMin).toBe("2026-10-10");
   await render({ ...room, startDate: "2026-10-11" });
-  expect(state.fields!.startDateMin).toBe("2026-10-10");
   await act(async () => state.fields!.onEndDateChange("2026-10-11"));
   await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
   expect(container.querySelector("[data-confirm]")).not.toBeNull();
@@ -64,7 +62,6 @@ it("preserves drafts and original date floor on same-room refresh; reopening and
     endDate: "2026-11-12",
   });
   expect(state.fields!.values.title).toBe("B");
-  expect(state.fields!.startDateMin).toBe("2026-11-10");
   expect(container.querySelector("[data-confirm]")).toBeNull();
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => root.unmount());
@@ -107,6 +104,24 @@ it("keeps the values from when it opened while the server changes and saves the 
     expect.objectContaining({ onSuccess: expect.any(Function) }),
   );
   await act(async () => second.unmount());
+});
+
+it("allows moving the start date earlier than the saved start date", async () => {
+  state.update.mockClear();
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const room = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-04", endDate: "2027-01-11" };
+  await act(async () => root.render(<RoomTripEditForm room={room} />));
+  expect("startDateMin" in state.fields!).toBe(false);
+  await act(async () => state.fields!.onStartDateChange("2027-01-02"));
+  await act(async () => container.querySelector<HTMLButtonElement>("button")!.click());
+  expect(state.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      data: expect.objectContaining({ startDate: "2027-01-02", endDate: "2027-01-11" }),
+    }),
+    expect.anything(),
+  );
+  await act(async () => root.unmount());
 });
 
 it("does not submit draft edits and submits once for rapid apply clicks", async () => {

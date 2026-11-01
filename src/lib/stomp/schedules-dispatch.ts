@@ -12,10 +12,8 @@ import {
   invalidateScheduleItemRouteForWholeSchedule,
   removeRouteQueriesForDeletedItemSource,
 } from "@/lib/plan/scheduleStompRouteScope";
-import {
-  hydrateRoomSchedulesFromServer,
-  syncRoomDetailFromServer,
-} from "@/lib/rooms";
+import { roomSchedulesQueryKey } from "@/lib/query-keys";
+import { syncRoomDetailFromServer } from "@/lib/rooms";
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 import { readSessionUserId } from "@/lib/session-user-cache";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
@@ -230,7 +228,8 @@ export async function dispatchRoomScheduleEvent(
         return;
       }
 
-      await hydrateRoomSchedulesFromServer(queryClient, rid);
+      // 일정 전체 재조회는 room-schedules 조회 하나로 한다 — 진행 중인 옛 조회가 취소돼 새 일정을 덮지 않는다
+      await queryClient.invalidateQueries({ queryKey: roomSchedulesQueryKey(rid) });
       await syncRoomDetailFromServer(queryClient, rid);
       return;
     }

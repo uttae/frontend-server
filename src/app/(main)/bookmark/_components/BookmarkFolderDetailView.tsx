@@ -36,7 +36,8 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
   const {
     data: bookmarkRowsRaw,
     isPending: bookmarksLoading,
-    isError: bookmarksError,
+    // 재조회 실패는 보이던 목록을 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
+    isLoadingError: bookmarksError,
     error: bookmarksErr,
     refetch,
   } = useRoomBookmarks(roomId, categoryIdOk);
