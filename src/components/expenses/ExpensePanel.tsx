@@ -407,7 +407,9 @@ export function ExpensePanel() {
               조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-center gap-x-3 gap-y-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_160px]">
+          {/* 카테고리 필터 칸 184: 목록 폭이 트리거 폭과 같아서, 체크가 붙은 '전체 카테고리' 행(글자 85 + 여백 32 + 체크 자리 48)이
+              목록 테두리 2와 스크롤 막대 15(목록이 8행이라 스크롤됨, 막대가 늘 보이는 설정)를 빼고도 한 줄에 들어가는 폭 */}
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_184px] items-center gap-x-3 gap-y-4">
             <div
               aria-label="준비·일차 필터"
               className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] @min-[800px]/expenses:col-span-1"
