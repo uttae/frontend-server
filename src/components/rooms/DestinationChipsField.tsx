@@ -12,7 +12,7 @@ type Props = {
   maxLength: number;
 };
 
-/** 목적지 검색 칸 → 고른 칩 → 경고 순서. 여행 정보 수정(`RoomTripEditFields`)의 목적지와 같은 배치이고, 간격은 감싸는 Field가 준다 */
+/** 목적지 검색 칸 → 고른 칩 → 경고 순서. 새 여행 만들기(`TripFormFields`)와 여행 정보 수정(`RoomTripEditForm`)이 같이 쓰고, 간격은 감싸는 Field가 준다 */
 export function DestinationChipsField({
   values,
   onChange,

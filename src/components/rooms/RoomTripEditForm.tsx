@@ -4,20 +4,24 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { DateRangeField } from "@/components/date-picker/DateRangeField";
+import { DestinationChipsField } from "@/components/rooms/DestinationChipsField";
+import { RoomTripReadOnlyFields } from "@/components/rooms/RoomTripReadOnlyFields";
 import { TripDateShrinkConfirmModal } from "@/components/rooms/TripDateShrinkConfirmModal";
-import { RoomTripEditFields } from "@/components/rooms/RoomTripEditFields";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { useRoomSchedules, useUpdateRoom } from "@/hooks/useRooms";
-import {
-  countSchedulesTrimmedByDateChange,
-  isTripScheduleDayLimitExceeded,
-} from "@/lib/plan/schedulePolicy";
+import { countSchedulesTrimmedByDateChange } from "@/lib/plan/schedulePolicy";
 import {
   areDestinationsEqual,
-  isTripDateRangeInvalid,
-  isTripDestinationsValid,
   ROOM_TRIP_TITLE_MAX_LENGTH,
   toTripFormValues,
+  TRIP_DESTINATION_MAX_LENGTH,
+  TRIP_DESTINATIONS_MAX_COUNT,
+  tripDateRangeError,
+  tripDestinationsError,
+  tripTitleError,
   type RoomTripFormSource,
   type TripFormValues,
 } from "@/lib/rooms/trip-form";
@@ -42,6 +46,7 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
    */
   const [opened, setOpened] = useState(latest);
   const [shrinkConfirmOpen, setShrinkConfirmOpen] = useState(false);
+  const idPrefix = `trip-${room.id}`;
 
   const { data: schedules } = useRoomSchedules(room.id);
   const { mutate: updateRoom, isPending, error } = useUpdateRoom();
@@ -108,29 +113,83 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
     startDate !== opened.startDate ||
     endDate !== opened.endDate;
 
-  // 칸 오류 문장은 RoomTripEditFields가 입력 중에 바로 보여 주고, 여기서는 적용하기만 잠근다(지금 화면 동작).
-  // 잠긴 버튼은 제출되지 않아 칸별 onSubmit 검증을 따로 두지 않는다
+  // 칸 오류는 각 form.Field의 validators가 입력할 때마다 칸 아래에 보인다. 적용하기는 같은 검증 함수로 잠근다
+  // (validators는 건드린 칸에서만 돌아서, 연 순간부터 비어 있던 칸(기간 없는 방 등)도 잠그려면 값으로 다시 본다)
   const canApply =
-    title.trim() &&
-    isTripDestinationsValid(destinations) &&
-    startDate &&
-    endDate &&
-    !isTripDateRangeInvalid(startDate, endDate) &&
-    !isTripScheduleDayLimitExceeded(startDate, endDate) &&
+    !tripTitleError(title) &&
+    !tripDestinationsError(destinations) &&
+    !tripDateRangeError(startDate, endDate) &&
     !isPending &&
     isDirty;
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
-      <RoomTripEditFields
-        idPrefix={`trip-${room.id}`}
-        values={readOnly ? latest : values}
-        readOnly={readOnly}
-        onTitleChange={(next) => form.setFieldValue("title", next)}
-        onDestinationsChange={(next) => form.setFieldValue("destinations", next)}
-        onStartDateChange={(next) => form.setFieldValue("startDate", next)}
-        onEndDateChange={(next) => form.setFieldValue("endDate", next)}
-      />
+      {readOnly ? (
+        <RoomTripReadOnlyFields idPrefix={idPrefix} values={latest} />
+      ) : (
+        <div className="flex min-w-0 flex-col gap-6">
+          <form.Field name="title" validators={{ onChange: ({ value }) => tripTitleError(value) }}>
+            {(field) => {
+              const fieldError = field.state.meta.errors[0];
+              return (
+                <Field>
+                  <FieldLabel htmlFor={`${idPrefix}-title`}>여행 제목</FieldLabel>
+                  <Input
+                    id={`${idPrefix}-title`}
+                    type="text"
+                    value={field.state.value}
+                    maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
+                    aria-invalid={fieldError ? true : undefined}
+                    aria-describedby={fieldError ? `${idPrefix}-title-error` : undefined}
+                    onChange={(event) => field.handleChange(event.target.value.slice(0, ROOM_TRIP_TITLE_MAX_LENGTH))}
+                    onBlur={field.handleBlur}
+                    placeholder="예: 봄 일본 여행, 하와이 신혼여행"
+                  />
+                  <FieldError id={`${idPrefix}-title-error`}>{fieldError}</FieldError>
+                </Field>
+              );
+            }}
+          </form.Field>
+
+          <form.Field name="destinations" validators={{ onChange: ({ value }) => tripDestinationsError(value) }}>
+            {(field) => (
+              <Field>
+                {/* 검색 입력이 DestinationSearchInput 안에 있어 label로 잇지 못한다. 입력 이름은 aria-label '목적지 검색'이다 */}
+                <p className="text-label-xs-regular text-text">목적지</p>
+                <DestinationChipsField
+                  values={field.state.value}
+                  onChange={field.handleChange}
+                  maxCount={TRIP_DESTINATIONS_MAX_COUNT}
+                  maxLength={TRIP_DESTINATION_MAX_LENGTH}
+                />
+                <FieldError>{field.state.meta.errors[0]}</FieldError>
+              </Field>
+            )}
+          </form.Field>
+
+          {/* 기간은 칸 하나(DateRangeField)가 두 값을 바꾼다. 오류는 끝 날짜 칸이 시작 날짜와 함께 검증해 기간 아래에 보인다 */}
+          <form.Field
+            name="endDate"
+            validators={{ onChange: ({ value, fieldApi }) => tripDateRangeError(fieldApi.form.getFieldValue("startDate"), value) }}
+          >
+            {(field) => (
+              <div className="flex min-w-0 flex-col gap-2">
+                {/* 스크롤되는 모달이고 칸 폭(약 176px)에 맞추면 달력이 절반 크기가 되어 팝업으로 띄운다 */}
+                <DateRangeField
+                  idPrefix={idPrefix}
+                  value={{ start: startDate, end: field.state.value }}
+                  popupOnly
+                  onChange={(next) => {
+                    form.setFieldValue("startDate", next.start);
+                    field.handleChange(next.end);
+                  }}
+                />
+                <FieldError>{field.state.meta.errors[0]}</FieldError>
+              </div>
+            )}
+          </form.Field>
+        </div>
+      )}
 
       {error && !readOnly && (
         <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">

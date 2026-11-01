@@ -30,7 +30,7 @@ type Props = {
   onEndDateChange: (value: string) => void;
 };
 
-/** 새 여행 만들기 입력 필드. 칸 모양과 배치는 여행 정보 수정(`RoomTripEditFields`)과 같은 Figma Text Field이고, 글자 수만 Header Suffix로 더 보인다 */
+/** 새 여행 만들기 입력 필드. 칸 모양과 배치는 여행 정보 수정(`RoomTripEditForm`)과 같은 Figma Text Field이고, 글자 수만 Header Suffix로 더 보인다 */
 export function TripFormFields({
   idPrefix,
   values,
