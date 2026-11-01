@@ -222,8 +222,9 @@ export function PlanTravelTime({
   const summaryPending =
     !displayRoute && !selectedFetching && selectedPending;
 
+  // 마지막 답이 "경로 없음"(null)이면 다시 받다가 실패해도 그 답을 보여 준다 — 재조회 실패로 이미 받은 답을 오류로 바꾸지 않는다
   const summaryIsError =
-    !displayRoute && primarySettled && selectedError;
+    !displayRoute && primarySettled && selectedError && selectedRoute !== null;
 
   const summaryUnavailable =
     !displayRoute &&

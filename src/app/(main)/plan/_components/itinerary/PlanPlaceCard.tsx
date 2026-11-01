@@ -19,6 +19,7 @@ import {
   useUpdateScheduleItem,
 } from "@/hooks/useRooms";
 import { usePlanPlaceCardPhoto } from "@/hooks/usePlanPlaceCardPhoto";
+import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
@@ -108,6 +109,8 @@ export function PlanPlaceCard({
   const { resolvedPhotoUrl, photoLoading } = usePlanPlaceCardPhoto(place, {
     enabled: thumbnailInViewport,
   });
+  const { visibleUrl: visiblePhotoUrl, markUnavailable: markPhotoUnavailable } =
+    useVisiblePlacePhotoUrl(resolvedPhotoUrl);
 
   const [memoOpen, setMemoOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
@@ -322,9 +325,9 @@ export function PlanPlaceCard({
               className="absolute inset-0 m-auto h-5 w-5"
               aria-hidden
             />
-          ) : resolvedPhotoUrl ? (
+          ) : visiblePhotoUrl ? (
             <Image
-              src={resolvedPhotoUrl}
+              src={visiblePhotoUrl}
               alt={place.title}
               fill
               className="object-cover"
@@ -336,6 +339,7 @@ export function PlanPlaceCard({
                   googlePlaceId: place.googlePlaceId,
                   placeName: place.title,
                   image: event.currentTarget,
+                  onPhotoUnavailable: markPhotoUnavailable,
                 })
               }
             />

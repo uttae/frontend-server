@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const apiFetch = vi.fn();
-const fetchAndSeedPlacePhotoUrls = vi.fn();
 
 vi.mock("@/lib/api/client", () => ({
   apiFetch,
@@ -11,14 +10,9 @@ vi.mock("@/lib/api/config", () => ({
   API_BASE: "https://api.example.test",
 }));
 
-vi.mock("@/lib/places/place-batch-cache", () => ({
-  fetchAndSeedPlacePhotoUrls,
-}));
-
 describe("fetchPlacesPageWithPhotos", () => {
   beforeEach(() => {
     apiFetch.mockReset();
-    fetchAndSeedPlacePhotoUrls.mockReset();
   });
 
   it("does not prefetch photo URLs for the full search result page", async () => {
@@ -52,7 +46,7 @@ describe("fetchPlacesPageWithPhotos", () => {
       pageToken: undefined,
     });
 
-    expect(fetchAndSeedPlacePhotoUrls).not.toHaveBeenCalled();
+    expect(apiFetch).toHaveBeenCalledTimes(1);
     expect(page.items[0]?.googlePlaceId).toBe("ChIJ-place-1");
     expect(page.items[0]).not.toHaveProperty("image");
   });
