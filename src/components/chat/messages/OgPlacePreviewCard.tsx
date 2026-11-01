@@ -4,6 +4,7 @@ import { MapPin, Star } from "lucide-react";
 
 import { useInViewport } from "@/hooks/useInViewport";
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
+import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
 import { resolveChatMessageTypography } from "@/components/chat/chat-typography";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ export function OgPlacePreviewCard({
   const { data: imageUrl } = usePlacePhotoUrlQuery(googlePlaceId, {
     enabled: thumbnailInViewport,
   });
+  const { visibleUrl, markUnavailable } = useVisiblePlacePhotoUrl(imageUrl);
 
   return (
     <button
@@ -54,10 +56,10 @@ export function OgPlacePreviewCard({
           isMinimized ? "h-[72px] w-[72px]" : "h-[88px] w-[88px]",
         )}
       >
-        {imageUrl ? (
+        {visibleUrl ? (
           // eslint-disable-next-line @next/next/no-img-element -- 동적 장소 사진 URL (원격 패턴 비고정)
           <img
-            src={imageUrl}
+            src={visibleUrl}
             alt={name}
             className="h-full w-full object-cover"
             loading="lazy"
@@ -67,6 +69,7 @@ export function OgPlacePreviewCard({
                 googlePlaceId,
                 placeName: name,
                 image: event.currentTarget,
+                onPhotoUnavailable: markUnavailable,
               })
             }
           />

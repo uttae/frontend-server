@@ -234,6 +234,14 @@ export class HttpError extends Error {
   }
 }
 
+/**
+ * 서버 응답을 받지 못한 일시적 네트워크 오류인지 — fetch는 이 실패를 TypeError로 던진다.
+ * 429·4xx·5xx 응답은 다시 보내도 같은 결과라 여기에 넣지 않는다.
+ */
+export function isNetworkError(error: unknown): boolean {
+  return error instanceof TypeError;
+}
+
 /** 방 생성·수정 API의 여행지 관련 서버 에러(HTTP 4xx) → 한국어 사용자 메시지 */
 export function messageForRoomDestinationError(
   body: unknown,

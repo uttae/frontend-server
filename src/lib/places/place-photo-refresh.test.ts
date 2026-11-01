@@ -101,4 +101,71 @@ describe("refreshPlacePhotoUrl", () => {
       }),
     );
   });
+
+  describe("onPhotoUnavailable", () => {
+    function brokenImage(dataset: Record<string, string> = {}) {
+      return {
+        src: "https://example.invalid/broken.jpg",
+        currentSrc: "https://example.invalid/broken.jpg",
+        complete: true,
+        naturalWidth: 0,
+        naturalHeight: 0,
+        dataset,
+        isConnected: true,
+      } as unknown as HTMLImageElement;
+    }
+
+    async function failImage(
+      image: HTMLImageElement,
+      googlePlaceId: string | null = "ChIJ-place-1",
+    ) {
+      const { handlePlacePhotoImageError } = await import(
+        "@/lib/places/place-photo-refresh"
+      );
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const onPhotoUnavailable = vi.fn();
+      handlePlacePhotoImageError({
+        source: "plan-place-card",
+        googlePlaceId,
+        placeName: "Spasso",
+        image,
+        onPhotoUnavailable,
+      });
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return onPhotoUnavailable;
+    }
+
+    it("is called without another request when the element already tried a refresh", async () => {
+      const onPhotoUnavailable = await failImage(brokenImage({ photoRefreshAttempted: "true" }));
+
+      expect(onPhotoUnavailable).toHaveBeenCalledOnce();
+      expect(requestPlacePhotoUrl).not.toHaveBeenCalled();
+    });
+
+    it("is called right away when there is no place to refresh", async () => {
+      const onPhotoUnavailable = await failImage(brokenImage(), null);
+
+      expect(onPhotoUnavailable).toHaveBeenCalledOnce();
+      expect(requestPlacePhotoUrl).not.toHaveBeenCalled();
+    });
+
+    it("is called when the refresh returns no URL or fails", async () => {
+      requestPlacePhotoUrl.mockResolvedValueOnce("");
+      const afterEmpty = await failImage(brokenImage());
+      requestPlacePhotoUrl.mockRejectedValueOnce(new Error("Place photo failed: 500"));
+      const afterFailure = await failImage(brokenImage());
+
+      expect(afterEmpty).toHaveBeenCalledOnce();
+      expect(afterFailure).toHaveBeenCalledOnce();
+    });
+
+    it("is not called while the refreshed URL loads", async () => {
+      requestPlacePhotoUrl.mockResolvedValueOnce("https://cdn.example/fresh.jpg");
+      const image = brokenImage();
+      const onPhotoUnavailable = await failImage(image);
+
+      expect(image.src).toBe("https://cdn.example/fresh.jpg");
+      expect(onPhotoUnavailable).not.toHaveBeenCalled();
+    });
+  });
 });
