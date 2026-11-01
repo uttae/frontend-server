@@ -410,9 +410,11 @@ export function ExpensePanel() {
           {/* 카테고리 필터 칸 184: 목록 폭이 트리거 폭과 같아서, 체크가 붙은 '전체 카테고리' 행(글자 85 + 여백 32 + 체크 자리 48)이
               목록 테두리 2와 스크롤 막대 15(목록이 8행이라 스크롤됨, 막대가 늘 보이는 설정)를 빼고도 한 줄에 들어가는 폭 */}
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_184px] items-center gap-x-3 gap-y-4">
+            {/* 일차가 많으면 가로로 넘친다. 마우스는 세로 휠로 가로 이동이 안 되므로 PC는 얇은 스크롤 막대를 보여 끌 수 있게 하고(북마크에서 추가 칩 줄과 같은 모양),
+                모바일 기기는 손가락으로 밀면 되니 막대를 숨긴다 */}
             <div
               aria-label="준비·일차 필터"
-              className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] @min-[800px]/expenses:col-span-1"
+              className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15 mobile:[scrollbar-width:none] mobile:[&::-webkit-scrollbar]:hidden @min-[800px]/expenses:col-span-1"
             >
               {dayOptions.map((option) => (
                 <button
