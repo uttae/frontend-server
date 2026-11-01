@@ -1,6 +1,7 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { Dialog } from "@/components/ui/dialog";
@@ -68,11 +69,14 @@ export function DatePickerLayer({
 
   if (presentation === "anchored") {
     return (
+      // 포커스는 달력 안에서만 돈다(WAI-ARIA 날짜 선택 대화상자). 달력이 body로 포털돼 Tab으로 빠져나가면 다음 칸이 아니라 페이지 맨 앞으로 갔다.
+      // 바깥 클릭은 그대로 뒤로 전달되고(확정), Esc는 취소다
       <Popover
         open
+        modal="trap-focus"
         onOpenChange={(open, details) => {
           if (open) return;
-          if (details.reason === "escape-key") {
+          if (details.reason === "escape-key" || details.reason === "close-press") {
             onEscape();
             return;
           }
@@ -96,6 +100,11 @@ export function DatePickerLayer({
           <div ref={dialogRef} style={{ zoom }}>
             {children}
           </div>
+          {/* Base UI는 닫기 부품이 있어야 포커스를 가둔다(PopoverPopup modal && hasClosePart). 화면 읽기 프로그램 터치 사용자가 빠져나갈 길이기도 하다.
+              보이지 않고 Tab 순서에도 넣지 않는다(키보드는 Esc·달력의 취소). 누르면 Esc처럼 취소다 */}
+          <PopoverPrimitive.Close tabIndex={-1} className="sr-only">
+            날짜 선택 닫기
+          </PopoverPrimitive.Close>
         </PopoverContent>
       </Popover>
     );
