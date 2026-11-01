@@ -386,8 +386,9 @@ export function ExpenseEditor({
                   );
                 }}
               </form.Field>
-              {/* 통화 이름이 숨는 조건(ExpenseCurrencyPicker의 mobile·max-sm)에서는 통화 칸을 코드 3글자 + ▼ 폭으로 줄여 금액 칸을 넓힌다 */}
-              <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] items-start gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[96px_minmax(0,1fr)] max-sm:grid-cols-[96px_minmax(0,1fr)] mobile:gap-3 mobile:p-3">
+              {/* 통화 이름이 숨는 조건(ExpenseCurrencyPicker의 mobile·max-sm)에서는 통화 칸을 코드 3글자 + ▼ 폭으로 줄여 금액 칸을 넓힌다.
+                  112 = 트리거 테두리 2 + 좌우 여백 24 + 간격 8 + ▼ 자리 32 + 코드 46(16px 글자에서 가장 넓은 MWK 37 + 여유) */}
+              <div className="grid min-w-0 grid-cols-[minmax(0,200px)_minmax(0,1fr)] items-start gap-4 rounded-2xl bg-fill p-4 mobile:grid-cols-[112px_minmax(0,1fr)] max-sm:grid-cols-[112px_minmax(0,1fr)] mobile:gap-3 mobile:p-3">
                 <form.Field name="currency">
                   {(field) => (
                     <ExpenseCurrencyPicker
