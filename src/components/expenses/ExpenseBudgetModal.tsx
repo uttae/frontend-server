@@ -123,7 +123,7 @@ export function ExpenseBudgetModal({
       // 저장·최신 예산 재조회 중에는 Esc·딤·X로 닫지 않는다(지금 동작)
       closeDisabled={pending}
     >
-      <DialogContent size="lg" closeLabel={`${title} 닫기`}>
+      <DialogContent size="sm" closeLabel={`${title} 닫기`}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">여행 전체의 예산을 설정해 주세요.</DialogDescription>
