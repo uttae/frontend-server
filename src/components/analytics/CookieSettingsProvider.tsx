@@ -63,7 +63,7 @@ export function CookieSettingsProvider({ children }: Readonly<{ children: ReactN
             <DialogHeader>
               <DialogTitle>쿠키 설정</DialogTitle>
             </DialogHeader>
-            <AnalyticsConsentSettings />
+            <AnalyticsConsentSettings onCancel={() => setOpen(false)} />
           </DialogContent>
         </Dialog>
       )}
