@@ -182,7 +182,7 @@ export default function MyInfoPage() {
                 <button
                   type="button"
                   onClick={() => setShowWithdrawConfirm(true)}
-                  className="mt-3 block text-label-s-regular mobile:text-label-xs-regular text-dark-gray underline underline-offset-2 transition hover:text-neutral-900"
+                  className="mt-3 block cursor-pointer text-label-s-regular mobile:text-label-xs-regular text-dark-gray underline underline-offset-2 transition hover:text-neutral-900"
                 >
                   회원 탈퇴
                 </button>
