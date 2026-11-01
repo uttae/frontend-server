@@ -154,12 +154,13 @@ function AlertDialogTitle({ className, ...props }: Readonly<AlertDialogPrimitive
   );
 }
 
-// body/lg/regular · text/subtle(5621:2820). 설명 문자열의 줄바꿈(\n)은 지금 확인창처럼 그대로 보인다(ConfirmDialog whitespace-pre-line)
+// text/subtle(5621:2820). 글자는 Figma body/lg(18)가 제목에 비해 커 보여 body/md(16)로 고정한다(사용자 결정 2026-11-01).
+// 설명 문자열의 줄바꿈(\n)은 지금 확인창처럼 그대로 보인다(ConfirmDialog whitespace-pre-line)
 function AlertDialogDescription({ className, ...props }: Readonly<AlertDialogPrimitive.Description.Props>) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-body-l-regular whitespace-pre-line text-text-subtle", className)}
+      className={cn("text-body-m-regular whitespace-pre-line text-text-subtle", className)}
       {...props}
     />
   );
