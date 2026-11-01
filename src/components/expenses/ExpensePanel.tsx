@@ -312,7 +312,7 @@ export function ExpensePanel() {
         : {},
     );
   }
-  // 조회 재시도 진행은 지금처럼 문구와 native disabled로 보인다. loading은 aria-disabled라 ExpensePanel.test의 disabled 단정과 맞지 않아 쓰지 않았다
+  // 패널(대화상자 밖)의 조회 재시도 진행은 지금처럼 문구와 native disabled로 보인다
   const retryLabel = refreshing ? "조회 다시 시도 중" : "조회 다시 시도";
   if (context.revoked) return null;
   return (
@@ -512,13 +512,16 @@ export function ExpensePanel() {
           {context.summary.isError && (
             <div className="space-y-3">
               <p role="alert">정산 조회에 실패했어요.</p>
+              {/* 대화상자 안 버튼이라 진행은 progress로 보인다(대화상자 버튼 규칙). 패널의 재시도 버튼은 대화상자 밖이라 문구 그대로 */}
               <Button
                 variant="outline"
                 size="sm"
-                disabled={refreshing || context.busy}
+                loading={refreshing}
+                loadingLabel="조회 다시 시도 중"
+                disabled={context.busy}
                 onClick={() => void refresh()}
               >
-                {retryLabel}
+                조회 다시 시도
               </Button>
             </div>
           )}
