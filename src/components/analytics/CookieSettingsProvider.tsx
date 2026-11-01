@@ -56,7 +56,7 @@ export function CookieSettingsProvider({ children }: Readonly<{ children: ReactN
           }}
         >
           <DialogContent
-            size="lg"
+            size="sm"
             closeLabel="쿠키 설정 닫기"
             finalFocus={() => getCookieSettingsReturnFocus(openerRef.current)}
           >
