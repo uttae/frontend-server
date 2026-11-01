@@ -13,12 +13,10 @@ import {
 } from "@/lib/plan/schedulePolicy";
 import {
   isTripDateRangeInvalid,
-  isTripStartBeforeMin,
   ROOM_TRIP_TITLE_MAX_LENGTH,
   TRIP_DATE_RANGE_INVALID_MESSAGE,
   TRIP_DESTINATION_MAX_LENGTH,
   TRIP_DESTINATIONS_MAX_COUNT,
-  TRIP_START_BEFORE_MIN_MESSAGE,
   type TripFormValues,
 } from "@/lib/rooms/trip-form";
 import { cn } from "@/lib/utils";
@@ -31,7 +29,6 @@ type Props = {
   idPrefix: string;
   values: TripFormValues;
   readOnly?: boolean;
-  startDateMin?: string;
   onTitleChange: (value: string) => void;
   onDestinationsChange: (next: string[]) => void;
   onStartDateChange: (value: string) => void;
@@ -54,7 +51,6 @@ export function RoomTripEditFields({
   idPrefix,
   values,
   readOnly = false,
-  startDateMin,
   onTitleChange,
   onDestinationsChange,
   onStartDateChange,
@@ -65,11 +61,9 @@ export function RoomTripEditFields({
   const [destinationWarning, setDestinationWarning] = useState<string | null>(null);
   const destinationsFull = destinations.length >= TRIP_DESTINATIONS_MAX_COUNT;
   const dateRangeInvalid = isTripDateRangeInvalid(startDate, endDate);
-  const startBeforeMin = startDateMin != null && isTripStartBeforeMin(startDate, startDateMin);
   const scheduleDayLimitExceeded = isTripScheduleDayLimitExceeded(startDate, endDate);
   let dateMessage = null;
-  if (startBeforeMin) dateMessage = TRIP_START_BEFORE_MIN_MESSAGE;
-  else if (dateRangeInvalid) dateMessage = TRIP_DATE_RANGE_INVALID_MESSAGE;
+  if (dateRangeInvalid) dateMessage = TRIP_DATE_RANGE_INVALID_MESSAGE;
   else if (scheduleDayLimitExceeded) dateMessage = TRIP_SCHEDULE_DAY_LIMIT_MESSAGE;
 
   function addDestination(place: { description: string; placeId: string } | null) {
@@ -161,7 +155,6 @@ export function RoomTripEditFields({
         <DateRangeField
           idPrefix={idPrefix}
           value={{ start: startDate, end: endDate }}
-          min={startDateMin}
           popupOnly
           onChange={(next) => {
             onStartDateChange(next.start);

@@ -2,6 +2,7 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
+import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 
 export function HeroSkeleton() {
@@ -18,7 +19,9 @@ export function HeroImage({
   name: string;
 }) {
   const { data: queriedPhotoUrl, isLoading } = usePlacePhotoUrlQuery(googlePlaceId);
-  const photoUrl = queriedPhotoUrl || fallbackImage || null;
+  const { visibleUrl: photoUrl, markUnavailable } = useVisiblePlacePhotoUrl(
+    queriedPhotoUrl || fallbackImage || null,
+  );
 
   if (!photoUrl && isLoading) {
     return <HeroSkeleton />;
@@ -40,6 +43,7 @@ export function HeroImage({
             googlePlaceId,
             placeName: name,
             image: event.currentTarget,
+            onPhotoUnavailable: markUnavailable,
           })
         }
       />

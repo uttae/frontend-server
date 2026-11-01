@@ -16,7 +16,6 @@ import {
   areDestinationsEqual,
   isTripDateRangeInvalid,
   isTripDestinationsValid,
-  isTripStartBeforeMin,
   ROOM_TRIP_TITLE_MAX_LENGTH,
   toTripFormValues,
   type RoomTripFormSource,
@@ -43,9 +42,6 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
    */
   const [opened, setOpened] = useState(latest);
   const [shrinkConfirmOpen, setShrinkConfirmOpen] = useState(false);
-
-  // Keep the original date floor throughout this room's edit session.
-  const [baselineStartYmd] = useState(opened.startDate);
 
   const { data: schedules } = useRoomSchedules(room.id);
   const { mutate: updateRoom, isPending, error } = useUpdateRoom();
@@ -120,7 +116,6 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
     startDate &&
     endDate &&
     !isTripDateRangeInvalid(startDate, endDate) &&
-    !isTripStartBeforeMin(startDate, baselineStartYmd) &&
     !isTripScheduleDayLimitExceeded(startDate, endDate) &&
     !isPending &&
     isDirty;
@@ -131,7 +126,6 @@ function RoomTripEditSession({ room, readOnly = false, onSaved }: Props) {
         idPrefix={`trip-${room.id}`}
         values={readOnly ? latest : values}
         readOnly={readOnly}
-        startDateMin={baselineStartYmd || undefined}
         onTitleChange={(next) => form.setFieldValue("title", next)}
         onDestinationsChange={(next) => form.setFieldValue("destinations", next)}
         onStartDateChange={(next) => form.setFieldValue("startDate", next)}
