@@ -20,6 +20,8 @@ type Props = {
   cancelLabel?: string;
   /** 확인 동작 처리 중. Esc·딤·취소를 모두 막고 확인 버튼은 progress로 바뀐다 */
   isPending?: boolean;
+  /** 지금은 확인할 수 없는 상태(예: 동기화 오류). 확인 버튼만 비활성으로 보이고 취소·닫기는 그대로 된다 */
+  confirmDisabled?: boolean;
   /** 삭제·탈퇴·나가기 같은 위험 동작이면 true(확인 버튼 Critical Solid) */
   destructive?: boolean;
   /** 확인 동작이 실패했을 때 버튼 아래에 보여줄 한 줄 안내 */
@@ -49,6 +51,7 @@ export function ConfirmDialog({
   confirmLabel = "확인",
   cancelLabel = "취소",
   isPending = false,
+  confirmDisabled = false,
   destructive = false,
   errorMessage,
   onConfirm,
@@ -80,6 +83,7 @@ export function ConfirmDialog({
               <AlertDialogCancel disabled={isPending}>{cancelLabel}</AlertDialogCancel>
               <AlertDialogAction
                 tone={destructive ? "critical" : "neutral"}
+                disabled={confirmDisabled}
                 loading={isPending}
                 loadingLabel="처리 중"
                 onClick={onConfirm}

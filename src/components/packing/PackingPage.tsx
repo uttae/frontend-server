@@ -131,7 +131,7 @@ function DeleteDialog({context,onClose}: {context:Context;onClose:()=>void}) {
   const count=context.state.data?.parts.find(value=>value.id===confirmation.id)?.items.length ?? 0;
   return <ConfirmDialog destructive title={part ? "카테고리를 삭제할까요?" : "준비물을 삭제할까요?"}
     description={`‘${confirmation.name}’${part ? `의 준비물 ${count}개와` : " 준비물과"}\n작성한 메모가 함께 삭제됩니다.`}
-    confirmLabel="삭제" isPending={deleting} onConfirm={()=>void confirm()} onCancel={close}/>;
+    confirmLabel="삭제" isPending={deleting} confirmDisabled={context.state.status!=="ready"} onConfirm={()=>void confirm()} onCancel={close}/>;
 }
 
 /**
