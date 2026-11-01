@@ -66,7 +66,7 @@ const dialogContentVariants = cva(
         default: "w-[min(353px,calc(100vw-2.5rem))]",
         // 옛 앱 max-w-sm: 북마크 추가·편집, 북마크에 담기, 일정에 추가, 시간 설정. 쿠키 설정도 이 폭이다
         sm: "w-[min(384px,calc(100vw-2.5rem))]",
-        // 옛 앱 max-w-md: SettingsDialog compact(준비물 이름), 회원 탈퇴 2종, 가계부 범위 목록, 북마크에서 장소 추가
+        // 옛 앱 max-w-md: SettingsDialog compact(준비물 이름), 가계부 범위 목록, 북마크에서 장소 추가. 초대하기도 이 폭이다
         md: "w-[min(448px,calc(100vw-2.5rem))]",
         // 옛 앱 max-w-[640px]: SettingsDialog 기본, 비용 추가·수정. 여행 정보 수정(600)도 여기에 둔다
         lg: "w-[min(640px,calc(100vw-2.5rem))]",

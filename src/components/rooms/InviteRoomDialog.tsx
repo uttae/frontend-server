@@ -37,8 +37,7 @@ export function InviteRoomDialog({
         if (!open) onClose();
       }}
     >
-      {/* 지금 폭 400(SettingsDialog alert)에 가장 가까운 sm(384) */}
-      <DialogContent size="sm" closeLabel="초대하기 닫기" finalFocus={finalFocus}>
+      <DialogContent size="md" closeLabel="초대하기 닫기" finalFocus={finalFocus}>
         <DialogHeader>
           <DialogTitle>초대하기</DialogTitle>
         </DialogHeader>
