@@ -9,24 +9,16 @@ const mocks = vi.hoisted(() => ({
   collectSegmentSourcesForCreate: vi.fn(),
   collectSegmentSourcesForDelete: vi.fn(),
   collectSegmentSourcesForReorder: vi.fn(),
-  getScheduleItems: vi.fn(),
+  invalidateSchedulePlanPlaces: vi.fn(),
   invalidateScheduleItemRouteForSources: vi.fn(),
   invalidateScheduleItemRouteForWholeSchedule: vi.fn(),
-  mergeOrRefetchSchedulePlanPlacesFromItems: vi.fn(),
   readOrderedItemIdsFromScheduleItemsCache: vi.fn(),
-  refetchSchedulePlanPlacesIntoCache: vi.fn(),
   removeRouteQueriesForDeletedItemSource: vi.fn(),
   syncAfterCrossScheduleItemMove: vi.fn(),
 }));
 
-vi.mock("@/lib/api/rooms/schedule-items", () => ({
-  getScheduleItems: mocks.getScheduleItems,
-}));
-
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
-  mergeOrRefetchSchedulePlanPlacesFromItems:
-    mocks.mergeOrRefetchSchedulePlanPlacesFromItems,
-  refetchSchedulePlanPlacesIntoCache: mocks.refetchSchedulePlanPlacesIntoCache,
+  invalidateSchedulePlanPlaces: mocks.invalidateSchedulePlanPlaces,
   syncAfterCrossScheduleItemMove: mocks.syncAfterCrossScheduleItemMove,
 }));
 
@@ -80,13 +72,11 @@ describe("dispatchRoomScheduleEvent", () => {
   beforeEach(() => {
     queryClient = new QueryClient();
     vi.clearAllMocks();
-    mocks.getScheduleItems.mockResolvedValue([]);
+    mocks.invalidateSchedulePlanPlaces.mockResolvedValue(undefined);
     mocks.invalidateScheduleItemRouteForSources.mockResolvedValue(undefined);
     mocks.invalidateScheduleItemRouteForWholeSchedule.mockResolvedValue(
       undefined,
     );
-    mocks.mergeOrRefetchSchedulePlanPlacesFromItems.mockResolvedValue(undefined);
-    mocks.refetchSchedulePlanPlacesIntoCache.mockResolvedValue(undefined);
     mocks.syncAfterCrossScheduleItemMove.mockResolvedValue(undefined);
   });
 
@@ -98,14 +88,14 @@ describe("dispatchRoomScheduleEvent", () => {
   it.each([false, true])("refetches ID-only time updates, including own-user tabs (%s)", async (ownUser) => {
     vi.useFakeTimers();
     if (ownUser) queryClient.setQueryData(sessionUserQueryKey, { id: 99 });
-    const rows = [{ itemId: 20, startTime: "23:00", endTime: "01:00" }];
-    mocks.getScheduleItems.mockResolvedValue(rows);
     const event = itemEvent("SCHEDULE_ITEM_UPDATED", []);
     await dispatchRoomScheduleEvent(queryClient, event);
     await dispatchRoomScheduleEvent(queryClient, event);
     await vi.runAllTimersAsync();
-    expect(mocks.getScheduleItems).toHaveBeenCalledExactlyOnceWith("room-1", 10);
-    expect(mocks.mergeOrRefetchSchedulePlanPlacesFromItems).toHaveBeenCalledWith(queryClient, "room-1", 10, rows);
+    // 본인 반향만 모였으면 본인 저장이 끝나며 다시 받는 조회에 합류한다
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10, {
+      joinInFlight: ownUser,
+    });
     expect(mocks.invalidateScheduleItemRouteForSources).not.toHaveBeenCalled();
     expect(mocks.invalidateScheduleItemRouteForWholeSchedule).not.toHaveBeenCalled();
   });
@@ -193,9 +183,8 @@ describe("dispatchRoomScheduleEvent", () => {
   it("refreshes travel mode before invalidating affectedRouteItemIds", async () => {
     vi.useFakeTimers();
     const order: string[] = [];
-    mocks.getScheduleItems.mockImplementation(async () => {
+    mocks.invalidateSchedulePlanPlaces.mockImplementation(async () => {
       order.push("refetch");
-      return [];
     });
     mocks.invalidateScheduleItemRouteForSources.mockImplementation(async () => {
       order.push("invalidate");
@@ -219,14 +208,14 @@ describe("dispatchRoomScheduleEvent", () => {
   it("preserves a newer route bucket when an earlier travel-mode refresh fails", async () => {
     vi.useFakeTimers();
     let rejectFirst!: (reason?: unknown) => void;
-    let resolveSecond!: (value: never[]) => void;
-    const first = new Promise<never[]>((_, reject) => {
+    let resolveSecond!: () => void;
+    const first = new Promise<void>((_, reject) => {
       rejectFirst = reject;
     });
-    const second = new Promise<never[]>((resolve) => {
+    const second = new Promise<void>((resolve) => {
       resolveSecond = resolve;
     });
-    mocks.getScheduleItems
+    mocks.invalidateSchedulePlanPlaces
       .mockReturnValueOnce(first)
       .mockReturnValueOnce(second);
 
@@ -243,7 +232,7 @@ describe("dispatchRoomScheduleEvent", () => {
     await vi.advanceTimersByTimeAsync(90);
 
     rejectFirst(new Error("first refresh failed"));
-    resolveSecond([]);
+    resolveSecond();
     await vi.runAllTimersAsync();
 
     expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledTimes(1);

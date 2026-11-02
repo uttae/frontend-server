@@ -5,8 +5,7 @@ import { useMemo } from "react";
 
 import { useRoomSchedules } from "@/hooks/useRooms";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
-import { readSchedulePlanPlacesFromCache } from "@/lib/plan/scheduleItemPlaces";
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -41,15 +40,12 @@ export function usePlanItineraryStopNormalizedPlaceIds(
 
   const placesQueries = useQueries({
     queries: orderedScheduleIdsForQueries.map((scheduleId) => ({
-      queryKey: scheduleItemsQueryKey(rid || null, scheduleId),
-      queryFn: () => readSchedulePlanPlacesFromCache(queryClient, rid, scheduleId),
+      ...schedulePlanPlacesQueryOptions(queryClient, rid, scheduleId),
       enabled:
         enabled &&
         rid.length > 0 &&
         orderedScheduleIdsForQueries.length > 0 &&
         schedulesHydrated,
-      staleTime: Infinity,
-      refetchOnMount: false,
       refetchOnWindowFocus: false,
     })),
   });

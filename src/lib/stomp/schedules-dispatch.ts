@@ -2,11 +2,9 @@ import { invalidateExpenses } from "@/lib/expenses/expense-queries";
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
-  mergeOrRefetchSchedulePlanPlacesFromItems,
-  refetchSchedulePlanPlacesIntoCache,
+  invalidateSchedulePlanPlaces,
   syncAfterCrossScheduleItemMove,
 } from "@/lib/plan/scheduleItemPlaces";
-import { getScheduleItems } from "@/lib/api/rooms/schedule-items";
 import {
   invalidateScheduleItemRouteForSources,
   invalidateScheduleItemRouteForWholeSchedule,
@@ -17,14 +15,6 @@ import { syncRoomDetailFromServer } from "@/lib/rooms";
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 import { readSessionUserId } from "@/lib/session-user-cache";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
-
-async function refetchScheduleItemsPlaces(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number,
-): Promise<void> {
-  await refetchSchedulePlanPlacesIntoCache(queryClient, roomId, scheduleId);
-}
 
 function bumpMapForRouteSources(
   roomId: string,
@@ -128,15 +118,19 @@ const syncSchedulePlacesRouteInvalidationPending = new Map<
   string,
   DebouncedRouteInvBucket
 >();
+/** 모으는 동안 다른 사람의 변경이 하나라도 들어온 일차 */
+const syncSchedulePlacesRemoteChangePending = new Set<string>();
 const DEBOUNCE_ITEMS_GET_MS = 90;
 
 function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
   queryClient: QueryClient,
   rid: string,
   sid: number,
+  ownEcho: boolean,
   affectedRouteItemIds?: number[] | null,
 ): void {
   const mapKey = `${rid}:${sid}`;
+  if (!ownEcho) syncSchedulePlacesRemoteChangePending.add(mapKey);
   if (affectedRouteItemIds !== undefined) {
     syncSchedulePlacesRouteInvalidationPending.set(
       mapKey,
@@ -156,15 +150,14 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
       const routeBucket =
         syncSchedulePlacesRouteInvalidationPending.get(mapKey);
       syncSchedulePlacesRouteInvalidationPending.delete(mapKey);
+      // 모은 이벤트가 모두 본인 반향이면, 본인 저장이 끝나며 보낸 조회가 이미 그 변경을 담고 있어 합류한다
+      const joinInFlight = !syncSchedulePlacesRemoteChangePending.has(mapKey);
+      syncSchedulePlacesRemoteChangePending.delete(mapKey);
       void (async () => {
         try {
-          const rows = await getScheduleItems(rid, sid);
-          await mergeOrRefetchSchedulePlanPlacesFromItems(
-            queryClient,
-            rid,
-            sid,
-            rows,
-          );
+          await invalidateSchedulePlanPlaces(queryClient, rid, sid, {
+            joinInFlight,
+          });
           if (routeBucket?.scope === "whole") {
             await invalidateScheduleItemRouteForWholeSchedule(
               queryClient,
@@ -195,7 +188,7 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
 /**
  * Plan 화면 등이 쓰는 캐시만, 스키마의 `type`별로 갱신합니다.
  * — `ROOM_SCHEDULES_RESYNCED`: `room-schedules` 전체 재조회 + 방 상세 동기화 (원격 탭; 액터는 mutation `onSuccess`)
- * — `schedule-items`: 일차별 장소 목록
+ * — `schedule-items`: 그 일차 장소 목록을 무효화해 다시 받는다(보는 화면이 없으면 그 화면에 들어갈 때)
  * — `schedule-item-route`: `itemId`·인접 구간의 `segmentSourceItemId`만 무효화(폴백 시 일정 전체)
  * — `SCHEDULE_ITEM_UPDATED`: 일정 목록만 동기화할 때 사용(본인 이벤트 포함); 경로(`schedule-item-route`)는 무효화하지 않음
  * — `SCHEDULE_ITEM_TRAVEL_MODE_UPDATED`: 공유 이동수단 변경 — 일정 목록만 동기화(경로 캐시는 수단별 키로 유지)
@@ -279,13 +272,7 @@ export async function dispatchRoomScheduleEvent(
 
       removeRouteQueriesForDeletedItemSource(queryClient, rid, sid, itemId);
 
-      const items = await getScheduleItems(rid, sid);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        sid,
-        items,
-      );
+      await invalidateSchedulePlanPlaces(queryClient, rid, sid);
 
       const sources = event.affectedRouteItemIds;
       if (sources === null) {
@@ -313,7 +300,7 @@ export async function dispatchRoomScheduleEvent(
         return;
       }
 
-      await refetchScheduleItemsPlaces(queryClient, rid, sid);
+      await invalidateSchedulePlanPlaces(queryClient, rid, sid);
 
       const sources = event.affectedRouteItemIds;
       if (sources === null) {
@@ -341,13 +328,7 @@ export async function dispatchRoomScheduleEvent(
         return;
       }
 
-      const items = await getScheduleItems(rid, sid);
-      await mergeOrRefetchSchedulePlanPlacesFromItems(
-        queryClient,
-        rid,
-        sid,
-        items,
-      );
+      await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       const sources = event.affectedRouteItemIds;
       enqueueDebouncedInvalidateScheduleRoutes(
         queryClient,
@@ -364,8 +345,18 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
+      const me = readSessionUserId(queryClient);
+      const actorIsMe =
+        typeof me === "number" &&
+        Number.isFinite(me) &&
+        event.actorUserId === me;
       // 같은 사용자의 다른 탭도 이 이벤트를 받으므로 HTTP 응답과 무관하게 목록을 동기화합니다.
-      enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
+      enqueueDebouncedHydratePlacesFromScheduleItemsApi(
+        queryClient,
+        rid,
+        sid,
+        actorIsMe,
+      );
       return;
     }
 
@@ -389,6 +380,7 @@ export async function dispatchRoomScheduleEvent(
         queryClient,
         rid,
         sid,
+        false,
         event.affectedRouteItemIds,
       );
       return;
