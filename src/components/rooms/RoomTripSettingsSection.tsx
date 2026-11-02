@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 
 import { DeleteConfirmModal } from "@/app/home/_components/DeleteConfirmModal";
@@ -42,7 +42,13 @@ export function RoomTripDeleteButton() {
   );
 }
 
-export function RoomTripSettingsSection({ onSaved }: { onSaved?: () => void }) {
+export function RoomTripSettingsSection({
+  update,
+  onSaved,
+}: Readonly<{
+  update: ComponentProps<typeof RoomTripEditForm>["update"];
+  onSaved?: () => void;
+}>) {
   const { roomId, roomSource, isLoading } = useCurrentRoomMembership();
   const canEdit = isRoomMemberRole(roomSource?.role);
   const description = !isLoading && roomSource && roomId && !canEdit
@@ -62,7 +68,7 @@ export function RoomTripSettingsSection({ onSaved }: { onSaved?: () => void }) {
           여행 정보를 불러오지 못했어요.
         </p>
       ) : (
-        <RoomTripEditForm room={roomSource} readOnly={!canEdit} onSaved={onSaved} />
+        <RoomTripEditForm room={roomSource} update={update} readOnly={!canEdit} onSaved={onSaved} />
       )}
     </div>
   );

@@ -201,7 +201,9 @@ export function DestinationSearchInput({
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
-      e.preventDefault();
+      // 추천 목록이 열려 있을 때만 Esc를 여기서 쓴다. 감싼 대화상자(ui/dialog)는 preventDefault된 Esc면 닫지 않고,
+      // 목록이 없으면 Esc가 대화상자 닫기로 이어진다
+      if (isOpen && predictions.length > 0) e.preventDefault();
       clearSuggestionUi();
       return;
     }

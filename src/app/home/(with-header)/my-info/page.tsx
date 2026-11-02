@@ -10,8 +10,8 @@ import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { CookieSettingsButton } from "@/components/analytics/CookieSettingsProvider";
+import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/user/UserAvatar";
-import { SettingsActionButton } from "@/components/settings/SettingsActionButton";
 import { WithdrawAccountConfirmModal } from "@/components/settings/WithdrawAccountConfirmModal";
 import { WithdrawalDelegationRequiredModal } from "@/components/settings/WithdrawalDelegationRequiredModal";
 
@@ -110,15 +110,15 @@ export default function MyInfoPage() {
               <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-dark-gray">
                 내 정보를 불러오지 못했어요
               </p>
-              <button
-                type="button"
+              <Button
+                tone="brand"
+                loading={isFetching}
+                loadingLabel="다시 불러오는 중"
                 onClick={() => refetch()}
-                disabled={isFetching}
-                aria-busy={isFetching}
-                className="mt-3 rounded-full bg-primary px-4 py-2 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                className="mt-3"
               >
                 다시 시도
-              </button>
+              </Button>
             </div>
           )}
 
@@ -169,20 +169,20 @@ export default function MyInfoPage() {
               </section>
 
               <div className="mt-8">
-                <SettingsActionButton
-                  variant="secondary"
-                  flex={false}
-                  className="w-full"
+                <Button
+                  variant="outline"
+                  loading={isLoggingOut}
+                  loadingLabel="로그아웃 중"
                   onClick={handleLogout}
-                  disabled={isLoggingOut}
+                  className="w-full"
                 >
-                  {isLoggingOut ? "로그아웃 중…" : "로그아웃"}
-                </SettingsActionButton>
+                  로그아웃
+                </Button>
 
                 <button
                   type="button"
                   onClick={() => setShowWithdrawConfirm(true)}
-                  className="mt-3 block text-label-s-regular mobile:text-label-xs-regular text-dark-gray underline underline-offset-2 transition hover:text-neutral-900"
+                  className="mt-3 block cursor-pointer text-label-s-regular mobile:text-label-xs-regular text-dark-gray underline underline-offset-2 transition hover:text-neutral-900"
                 >
                   회원 탈퇴
                 </button>

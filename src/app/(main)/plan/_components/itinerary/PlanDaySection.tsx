@@ -1,24 +1,23 @@
 "use client";
 
+import { MenuDotHorizontalIcon, PlusIcon, TrashIcon } from "@/assets/icons";
 import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { usePlanItemCrossDayDragStore } from "@/stores/plan-item-cross-day-drag-store";
 import { cn } from "@/lib/utils";
-import {
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-} from "lucide-react";
-import { useCallback, useId, useRef, useState } from "react";
-import type { CSSProperties, DragEvent, ReactNode, Ref } from "react";
+import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import { useCallback, useId, useState } from "react";
+import type { CSSProperties, DragEvent, ReactNode, Ref, SyntheticEvent } from "react";
 
 export type PlanDaySectionDragHandleProps = {
   dragDisabled?: boolean;
@@ -61,6 +60,16 @@ export type PlanDaySectionProps = {
     onDragLeave: (e: DragEvent<Element>) => void;
     onDrop: (e: DragEvent<Element>) => void;
   };
+};
+
+// 메뉴는 body로 포털되지만 React 이벤트는 트리를 따라 섹션(일차 간 드롭 핸들러)으로 올라간다.
+// 트리거와 포털 표면에서만 포인터 전파를 끊고, 키보드는 Base UI에 전달한다
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+const pointerBoundary = {
+  onClick: stopPropagation,
+  onMouseDown: stopPropagation,
+  onPointerDown: stopPropagation,
+  onTouchStart: stopPropagation,
 };
 
 export function PlanDaySection({
@@ -149,8 +158,6 @@ export function PlanDaySection({
     onRequestAddExpense != null || onRequestDeleteSchedule != null || onRequestInsertScheduleAfter != null;
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useOnClickOutside(menuRef, () => setMenuOpen(false));
 
   return (
     <section
@@ -226,88 +233,45 @@ export function PlanDaySection({
             </span>
           </button>
           {showScheduleMenu ? (
-            <div ref={menuRef} className="relative shrink-0 self-center">
-              <button
-                type="button"
+            <DropdownMenu open={menuOpen && !isScheduleMenuDisabled} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger
+                {...pointerBoundary}
                 aria-label="일차 메뉴"
-                aria-expanded={menuOpen}
-                aria-haspopup="menu"
                 disabled={isScheduleMenuDisabled}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (isScheduleMenuDisabled) return;
-                  setMenuOpen((v) => !v);
-                }}
                 className={cn(
-                  "rounded-lg p-2 text-dark-gray transition-colors",
+                  "shrink-0 self-center rounded-lg p-2 text-dark-gray transition-colors",
                   isScheduleMenuDisabled
                     ? "cursor-not-allowed opacity-40"
                     : "cursor-pointer hover:bg-bubble-gray/60",
                 )}
               >
-                <MoreHorizontal className="h-5 w-5" aria-hidden />
-              </button>
-              {menuOpen && !isScheduleMenuDisabled ? (
-                <div
-                  className="absolute right-0 top-full z-50 mt-1 w-max overflow-hidden rounded-xl border border-gray-border bg-white py-1 shadow-lg"
-                  role="menu"
-                >
-                  {onRequestAddExpense ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={isAddExpenseDisabled}
-                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-40"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                        onRequestAddExpense();
-                      }}
-                    >
-                      <ExpenseIcon className="size-4 shrink-0" />
-                      {title} 비용 추가
-                    </button>
-                  ) : null}
-                  {onRequestInsertScheduleAfter ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      className="flex w-full cursor-pointer items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 hover:bg-bubble-gray"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                        onRequestInsertScheduleAfter();
-                      }}
-                    >
-                      <Plus className="size-4 shrink-0" aria-hidden />
-                      일차 추가
-                    </button>
-                  ) : null}
-                  {onRequestDeleteSchedule ? (
-                    <button
-                      type="button"
-                      role="menuitem"
-                      disabled={isDeleteScheduleDisabled}
-                      className={cn(
-                        "flex w-full items-center gap-2 whitespace-nowrap px-3 py-2.5 text-left text-label-l-regular mobile:text-label-m-regular text-status-negative hover:bg-bubble-gray",
-                        isDeleteScheduleDisabled
-                          ? "cursor-not-allowed opacity-40"
-                          : "cursor-pointer",
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMenuOpen(false);
-                        if (isDeleteScheduleDisabled) return;
-                        onRequestDeleteSchedule();
-                      }}
-                    >
-                      <Trash2 className="size-4 shrink-0" aria-hidden />
-                      일차 삭제
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
+                <MenuDotHorizontalIcon size={20} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" {...pointerBoundary}>
+                {onRequestAddExpense ? (
+                  <DropdownMenuItem disabled={isAddExpenseDisabled} onClick={onRequestAddExpense}>
+                    <ExpenseIcon />
+                    {title} 비용 추가
+                  </DropdownMenuItem>
+                ) : null}
+                {onRequestInsertScheduleAfter ? (
+                  <DropdownMenuItem onClick={onRequestInsertScheduleAfter}>
+                    <PlusIcon />
+                    일차 추가
+                  </DropdownMenuItem>
+                ) : null}
+                {onRequestDeleteSchedule ? (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={isDeleteScheduleDisabled}
+                    onClick={onRequestDeleteSchedule}
+                  >
+                    <TrashIcon />
+                    일차 삭제
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
         </div>
         {summaryAction || trackedSid !== undefined ? (

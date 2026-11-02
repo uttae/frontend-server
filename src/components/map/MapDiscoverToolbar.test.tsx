@@ -27,19 +27,26 @@ it("keeps the selected category, applies rating/open filters, and reset clears a
   expect(button("음식점").getAttribute("aria-pressed")).toBe("true");
   expect(host.textContent).not.toContain("호텔");
   await act(async () => button("영업 중").click());
-  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!.click());
-  const trigger = host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!;
-  expect(document.getElementById(trigger.getAttribute("aria-controls")!)).not.toBeNull();
+  // 평점 필터는 ui Select(Base UI)라 트리거는 combobox, 목록은 document.body로 포털된 listbox·option이다
+  const trigger = host.querySelector<HTMLButtonElement>('[role="combobox"][aria-label="평점 필터"]')!;
+  expect(trigger.textContent).toBe("평점");
+  await act(async () => trigger.click());
+  await act(async () => { await new Promise((r) => requestAnimationFrame(() => r(null))); });
+  expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  const listbox = document.getElementById(trigger.getAttribute("aria-controls")!)!;
+  expect(listbox.getAttribute("role")).toBe("listbox");
+  expect(host.contains(listbox)).toBe(false);
+  expect(document.activeElement?.getAttribute("role")).toBe("option");
   expect(document.activeElement?.textContent).toBe("전체");
-  // The menu is portalled out of the horizontal scroll clip, but its choices must still work.
-  const ratingChoice = [...document.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent?.includes("4.0"))!;
-  await act(async () => {
-    ratingChoice.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
-    ratingChoice.click();
-  });
-  expect(JSON.parse(host.querySelector("output")!.textContent!)).toMatchObject({ category: "restaurant", open: "open" });
-  expect(JSON.parse(host.querySelector("output")!.textContent!).rating).not.toBe("all");
+  expect(document.activeElement?.getAttribute("aria-selected")).toBe("true");
+  // The list is portalled out of the horizontal scroll clip, but its choices must still work.
+  const ratingChoice = [...listbox.querySelectorAll<HTMLElement>('[role="option"]')].find(o => o.textContent === "4.0 이상")!;
+  await act(async () => ratingChoice.click());
+  expect(JSON.parse(host.querySelector("output")!.textContent!)).toEqual({ category: "restaurant", rating: "4.0", open: "open" });
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  expect(trigger.textContent).toBe("4.0 이상");
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="카테고리 필터 초기화"]')!.click());
   expect(JSON.parse(host.querySelector("output")!.textContent!)).toEqual({ category: null, rating: "all", open: "all" });
+  expect(host.querySelector('[aria-label="평점 필터"]')).toBeNull();
   expect(button("호텔")).toBeDefined();
 });

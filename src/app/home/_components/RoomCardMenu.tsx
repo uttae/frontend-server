@@ -1,13 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
-import { LogOut } from "lucide-react";
-import { InviteRoomModal } from "./InviteRoomModal";
 
-import { useOnClickOutside } from "@/hooks/useOnClickOutside";
+import { MenuDotVerticalIcon, SignLogoutIcon, TrashIcon } from "@/assets/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { RoomListItem } from "@/lib/api/rooms";
 import { isHostRole, isRoomMemberRole } from "@/lib/rooms";
+
+import { InviteRoomModal } from "./InviteRoomModal";
 
 type Props = {
   room: RoomListItem;
@@ -16,90 +22,45 @@ type Props = {
 };
 
 export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
-  const [open, setOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const closeInvite = useCallback(() => setInviteOpen(false), []);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  useOnClickOutside(menuRef, () => setOpen(false));
-
-  useEffect(() => {
-    if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [open]);
-
-  const isHost = isHostRole(room.role);
+  // 초대하기 항목은 메뉴와 함께 사라져서, 초대 모달을 닫으면 더보기 버튼으로 포커스를 돌린다
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div ref={menuRef} className="relative">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        className="flex size-11 cursor-pointer items-center justify-center rounded-[8px] transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
-        aria-label={`${room.title} 더보기`}
-        aria-expanded={open}
-      >
-        <Image src="/rooms/figma/menu.svg" alt="" width={24} height={24} className="size-6" />
-      </button>
-
-      {open && (
-        <div className="absolute right-[10px] top-[42px] z-30 w-40 overflow-hidden rounded-[12px] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          ref={triggerRef}
+          aria-label={`${room.title} 더보기`}
+          className="flex size-11 cursor-pointer items-center justify-center rounded-[8px] text-icon-subtle transition-colors hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <MenuDotVerticalIcon size={24} />
+        </DropdownMenuTrigger>
+        {/* Figma 오버레이 S 위치(3562:2283): 44px 메뉴 영역 기준 right 10px, top 42px — 지금 자리 그대로 */}
+        <DropdownMenuContent align="end" alignOffset={10} sideOffset={-2}>
           {isRoomMemberRole(room.role) ? (
-            <button
-              type="button"
-              onClick={() => {
-                buttonRef.current?.focus();
-                setOpen(false);
-                setInviteOpen(true);
-              }}
-              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular text-text shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
-            >
+            <DropdownMenuItem onClick={() => setInviteOpen(true)}>
+              {/* @/assets/icons에 사람 추가 아이콘이 없어 Figma에서 받은 원본을 그대로 쓴다 */}
               <Image src="/rooms/figma/invite.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
               초대하기
-            </button>
+            </DropdownMenuItem>
           ) : null}
-          {isHost ? (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setOpen(false);
-                onDelete(room);
-              }}
-              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular text-status-negative shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
-            >
-              <Image src="/rooms/figma/trash.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
+          {isHostRole(room.role) ? (
+            <DropdownMenuItem variant="destructive" onClick={() => onDelete(room)}>
+              <TrashIcon />
               방 삭제하기
-            </button>
+            </DropdownMenuItem>
           ) : (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                setOpen(false);
-                onLeave(room);
-              }}
-              className="flex h-12 w-full cursor-pointer items-start gap-2 px-4 py-3.5 text-left text-label-m-regular text-text shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
-            >
-              <LogOut size={20} aria-hidden />
+            <DropdownMenuItem onClick={() => onLeave(room)}>
+              <SignLogoutIcon />
               방 나가기
-            </button>
+            </DropdownMenuItem>
           )}
-        </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {inviteOpen && (
+        <InviteRoomModal room={room} finalFocus={triggerRef} onClose={() => setInviteOpen(false)} />
       )}
-      {inviteOpen && <InviteRoomModal room={room} onClose={closeInvite} />}
-    </div>
+    </>
   );
 }

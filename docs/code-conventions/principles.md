@@ -15,36 +15,39 @@
 
 ### 1-1. 부품은 한 번 만들고 조립한다 (Headless UI)
 
-목표는 동작(포커스 가두기·키보드·aria·포털)은 shadcn(Base UI) 프리미티브가, 모양은 디자인 시스템 토큰이 맡는 것이다. 둘을 합친 부품을 `src/components/ui/`에 한 번 두고 화면은 조립만 한다. shadcn은 `base-nova` 스타일(`components.json`)로 받고, 옮기는 동안 기존 공용 부품과 병행한다.
+목표는 동작(포커스 가두기·키보드·aria·포털)은 shadcn(Base UI) 프리미티브가, 모양은 디자인 시스템 토큰이 맡는 것이다. 둘을 합친 부품을 `src/components/ui/`에 한 번 두고 화면은 조립만 한다. shadcn은 `base-nova` 스타일(`components.json`)로 받는다.
 
 | 상황 | 할 일 |
 | :-- | :-- |
-| 맞는 부품이 있다(`src/components/ui/`의 shadcn 부품, `src/components/<도메인>/`의 `ConfirmDialog`·`SettingsDialog`·`MobileBottomSheet`·`SettingsActionButton` 등) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳은 그쪽을 쓰고, 기존 사용처는 아래 4행대로 따로 옮긴다 |
-| 맞는 공용 부품이 없는 동작 부품(드롭다운·팝오버·탭·셀렉트)이 필요하다 | shadcn으로 만든다. `src/components/ui/`에 아직 없는 부품이면 받기 전에 묻는다(새 파일·의존성이 생긴다). 미루면 공용 셸에서 동작 처리(portal·포커스 가두기·Escape·aria)만 가져오고, 클래스·토큰·아이콘은 3-6과 Design.md를 따른다 |
+| 맞는 부품이 있다(`src/components/ui/`의 `Button`·`Dialog`·`AlertDialog`·`Drawer`(바텀시트)·`ResponsiveDialog`(PC는 대화상자, 모바일 기기는 바텀시트)·`DropdownMenu`·`Select`·`Combobox`·`Popover`·`Tabs`·`Field`·`Input` 등, 확인창은 `ConfirmDialog`) | 그대로 쓴다. 같은 역할의 shadcn 부품이 생기면 새로 쓰는 곳은 그쪽을 쓰고, 기존 사용처는 아래 4행대로 따로 옮긴다 |
+| 맞는 부품이 없는 동작 부품이 필요하다 | shadcn으로 만든다. `src/components/ui/`에 아직 없는 부품이면 받기 전에 묻는다(새 파일·의존성이 생긴다). 클래스·토큰·아이콘은 3-6과 Design.md를 따른다 |
 | 동작 없는 표시 부품이 필요하다 | Tailwind로 만든다 |
 | 기존 공용 부품이나 그 사용처를 shadcn으로 바꾼다 | 기능·버그 작업에 섞지 않고 따로 한다 |
 
 - 변형은 `variant`·`size` 같은 유니온 prop으로 받고, 값은 Figma 컴포넌트 속성 값에 맞춘다. 변형별 클래스는 cva로 정의한다(3-6).
 - 화면은 부품의 색·글자를 덮지 않는다. 바깥에서 주는 `className`은 배치(폭·정렬·위치)에만 쓴다.
-- 공용 Button은 사이즈 기획이 끝나지 않아 보류 중이다. 범용 Button 부품을 새로 만들지 않는다.
+- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
 - shadcn 코드를 받으면 디자인 시스템에 맞춘다.
   - 색·그림자·포커스 클래스(`secondary`·`*-foreground`·`muted`·`accent`·`input`·`ring`·`shadow-*`)는 시맨틱 토큰으로 바꾼다. 이름이 같아도 뜻이 다르고(`secondary`는 라임), 없는 이름은 CSS가 생기지 않는다.
   - `shadcn init`은 하지 않고 `add`로만 받는다. init이 `globals.css`에 넣는 색 변수(`:root`·`@theme inline`)는 기존 `primary`·`border`·`background` 토큰을 앱 전체에서 덮는다.
   - 아이콘은 `lucide-react` 대신 `@/assets/icons`, `cn`은 `@/lib/utils`의 것을 쓴다. 받은 코드의 `import { cn } from "cn"`은 CLI가 바꾸지 않는다. `cn` 패키지는 타이포 토큰을 색으로 보고 지운다.
   - `dark:` 클래스는 지운다. 다크 모드 설정이 없어 OS가 다크 모드면 적용된다.
-  - z값은 같은 역할의 공용 셸(대화상자 `SettingsDialog`, 시트 `MobileBottomSheet`)에 맞추고, 그 안에서 여는 팝오버·셀렉트는 셸보다 위에 둔다.
+  - Base UI 팝업(대화상자·시트·메뉴·셀렉트·팝오버)은 모두 z-50이다. 앱은 `isolate`로 묶여 있어(`app-chrome-shell`) body로 포털되는 팝업이 앱의 z와 섞이지 않고, 같은 z라 나중에 연 팝업(대화상자 안 셀렉트·확인창)이 위에 뜬다. 앱 안에서 z를 키워 팝업 위로 올리지 않는다.
 
 ```tsx
 // ✗ 화면마다 모달을 직접 만든다. 포커스 가두기·ESC·aria가 빠지고 z값이 제각각이 된다
 <div className="fixed inset-0 z-[999] bg-black/50" onClick={close}>…</div>
 
-// ✓ 지금: 공용 셸을 쓴다(포커스 가두기·ESC·aria 포함)
-{isInviteOpen && <SettingsDialog title="초대" onClose={closeInvite}>…</SettingsDialog>}
-
-// ✓ shadcn으로 옮긴 뒤: 동작은 Base UI, 모양은 토큰을 입힌 ui 부품
-<Dialog>
-  <DialogTrigger className="…">초대</DialogTrigger>
-  <DialogContent>…</DialogContent>
+// ✓ 동작은 Base UI, 모양은 토큰을 입힌 ui 부품. 저장 중에는 closeDisabled로 Esc·딤·X를 막는다
+<Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen} closeDisabled={isSending}>
+  <DialogContent>
+    <DialogHeader><DialogTitle>초대</DialogTitle></DialogHeader>
+    …
+    <DialogFooter>
+      <DialogClose render={<Button variant="weak" />}>취소</DialogClose>
+      <Button loading={isSending} loadingLabel="보내는 중" onClick={send}>보내기</Button>
+    </DialogFooter>
+  </DialogContent>
 </Dialog>
 ```
 
@@ -140,7 +143,7 @@ function PlaceRow({ place }: { place: Place }) {
 
 boolean prop은 하나 늘 때마다 가능한 조합이 두 배가 되고, 그중 일부는 있을 수 없는 상태다. 변형은 이름 있는 값이나 합성으로 드러낸다.
 
-- 구조·동작을 바꾸는 boolean prop 대신 children·slot이나 변형별 컴포넌트를 쓴다. 표시 변형은 boolean 여럿 대신 유니온 prop(`variant`·`size`)으로 받는다(`MobileBottomSheet`의 `variant: "menu" | "form"`).
+- 구조·동작을 바꾸는 boolean prop 대신 children·slot이나 변형별 컴포넌트를 쓴다. 표시 변형은 boolean 여럿 대신 유니온 prop(`variant`·`size`)으로 받는다(`Badge`의 `variant: "weak" | "solid" | "outline"`·`tone`).
 - renderX prop 대신 children으로 넘긴다.
 - 쿼리 상태를 `isPending`·`isError` prop으로 쪼개 넘기지 않는다. 분기는 컨테이너에서 끝낸다(1-2).
 
@@ -422,6 +425,33 @@ const sorted = data.places.sort(byOrder);
 
 // ✓ 복사본을 정렬한다
 const sorted = [...data.places].sort(byOrder);
+```
+
+### 2-9. 폼은 TanStack Form, 검증은 칸마다 (Forms)
+
+입력 값·검증·제출 상태를 `useState`로 하나씩 들면 오류가 폼 아래 문장 하나로 뭉치고, 어느 칸이 틀렸는지 화면이 모른다. 대화상자·시트 안의 폼은 `@tanstack/react-form`으로 쓴다.
+
+- 값은 `useForm({ defaultValues })`가 갖고, 칸은 `form.Field`로 그린다. 검증은 칸마다 `validators`에 함수로 둔다(zod는 아직 쓰지 않는다 — 나중에 같은 자리에 스키마를 넣는다). 검증 함수는 `src/lib`의 순수 함수를 부른다.
+- 칸 오류는 그 칸에 `aria-invalid`와 `FieldError`로 그린다. Select처럼 Figma에 오류 상태가 없는 칸도 Text Field 오류 모양을 쓴다. 권한·저장 실패·충돌처럼 칸이 없는 오류는 폼 아래 문장으로 둔다.
+- 제출은 `form.handleSubmit()` → `onSubmit`에서 mutation의 `mutateAsync`. 버튼 `loading`과 대화상자 `closeDisabled`는 그 mutation의 `isPending` 하나로 정한다(2-4).
+
+```tsx
+const form = useForm({
+  defaultValues: { budget: initial.budgetKrw ?? "" },
+  onSubmit: ({ value }) => saveBudget.mutateAsync({ budgetKrw: value.budget }),
+});
+
+<form.Field name="budget" validators={{ onSubmit: ({ value }) => budgetError(value) }}>
+  {(field) => (
+    <Field>
+      <FieldLabel htmlFor={field.name}>예산 (KRW)</FieldLabel>
+      <Input id={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)}
+        aria-invalid={field.state.meta.errors.length > 0} />
+      <FieldError>{field.state.meta.errors[0]}</FieldError>
+    </Field>
+  )}
+</form.Field>
+<Button type="submit" loading={saveBudget.isPending} loadingLabel="저장 중">저장</Button>
 ```
 
 ## 3. 퍼블리싱

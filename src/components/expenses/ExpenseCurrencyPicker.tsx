@@ -1,15 +1,31 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDownIcon } from "@/assets/icons";
-import { Check, Search } from "lucide-react";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxLabel,
+  ComboboxList,
+  ComboboxTrigger,
+  ComboboxValue,
+} from "@/components/ui/combobox";
+import { Field } from "@/components/ui/field";
 import type { ExpenseCurrency } from "@/lib/api/rooms/expenses";
 
 const currencyNames = new Intl.DisplayNames(["ko"], { type: "currency" });
 function currencyName(code: string) {
   return currencyNames.of(code) ?? code;
 }
+// 검색어 앞뒤 공백은 무시하고, 통화 코드·한국어 이름에 포함되면 찾는다(대소문자 무시). Base UI 기본 필터는 공백을 다듬지 않는다
+function matchCurrency(item: ExpenseCurrency, query: string) {
+  return `${item.currency} ${currencyName(item.currency)}`
+    .toLocaleLowerCase()
+    .includes(query.trim().toLocaleLowerCase());
+}
 
+/** 통화 선택. 트리거를 누르면 팝업 안 검색 입력과 서버 통화 목록이 열린다(목록 밖 통화는 고를 수 없다) */
 export function ExpenseCurrencyPicker({
   value,
   currencies,
@@ -21,198 +37,56 @@ export function ExpenseCurrencyPicker({
   onChange: (currency: string) => void;
   disabled?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [active, setActive] = useState(0);
-  const root = useRef<HTMLDivElement>(null);
-  const trigger = useRef<HTMLButtonElement>(null);
-  const input = useRef<HTMLInputElement>(null);
-  const list = useRef<HTMLDivElement>(null);
-  const id = useId();
-  const isOpen = open && !disabled;
-  const query = search.trim().toLocaleLowerCase();
-  const results = currencies.filter((c) =>
-    (c.currency + " " + currencyName(c.currency))
-      .toLocaleLowerCase()
-      .includes(query),
-  );
-  const activeIndex = Math.min(active, results.length - 1);
-
-  function close(restoreFocus = true) {
-    setOpen(false);
-    if (restoreFocus) trigger.current?.focus();
-  }
-  function select(code: string) {
-    if (disabled) return;
-    onChange(code);
-    close();
-  }
-  useEffect(() => {
-    if (!isOpen) return;
-    input.current?.focus();
-    const element = root.current;
-    if (!element) return;
-    const outside = (event: PointerEvent) => {
-      if (!element.contains(event.target as Node)) setOpen(false);
-    };
-    element.ownerDocument.addEventListener("pointerdown", outside);
-    return () =>
-      element.ownerDocument.removeEventListener("pointerdown", outside);
-  }, [isOpen]);
-  useEffect(() => {
-    if (isOpen)
-      list.current?.children[activeIndex]?.scrollIntoView({ block: "nearest" });
-  }, [activeIndex, isOpen, search]);
-
+  // 통화 목록이 아직 없거나(조회 중·실패) 비용의 통화가 목록에 없어도 트리거에는 폼 값을 보인다(옛 동작).
+  // 대체 항목은 목록에 없어 고르거나 체크되지 않고, 트리거 글자와 같은 값 비교(통화 코드)에만 쓰인다
+  const selected =
+    currencies.find((currency) => currency.currency === value) ??
+    (value ? { currency: value, fractionDigits: 0, maximumAmount: "0" } : null);
   return (
-    <div
-      ref={root}
-      className="relative min-w-0"
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+    <Combobox
+      items={currencies}
+      value={selected}
+      onValueChange={(next) => {
+        if (next) onChange(next.currency);
       }}
+      itemToStringLabel={(currency: ExpenseCurrency) => currencyName(currency.currency)}
+      isItemEqualToValue={(a, b) => a.currency === b.currency}
+      filter={matchCurrency}
+      // 검색어를 입력하면 첫 결과를 강조해 Enter로 바로 고른다(옛 동작: 검색어가 바뀔 때마다 첫 결과가 활성)
+      autoHighlight
+      disabled={disabled}
     >
-      <span
-        id={id + "-label"}
-        className="block text-[12px] leading-4 font-medium"
-      >
-        통화
-      </span>
-      <button
-        ref={trigger}
-        type="button"
-        disabled={disabled}
-        aria-label={
-          value ? `통화 선택: ${currencyName(value)} (${value})` : "통화 선택"
-        }
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-controls={isOpen ? id : undefined}
-        onClick={() => {
-          if (disabled) return;
-          setSearch("");
-          setActive(0);
-          setOpen(!isOpen);
-        }}
-        className="mt-1 flex h-12 w-full min-w-0 items-center gap-2 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-left text-[14px] leading-5 font-medium cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">{value || "통화 선택"}</span>
-          {value && (
-            <span className="block truncate text-body-xs-regular text-dark-gray mobile:hidden max-sm:hidden">
-              {currencyName(value)}
-            </span>
-          )}
-        </span>
-        <ChevronDownIcon size={20} aria-hidden="true" className="shrink-0 text-icon-subtle" />
-      </button>
-      {isOpen && (
-        <div
-          id={id}
-          role="dialog"
-          aria-label="통화 선택"
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.preventDefault();
-              event.stopPropagation();
-              close();
+      <Field>
+        <ComboboxLabel>통화</ComboboxLabel>
+        <ComboboxTrigger>
+          <ComboboxValue>
+            {(currency: ExpenseCurrency | null) =>
+              currency ? (
+                <>
+                  <span className="block truncate">{currency.currency}</span>
+                  {/* 좁은 칸(모바일 기기·좁은 화면)에서는 코드만 보인다. 비용 편집 폼이 이 조건에서 통화 칸을 줄인다 */}
+                  <span className="block truncate text-caption-m-regular text-text-subtle mobile:hidden max-sm:hidden">
+                    {currencyName(currency.currency)}
+                  </span>
+                </>
+              ) : (
+                "통화 선택"
+              )
             }
-          }}
-          className="absolute left-0 top-full z-30 mt-2 w-[min(20rem,calc(100vw-5rem))] max-w-[calc(100vw-5rem)] overflow-hidden rounded-2xl border border-gray-border bg-white shadow-xl"
-        >
-          <div className="p-3">
-            <div className="flex items-center gap-2 rounded-lg bg-gray-50 px-3">
-              <Search
-                size={16}
-                className="shrink-0 text-dark-gray"
-                aria-hidden="true"
-              />
-              <input
-                ref={input}
-                value={search}
-                autoComplete="off"
-                placeholder="통화 이름 또는 코드 검색"
-                aria-label="통화 검색"
-                role="combobox"
-                aria-expanded="true"
-                aria-autocomplete="list"
-                aria-controls={id + "-list"}
-                aria-activedescendant={
-                  results[activeIndex]
-                    ? id + "-" + results[activeIndex].currency
-                    : undefined
-                }
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setActive(0);
-                }}
-                onKeyDown={(event) => {
-                  if (event.nativeEvent.isComposing) return;
-                  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-                    event.preventDefault();
-                    setActive(
-                      Math.max(
-                        0,
-                        Math.min(
-                          results.length - 1,
-                          activeIndex + (event.key === "ArrowDown" ? 1 : -1),
-                        ),
-                      ),
-                    );
-                  } else if (event.key === "Enter") {
-                    event.preventDefault();
-                    if (results[activeIndex])
-                      select(results[activeIndex].currency);
-                  }
-                }}
-                className="min-h-11 w-full min-w-0 bg-transparent text-body-m-regular outline-none"
-              />
-            </div>
-          </div>
-          <div
-            ref={list}
-            id={id + "-list"}
-            role="listbox"
-            aria-label="통화 목록"
-            className="max-h-52 overflow-y-auto overscroll-contain px-2 pb-2"
-          >
-            {results.map((c, index) => (
-              <button
-                key={c.currency}
-                id={id + "-" + c.currency}
-                type="button"
-                role="option"
-                aria-selected={c.currency === value}
-                tabIndex={-1}
-                onMouseDown={(event) => event.preventDefault()}
-                onClick={() => select(c.currency)}
-                className={`flex min-h-14 w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left cursor-pointer transition-colors hover:bg-primary/10 ${index === activeIndex ? "bg-primary/5" : ""}`}
-              >
-                <span className="min-w-0">
-                  <span className="block break-words text-body-s-emphasis mobile:text-body-xs-emphasis font-medium">
-                    {currencyName(c.currency)}
-                  </span>
-                  <span className="block text-body-xs-regular text-dark-gray">
-                    {c.currency}
-                  </span>
-                </span>
-                {c.currency === value && (
-                  <Check
-                    size={17}
-                    className="shrink-0 text-primary"
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
-            ))}
-          </div>
-          {!results.length && (
-            <p role="status" className="px-4 pb-4 text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
-              검색 결과가 없어요.
-            </p>
+          </ComboboxValue>
+        </ComboboxTrigger>
+      </Field>
+      <ComboboxContent aria-label="통화 선택" className="w-[min(20rem,calc(100vw-5rem))]">
+        <ComboboxInput placeholder="통화 이름 또는 코드 검색" aria-label="통화 검색" />
+        <ComboboxList>
+          {(currency: ExpenseCurrency) => (
+            <ComboboxItem key={currency.currency} value={currency} description={currency.currency}>
+              {currencyName(currency.currency)}
+            </ComboboxItem>
           )}
-        </div>
-      )}
-    </div>
+        </ComboboxList>
+        <ComboboxEmpty>검색 결과가 없어요.</ComboboxEmpty>
+      </ComboboxContent>
+    </Combobox>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
+import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
@@ -11,8 +11,7 @@ import { ExpenseSelect } from "./ExpenseSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
-import { RefreshCw } from "lucide-react";
-import { PlusIcon } from "@/assets/icons";
+import { PlusIcon, RefreshIcon } from "@/assets/icons";
 import { ExpenseDialog } from "./ExpenseDialog";
 import { ExpenseCategorySummary } from "./ExpenseCategorySummary";
 import { totalsByCurrency } from "@/lib/expenses/expense-scope";
@@ -28,7 +27,6 @@ import { useExpenseContext } from "./ExpenseProvider";
 import {
   ExpenseList,
   ExpenseSummaryView,
-  expenseButtonClass,
   formatExpenseAmount,
 } from "./ExpenseViews";
 type DeleteConflict = { selected: Expense; latest?: Expense; failed?: boolean };
@@ -74,36 +72,36 @@ function ExpenseDeleteConflict({
             onDelete={() => {}}
             busy={false}
           />
-          <button
-            type="button"
-            className={expenseButtonClass}
+          <Button
+            variant="outline"
+            size="sm"
             disabled={deleting || context.busy || !context.canManage}
             onClick={() => onRemove(conflict.latest!)}
           >
             최신 비용 확인 후 삭제
-          </button>
+          </Button>
         </>
       ) : (
         unavailable
       )}
       {conflict.failed && (
-        <button
-          type="button"
-          className={expenseButtonClass}
+        <Button
+          variant="outline"
+          size="sm"
           disabled={deleting}
           onClick={() => onRecover(conflict.selected)}
         >
           최신 비용 다시 조회
-        </button>
+        </Button>
       )}
-      <button
-        type="button"
-        className={expenseButtonClass}
+      <Button
+        variant="outline"
+        size="sm"
         disabled={deleting || context.busy}
         onClick={onCancel}
       >
         삭제 취소
-      </button>
+      </Button>
     </div>
   );
 }
@@ -307,24 +305,15 @@ export function ExpensePanel() {
       label: `Day ${s.dayNumber}`,
     })),
   ];
-  const addButton = (
-    <button
-      type="button"
-      aria-label="비용 추가"
-      disabled={context.busy}
-      onClick={() =>
-        context.open(
-          activeFilter !== "ALL" && activeFilter !== "PREPARATION"
-            ? { scheduleId: Number(activeFilter) }
-            : {},
-        )
-      }
-      className={cn(expenseButtonClass, "inline-flex items-center justify-center gap-1 bg-primary text-white enabled:hover:bg-primary-strong")}
-    >
-      <PlusIcon size={16} />
-      비용 추가
-    </button>
-  );
+  function openNewExpense() {
+    context.open(
+      activeFilter !== "ALL" && activeFilter !== "PREPARATION"
+        ? { scheduleId: Number(activeFilter) }
+        : {},
+    );
+  }
+  // 패널(대화상자 밖)의 조회 재시도 진행은 지금처럼 문구와 native disabled로 보인다
+  const retryLabel = refreshing ? "조회 다시 시도 중" : "조회 다시 시도";
   if (context.revoked) return null;
   return (
     <section
@@ -336,15 +325,16 @@ export function ExpensePanel() {
         description="여행 비용과 정산을 한눈에 확인해요."
         className="mb-6 min-h-[72px] items-center mobile:hidden max-sm:hidden [&_h1]:text-[32px] [&_h1]:leading-[42px]"
         action={
-          <div className="flex gap-3 [&>button]:h-9 [&>button]:min-h-9 [&>button]:min-w-[111px] [&>button]:rounded-full [&>button]:py-0 [&>button]:text-[14px]">
-            <button
-              type="button"
-              className={expenseButtonClass}
-              onClick={() => setTab("summary")}
-            >
+          <div className="flex gap-3">
+            <Button variant="outline" size="sm" className="min-w-[111px]" onClick={() => setTab("summary")}>
               정산 요약
-            </button>
-            {context.canManage && addButton}
+            </Button>
+            {context.canManage && (
+              <Button tone="brand" size="sm" className="min-w-[111px]" aria-label="비용 추가" disabled={context.busy} onClick={openNewExpense}>
+                <PlusIcon data-icon="inline-start" />
+                비용 추가
+              </Button>
+            )}
           </div>
         }
       />
@@ -361,28 +351,29 @@ export function ExpensePanel() {
           <ExpenseBudgetSummary />
           <ExpenseCategorySummary />
           {readFailed && (
-            <button
-              type="button"
-              aria-label={refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
-              className={`${expenseButtonClass} mt-4 inline-flex items-center gap-1`}
+            <Button
+              variant="outline"
+              size="sm"
+              aria-label={retryLabel}
+              className="mt-4"
               disabled={refreshing || context.busy}
               onClick={() => void refresh()}
             >
-              <RefreshCw size={16} aria-hidden />
-              {refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
-            </button>
+              <RefreshIcon data-icon="inline-start" />
+              {retryLabel}
+            </Button>
           )}
         </aside>
         <div className="min-w-0 space-y-4">
-          <div className="hidden grid-cols-2 gap-4 mobile:grid max-sm:grid [&>button]:h-11 [&>button]:bg-fill-subtle [&>button:first-child]:bg-primary [&_svg]:hidden">
-            {context.canManage && addButton}
-            <button
-              type="button"
-              className={expenseButtonClass}
-              onClick={() => setTab("summary")}
-            >
+          <div className="hidden grid-cols-2 gap-4 mobile:grid max-sm:grid">
+            {context.canManage && (
+              <Button tone="brand" aria-label="비용 추가" disabled={context.busy} onClick={openNewExpense}>
+                비용 추가
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setTab("summary")}>
               정산 요약
-            </button>
+            </Button>
           </div>
           <ExpenseMemberNotice context={context} />
           {conflict && (
@@ -416,10 +407,14 @@ export function ExpensePanel() {
               조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
-          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_144px] items-center gap-x-3 gap-y-4 @min-[800px]/expenses:grid-cols-[minmax(0,1fr)_160px]">
+          {/* 카테고리 필터 칸 184: 목록 폭이 트리거 폭과 같아서, 체크가 붙은 '전체 카테고리' 행(글자 85 + 여백 32 + 체크 자리 48)이
+              목록 테두리 2와 스크롤 막대 15(목록이 8행이라 스크롤됨, 막대가 늘 보이는 설정)를 빼고도 한 줄에 들어가는 폭 */}
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_184px] items-center gap-x-3 gap-y-4">
+            {/* 일차가 많으면 가로로 넘친다. 마우스는 세로 휠로 가로 이동이 안 되므로 PC는 얇은 스크롤 막대를 보여 끌 수 있게 하고(북마크에서 추가 칩 줄과 같은 모양),
+                모바일 기기는 손가락으로 밀면 되니 막대를 숨긴다 */}
             <div
               aria-label="준비·일차 필터"
-              className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto [scrollbar-width:none] @min-[800px]/expenses:col-span-1"
+              className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15 mobile:[scrollbar-width:none] mobile:[&::-webkit-scrollbar]:hidden @min-[800px]/expenses:col-span-1"
             >
               {dayOptions.map((option) => (
                 <button
@@ -509,18 +504,7 @@ export function ExpensePanel() {
           title="정산 요약"
           description={context.summary.data ? `전체 여행 · ${new Set(context.summary.data.currencies.flatMap(currency => currency.individuals.map(person => person.userId))).size}명` : undefined}
           onClose={() => setTab("list")}
-          settlement
-          footer={
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className={cn(expenseButtonClass, "min-h-9 min-w-[111px] rounded-full bg-primary py-1 text-white mobile:h-12 mobile:min-h-12 mobile:w-full mobile:rounded-lg mobile:text-[16px] mobile:font-bold max-sm:h-12 max-sm:min-h-12 max-sm:w-full max-sm:rounded-lg max-sm:text-[16px] max-sm:font-bold")}
-                onClick={() => setTab("list")}
-              >
-                확인
-              </button>
-            </div>
-          }
+          footer={<Button onClick={() => setTab("list")}>확인</Button>}
         >
           {context.summary.isPending && (
             <Spinner aria-label="정산 불러오는 중" className="flex min-h-32 w-full" />
@@ -528,14 +512,17 @@ export function ExpensePanel() {
           {context.summary.isError && (
             <div className="space-y-3">
               <p role="alert">정산 조회에 실패했어요.</p>
-              <button
-                type="button"
-                className={expenseButtonClass}
-                disabled={refreshing || context.busy}
+              {/* 대화상자 안 버튼이라 진행은 progress로 보인다(대화상자 버튼 규칙). 패널의 재시도 버튼은 대화상자 밖이라 문구 그대로 */}
+              <Button
+                variant="outline"
+                size="sm"
+                loading={refreshing}
+                loadingLabel="조회 다시 시도 중"
+                disabled={context.busy}
                 onClick={() => void refresh()}
               >
-                {refreshing ? "조회 다시 시도 중" : "조회 다시 시도"}
-              </button>
+                조회 다시 시도
+              </Button>
             </div>
           )}
           {context.summary.isSuccess &&
@@ -555,7 +542,6 @@ export function ExpensePanel() {
       {expenseToDelete ? (
         <ConfirmDialog
           title="비용을 삭제할까요?"
-          appearance="ledger"
           destructive
           description={`${expenseTitle(expenseToDelete)} 내역을 삭제해요. 삭제한 내역은 복구할 수 없어요.`}
           confirmLabel="삭제"

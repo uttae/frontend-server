@@ -1,11 +1,21 @@
 "use client";
 
-import { Spinner } from "@/components/ui/spinner";
-
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
-import { createPortal } from "react-dom";
+import type { SyntheticEvent } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCreateScheduleItem, useRoomSchedules } from "@/hooks/useRooms";
 import { bucketItemCount } from "@/lib/analytics/context";
@@ -22,6 +32,16 @@ import {
   parseLocalYmd,
 } from "@/lib/plan/tripRange";
 import { useSessionStore } from "@/stores/session-store";
+
+// 포털 안 클릭·터치가 React 트리를 따라 부모(지도 상세 패널·시트 드래그, 검색 결과 카드)로 올라가지 않게 포털 표면과 배경에서 끊는다.
+// 딤은 표면 밖이므로 표면과 배경 각각에서 차단한다. 키보드는 Base UI에 그대로 전달한다
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+const pointerBoundary = {
+  onClick: stopPropagation,
+  onMouseDown: stopPropagation,
+  onPointerDown: stopPropagation,
+  onTouchStart: stopPropagation,
+};
 
 type Props = {
   googlePlaceId: string;
@@ -55,14 +75,6 @@ export function AddToScheduleModal({
 
   const sorted = schedules ? sortRoomSchedules(schedules) : [];
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   async function pickDay(scheduleId: number) {
     if (!rid || isAdding) return;
     try {
@@ -91,39 +103,22 @@ export function AddToScheduleModal({
     }
   }
 
-  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
-  return createPortal(
-    <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-      role="presentation"
-      onMouseDown={(ev) => {
-        ev.stopPropagation();
-        if (ev.target === ev.currentTarget) onClose();
+  return (
+    <Dialog
+      open
+      closeDisabled={isAdding}
+      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 추가 중에는 Esc·딤·닫기를 막는다
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      onClick={(ev) => ev.stopPropagation()}
-      onPointerDown={(ev) => ev.stopPropagation()}
-      onTouchStart={(ev) => ev.stopPropagation()}
     >
-      <div
-        className="flex max-h-[min(80vh,520px)] w-full max-w-sm flex-col rounded-2xl border border-gray-border bg-white shadow-lg"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-schedule-modal-title"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="shrink-0 border-b border-gray-border px-5 py-4">
-          <h2
-            id="add-schedule-modal-title"
-            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
-          >
-            일정에 추가
-          </h2>
-          <p className="mt-1 text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-            담을 여행 일차를 선택하세요.
-          </p>
-        </div>
+      <DialogContent {...pointerBoundary} backdropProps={pointerBoundary} size="sm" showCloseButton={false} className="max-h-[min(80dvh,520px)]">
+        <DialogHeader>
+          <DialogTitle>일정에 추가</DialogTitle>
+          <DialogDescription>담을 여행 일차를 선택하세요.</DialogDescription>
+        </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <DialogBody>
           {!rid ? (
             <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
               참여 중인 방이 없어요. 방에 입장한 뒤 다시 시도해 주세요.
@@ -181,19 +176,12 @@ export function AddToScheduleModal({
               ))}
             </ul>
           ) : null}
-        </div>
+        </DialogBody>
 
-        <div className="shrink-0 border-t border-gray-border px-5 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray"
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>,
-    document.body,
+        <DialogFooter>
+          <DialogClose render={<Button variant="weak" />}>닫기</DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -5,6 +5,8 @@ import { MemoIcon } from "@/components/icons";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
@@ -34,73 +36,6 @@ function normalizeMemoDraft(value: string): string {
 
 function isLocallyDirty(draft: string, editStartMemo: string): boolean {
   return draft !== editStartMemo;
-}
-
-function MemoOverwriteConfirmDialog({
-  open,
-  isPending,
-  onCancel,
-  onConfirm,
-}: {
-  open: boolean;
-  isPending: boolean;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onCancel]);
-
-  if (!open) return null;
-
-  return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 px-4"
-      onMouseDown={(ev) => {
-        if (ev.target === ev.currentTarget) onCancel();
-      }}
-    >
-      <div
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="memo-overwrite-dialog-title"
-        aria-describedby="memo-overwrite-dialog-desc"
-        onMouseDown={(e) => e.stopPropagation()}
-        className="w-full max-w-sm rounded-2xl border border-gray-border bg-white p-5 shadow-lg"
-      >
-        <h2 id="memo-overwrite-dialog-title" className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-gray-900">
-          다른 사람의 입력을 덮어씁니다!
-        </h2>
-        <p id="memo-overwrite-dialog-desc" className="mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
-          다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다.
-        </p>
-        <div className="mt-5 flex justify-end gap-2">
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={onCancel}
-            className="cursor-pointer rounded-md border border-gray-border px-3 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-gray-800 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            disabled={isPending}
-            onClick={onConfirm}
-            className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-label-m-regular mobile:text-label-s-regular font-medium text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isPending ? "저장 중…" : "확인"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function PlanItemMemoReadOnly({
@@ -241,8 +176,9 @@ export function PlanItemMemoEditor({
             <span className="mr-auto text-caption-s-regular tabular-nums text-dark-gray/60">
               {draft.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setDraft(incomingMemo);
                 setEditStartMemo(normalizeMemoDraft(incomingMemo));
@@ -250,34 +186,32 @@ export function PlanItemMemoEditor({
                 onClose();
               }}
               disabled={isPending}
-              className={cn(
-                "cursor-pointer border border-gray-border bg-white text-gray-800 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40",
-                PLAN_PLACE_CARD_TW.timeSaveButtonCompact
-              )}
             >
               취소
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              tone="brand"
+              size="sm"
               onClick={() => void handleSave()}
-              disabled={isPending || !dirty}
-              className={cn(
-                "cursor-pointer bg-primary text-white transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40",
-                PLAN_PLACE_CARD_TW.timeSaveButtonCompact
-              )}
+              disabled={!dirty}
+              loading={isPending}
+              loadingLabel="저장 중"
             >
-              {isPending ? "저장 중…" : "저장"}
-            </button>
+              저장
+            </Button>
           </div>
         </div>
       </div>
 
-      <MemoOverwriteConfirmDialog
-        open={overwriteDialogOpen}
-        isPending={isPending}
-        onCancel={() => setOverwriteDialogOpen(false)}
-        onConfirm={() => void commitSave()}
-      />
+      {overwriteDialogOpen ? (
+        <ConfirmDialog
+          title="다른 사람의 입력을 덮어씁니다!"
+          description="다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다."
+          isPending={isPending}
+          onConfirm={() => void commitSave()}
+          onCancel={() => setOverwriteDialogOpen(false)}
+        />
+      ) : null}
     </>
   );
 }

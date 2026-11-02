@@ -33,10 +33,13 @@ function mentionSuffixMatchesAi(valueFromAt: string): boolean {
   return t.length === 0 || "ai".startsWith(t);
 }
 
-/** 고정 인풋바 높이 — 텍스트 2줄(line-height 1.5) + 버튼 행 */
-const CHAT_INPUT_BAR_HEIGHT = {
-  default: 100,
-  minimized: 110,
+/**
+ * 고정 인풋바 높이 = 위 테두리 1 + 버튼 행 43 + 입력 영역 여백 20(바깥 위 4·아래 8, 입력칸 위아래 4) + 글자 줄.
+ * PC는 3줄(14px 글자, 행간 20 × 3 = 60)이라 124, 모바일 기기는 지금 높이 100, 작은 패널(12px 글자)은 110(약 3줄)
+ */
+const CHAT_INPUT_BAR_HEIGHT_CLASS = {
+  default: "h-[124px] mobile:h-[100px]",
+  minimized: "h-[110px]",
 } as const;
 
 function scrollInputToCaret(el: HTMLTextAreaElement) {
@@ -270,12 +273,10 @@ export function ChatInputBar({
 
   return (
     <div
-      className="flex shrink-0 flex-col border-t border-gray-300"
-      style={{
-        height: isMinimized
-          ? CHAT_INPUT_BAR_HEIGHT.minimized
-          : CHAT_INPUT_BAR_HEIGHT.default,
-      }}
+      className={cn(
+        "flex shrink-0 flex-col border-t border-gray-300",
+        isMinimized ? CHAT_INPUT_BAR_HEIGHT_CLASS.minimized : CHAT_INPUT_BAR_HEIGHT_CLASS.default,
+      )}
     >
       <div
         ref={inputShellRef}
