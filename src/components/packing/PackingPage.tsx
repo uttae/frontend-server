@@ -69,7 +69,7 @@ function PackingCheckbox({item,context,detail = false}: {item:PackingItem;contex
  * 다른 항목을 저장하는 동안(status writing)은 제출만 막고 버튼 모양은 그대로 둔다(체크할 때마다 깜빡이지 않게).
  * 동기화 오류처럼 저장할 수 없는 상태(ready·writing 밖)에서는 버튼을 비활성으로 보인다(옛 동작)
  */
-function NameDialog({editor,context,finalFocus,onClose}: {editor:Editor;context:Context;finalFocus:()=>HTMLElement|null;onClose:()=>void}) {
+function NameDialog({editor,context,finalFocus,onClose}: Readonly<{editor:Editor;context:Context;finalFocus:()=>HTMLElement|null;onClose:()=>void}>) {
   const formId=useId();
   const mounted=useRef(true);
   const composing=useRef(false);
@@ -82,7 +82,14 @@ function NameDialog({editor,context,finalFocus,onClose}: {editor:Editor;context:
     onSubmit:async({value,formApi})=>{
       const coordinator=context.coordinator;
       if(!coordinator) return;
-      const command=editor.kind==="createPart" ? {type:"createPart" as const,name:value.name} : editor.kind==="renamePart" ? {type:"renamePart" as const,id:editor.id,name:value.name} : editor.kind==="createItem" ? {type:"createItem" as const,partId:editor.id,name:value.name} : {type:"renameItem" as const,id:editor.id,name:value.name};
+      const command = (() => {
+        switch (editor.kind) {
+          case "createPart": return {type:"createPart" as const,name:value.name};
+          case "renamePart": return {type:"renamePart" as const,id:editor.id,name:value.name};
+          case "createItem": return {type:"createItem" as const,partId:editor.id,name:value.name};
+          case "renameItem": return {type:"renameItem" as const,id:editor.id,name:value.name};
+        }
+      })();
       const result=await coordinator.execute(command);
       // 저장하는 동안 다시 고친 이름은 남기고, 대화상자를 닫았다 다시 연 뒤 도착한 응답은 새 대화상자를 닫지 않는다
       if(mounted.current && (result.kind==="missing" || (result.kind==="success" && formApi.getFieldValue("name")===value.name))) onClose();
@@ -129,8 +136,9 @@ function DeleteDialog({context,onClose}: {context:Context;onClose:()=>void}) {
   function close(){if(!pending.current)onClose();}
   async function confirm(){if(pending.current || context.state.status!=="ready" || !context.coordinator)return;pending.current=true;setDeleting(true);try{await context.coordinator.confirmDelete();}finally{pending.current=false;setDeleting(false);}}
   const count=context.state.data?.parts.find(value=>value.id===confirmation.id)?.items.length ?? 0;
+  const deletionSubject=part ? `의 준비물 ${count}개와` : " 준비물과";
   return <ConfirmDialog destructive title={part ? "카테고리를 삭제할까요?" : "준비물을 삭제할까요?"}
-    description={`‘${confirmation.name}’${part ? `의 준비물 ${count}개와` : " 준비물과"}\n작성한 메모가 함께 삭제됩니다.`}
+    description={`‘${confirmation.name}’${deletionSubject}\n작성한 메모가 함께 삭제됩니다.`}
     confirmLabel="삭제" isPending={deleting} confirmDisabled={context.state.status!=="ready"} onConfirm={()=>void confirm()} onCancel={close}/>;
 }
 
@@ -185,7 +193,7 @@ function useMemoForm(item:PackingItem, context:Context, open:boolean, onComplete
   return {form,isSaving,blocked,cancel,save};
 }
 
-function MemoPanel({item,memo}: {item:PackingItem;memo:ReturnType<typeof useMemoForm>}) {
+function MemoPanel({item,memo}: Readonly<{item:PackingItem;memo:ReturnType<typeof useMemoForm>}>) {
   const {isMobileDevice}=useMobileView();
   const errorId=useId();
   const {form}=memo;
@@ -210,7 +218,7 @@ function MemoPanel({item,memo}: {item:PackingItem;memo:ReturnType<typeof useMemo
   </section>;
 }
 
-function DetailSections({item,memo}: {item:PackingItem;memo:ReturnType<typeof useMemoForm>}) {
+function DetailSections({item,memo}: Readonly<{item:PackingItem;memo:ReturnType<typeof useMemoForm>}>) {
   return <>
     <MemoPanel item={item} memo={memo}/>
     {item.tips.length>0 && <section className={styles.tips}>
@@ -224,7 +232,7 @@ function DetailSections({item,memo}: {item:PackingItem;memo:ReturnType<typeof us
 }
 
 /** 체크·이름·수정/삭제 줄. 이름 요소(children)는 PC 패널은 h2, 모바일 시트는 시트 제목(DrawerTitle)이다 */
-function DetailHeader({item,context,onRename,onDelete,children}: {item:PackingItem;context:Context;onRename:()=>void;onDelete:()=>void;children:ReactNode}) {
+function DetailHeader({item,context,onRename,onDelete,children}: Readonly<{item:PackingItem;context:Context;onRename:()=>void;onDelete:()=>void;children:ReactNode}>) {
   return <div className={styles.detailHeader}>
     <PackingCheckbox item={item} context={context} detail/>
     {children}
@@ -239,7 +247,7 @@ type DetailProps = {item:PackingItem|null;context:Context;open:boolean;onClose:(
 type ItemDetailProps = Omit<DetailProps,"item"> & {item:PackingItem};
 
 /** PC: 목록 오른쪽 비모달 패널. 닫혀도 언마운트하지 않아 메모 초안이 남는다 */
-function DetailPanel({item,context,open,onClose,onRename,onDelete}: DetailProps) {
+function DetailPanel({item,context,open,onClose,onRename,onDelete}: Readonly<DetailProps>) {
   useEffect(()=>{
     if(!open) return;
     function handleEscape(event:KeyboardEvent) {
@@ -272,7 +280,7 @@ function DetailPanelBody({item,context,open,onClose,onRename,onDelete}: ItemDeta
  * 모바일 기기: 아래 시트(Drawer). 저장 중(status writing)에는 Esc·딤·X·스와이프로 닫히지 않는다.
  * 시트 내용은 닫히면 언마운트되므로 메모 폼은 시트 바깥(DetailSheetBody)이 들고 있다
  */
-function DetailSheet({item,context,open,onClose,onRename,onDelete}: DetailProps) {
+function DetailSheet({item,context,open,onClose,onRename,onDelete}: Readonly<DetailProps>) {
   return <Drawer open={open} onOpenChange={next=>{if(!next)onClose();}} closeDisabled={context.state.status==="writing"}>
     {item && <DetailSheetBody key={item.id} item={item} context={context} open={open} onClose={onClose} onRename={onRename} onDelete={onDelete}/>}
   </Drawer>;
@@ -293,7 +301,7 @@ function DetailSheetBody({item,context,open,onClose,onRename,onDelete}: ItemDeta
 }
 
 /** 카테고리 메뉴. 항목에서 연 이름 대화상자는 닫힐 때 이 메뉴 버튼으로 포커스를 돌려준다(항목은 메뉴와 함께 사라진다) */
-function PartMenu({part,onEdit,onDelete}: {part:PackingPart;onEdit:(editor:Editor,returnFocus:HTMLElement|null)=>void;onDelete:()=>void}) {
+function PartMenu({part,onEdit,onDelete}: Readonly<{part:PackingPart;onEdit:(editor:Editor,returnFocus:HTMLElement|null)=>void;onDelete:()=>void}>) {
   const trigger=useRef<HTMLButtonElement>(null);
   return <DropdownMenu>
     <DropdownMenuTrigger ref={trigger} className={styles.menuTrigger} aria-label={`카테고리 메뉴: ${part.name}`}>

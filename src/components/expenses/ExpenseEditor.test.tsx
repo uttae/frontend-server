@@ -208,7 +208,7 @@ it("remembers currency only after a successful new expense save", async () => {
   expect(currencyValue()).toBe("KRW");
   await chooseCurrency("USD");
   expect(currencyValue()).toBe("USD");
-  expect(localStorage.length).toBe(0);
+  expect(localStorage).toHaveLength(0);
   await completeNewExpense();
   expect(mocks.save).toHaveBeenCalledOnce();
   expect(Object.values({ ...localStorage })).toEqual(["USD"]);
@@ -221,17 +221,17 @@ it("does not remember cancelled, failed, or edited expense currency", async () =
   await chooseCurrency("USD");
   await click(button("닫기")!);
   expect(mocks.close).toHaveBeenCalledOnce();
-  expect(localStorage.length).toBe(0);
+  expect(localStorage).toHaveLength(0);
   await mount(null);
   await chooseCurrency("USD");
   mocks.save.mockRejectedValueOnce(new Error("저장 실패"));
   await completeNewExpense();
   expect(mocks.save).toHaveBeenCalledOnce();
-  expect(localStorage.length).toBe(0);
+  expect(localStorage).toHaveLength(0);
   await mount();
   await clickSave();
   expect(mocks.save).toHaveBeenCalledOnce();
-  expect(localStorage.length).toBe(0);
+  expect(localStorage).toHaveLength(0);
 });
 
 it("scopes the remembered currency to the authenticated user and room", async () => {

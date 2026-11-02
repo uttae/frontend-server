@@ -116,6 +116,7 @@ export function PlanItemTimeEditor({
     startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
   const dirty = serverStartHm !== startHm || serverEndHm !== endHm;
   const validation = validateScheduleTimeDraft(startHm, endHm);
+  const describedBy = validation.valid ? `${formId}-help` : `${formId}-help ${formId}-error`;
 
   function submit() {
     // 라이브러리는 연타를 막지 않는다. isPending은 다음 렌더에 바뀌어 ref 락을 함께 본다
@@ -166,13 +167,6 @@ export function PlanItemTimeEditor({
             event.preventDefault();
             submit();
           }}
-          // 입력 칸에서 Enter는 바로 적용한다. 적용 버튼이 비활성(검증 실패)이어도 실패 안내 토스트를 띄우려고 암묵 제출 대신 직접 부른다
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && event.target instanceof HTMLInputElement) {
-              event.preventDefault();
-              submit();
-            }
-          }}
         >
           <p id={`${formId}-help`} className="text-center text-body-xs-regular text-dark-gray">
             24시간 기준 · 시와 분을 직접 입력하세요
@@ -192,7 +186,14 @@ export function PlanItemTimeEditor({
                     value={field.state.value ?? serverValue}
                     onChange={field.handleChange}
                     disabled={disabled}
-                    describedBy={`${formId}-help${validation.valid ? "" : ` ${formId}-error`}`}
+                    describedBy={describedBy}
+                    // 적용 버튼이 비활성이어도 Enter로 검증 실패 안내를 보여 준다.
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        submit();
+                      }
+                    }}
                   />
                 </div>
               )}

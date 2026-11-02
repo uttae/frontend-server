@@ -62,9 +62,12 @@ function AlertDialogTrigger(props: Readonly<AlertDialogPrimitive.Trigger.Props>)
 // 딤은 Alert Dialog 페이지에 정의가 없어(figma-button-dialog 3-6) 지금 앱 값 black/40을 쓴다.
 // 대화상자 안에서 연 확인창(중첩)도 딤을 그린다(forceRender). 확인창은 그림자가 없어 흰 대화상자 위에서 경계가 사라지고, 지금 확인창도 대화상자 위에 딤을 한 겹 더 깐다.
 // iOS 26 Safari는 fixed 딤이 스크롤 뒤 화면을 다 덮지 못해 absolute로 둔다(Base UI 권장, body position: relative는 globals.css)
-function AlertDialogOverlay({ closeLabel }: Readonly<{ closeLabel?: string }>) {
+type BackdropEventProps = Pick<AlertDialogPrimitive.Backdrop.Props, "onClick" | "onMouseDown" | "onPointerDown" | "onTouchStart">;
+
+function AlertDialogOverlay({ closeLabel, backdropProps }: Readonly<{ closeLabel?: string; backdropProps?: BackdropEventProps }>) {
   return (
     <AlertDialogPrimitive.Backdrop
+      {...backdropProps}
       forceRender
       data-slot="alert-dialog-overlay"
       className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-100 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"
@@ -88,6 +91,8 @@ type AlertDialogContentProps = Omit<AlertDialogPrimitive.Popup.Props, "className
   className?: string;
   /** 주면 딤을 눌러 닫힌다(지금 확인창 동작). 값은 딤 위 숨은 닫기 버튼의 이름이다(예: "{제목} 배경 닫기"). 없으면 Esc·취소로만 닫힌다 */
   backdropCloseLabel?: string;
+  /** 배경 닫기 버튼을 포함한 포털 이벤트의 전파 경계. 키보드는 차단하지 않는다 */
+  backdropProps?: BackdropEventProps;
   /** 확인창의 접근성 이름. AlertDialogTitle 없이(Figma Show Title=false) 쓸 때 꼭 준다. 제목이 있으면 Base UI가 aria-labelledby로 제목을 잇는다 */
   "aria-label"?: string;
 };
@@ -103,11 +108,11 @@ type AlertDialogContentProps = Omit<AlertDialogPrimitive.Popup.Props, "className
  * 첫 포커스는 취소 버튼이다(없으면 Base UI 기본: 첫 포커스 요소, 터치로 열면 표면). 세로 배치(주요 → 취소)에서도 Enter 한 번에 파괴적 동작이 실행되지 않게 한다.
  * 바꾸려면 initialFocus를 넘긴다.
  */
-function AlertDialogContent({ className, backdropCloseLabel, initialFocus, ...props }: Readonly<AlertDialogContentProps>) {
+function AlertDialogContent({ className, backdropCloseLabel, backdropProps, initialFocus, ...props }: Readonly<AlertDialogContentProps>) {
   const popupRef = useRef<HTMLDivElement>(null);
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal">
-      <AlertDialogOverlay closeLabel={backdropCloseLabel} />
+      <AlertDialogOverlay closeLabel={backdropCloseLabel} backdropProps={backdropProps} />
       <AlertDialogPrimitive.Popup
         ref={popupRef}
         data-slot="alert-dialog-content"

@@ -30,10 +30,15 @@ type Props = {
   onCancel: () => void;
 };
 
-// 포털 안 이벤트가 React 트리를 따라 카드 클릭·드래그 호스트(PlanPlaceCard·BookmarkPlaceRow)로 올라가는 것만 막는다.
-// Base UI 포털도 React 부모로 이벤트를 올리고, 딤의 '배경 닫기' 버튼은 표면 밖이라 표면 props로는 못 막아 Root 바깥을 감싼다.
-// 감싼 요소는 display: contents라 호출부 배치에 상자를 더하지 않는다. 키 입력은 Base UI가 document에서 받으므로 막지 않는다
+// 포털 표면과 배경에서만 카드 클릭·드래그 호스트로 가는 포인터 이벤트를 끊는다.
+// 키 입력은 Base UI가 document에서도 받으므로 막지 않는다.
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+const pointerBoundary = {
+  onClick: stopPropagation,
+  onMouseDown: stopPropagation,
+  onPointerDown: stopPropagation,
+  onTouchStart: stopPropagation,
+};
 
 /**
  * 확인창(Figma Alert Dialog 5621:3002). 마운트되면 열린 상태라 호출부는 조건부로 렌더한다.
@@ -58,47 +63,39 @@ export function ConfirmDialog({
   onCancel,
 }: Readonly<Props>) {
   return (
-    <div
-      className="contents"
-      onClick={stopPropagation}
-      onMouseDown={stopPropagation}
-      onPointerDown={stopPropagation}
-      onTouchStart={stopPropagation}
+    <AlertDialog
+      open
+      closeDisabled={isPending}
+      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
     >
-      <AlertDialog
-        open
-        closeDisabled={isPending}
-        // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
-        onOpenChange={(open) => {
-          if (!open) onCancel();
-        }}
-      >
-        <AlertDialogContent backdropCloseLabel={`${title} 배경 닫기`}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{title}</AlertDialogTitle>
-            {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
-          </AlertDialogHeader>
-          <div className="flex flex-col gap-2">
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>{cancelLabel}</AlertDialogCancel>
-              <AlertDialogAction
-                tone={destructive ? "critical" : "neutral"}
-                disabled={confirmDisabled}
-                loading={isPending}
-                loadingLabel="처리 중"
-                onClick={onConfirm}
-              >
-                {confirmLabel}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-            {errorMessage ? (
-              <p role="alert" className="text-center text-body-s-regular text-status-negative">
-                {errorMessage}
-              </p>
-            ) : null}
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+      <AlertDialogContent {...pointerBoundary} backdropProps={pointerBoundary} backdropCloseLabel={`${title} 배경 닫기`}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}
+        </AlertDialogHeader>
+        <div className="flex flex-col gap-2">
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>{cancelLabel}</AlertDialogCancel>
+            <AlertDialogAction
+              tone={destructive ? "critical" : "neutral"}
+              disabled={confirmDisabled}
+              loading={isPending}
+              loadingLabel="처리 중"
+              onClick={onConfirm}
+            >
+              {confirmLabel}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+          {errorMessage ? (
+            <p role="alert" className="text-center text-body-s-regular text-status-negative">
+              {errorMessage}
+            </p>
+          ) : null}
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

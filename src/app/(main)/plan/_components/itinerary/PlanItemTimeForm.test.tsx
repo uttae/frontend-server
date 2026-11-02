@@ -176,7 +176,7 @@ describe("schedule time editor", () => {
 });
 
 describe("web time editing", () => {
-  it("prefills exact minutes and applies typed values with Enter", async () => {
+  it.each([0, 1, 2, 3])("prefills exact minutes and applies typed values with Enter from input %s", async (column) => {
     props.startTime = "09:07";
     props.endTime = "10:13";
     await render();
@@ -186,7 +186,7 @@ describe("web time editing", () => {
     await type(0, "8");
     expect(selected(0)).toBe("8");
     await type(1, "5");
-    await key(input(1), "Enter");
+    await key(input(column), "Enter");
     expect(body()).toEqual({ startTime: "08:05" });
   });
   it.each(["24", "-1", "abc", "", "100"])("shows invalid hour %s without saving", async (value) => {
@@ -195,6 +195,7 @@ describe("web time editing", () => {
     expect(input(0).getAttribute("aria-invalid")).toBe("true");
     expect(document.querySelector('[role="alert"]')?.textContent).toBeTruthy();
     await key(input(0), "Enter");
+    expect(mocks.error).toHaveBeenCalledOnce();
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
     await type(0, "22");
     expect(input(0).getAttribute("aria-invalid")).toBe("false");

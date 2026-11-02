@@ -38,7 +38,7 @@ export function RoomTripEditForm(props: Props) {
   return <RoomTripEditSession key={props.room.id} {...props} />;
 }
 
-function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Props) {
+function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readonly<Props>) {
   /** 서버 최신 값 — 다른 멤버가 바꾸면 따라 바뀐다. 읽기 전용 표시와 저장 직전 기준(기간 축소 확인·이전 기간)에 쓴다 */
   // 저장은 화면에 보이는 폼 값 그대로 보낸다 — 열어 둔 사이 다른 멤버가 바꾼 값보다 마지막에 저장한 사람의 화면 값이 남는다
   const latest = toTripFormValues(room);

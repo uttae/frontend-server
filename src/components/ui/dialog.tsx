@@ -82,6 +82,8 @@ type DialogContentProps = Omit<DialogPrimitive.Popup.Props, "className"> &
   VariantProps<typeof dialogContentVariants> & {
     /** 제목 줄 오른쪽 닫기(X). 기본 표시. Figma Modal에는 늘 있다 */
     showCloseButton?: boolean;
+    /** 포털 배경 이벤트를 호출부 카드로 올리지 않을 때 지정한다. 키보드 이벤트는 그대로 전달한다 */
+    backdropProps?: Pick<DialogPrimitive.Backdrop.Props, "onClick" | "onMouseDown" | "onPointerDown" | "onTouchStart">;
     /** 닫기(X)의 접근성 이름. 화면에는 보이지 않는다(예: "쿠키 설정 닫기") */
     closeLabel?: string;
     /** 배치(높이 상한 등)에만 쓴다. 폭은 size로 고른다 */
@@ -100,6 +102,7 @@ function DialogContent({
   size,
   showCloseButton = true,
   closeLabel = "닫기",
+  backdropProps,
   ...props
 }: Readonly<DialogContentProps>) {
   return (
@@ -108,6 +111,7 @@ function DialogContent({
           iOS 26 Safari는 fixed 딤이 스크롤 뒤 화면 전체를 덮지 못해 Base UI 권장대로 absolute로 바꾸고 min-h-dvh로 채운다(body는 globals.css에서 position: relative).
           Base UI는 다른 대화상자·시트 안에서 연(nested) 대화상자의 딤을 그리지 않는다. 지금 앱처럼 뒤 대화상자도 딤으로 덮도록 forceRender로 늘 그린다 */}
       <DialogPrimitive.Backdrop
+        {...backdropProps}
         forceRender
         data-slot="dialog-overlay"
         className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-150 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"

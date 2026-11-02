@@ -63,8 +63,14 @@ export type PlanDaySectionProps = {
 };
 
 // 메뉴는 body로 포털되지만 React 이벤트는 트리를 따라 섹션(일차 간 드롭 핸들러)으로 올라간다.
-// 지금 메뉴처럼 트리거·항목의 클릭이 섹션으로 가지 않게 Root를 감싼 요소에서 끊는다(MIGRATION 7장)
+// 트리거와 포털 표면에서만 포인터 전파를 끊고, 키보드는 Base UI에 전달한다
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+const pointerBoundary = {
+  onClick: stopPropagation,
+  onMouseDown: stopPropagation,
+  onPointerDown: stopPropagation,
+  onTouchStart: stopPropagation,
+};
 
 export function PlanDaySection({
   title,
@@ -227,53 +233,45 @@ export function PlanDaySection({
             </span>
           </button>
           {showScheduleMenu ? (
-            <div
-              className="contents"
-              onClick={stopPropagation}
-              onMouseDown={stopPropagation}
-              onPointerDown={stopPropagation}
-              onTouchStart={stopPropagation}
-            >
-              {/* mutation·드래그 중(isScheduleMenuDisabled)에는 열려 있던 메뉴도 감춘다(지금 동작) */}
-              <DropdownMenu open={menuOpen && !isScheduleMenuDisabled} onOpenChange={setMenuOpen}>
-                <DropdownMenuTrigger
-                  aria-label="일차 메뉴"
-                  disabled={isScheduleMenuDisabled}
-                  className={cn(
-                    "shrink-0 self-center rounded-lg p-2 text-dark-gray transition-colors",
-                    isScheduleMenuDisabled
-                      ? "cursor-not-allowed opacity-40"
-                      : "cursor-pointer hover:bg-bubble-gray/60",
-                  )}
-                >
-                  <MenuDotHorizontalIcon size={20} />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {onRequestAddExpense ? (
-                    <DropdownMenuItem disabled={isAddExpenseDisabled} onClick={onRequestAddExpense}>
-                      <ExpenseIcon />
-                      {title} 비용 추가
-                    </DropdownMenuItem>
-                  ) : null}
-                  {onRequestInsertScheduleAfter ? (
-                    <DropdownMenuItem onClick={onRequestInsertScheduleAfter}>
-                      <PlusIcon />
-                      일차 추가
-                    </DropdownMenuItem>
-                  ) : null}
-                  {onRequestDeleteSchedule ? (
-                    <DropdownMenuItem
-                      variant="destructive"
-                      disabled={isDeleteScheduleDisabled}
-                      onClick={onRequestDeleteSchedule}
-                    >
-                      <TrashIcon />
-                      일차 삭제
-                    </DropdownMenuItem>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <DropdownMenu open={menuOpen && !isScheduleMenuDisabled} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger
+                {...pointerBoundary}
+                aria-label="일차 메뉴"
+                disabled={isScheduleMenuDisabled}
+                className={cn(
+                  "shrink-0 self-center rounded-lg p-2 text-dark-gray transition-colors",
+                  isScheduleMenuDisabled
+                    ? "cursor-not-allowed opacity-40"
+                    : "cursor-pointer hover:bg-bubble-gray/60",
+                )}
+              >
+                <MenuDotHorizontalIcon size={20} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" {...pointerBoundary}>
+                {onRequestAddExpense ? (
+                  <DropdownMenuItem disabled={isAddExpenseDisabled} onClick={onRequestAddExpense}>
+                    <ExpenseIcon />
+                    {title} 비용 추가
+                  </DropdownMenuItem>
+                ) : null}
+                {onRequestInsertScheduleAfter ? (
+                  <DropdownMenuItem onClick={onRequestInsertScheduleAfter}>
+                    <PlusIcon />
+                    일차 추가
+                  </DropdownMenuItem>
+                ) : null}
+                {onRequestDeleteSchedule ? (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={isDeleteScheduleDisabled}
+                    onClick={onRequestDeleteSchedule}
+                  >
+                    <TrashIcon />
+                    일차 삭제
+                  </DropdownMenuItem>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : null}
         </div>
         {summaryAction || trackedSid !== undefined ? (

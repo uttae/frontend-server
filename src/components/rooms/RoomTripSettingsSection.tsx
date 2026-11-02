@@ -45,10 +45,10 @@ export function RoomTripDeleteButton() {
 export function RoomTripSettingsSection({
   update,
   onSaved,
-}: {
+}: Readonly<{
   update: ComponentProps<typeof RoomTripEditForm>["update"];
   onSaved?: () => void;
-}) {
+}>) {
   const { roomId, roomSource, isLoading } = useCurrentRoomMembership();
   const canEdit = isRoomMemberRole(roomSource?.role);
   const description = !isLoading && roomSource && roomId && !canEdit
