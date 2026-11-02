@@ -57,13 +57,17 @@ export function handlePlacePhotoImageError(args: {
   googlePlaceId?: string | null;
   placeName?: string | null;
   image: HTMLImageElement;
+  /** 다시 받아도 보여 줄 사진이 없을 때 — 깨진 이미지 대신 사진 없음 상태로 바꾸게 한다 */
+  onPhotoUnavailable?: () => void;
 }): void {
   logPlacePhotoImageError(args);
 
   const id =
     typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
-  if (!id.length) return;
-  if (args.image.dataset.photoRefreshAttempted === "true") return;
+  if (!id.length || args.image.dataset.photoRefreshAttempted === "true") {
+    args.onPhotoUnavailable?.();
+    return;
+  }
 
   args.image.dataset.photoRefreshAttempted = "true";
   void refreshPlacePhotoUrl(id)
@@ -78,6 +82,7 @@ export function handlePlacePhotoImageError(args: {
         placeName: args.placeName ?? null,
         imageConnected: args.image.isConnected,
       });
+      args.onPhotoUnavailable?.();
     })
     .catch((error: unknown) => {
       console.warn("[PHOTO-URL] refresh failed", {
@@ -86,5 +91,6 @@ export function handlePlacePhotoImageError(args: {
         placeName: args.placeName ?? null,
         ...describeUnknownError(error),
       });
+      args.onPhotoUnavailable?.();
     });
 }

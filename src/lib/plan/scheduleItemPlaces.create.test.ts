@@ -214,3 +214,32 @@ describe("createScheduleItemAtPlanIndex", () => {
     ).not.toHaveBeenCalled();
   });
 });
+
+ describe("cross-schedule refresh sequencing", () => {
+  it("waits for source refresh before target and routes", async () => {
+    const client = new QueryClient();
+    let finishSource!: () => void;
+    const source = new Promise<void>((resolve) => { finishSource = resolve; });
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockReturnValueOnce(source).mockResolvedValue(undefined);
+    const syncing = syncAfterCrossScheduleItemMove(client, "room-1", 10, 20);
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate.mock.calls[0][0]?.queryKey).toEqual(scheduleItemsQueryKey("room-1", 10));
+    finishSource();
+    await syncing;
+    expect(invalidate.mock.calls[1][0]?.queryKey).toEqual(scheduleItemsQueryKey("room-1", 20));
+  });
+  it("refreshes identical source and target once", async () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockResolvedValue(undefined);
+    await syncAfterCrossScheduleItemMove(client, "room-1", 10, 10);
+    expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+  it("does not refresh target or routes when source refresh fails", async () => {
+    vi.clearAllMocks();
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockRejectedValue(new Error("source failed"));
+    await expect(syncAfterCrossScheduleItemMove(client, "room-1", 10, 20)).rejects.toThrow("source failed");
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(mocks.invalidateScheduleItemRouteForWholeSchedule).not.toHaveBeenCalled();
+  });
+});

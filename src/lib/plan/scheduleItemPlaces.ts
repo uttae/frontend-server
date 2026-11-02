@@ -1,7 +1,7 @@
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { awaitRoomSchedulesHydrated } from "@/lib/rooms";
+import { awaitRoomSchedulesHydrated, waitForRoomSchedulesHydration } from "@/lib/rooms";
 
 import {
   createScheduleItem,
@@ -10,9 +10,15 @@ import {
   type CreateScheduleItemResponse,
   type RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
+import {
+  fetchAndSeedPlacePreviews,
+  reconcileSchedulePlanPlacesAfterPreviewSeed,
+} from "@/lib/places/place-batch-cache";
 import { fetchPlacePreview } from "@/lib/places/place-queries";
 import {
   buildPlanPlacesFromItemsWithPreviewEnrichment,
+  PLAN_PLACE_PREVIEW_ERROR_TITLE,
+  planPlacesNeedPreviewEnrich,
   resolveScheduleItemsFromCacheOrHydrate,
 } from "@/lib/plan/schedule-bulk-hydration";
 import { getQueryClient } from "@/lib/query-client";
@@ -362,6 +368,45 @@ export async function syncAfterCrossScheduleItemMove(
   usePlanMapDirectionsEpochStore.getState().bumpForDirections(rid);
 }
 
+/** 캐시에 preview 에러 title이 있으면 enrich 후 `schedule-items`를 갱신합니다. */
+export async function ensureSchedulePlanPlacesEnriched(
+  queryClient: QueryClient,
+  roomId: string,
+  scheduleId: number,
+): Promise<PlanPlace[]> {
+  const rid = roomId.trim();
+  if (!rid.length) return [];
+  const key = scheduleItemsQueryKey(rid, scheduleId);
+  // 일정 불러오기가 진행 중이면 그 결과를 쓴다 — 방금 batch로 받은 장소를 일차마다 다시 받지 않는다
+  const waitedForHydration = await waitForRoomSchedulesHydration(queryClient, rid);
+  const cached = queryClient.getQueryData<PlanPlace[]>(key);
+  if (cached != null && (waitedForHydration || !planPlacesNeedPreviewEnrich(cached))) {
+    return cached;
+  }
+  if (cached != null) {
+    // 지금 일차 목록(삭제·수정·순서가 반영됨)은 그대로 두고 자리표시자 장소의 미리보기만 채운다 —
+    // room-schedules의 items는 장소 단위 변경을 따라가지 않아, 거기서 다시 만들면 지운 장소가 되살아난다
+    const placeholderIds = cached
+      .filter((place) => place.title === PLAN_PLACE_PREVIEW_ERROR_TITLE)
+      .flatMap((place) => (place.googlePlaceId ? [place.googlePlaceId] : []));
+    await fetchAndSeedPlacePreviews(placeholderIds, queryClient);
+    reconcileSchedulePlanPlacesAfterPreviewSeed(queryClient, rid);
+    return queryClient.getQueryData<PlanPlace[]>(key) ?? cached;
+  }
+
+  const items = await resolveScheduleItemsFromCacheOrHydrate(
+    queryClient,
+    rid,
+    scheduleId,
+  );
+  const places = await buildPlanPlacesFromItemsWithPreviewEnrichment(
+    queryClient,
+    items,
+  );
+  queryClient.setQueryData(key, places);
+  return places;
+}
+
 /**
  * 그 일차 항목을 서버에서 받아 캐시된 장소의 이름·주소와 합칩니다. 캐시는 TanStack이 씁니다.
  * 같은 일차 조회가 겹치면 TanStack이 옛 조회를 취소하고 그 응답을 버립니다.
@@ -372,6 +417,12 @@ async function fetchSchedulePlanPlaces(
   scheduleId: number,
   signal: AbortSignal,
 ): Promise<PlanPlace[]> {
+  const key = scheduleItemsQueryKey(roomId, scheduleId);
+  const state = queryClient.getQueryState<PlanPlace[]>(key);
+  // 미리보기 오류의 재진입 복구만 캐시 목록을 유지한다. 변경 알림의 무효화는 HTTP로 확인한다.
+  if (!state?.isInvalidated && state?.data && planPlacesNeedPreviewEnrich(state.data)) {
+    return ensureSchedulePlanPlacesEnriched(queryClient, roomId, scheduleId);
+  }
   const items = await getScheduleItems(roomId, scheduleId, signal);
   const prev = queryClient.getQueryData<PlanPlace[]>(
     scheduleItemsQueryKey(roomId, scheduleId),
@@ -401,6 +452,10 @@ export function schedulePlanPlacesQueryOptions(
         : [],
     // 본인 저장 응답과 STOMP 무효화로만 갱신한다. 화면 밖에서 무효화된 목록은 다시 마운트될 때 받는다
     staleTime: Infinity,
+    refetchOnMount: (query) => {
+      const data = query.state.data;
+      return data && planPlacesNeedPreviewEnrich(data) ? "always" : true;
+    },
   });
 }
 
