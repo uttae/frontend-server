@@ -1,5 +1,5 @@
 "use client";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "framer-motion";
@@ -293,7 +293,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
           onOpenBookmark={() => setBookmarkModal({})}
         />
         {isAdding ?
-          <LoadingIndicator label="장소 추가 중" />
+          <Spinner aria-label="장소 추가 중" />
         : null}
       </div>
 

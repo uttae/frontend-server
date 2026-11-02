@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect } from "react";
-import { UserX } from "lucide-react";
-
 import {
-  SettingsActionButton,
-  SettingsActionButtonRow,
-} from "@/components/settings/SettingsActionButton";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   onClose: () => void;
@@ -14,70 +17,47 @@ type Props = {
   isPending: boolean;
 };
 
+const TITLE = "정말 탈퇴하시겠어요?";
+
+/** 회원 탈퇴 확인창(Figma Alert Dialog, Destructive). 마운트되면 열린 상태라 호출부가 조건부로 렌더한다 */
 export function WithdrawAccountConfirmModal({
   onClose,
   onConfirm,
   isPending,
 }: Props) {
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isPending) onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [onClose, isPending]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isPending) onClose();
+    <AlertDialog
+      open
+      closeDisabled={isPending}
+      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      role="presentation"
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="withdraw-account-title"
-        className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-6 pb-2 pt-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
-            <UserX size={22} className="text-status-negative" aria-hidden />
-          </div>
-          <h2 id="withdraw-account-title" className="text-title-s font-bold">
-            정말 탈퇴하시겠어요?
-          </h2>
-          <p className="mt-3 text-left text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
-            탈퇴 후에는 계정을 복구할 수 없습니다. 
-            <br />
-            이메일·닉네임·프로필 등
-            
-            개인정보는 익명화되며,<br /> 참여 중이던 여행 멤버십은 정리됩니다.
+      {/* 지금처럼 딤을 눌러도 닫힌다(처리 중에는 closeDisabled가 막는다) */}
+      <AlertDialogContent backdropCloseLabel={`${TITLE} 배경 닫기`}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{TITLE}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {"탈퇴 후에는 계정을 복구할 수 없습니다.\n이메일·닉네임·프로필 등 개인정보는 익명화되며,\n참여 중이던 여행 멤버십은 정리됩니다."}
+          </AlertDialogDescription>
+          {/* 지금 화면처럼 본문보다 작은 보조 안내 */}
+          <p className="text-body-s-regular text-text-subtle">
+            방장인 여행에 다른 멤버가 남아 있으면, 탈퇴 전 방장을 위임해야 합니다.
           </p>
-          <p className="mt-2 text-left text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
-            방장인 여행에 다른 멤버가 남아 있으면, 탈퇴 전 방장을 위임해야
-            합니다.
-          </p>
-        </div>
-        <SettingsActionButtonRow className="px-6 py-5 pt-0">
-          <SettingsActionButton
-            variant="secondary"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            취소
-          </SettingsActionButton>
-          <SettingsActionButton
-            variant="primary"
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
+          <AlertDialogAction
+            tone="critical"
+            loading={isPending}
+            loadingLabel="탈퇴 처리 중"
             onClick={onConfirm}
-            disabled={isPending}
           >
-            {isPending ? "탈퇴 처리 중…" : "탈퇴하기"}
-          </SettingsActionButton>
-        </SettingsActionButtonRow>
-      </div>
-    </div>
+            탈퇴하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

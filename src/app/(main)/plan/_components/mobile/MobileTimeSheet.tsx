@@ -3,8 +3,17 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
-import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerBody,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
   addMinutesToHm,
@@ -105,99 +114,87 @@ export function MobileTimeSheet({
   ];
 
   return (
-    <MobileBottomSheet
-      open
-      onClose={onClose}
-      title={placeName}
-      subtitle={subtitle || undefined}
-      variant="form"
-      closeDisabled={isPending}
-    >
-      <div className="flex w-full items-end gap-2">
-        {fields.map(({ key, label, value }) => {
-          const active = activeField === key;
-          const display = formatHm12h(value);
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => openField(key)}
-              disabled={isPending || (key === "end" && !start)}
-              aria-expanded={active}
-              aria-label={`${label} ${display || "미설정"}`}
-              className={cn(
-                "flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg border bg-fill-subtle px-2 pb-1.5 pt-3 disabled:opacity-40",
-                active ? "border-primary" : "border-border",
-              )}
-            >
-              <span
-                className={cn(
-                  "w-full px-1 text-center text-label-xs-regular",
-                  active ? "text-primary-strong" : "text-text-subtle",
-                )}
+    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isPending}>
+      <DrawerContent closeLabel="방문 시간 닫기">
+        <DrawerHeader>
+          <DrawerTitle>{placeName}</DrawerTitle>
+          {subtitle ? <DrawerDescription>{subtitle}</DrawerDescription> : null}
+        </DrawerHeader>
+        <DrawerBody className="gap-4">
+          <div className="flex w-full items-end gap-2">
+            {fields.map(({ key, label, value }) => {
+              const active = activeField === key;
+              const display = formatHm12h(value);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => openField(key)}
+                  disabled={isPending || (key === "end" && !start)}
+                  aria-expanded={active}
+                  aria-label={`${label} ${display || "미설정"}`}
+                  className={cn(
+                    "flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg border bg-fill-subtle px-2 pb-1.5 pt-3 disabled:opacity-40",
+                    active ? "border-primary" : "border-border",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-full px-1 text-center text-label-xs-regular",
+                      active ? "text-primary-strong" : "text-text-subtle",
+                    )}
+                  >
+                    {label}
+                  </span>
+                  <span className="flex h-8 w-full items-center justify-center truncate px-1 text-body-m-regular tabular-nums text-text">
+                    {display || "-- : --"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {activeField ? (
+            // 휠은 세로로 끌어 고른다. 시트가 같이 끌려 닫히지 않게 Base UI 스와이프에서 뺀다(옛 시트도 제목 줄에서만 끌렸다)
+            <div data-base-ui-swipe-ignore="" inert={isPending} className={cn(isPending && "opacity-60")}>
+              <TimeWheelPicker
+                value={(activeField === "start" ? start : end) || DEFAULT_HM}
+                onChange={activeField === "start" ? setStart : setEnd}
+                active
+                onInteract={() => {}}
+              />
+            </div>
+          ) : null}
+
+          {start || end ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setStart("");
+                  setEnd("");
+                  setActiveField(null);
+                }}
+                disabled={isPending}
+                className="text-caption-l-regular text-text-subtle underline underline-offset-2 disabled:opacity-40"
               >
-                {label}
-              </span>
-              <span className="flex h-8 w-full items-center justify-center truncate px-1 text-body-m-regular tabular-nums text-text">
-                {display || "-- : --"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {activeField ? (
-        <div inert={isPending} className={cn(isPending && "opacity-60")}>
-          <TimeWheelPicker
-            value={(activeField === "start" ? start : end) || DEFAULT_HM}
-            onChange={activeField === "start" ? setStart : setEnd}
-            active
-            onInteract={() => {}}
-          />
-        </div>
-      ) : null}
-
-      {start || end ? (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              setStart("");
-              setEnd("");
-              setActiveField(null);
-            }}
-            disabled={isPending}
-            className="text-caption-l-regular text-text-subtle underline underline-offset-2 disabled:opacity-40"
+                시간 지우기
+              </button>
+            </div>
+          ) : null}
+        </DrawerBody>
+        <DrawerFooter>
+          <DrawerClose render={<Button variant="weak" />}>취소</DrawerClose>
+          <Button
+            loading={isPending}
+            loadingLabel="저장 중"
+            disabled={!dirty || !validation.valid}
+            onClick={() => void handleSave()}
           >
-            시간 지우기
-          </button>
-        </div>
-      ) : null}
-
-      <div className="flex h-11 w-full items-center gap-4 px-1">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="flex-1 rounded-lg bg-fill-subtle px-2.5 py-2 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:hover:text-text-subtle enabled:active:bg-fill-strong enabled:active:text-text disabled:bg-fill disabled:text-text-disabled"
-        >
-          취소
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={isPending || !dirty || !validation.valid}
-          aria-busy={isPending}
-          className={cn(
-            "flex flex-1 items-center justify-center rounded-lg px-2.5 py-2 text-label-m-emphasis text-text-inverse transition-colors",
-            isPending
-              ? "bg-[var(--gray-900)]"
-              : "bg-[var(--gray-800)] enabled:hover:bg-[var(--gray-700)] enabled:active:bg-[var(--gray-900)] disabled:bg-fill disabled:text-text-disabled",
-          )}
-        >
-          {isPending ? <LoadingIndicator label="저장 중" className="text-text-inverse" /> : "확인"}
-        </button>
-      </div>
-    </MobileBottomSheet>
+            확인
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

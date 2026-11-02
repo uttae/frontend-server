@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useId, useState, useSyncExternalStore } from "react";
 
-import { SettingsActionButton } from "@/components/settings/SettingsActionButton";
+import { Button } from "@/components/ui/button";
+import { DialogFooter } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import {
   denyAnalyticsConsent,
   grantAnalyticsConsent,
@@ -20,6 +22,7 @@ type AnalyticsConsentSettingsViewProps = {
   message: string;
   draft: AnalyticsConsentState;
   onSave: () => void;
+  onCancel: () => void;
   onDeny: () => void;
   onGrant: () => void;
 };
@@ -43,6 +46,7 @@ export function AnalyticsConsentSettingsView({
   onGrant,
   draft,
   onSave,
+  onCancel,
 }: AnalyticsConsentSettingsViewProps) {
   const categoryId = useId();
   const descriptionId = useId();
@@ -66,26 +70,14 @@ export function AnalyticsConsentSettingsView({
             Google Analytics로 방문과 기능 사용 통계를 분석합니다.
           </p>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={allowed}
+        <Switch
+          checked={allowed}
+          onCheckedChange={(checked) => (checked ? onGrant() : onDeny())}
           aria-labelledby={categoryId}
           aria-describedby={
             consent === "pending" ? `${descriptionId} ${hintId}` : descriptionId
           }
-          onClick={allowed ? onDeny : onGrant}
-          className="flex min-h-11 shrink-0 cursor-pointer items-center rounded-lg px-1 py-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
-        >
-          <span
-            aria-hidden="true"
-            className={`flex h-7 w-12 items-center rounded-full p-1 transition-colors motion-reduce:transition-none ${allowed ? "bg-primary" : "bg-neutral-400"}`}
-          >
-            <span
-              className={`h-5 w-5 rounded-full bg-white shadow-sm transition-transform motion-reduce:transition-none ${allowed ? "translate-x-5" : "translate-x-0"}`}
-            />
-          </span>
-        </button>
+        />
       </div>
       {consent === "pending" && (
         <p id={hintId} className="mt-3 text-body-xs-regular leading-relaxed text-dark-gray">
@@ -102,22 +94,19 @@ export function AnalyticsConsentSettingsView({
           삭제합니다.
         </p>
       </details>
-      <div className="mt-4 flex items-center justify-between gap-4">
-        <Link
-          href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
-          className="rounded-sm text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          개인정보 처리방침
-        </Link>
-        <SettingsActionButton
-          variant="primary"
-          flex={false}
-          className="min-h-11 min-w-24 px-6 text-body-s-regular mobile:text-body-xs-regular focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          onClick={onSave}
-        >
-          저장
-        </SettingsActionButton>
-      </div>
+      <Link
+        href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
+        className="mt-4 block w-fit rounded-sm text-label-m-regular mobile:text-label-s-regular font-medium text-dark-gray underline underline-offset-4 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        개인정보 처리방침
+      </Link>
+      {/* 대화상자 Footer(취소 Neutral Weak → 저장 Neutral Solid). 간격 20은 Modal 영역 간격이고, 저장 결과 문장은 버튼 아래에 붙는다 */}
+      <DialogFooter className="mt-5">
+        <Button variant="weak" onClick={onCancel}>
+          취소
+        </Button>
+        <Button onClick={onSave}>저장</Button>
+      </DialogFooter>
       <p
         aria-live="polite"
         className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray not-empty:mt-3"
@@ -128,7 +117,8 @@ export function AnalyticsConsentSettingsView({
   );
 }
 
-export function AnalyticsConsentSettings() {
+// 취소는 대화상자를 닫는다(저장하지 않은 선택은 다음에 열 때 저장된 값으로 다시 읽음)
+export function AnalyticsConsentSettings({ onCancel }: Readonly<{ onCancel: () => void }>) {
   const consent = useSyncExternalStore(
     analyticsConsentStore.subscribe,
     analyticsConsentStore.getSnapshot,
@@ -155,6 +145,7 @@ export function AnalyticsConsentSettings() {
       onGrant={() => select("granted")}
       onDeny={() => select("denied")}
       onSave={save}
+      onCancel={onCancel}
     />
   );
 }

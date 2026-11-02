@@ -1,11 +1,12 @@
 "use client";
 
+import { Skeleton } from "@/components/ui/skeleton";
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
 import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 
 export function HeroSkeleton() {
-  return <div className="h-full animate-pulse bg-gray-200" />;
+  return <Skeleton className="h-full rounded-none" />;
 }
 
 export function HeroImage({

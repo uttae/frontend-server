@@ -9,6 +9,7 @@ import {
   DESTINATION_INCLUDED_PRIMARY_TYPES,
   PlacePredictionInlineDescription,
 } from "@/lib/placesAutocompleteSuggest";
+import { CloseIcon, SearchIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_SELECTION_HINT =
@@ -33,10 +34,47 @@ type Props = {
   appearance?: "default" | "field";
 };
 
-function DestinationLeadingIcon({ show, type }: Readonly<{ show: boolean; type: "search" | "map-pin" }>) {
+function DestinationLeadingIcon({ show, type, appearance }: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: "default" | "field" }>) {
   if (!show) return null;
+  if (appearance === "field") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
   const Icon = type === "search" ? Search : MapPin;
   return <Icon size={15} className="shrink-0 text-dark-gray" />;
+}
+
+function DestinationClearButton({ appearance, selectionOnly, onClick }: Readonly<{
+  appearance: "default" | "field";
+  selectionOnly: boolean;
+  onClick: React.MouseEventHandler<HTMLButtonElement>;
+}>) {
+  const isField = appearance === "field";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={selectionOnly ? "선택 지우기" : "지우기"}
+      className={isField
+        ? "grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
+        : "shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"}
+    >
+      {isField ? <CloseIcon size={20} /> : <X size={14} />}
+    </button>
+  );
+}
+
+function DestinationSelectionHint({ id, appearance }: Readonly<{
+  id: string;
+  appearance: "default" | "field";
+}>) {
+  return (
+    <p
+      id={id}
+      className={appearance === "field"
+        ? "mt-1 text-caption-s-regular text-text-subtle"
+        : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"}
+    >
+      {DESTINATION_SELECTION_HINT}
+    </p>
+  );
 }
 
 /**
@@ -55,7 +93,7 @@ export function DestinationSearchInput({
   appearance = "default",
 }: Readonly<Props>) {
   const isField = appearance === "field";
-  const showHint = selectionOnly && !isField;
+  const showHint = selectionOnly;
   const placesLib = useMapsLibrary("places");
 
   const buildRequest = useCallback(
@@ -163,7 +201,9 @@ export function DestinationSearchInput({
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
-      e.preventDefault();
+      // 추천 목록이 열려 있을 때만 Esc를 여기서 쓴다. 감싼 대화상자(ui/dialog)는 preventDefault된 Esc면 닫지 않고,
+      // 목록이 없으면 Esc가 대화상자 닫기로 이어진다
+      if (isOpen && predictions.length > 0) e.preventDefault();
       clearSuggestionUi();
       return;
     }
@@ -193,12 +233,14 @@ export function DestinationSearchInput({
         <div
           className={cn(
             "flex w-full items-center gap-2",
+            // field는 Figma 02 Text Field의 Search Bar(5002:4377): 48px, padding L14 R10, gap 8, radius 8.
+            // 테두리는 Default border/default → Focused primary/default → 값이 있고 포커스가 없으면(Filled) primary/strong
             isField
-              ? "h-12 rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary"
+              ? "h-12 rounded-md border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary [&:has(input:not(:placeholder-shown)):not(:focus-within)]:border-primary-strong"
               : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
           )}
         >
-          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} />
+          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} appearance={appearance} />
           <input
             ref={inputRef}
             aria-label="목적지 검색"
@@ -222,18 +264,12 @@ export function DestinationSearchInput({
             className={cn(
               "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
               selectionOnly && "bg-transparent",
-              isField && "text-text-subtle placeholder:text-text-disabled",
+              // Figma Text 프레임 오른쪽 4px, 입력 글자 text/default, 플레이스홀더 text/subtle
+              isField && "pr-1 text-text placeholder:text-text-subtle",
             )}
           />
           {showClear ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label={selectionOnly ? "선택 지우기" : "지우기"}
-              className="shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"
-            >
-              <X size={14} />
-            </button>
+            <DestinationClearButton appearance={appearance} selectionOnly={selectionOnly} onClick={handleClear} />
           ) : null}
         </div>
 
@@ -270,14 +306,7 @@ export function DestinationSearchInput({
         ) : null}
       </div>
 
-      {showHint ? (
-        <p
-          id={selectionOnlyFooterId}
-          className="mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
-        >
-          {DESTINATION_SELECTION_HINT}
-        </p>
-      ) : null}
+      {showHint ? <DestinationSelectionHint id={selectionOnlyFooterId} appearance={appearance} /> : null}
     </div>
   );
 }

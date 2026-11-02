@@ -4,10 +4,7 @@ import Link from "next/link";
 import { CookieSettingsButton } from "./CookieSettingsProvider";
 import { motion, useReducedMotion } from "framer-motion";
 
-import {
-  SettingsActionButton,
-  SettingsActionButtonRow,
-} from "@/components/settings/SettingsActionButton";
+import { Button } from "@/components/ui/button";
 import { AGREEMENT_PUBLIC_PATH } from "@/lib/agreements/paths";
 
 type CookieConsentBannerProps = {
@@ -21,6 +18,7 @@ export function CookieConsentBanner({
 }: CookieConsentBannerProps) {
   const reduceMotion = useReducedMotion();
 
+  // z-40: 앱(isolate 묶음) 위, Base UI 대화상자·시트(z-50 포털) 아래다. 배너의 '쿠키 설정'으로 연 대화상자가 배너를 덮고 딤이 배너를 막는다
   return (
     <motion.div
       role="region"
@@ -28,7 +26,7 @@ export function CookieConsentBanner({
       initial={reduceMotion ? false : { y: "100%", opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.25 }}
-      className="fixed inset-x-0 bottom-0 z-[100] border-t border-gray-border bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-border bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_24px_rgba(0,0,0,0.08)] backdrop-blur-sm"
     >
       <div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
@@ -45,14 +43,14 @@ export function CookieConsentBanner({
           </CookieSettingsButton>
         </p>
 
-        <SettingsActionButtonRow className="shrink-0 pt-0 sm:min-w-[220px]">
-          <SettingsActionButton variant="secondary" onClick={onReject}>
+        <div className="flex shrink-0 gap-2 sm:min-w-[220px]">
+          <Button variant="outline" className="flex-1" onClick={onReject}>
             거부
-          </SettingsActionButton>
-          <SettingsActionButton variant="primary" onClick={onAccept}>
+          </Button>
+          <Button tone="brand" className="flex-1" onClick={onAccept}>
             허용
-          </SettingsActionButton>
-        </SettingsActionButtonRow>
+          </Button>
+        </div>
       </div>
     </motion.div>
   );

@@ -181,6 +181,7 @@ export function PlanPageView() {
 
   const deleteDayDialog = dayToDelete ? (
     <ConfirmDialog
+      destructive
       title={dayToDelete.isLast ? "이 일차를 비울까요?" : "이 일차를 삭제할까요?"}
       description={
         dayToDelete.isLast
