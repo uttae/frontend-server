@@ -282,7 +282,6 @@ export function PlanDaySection({
             <div className="min-w-0 flex-1">{summaryAction}</div>
             {trackedSid !== undefined ? (
               <label
-                onClick={(event) => event.stopPropagation()}
                 className="flex min-h-8 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-2 text-label-xs-regular text-text-subtle transition-colors select-none hover:bg-fill"
               >
                 지도에 경로 표시
