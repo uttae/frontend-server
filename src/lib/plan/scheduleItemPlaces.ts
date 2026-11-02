@@ -301,8 +301,9 @@ export async function syncAfterCrossScheduleItemMove(
         )
       : null;
 
-  for (const sid of scheduleIds) {
-    await invalidateSchedulePlanPlaces(queryClient, rid, sid);
+  await invalidateSchedulePlanPlaces(queryClient, rid, sourceScheduleId);
+  if (targetScheduleId !== sourceScheduleId) {
+    await invalidateSchedulePlanPlaces(queryClient, rid, targetScheduleId);
   }
 
   if (affectedRouteItemIds !== undefined) {

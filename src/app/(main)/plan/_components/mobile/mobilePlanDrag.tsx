@@ -179,23 +179,23 @@ export function useMobilePlanDragController({
   const scheduleResyncPending = useScheduleResyncPending(roomId);
   const dragDisabled = isReorderPending || isMovePending || scheduleResyncPending;
   // 결과가 편집 목록에만 보이므로 캐시를 고치지 않고, 저장하는 동안 요청 값으로 새 자리를 그린다
-  const pending: PendingPlanMove | null =
-    isReorderPending && reorderVariables
-      ? {
-          kind: "reorder",
-          scheduleId: reorderVariables.scheduleId,
-          itemId: reorderVariables.itemId,
-          newOrderIndex: reorderVariables.body.newOrderIndex,
-        }
-      : isMovePending && moveVariables?.place
-        ? {
-            kind: "move",
-            place: moveVariables.place,
-            fromScheduleId: moveVariables.sourceScheduleId,
-            toScheduleId: moveVariables.targetScheduleId,
-            toIndex: moveVariables.targetOrderIndex,
-          }
-        : null;
+  let pending: PendingPlanMove | null = null;
+  if (isReorderPending && reorderVariables) {
+    pending = {
+      kind: "reorder",
+      scheduleId: reorderVariables.scheduleId,
+      itemId: reorderVariables.itemId,
+      newOrderIndex: reorderVariables.body.newOrderIndex,
+    };
+  } else if (isMovePending && moveVariables?.place) {
+    pending = {
+      kind: "move",
+      place: moveVariables.place,
+      fromScheduleId: moveVariables.sourceScheduleId,
+      toScheduleId: moveVariables.targetScheduleId,
+      toIndex: moveVariables.targetOrderIndex,
+    };
+  }
 
   const updateActive = useCallback((next: ActiveDrag | null) => {
     activeRef.current = next;

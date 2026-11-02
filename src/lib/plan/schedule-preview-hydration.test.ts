@@ -101,7 +101,7 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
     await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [
       schedule(1, ["a", "b"]),
       schedule(2, ["c", "d"]),
-    ]);
+    ], Date.now());
 
     expect(requestPlacePreviewsBatch.mock.calls).toEqual([[["a", "b", "c", "d"]], [["b", "d"]]]);
     expect(requestPlacePreview).not.toHaveBeenCalled();
@@ -113,7 +113,7 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
     const queryClient = createQueryClient();
     requestPlacePreviewsBatch.mockRejectedValueOnce(new HttpError(429, "요청이 너무 많습니다"));
 
-    await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [schedule(1, ["a", "b"])]);
+    await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [schedule(1, ["a", "b"])], Date.now());
 
     expect(requestPlacePreviewsBatch).toHaveBeenCalledTimes(1);
     expect(requestPlacePreview).not.toHaveBeenCalled();
@@ -207,7 +207,7 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
   });
 });
 
- describe("schedulePlanPlacesQueryOptions after preview recovery merge", () => {
+describe("schedulePlanPlacesQueryOptions after preview recovery merge", () => {
   it("invalidated placeholder data fetches authoritative items instead of only enriching old items", async () => {
     const queryClient = createQueryClient();
     const key = scheduleItemsQueryKey(ROOM_ID, 1);

@@ -215,7 +215,7 @@ describe("createScheduleItemAtPlanIndex", () => {
   });
 });
 
- describe("cross-schedule refresh sequencing", () => {
+describe("cross-schedule refresh sequencing", () => {
   it("waits for source refresh before target and routes", async () => {
     const client = new QueryClient();
     let finishSource!: () => void;

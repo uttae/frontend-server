@@ -25,7 +25,8 @@ vi.mock("@/lib/places/place-queries", () => ({
     formattedAddress: "",
   }),
 }));
-vi.mock("@/lib/plan/schedule-bulk-hydration", () => ({
+vi.mock("@/lib/plan/schedule-bulk-hydration", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/plan/schedule-bulk-hydration")>(),
   buildPlanPlacesFromItemsWithPreviewEnrichment: async (
     _queryClient: unknown,
     items: RoomScheduleItem[],
