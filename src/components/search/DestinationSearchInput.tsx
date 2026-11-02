@@ -34,10 +34,47 @@ type Props = {
   appearance?: "default" | "field";
 };
 
-function DestinationLeadingIcon({ show, type }: Readonly<{ show: boolean; type: "search" | "map-pin" }>) {
+function DestinationLeadingIcon({ show, type, appearance }: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: "default" | "field" }>) {
   if (!show) return null;
+  if (appearance === "field") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
   const Icon = type === "search" ? Search : MapPin;
   return <Icon size={15} className="shrink-0 text-dark-gray" />;
+}
+
+function DestinationClearButton({ appearance, selectionOnly, onClick }: Readonly<{
+  appearance: "default" | "field";
+  selectionOnly: boolean;
+  onClick: React.MouseEventHandler<HTMLButtonElement>;
+}>) {
+  const isField = appearance === "field";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={selectionOnly ? "선택 지우기" : "지우기"}
+      className={isField
+        ? "grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
+        : "shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"}
+    >
+      {isField ? <CloseIcon size={20} /> : <X size={14} />}
+    </button>
+  );
+}
+
+function DestinationSelectionHint({ id, appearance }: Readonly<{
+  id: string;
+  appearance: "default" | "field";
+}>) {
+  return (
+    <p
+      id={id}
+      className={appearance === "field"
+        ? "mt-1 text-caption-s-regular text-text-subtle"
+        : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"}
+    >
+      {DESTINATION_SELECTION_HINT}
+    </p>
+  );
 }
 
 /**
@@ -201,11 +238,7 @@ export function DestinationSearchInput({
               : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
           )}
         >
-          {isField ? (
-            showLeadingIcon && <SearchIcon size={20} className="shrink-0 text-icon-subtle" />
-          ) : (
-            <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} />
-          )}
+          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} appearance={appearance} />
           <input
             ref={inputRef}
             aria-label="목적지 검색"
@@ -233,26 +266,8 @@ export function DestinationSearchInput({
               isField && "pr-1 text-text placeholder:text-text-subtle",
             )}
           />
-          {showClear && isField ? (
-            // Figma Trailing Icon 영역 32×48, close 20px
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label={selectionOnly ? "선택 지우기" : "지우기"}
-              className="grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
-            >
-              <CloseIcon size={20} />
-            </button>
-          ) : null}
-          {showClear && !isField ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              aria-label={selectionOnly ? "선택 지우기" : "지우기"}
-              className="shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"
-            >
-              <X size={14} />
-            </button>
+          {showClear ? (
+            <DestinationClearButton appearance={appearance} selectionOnly={selectionOnly} onClick={handleClear} />
           ) : null}
         </div>
 
@@ -289,19 +304,7 @@ export function DestinationSearchInput({
         ) : null}
       </div>
 
-      {showHint ? (
-        <p
-          id={selectionOnlyFooterId}
-          className={
-            isField
-              ? // Figma Text Field Footer(5002:4440)의 Helper Text: 칸 아래 4px, caption/sm/regular·text/subtle
-                "mt-1 text-caption-s-regular text-text-subtle"
-              : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
-          }
-        >
-          {DESTINATION_SELECTION_HINT}
-        </p>
-      ) : null}
+      {showHint ? <DestinationSelectionHint id={selectionOnlyFooterId} appearance={appearance} /> : null}
     </div>
   );
 }
