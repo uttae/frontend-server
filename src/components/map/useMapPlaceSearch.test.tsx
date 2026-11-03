@@ -110,9 +110,11 @@ it("web whole search publishes only Text Search pins without selecting a detail 
   expect(usePlaceSearchStore.getState().selectedId).toBeNull();
   expect(usePlaceSearchStore.getState().items.map(x => x.googlePlaceId)).toEqual(["other"]);
   expect(usePlaceSearchStore.getState().items[0].rating).toBe(4.2);
-  expect(client.getQueryData(placeDetailQueryKey("first"))).toEqual(rawDetail);
+  expect(network.page).toHaveBeenCalledWith(expect.objectContaining({ latitude: 1, longitude: 2, radius: 5000 }));
+  expect(vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/resolve"))).toHaveLength(0);
+  expect(client.getQueryData(placeDetailQueryKey("first"))).toBeUndefined();
 });
-it("mobile whole search keeps cards collapsed and reuses resolved full detail without GET supplement", async () => {
+it("mobile whole search keeps cards collapsed without detail requests", async () => {
   await act(async () => root.render(<Harness mobile />));
   await act(async () => {
     await api.confirm(confirmation());

@@ -182,13 +182,14 @@ export function MapPlaceSearchInput({
       suggestions?.query === value && suggestions.status === "done"
         ? suggestions
         : null;
-    const prediction = index > 0 ? ready?.items[index - 1] : ready?.items[0];
+    // 모두검색(index ≤ 0)은 후보를 확정하지 않고 지도 중심에서 찾는다(confirmPlaceSearch)
+    const prediction = index > 0 ? ready?.items[index - 1] : undefined;
     if (index > 0 && !prediction) return;
-    if (ready?.session && ready.session.expiresAt <= Date.now()) {
+    const requestSession = prediction ? ready?.session ?? null : null;
+    if (requestSession && requestSession.expiresAt <= Date.now()) {
       token.current?.abandon(); token.current = null;
       schedule(value); return;
     }
-    const requestSession = ready?.session ?? null;
     cancel();
     const requestGeneration = generation.current;
     confirmGeneration.current = requestGeneration;

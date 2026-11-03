@@ -15,7 +15,6 @@ type PlaceSearchState = {
   expanded: boolean;
   status: "idle" | "pending" | "done" | "error";
   error: string | null;
-  fallback: boolean;
   termination: PlaceResolveResponse["termination"] | "failed" | "not-requested";
   resolution: Omit<PlaceResolveResponse, "detail"> | null;
   setScope: (scope: string) => void;
@@ -33,7 +32,6 @@ const empty = {
   expanded: false,
   status: "idle" as const,
   error: null,
-  fallback: false,
   termination: "not-requested" as const,
   resolution: null,
 };

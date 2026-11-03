@@ -89,7 +89,6 @@ export function MobileMapSearch({
         expanded: false,
         status: "done",
         error: null,
-        fallback: false,
         termination: "not-requested",
         resolution: null,
         query: item.name,

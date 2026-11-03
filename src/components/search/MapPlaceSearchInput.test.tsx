@@ -69,7 +69,7 @@ async function key(key: string) {
       .dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })),
   );
 }
-it("puts all results first; unselected Enter retains original query and first prediction", async () => {
+it("puts all results first; unselected Enter confirms the original query without a prediction", async () => {
   await type("원래");
   await wait();
   expect(host.querySelector('[role="option"]')?.textContent).toContain(
@@ -77,7 +77,7 @@ it("puts all results first; unselected Enter retains original query and first pr
   );
   await key("Enter");
   expect(confirm).toHaveBeenCalledWith(
-    expect.objectContaining({ query: "원래", kind: "whole", prediction: p }),
+    expect.objectContaining({ query: "원래", kind: "whole", prediction: undefined, session: null }),
   );
 });
 it("arrow-selected recommendation Enter confirms only that prediction", async () => {

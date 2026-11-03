@@ -36,6 +36,8 @@ import { usePlaceSearchStore } from "@/stores/place-search-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 import { useSessionStore } from "@/stores/session-store";
 
+const SEARCH_BIAS_RADIUS_METERS = 5000;
+
 export function useMapPlaceSearch(mobile: boolean) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const userId = useSessionUser().data?.id;
@@ -126,7 +128,6 @@ export function useMapPlaceSearch(mobile: boolean) {
       searchRankBuckets,
       selectedId,
       status: "done",
-      fallback: result.fallback,
       termination: result.termination,
     });
     setActiveSearchMapPins(placeSearchResultsToMapPins(items));
@@ -186,6 +187,7 @@ export function useMapPlaceSearch(mobile: boolean) {
       const result = await confirmPlaceSearch({
         ...confirmation,
         mapCenter,
+        radius: SEARCH_BIAS_RADIUS_METERS,
         isCurrent,
         onResolved: (resolved) => {
           usePlaceSearchStore.setState({
