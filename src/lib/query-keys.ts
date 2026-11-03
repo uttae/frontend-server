@@ -54,8 +54,6 @@ export function planItinerarySegmentMapPathQueryKey(
   originPlaceId: string,
   destPlaceId: string,
   travelModeCanon: string,
-  roomDirectionsEpoch: number,
-  segmentEpoch: number,
 ) {
   return [
     "plan-itinerary-map-segment-path",
@@ -66,8 +64,6 @@ export function planItinerarySegmentMapPathQueryKey(
     originPlaceId.trim(),
     destPlaceId.trim(),
     travelModeCanon,
-    roomDirectionsEpoch,
-    segmentEpoch,
   ] as const;
 }
 

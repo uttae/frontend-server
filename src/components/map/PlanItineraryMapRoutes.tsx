@@ -34,10 +34,6 @@ import {
   flattenPlanItinerarySegmentsFromPlaces,
 } from "@/lib/plan/planItineraryMapSegments";
 import { planItinerarySegmentMapPathQueryKey } from "@/lib/query-keys";
-import {
-  planMapSegmentEpochStoreKey,
-  usePlanMapDirectionsEpochStore,
-} from "@/stores/plan-map-directions-epoch-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
 import { useSessionStore } from "@/stores/session-store";
@@ -116,13 +112,6 @@ export function PlanItineraryMapRoutes({
     [singleDay, singleDayScheduleId, visibleByScheduleId],
   );
 
-  const directionsEpoch = usePlanMapDirectionsEpochStore((s) =>
-    rid.length > 0 ? (s.epochByRoomId[rid] ?? 0) : 0,
-  );
-  const epochBySegmentKey = usePlanMapDirectionsEpochStore(
-    (s) => s.epochBySegmentKey,
-  );
-
   const orderedScheduleIdsForQueries = useMemo(
     () => [...visibleScheduleIds].sort((a, b) => a - b),
     [visibleScheduleIds],
@@ -173,56 +162,45 @@ export function PlanItineraryMapRoutes({
   );
 
   const pathsPerSegmentQueries = useQueries({
-    queries: segments.map((seg) => {
-      const epochKey = planMapSegmentEpochStoreKey(
+    queries: segments.map((seg) => ({
+      queryKey: planItinerarySegmentMapPathQueryKey(
         rid,
         seg.scheduleId,
         seg.segmentSourceItemId,
-      );
-      const segmentEpoch = epochBySegmentKey[epochKey] ?? 0;
-
-      return {
-        queryKey: planItinerarySegmentMapPathQueryKey(
-          rid,
-          seg.scheduleId,
-          seg.segmentSourceItemId,
-          seg.originPlaceId,
-          seg.destPlaceId,
-          seg.travelModeCanon,
-          directionsEpoch,
-          segmentEpoch,
-        ),
-        /**
-         * 구간 경로는 일정 리스트와 같은 쿼리를 통해 가져옵니다. 그 쿼리에 맡겨야
-         * in-flight 합치기와 재정렬 중 뒤늦게 온 응답 폐기를 React Query가 처리합니다.
-         */
-        queryFn: async () => {
-          const route = await loadScheduleItemRouteForMap(
-            queryClient,
-            persistedScheduleItemRouteQueryOptions(
-              rid,
-              seg.scheduleId,
-              seg.segmentSourceItemId,
-              seg.destPlaceId,
-              seg.travelModeCanon,
-              fingerprintByScheduleId.get(seg.scheduleId) ?? "",
-              { segmentReady: true },
-            ),
-          );
-          return {
-            path: await decodeOrientedPlanItinerarySegmentPath(
-              seg,
-              route?.encodedPolyline,
-            ),
-          };
-        },
-        enabled: rid.length > 0 && segments.length > 0,
-        staleTime: Infinity,
-        refetchOnMount: false,
-        refetchOnWindowFocus: false,
-        retry: false,
-      };
-    }),
+        seg.originPlaceId,
+        seg.destPlaceId,
+        seg.travelModeCanon,
+      ),
+      /**
+       * 구간 경로는 일정 리스트와 같은 쿼리를 통해 가져옵니다. 그 쿼리에 맡겨야
+       * in-flight 합치기와 재정렬 중 뒤늦게 온 응답 폐기를 React Query가 처리합니다.
+       */
+      queryFn: async () => {
+        const route = await loadScheduleItemRouteForMap(
+          queryClient,
+          persistedScheduleItemRouteQueryOptions(
+            rid,
+            seg.scheduleId,
+            seg.segmentSourceItemId,
+            seg.destPlaceId,
+            seg.travelModeCanon,
+            fingerprintByScheduleId.get(seg.scheduleId) ?? "",
+            { segmentReady: true },
+          ),
+        );
+        return {
+          path: await decodeOrientedPlanItinerarySegmentPath(
+            seg,
+            route?.encodedPolyline,
+          ),
+        };
+      },
+      enabled: rid.length > 0 && segments.length > 0,
+      staleTime: Infinity,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+      retry: false,
+    })),
   });
 
   const polylines: Array<JSX.Element> = [];
@@ -230,13 +208,8 @@ export function PlanItineraryMapRoutes({
     const query = pathsPerSegmentQueries[segIdx];
     if (!query || query.isPending || query.isFetching) return;
     const pts = query.data?.path ?? [];
-
-    const segEpochKey = planMapSegmentEpochStoreKey(
-      rid,
-      seg.scheduleId,
-      seg.segmentSourceItemId,
-    );
-    const segEpoch = epochBySegmentKey[segEpochKey] ?? 0;
+    // 도착 장소가 바뀌면 다른 선이라 새로 그린다
+    const polylineKey = `${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.destPlaceId}-${seg.travelModeCanon}`;
 
     const routeColor =
       routeColorByScheduleId.get(seg.scheduleId) ?? fallbackRouteStroke;
@@ -244,7 +217,7 @@ export function PlanItineraryMapRoutes({
     if (pts.length) {
       polylines.push(
         <Polyline
-          key={`${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.travelModeCanon}-${directionsEpoch}-${segEpoch}`}
+          key={polylineKey}
           zIndex={40 + segIdx}
           strokeColor={routeColor}
           strokeOpacity={0.8}
@@ -263,7 +236,7 @@ export function PlanItineraryMapRoutes({
     connectorPaths.forEach((connectorPath, connectorIdx) => {
       polylines.push(
         <Polyline
-          key={`${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.travelModeCanon}-${directionsEpoch}-${segEpoch}-connector-${connectorIdx}`}
+          key={`${polylineKey}-connector-${connectorIdx}`}
           zIndex={35 + segIdx}
           strokeColor={routeColor}
           strokeOpacity={0}
