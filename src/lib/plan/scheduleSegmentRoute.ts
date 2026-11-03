@@ -25,9 +25,7 @@ export type ResolveScheduleSegmentRouteArgs = {
  * 거리·소요 시간과 지도 폴리라인이 같은 캐시 항목을 공유하도록 일정 리스트와 지도가 모두
  * 이 함수를 queryFn으로 쓰는 하나의 쿼리(`scheduleItemRouteQueryKey`)를 거칩니다.
  *
- * in-flight 합치기와 재정렬 중 뒤늦게 도착한 응답 폐기는 React Query가 담당합니다.
- * 여기서 직접 캐시에 쓰지 않습니다 — `setQueryData`는 무효화 플래그까지 지워서
- * 순서가 바뀐 뒤의 낡은 경로를 유효한 값으로 만들어 버립니다.
+ * in-flight 합치기와 캐시 쓰기는 이 함수를 queryFn으로 쓰는 쿼리(React Query)가 맡아, 여기서 직접 캐시에 쓰지 않습니다.
  */
 export async function resolveScheduleSegmentRoute({
   roomId,

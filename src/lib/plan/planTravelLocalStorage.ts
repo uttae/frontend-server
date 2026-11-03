@@ -75,21 +75,6 @@ function removeSessionStorageKeysMatchingPrefixes(prefixes: string[]): void {
   }
 }
 
-/** 지정 구간(`segmentSourceItemId`)의 경로 sessionStorage만 제거 */
-export function clearPersistedScheduleRoutesForSegmentSources(
-  roomId: string,
-  scheduleId: number,
-  segmentSourceItemIds: number[],
-): void {
-  const rid = roomId.trim();
-  if (!rid.length || segmentSourceItemIds.length === 0) return;
-  removeSessionStorageKeysMatchingPrefixes(
-    segmentSourceItemIds.map(
-      (id) => `${NS_ROUTE}:${rid}:${scheduleId}:${id}:`,
-    ),
-  );
-}
-
 /** 해당 일차 경로 sessionStorage 항목 일괄 제거 */
 export function clearPersistedScheduleRoutesForSchedule(
   roomId: string,

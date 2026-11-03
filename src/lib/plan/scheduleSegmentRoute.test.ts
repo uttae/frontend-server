@@ -109,10 +109,7 @@ describe("resolveScheduleSegmentRoute", () => {
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * 캐시 쓰기는 React Query가 소유합니다. 리졸버가 직접 setQueryData 하면
-   * 무효화 플래그까지 지워져 재정렬 뒤 낡은 경로가 유효한 값으로 굳습니다.
-   */
+  /** 캐시 쓰기는 이 리졸버를 queryFn으로 쓰는 쿼리가 맡는다 */
   it("캐시에 직접 쓰지 않는다", async () => {
     getScheduleItemRouteMock.mockResolvedValue(ROUTE);
 

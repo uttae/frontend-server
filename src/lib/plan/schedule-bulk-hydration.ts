@@ -19,13 +19,6 @@ import {
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import {
-  bumpPlanMapRouteSegments,
-  invalidateScheduleItemRouteForSources,
-  orderedItemIdsFromPlanPlaces,
-  readOrderedItemIdsFromScheduleItemsCache,
-  segmentSourcesWithChangedNext,
-} from "@/lib/plan/scheduleStompRouteScope";
-import {
   SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
 } from "@/lib/plan/scheduleTravelMode";
@@ -209,7 +202,7 @@ export async function buildSchedulePlacesFromSchedulesWithItems(
 }
 
 /**
- * 만든 일차 목록을 한 번에 씁니다. 순서가 바뀐 일차는 이웃이 바뀐 구간 경로만 무효화합니다.
+ * 만든 일차 목록을 한 번에 씁니다. 경로는 도착 장소까지 key에 있어 순서가 바뀌어도 무효화하지 않습니다.
  * `startedAt`(일정 전체 조회를 보낸 시각) 뒤에 바뀐 일차는 그쪽이 더 새 상태라 덮지 않고,
  * 그 일차를 받는 중이면 이 조회보다 먼저 보낸 요청일 수 있어 다시 받게 합니다.
  */
@@ -227,19 +220,9 @@ export function writeSchedulePlacesFromHydrate(
     const state = queryClient.getQueryState(key);
     if (state && state.dataUpdatedAt > startedAt) continue;
 
-    const before = readOrderedItemIdsFromScheduleItemsCache(queryClient, rid, sid);
     queryClient.setQueryData(key, places);
     if (state?.fetchStatus === "fetching") {
       void queryClient.refetchQueries({ queryKey: key, exact: true });
-    }
-
-    const changed = segmentSourcesWithChangedNext(
-      before,
-      orderedItemIdsFromPlanPlaces(places),
-    );
-    if (changed.length) {
-      void invalidateScheduleItemRouteForSources(queryClient, rid, sid, changed);
-      bumpPlanMapRouteSegments(rid, sid, changed);
     }
   }
 }
@@ -307,7 +290,7 @@ function segmentDestinationsByItemId(places: readonly PlanPlace[]): Map<number, 
 
 /**
  * 일차의 모든 구간 경로가 이미 캐시에 있는지 — 일정 화면에서 받아 뒀거나, 화면을 다시 열었거나,
- * 지도 경로 보기로 넘어온 경우다. 캐시가 지워졌거나(gc) 일정 변경으로 무효화된 구간이 하나라도 있으면 false.
+ * 지도 경로 보기로 넘어온 경우다. 받은 적 없거나(새 순서·gc) 무효화된 구간이 하나라도 있으면 false.
  */
 export function scheduleSegmentRoutesCached(
   queryClient: QueryClient,
