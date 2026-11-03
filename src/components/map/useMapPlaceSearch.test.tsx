@@ -12,6 +12,7 @@ import { registerQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { useSessionStore } from "@/stores/session-store";
+import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 const network = vi.hoisted(() => ({
   page: vi.fn(),
   detail: vi.fn(),
@@ -24,6 +25,12 @@ vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: network.page,
 }));
 vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
+vi.mock("@/lib/map-viewport-commit", () => ({
+  boundsInstanceFromDiscoverSnapshot: (b: google.maps.LatLngBoundsLiteral) => ({
+    contains: (p: google.maps.LatLngLiteral) =>
+      p.lat >= b.south && p.lat <= b.north && p.lng >= b.west && p.lng <= b.east,
+  }),
+}));
 vi.mock("@/contexts/SelectedPlaceContext", () => ({
   useSelectedPlace: () => ({ setSelectedPlace: network.select }),
 }));
@@ -95,7 +102,7 @@ beforeEach(async () => {
   network.track.mockReset();
   useSessionStore.setState({ currentRoomId: "room" });
   usePlaceSearchStore.getState().clear();
-  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12 });
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12, radiusMeters: null, bounds: null });
   host = document.createElement("div");
   root = createRoot(host);
   await act(async () => root.render(<Harness />));
@@ -140,6 +147,27 @@ it("mobile specific reuses chosen resolved detail without Text Search", async ()
     expect.objectContaining({ googlePlaceId: "first", name: "추천" }),
     expect.objectContaining({ analyticsSource: "search", itinerarySource: "search" }),
   );
+});
+// 센소지를 찾은 뒤 지도를 5km 넘게 옮겨 재검색하면 Google이 센소지를 다시 돌려준다
+it.each([
+  ["keeps only results inside the visible map", ["inside"]],
+  ["shows no results when every result is outside the visible map", []],
+] as const)("search here %s", async (_, expected) => {
+  await act(async () => { await api.confirm(confirmation()); });
+  useMapCenterStore.setState({
+    mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234,
+    bounds: { south: 0, west: 1, north: 2, east: 3 },
+  });
+  const outside = { googlePlaceId: "outside", name: "이동 전 장소", location: { lat: 38, lng: 128 } };
+  const inside = { googlePlaceId: "inside", name: "화면 안", location: { lat: 1.5, lng: 2.5 } };
+  network.page.mockResolvedValueOnce({ items: expected.length ? [outside, inside] : [outside], nextPageToken: null });
+  await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
+  await vi.waitFor(() =>
+    expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(expected),
+  );
+  expect(network.page).toHaveBeenCalledTimes(2);
+  expect(network.page).toHaveBeenLastCalledWith(expect.objectContaining({ query: "원래 검색어", latitude: 1, longitude: 2, radius: 1234 }));
+  expect(usePlaceSearchStore.getState().status).toBe("done");
 });
 it("editing input suppresses a late response and analytics", async () => {
   let finish!: (v: unknown) => void;

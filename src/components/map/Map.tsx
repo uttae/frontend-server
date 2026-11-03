@@ -194,6 +194,7 @@ function MapBootstrapSync({
       mapCenter: { lat, lng },
       zoom: mapZoom,
       radiusMeters,
+      bounds: bounds?.toJSON() ?? null,
     });
   }, [map, ready, center.lat, center.lng, zoom, roomId, setMapCamera]);
 
@@ -461,6 +462,7 @@ export default function TripMap({
         mapCenter: { lat: center.lat, lng: center.lng },
         zoom,
         radiusMeters,
+        bounds,
       });
 
       const rid =
