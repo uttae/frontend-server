@@ -84,7 +84,7 @@ describe("hydrateScheduleRoutesBatch", () => {
 
     expect(
       queryClient.getQueryData(
-        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"),
+        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "places/b", "DRIVING"),
       ),
     ).toMatchObject({
       distanceMeters: 1200,
@@ -125,7 +125,7 @@ describe("hydrateScheduleRoutesBatch", () => {
 
     expect(
       queryClient.getQueryData(
-        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"),
+        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "places/b", "DRIVING"),
       ),
     ).not.toHaveProperty("encodedPolyline");
   });
@@ -171,6 +171,7 @@ describe("hydrateScheduleRoutesBatch", () => {
       ROOM_ID,
       SCHEDULE_ID,
       2,
+      "places/c",
       "WALKING",
     );
     expect(queryClient.getQueryData(failedKey)).toBeUndefined();
@@ -179,6 +180,7 @@ describe("hydrateScheduleRoutesBatch", () => {
         roomId: ROOM_ID,
         scheduleId: SCHEDULE_ID,
         segmentSourceItemId: 2,
+        destinationPlaceId: "places/c",
         travelMode: "WALKING",
       }),
     ).rejects.toThrow("temporary single route failure");
@@ -188,6 +190,7 @@ describe("hydrateScheduleRoutesBatch", () => {
         roomId: ROOM_ID,
         scheduleId: SCHEDULE_ID,
         segmentSourceItemId: 2,
+        destinationPlaceId: "places/c",
         travelMode: "WALKING",
       }),
     ).resolves.toEqual(fallbackRoute);
@@ -209,13 +212,14 @@ describe("hydrateScheduleRoutesBatch", () => {
       await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
 
       expect(
-        queryClient.getQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "WALKING")),
+        queryClient.getQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "places/c", "WALKING")),
       ).toBeNull();
       await expect(
         resolveScheduleSegmentRoute({
           roomId: ROOM_ID,
           scheduleId: SCHEDULE_ID,
           segmentSourceItemId: 2,
+          destinationPlaceId: "places/c",
           travelMode: "WALKING",
         }),
       ).resolves.toBeNull();
@@ -242,7 +246,7 @@ describe("hydrateScheduleRoutesBatch", () => {
 
     expect(
       queryClient.getQueryData(
-        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"),
+        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "places/b", "DRIVING"),
       ),
     ).toBeUndefined();
   });
@@ -255,8 +259,8 @@ describe("fetchAndSeedScheduleRoutesBatch", () => {
   function seededClient() {
     const queryClient = new QueryClient();
     queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
-    queryClient.setQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"), route);
-    queryClient.setQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "DRIVING"), route);
+    queryClient.setQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "places/b", "DRIVING"), route);
+    queryClient.setQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "places/c", "DRIVING"), route);
     return queryClient;
   }
 
@@ -268,9 +272,22 @@ describe("fetchAndSeedScheduleRoutesBatch", () => {
 
   it("캐시에 없는 구간이 있으면 일괄로 다시 받는다", async () => {
     const queryClient = seededClient();
-    queryClient.removeQueries({ queryKey: scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "DRIVING") });
+    queryClient.removeQueries({ queryKey: scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "places/c", "DRIVING") });
     getScheduleItemRoutesBatchMock.mockResolvedValue([]);
 
+    await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledOnce();
+  });
+
+  it("순서를 바꿨다가 되돌리면 받아 둔 경로가 있어 일괄 요청을 보내지 않는다", async () => {
+    const queryClient = seededClient();
+    const reordered = [place(1, "places/a"), place(3, "places/c"), place(2, "places/b")];
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), reordered);
+    getScheduleItemRoutesBatchMock.mockResolvedValue([]);
+
+    await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, reordered);
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
     await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
 
     expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledOnce();
@@ -279,7 +296,7 @@ describe("fetchAndSeedScheduleRoutesBatch", () => {
   it("일정 변경으로 무효화된 구간이 있으면 일괄로 다시 받는다", async () => {
     const queryClient = seededClient();
     await queryClient.invalidateQueries({
-      queryKey: scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "DRIVING"),
+      queryKey: scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, "places/b", "DRIVING"),
       refetchType: "none",
     });
     getScheduleItemRoutesBatchMock.mockResolvedValue([]);

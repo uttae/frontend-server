@@ -18,6 +18,7 @@ let getScheduleItemRouteMock: ReturnType<typeof vi.fn>;
 const ROOM_ID = "room-1";
 const SCHEDULE_ID = 10;
 const ITEM_ID = 1;
+const DESTINATION = "place-b";
 
 const ROUTE = {
   distanceMeters: 1200,
@@ -50,14 +51,15 @@ beforeEach(() => {
   registerQueryClient(queryClient);
 });
 
-const ROUTE_KEY = () =>
-  scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, ITEM_ID, "DRIVING");
+const ROUTE_KEY = (destination = DESTINATION) =>
+  scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, ITEM_ID, destination, "DRIVING");
 
-function resolve() {
+function resolve(destinationPlaceId = DESTINATION) {
   return resolveScheduleSegmentRoute({
     roomId: ROOM_ID,
     scheduleId: SCHEDULE_ID,
     segmentSourceItemId: ITEM_ID,
+    destinationPlaceId,
     travelMode: "DRIVING",
   });
 }
@@ -83,10 +85,16 @@ describe("resolveScheduleSegmentRoute", () => {
     await expect(resolve()).resolves.toBeNull();
   });
 
-  /**
-   * 재정렬로 무효화된 구간은 같은 키라도 목적지가 달라져 있습니다.
-   * 낡은 값을 그대로 돌려주면 지도에 이전 순서의 폴리라인이 남습니다.
-   */
+  it("같은 출발 항목이라도 도착 장소가 다르면 그 도착 장소의 경로를 받고, 순서를 되돌리면 받아 둔 경로를 쓴다", async () => {
+    queryClient.setQueryData(ROUTE_KEY("place-b"), ROUTE);
+    const toC = { ...ROUTE, distanceMeters: 999, encodedPolyline: "zzz" };
+    getScheduleItemRouteMock.mockResolvedValue(toC);
+
+    await expect(resolve("place-c")).resolves.toEqual(toC);
+    await expect(resolve("place-b")).resolves.toEqual(ROUTE);
+    expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
+  });
+
   it("캐시가 무효화된 상태면 낡은 값을 쓰지 않고 다시 조회한다", async () => {
     queryClient.setQueryData(ROUTE_KEY(), ROUTE);
     await queryClient.invalidateQueries({

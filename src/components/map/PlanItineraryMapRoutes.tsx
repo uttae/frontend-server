@@ -203,6 +203,7 @@ export function PlanItineraryMapRoutes({
               rid,
               seg.scheduleId,
               seg.segmentSourceItemId,
+              seg.destPlaceId,
               seg.travelModeCanon,
               fingerprintByScheduleId.get(seg.scheduleId) ?? "",
               { segmentReady: true },

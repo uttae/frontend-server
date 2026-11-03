@@ -176,6 +176,8 @@ export function useScheduleItemRoute(
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
+  /** 다음 장소의 `googlePlaceId` */
+  destinationPlaceId: string,
   travelMode: ScheduleTravelModeValue,
   /** 일정 장소 목록상 구간 소스 아이디가 존재·목록 안정 후에만 true */
   routeQueryEnabled = true,
@@ -189,6 +191,7 @@ export function useScheduleItemRoute(
       rid,
       scheduleId,
       segmentSourceItemId,
+      destinationPlaceId,
       travelMode,
       scheduleFingerprint,
       { segmentReady: Boolean(routeQueryEnabled) },

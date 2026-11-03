@@ -13,13 +13,15 @@ export type ResolveScheduleSegmentRouteArgs = {
   roomId: string;
   scheduleId: number;
   segmentSourceItemId: number;
+  /** 다음 장소의 `googlePlaceId` — 캐시 key에만 쓴다(서버는 출발 항목의 다음 항목으로 계산) */
+  destinationPlaceId: string;
   travelMode: ScheduleTravelModeValue;
   /** 일정 지문 — 비면 sessionStorage에 기록하지 않습니다. */
   scheduleFingerprint?: string;
 };
 
 /**
- * 구간 `(room, schedule, 출발 항목, 이동수단)` 경로를 가져오는 fetch 본체입니다.
+ * 구간 `(room, schedule, 출발 항목, 도착 장소, 이동수단)` 경로를 가져오는 fetch 본체입니다.
  * 거리·소요 시간과 지도 폴리라인이 같은 캐시 항목을 공유하도록 일정 리스트와 지도가 모두
  * 이 함수를 queryFn으로 쓰는 하나의 쿼리(`scheduleItemRouteQueryKey`)를 거칩니다.
  *
@@ -31,6 +33,7 @@ export async function resolveScheduleSegmentRoute({
   roomId,
   scheduleId,
   segmentSourceItemId,
+  destinationPlaceId,
   travelMode,
   scheduleFingerprint,
 }: ResolveScheduleSegmentRouteArgs): Promise<ScheduleSegmentRoute> {
@@ -44,6 +47,7 @@ export async function resolveScheduleSegmentRoute({
     rid,
     scheduleId,
     segmentSourceItemId,
+    destinationPlaceId,
     travelMode,
   );
   const cached = getQueryClient()?.getQueryState<ScheduleSegmentRoute>(routeKey);

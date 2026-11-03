@@ -106,6 +106,7 @@ export function PlanTravelTime({
     roomId,
     scheduleId,
     segmentSourceItemId,
+    destinationGooglePlaceId ?? "",
     selectedMode,
     routeQueryEnabled,
     fpTrim,
@@ -127,6 +128,7 @@ export function PlanTravelTime({
         rid,
         scheduleId,
         segmentSourceItemId,
+        destinationGooglePlaceId ?? "",
         mode,
         fpTrim,
         {

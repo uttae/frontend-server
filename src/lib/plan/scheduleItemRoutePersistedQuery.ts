@@ -15,7 +15,7 @@ type RouteCached = ScheduleItemRouteResponse | null;
 
 /**
  * — `segmentReady`: 네트워크 패치·sessionStorage 시드 허용(`routeQueryEnabled`). 쿼리 키는 이것과 무관하게
- *   `(room, schedule, 구간, 모드)`로 고정 — 일정 refetch 중 잠깐 false가 되어도 구간끼리 캐시를 공유하지 않음
+ *   `(room, schedule, 구간, 도착 장소, 모드)`로 고정 — 일정 refetch 중 잠깐 false가 되어도 구간끼리 캐시를 공유하지 않음
  * — `networkEnabled` 생략 시 `segmentReady`와 동일; 지연 수단은 메뉴 열림 시만 `true`
  */
 export type PersistedScheduleRoutePersistFlags = {
@@ -30,6 +30,8 @@ export function persistedScheduleItemRouteQueryOptions(
   roomIdTrimmed: string,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
+  /** 다음 장소의 `googlePlaceId` — 비어 있으면 구간이 정해지지 않아 조회하지 않는다 */
+  destinationPlaceId: string,
   travelMode: ScheduleTravelModeValue,
   fingerprintTrimmed: string,
   flags: PersistedScheduleRoutePersistFlags,
@@ -43,10 +45,11 @@ export function persistedScheduleItemRouteQueryOptions(
   const itemOk =
     typeof segmentSourceItemId === "number" &&
     Number.isFinite(segmentSourceItemId);
+  const dest = destinationPlaceId.trim();
   const fp = fingerprintTrimmed.trim();
 
   const keyEligible =
-    flags.segmentReady && rid.length > 0 && sidOk && itemOk;
+    flags.segmentReady && rid.length > 0 && sidOk && itemOk && dest.length > 0;
 
   const network =
     typeof flags.networkEnabled === "boolean"
@@ -58,8 +61,9 @@ export function persistedScheduleItemRouteQueryOptions(
   const keyRoom = rid.length > 0 ? rid : null;
   const keySchedule = sidOk ? sid : null;
   const keySegment = itemOk ? segmentSourceItemId : null;
+  const keyDestination = dest.length > 0 ? dest : null;
   const keyMode =
-    sidOk && itemOk && rid.length > 0 ? travelMode : null;
+    sidOk && itemOk && rid.length > 0 && dest.length > 0 ? travelMode : null;
 
   const sessionSeed: RouteCached | undefined =
     fp.length > 0 &&
@@ -80,6 +84,7 @@ export function persistedScheduleItemRouteQueryOptions(
       keyRoom,
       keySchedule,
       keySegment,
+      keyDestination,
       keyMode,
     ),
     ...(sessionSeed !== undefined
@@ -93,6 +98,7 @@ export function persistedScheduleItemRouteQueryOptions(
         roomId: rid,
         scheduleId: sid!,
         segmentSourceItemId: segmentSourceItemId!,
+        destinationPlaceId: dest,
         travelMode,
         scheduleFingerprint: fp,
       }),

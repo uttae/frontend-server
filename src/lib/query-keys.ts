@@ -121,12 +121,15 @@ export const scheduleItemsQueryKey = (
 
 /**
  * 구간별 길찾기 API 결과 (`GET …/route?travelMode=…`).
+ * 서버는 출발 항목에서 그 순간의 다음 항목까지 경로를 주므로 도착 장소를 key에 넣는다 —
+ * 순서가 바뀌면 다른 key가 되고, 순서를 되돌리면 받아 둔 값을 그대로 쓴다.
  * 무효화: `["schedule-item-route", roomId]` prefix.
  */
 export const scheduleItemRouteQueryKey = (
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
+  destinationPlaceId: string | null,
   travelMode: ScheduleTravelModeValue | null,
 ) =>
   [
@@ -134,6 +137,7 @@ export const scheduleItemRouteQueryKey = (
     roomId,
     scheduleId,
     segmentSourceItemId,
+    destinationPlaceId,
     travelMode,
   ] as const;
 

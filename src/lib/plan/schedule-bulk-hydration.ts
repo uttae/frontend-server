@@ -292,6 +292,19 @@ function scheduleRoutesBatchKey(
   return `${roomId.trim()}:${scheduleId}:${placesFingerprint}`;
 }
 
+/** 구간 출발 항목 → 다음 장소의 `googlePlaceId` (마지막 장소와 장소 ID가 빈 구간은 뺀다) */
+function segmentDestinationsByItemId(places: readonly PlanPlace[]): Map<number, string> {
+  const out = new Map<number, string>();
+  for (let i = 0; i < places.length - 1; i += 1) {
+    const itemId = places[i]?.itemId;
+    const destination = places[i + 1]?.googlePlaceId?.trim() ?? "";
+    if (typeof itemId === "number" && Number.isFinite(itemId) && destination.length) {
+      out.set(itemId, destination);
+    }
+  }
+  return out;
+}
+
 /**
  * 일차의 모든 구간 경로가 이미 캐시에 있는지 — 일정 화면에서 받아 뒀거나, 화면을 다시 열었거나,
  * 지도 경로 보기로 넘어온 경우다. 캐시가 지워졌거나(gc) 일정 변경으로 무효화된 구간이 하나라도 있으면 false.
@@ -303,13 +316,16 @@ export function scheduleSegmentRoutesCached(
   places: readonly PlanPlace[],
 ): boolean {
   const rid = roomId.trim();
-  const sources = places
-    .slice(0, -1)
-    .filter((p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number" && Number.isFinite(p.itemId));
-  if (!rid.length || !sources.length) return false;
-  return sources.every((place) => {
+  const destinationByItemId = segmentDestinationsByItemId(places);
+  if (!rid.length || !destinationByItemId.size) return false;
+  return places.every((place) => {
+    if (typeof place.itemId !== "number") return true;
+    const destination = destinationByItemId.get(place.itemId);
+    if (destination === undefined) return true;
     const mode = canonicalScheduleTravelMode(place.travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
-    const state = queryClient.getQueryState(scheduleItemRouteQueryKey(rid, scheduleId, place.itemId, mode));
+    const state = queryClient.getQueryState(
+      scheduleItemRouteQueryKey(rid, scheduleId, place.itemId, destination, mode),
+    );
     return state?.status === "success" && !state.isInvalidated;
   });
 }
@@ -393,7 +409,7 @@ export async function hydrateScheduleRoutesBatch(
 
   /**
    * 응답 대기 중 일정이 바뀌었으면(지문 불일치) 늦게 도착한 결과를 버립니다 —
-   * 구간 캐시 키는 출발 항목만 담고 있어 옛 목적지의 경로가 새 구간에 시딩될 수 있음.
+   * 서버는 요청을 받은 순간의 순서로 다음 장소를 정하므로, 그사이 순서가 바뀌었으면 어느 도착 장소의 경로인지 알 수 없다.
    */
   const snapshotFp = schedulePlacesFingerprint([...places]);
   const currentPlaces = queryClient.getQueryData<PlanPlace[]>(
@@ -402,13 +418,16 @@ export async function hydrateScheduleRoutesBatch(
   const currentFp = schedulePlacesFingerprint([...(currentPlaces ?? [])]);
   if (!snapshotFp.length || snapshotFp !== currentFp) return;
 
+  const destinationByItemId = segmentDestinationsByItemId(places);
   for (const result of results) {
     const itemId = result.itemId;
     const mode = canonicalScheduleTravelMode(result.travelMode);
     if (!mode) continue;
     if (typeof itemId !== "number" || !Number.isFinite(itemId)) continue;
+    const destination = destinationByItemId.get(itemId);
+    if (destination === undefined) continue;
 
-    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, mode);
+    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, destination, mode);
     if (isBatchItemOk(result)) {
       queryClient.setQueryData(routeKey, batchRouteItemToResponse(result));
     } else if (result.errorCode && ROUTE_ANSWER_ERROR_CODES.has(result.errorCode)) {
