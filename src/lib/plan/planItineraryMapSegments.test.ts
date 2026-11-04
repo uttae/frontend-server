@@ -30,6 +30,6 @@ test("소문자 이동수단을 표준값으로 정규화한다", () => {
   expect(flattenTravelMode("walking")).toBe("WALKING");
 });
 
-test("이동수단이 누락되면 일정 기본값을 사용한다", () => {
-  expect(flattenTravelMode()).toBe("DRIVING");
+test.each([undefined, "", "BICYCLING", "CYCLING", "BOAT"])("미지원 수단 %s의 지도 경로를 만들지 않는다", (mode) => {
+  expect(flattenTravelMode(mode)).toBeUndefined();
 });
