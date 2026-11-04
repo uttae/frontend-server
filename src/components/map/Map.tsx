@@ -401,6 +401,8 @@ export default function TripMap({
   );
   const [rating, setRating] = useState<RatingValue>("all");
   const [openNow, setOpenNow] = useState<OpenValue>("all");
+  // 카테고리 검색이 실패하면 「현 위치에서 검색」 버튼이 「다시 시도」로 남는다
+  const [discoverFailed, setDiscoverFailed] = useState(false);
   const [showBookmarkPins, setShowBookmarkPins] = useState(true);
 
   // Text search takes over the map at request start, including autocomplete selection.
@@ -601,7 +603,7 @@ export default function TripMap({
           {routeView ? <RouteViewMarkers routeView={routeView} /> : (
             <>
               <PlanItineraryMapRoutes />
-              <MapDiscoverPlaces selectedCategoryId={selectedCategoryId} rating={rating} openNow={openNow} />
+              <MapDiscoverPlaces selectedCategoryId={selectedCategoryId} rating={rating} openNow={openNow} onSearchFailedChange={setDiscoverFailed} />
               <MapBookmarkPins roomId={currentRoomId} enabled={showBookmarkPins}
                 hiddenNormalizedPlaceIds={isPlanPage ? planStopPlaceIds : undefined} />
               <MapSearchResultPins />
@@ -655,7 +657,7 @@ export default function TripMap({
 
       {!bootstrap.ready || routeView ? null : (
         <>
-          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} />}
+          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} discoverFailed={discoverFailed} />}
           {isMobileDevice ? (
             <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
               {onOpenRouteView ? (

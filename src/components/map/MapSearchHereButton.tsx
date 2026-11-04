@@ -13,10 +13,13 @@ import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 
 export type MapSearchHereButtonProps = {
   discoverCategoryId: string | null;
+  /** 카테고리 검색이 실패함 — 버튼이 「다시 시도」로 남는다 */
+  discoverFailed: boolean;
 };
 
 export function MapSearchHereButton({
   discoverCategoryId,
+  discoverFailed,
 }: MapSearchHereButtonProps) {
   const requestSearchRecenter = useSearchRecenterStore(
     (s) => s.requestSearchRecenter,
@@ -32,7 +35,8 @@ export function MapSearchHereButton({
     suggestSearchRecenter,
     searchRecenterNotice,
     suggestDiscoverRecenter,
-  } = usePlacesSearchHereVisible({ discoverCategoryId });
+    retryDiscoverRecenter,
+  } = usePlacesSearchHereVisible({ discoverCategoryId, discoverFailed });
   const showEmptyNotice =
     searchRecenterNotice === "empty" && closedGeneration !== generation;
 
@@ -55,7 +59,11 @@ export function MapSearchHereButton({
         </div>
       ) : (
         <SearchHereFloatingButton
-          label={searchRecenterNotice === "failed" ? "다시 시도" : "현 위치에서 검색"}
+          label={
+            searchRecenterNotice === "failed" || retryDiscoverRecenter
+              ? "다시 시도"
+              : "현 위치에서 검색"
+          }
           onPress={() => {
             if (suggestSearchRecenter) {
               requestSearchRecenter();

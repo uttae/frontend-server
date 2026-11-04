@@ -17,11 +17,12 @@ beforeEach(async () => {
   useSearchRecenterStore.getState().setSearchSnapshot(searched);
   host = document.createElement("div");
   root = createRoot(host);
-  await act(async () => root.render(<MapSearchHereButton discoverCategoryId={null} />));
+  await act(async () => root.render(<MapSearchHereButton discoverCategoryId={null} discoverFailed={false} />));
 });
 afterEach(async () => {
   await act(async () => root.unmount());
   useSearchRecenterStore.getState().clearSearchSnapshot();
+  useSearchRecenterStore.getState().clearDiscoverSnapshot();
   usePlaceSearchStore.getState().clear();
 });
 
@@ -59,6 +60,29 @@ it("shows 검색 결과가 없어요 until closed, and again for the next search
 
 it("goes back to 현 위치에서 검색 when the map moves after a failure", async () => {
   await finishSearch({ searchMode: "map_recenter", status: "error" });
+  await act(async () => useMapCenterStore.setState({ mapCenter: { lat: 35.8, lng: 139.8 } }));
+  expect(button()?.textContent).toBe("현 위치에서 검색");
+});
+
+// 카테고리 칩으로 찾은 뒤 「현 위치에서 검색」이 실패해도(결과 없음이 아니라 오류) 같은 자리에서 다시 시도한다
+it("turns into 다시 시도 when the category search fails and asks the category search again", async () => {
+  useSearchRecenterStore.getState().setDiscoverSnapshot({
+    ...searched,
+    bounds: { south: 35.69, west: 139.79, north: 35.71, east: 139.81 },
+  });
+  await act(async () => root.render(<MapSearchHereButton discoverCategoryId="restaurant" discoverFailed />));
+  expect(button()?.textContent).toBe("다시 시도");
+  const before = useSearchRecenterStore.getState().discoverRecenterRequestId;
+  await act(async () => button()!.click());
+  expect(useSearchRecenterStore.getState().discoverRecenterRequestId).toBe(before + 1);
+});
+
+it("goes back to 현 위치에서 검색 when the map moves after a category failure", async () => {
+  useSearchRecenterStore.getState().setDiscoverSnapshot({
+    ...searched,
+    bounds: { south: 35.69, west: 139.79, north: 35.71, east: 139.81 },
+  });
+  await act(async () => root.render(<MapSearchHereButton discoverCategoryId="restaurant" discoverFailed />));
   await act(async () => useMapCenterStore.setState({ mapCenter: { lat: 35.8, lng: 139.8 } }));
   expect(button()?.textContent).toBe("현 위치에서 검색");
 });

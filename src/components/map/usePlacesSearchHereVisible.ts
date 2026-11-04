@@ -9,6 +9,8 @@ import type { MapCenterCoords } from "@/stores/map-center-store";
 
 type UsePlacesSearchHereVisibleParams = {
   discoverCategoryId: string | null;
+  /** 카테고리 검색(MapDiscoverPlaces)이 실패함 */
+  discoverFailed: boolean;
 };
 
 /** 「현 위치에서 검색」 결과를 버튼 자리에서 알린다: 실패는 「다시 시도」, 결과 0개는 「검색 결과가 없어요」 */
@@ -19,6 +21,8 @@ export type PlacesSearchHereVisibility = {
   suggestSearchRecenter: boolean;
   searchRecenterNotice: SearchRecenterNotice | null;
   suggestDiscoverRecenter: boolean;
+  /** 실패한 카테고리 검색을 같은 화면에서 다시 시도 */
+  retryDiscoverRecenter: boolean;
 };
 
 function searchRecenterNoticeOf(
@@ -59,6 +63,7 @@ function chipsDiscoverRecenterEligible(
  */
 export function usePlacesSearchHereVisible({
   discoverCategoryId,
+  discoverFailed,
 }: UsePlacesSearchHereVisibleParams): PlacesSearchHereVisibility {
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const zoom = useMapCenterStore((s) => s.zoom);
@@ -74,6 +79,7 @@ export function usePlacesSearchHereVisible({
       suggestSearchRecenter: false,
       searchRecenterNotice: null,
       suggestDiscoverRecenter: false,
+      retryDiscoverRecenter: false,
     };
   }
 
@@ -94,17 +100,22 @@ export function usePlacesSearchHereVisible({
   const suggestSearchRecenter =
     movedFromSearch || searchRecenterNotice === "failed";
 
-  const suggestDiscoverRecenter = chipsDiscoverRecenterEligible(
+  const movedFromDiscover = chipsDiscoverRecenterEligible(
     discoverCategoryId,
     discoverSnapshot,
     mapCenter,
     zoom,
   );
+  // 카테고리 검색이 실패하면 그 화면에서 「다시 시도」, 지도를 옮기면 새 화면 검색이라 「현 위치에서 검색」
+  const retryDiscoverRecenter =
+    discoverFailed && discoverSnapshot != null && !movedFromDiscover;
+  const suggestDiscoverRecenter = movedFromDiscover || retryDiscoverRecenter;
 
   return {
     visible: suggestSearchRecenter || suggestDiscoverRecenter,
     suggestSearchRecenter,
     searchRecenterNotice,
     suggestDiscoverRecenter,
+    retryDiscoverRecenter,
   };
 }
