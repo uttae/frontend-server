@@ -6,6 +6,7 @@ import { useStompContext } from "@/contexts/StompContext";
 import { isChatSendBlocked } from "@/stores/chat-rate-limit-store";
 import { useSessionStore } from "@/stores/session-store";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
+import { CHAT_AI_ENABLED } from "@/lib/chat/ai-availability";
 import type { PlaceShareData } from "@/types/chat";
 
 /**
@@ -49,6 +50,7 @@ export function useChatActions() {
 
   const sendAiMessage = useCallback(
     (content: string) => {
+      if (!CHAT_AI_ENABLED) return;
       const trimmed = content.trim();
       if (
         !client ||
@@ -99,6 +101,7 @@ export function useChatActions() {
 
   const sendCancelAiRequest = useCallback(
     (requestMessageId: string) => {
+      if (!CHAT_AI_ENABLED) return;
       const id = requestMessageId.trim();
       if (!client || !connected || !ridTrimmed || !id) return;
       client.publish({

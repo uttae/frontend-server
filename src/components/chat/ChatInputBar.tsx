@@ -20,6 +20,7 @@ import {
   CHAT_MESSAGE_TOO_LONG_TOAST,
 } from "@/components/chat/chat-constants";
 import { cn } from "@/lib/utils";
+import { CHAT_AI_ENABLED } from "@/lib/chat/ai-availability";
 
 interface ChatInputBarProps {
   isMinimized: boolean;
@@ -81,7 +82,7 @@ export function ChatInputBar({
 
   const updateMentionFromDom = useCallback(
     (v: string, cursor: number, aiOn: boolean) => {
-      if (aiOn) {
+      if (!CHAT_AI_ENABLED || aiOn) {
         setMentionOpen(false);
         setMentionAnchor(null);
         return;
@@ -125,6 +126,7 @@ export function ChatInputBar({
   }, [mentionOpen]);
 
   function toggleAi() {
+    if (!CHAT_AI_ENABLED) return;
     setAiEnabled((prev) => {
       const next = !prev;
       if (next) {
@@ -156,7 +158,7 @@ export function ChatInputBar({
   }
 
   function pickMentionAi() {
-    if (mentionAnchor === null) return;
+    if (!CHAT_AI_ENABLED || mentionAnchor === null) return;
     const el = inputRef.current;
     if (!el) return;
     const v = el.value;
@@ -180,7 +182,7 @@ export function ChatInputBar({
     const v = el.value;
     const cursor = el.selectionStart ?? v.length;
 
-    if (!aiEnabled && /^@ai(\s+|$)/i.test(v)) {
+    if (CHAT_AI_ENABLED && !aiEnabled && /^@ai(\s+|$)/i.test(v)) {
       const rest = v.replace(/^@ai\s*/i, "");
       setAiEnabled(true);
       setMentionOpen(false);
@@ -217,7 +219,7 @@ export function ChatInputBar({
       return;
     }
 
-    if (aiEnabled) onSendAi(trimmed);
+    if (CHAT_AI_ENABLED && aiEnabled) onSendAi(trimmed);
     else onSendChat(trimmed);
 
     setMessage("");
@@ -365,25 +367,27 @@ export function ChatInputBar({
         )}
       >
         <div className="flex min-w-0 items-center gap-1">
-          <motion.button
-            type="button"
-            onClick={toggleAi}
-            whileTap={reduceMotion ? undefined : chatTapSoft}
-            transition={chatTapTransition}
-            className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 transition-colors ${
-              aiEnabled
-                ? "bg-primary text-white"
-                : "bg-light-gray text-black/40"
-            }`}
-          >
-            <span className={typo.input}>{CHAT_AI_MENTION_LABEL}</span>
-            {aiEnabled && (
-              <Check
-                className={cn(isMinimized ? "h-3 w-3" : "h-3.5 w-3.5")}
-                strokeWidth={3}
-              />
-            )}
-          </motion.button>
+          {CHAT_AI_ENABLED ? (
+            <motion.button
+              type="button"
+              onClick={toggleAi}
+              whileTap={reduceMotion ? undefined : chatTapSoft}
+              transition={chatTapTransition}
+              className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 transition-colors ${
+                aiEnabled
+                  ? "bg-primary text-white"
+                  : "bg-light-gray text-black/40"
+              }`}
+            >
+              <span className={typo.input}>{CHAT_AI_MENTION_LABEL}</span>
+              {aiEnabled && (
+                <Check
+                  className={cn(isMinimized ? "h-3 w-3" : "h-3.5 w-3.5")}
+                  strokeWidth={3}
+                />
+              )}
+            </motion.button>
+          ) : null}
           {aiEnabled ? (
             <>
               <motion.button
