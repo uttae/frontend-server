@@ -39,6 +39,7 @@ import {
 import { MAP_DETAIL_PANEL_COVER_WIDTH_PX } from "@/lib/layout-tokens";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
+import { settleSearchSnapshotAfterMove } from "@/lib/map-viewport-commit";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
@@ -194,6 +195,7 @@ function MapBootstrapSync({
       mapCenter: { lat, lng },
       zoom: mapZoom,
       radiusMeters,
+      bounds: bounds?.toJSON() ?? null,
     });
   }, [map, ready, center.lat, center.lng, zoom, roomId, setMapCamera]);
 
@@ -291,7 +293,9 @@ function MapSearchResultPins() {
   const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
 
   useEffect(() => {
-    if (map && preview) panToWithinWorld(map, preview.location);
+    if (!map || !preview) return;
+    panToWithinWorld(map, preview.location);
+    return settleSearchSnapshotAfterMove(map);
   }, [map, preview]);
 
   // 전체 검색 결과가 준비되면 첫 추천 대신 실제 결과들이 보이도록 맞춘다.
@@ -305,6 +309,7 @@ function MapSearchResultPins() {
       items.forEach((item) => bounds.extend(item.location));
       map.fitBounds(bounds, 80);
     }
+    return settleSearchSnapshotAfterMove(map);
   }, [map, isMobileDevice, pinsFocus, kind, status, items]);
 
   if (pinsFocus !== "search") return null;
@@ -396,6 +401,8 @@ export default function TripMap({
   );
   const [rating, setRating] = useState<RatingValue>("all");
   const [openNow, setOpenNow] = useState<OpenValue>("all");
+  // 카테고리 검색이 실패하면 「현 위치에서 검색」 버튼이 「다시 시도」로 남는다
+  const [discoverFailed, setDiscoverFailed] = useState(false);
   const [showBookmarkPins, setShowBookmarkPins] = useState(true);
 
   // Text search takes over the map at request start, including autocomplete selection.
@@ -461,6 +468,7 @@ export default function TripMap({
         mapCenter: { lat: center.lat, lng: center.lng },
         zoom,
         radiusMeters,
+        bounds,
       });
 
       const rid =
@@ -595,7 +603,7 @@ export default function TripMap({
           {routeView ? <RouteViewMarkers routeView={routeView} /> : (
             <>
               <PlanItineraryMapRoutes />
-              <MapDiscoverPlaces selectedCategoryId={selectedCategoryId} rating={rating} openNow={openNow} />
+              <MapDiscoverPlaces selectedCategoryId={selectedCategoryId} rating={rating} openNow={openNow} onSearchFailedChange={setDiscoverFailed} />
               <MapBookmarkPins roomId={currentRoomId} enabled={showBookmarkPins}
                 hiddenNormalizedPlaceIds={isPlanPage ? planStopPlaceIds : undefined} />
               <MapSearchResultPins />
@@ -649,7 +657,7 @@ export default function TripMap({
 
       {!bootstrap.ready || routeView ? null : (
         <>
-          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} />}
+          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} discoverFailed={discoverFailed} />}
           {isMobileDevice ? (
             <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
               {onOpenRouteView ? (
@@ -770,7 +778,9 @@ function MobileSearchSelection() {
   const lat = item?.location.lat;
   const lng = item?.location.lng;
   useEffect(() => {
-    if (map && focus === "search" && !selectedPlace && lat != null && lng != null) panToWithinWorld(map, { lat, lng });
+    if (!map || focus !== "search" || selectedPlace || lat == null || lng == null) return;
+    panToWithinWorld(map, { lat, lng });
+    return settleSearchSnapshotAfterMove(map);
   }, [map, focus, selectedPlace, selectedId, lat, lng]);
   if (!item || focus !== "search" || selectedPlace) return null;
   return <AdvancedMarker position={item.location} onClick={(event) => event.stop()}><span className="block text-primary drop-shadow-md"><MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} /></span></AdvancedMarker>;

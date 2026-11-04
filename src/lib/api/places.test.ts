@@ -215,3 +215,22 @@ describe("place preview API requests", () => {
     expect(error).toMatchObject({ status: 502 });
   });
 });
+
+describe("place area search API request", () => {
+  beforeEach(() => {
+    apiFetch.mockReset();
+  });
+
+  it("sends the visible rectangle to the area search endpoint without a center or radius", async () => {
+    const { searchPlacesInArea } = await import("@/lib/api/places");
+    apiFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ items: [], nextPageToken: null }) });
+
+    await searchPlacesInArea({ query: "카페", south: 35.7, west: 139.75, north: 35.72, east: 139.8, pageSize: 20 });
+
+    const requestedUrl = new URL(apiFetch.mock.calls[0]![0] as string);
+    expect(requestedUrl.pathname).toBe("/places/search/area");
+    expect(Object.fromEntries(requestedUrl.searchParams)).toEqual({
+      query: "카페", south: "35.7", west: "139.75", north: "35.72", east: "139.8", pageSize: "20",
+    });
+  });
+});
