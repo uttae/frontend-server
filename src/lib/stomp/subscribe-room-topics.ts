@@ -14,6 +14,7 @@ import {
   optimisticPatchSelfOnline,
   scheduleRoomMembersResyncAfterSubscribe,
 } from "@/lib/stomp/presence-dispatch";
+import { resyncRoomDataAfterSubscribe } from "@/lib/stomp/room-resync-dispatch";
 import { parseRoomScheduleMessage } from "@/lib/stomp/schedule-events";
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 import { dispatchUserError } from "@/lib/stomp/user-error-dispatch";
@@ -113,6 +114,7 @@ export function subscribeRoomStompTopics(
     queryClientRef.current,
     subscribedRoomId,
   );
+  resyncRoomDataAfterSubscribe(queryClientRef.current, subscribedRoomId);
 
   return () => {
     membersSub.unsubscribe();

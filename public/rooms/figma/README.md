@@ -4,10 +4,9 @@
 - 모바일: https://www.figma.com/design/3JnrQOfRePmycccIBfiPnZ?node-id=3314-5275
 - 추출일: 2026-09-20
 - `trip-cover.png`: Figma 원본 카드 사진. 현재 방 목록에서는 `public/rooms/covers/`의 사진 9장 중 방 ID로 선택한 이미지를 사용한다.
-- `menu.svg`, `plus.svg`: Figma에서 내려받은 원본 아이콘.
+- `plus.svg`: Figma에서 내려받은 원본 아이콘.
 - `plus-mobile.svg`: 모바일 생성 버튼의 20px 원본 아이콘.
-- `user.svg`, `logout.svg`: 프로필 오버레이 원본 아이콘 (`3456:5418`).
-- `invite.svg`, `trash.svg`: 방 더보기 오버레이 원본 아이콘 (`3449:3613`).
+- `invite.svg`: 방 더보기 오버레이 원본 아이콘 (`3449:3613`). 더보기 버튼·프로필 메뉴·삭제 아이콘은 디자인 시스템 아이콘(`@/assets/icons`)을 쓴다.
 
 광고 배너 영역에는 [마케팅 시안](https://www.figma.com/design/asf1pKmEosGS4xUx1qn3MV/%EB%A7%88%EC%BC%80%ED%8C%85?node-id=0-1)의 데스크톱·모바일 완성 배너 이미지를 각각 그대로 사용한다. 에셋은 만료되는 Figma 다운로드 URL 대신 로컬 파일을 참조한다.
 

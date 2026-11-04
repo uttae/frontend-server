@@ -52,7 +52,7 @@ it("changes an existing time without altering its unset end", async () => {
   props = { ...props, startTime: "09:07" }; await render(); await choose("분", "8"); await click("확인");
   expect(save.mock.calls[0][0].body).toEqual({ startTime: "09:08" });
 });
-it.each(["취소", "닫기"])("%s never saves edits or deletions", async label => {
+it.each(["취소", "방문 시간 닫기"])("%s never saves edits or deletions", async label => {
   props = { ...props, startTime: "09:07", endTime: "10:13" }; await render(); await click("초기화"); await click(label);
   expect(save).not.toHaveBeenCalled(); expect(props.onClose).toHaveBeenCalledOnce();
 });

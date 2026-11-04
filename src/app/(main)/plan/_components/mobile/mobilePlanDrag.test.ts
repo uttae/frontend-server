@@ -7,6 +7,7 @@ vi.mock("@/hooks/useRooms", () => ({
   useReorderScheduleItem: vi.fn(),
 }));
 vi.mock("@/lib/analytics/track", () => ({ AnalyticsEvents: {}, trackAnalyticsEvent: vi.fn() }));
+vi.mock("@/hooks/useScheduleResyncPending", () => ({ useScheduleResyncPending: () => false }));
 
 const { applyPendingPlanMove, mobilePlanRowOffset } = await import("./mobilePlanDrag");
 

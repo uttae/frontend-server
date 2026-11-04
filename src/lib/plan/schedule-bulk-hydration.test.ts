@@ -194,6 +194,35 @@ describe("hydrateScheduleRoutesBatch", () => {
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(2);
   });
 
+  it.each(["NO_ROUTE", "LAST_ITEM", "SCHEDULE_ITEM_NOT_FOUND"])(
+    "경로 없음 답(%s)은 null로 시딩해 단건으로 다시 묻지 않는다",
+    async (errorCode) => {
+      const queryClient = new QueryClient();
+      registerQueryClient(queryClient);
+      const places = [place(1, "places/a"), place(2, "places/b"), place(3, "places/c")];
+      queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
+      getScheduleItemRoutesBatchMock.mockResolvedValue([
+        routeResult,
+        { status: "FAILED", itemId: 2, travelMode: "WALKING", errorCode },
+      ]);
+
+      await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+      expect(
+        queryClient.getQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, "WALKING")),
+      ).toBeNull();
+      await expect(
+        resolveScheduleSegmentRoute({
+          roomId: ROOM_ID,
+          scheduleId: SCHEDULE_ID,
+          segmentSourceItemId: 2,
+          travelMode: "WALKING",
+        }),
+      ).resolves.toBeNull();
+      expect(getScheduleItemRouteMock).not.toHaveBeenCalled();
+    },
+  );
+
   it("응답 대기 중 일정이 바뀌면(지문 불일치) 늦게 도착한 결과를 버린다", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(

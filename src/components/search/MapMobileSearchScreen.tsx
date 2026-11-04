@@ -7,6 +7,7 @@ import {
   LocationIcon,
   SearchIcon,
 } from "@/assets/icons";
+import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
   addMapSearchHistory,
@@ -141,18 +142,19 @@ export function MapMobileSearchScreen({
           />
       </div>
       {error ? (
-        <div
-          role="alert"
-          className="mx-3 flex items-center gap-2 rounded-lg border border-border-subtle p-3 text-body-s-regular text-text"
-        >
-          <span>{error}</span>
-          <button
-            type="button"
-            className="shrink-0 text-primary underline"
-            onClick={() => inputRef.current?.focus()}
-          >
-            다시 시도
-          </button>
+        <div className="px-3">
+          <Alert orientation="horizontal">
+            <AlertTitle>{error}</AlertTitle>
+            <AlertAction>
+              <button
+                type="button"
+                className="text-primary underline"
+                onClick={() => inputRef.current?.focus()}
+              >
+                다시 시도
+              </button>
+            </AlertAction>
+          </Alert>
         </div>
       ) : null}
       {!query.trim() ? (

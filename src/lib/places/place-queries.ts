@@ -1,17 +1,20 @@
+import { isBatchItemError, isBatchItemOk } from "@/lib/api/batch-types";
+import { HttpError } from "@/lib/api/errors";
 import {
   requestPlaceDetail,
-  requestPlacePhotoUrl,
   requestPlacePreview,
+  requestPlacePreviewsBatch,
   type PlaceDetail,
   type PlacePreview,
+  type PlacePreviewBatchItem,
   type PlacePreviewResponse,
 } from "@/lib/api/places";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
-import { getQueryClient } from "@/lib/query-client";
 import {
-  placePhotoUrlQueryDefaults,
-  placePhotoUrlQueryKey,
-} from "@/lib/place-photo-query";
+  createPlaceBatchLoader,
+  type PlaceBatchResult,
+} from "@/lib/places/place-batch-loader";
+import { getQueryClient } from "@/lib/query-client";
 
 export const placeDetailQueryDefaults = {
   staleTime: Infinity,
@@ -104,6 +107,51 @@ export function resolvePreviewGooglePlaceId(googlePlaceId: string): string {
   return raw.length ? normalizeGooglePlaceResourceId(raw) : "";
 }
 
+/** status 없이 오는 응답(레거시 `items`)도 id와 이름이 있으면 받은 것으로 본다 */
+function hasPreviewIdAndName({
+  googlePlaceId,
+  name,
+}: {
+  googlePlaceId?: unknown;
+  name?: unknown;
+}): boolean {
+  return (
+    typeof googlePlaceId === "string" &&
+    googlePlaceId.trim().length > 0 &&
+    typeof name === "string" &&
+    name.trim().length > 0
+  );
+}
+
+function previewBatchItemResult(
+  item: PlacePreviewBatchItem,
+): PlaceBatchResult<PlacePreview> | null {
+  if (isBatchItemError(item)) {
+    // 항목 실패는 외부 API 실패(EXTERNAL_API_ERROR)일 때만 온다 — 단건으로 보냈으면 502였을 실패다
+    return {
+      ok: false,
+      error: new HttpError(502, `장소 미리보기 조회 실패: ${item.errorCode ?? item.status}`),
+    };
+  }
+  if (isBatchItemOk(item) || hasPreviewIdAndName(item)) {
+    return { ok: true, value: normalizePlacePreview(item) };
+  }
+  return null;
+}
+
+/** 같은 커밋에 요청된 미리보기를 모아 받는다 — 1곳이면 단건, 2곳 이상이면 batch */
+const loadPlacePreviewInBatch = createPlaceBatchLoader<PlacePreview>({
+  fetchOne: async (id) => normalizePlacePreview(await requestPlacePreview(id)),
+  fetchMany: async (ids) => {
+    const results = new Map<string, PlaceBatchResult<PlacePreview>>();
+    for (const item of await requestPlacePreviewsBatch(ids)) {
+      const result = previewBatchItemResult(item);
+      if (result) results.set(resolvePreviewGooglePlaceId(item.googlePlaceId), result);
+    }
+    return results;
+  },
+});
+
 /** useQueries queryFn 등 중첩 fetchQuery 없이 preview API만 호출 */
 export async function loadPlacePreview(googlePlaceId: string): Promise<PlacePreview> {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
@@ -116,15 +164,15 @@ export async function loadPlacePreview(googlePlaceId: string): Promise<PlacePrev
 
 /**
  * 북마크·일정 카드 등 `useQueries`용 — `fetchPlacePreview`와 동일 `placePreviewQueryKey`·60s 캐시.
+ * 같은 커밋에 마운트된 미리보기(북마크 목록·지도 핀)는 batch 하나로 모은다.
  */
 export function placePreviewQueryOptions(googlePlaceId: string) {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
   return {
     queryKey: placePreviewQueryKey(id),
-    queryFn: () => loadPlacePreview(id),
+    queryFn: () => loadPlacePreviewInBatch(id),
     enabled: id.length > 0,
     ...placePreviewQueryDefaults,
-    retry: 1,
   };
 }
 
@@ -171,23 +219,5 @@ export async function fetchPlacePreview(googlePlaceId: string): Promise<PlacePre
     queryKey: placePreviewQueryKey(id),
     queryFn: () => loadPlacePreview(id),
     ...placePreviewQueryDefaults,
-  });
-}
-
-export async function fetchPlacePhotoUrl(googlePlaceId: string): Promise<string> {
-  const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
-  if (!id.length) {
-    throw new Error("fetchPlacePhotoUrl: empty googlePlaceId");
-  }
-
-  const queryClient = getQueryClient();
-  if (!queryClient) {
-    return requestPlacePhotoUrl(id);
-  }
-
-  return queryClient.fetchQuery({
-    queryKey: placePhotoUrlQueryKey(id),
-    queryFn: () => requestPlacePhotoUrl(id),
-    ...placePhotoUrlQueryDefaults,
   });
 }

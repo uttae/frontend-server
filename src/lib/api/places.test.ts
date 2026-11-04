@@ -71,6 +71,38 @@ describe("place photo API requests", () => {
     );
   });
 
+  it("throws an HttpError carrying the status when a single photo request fails", async () => {
+    const { requestPlacePhotoUrl } = await import("@/lib/api/places");
+    const { HttpError } = await import("@/lib/api/errors");
+    apiFetch.mockResolvedValueOnce({
+      status: 502,
+      ok: false,
+      json: async () => ({ code: "EXTERNAL_API_ERROR", message: "외부 API 호출 중 오류가 발생했습니다" }),
+    });
+
+    const error = await requestPlacePhotoUrl("ChIJ-place-1").catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error).toMatchObject({ status: 502, message: "외부 API 호출 중 오류가 발생했습니다" });
+  });
+
+  it("throws an HttpError when the whole photo batch request is rate limited", async () => {
+    const { requestPlacePhotoUrlsBatch } = await import("@/lib/api/places");
+    const { HttpError } = await import("@/lib/api/errors");
+    apiFetch.mockResolvedValueOnce({
+      status: 429,
+      ok: false,
+      json: async () => ({ code: "RATE_LIMIT_EXCEEDED", message: "요청이 너무 많습니다" }),
+    });
+
+    const error = await requestPlacePhotoUrlsBatch(["ChIJ-place-1", "ChIJ-place-2"]).catch(
+      (reason: unknown) => reason,
+    );
+
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error).toMatchObject({ status: 429 });
+  });
+
   it("requests batch photo URLs with googlePlaceIds and reads googlePlaceId response items", async () => {
     const { requestPlacePhotoUrlsBatch } = await import("@/lib/api/places");
     apiFetch.mockResolvedValueOnce({
@@ -147,5 +179,39 @@ describe("place photo API requests", () => {
         photoUrl: null,
       },
     ]);
+  });
+});
+
+describe("place preview API requests", () => {
+  beforeEach(() => {
+    apiFetch.mockReset();
+  });
+
+  it("throws an HttpError when the preview batch request is rate limited", async () => {
+    const { requestPlacePreviewsBatch } = await import("@/lib/api/places");
+    const { HttpError } = await import("@/lib/api/errors");
+    apiFetch.mockResolvedValueOnce({
+      status: 429,
+      ok: false,
+      json: async () => ({ code: "RATE_LIMIT_EXCEEDED", message: "요청이 너무 많습니다" }),
+    });
+
+    const error = await requestPlacePreviewsBatch(["ChIJ-place-1", "ChIJ-place-2"]).catch(
+      (reason: unknown) => reason,
+    );
+
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error).toMatchObject({ status: 429, message: "요청이 너무 많습니다" });
+  });
+
+  it("throws an HttpError carrying the status when a single preview request fails", async () => {
+    const { requestPlacePreview } = await import("@/lib/api/places");
+    const { HttpError } = await import("@/lib/api/errors");
+    apiFetch.mockResolvedValueOnce({ status: 502, ok: false, json: async () => ({}) });
+
+    const error = await requestPlacePreview("ChIJ-place-1").catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(HttpError);
+    expect(error).toMatchObject({ status: 502 });
   });
 });

@@ -36,7 +36,8 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
   const {
     data: bookmarkRowsRaw,
     isPending: bookmarksLoading,
-    isError: bookmarksError,
+    // 재조회 실패는 보이던 목록을 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
+    isLoadingError: bookmarksError,
     error: bookmarksErr,
     refetch,
   } = useRoomBookmarks(roomId, categoryIdOk);
@@ -96,8 +97,6 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
     places.length === 0 &&
     placeQueries.length > 0 &&
     placeQueries.every((q) => q.isError);
-
-  const firstPlaceError = placeQueries.find((q) => q.isError)?.error;
 
   const retryPlacePreviews = () => {
     for (const q of placeQueries) {
@@ -165,10 +164,9 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
           <BookmarkListSkeleton />
         ) : cardsError ? (
           <div className="space-y-3 py-10">
+            {/* 에러 문구는 내부 메시지(요청 id·API 오류 코드)라 화면에 그대로 보여 주지 않는다 */}
             <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
-              {firstPlaceError instanceof Error
-                ? firstPlaceError.message
-                : "장소 정보를 불러오지 못했습니다."}
+              장소 정보를 불러오지 못했습니다.
             </p>
             <div className="text-center">
               <button

@@ -123,7 +123,8 @@ export function useMobileRouteView({
     queries: schedules.map((s) => ({
       queryKey: scheduleItemsQueryKey(rid || null, s.scheduleId),
       queryFn: () => readSchedulePlanPlacesFromCache(queryClient, rid, s.scheduleId),
-      enabled: active && rid.length > 0 && schedulesQuery.isSuccess,
+      // 재조회가 실패해도(status 'error') 받아 둔 일정으로 계속 그린다
+      enabled: active && rid.length > 0 && schedulesQuery.data !== undefined,
       staleTime: Infinity,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
@@ -425,7 +426,7 @@ export function useMobileRouteView({
     return null;
   } else if (schedulesQuery.isLoading || (schedules.length > 0 && entries.length === 0)) {
     return <RouteCardSlot><MobileRoutePlaceCardSkeleton /></RouteCardSlot>;
-  } else if (schedulesQuery.isError) {
+  } else if (schedulesQuery.isLoadingError) {
     return (
       <RouteCardSlot>
         <MobileRouteMessageCard tone="error" title="일정을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." />

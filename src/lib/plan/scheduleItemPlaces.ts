@@ -1,6 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import { awaitRoomSchedulesHydrated } from "@/lib/rooms";
+import { awaitRoomSchedulesHydrated, waitForRoomSchedulesHydration } from "@/lib/rooms";
 
 import {
   createScheduleItem,
@@ -8,9 +8,14 @@ import {
   type CreateScheduleItemResponse,
   type RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
+import {
+  fetchAndSeedPlacePreviews,
+  reconcileSchedulePlanPlacesAfterPreviewSeed,
+} from "@/lib/places/place-batch-cache";
 import { fetchPlacePreview } from "@/lib/places/place-queries";
 import {
   buildPlanPlacesFromItemsWithPreviewEnrichment,
+  PLAN_PLACE_PREVIEW_ERROR_TITLE,
   planPlacesNeedPreviewEnrich,
   resolveScheduleItemsFromCacheOrHydrate,
 } from "@/lib/plan/schedule-bulk-hydration";
@@ -25,7 +30,7 @@ import {
   readOrderedItemIdsFromScheduleItemsCache,
   removeRouteQueriesForDeletedItemSource,
 } from "@/lib/plan/scheduleStompRouteScope";
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 import type { PlanPlace } from "@/lib/plan/types";
 import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
 
@@ -167,6 +172,25 @@ async function buildPlanPlacesFromScheduleItems(
   return Promise.all(sorted.map((item) => planPlaceFromScheduleItem(item)));
 }
 
+/**
+ * 일차 장소 목록을 씁니다. 그사이 일정 전체 재조회가 진행 중이면 그 응답은 이 변경 전 스냅샷이라
+ * 끝나는 대로 방금 쓴 일차를 되돌립니다. 진행 중인 조회를 취소하고 다시 받게 합니다.
+ */
+export function setSchedulePlanPlaces(
+  queryClient: QueryClient,
+  roomId: string,
+  scheduleId: number,
+  places: PlanPlace[],
+): void {
+  const rid = roomId.trim();
+  queryClient.setQueryData(scheduleItemsQueryKey(rid, scheduleId), places);
+
+  const roomSchedulesKey = roomSchedulesQueryKey(rid);
+  if (queryClient.isFetching({ queryKey: roomSchedulesKey, exact: true }) > 0) {
+    void queryClient.refetchQueries({ queryKey: roomSchedulesKey, exact: true });
+  }
+}
+
 /** DELETE 직후 `schedule-items`에서 항목만 제거(Preview·Photo 재조회 없음). */
 export function removeScheduleItemFromPlanPlacesCache(
   queryClient: QueryClient,
@@ -181,7 +205,7 @@ export function removeScheduleItemFromPlanPlacesCache(
   if (!prev?.length) return false;
   const next = prev.filter((p) => p.itemId !== deletedItemId);
   if (next.length === prev.length) return false;
-  queryClient.setQueryData(key, next);
+  setSchedulePlanPlaces(queryClient, rid, scheduleId, next);
   return true;
 }
 
@@ -255,11 +279,11 @@ export async function mergeOrRefetchSchedulePlanPlacesFromItems(
   const prev = queryClient.getQueryData<PlanPlace[]>(key);
   const merged = await mergeScheduleItemsIntoPlanPlaces(prev, items);
   if (merged) {
-    queryClient.setQueryData(key, merged);
+    setSchedulePlanPlaces(queryClient, rid, scheduleId, merged);
     return;
   }
   const places = await buildPlanPlacesFromScheduleItems(items);
-  queryClient.setQueryData(key, places);
+  setSchedulePlanPlaces(queryClient, rid, scheduleId, places);
 }
 
 /** cross-day item 이동 후 source/target 일차 items·route 캐시 동기화 */
@@ -370,9 +394,21 @@ export async function ensureSchedulePlanPlacesEnriched(
   const rid = roomId.trim();
   if (!rid.length) return [];
   const key = scheduleItemsQueryKey(rid, scheduleId);
+  // 일정 불러오기가 진행 중이면 그 결과를 쓴다 — 방금 batch로 받은 장소를 일차마다 다시 받지 않는다
+  const waitedForHydration = await waitForRoomSchedulesHydration(queryClient, rid);
   const cached = queryClient.getQueryData<PlanPlace[]>(key);
-  if (cached != null && !planPlacesNeedPreviewEnrich(cached)) {
+  if (cached != null && (waitedForHydration || !planPlacesNeedPreviewEnrich(cached))) {
     return cached;
+  }
+  if (cached != null) {
+    // 지금 일차 목록(삭제·수정·순서가 반영됨)은 그대로 두고 자리표시자 장소의 미리보기만 채운다 —
+    // room-schedules의 items는 장소 단위 변경을 따라가지 않아, 거기서 다시 만들면 지운 장소가 되살아난다
+    const placeholderIds = cached
+      .filter((place) => place.title === PLAN_PLACE_PREVIEW_ERROR_TITLE)
+      .flatMap((place) => (place.googlePlaceId ? [place.googlePlaceId] : []));
+    await fetchAndSeedPlacePreviews(placeholderIds, queryClient);
+    reconcileSchedulePlanPlacesAfterPreviewSeed(queryClient, rid);
+    return queryClient.getQueryData<PlanPlace[]>(key) ?? cached;
   }
 
   const items = await resolveScheduleItemsFromCacheOrHydrate(
@@ -601,7 +637,7 @@ export async function createScheduleItemAtPlanIndex(
     const createdPlace = await planPlaceFromScheduleItem(response.createdItem);
     const merged = mergeCreatedScheduleItemDelta(prev, createdPlace, response);
     if (merged) {
-      queryClient.setQueryData(key, merged);
+      setSchedulePlanPlaces(queryClient, rid, args.scheduleId, merged);
     } else {
       const fresh = await getScheduleItems(rid, args.scheduleId);
       await mergeOrRefetchSchedulePlanPlacesFromItems(

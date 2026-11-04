@@ -5,8 +5,17 @@ import Image from "next/image";
 import { formatTimePickerValue, timePartsFromHm, timePartsToHm, type TimeParts } from "@/lib/plan/timePickerDraft";
 import { toast } from "sonner";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
-import { MobileBottomSheet } from "@/components/mobile/MobileBottomSheet";
+import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerBody,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
   computeDurationMinutesFromRange,
@@ -102,101 +111,84 @@ export function MobileTimeSheet({
   ];
 
   return (
-    <MobileBottomSheet
-      open
-      onClose={onClose}
-      title={placeName}
-      subtitle={subtitle || undefined}
-      variant="form"
-      closeDisabled={isPending}
-      footer={
-      <div className="flex h-11 w-full items-center gap-4 px-1">
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isPending}
-          className="flex-1 rounded-lg bg-fill-subtle px-2.5 py-2 text-label-m-emphasis text-text transition-colors enabled:hover:bg-fill enabled:hover:text-text-subtle enabled:active:bg-fill-strong enabled:active:text-text disabled:bg-fill disabled:text-text-disabled"
-        >
-          취소
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={isPending || isWheelSettling || !dirty || !validation.valid}
-          aria-busy={isPending}
-          className={cn(
-            "flex flex-1 items-center justify-center rounded-lg px-2.5 py-2 text-label-m-emphasis text-text-inverse transition-colors",
-            isPending
-              ? "bg-[var(--gray-900)]"
-              : "bg-[var(--gray-800)] enabled:hover:bg-[var(--gray-700)] enabled:active:bg-[var(--gray-900)] disabled:bg-fill disabled:text-text-disabled",
-          )}
-        >
-          {isPending ? <LoadingIndicator label="저장 중" className="text-text-inverse" /> : "확인"}
-        </button>
-      </div>
-      }
-    >
-      <div className="flex w-full flex-col gap-3">
-      <div className="flex h-[70px] w-full items-end gap-2">
-        {fields.map(({ key, label, value }) => {
-          const active = activeField === key;
-          const display = formatTimePickerValue(value);
-          return (
+    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isPending}>
+      <DrawerContent closeLabel="방문 시간 닫기">
+        <DrawerHeader>
+          <DrawerTitle>{placeName}</DrawerTitle>
+          {subtitle ? <DrawerDescription>{subtitle}</DrawerDescription> : null}
+        </DrawerHeader>
+        <DrawerBody className="gap-3">
+          <div className="flex h-[70px] w-full items-end gap-2">
+            {fields.map(({ key, label, value }) => {
+              const active = activeField === key;
+              const display = formatTimePickerValue(value);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => openField(key)}
+                  disabled={isPending || isWheelSettling || (key === "end" && !start)}
+                  aria-expanded={active}
+                  aria-label={`${label} ${display || "미설정"}`}
+                  className={cn(
+                    "flex min-w-0 flex-1 flex-col gap-0.5 h-[70px] rounded-md border bg-fill-subtle px-2 pb-1.5 pt-3",
+                    active ? "border-primary" : "border-border",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "w-full px-1 text-center text-label-xs-regular",
+                      active ? "text-primary-strong" : "text-text-subtle",
+                    )}
+                  >
+                    {label}
+                  </span>
+                  <span className="flex h-8 w-full items-center justify-center truncate px-1 text-body-m-regular tabular-nums text-text">
+                    {display || "-- : --"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div data-base-ui-swipe-ignore="" inert={isPending}>
+            <TimeWheelPicker
+              key={activeField ?? "idle"}
+              value={activeField === "end" ? endParts : startParts}
+              onChange={activeField === "end" ? setEnd : setStart}
+              active={activeField !== null}
+              onSettlingChange={setWheelSettling}
+            />
+          </div>
+          <div className="flex h-8 items-center justify-end px-1">
             <button
-              key={key}
               type="button"
-              onClick={() => openField(key)}
-              disabled={isPending || isWheelSettling || (key === "end" && !start)}
-              aria-expanded={active}
-              aria-label={`${label} ${display || "미설정"}`}
-              className={cn(
-                "flex min-w-0 flex-1 flex-col gap-0.5 h-[70px] rounded-md border bg-fill-subtle px-2 pb-1.5 pt-3",
-                active ? "border-primary" : "border-border",
-              )}
+              disabled={isPending || (activeField === null && start === "" && end === "")}
+              onClick={() => {
+                setStart(timePartsFromHm(""));
+                setEnd(timePartsFromHm(""));
+                setActiveField(null);
+                setWheelSettling(false);
+              }}
+              className="relative flex h-8 items-center gap-1 text-label-xs-regular text-text-subtle disabled:text-text-disabled before:absolute before:-inset-y-1.5 before:inset-x-0 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <span
-                className={cn(
-                  "w-full px-1 text-center text-label-xs-regular",
-                  active ? "text-primary-strong" : "text-text-subtle",
-                )}
-              >
-                {label}
-              </span>
-              <span className="flex h-8 w-full items-center justify-center truncate px-1 text-body-m-regular tabular-nums text-text">
-                {display || "-- : --"}
-              </span>
+              <Image src={activeField === null && start === "" && end === "" ? "/icons/time-picker/reset-disabled.svg" : "/icons/time-picker/reset-active.svg"} width={16} height={16} alt="" />
+              초기화
             </button>
-          );
-        })}
-      </div>
-
-      <div inert={isPending}>
-        <TimeWheelPicker
-          key={activeField ?? "idle"}
-          value={activeField === "end" ? endParts : startParts}
-          onChange={activeField === "end" ? setEnd : setStart}
-          active={activeField !== null}
-          onSettlingChange={setWheelSettling}
-        />
-      </div>
-      <div className="flex h-8 items-center justify-end px-1">
-        <button
-          type="button"
-          disabled={isPending || (activeField === null && start === "" && end === "")}
-          onClick={() => {
-            setStart(timePartsFromHm(""));
-            setEnd(timePartsFromHm(""));
-            setActiveField(null);
-            setWheelSettling(false);
-          }}
-          className="relative flex h-8 items-center gap-1 text-label-xs-regular text-text-subtle disabled:text-text-disabled before:absolute before:-inset-y-1.5 before:inset-x-0 focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          <Image src={activeField === null && start === "" && end === "" ? "/icons/time-picker/reset-disabled.svg" : "/icons/time-picker/reset-active.svg"} width={16} height={16} alt="" />
-          초기화
-        </button>
-      </div>
-      </div>
-
-    </MobileBottomSheet>
+          </div>
+        </DrawerBody>
+        <DrawerFooter>
+          <DrawerClose render={<Button variant="weak" />}>취소</DrawerClose>
+          <Button
+            loading={isPending}
+            loadingLabel="저장 중"
+            disabled={isWheelSettling || !dirty || !validation.valid}
+            onClick={() => void handleSave()}
+          >
+            확인
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }

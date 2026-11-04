@@ -57,3 +57,26 @@ it("stable incoming handlers see committed panel/connection state and read dedup
   await hook.unmount();
   client.clear();
 });
+it("keeps markMessagesRead stable across reconnects so the history load is not restarted", async () => {
+  const client = new QueryClient();
+  const rawMessagesRef = { current: [] as ServerChatMessage[] };
+  const hook = hookHarness(
+    (roomId: string) =>
+      useChatMessageRead({ roomId, panelOpen: true, rawMessagesRef }),
+    (child) => (
+      <QueryClientProvider client={client}>{child}</QueryClientProvider>
+    ),
+  );
+  state.connected = true;
+  await hook.render("a");
+  const markMessagesRead = hook.current.markMessagesRead;
+
+  state.connected = false;
+  await hook.render("a");
+  state.connected = true;
+  await hook.render("a");
+
+  expect(hook.current.markMessagesRead).toBe(markMessagesRead);
+  await hook.unmount();
+  client.clear();
+});

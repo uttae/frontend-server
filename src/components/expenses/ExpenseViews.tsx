@@ -1,5 +1,9 @@
 "use client";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ExpenseKrwAmount, ExpenseRowAmount } from "./ExpenseKrw";
 import { expenseTitle } from "@/lib/expenses/expense-name";
 
@@ -25,12 +29,8 @@ import {
   roleOptions,
   type MemberQueryStatus,
 } from "@/lib/expenses/expense-policy";
-import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
+import { UserAvatar } from "@/components/user/UserAvatar";
 
-export const expenseButtonClass =
-  "min-h-10 rounded-lg border border-gray-border px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50";
-export const expenseInputClass =
-  "mt-1 min-h-12 w-full min-w-0 rounded-lg border border-border bg-fill-subtle px-3 py-2 text-body-s-regular focus:outline-primary";
 // Group the integer string directly so large amounts and trailing decimals stay exact.
 import { formatExpenseAmount } from "@/lib/expenses/format-expense-amount";
 
@@ -70,12 +70,13 @@ export function ExpensePerson({
       title={person.label}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 align-middle"
     >
-      {person.imageUrl ? <ChatMemberAvatarRing
-        avatarUrl={person.imageUrl ?? undefined}
-        alt=""
-        chromeAvatarClassName="h-6 w-6 shrink-0 overflow-hidden rounded-full border-[1.5px] border-white"
-        reduceMotion={true}
-      /> : <span aria-hidden className="flex size-6 shrink-0 items-center justify-center rounded-full border-[1.5px] border-white bg-primary-subtle text-[12px] leading-4 text-primary">{person.label.slice(0, 1)}</span>}
+      {/* tone이 대체를 정한다: 사진을 못 받으면 사람 아이콘, 사진이 없으면 라벨 첫 글자 */}
+      <UserAvatar
+        user={{ nickname: person.label, profileImageUrl: person.imageUrl }}
+        size={24}
+        tone={person.imageUrl ? "icon" : "primary"}
+        ring="cutout"
+      />
       <span
         className={compact || memberStatus === "pending" ? "sr-only" : "min-w-0 [overflow-wrap:anywhere]"}
       >
@@ -103,6 +104,7 @@ export function ExpenseRolePicker({
   currentUserId,
   selected,
   original,
+  disabled,
   onChange,
 }: Readonly<{
   title: string;
@@ -110,6 +112,8 @@ export function ExpenseRolePicker({
   currentUserId?: number;
   selected: number[];
   original: number[];
+  // 감싼 <fieldset disabled>는 Base UI Checkbox(span)에 전달되지 않아 따로 받는다
+  disabled?: boolean;
   onChange: (ids: number[]) => void;
 }>) {
   const titleId = useId();
@@ -140,19 +144,19 @@ export function ExpenseRolePicker({
       {options.map((option) => (
         <label
           key={option.userId}
-          className="flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-3 text-[16px] leading-5 font-medium mobile:min-h-11 mobile:px-2 mobile:text-[12px] max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed focus-within:ring-2 focus-within:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30 mobile:has-[:checked]:ring-0 max-sm:has-[:checked]:ring-0"
+          className="flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-3 text-[16px] leading-5 font-medium mobile:min-h-11 mobile:px-2 mobile:text-[12px] max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30 mobile:has-[:checked]:ring-0 max-sm:has-[:checked]:ring-0"
         >
-          <input
-            type="checkbox"
+          <Checkbox
+            size="sm"
             checked={selected.includes(option.userId)}
-            onChange={(e) =>
+            disabled={disabled}
+            onCheckedChange={(checked) =>
               onChange(
-                e.target.checked
+                checked
                   ? [...selected, option.userId]
                   : selected.filter((id) => id !== option.userId),
               )
             }
-            className="size-5 shrink-0 cursor-pointer appearance-none bg-[url(/expenses/checkbox.svg)] bg-contain bg-center bg-no-repeat checked:bg-[url(/expenses/checkbox-checked.svg)] disabled:cursor-not-allowed"
           />
           <ExpensePerson
             userId={option.userId}
@@ -174,16 +178,17 @@ export function ExpenseRolePicker({
             />
             <p className="text-body-xs-regular text-dark-gray">승인 대기</p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="outline"
+            size="sm"
             aria-label={`${title} ${member.nickname} #${member.userId} 제외`}
-            className={`${expenseButtonClass} shrink-0`}
+            className="shrink-0"
             onClick={() =>
               onChange(selected.filter((id) => id !== member.userId))
             }
           >
             제외
-          </button>
+          </Button>
         </div>
       ))}
       {pendingMembers.length > 0 && (
@@ -292,9 +297,9 @@ export function ExpenseList({
                       expenseDayLabel("TRIP_DAY", Number(key), schedules))}
                 </h3>
                 {day && (
-                  <span className="rounded-full bg-primary-subtle px-2 py-1 text-label-xs-emphasis text-primary">
+                  <Badge tone="brand" size="md">
                     {day.dayNumber}일차
-                  </span>
+                  </Badge>
                 )}
                 <span className="text-[14px] leading-5 text-text-subtle"><ExpenseKrwAmount total={krwSummary?.days?.find((d) => key === "PREPARATION" ? d.expenseGroup === "PREPARATION" : d.expenseGroup === "TRIP_DAY" && String(d.scheduleId) === key)?.total} /></span>
                 {!krwSummary && <span className="text-body-xs-regular text-text-subtle">
@@ -527,7 +532,7 @@ function SettlementContent({
 }: Readonly<SettlementProps>) {
   if (scope === "mine" && currentUserId === undefined) {
     return (
-      <LoadingIndicator label="내 정산 사용자 정보 불러오는 중" className="flex w-full py-4" />
+      <Spinner aria-label="내 정산 사용자 정보 불러오는 중" className="flex w-full py-4" />
     );
   }
   if (!summary.currencies.length) {
@@ -672,27 +677,13 @@ export function ExpenseSummaryView({
     <div className="flex flex-col gap-6 mobile:gap-4 max-sm:gap-4">
       {showDetails && <details className="order-last text-body-xs-regular text-text-subtle">
         <summary className="cursor-pointer">정산 범위</summary>
-      <div
-        className="flex gap-1 border-b border-gray-border"
-        aria-label="정산 범위"
-      >
-        {(
-          [
-            ["mine", "내 정산"],
-            ["all", "전체 정산"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={scope === value}
-            onClick={() => onScopeChange?.(value)}
-            className={`min-h-10 cursor-pointer border-b-2 px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${scope === value ? "border-primary text-primary-strong" : "border-transparent text-dark-gray hover:text-primary-strong"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 정산 내용 범위를 바꾸는 하위 전환이라 Tabs Chip(Outline md)을 쓴다. 내용은 아래 SettlementContent가 scope로 그려 패널을 두지 않는다 */}
+      <Tabs value={scope} onValueChange={(next: "mine" | "all") => onScopeChange?.(next)}>
+        <TabsList variant="outline" size="md" aria-label="정산 범위">
+          <TabsTrigger value="mine">내 정산</TabsTrigger>
+          <TabsTrigger value="all">전체 정산</TabsTrigger>
+        </TabsList>
+      </Tabs>
       </details>}
       {krwSummary && (scope !== "all" || !summary.currencies.length) && <section aria-label="결제자별 원화 합계" className="space-y-3">
         <h3>원화 환산 결제 합계</h3>
@@ -788,27 +779,13 @@ export function ExpenseAnalysisView({
   const [groupBy, setGroupBy] = useState<"category" | "day">("category");
   return (
     <div className="space-y-6">
-      <div
-        className="flex gap-1 border-b border-gray-border"
-        aria-label="비용 분석 기준"
-      >
-        {(
-          [
-            ["category", "카테고리별"],
-            ["day", "일차별"],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            aria-pressed={groupBy === value}
-            onClick={() => setGroupBy(value)}
-            className={`min-h-10 cursor-pointer border-b-2 px-3 py-2 text-label-m-emphasis mobile:text-label-s-emphasis font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-primary ${groupBy === value ? "border-primary text-primary-strong" : "border-transparent text-dark-gray hover:text-primary-strong"}`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* 분석 묶음 기준을 바꾸는 하위 전환이라 Tabs Chip(Outline md). 통화마다 그래프 하나를 groupBy로 고르므로 패널을 두지 않는다 */}
+      <Tabs value={groupBy} onValueChange={(next: "category" | "day") => setGroupBy(next)}>
+        <TabsList variant="outline" size="md" aria-label="비용 분석 기준">
+          <TabsTrigger value="category">카테고리별</TabsTrigger>
+          <TabsTrigger value="day">일차별</TabsTrigger>
+        </TabsList>
+      </Tabs>
       {!summary.currencies.length && (
         <p className="py-6 text-center text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
           분석할 비용이 없어요.

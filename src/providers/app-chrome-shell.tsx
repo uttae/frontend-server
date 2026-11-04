@@ -23,7 +23,11 @@ export function AppChromeShell({
 
   return (
     <CookieSettingsProvider>
-      <MobileChrome>{children}</MobileChrome>
+      {/* Base UI 권장: 앱을 별도 쌓임 맥락으로 묶어 body로 포털되는 대화상자·팝업이 늘 앱 위에 뜨게 한다.
+          토스트는 이 밖에 두어 대화상자가 열려 있어도 위에 보인다 */}
+      <div className="isolate flex min-h-full w-full flex-1 flex-col">
+        <MobileChrome>{children}</MobileChrome>
+      </div>
       {analyticsEnabled ? (
         <ConsentGatedAnalytics
           debugMode={analyticsRuntime.debugMode}

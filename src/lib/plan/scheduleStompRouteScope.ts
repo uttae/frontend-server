@@ -33,6 +33,36 @@ export function readOrderedItemIdsFromScheduleItemsCache(
   return asOrderedItemIds(data ?? null);
 }
 
+/** `PlanPlace[]` → 순서대로 `itemId` 목록 */
+export function orderedItemIdsFromPlanPlaces(
+  places: readonly PlanPlace[],
+): number[] {
+  return asOrderedItemIds(places) ?? [];
+}
+
+/**
+ * 재조회 전후 순서를 비교해 다음 장소가 바뀐 구간의 출발 `itemId`를 모읍니다.
+ * 이전 캐시가 없으면 받아 둔 구간 경로도 없으므로 비웁니다.
+ */
+export function segmentSourcesWithChangedNext(
+  before: number[] | null,
+  after: number[],
+): number[] {
+  if (!before) return [];
+  const nextOf = (ids: number[]) =>
+    new Map<number, number | undefined>(ids.map((id, i) => [id, ids[i + 1]]));
+  const beforeNext = nextOf(before);
+  const afterNext = nextOf(after);
+  const changed = new Set<number>();
+  for (const [id, next] of beforeNext) {
+    if (afterNext.get(id) !== next) changed.add(id);
+  }
+  for (const [id, next] of afterNext) {
+    if (beforeNext.get(id) !== next) changed.add(id);
+  }
+  return [...changed];
+}
+
 /** 리오더 API 응답 `RoomScheduleItem[]` → `orderIndex` 순 `itemId` 목록 */
 export function orderedItemIdsFromRoomScheduleItems(
   items: RoomScheduleItem[],

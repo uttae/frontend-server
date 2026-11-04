@@ -10,15 +10,13 @@ import {
   TrashIcon,
 } from "@/assets/icons";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
-import {
-  MobileBottomSheet,
-  MobileSheetMenuItem,
-} from "@/components/mobile/MobileBottomSheet";
+import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
 import type { InsertAnchor } from "@/lib/plan/insertPosition";
 import { summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
 
 import { MobilePlanItinerary } from "./MobilePlanItinerary";
+import { MobileSheetMenuItem } from "./MobileSheetMenuItem";
 
 type MobilePlanDaySectionProps = Readonly<{
   roomId: string;
@@ -119,46 +117,53 @@ export function MobilePlanDaySection({
         onPlaceAdded={onPlaceAdded}
       />
 
-      <MobileBottomSheet open={manageOpen} onClose={() => setManageOpen(false)} title="일정 관리">
-        <MobileSheetMenuItem
-          icon={CalendarAddIcon}
-          label="일차 추가"
-          disabled={menuDisabled}
-          onClick={() => {
-            setManageOpen(false);
-            onRequestInsertDayAfter();
-          }}
-        />
-        <MobileSheetMenuItem
-          icon={TrashIcon}
-          label="일차 삭제"
-          danger
-          disabled={menuDisabled}
-          onClick={() => {
-            setManageOpen(false);
-            onRequestDeleteDay();
-          }}
-        />
-        {expenses.canManage ? (
-          <>
-            <hr className="my-1 shrink-0 border-border-subtle" />
+      <Drawer open={manageOpen} onOpenChange={setManageOpen}>
+        <DrawerContent closeLabel="일정 관리 닫기">
+          <DrawerHeader>
+            <DrawerTitle>일정 관리</DrawerTitle>
+          </DrawerHeader>
+          <DrawerBody className="gap-2">
             <MobileSheetMenuItem
-              icon={CoinIcon}
-              label="비용"
-              disabled={expenses.busy}
-              onClick={openDayExpenses}
-              trailing={
-                dayExpenseSummary ? (
-                  <span className="flex items-center justify-end gap-1 text-body-s-regular tabular-nums text-text-subtle">
-                    <CoinIcon size={18} className="shrink-0 text-icon-subtle" />
-                    <span className="truncate">{dayExpenseSummary}</span>
-                  </span>
-                ) : null
-              }
+              icon={CalendarAddIcon}
+              label="일차 추가"
+              disabled={menuDisabled}
+              onClick={() => {
+                setManageOpen(false);
+                onRequestInsertDayAfter();
+              }}
             />
-          </>
-        ) : null}
-      </MobileBottomSheet>
+            <MobileSheetMenuItem
+              icon={TrashIcon}
+              label="일차 삭제"
+              danger
+              disabled={menuDisabled}
+              onClick={() => {
+                setManageOpen(false);
+                onRequestDeleteDay();
+              }}
+            />
+            {expenses.canManage ? (
+              <>
+                <hr className="my-1 shrink-0 border-border-subtle" />
+                <MobileSheetMenuItem
+                  icon={CoinIcon}
+                  label="비용"
+                  disabled={expenses.busy}
+                  onClick={openDayExpenses}
+                  trailing={
+                    dayExpenseSummary ? (
+                      <span className="flex items-center justify-end gap-1 text-body-s-regular tabular-nums text-text-subtle">
+                        <CoinIcon size={18} className="shrink-0 text-icon-subtle" />
+                        <span className="truncate">{dayExpenseSummary}</span>
+                      </span>
+                    ) : null
+                  }
+                />
+              </>
+            ) : null}
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </section>
   );
 }
