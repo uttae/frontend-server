@@ -87,6 +87,8 @@ export type ScheduleItemRouteBatchItem =
   | ({
       status: "OK";
       itemId: number;
+      /** 서버가 계산한 구간의 도착 항목(요청을 받은 순간의 다음 항목) */
+      toItemId?: number;
       travelMode: string;
       distanceMeters: number;
       durationSeconds: number;
@@ -96,6 +98,8 @@ export type ScheduleItemRouteBatchItem =
   | {
       status: "ERROR";
       itemId: number;
+      /** 경로 없음(`NO_ROUTE`)이면 있고, 마지막 항목·항목 없음이면 서버가 생략 */
+      toItemId?: number;
       travelMode: string;
       errorCode?: string;
     };

@@ -75,13 +75,14 @@ describe("hydrateScheduleRoutesBatch", () => {
   const routeResult = {
     status: "OK" as const,
     itemId: 1,
+    toItemId: 2,
     travelMode: "DRIVING",
     distanceMeters: 1200,
     durationSeconds: 300,
     encodedPolyline: "_p~iF~ps|U_ulLnnqC",
   };
 
-  it("응답 시점에 일정 지문이 그대로면 경로를 시딩한다", async () => {
+  it("응답이 알려 준 출발·도착 항목 구간으로 경로를 시딩한다", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(
       scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID),
@@ -156,6 +157,7 @@ describe("hydrateScheduleRoutesBatch", () => {
       {
         status: "ERROR",
         itemId: 2,
+        toItemId: 3,
         travelMode: "WALKING",
         errorCode: "UPSTREAM_TIMEOUT",
       },
@@ -206,8 +208,35 @@ describe("hydrateScheduleRoutesBatch", () => {
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(2);
   });
 
-  it.each(["NO_ROUTE", "LAST_ITEM", "SCHEDULE_ITEM_NOT_FOUND"])(
-    "경로 없음 답(%s)은 null로 시딩해 단건으로 다시 묻지 않는다",
+  it("경로 없음 답(NO_ROUTE)은 그 구간을 null로 시딩해 단건으로 다시 묻지 않는다", async () => {
+    const queryClient = new QueryClient();
+    registerQueryClient(queryClient);
+    const places = [place(1, "places/a"), place(2, "places/b"), place(3, "places/c")];
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
+    getScheduleItemRoutesBatchMock.mockResolvedValue([
+      routeResult,
+      { status: "FAILED", itemId: 2, toItemId: 3, travelMode: "WALKING", errorCode: "NO_ROUTE" },
+    ]);
+
+    await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    expect(
+      queryClient.getQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, 3, "WALKING")),
+    ).toBeNull();
+    await expect(
+      resolveScheduleSegmentRoute({
+        roomId: ROOM_ID,
+        scheduleId: SCHEDULE_ID,
+        segmentSourceItemId: 2,
+        destinationItemId: 3,
+        travelMode: "WALKING",
+      }),
+    ).resolves.toBeNull();
+    expect(getScheduleItemRouteMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["LAST_ITEM", "SCHEDULE_ITEM_NOT_FOUND"])(
+    "도착 항목이 없는 답(%s)은 시딩하지 않고 그 칸이 도착 항목을 지정한 단건으로 받는다",
     async (errorCode) => {
       const queryClient = new QueryClient();
       registerQueryClient(queryClient);
@@ -217,12 +246,14 @@ describe("hydrateScheduleRoutesBatch", () => {
         routeResult,
         { status: "FAILED", itemId: 2, travelMode: "WALKING", errorCode },
       ]);
+      const toThree = { travelMode: "WALKING", distanceMeters: 800, durationSeconds: 600 };
+      getScheduleItemRouteMock.mockResolvedValue(toThree);
 
       await hydrateScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
 
       expect(
-        queryClient.getQueryData(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, 3, "WALKING")),
-      ).toBeNull();
+        queryClient.getQueryState(scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 2, 3, "WALKING")),
+      ).toBeUndefined();
       await expect(
         resolveScheduleSegmentRoute({
           roomId: ROOM_ID,
@@ -231,19 +262,19 @@ describe("hydrateScheduleRoutesBatch", () => {
           destinationItemId: 3,
           travelMode: "WALKING",
         }),
-      ).resolves.toBeNull();
-      expect(getScheduleItemRouteMock).not.toHaveBeenCalled();
+      ).resolves.toEqual(toThree);
+      expect(getScheduleItemRouteMock).toHaveBeenCalledExactlyOnceWith(ROOM_ID, SCHEDULE_ID, 2, 3, "WALKING");
     },
   );
 
-  it("응답 대기 중 일정이 바뀌면(지문 불일치) 늦게 도착한 결과를 버린다", async () => {
+  it("응답 대기 중 순서가 바뀌어도 응답이 알려 준 구간에 저장하고 새 순서의 구간에는 넣지 않는다", async () => {
     const queryClient = new QueryClient();
     queryClient.setQueryData(
       scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID),
       snapshot,
     );
     getScheduleItemRoutesBatchMock.mockImplementation(async () => {
-      // batch 응답이 도착하기 전에 목적지가 B → C 로 교체된 상황
+      // batch 응답이 도착하기 전에 1번 다음 장소가 2 → 3으로 바뀐 상황 — 서버는 요청을 받은 순간의 1→2를 계산했다
       queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), [
         place(1, "places/a"),
         place(3, "places/c"),
@@ -256,6 +287,11 @@ describe("hydrateScheduleRoutesBatch", () => {
     expect(
       queryClient.getQueryData(
         scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, 2, "DRIVING"),
+      ),
+    ).toMatchObject({ distanceMeters: 1200 });
+    expect(
+      queryClient.getQueryState(
+        scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, 1, 3, "DRIVING"),
       ),
     ).toBeUndefined();
   });
@@ -321,6 +357,7 @@ describe("진입 batch·일정 목록·지도가 같은 구간 경로 캐시를 
   const batchRoute = (itemId: number, distanceMeters: number) => ({
     status: "OK" as const,
     itemId,
+    toItemId: itemId + 1,
     travelMode: "DRIVING",
     distanceMeters,
     durationSeconds: 60,

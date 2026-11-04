@@ -261,8 +261,6 @@ const inFlightScheduleRoutesBatch = new Map<string, Promise<void>>();
  * 실패가 아니라 "경로 없음"이라는 답인 batch 항목 — 단건으로 다시 물어도 같은 답(204·404)이 오므로
  * 경로 없음(`null`)으로 시딩하고 다시 묻지 않는다.
  */
-const ROUTE_ANSWER_ERROR_CODES = new Set(["NO_ROUTE", "LAST_ITEM", "SCHEDULE_ITEM_NOT_FOUND"]);
-
 /**
  * in-flight dedup 키 — 일정 지문(`itemId` 순서·장소 정체성)을 포함해
  * 목적지만 바뀐 일정(`[A,B]`→`[A,C]`)이 이전 batch Promise를 공유하지 않게 합니다.
@@ -394,30 +392,18 @@ export async function hydrateScheduleRoutesBatch(
 
   const results = await getScheduleItemRoutesBatch(rid, scheduleId, requestItems);
 
-  /**
-   * 응답 대기 중 일정이 바뀌었으면(지문 불일치) 늦게 도착한 결과를 버립니다 —
-   * 서버는 요청을 받은 순간의 순서로 다음 장소를 정하므로, 그사이 순서가 바뀌었으면 어느 도착 장소의 경로인지 알 수 없다.
-   */
-  const snapshotFp = schedulePlacesFingerprint([...places]);
-  const currentPlaces = queryClient.getQueryData<PlanPlace[]>(
-    scheduleItemsQueryKey(rid, scheduleId),
-  );
-  const currentFp = schedulePlacesFingerprint([...(currentPlaces ?? [])]);
-  if (!snapshotFp.length || snapshotFp !== currentFp) return;
-
-  const destinationByItemId = segmentDestinationsByItemId(places);
+  // 서버는 요청을 받은 순간의 순서로 다음 항목을 정하므로, 응답이 알려 준 도착 항목(toItemId)의 구간으로 저장한다 —
+  // 기다리는 사이 순서가 바뀌었어도 그 구간의 값이라 버리지 않는다. 마지막 항목·항목 없음은 도착 항목이 없어
+  // 저장하지 않고, 그 칸이 도착 항목을 지정한 단건 조회로 받는다
   for (const result of results) {
-    const itemId = result.itemId;
+    const { itemId, toItemId } = result;
     const mode = canonicalScheduleTravelMode(result.travelMode);
-    if (!mode) continue;
-    if (typeof itemId !== "number" || !Number.isFinite(itemId)) continue;
-    const destination = destinationByItemId.get(itemId);
-    if (destination === undefined) continue;
+    if (!mode || !isFiniteItemId(itemId) || !isFiniteItemId(toItemId)) continue;
 
-    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, destination, mode);
+    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, toItemId, mode);
     if (isBatchItemOk(result)) {
       queryClient.setQueryData(routeKey, batchRouteItemToResponse(result));
-    } else if (result.errorCode && ROUTE_ANSWER_ERROR_CODES.has(result.errorCode)) {
+    } else if (result.errorCode === "NO_ROUTE") {
       queryClient.setQueryData(routeKey, null);
     }
   }
