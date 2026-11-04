@@ -169,6 +169,11 @@ it.each([
   expect(network.page).toHaveBeenLastCalledWith(expect.objectContaining({ query: "원래 검색어", latitude: 1, longitude: 2, radius: 1234 }));
   expect(usePlaceSearchStore.getState().status).toBe("done");
 });
+it("search box failure shows one message instead of the raw error", async () => {
+  network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  await act(async () => { await api.confirm(confirmation()); });
+  expect(usePlaceSearchStore.getState()).toMatchObject({ status: "error", error: "검색에 실패했어요." });
+});
 it("editing input suppresses a late response and analytics", async () => {
   let finish!: (v: unknown) => void;
   network.page.mockReturnValue(

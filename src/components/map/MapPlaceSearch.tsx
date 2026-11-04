@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { flushSync } from "react-dom";
+import { RefreshIcon } from "@/assets/icons";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 import { useSearchParams } from "next/navigation";
 import { MapPlaceSearchInput } from "@/components/search/MapPlaceSearchInput";
@@ -103,10 +104,12 @@ function SearchFeedback({ status, error, hasItems, retry }: Readonly<{
 }>) {
   if (status === "pending") return <Spinner aria-label="장소 검색 중" />;
   if (status === "error") return (
-    <div role="alert" className="flex items-center gap-2 text-body-s-regular text-text">
-      <span>{error}</span>
-      <button type="button" className="shrink-0 cursor-pointer text-primary underline hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary" onClick={retry}>
-        다시 시도
+    <div role="alert" className="flex items-center justify-between gap-2 text-body-s-regular text-text">
+      <span className="min-w-0">{error}</span>
+      {/* 아이콘은 20px, 누르는 영역은 44px */}
+      <button type="button" aria-label="다시 시도" onClick={retry}
+        className="-m-3 grid size-11 shrink-0 cursor-pointer place-items-center text-icon-subtle hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary">
+        <RefreshIcon size={20} />
       </button>
     </div>
   );

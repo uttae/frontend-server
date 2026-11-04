@@ -232,10 +232,7 @@ export function useMapPlaceSearch(mobile: boolean) {
       usePlaceSearchStore.setState({
         status: "error",
         termination: failedTermination(confirmation),
-        error:
-          error instanceof Error
-            ? error.message
-            : "검색에 실패했어요. 다시 시도해주세요.",
+        error: searchFailureMessage(confirmation, error),
       });
       return false;
     }
@@ -285,6 +282,12 @@ function toAnchor(
     isOpen: anchor.detail.regularOpeningHours?.openNow ?? null,
     location: anchor.location,
   };
+}
+
+// 모두검색 실패의 원문(네트워크 오류면 "Failed to fetch")은 사용자에게 뜻이 없어 한 문구로 보여 준다
+function searchFailureMessage(confirmation: SearchConfirmation, error: unknown) {
+  if (confirmation.kind === "whole") return "검색에 실패했어요.";
+  return error instanceof Error ? error.message : "검색에 실패했어요. 다시 시도해주세요.";
 }
 
 function failedTermination(confirmation: SearchConfirmation) {

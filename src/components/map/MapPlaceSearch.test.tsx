@@ -84,9 +84,7 @@ it("specific Details failure retry returns to that input with a fresh session an
     (buttons[1] as HTMLButtonElement).click();
   });
   expect(usePlaceSearchStore.getState().status).toBe("error");
-  const retry = [...host.querySelectorAll("button")].find(
-    (button) => button.textContent === "다시 시도",
-  )!;
+  const retry = host.querySelector<HTMLButtonElement>('button[aria-label="다시 시도"]')!;
   await act(async () => retry.click());
   expect(boundary.page).not.toHaveBeenCalled();
   expect(document.activeElement).toBe(input);
