@@ -11,6 +11,7 @@ import {
   loginErrorQueryForExchangeFailure,
   saveGoogleAgreementFlowSession,
 } from "@/lib/google-oauth";
+import { pendingInviteAuthPath } from "@/lib/session-user-flow";
 import { finishGoogleLogin } from "@/lib/google-login-client";
 
 function AuthCallbackContent() {
@@ -37,7 +38,7 @@ function AuthCallbackContent() {
       !pending ||
       returnedState !== pending.state
     ) {
-      router.replace("/login?error=OAuthCallback");
+      router.replace(pendingInviteAuthPath("/login?error=OAuthCallback"));
       return;
     }
 
@@ -45,7 +46,7 @@ function AuthCallbackContent() {
       .then(async (result) => {
         if (result.ok && result.status === "AUTHENTICATED") {
           const destination = await finishGoogleLogin(queryClient);
-          router.replace(destination ?? "/login?error=OAuthCallback");
+          router.replace(destination ?? pendingInviteAuthPath("/login?error=OAuthCallback"));
           return;
         }
 
@@ -55,7 +56,7 @@ function AuthCallbackContent() {
             signupToken: result.signupToken,
             expiresAt: Date.now() + result.expiresInSeconds * 1000,
           });
-          router.replace("/login/agreements");
+          router.replace(pendingInviteAuthPath("/login/agreements"));
           return;
         }
 
@@ -65,15 +66,15 @@ function AuthCallbackContent() {
             reacceptanceToken: result.reacceptanceToken,
             expiresAt: Date.now() + result.expiresInSeconds * 1000,
           });
-          router.replace("/login/agreements");
+          router.replace(pendingInviteAuthPath("/login/agreements"));
           return;
         }
 
         const errorQuery = loginErrorQueryForExchangeFailure(result.errorCode);
-        router.replace(`/login?error=${errorQuery}`);
+        router.replace(pendingInviteAuthPath(`/login?error=${errorQuery}`));
       })
       .catch(() => {
-        router.replace("/login?error=OAuthCallback");
+        router.replace(pendingInviteAuthPath("/login?error=OAuthCallback"));
       });
   }, [searchParams, router, queryClient]);
 
