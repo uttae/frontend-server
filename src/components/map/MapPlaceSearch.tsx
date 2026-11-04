@@ -64,7 +64,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
         <div
           data-tutorial-target="search"
           hidden={hidden}
-          className="pointer-events-auto relative min-w-0 max-w-[calc(100%-60px)] shrink-0"
+          className="group/search pointer-events-auto relative min-w-0 max-w-[calc(100%-60px)] shrink-0"
         >
           <MapPlaceSearchInput
             key={`${scopeKey}:${initialQuery}`}
@@ -77,8 +77,9 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
             onInvalidate={invalidate}
             onClear={clearSearch}
           />
+          {/* 다시 검색하려고 검색창에 들어가면 추천 목록과 같은 자리라 안내를 숨긴다 */}
           {feedback ? (
-            <div className="absolute right-0 top-full mt-1 w-[353px] max-w-full rounded-lg border border-border-subtle bg-fill-subtle p-3">
+            <div className="absolute right-0 top-full mt-1 w-[353px] max-w-full rounded-lg border border-border-subtle bg-fill-subtle p-3 group-has-[input:focus]/search:hidden">
               {feedback}
             </div>
           ) : null}
