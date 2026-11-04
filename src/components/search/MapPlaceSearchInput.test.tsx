@@ -167,6 +167,14 @@ it("429 respects shared wait without request loop on further input", async () =>
   expect(sdk.fetch).toHaveBeenCalledTimes(1);
   expect(host.textContent).toContain("잠시 후");
 });
+it("network failure shows the default notice under all results instead of the raw error", async () => {
+  sdk.fetch.mockRejectedValue(new TypeError("Failed to fetch"));
+  await type("원래"); await wait();
+  expect([...host.querySelectorAll('[role="option"]')].map((option) => option.textContent))
+    .toEqual(["'원래' 모든 결과보기"]);
+  expect(host.textContent).toContain("검색 추천을 불러오지 못했어요. 다시 입력해주세요.");
+  expect(host.textContent).not.toContain("Failed to fetch");
+});
 it("nullable structured main text falls back to actual complete prediction text", async () => {
   await act(async () => vi.advanceTimersByTimeAsync(61000));
   sdk.fetch.mockImplementation(async url => String(url).endsWith("/places/sessions")
