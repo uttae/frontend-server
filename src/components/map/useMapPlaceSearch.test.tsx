@@ -172,7 +172,20 @@ it.each([
 it("search box failure shows one message instead of the raw error", async () => {
   network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
   await act(async () => { await api.confirm(confirmation()); });
-  expect(usePlaceSearchStore.getState()).toMatchObject({ status: "error", error: "검색에 실패했어요." });
+  expect(usePlaceSearchStore.getState()).toMatchObject({ status: "error", error: "검색에 실패했어요.", searchMode: "text" });
+});
+// 「현 위치에서 검색」 실패는 검색창 문구 없이 그 버튼이 「다시 시도」로 알리고, 보이던 결과는 그대로 둔다
+it("search here failure keeps the shown results and leaves the message to the button", async () => {
+  await act(async () => { await api.confirm(confirmation()); });
+  useMapCenterStore.setState({
+    mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234,
+    bounds: { south: 0, west: 1, north: 2, east: 3 },
+  });
+  network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
+  await vi.waitFor(() => expect(usePlaceSearchStore.getState().status).toBe("error"));
+  expect(usePlaceSearchStore.getState()).toMatchObject({ searchMode: "map_recenter", error: null });
+  expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(["other"]);
 });
 it("editing input suppresses a late response and analytics", async () => {
   let finish!: (v: unknown) => void;

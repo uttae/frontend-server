@@ -34,7 +34,10 @@ import {
   useMapPinsFocusStore,
 } from "@/stores/map-pins-focus-store";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
-import { usePlaceSearchStore } from "@/stores/place-search-store";
+import {
+  usePlaceSearchStore,
+  type PlaceSearchMode,
+} from "@/stores/place-search-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -106,7 +109,7 @@ export function useMapPlaceSearch(mobile: boolean) {
   function applySearchResult(
     result: NonNullable<Awaited<ReturnType<typeof confirmPlaceSearch<PlaceSearchResult>>>>,
     confirmation: SearchConfirmation,
-    mode: "text" | "map_recenter",
+    mode: PlaceSearchMode,
   ) {
     const searchRankBuckets: Record<string, SearchRankBucket> =
       confirmation.kind === "whole"
@@ -158,7 +161,7 @@ export function useMapPlaceSearch(mobile: boolean) {
 
   async function confirm(
     confirmation: SearchConfirmation,
-    mode: "text" | "map_recenter" = "text",
+    mode: PlaceSearchMode = "text",
   ): Promise<boolean> {
     const query = confirmation.query.trim();
     if (!query) return false;
@@ -178,6 +181,7 @@ export function useMapPlaceSearch(mobile: boolean) {
     usePlaceSearchStore.setState({
       query,
       confirmationKind: confirmation.kind,
+      searchMode: mode,
       status: "pending",
       error: null,
       expanded: false,
@@ -232,7 +236,7 @@ export function useMapPlaceSearch(mobile: boolean) {
       usePlaceSearchStore.setState({
         status: "error",
         termination: failedTermination(confirmation),
-        error: searchFailureMessage(confirmation, error),
+        error: searchFailureMessage(confirmation, mode, error),
       });
       return false;
     }
@@ -284,8 +288,14 @@ function toAnchor(
   };
 }
 
+// 「현 위치에서 검색」 실패는 그 버튼이 「다시 시도」로 알리므로 검색창 문구가 없다.
 // 모두검색 실패의 원문(네트워크 오류면 "Failed to fetch")은 사용자에게 뜻이 없어 한 문구로 보여 준다
-function searchFailureMessage(confirmation: SearchConfirmation, error: unknown) {
+function searchFailureMessage(
+  confirmation: SearchConfirmation,
+  mode: PlaceSearchMode,
+  error: unknown,
+) {
+  if (mode === "map_recenter") return null;
   if (confirmation.kind === "whole") return "검색에 실패했어요.";
   return error instanceof Error ? error.message : "검색에 실패했어요. 다시 시도해주세요.";
 }

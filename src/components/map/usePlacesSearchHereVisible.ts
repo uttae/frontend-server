@@ -2,6 +2,7 @@
 
 import { shouldSuggestPlacesSearchRecenter } from "@/lib/maps";
 import { useMapCenterStore } from "@/stores/map-center-store";
+import { usePlaceSearchStore } from "@/stores/place-search-store";
 import type { DiscoverMapSnapshot } from "@/stores/search-recenter-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 import type { MapCenterCoords } from "@/stores/map-center-store";
@@ -10,11 +11,24 @@ type UsePlacesSearchHereVisibleParams = {
   discoverCategoryId: string | null;
 };
 
+/** 「현 위치에서 검색」 결과를 버튼 자리에서 알린다: 실패는 「다시 시도」, 결과 0개는 「검색 결과가 없어요」 */
+export type SearchRecenterNotice = "failed" | "empty";
+
 export type PlacesSearchHereVisibility = {
   visible: boolean;
   suggestSearchRecenter: boolean;
+  searchRecenterNotice: SearchRecenterNotice | null;
   suggestDiscoverRecenter: boolean;
 };
+
+function searchRecenterNoticeOf(
+  status: "idle" | "pending" | "done" | "error",
+  hasResults: boolean,
+): SearchRecenterNotice | null {
+  if (status === "error") return "failed";
+  if (status === "done" && !hasResults) return "empty";
+  return null;
+}
 
 function chipsDiscoverRecenterEligible(
   discoverCategoryId: string | null,
@@ -50,16 +64,20 @@ export function usePlacesSearchHereVisible({
   const zoom = useMapCenterStore((s) => s.zoom);
   const searchSnapshot = useSearchRecenterStore((s) => s.searchSnapshot);
   const discoverSnapshot = useSearchRecenterStore((s) => s.discoverSnapshot);
+  const searchMode = usePlaceSearchStore((s) => s.searchMode);
+  const searchStatus = usePlaceSearchStore((s) => s.status);
+  const hasResults = usePlaceSearchStore((s) => s.items.length > 0);
 
   if (!mapCenter) {
     return {
       visible: false,
       suggestSearchRecenter: false,
+      searchRecenterNotice: null,
       suggestDiscoverRecenter: false,
     };
   }
 
-  const suggestSearchRecenter =
+  const movedFromSearch =
     searchSnapshot != null
     && shouldSuggestPlacesSearchRecenter({
       mapCenter,
@@ -68,6 +86,13 @@ export function usePlacesSearchHereVisible({
       zoom,
       snapshotZoom: searchSnapshot.zoom,
     });
+  // 실패·결과 없음은 검색한 그 화면에서만 알린다. 지도를 옮기면 새 화면 검색이라 「현 위치에서 검색」으로 돌아간다
+  const searchRecenterNotice =
+    movedFromSearch || searchMode !== "map_recenter"
+      ? null
+      : searchRecenterNoticeOf(searchStatus, hasResults);
+  const suggestSearchRecenter =
+    movedFromSearch || searchRecenterNotice === "failed";
 
   const suggestDiscoverRecenter = chipsDiscoverRecenterEligible(
     discoverCategoryId,
@@ -79,6 +104,7 @@ export function usePlacesSearchHereVisible({
   return {
     visible: suggestSearchRecenter || suggestDiscoverRecenter,
     suggestSearchRecenter,
+    searchRecenterNotice,
     suggestDiscoverRecenter,
   };
 }

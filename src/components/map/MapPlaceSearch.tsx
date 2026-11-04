@@ -27,6 +27,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   const items = usePlaceSearchStore((s) => s.items);
   const inputRef = useRef<HTMLInputElement>(null);
   const confirmationKind = usePlaceSearchStore((s) => s.confirmationKind);
+  const searchMode = usePlaceSearchStore((s) => s.searchMode);
   const query = usePlaceSearchStore((s) => s.query);
   const focus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace } = useSelectedPlace();
@@ -45,8 +46,9 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
     }
     void confirm({ query, kind: "whole", session: null, generation: 0 });
   };
-  const hasFeedback = status === "pending" || status === "error" ||
-    (status === "done" && !items.length);
+  // 「현 위치에서 검색」의 실패·결과 없음은 검색창이 아니라 그 버튼 자리에서 알린다(MapSearchHereButton)
+  const hasFeedback = status === "pending" || (searchMode === "text" &&
+    (status === "error" || (status === "done" && !items.length)));
   const feedback = hasFeedback ? (
     <SearchFeedback status={status} error={error} hasItems={items.length > 0} retry={retry} />
   ) : null;

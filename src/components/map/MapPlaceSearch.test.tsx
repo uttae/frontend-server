@@ -104,3 +104,21 @@ it("specific Details failure retry returns to that input with a fresh session an
   expect(boundary.page).not.toHaveBeenCalled();
   expect(usePlaceSearchStore.getState().selectedId).toBe("chosen");
 });
+// 버튼으로 한 「현 위치에서 검색」의 결과 없음은 검색창 아래가 아니라 버튼 자리에서 알린다
+it("search here no results stay out of the search box", async () => {
+  useSessionStore.setState({ currentRoomId: "room" });
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
+  usePlaceSearchStore.getState().clear();
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  cleanup = async () => {
+    await act(async () => root.unmount());
+    host.remove();
+  };
+  await act(async () => root.render(<MapPlaceSearch mobile={false} />));
+  await act(async () => usePlaceSearchStore.setState({ searchMode: "map_recenter", status: "done", items: [] }));
+  expect(host.textContent).not.toContain("검색 결과가 없어요");
+  await act(async () => usePlaceSearchStore.setState({ searchMode: "text" }));
+  expect(host.textContent).toContain("검색 결과가 없어요");
+});
