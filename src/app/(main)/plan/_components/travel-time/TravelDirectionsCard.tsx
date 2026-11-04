@@ -1,7 +1,6 @@
 "use client";
 
 import { ChevronDown, ExternalLink, EyeOff } from "lucide-react";
-import { toast } from "sonner";
 
 import { Spinner } from "@/components/ui/spinner";
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
@@ -38,9 +37,7 @@ export type TravelDirectionsCardProps = {
     Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>
   >;
   modeRouteRowLoading?: Partial<Record<ScheduleTravelModeValue, boolean>>;
-  effectiveMode: ScheduleTravelModeValue;
-  showUnknownOption: boolean;
-  modeRaw: string;
+  effectiveMode: ScheduleTravelModeValue | null;
   googleMapsDirectionsUrl?: string;
   /** PC 일정 — 구간마다 반복되는 길찾기 링크가 튀지 않게 회색 12px로 낮춘다 */
   subtleDirectionsLink?: boolean;
@@ -60,8 +57,6 @@ export function TravelDirectionsCard({
   modeRouteSummaries = {},
   modeRouteRowLoading = {},
   effectiveMode,
-  showUnknownOption,
-  modeRaw,
   googleMapsDirectionsUrl,
   subtleDirectionsLink = false,
   readOnly = false,
@@ -72,7 +67,7 @@ export function TravelDirectionsCard({
   const headerTravelMode =
     canonicalScheduleTravelMode(summaryMode) ?? summaryMode;
 
-  const summaryLine = (
+  const summaryLine = !canonicalScheduleTravelMode(summaryMode) ? "이동수단 선택" : (
     <TravelRouteSummaryLine
       route={route}
       isPending={routeQuery.isPending}
@@ -198,32 +193,7 @@ export function TravelDirectionsCard({
                 </li>
               );
             })}
-            {showUnknownOption && !readOnly ? (
-              <li className="col-span-3">
-                <button
-                  type="button"
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular hover:bg-gray-border/30 disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => {
-                    const c = canonicalScheduleTravelMode(modeRaw);
-                    if (!c) {
-                      toast.error(
-                        "표준 이동 수단으로 바꿀 수 없어요. 목록에서 선택해 주세요.",
-                      );
-                      return;
-                    }
-                    void onSelectTravelMode?.(c);
-                  }}
-                >
-                  <TravelModeGlyph mode={modeRaw} />
-                  <span className="font-medium text-gray-900">
-                    {scheduleTravelModeLabel(modeRaw)}
-                  </span>
-                  <span className="ml-auto text-body-xs-regular text-dark-gray">
-                    표준 값으로 변경
-                  </span>
-                </button>
-              </li>
-            ) : null}
+
           </ul>
 
           <div className="my-2 border-t border-gray-border" />
