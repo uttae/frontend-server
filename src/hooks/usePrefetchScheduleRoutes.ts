@@ -7,7 +7,7 @@ import type { PlanPlace } from "@/lib/plan/types";
 
 /**
  * 페이지 진입·새로고침 시 일차별 구간 경로를 저장된 공유 이동수단 기준 `routes/batch`로 1회 시딩합니다.
- * 리오더·추가·삭제 등으로 장소 목록이 바뀌면 batch는 재호출하지 않고, 새로 생긴 구간(받은 적 없는 출발·도착 장소)만 개별 GET합니다.
+ * 리오더·추가·삭제 등으로 장소 목록이 바뀌면 batch는 재호출하지 않고, 새로 생긴 구간(받은 적 없는 출발·도착 항목)만 개별 GET합니다.
  */
 export function usePrefetchScheduleRoutes(
   roomId: string,

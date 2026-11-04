@@ -53,7 +53,7 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
  * Plan 화면 등이 쓰는 캐시만, 스키마의 `type`별로 갱신합니다.
  * — `ROOM_SCHEDULES_RESYNCED`: `room-schedules` 전체 재조회 + 방 상세 동기화 (원격 탭; 액터는 mutation `onSuccess`)
  * — `schedule-items`: 그 일차 장소 목록을 무효화해 다시 받는다(보는 화면이 없으면 그 화면에 들어갈 때)
- * — `schedule-item-route`: 무효화하지 않는다 — key에 도착 장소·이동수단이 있어, 순서·수단이 바뀐 구간은
+ * — `schedule-item-route`: 무효화하지 않는다 — key에 도착 항목·이동수단이 있어, 순서·수단이 바뀐 구간은
  *   새 목록을 그릴 때 새 key로 받고 되돌리면 받아 둔 값을 쓴다
  * — `SCHEDULE_ITEM_UPDATED`: 일정 목록만 동기화할 때 사용(본인 이벤트 포함)
  */

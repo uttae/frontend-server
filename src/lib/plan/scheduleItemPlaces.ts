@@ -229,7 +229,7 @@ export async function mergeOrRefetchSchedulePlanPlacesFromItems(
 }
 
 /**
- * 다른 일차로 옮긴 뒤 두 일차 장소 목록을 다시 받습니다. 경로는 도착 장소까지 key에 있어
+ * 다른 일차로 옮긴 뒤 두 일차 장소 목록을 다시 받습니다. 경로는 도착 항목까지 key에 있어
  * 순서가 바뀐 구간은 새 key로 받으므로 따로 무효화하지 않습니다.
  */
 export async function syncAfterCrossScheduleItemMove(
