@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { SearchHereFloatingButton } from "@/components/map/SearchHereFloatingButton";
+import { CloseIcon } from "@/assets/icons";
+import {
+  SearchHereFloatingButton,
+  searchHerePillClass,
+} from "@/components/map/SearchHereFloatingButton";
 import { usePlacesSearchHereVisible } from "@/components/map/usePlacesSearchHereVisible";
-import { Chip, ChipRemove } from "@/components/ui/chip";
+import { cn } from "@/lib/utils";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 
@@ -37,12 +41,17 @@ export function MapSearchHereButton({
   return (
     <div className="pointer-events-none absolute bottom-6 left-1/2 z-[17] -translate-x-1/2">
       {showEmptyNotice ? (
-        // 그림자는 지도 위 검색 열기 버튼과 같은 값(그림자 토큰 없음)
-        <div role="status" className="pointer-events-auto rounded-full shadow-[0_2px_10px_#0000001a]">
-          <Chip variant="outline" size="md">
-            검색 결과가 없어요
-            <ChipRemove aria-label="안내 닫기" onClick={() => setClosedGeneration(generation)} />
-          </Chip>
+        <div role="status" className={cn(searchHerePillClass, "pe-1")}>
+          검색 결과가 없어요
+          {/* 아이콘은 16px, 누르는 영역은 32×44px(세로는 음수 margin으로 알약 높이 유지) */}
+          <button
+            type="button"
+            aria-label="안내 닫기"
+            onClick={() => setClosedGeneration(generation)}
+            className="-my-3 grid h-11 w-8 shrink-0 cursor-pointer place-items-center text-primary focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <CloseIcon size={16} />
+          </button>
         </div>
       ) : (
         <SearchHereFloatingButton
