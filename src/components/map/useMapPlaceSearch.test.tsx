@@ -15,6 +15,7 @@ import { useSessionStore } from "@/stores/session-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 const network = vi.hoisted(() => ({
   page: vi.fn(),
+  area: vi.fn(),
   detail: vi.fn(),
   select: vi.fn(),
   track: vi.fn(),
@@ -23,14 +24,9 @@ const network = vi.hoisted(() => ({
 }));
 vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: network.page,
+  fetchPlacesAreaPage: network.area,
 }));
 vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
-vi.mock("@/lib/map-viewport-commit", () => ({
-  boundsInstanceFromDiscoverSnapshot: (b: google.maps.LatLngBoundsLiteral) => ({
-    contains: (p: google.maps.LatLngLiteral) =>
-      p.lat >= b.south && p.lat <= b.north && p.lng >= b.west && p.lng <= b.east,
-  }),
-}));
 vi.mock("@/contexts/SelectedPlaceContext", () => ({
   useSelectedPlace: () => ({ setSelectedPlace: network.select }),
 }));
@@ -77,6 +73,7 @@ beforeEach(async () => {
     if (String(url).endsWith("/places/resolve")) return Response.json({ detail: rawDetail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" });
     throw new Error(`Unexpected HTTP ${String(url)}`);
   });
+  network.area.mockReset().mockResolvedValue({ items: [], nextPageToken: null });
   network.page.mockReset().mockResolvedValue({
     items: [
       {
@@ -148,26 +145,21 @@ it("mobile specific reuses chosen resolved detail without Text Search", async ()
     expect.objectContaining({ analyticsSource: "search", itinerarySource: "search" }),
   );
 });
-// 센소지를 찾은 뒤 지도를 5km 넘게 옮겨 재검색하면 Google이 센소지를 다시 돌려준다
+// 센소지를 찾은 뒤 지도를 옮겨 재검색할 때 위치 우선(bias)으로 찾으면 Google이 센소지를 다시 돌려줬다
 it.each([
-  ["keeps only results inside the visible map", ["inside"]],
-  ["shows no results when every result is outside the visible map", []],
-] as const)("search here %s", async (_, expected) => {
+  ["shows what Google finds inside the visible map", ["inside"]],
+  ["shows no results when Google finds nothing inside the visible map", []],
+] as const)("search here asks Google for the visible map only and %s", async (_, expected) => {
   await act(async () => { await api.confirm(confirmation()); });
-  useMapCenterStore.setState({
-    mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234,
-    bounds: { south: 0, west: 1, north: 2, east: 3 },
-  });
-  const outside = { googlePlaceId: "outside", name: "이동 전 장소", location: { lat: 38, lng: 128 } };
+  const bounds = { south: 0, west: 1, north: 2, east: 3 };
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234, bounds });
   const inside = { googlePlaceId: "inside", name: "화면 안", location: { lat: 1.5, lng: 2.5 } };
-  network.page.mockResolvedValueOnce({ items: expected.length ? [outside, inside] : [outside], nextPageToken: null });
+  network.area.mockResolvedValueOnce({ items: expected.length ? [inside] : [], nextPageToken: null });
   await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
-  await vi.waitFor(() =>
-    expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(expected),
-  );
-  expect(network.page).toHaveBeenCalledTimes(2);
-  expect(network.page).toHaveBeenLastCalledWith(expect.objectContaining({ query: "원래 검색어", latitude: 1, longitude: 2, radius: 1234 }));
-  expect(usePlaceSearchStore.getState().status).toBe("done");
+  await vi.waitFor(() => expect(usePlaceSearchStore.getState().status).toBe("done"));
+  expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(expected);
+  expect(network.area).toHaveBeenCalledExactlyOnceWith({ query: "원래 검색어", area: bounds, pageSize: expect.any(Number) });
+  expect(network.page).toHaveBeenCalledTimes(1);
 });
 it("search box failure shows one message instead of the raw error", async () => {
   network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
@@ -181,7 +173,7 @@ it("search here failure keeps the shown results and leaves the message to the bu
     mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234,
     bounds: { south: 0, west: 1, north: 2, east: 3 },
   });
-  network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  network.area.mockRejectedValueOnce(new TypeError("Failed to fetch"));
   await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
   await vi.waitFor(() => expect(usePlaceSearchStore.getState().status).toBe("error"));
   expect(usePlaceSearchStore.getState()).toMatchObject({ searchMode: "map_recenter", error: null });

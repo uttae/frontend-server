@@ -4,6 +4,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
+  fetchPlacesAreaPage,
   fetchPlacesPageWithPhotos,
   type PlaceSearchResult,
 } from "@/hooks/usePlacesSearch";
@@ -18,7 +19,6 @@ import {
   type SearchRankBucket,
 } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import { boundsInstanceFromDiscoverSnapshot } from "@/lib/map-viewport-commit";
 import { getQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
@@ -174,9 +174,8 @@ export function useMapPlaceSearch(mobile: boolean) {
       useSessionStore.getState().currentRoomId === roomId &&
       searchPinWriteStillValid(epoch);
     const { mapCenter, radiusMeters, bounds } = useMapCenterStore.getState();
-    // 「현 위치에서 검색」은 지금 화면 안 결과만 보여 준다. Text Search의 locationBias는 영역 밖 결과도
-    // 돌려주므로(이동 전 장소로 지도가 되돌아감) 화면 경계로 거르고, 남는 게 없으면 결과 없음이다.
-    // 반경도 화면을 덮는 원으로 맞춰야 확대한 화면에서 결과가 화면 밖으로 밀려나지 않는다.
+    // 「현 위치에서 검색」은 Google에 지금 화면 사각형 안만 찾게 한다(locationRestriction).
+    // 위치 우선(locationBias)으로 찾으면 화면 밖 결과가 섞여 이동 전 장소로 지도가 되돌아간다.
     const searchArea = mode === "map_recenter" ? bounds : null;
     usePlaceSearchStore.setState({
       query,
@@ -197,6 +196,7 @@ export function useMapPlaceSearch(mobile: boolean) {
       const result = await confirmPlaceSearch({
         ...confirmation,
         mapCenter,
+        // 화면 검색의 반경은 버튼이 다시 뜨는 이동 거리 기준(searchSnapshot)으로만 쓴다
         radius: searchArea
           ? clampPlacesSearchRadiusMeters(radiusMeters ?? SEARCH_BIAS_RADIUS_METERS)
           : SEARCH_BIAS_RADIUS_METERS,
@@ -218,14 +218,18 @@ export function useMapPlaceSearch(mobile: boolean) {
             zoom: useMapCenterStore.getState().zoom,
             radius: params.radius,
           });
-          const page = await fetchPlacesPageWithPhotos({
-            ...params,
-            pageSize: PLACES_SEARCH_PAGE_SIZE,
-            pageToken: undefined,
-          });
-          if (!searchArea) return page.items;
-          const area = boundsInstanceFromDiscoverSnapshot(searchArea);
-          return page.items.filter((item) => area.contains(item.location));
+          const page = searchArea
+            ? await fetchPlacesAreaPage({
+                query: params.query,
+                area: searchArea,
+                pageSize: PLACES_SEARCH_PAGE_SIZE,
+              })
+            : await fetchPlacesPageWithPhotos({
+                ...params,
+                pageSize: PLACES_SEARCH_PAGE_SIZE,
+                pageToken: undefined,
+              });
+          return page.items;
         },
       });
       if (!result || !isCurrent()) return false;
