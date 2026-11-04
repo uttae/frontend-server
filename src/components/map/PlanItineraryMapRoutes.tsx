@@ -45,7 +45,6 @@ import { PlanItineraryStopMapPin } from "./PlanItineraryStopMapPin";
  * 일차만 지도에 경로(polyline)와 정류장 마커를 그립니다.
  * `routeDay`가 있으면(모바일 경로 보기) 토글과 관계없이 그 일차만 그립니다.
  * 폴리라인 travelMode는 서버에 저장된 구간별 공유 이동수단을 따릅니다.
- * STOMP 에폭은 {@link usePlanMapDirectionsEpochStore} 참고.
  */
 /** 모바일 경로 보기 — 고른 일차 하나만 그린다 */
 export type PlanItineraryRouteDay = {
@@ -167,14 +166,12 @@ export function PlanItineraryMapRoutes({
         rid,
         seg.scheduleId,
         seg.segmentSourceItemId,
+        seg.destinationItemId,
         seg.originPlaceId,
         seg.destPlaceId,
         seg.travelModeCanon,
       ),
-      /**
-       * 구간 경로는 일정 리스트와 같은 쿼리를 통해 가져옵니다. 그 쿼리에 맡겨야
-       * in-flight 합치기와 재정렬 중 뒤늦게 온 응답 폐기를 React Query가 처리합니다.
-       */
+      /** 구간 경로는 일정 리스트와 같은 쿼리로 가져와, 같은 구간을 받는 중이면 그 요청에 합류한다 */
       queryFn: async () => {
         const route = await loadScheduleItemRouteForMap(
           queryClient,
@@ -182,7 +179,7 @@ export function PlanItineraryMapRoutes({
             rid,
             seg.scheduleId,
             seg.segmentSourceItemId,
-            seg.destPlaceId,
+            seg.destinationItemId,
             seg.travelModeCanon,
             fingerprintByScheduleId.get(seg.scheduleId) ?? "",
             { segmentReady: true },
@@ -208,8 +205,8 @@ export function PlanItineraryMapRoutes({
     const query = pathsPerSegmentQueries[segIdx];
     if (!query || query.isPending || query.isFetching) return;
     const pts = query.data?.path ?? [];
-    // 도착 장소가 바뀌면 다른 선이라 새로 그린다
-    const polylineKey = `${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.destPlaceId}-${seg.travelModeCanon}`;
+    // 도착 항목이 바뀌면 다른 선이라 새로 그린다
+    const polylineKey = `${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.destinationItemId}-${seg.travelModeCanon}`;
 
     const routeColor =
       routeColorByScheduleId.get(seg.scheduleId) ?? fallbackRouteStroke;

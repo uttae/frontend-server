@@ -18,7 +18,7 @@ let getScheduleItemRouteMock: ReturnType<typeof vi.fn>;
 const ROOM_ID = "room-1";
 const SCHEDULE_ID = 10;
 const ITEM_ID = 1;
-const DESTINATION = "place-b";
+const DESTINATION = 2;
 
 const ROUTE = {
   distanceMeters: 1200,
@@ -54,12 +54,12 @@ beforeEach(() => {
 const ROUTE_KEY = (destination = DESTINATION) =>
   scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, ITEM_ID, destination, "DRIVING");
 
-function resolve(destinationPlaceId = DESTINATION) {
+function resolve(destinationItemId = DESTINATION) {
   return resolveScheduleSegmentRoute({
     roomId: ROOM_ID,
     scheduleId: SCHEDULE_ID,
     segmentSourceItemId: ITEM_ID,
-    destinationPlaceId,
+    destinationItemId,
     travelMode: "DRIVING",
   });
 }
@@ -72,11 +72,17 @@ describe("resolveScheduleSegmentRoute", () => {
     expect(getScheduleItemRouteMock).not.toHaveBeenCalled();
   });
 
-  it("캐시 miss면 단건 GET 결과를 반환한다", async () => {
+  it("캐시 miss면 도착 항목을 지정한 단건 GET 결과를 반환한다", async () => {
     getScheduleItemRouteMock.mockResolvedValue(ROUTE);
 
     await expect(resolve()).resolves.toEqual(ROUTE);
-    expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
+    expect(getScheduleItemRouteMock).toHaveBeenCalledExactlyOnceWith(
+      ROOM_ID,
+      SCHEDULE_ID,
+      ITEM_ID,
+      DESTINATION,
+      "DRIVING",
+    );
   });
 
   it("경로 없음(204)은 null을 반환한다", async () => {
@@ -85,13 +91,13 @@ describe("resolveScheduleSegmentRoute", () => {
     await expect(resolve()).resolves.toBeNull();
   });
 
-  it("같은 출발 항목이라도 도착 장소가 다르면 그 도착 장소의 경로를 받고, 순서를 되돌리면 받아 둔 경로를 쓴다", async () => {
-    queryClient.setQueryData(ROUTE_KEY("place-b"), ROUTE);
+  it("같은 출발 항목이라도 도착 항목이 다르면 그 도착 항목의 경로를 받고, 순서를 되돌리면 받아 둔 경로를 쓴다", async () => {
+    queryClient.setQueryData(ROUTE_KEY(2), ROUTE);
     const toC = { ...ROUTE, distanceMeters: 999, encodedPolyline: "zzz" };
     getScheduleItemRouteMock.mockResolvedValue(toC);
 
-    await expect(resolve("place-c")).resolves.toEqual(toC);
-    await expect(resolve("place-b")).resolves.toEqual(ROUTE);
+    await expect(resolve(3)).resolves.toEqual(toC);
+    await expect(resolve(2)).resolves.toEqual(ROUTE);
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
   });
 

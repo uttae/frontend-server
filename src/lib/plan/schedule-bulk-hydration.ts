@@ -275,17 +275,21 @@ function scheduleRoutesBatchKey(
   return `${roomId.trim()}:${scheduleId}:${placesFingerprint}`;
 }
 
-/** 구간 출발 항목 → 다음 장소의 `googlePlaceId` (마지막 장소와 장소 ID가 빈 구간은 뺀다) */
-function segmentDestinationsByItemId(places: readonly PlanPlace[]): Map<number, string> {
-  const out = new Map<number, string>();
+/** 구간 출발 항목 → 다음 장소의 `itemId` (마지막 장소와 항목 ID가 없는 구간은 뺀다) */
+function segmentDestinationsByItemId(places: readonly PlanPlace[]): Map<number, number> {
+  const out = new Map<number, number>();
   for (let i = 0; i < places.length - 1; i += 1) {
     const itemId = places[i]?.itemId;
-    const destination = places[i + 1]?.googlePlaceId?.trim() ?? "";
-    if (typeof itemId === "number" && Number.isFinite(itemId) && destination.length) {
+    const destination = places[i + 1]?.itemId;
+    if (isFiniteItemId(itemId) && isFiniteItemId(destination)) {
       out.set(itemId, destination);
     }
   }
   return out;
+}
+
+function isFiniteItemId(id: number | undefined): id is number {
+  return typeof id === "number" && Number.isFinite(id);
 }
 
 /**

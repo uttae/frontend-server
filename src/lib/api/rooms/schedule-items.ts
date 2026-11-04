@@ -118,11 +118,13 @@ function readScheduleItemRouteBatchItems(
 export async function getScheduleItemRoute(
   roomId: string,
   scheduleId: number,
-  /** 구간 시작(현재) 일정 항목 ID — 명세상 ‘현재 항목에서 다음 항목으로’ */
+  /** 구간 출발 일정 항목 ID */
   itemId: number,
+  /** 구간 도착 일정 항목 ID — 보내면 서버가 그 순간의 순서와 관계없이 이 항목까지 계산한다 */
+  destinationItemId: number,
   travelMode?: string | null,
 ): Promise<ScheduleItemRouteResponse | null> {
-  const params = new URLSearchParams();
+  const params = new URLSearchParams({ destinationItemId: String(destinationItemId) });
   const tm =
     typeof travelMode === "string" && travelMode.trim().length > 0
       ? travelMode.trim()

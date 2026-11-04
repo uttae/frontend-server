@@ -38,8 +38,8 @@ function itemEvent(
 
 describe("dispatchRoomScheduleEvent", () => {
   let queryClient: QueryClient;
-  // 경로는 도착 장소까지 key에 있어 일정이 바뀌어도 무효화하지 않는다 — 순서가 바뀐 구간은 새 key로 받는다
-  const routeKey = scheduleItemRouteQueryKey("room-1", 10, 20, "place-b", "DRIVING");
+  // 경로는 도착 항목까지 key에 있어 일정이 바뀌어도 무효화하지 않는다 — 순서가 바뀐 구간은 새 key로 받는다
+  const routeKey = scheduleItemRouteQueryKey("room-1", 10, 20, 21, "DRIVING");
 
   beforeEach(() => {
     queryClient = new QueryClient();

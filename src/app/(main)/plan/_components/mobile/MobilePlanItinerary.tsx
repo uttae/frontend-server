@@ -240,6 +240,7 @@ function PlaceTravelSegment({
       roomId={roomId}
       scheduleId={scheduleId}
       segmentSourceItemId={place.itemId}
+      destinationItemId={next.itemId}
       scheduleFingerprint={scheduleFingerprint}
       travelMode={place.travelMode}
       originGooglePlaceId={place.googlePlaceId}

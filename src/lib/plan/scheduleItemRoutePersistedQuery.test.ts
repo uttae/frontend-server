@@ -42,7 +42,7 @@ describe("persistedScheduleItemRouteQueryOptions", () => {
       "room-1",
       10,
       1,
-      "place-b",
+      2,
       "DRIVING",
       "",
       { segmentReady: true },
@@ -72,20 +72,20 @@ describe("persistedScheduleItemRouteQueryOptions", () => {
 });
 
 describe("persistedScheduleItemRouteQueryOptions key", () => {
-  it("도착 장소가 key에 들어가 같은 출발 항목이라도 도착 장소마다 다른 캐시를 쓴다", () => {
-    const toB = persistedScheduleItemRouteQueryOptions("room-1", 10, 1, "place-b", "DRIVING", "", {
+  it("도착 항목이 key에 들어가 같은 출발 항목이라도 도착 항목마다 다른 캐시를 쓴다", () => {
+    const toB = persistedScheduleItemRouteQueryOptions("room-1", 10, 1, 2, "DRIVING", "", {
       segmentReady: true,
     });
-    const toC = persistedScheduleItemRouteQueryOptions("room-1", 10, 1, "place-c", "DRIVING", "", {
+    const toC = persistedScheduleItemRouteQueryOptions("room-1", 10, 1, 3, "DRIVING", "", {
       segmentReady: true,
     });
 
-    expect(toB.queryKey).toEqual(["schedule-item-route", "room-1", 10, 1, "place-b", "DRIVING"]);
+    expect(toB.queryKey).toEqual(["schedule-item-route", "room-1", 10, 1, 2, "DRIVING"]);
     expect(toC.queryKey).not.toEqual(toB.queryKey);
   });
 
-  it("도착 장소가 없으면 조회하지 않는다", () => {
-    const options = persistedScheduleItemRouteQueryOptions("room-1", 10, 1, " ", "DRIVING", "", {
+  it("도착 항목이 없으면 조회하지 않는다", () => {
+    const options = persistedScheduleItemRouteQueryOptions("room-1", 10, 1, null, "DRIVING", "", {
       segmentReady: true,
     });
 
@@ -96,7 +96,7 @@ describe("persistedScheduleItemRouteQueryOptions key", () => {
 describe("loadScheduleItemRouteForMap", () => {
   const route = { travelMode: "TRANSIT", distanceMeters: 1700, durationSeconds: 1140 };
   const routeOptions = () =>
-    persistedScheduleItemRouteQueryOptions("room-1", 10, 1, "place-b", "TRANSIT", "", {
+    persistedScheduleItemRouteQueryOptions("room-1", 10, 1, 2, "TRANSIT", "", {
       segmentReady: true,
     });
 
