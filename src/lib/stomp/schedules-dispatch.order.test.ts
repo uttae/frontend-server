@@ -36,26 +36,11 @@ vi.mock("@/lib/plan/schedule-bulk-hydration", async (importOriginal) => ({
       .map((item) => fixtures.place(item.itemId)),
   resolveScheduleItemsFromCacheOrHydrate: vi.fn(),
 }));
-vi.mock("@/lib/plan/scheduleStompRouteScope", () => ({
-  bumpPlanMapRouteSegments: vi.fn(),
-  invalidateScheduleItemRouteForSources: vi.fn(async () => undefined),
-  invalidateScheduleItemRouteForWholeSchedule: vi.fn(async () => undefined),
-  invalidateScheduleItemRoutesAfterDelete: vi.fn(async () => undefined),
-  invalidateScheduleItemRoutesAfterItemCreated: vi.fn(async () => undefined),
-  invalidateScheduleItemRoutesAfterReorder: vi.fn(async () => undefined),
-  readOrderedItemIdsFromScheduleItemsCache: vi.fn(() => null),
-  removeRouteQueriesForDeletedItemSource: vi.fn(),
-}));
 vi.mock("@/lib/rooms", () => ({
   syncRoomDetailFromServer: vi.fn(),
 }));
 vi.mock("@/lib/query-client", () => ({
   getQueryClient: () => null,
-}));
-vi.mock("@/stores/plan-map-directions-epoch-store", () => ({
-  usePlanMapDirectionsEpochStore: {
-    getState: () => ({ bumpForDirections: vi.fn(), bumpSegments: vi.fn() }),
-  },
 }));
 
 import {
