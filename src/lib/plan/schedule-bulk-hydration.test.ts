@@ -16,6 +16,9 @@ vi.mock("@/lib/api/rooms/schedule-items", async (importOriginal) => {
 let hydrateScheduleRoutesBatch: typeof import("@/lib/plan/schedule-bulk-hydration").hydrateScheduleRoutesBatch;
 let fetchAndSeedScheduleRoutesBatch: typeof import("@/lib/plan/schedule-bulk-hydration").fetchAndSeedScheduleRoutesBatch;
 let resolveScheduleSegmentRoute: typeof import("@/lib/plan/scheduleSegmentRoute").resolveScheduleSegmentRoute;
+let persistedScheduleItemRouteQueryOptions: typeof import("@/lib/plan/scheduleItemRoutePersistedQuery").persistedScheduleItemRouteQueryOptions;
+let loadScheduleItemRouteForMap: typeof import("@/lib/plan/scheduleItemRoutePersistedQuery").loadScheduleItemRouteForMap;
+let flattenPlanItinerarySegmentsFromPlaces: typeof import("@/lib/plan/planItineraryMapSegments").flattenPlanItinerarySegmentsFromPlaces;
 let scheduleItemsQueryKey: typeof import("@/lib/query-keys").scheduleItemsQueryKey;
 let scheduleItemRouteQueryKey: typeof import("@/lib/query-keys").scheduleItemRouteQueryKey;
 let registerQueryClient: typeof import("@/lib/query-client").registerQueryClient;
@@ -45,6 +48,12 @@ beforeAll(async () => {
   ));
   ({ resolveScheduleSegmentRoute } = await import(
     "@/lib/plan/scheduleSegmentRoute"
+  ));
+  ({ persistedScheduleItemRouteQueryOptions, loadScheduleItemRouteForMap } = await import(
+    "@/lib/plan/scheduleItemRoutePersistedQuery"
+  ));
+  ({ flattenPlanItinerarySegmentsFromPlaces } = await import(
+    "@/lib/plan/planItineraryMapSegments"
   ));
   ({ scheduleItemsQueryKey, scheduleItemRouteQueryKey } = await import(
     "@/lib/query-keys"
@@ -304,5 +313,66 @@ describe("fetchAndSeedScheduleRoutesBatch", () => {
     await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
 
     expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledOnce();
+  });
+});
+
+describe("진입 batch·일정 목록·지도가 같은 구간 경로 캐시를 쓴다", () => {
+  const places = [place(1, "places/a"), place(2, "places/b"), place(3, "places/c")];
+  const batchRoute = (itemId: number, distanceMeters: number) => ({
+    status: "OK" as const,
+    itemId,
+    travelMode: "DRIVING",
+    distanceMeters,
+    durationSeconds: 60,
+    encodedPolyline: "_p~iF~ps|U_ulLnnqC",
+  });
+
+  it("진입 batch가 받아 둔 경로를 목록 칸과 지도가 다시 요청하지 않고 쓴다", async () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), places);
+    getScheduleItemRoutesBatchMock.mockResolvedValue([batchRoute(1, 100), batchRoute(2, 200)]);
+
+    await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
+
+    // 목록 칸 — PlanItinerary가 넘기는 것처럼 다음 장소의 googlePlaceId로 조회한다
+    const listDistances = await Promise.all(
+      places.slice(0, -1).map((origin, index) =>
+        queryClient
+          .fetchQuery(
+            persistedScheduleItemRouteQueryOptions(
+              ROOM_ID,
+              SCHEDULE_ID,
+              origin.itemId ?? null,
+              places[index + 1]?.googlePlaceId ?? "",
+              "DRIVING",
+              "",
+              { segmentReady: true },
+            ),
+          )
+          .then((route) => route?.distanceMeters),
+      ),
+    );
+    // 지도 — 지도가 쓰는 구간 계산 그대로 조회한다
+    const mapDistances = await Promise.all(
+      flattenPlanItinerarySegmentsFromPlaces([SCHEDULE_ID], [places]).map((segment) =>
+        loadScheduleItemRouteForMap(
+          queryClient,
+          persistedScheduleItemRouteQueryOptions(
+            ROOM_ID,
+            segment.scheduleId,
+            segment.segmentSourceItemId,
+            segment.destPlaceId,
+            segment.travelModeCanon,
+            "",
+            { segmentReady: true },
+          ),
+        ).then((route) => route?.distanceMeters),
+      ),
+    );
+
+    expect(listDistances).toEqual([100, 200]);
+    expect(mapDistances).toEqual([100, 200]);
+    expect(getScheduleItemRoutesBatchMock).toHaveBeenCalledOnce();
+    expect(getScheduleItemRouteMock).not.toHaveBeenCalled();
   });
 });
