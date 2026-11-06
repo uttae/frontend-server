@@ -659,10 +659,12 @@ export function useTransferHost() {
         readSessionUserId(queryClient),
         targetUserId,
       );
-      // 반영한 결과를 서버 값으로 다시 맞춘다 — 캐시는 바로 바뀌어 있으므로 화면은 기다리지 않는다
-      queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
+    },
+    // 방장 판정의 세 출처를 서버 값으로 다시 맞춘다(실패해도) — 성공하면 캐시는 바로 바뀌어 있으므로 화면은 기다리지 않는다
+    onSettled: (_data, _error, { roomId }) => {
+      void queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });
 }
@@ -682,10 +684,12 @@ export function useKickMember() {
   return useMutation({
     mutationFn: ({ roomId, userId }: { roomId: string; userId: number }) =>
       kickMember(roomId, userId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
-    },
+    // 응답 본문이 없어 목록에서 빠질 때까지 기다린다 — 확인창이 닫힌 뒤 내보낸 멤버가 잠깐 남지 않게
+    onSettled: (_data, _error, { roomId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) }),
+        queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY }),
+      ]),
   });
 }
 
@@ -699,11 +703,13 @@ export function useApproveJoinRequest() {
       roomId: string;
       requestId: number;
     }) => approveJoinRequest(roomId, requestId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
-    },
+    // 응답 본문이 없어 요청 목록에서 빠지고 멤버 목록에 들어올 때까지 기다린다(같은 행을 다시 누르지 않게)
+    onSettled: (_data, _error, { roomId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) }),
+        queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) }),
+        queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY }),
+      ]),
   });
 }
 
@@ -717,9 +723,9 @@ export function useRejectJoinRequest() {
       roomId: string;
       requestId: number;
     }) => rejectJoinRequest(roomId, requestId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) });
-    },
+    // 응답 본문이 없어 요청 목록에서 빠질 때까지 기다린다(같은 행을 다시 누르지 않게)
+    onSettled: (_data, _error, { roomId }) =>
+      queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) }),
   });
 }
 
