@@ -6,17 +6,25 @@ import {
 } from "@/lib/query-keys";
 import type { RoomBookmarkChangedEvent } from "@/types/roomBookmarkStomp";
 
-async function invalidateAllRoomBookmarkQueries(
+/**
+ * 폴더 목록(장소 개수 포함)과 방 전체 북마크를 함께 무효화합니다. 북마크가 바뀌는 STOMP 이벤트와
+ * 본인 변경(mutation `onSettled`)이 같이 씁니다. 받는 중인 옛 조회는 TanStack이 취소하고 새로 받습니다.
+ */
+export async function invalidateRoomBookmarkLists(
   queryClient: QueryClient,
   roomId: string,
 ): Promise<void> {
-  await queryClient.invalidateQueries({
-    queryKey: roomAllBookmarksQueryKey(roomId),
-    refetchType: "active",
-  });
+  const rid = roomId.trim();
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: bookmarkCategoriesQueryKey(rid) }),
+    queryClient.invalidateQueries({ queryKey: roomAllBookmarksQueryKey(rid) }),
+  ]);
 }
 
-/** STOMP `RoomBookmarkChangedEvent.type`별 최소 범위 무효화·제거만 수행합니다. */
+/**
+ * STOMP `RoomBookmarkChangedEvent.type`별로 바뀐 범위를 함께 무효화합니다. 화면에 있는 목록만 바로 다시 받고
+ * 나머지는 다시 볼 때 받습니다. 카테고리별 북마크는 방 전체 목록에서 거르므로 전체 목록 하나로 충분합니다.
+ */
 export async function invalidateRoomBookmarkQueries(
   queryClient: QueryClient,
   event: RoomBookmarkChangedEvent,
@@ -26,42 +34,17 @@ export async function invalidateRoomBookmarkQueries(
 
   switch (event.type) {
     case "BOOKMARK_CREATED":
-      await invalidateAllRoomBookmarkQueries(queryClient, rid);
-      await queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(rid),
-        refetchType: "active",
-      });
-      break;
-
     case "BOOKMARK_UPDATED":
-      await invalidateAllRoomBookmarkQueries(queryClient, rid);
-      await queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(rid),
-        refetchType: "active",
-      });
-      break;
-
     case "BOOKMARK_DELETED":
-      await invalidateAllRoomBookmarkQueries(queryClient, rid);
-      await queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(rid),
-        refetchType: "active",
-      });
+    // 카테고리를 지우면 서버가 그 안의 북마크도 함께 지운다
+    case "CATEGORY_DELETED":
+      await invalidateRoomBookmarkLists(queryClient, rid);
       break;
 
     case "CATEGORY_CREATED":
     case "CATEGORY_UPDATED":
       await queryClient.invalidateQueries({
         queryKey: bookmarkCategoriesQueryKey(rid),
-        refetchType: "active",
-      });
-      break;
-
-    case "CATEGORY_DELETED":
-      await invalidateAllRoomBookmarkQueries(queryClient, rid);
-      await queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(rid),
-        refetchType: "active",
       });
       break;
 
