@@ -37,7 +37,6 @@ export {
   createRoomBookmarks,
   deleteRoomBookmark,
   getAllRoomBookmarks,
-  getRoomBookmarks,
   patchRoomBookmarkCategory,
 } from "./bookmarks";
 

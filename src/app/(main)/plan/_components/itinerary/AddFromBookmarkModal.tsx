@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { FolderRibbonIcon } from "@/app/(main)/bookmark/_components/FolderRibbonIcon";
 import { BookmarkPlacePreviewCard } from "@/app/(main)/bookmark/_components/BookmarkPlacePreviewCard";
 import {
-  useAllRoomBookmarks,
   useBookmarkCategories,
   useCreateScheduleItem,
   useRoomBookmarks,
@@ -67,8 +66,6 @@ export function AddFromBookmarkModal({
     error: categoriesErr,
     refetch: refetchCategories,
   } = useBookmarkCategories(roomId);
-
-  useAllRoomBookmarks(roomId);
 
   useEffect(() => {
     if (!categories?.length) return;

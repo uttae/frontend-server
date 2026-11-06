@@ -5,7 +5,7 @@ import { useQueries } from "@tanstack/react-query";
 
 import { placePreviewQueryOptions } from "@/lib/places/place-queries";
 import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
-import { useAllRoomBookmarks, useRoomBookmarks } from "@/hooks/useRooms";
+import { useRoomBookmarks } from "@/hooks/useRooms";
 import { useSessionStore } from "@/stores/session-store";
 import type { RoomBookmark } from "@/lib/api/rooms";
 import type { BookmarkFolder, BookmarkedPlace } from "@/types/bookmark";
@@ -30,8 +30,6 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
   const roomId = useSessionStore((s) => s.currentRoomId);
   const categoryId = Number.parseInt(folder.id, 10);
   const categoryIdOk = Number.isFinite(categoryId) ? categoryId : null;
-
-  useAllRoomBookmarks(roomId);
 
   const {
     data: bookmarkRowsRaw,

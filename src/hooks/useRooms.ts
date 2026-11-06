@@ -4,6 +4,7 @@ import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
 import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
+  queryOptions,
   useMutation,
   useQuery,
   useQueryClient,
@@ -32,7 +33,7 @@ import {
   getBookmarkCategories,
   getJoinRequests,
   getJoinStatus,
-  getRoomBookmarks,
+  getAllRoomBookmarks,
   getRoomMembers,
   patchRoomBookmarkCategory,
   getRooms,
@@ -66,7 +67,6 @@ import {
   syncPlanPlacesAfterReorderSuccess,
 } from "@/lib/plan/scheduleItemPlaces";
 import { planPlacesNeedPreviewEnrich } from "@/lib/plan/schedule-bulk-hydration";
-import { fetchAndSeedAllRoomBookmarks } from "@/lib/bookmarks/bookmark-bulk-cache";
 import {
   appendBookmarkCategoryToCache,
   appendRoomBookmarksToCache,
@@ -75,7 +75,6 @@ import {
   bookmarkCategoriesQueryKey,
   joinRequestsQueryKey,
   roomAllBookmarksQueryKey,
-  roomBookmarksQueryKey,
   ROOMS_QUERY_KEY,
   roomDetailQueryKey,
   roomMembersQueryKey,
@@ -798,20 +797,27 @@ export function useDeleteBookmarkCategory() {
   });
 }
 
+/**
+ * 방 전체 북마크 조회 옵션. 카테고리별 목록도 이 캐시 하나에서 거른다 — 서버의 카테고리별 응답과 모양이 같고
+ * 카테고리 안 순서(최근 추가 순)도 같아서, 폴더를 바꿀 때 GET·스켈레톤 없이 같은 사본을 쓴다.
+ */
+function roomBookmarksQueryOptions(roomId: string | null) {
+  return queryOptions({
+    queryKey: roomAllBookmarksQueryKey(roomId),
+    queryFn: () => getAllRoomBookmarks(roomId!),
+    // 본인 변경과 STOMP 무효화로만 갱신한다. 화면 밖에서 무효화된 목록은 다시 마운트될 때 받는다
+    staleTime: Infinity,
+  });
+}
+
 export function useAllRoomBookmarks(
   roomId: string | null,
   options?: { enabled?: boolean },
 ) {
-  const queryClient = useQueryClient();
   const queryEnabled = options?.enabled ?? true;
   return useQuery({
-    queryKey: roomAllBookmarksQueryKey(roomId),
-    queryFn: () => fetchAndSeedAllRoomBookmarks(queryClient, roomId!),
+    ...roomBookmarksQueryOptions(roomId),
     enabled: !!roomId && queryEnabled,
-    staleTime: Infinity,
-    // STOMP가 비활성 캐시를 stale로 표시했다면 queryFn이 등록된 뒤 갱신한다.
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
   });
 }
 
@@ -822,13 +828,10 @@ export function useRoomBookmarks(
   const idOk =
     categoryId != null && Number.isFinite(categoryId) && categoryId >= 0;
   return useQuery({
-    queryKey: roomBookmarksQueryKey(roomId, idOk ? categoryId : null),
-    queryFn: () => getRoomBookmarks(roomId!, categoryId!),
+    // 카테고리를 고르기 전에는 전체 목록을 걸러 빈 목록을 내지 않고 '조회 전'으로 둔다(빈 상태 문구가 잠깐 보이지 않게)
+    ...roomBookmarksQueryOptions(idOk ? roomId : null),
     enabled: !!roomId && idOk,
-    staleTime: Infinity,
-    // setQueryData로 시딩된 비활성 캐시는 마운트 시점에만 안전하게 재조회한다.
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    select: (bookmarks) => bookmarks.filter((b) => b.categoryId === categoryId),
   });
 }
 
@@ -950,13 +953,7 @@ export function useMoveRoomBookmark() {
       categoryId: number;
       fromCategoryId: number;
     }) => patchRoomBookmarkCategory(roomId, bookmarkId, { categoryId }),
-    onSuccess: (_, { roomId, categoryId, fromCategoryId }) => {
-      queryClient.invalidateQueries({
-        queryKey: roomBookmarksQueryKey(roomId, fromCategoryId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: roomBookmarksQueryKey(roomId, categoryId),
-      });
+    onSuccess: (_, { roomId }) => {
       queryClient.invalidateQueries({
         queryKey: bookmarkCategoriesQueryKey(roomId),
       });
@@ -975,10 +972,7 @@ export function useDeleteRoomBookmarkItem() {
       bookmarkId: number;
       categoryId: number;
     }) => deleteRoomBookmark(input.roomId, input.bookmarkId),
-    onSuccess: (_, { roomId, categoryId }) => {
-      queryClient.invalidateQueries({
-        queryKey: roomBookmarksQueryKey(roomId, categoryId),
-      });
+    onSuccess: (_, { roomId }) => {
       queryClient.invalidateQueries({
         queryKey: bookmarkCategoriesQueryKey(roomId),
       });

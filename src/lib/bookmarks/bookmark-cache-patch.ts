@@ -4,7 +4,6 @@ import type { BookmarkCategory, RoomBookmark } from "@/lib/api/rooms";
 import {
   bookmarkCategoriesQueryKey,
   roomAllBookmarksQueryKey,
-  roomBookmarksQueryKey,
 } from "@/lib/query-keys";
 
 export function appendBookmarkCategoryToCache(
@@ -30,11 +29,11 @@ export function appendBookmarkCategoryToCache(
 }
 
 function mergeBookmarksById(
-  prev: RoomBookmark[] | undefined,
+  prev: RoomBookmark[],
   incoming: readonly RoomBookmark[],
 ): RoomBookmark[] {
   const byId = new Map<number, RoomBookmark>();
-  for (const row of prev ?? []) {
+  for (const row of prev) {
     byId.set(row.bookmarkId, row);
   }
   for (const row of incoming) {
@@ -43,6 +42,7 @@ function mergeBookmarksById(
   return [...byId.values()];
 }
 
+/** 추가한 북마크를 방 전체 목록에 합친다. 카테고리별 목록은 이 목록에서 거르므로 따로 쓰지 않는다 */
 export function appendRoomBookmarksToCache(
   queryClient: QueryClient,
   roomId: string,
@@ -53,22 +53,7 @@ export function appendRoomBookmarksToCache(
 
   queryClient.setQueryData<RoomBookmark[]>(
     roomAllBookmarksQueryKey(rid),
-    (prev) => mergeBookmarksById(prev, bookmarks),
+    // 목록을 받은 적이 없으면 일부만 든 목록을 만들지 않고 처음 조회에 맡긴다
+    (prev) => prev && mergeBookmarksById(prev, bookmarks),
   );
-
-  const byCategory = new Map<number, RoomBookmark[]>();
-  for (const bookmark of bookmarks) {
-    const categoryId = bookmark.categoryId;
-    if (typeof categoryId !== "number" || !Number.isFinite(categoryId)) continue;
-    const list = byCategory.get(categoryId) ?? [];
-    list.push(bookmark);
-    byCategory.set(categoryId, list);
-  }
-
-  for (const [categoryId, rows] of byCategory) {
-    queryClient.setQueryData<RoomBookmark[]>(
-      roomBookmarksQueryKey(rid, categoryId),
-      (prev) => mergeBookmarksById(prev, rows),
-    );
-  }
 }
