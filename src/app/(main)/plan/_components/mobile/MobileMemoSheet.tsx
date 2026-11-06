@@ -17,13 +17,7 @@ import {
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
-
-const MEMO_MAX_LENGTH = 2000;
-
-// 입력은 maxLength로 막히지만 저장 전에 칸에서 한 번 더 확인한다. 문구는 PC 메모 편집(PlanItemMemoForm)과 같다
-function memoLengthError(memo: string) {
-  return memo.trim().length > MEMO_MAX_LENGTH ? `메모는 ${MEMO_MAX_LENGTH}자 이하여야 해요.` : undefined;
-}
+import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 
 type MobileMemoSheetProps = Readonly<{
   roomId: string;
@@ -67,7 +61,8 @@ export function MobileMemoSheet({
 
   const form = useForm({
     defaultValues: { memo: initial },
-    onSubmit: ({ value }) => writeMemo(saveMemo, value.memo.trim()),
+    // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
+    onSubmit: ({ value }) => writeMemo(saveMemo, scheduleItemMemoSchema.parse(value.memo)),
   });
   const hasMemo = initial.length > 0;
   // TanStack isDirty는 한 번 바뀌면 남아서, 되돌리면 다시 꺼지는 지금 기준(앞뒤 공백 무시 비교)을 그대로 쓴다
@@ -102,9 +97,9 @@ export function MobileMemoSheet({
               void form.handleSubmit();
             }}
           >
-            <form.Field name="memo" validators={{ onSubmit: ({ value }) => memoLengthError(value) }}>
+            <form.Field name="memo" validators={{ onSubmit: scheduleItemMemoSchema }}>
               {(field) => {
-                const error = field.state.meta.errors[0];
+                const error = field.state.meta.errors[0]?.message;
                 return (
                   <Field>
                     <FieldLabel htmlFor={memoId}>메모</FieldLabel>
@@ -112,7 +107,7 @@ export function MobileMemoSheet({
                       id={memoId}
                       ref={textareaRef}
                       value={field.state.value}
-                      maxLength={MEMO_MAX_LENGTH}
+                      maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH}
                       onChange={(event) => field.handleChange(event.target.value)}
                       onBlur={field.handleBlur}
                       disabled={isWriting}
