@@ -258,3 +258,23 @@ it("sends AND filters without changing the returned whole-room and filtered tota
   expect(await getExpenseKrwSummary("r", { expenseGroup: "TRIP_DAY", scheduleId: 10, category: "FOOD", payerUserId: 2 })).toEqual(response);
   expect(fetcher.mock.lastCall![0]).toBe("http://fixture/rooms/r/expenses/summary/krw?expenseGroup=TRIP_DAY&scheduleId=10&category=FOOD&payerUserId=2");
 });
+
+it("passes the query cancel signal to read requests so a superseded read is aborted", async () => {
+  const api = await import("./expenses");
+  const controller = new AbortController();
+  for (const read of [
+    () => api.getExpenses("r", controller.signal),
+    () => api.getExpenseSummary("r", controller.signal),
+    () => api.getExpenseCurrencies("r", controller.signal),
+    () => api.getExpenseBudget("r", controller.signal),
+    () => api.getExpenseKrwSummary("r", { category: "FOOD" }, controller.signal),
+  ]) {
+    fetcher.mockResolvedValueOnce(new Response(JSON.stringify([])));
+    await read();
+    expect(fetcher.mock.lastCall?.[1]).toEqual({ signal: controller.signal });
+  }
+  // signal 없이 부르면 지금처럼 init 없이 보낸다
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify([])));
+  await api.getExpenses("r");
+  expect(fetcher.mock.lastCall?.[1]).toBeUndefined();
+});

@@ -99,7 +99,7 @@ function useExpenses(roomId: string) {
   // The shared presence cache may contain only a partial STOMP member snapshot.
   const memberQuery = useQuery({
     queryKey: expenseKeys.members(roomId),
-    queryFn: () => getRoomMembers(roomId),
+    queryFn: ({ signal }) => getRoomMembers(roomId, signal),
     enabled,
     retry: false,
     staleTime: 0,
@@ -122,22 +122,22 @@ function useExpenses(roomId: string) {
   const list = useQuery({
     ...options,
     queryKey: expenseKeys.list(roomId),
-    queryFn: () => getExpenses(roomId),
+    queryFn: ({ signal }) => getExpenses(roomId, signal),
   });
   const summary = useQuery({
     ...options,
     queryKey: expenseKeys.summary(roomId),
-    queryFn: () => getExpenseSummary(roomId),
+    queryFn: ({ signal }) => getExpenseSummary(roomId, signal),
   });
   const budget = useQuery({
     ...options,
     queryKey: expenseKeys.budget(roomId),
-    queryFn: () => getExpenseBudget(roomId),
+    queryFn: ({ signal }) => getExpenseBudget(roomId, signal),
   });
   const krwSummary = useQuery({
     ...options,
     queryKey: expenseKeys.krwSummary(roomId),
-    queryFn: () => getExpenseKrwSummary(roomId),
+    queryFn: ({ signal }) => getExpenseKrwSummary(roomId, {}, signal),
   });
   const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
   const filteredKrwSummary = useQuery({
@@ -146,7 +146,7 @@ function useExpenses(roomId: string) {
     // onto that stale query when returning to All and trigger a whole-room refetch.
     enabled: enabled && Object.keys(krwFilters).length > 0,
     queryKey: [...expenseKeys.krwSummary(roomId), krwFilters],
-    queryFn: () => getExpenseKrwSummary(roomId, krwFilters),
+    queryFn: ({ signal }) => getExpenseKrwSummary(roomId, krwFilters, signal),
   });
   const budgetMutation = useMutation({
     mutationFn: async (body: ExpenseBudgetInput) => {
@@ -196,7 +196,7 @@ function useExpenses(roomId: string) {
   const currencies = useQuery({
     ...options,
     queryKey: expenseKeys.currencies(roomId),
-    queryFn: () => getExpenseCurrencies(roomId),
+    queryFn: ({ signal }) => getExpenseCurrencies(roomId, signal),
   });
   const mutation = useMutation({
     mutationFn: async (
@@ -320,7 +320,7 @@ function useExpenses(roomId: string) {
         throw new Error("방 접근 권한이 없어요.");
       return client.fetchQuery({
         queryKey: expenseKeys.budget(roomId),
-        queryFn: () => getExpenseBudget(roomId),
+        queryFn: ({ signal }) => getExpenseBudget(roomId, signal),
         staleTime: 0,
         retry: false,
       });
@@ -341,7 +341,7 @@ function useExpenses(roomId: string) {
         throw new Error("방 접근 권한이 없어요.");
       const records = await client.fetchQuery({
         queryKey: expenseKeys.list(roomId),
-        queryFn: () => getExpenses(roomId),
+        queryFn: ({ signal }) => getExpenses(roomId, signal),
         staleTime: 0,
         retry: false,
       });

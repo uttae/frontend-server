@@ -38,10 +38,11 @@ function normalizeMemberListPayload(
 
 export async function getRoomMembers(
   roomId: string,
+  signal?: AbortSignal,
 ): Promise<RoomMemberListResponse> {
   const res = await requestJson<RoomMemberListResponse>(
     apiUrl(`/rooms/${roomId}/members`),
-    undefined,
+    signal ? { signal } : undefined,
     { errorMessage: "멤버 목록 조회 실패" },
   );
   return normalizeMemberListPayload(res);

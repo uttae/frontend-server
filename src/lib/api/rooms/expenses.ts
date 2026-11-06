@@ -96,11 +96,15 @@ async function request<T>(
   }
   return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);
 }
-export const getExpenses = (roomId: string) => request<Expense[]>(roomId);
-export const getExpenseSummary = (roomId: string) =>
-  request<ExpenseSummary>(roomId, "/summary");
-export const getExpenseCurrencies = (roomId: string) =>
-  request<ExpenseCurrency[]>(roomId, "/currencies");
+/** 조회 함수는 TanStack이 넘기는 `signal`을 받는다 — 무효화로 취소된 옛 조회의 HTTP 요청도 끊는다 */
+const readInit = (signal?: AbortSignal): RequestInit | undefined =>
+  signal ? { signal } : undefined;
+export const getExpenses = (roomId: string, signal?: AbortSignal) =>
+  request<Expense[]>(roomId, "", readInit(signal));
+export const getExpenseSummary = (roomId: string, signal?: AbortSignal) =>
+  request<ExpenseSummary>(roomId, "/summary", readInit(signal));
+export const getExpenseCurrencies = (roomId: string, signal?: AbortSignal) =>
+  request<ExpenseCurrency[]>(roomId, "/currencies", readInit(signal));
 export const createExpense = (roomId: string, body: ExpenseInput) =>
   request<Expense>(roomId, "", { method: "POST", ...jsonBody(body) });
 export const patchExpense = (
@@ -149,19 +153,23 @@ export type ExpenseKrwFilters = {
   category?: ExpenseCategory;
   payerUserId?: number;
 };
-export const getExpenseBudget = (roomId: string) =>
-  request<ExpenseBudget>(roomId, "/budget");
+export const getExpenseBudget = (roomId: string, signal?: AbortSignal) =>
+  request<ExpenseBudget>(roomId, "/budget", readInit(signal));
 export const putExpenseBudget = (roomId: string, body: ExpenseBudgetInput) =>
   request<ExpenseBudget>(roomId, "/budget", {
     method: "PUT",
     ...jsonBody(body),
   });
-export const getExpenseKrwSummary = (roomId: string, filters: ExpenseKrwFilters = {}) => {
+export const getExpenseKrwSummary = (
+  roomId: string,
+  filters: ExpenseKrwFilters = {},
+  signal?: AbortSignal,
+) => {
   const query = new URLSearchParams();
   for (const key of ["expenseGroup", "scheduleId", "category", "payerUserId"] as const) {
     const value = filters[key];
     if (value !== undefined) query.set(key, String(value));
   }
   const suffix = query.size ? "?" + query.toString() : "";
-  return request<ExpenseKrwSummary>(roomId, `/summary/krw${suffix}`);
+  return request<ExpenseKrwSummary>(roomId, `/summary/krw${suffix}`, readInit(signal));
 };

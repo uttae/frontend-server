@@ -899,13 +899,13 @@ it("isolates AND-filtered KRW snapshots and refreshes them on expense invalidati
   const filters = { expenseGroup: "TRIP_DAY" as const, scheduleId: 10, category: "FOOD" as const };
   await act(async () => context.setKrwFilters(filters));
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(mocks.krw).toHaveBeenCalledWith("r", filters);
+  expect(mocks.krw).toHaveBeenCalledWith("r", filters, expect.any(AbortSignal));
   expect(client.getQueryData(expenseKeys.krwSummary("r"))).toBeDefined();
   expect(client.getQueryData([...expenseKeys.krwSummary("r"), filters])).toBeDefined();
   mocks.krw.mockClear();
   const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
   await act(async () => getExpenseRecovery(client, "r").message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" })));
-  expect(mocks.krw).toHaveBeenCalledWith("r", filters);
+  expect(mocks.krw).toHaveBeenCalledWith("r", filters, expect.any(AbortSignal));
   expect(mocks.krw).toHaveBeenCalledWith("r");
 });
 
@@ -937,7 +937,9 @@ it("returns to all expenses without refetching or blanking the whole-room summar
  const whole = context.krwSummary.data!;
  const previous = mocks.krw.getMockImplementation()!;
  let finish: ((value: ExpenseKrwSummary) => void) | undefined;
- mocks.krw.mockImplementation((...args) => args.length === 1 ? new Promise(resolve => { finish = resolve; }) : previous(...args));
+ // 필터 없는 방 전체 합계 조회만 붙잡는다(필터 인자가 없거나 빈 객체)
+ const wholeRoom = (args: unknown[]) => Object.keys((args[1] as object | undefined) ?? {}).length === 0;
+ mocks.krw.mockImplementation((...args) => wholeRoom(args) ? new Promise(resolve => { finish = resolve; }) : previous(...args));
  try {
   await act(async () => context.setKrwFilters({}));
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
