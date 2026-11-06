@@ -71,6 +71,7 @@ import {
   appendBookmarkCategoryToCache,
   appendRoomBookmarksToCache,
 } from "@/lib/bookmarks/bookmark-cache-patch";
+import { invalidateRoomBookmarkLists } from "@/lib/bookmarks-invalidation";
 import {
   bookmarkCategoriesQueryKey,
   joinRequestsQueryKey,
@@ -789,11 +790,10 @@ export function useDeleteBookmarkCategory() {
       roomId: string;
       categoryId: number;
     }) => deleteBookmarkCategory(roomId, categoryId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(roomId),
-      });
-    },
+    // 서버가 폴더 안의 북마크도 함께 지운다. 본인 CATEGORY_DELETED는 STOMP에서 버리므로 여기서 둘 다 다시 받는다.
+    // 응답 본문이 없어 목록에서 폴더가 빠질 때까지 기다린다 — 확인창이 닫힌 뒤 지운 폴더가 잠깐 남지 않게
+    onSettled: (_data, _error, { roomId }) =>
+      invalidateRoomBookmarkLists(queryClient, roomId),
   });
 }
 
