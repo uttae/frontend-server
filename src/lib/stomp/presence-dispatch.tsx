@@ -115,19 +115,3 @@ export function scheduleRoomMembersResyncAfterSubscribe(
     }, PRESENCE_MEMBERS_RESYNC_DELAY_MS),
   );
 }
-
-/** @deprecated 구독 직후 `scheduleRoomMembersResyncAfterSubscribe` 사용 */
-export async function syncRoomMembersIfCacheEmpty(
-  queryClient: QueryClient,
-  roomId: string,
-): Promise<void> {
-  const rid = roomId.trim();
-  if (!rid.length) return;
-
-  const cached = queryClient.getQueryData<RoomMemberListResponse>(
-    roomMembersQueryKey(rid),
-  );
-  if (cached?.members?.length) return;
-
-  await invalidateRoomMembersActive(queryClient, rid);
-}
