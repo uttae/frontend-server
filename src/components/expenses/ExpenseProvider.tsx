@@ -102,8 +102,8 @@ function useExpenses(roomId: string) {
     queryFn: ({ signal }) => getRoomMembers(roomId, signal),
     enabled,
     retry: false,
-    staleTime: 0,
-    refetchOnMount: "always",
+    // 다른 가계부 조회와 같이 복구·무효화로만 다시 받는다(멤버 이벤트도 이 key를 무효화한다)
+    staleTime: Infinity,
     // Visibility recovery already refreshes members with the other room data.
     refetchOnWindowFocus: false,
   });
@@ -112,10 +112,12 @@ function useExpenses(roomId: string) {
     !revoked && canManageExpenses(user?.id, members, memberQuery.status);
   const schedules = useRoomSchedules(revoked ? null : roomId || null);
   // Recovery owns focus/reconnect reads; manual refresh remains available.
+  // 입장·연결 성립 복구(refresh "all")와 변경 알림·본인 저장의 무효화로만 다시 받는다. 재마운트만으로는 받지 않아
+  // 입장 때 복구 조회와 겹치지 않는다. 화면 밖에서 무효화된 조회는 다시 붙을 때 받는다
   const options = {
     enabled,
     retry: false,
-    staleTime: 0,
+    staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   };

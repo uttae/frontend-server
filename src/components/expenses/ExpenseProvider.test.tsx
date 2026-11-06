@@ -316,6 +316,23 @@ it("다른 화면의 무효화로 다시 받는 동안에도 장부를 비우지
   await act(async () => { finish({ currencies: [] }); await new Promise((resolve) => setTimeout(resolve, 20)); });
   expect(context.syncStatus).toBe("ready");
 });
+it("다시 들어오면 재마운트 조회 없이 입장 복구 조회 한 번만 보낸다", async () => {
+  await mountMutations();
+  await act(async () => unmount());
+  const reads = [mocks.list, mocks.summary, mocks.budget, mocks.krw, mocks.members];
+  for (const read of reads) read.mockClear();
+  await act(async () => {
+    draw(
+      <QueryClientProvider client={client}>
+        <ExpenseProvider roomId="r"><MutationProbe /></ExpenseProvider>
+      </QueryClientProvider>,
+    );
+  });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+  // 남아 있던 캐시는 마운트만으로 다시 받지 않고, 놓친 알림을 메우는 입장 복구가 한 번씩 받는다
+  for (const read of reads) expect(read).toHaveBeenCalledTimes(1);
+  expect(context.syncStatus).toBe("ready");
+});
 it("uses a fresh list read for recovery and propagates read failure without returning cached data", async () => {
   await mountMutations();
   mocks.list.mockResolvedValueOnce([{ ...record, version: 8 }]);
