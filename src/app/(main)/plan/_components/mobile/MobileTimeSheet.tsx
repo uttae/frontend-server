@@ -19,9 +19,8 @@ import {
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
   computeDurationMinutesFromRange,
+  createScheduleTimeSchema,
   normalizeStartTimeToHm,
-  validateScheduleTimeDraft,
-  type ScheduleTimeDraftValidation,
 } from "@/lib/plan/scheduleTime";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +72,12 @@ export function MobileTimeSheet({
   ]
     .filter(Boolean)
     .join(" · ");
-  const validation: ScheduleTimeDraftValidation = start === null || end === null
-    ? { valid: false, message: "오전/오후, 시, 분을 모두 선택해 주세요." }
-    : validateScheduleTimeDraft(start, end);
+  // 확인 버튼을 잠그는 오류. 휠에서 오전/오후·시·분을 다 고르지 않은 칸(null)은 스키마 전에 막는다
+  const timeError =
+    start === null || end === null
+      ? "오전/오후, 시, 분을 모두 선택해 주세요."
+      : createScheduleTimeSchema({ serverStartHm: serverStart, serverEndHm: serverEnd }).safeParse({ start, end }).error
+          ?.issues[0]?.message;
 
   function openField(field: Field) {
     if (field === "end" && !start) return;
@@ -84,8 +86,8 @@ export function MobileTimeSheet({
 
   async function handleSave() {
     if (isPending || isWheelSettling || !dirty) return;
-    if (!validation.valid) {
-      toast.error(validation.message);
+    if (timeError) {
+      toast.error(timeError);
       return;
     }
     try {
@@ -182,7 +184,7 @@ export function MobileTimeSheet({
           <Button
             loading={isPending}
             loadingLabel="저장 중"
-            disabled={isWheelSettling || !dirty || !validation.valid}
+            disabled={isWheelSettling || !dirty || Boolean(timeError)}
             onClick={() => void handleSave()}
           >
             확인
