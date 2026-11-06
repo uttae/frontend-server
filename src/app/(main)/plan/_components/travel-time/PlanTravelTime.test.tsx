@@ -1,52 +1,45 @@
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+// @vitest-environment jsdom
+import { act } from "react";
+import { createRoot, type Root } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { PlanTravelTime } from "./PlanTravelTime";
-
-const selectedRoute = vi.hoisted(() => ({
-  current: { data: undefined, isPending: false, isError: false, isFetching: false } as Record<string, unknown>,
-}));
-
-vi.mock("@/hooks/useRooms", () => ({
-  useScheduleItemRoute: () => selectedRoute.current,
-  useUpdateScheduleItemTravelMode: () => ({ mutate: vi.fn() }),
-}));
-vi.mock("@tanstack/react-query", () => ({
-  useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => ({ data: undefined })),
+const api = vi.hoisted(() => ({ route: vi.fn(), updateMode: vi.fn() }));
+vi.mock("@/lib/api/rooms", async original => ({
+  ...await original<object>(), getScheduleItemRoute: api.route, updateScheduleItemTravelMode: api.updateMode,
 }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: false }) }));
-
-function renderSummary() {
-  return renderToStaticMarkup(
-    createElement(PlanTravelTime, {
-      roomId: "room-1",
-      scheduleId: 1,
-      segmentSourceItemId: 100,
-      scheduleFingerprint: "100:a:|101:b:",
-      travelMode: "DRIVING",
-      contentOnly: true,
-    }),
-  );
+import { PlanTravelTime } from "./PlanTravelTime";
+let root: Root;
+let container: HTMLDivElement;
+let client: QueryClient;
+beforeEach(() => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  api.route.mockReset().mockImplementation(async (_r, _s, _i, travelMode) => ({ travelMode, distanceMeters: 100, durationSeconds: 60 }));
+  api.updateMode.mockReset().mockImplementation(async (_r, _s, itemId, body) => ({ itemId, scheduleId: 10, googlePlaceId: "a", orderIndex: 0, startTime: null, endTime: null, createdAt: "2026-10-28", ...body }));
+  client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+  container = document.createElement("div"); document.body.append(container); root = createRoot(container);
+});
+afterEach(async () => { await act(async () => root.unmount()); container.remove(); client.clear(); vi.unstubAllGlobals(); });
+async function render(travelMode?: string) {
+  await act(async () => root.render(<QueryClientProvider client={client}><PlanTravelTime
+    roomId="room" scheduleId={10} segmentSourceItemId={1} scheduleFingerprint=""
+    travelMode={travelMode} originGooglePlaceId="a" destinationGooglePlaceId="b"
+  /></QueryClientProvider>));
 }
-
-describe("PlanTravelTime 요약 줄", () => {
-  beforeEach(() => {
-    selectedRoute.current = { data: undefined, isPending: false, isError: false, isFetching: false };
-  });
-
-  it("다시 받다가 실패해도 마지막 답이 '경로 없음'이면 오류 대신 그 답을 보여 준다", () => {
-    selectedRoute.current = { data: null, isPending: false, isError: true, isFetching: false };
-
-    const html = renderSummary();
-
-    expect(html).toContain("이동 안내 없음");
-    expect(html).not.toContain("경로 조회 오류");
-  });
-
-  it("받은 답 없이 실패하면 오류를 보여 준다", () => {
-    selectedRoute.current = { data: undefined, isPending: false, isError: true, isFetching: false };
-
-    expect(renderSummary()).toContain("경로 조회 오류");
-  });
+it.each([undefined, "BICYCLING", "CYCLING", "BOAT"])("does not query or save unsupported %s until an explicit supported selection", async mode => {
+  await render(mode);
+  expect(container.textContent).toContain("이동수단 선택");
+  expect(container.querySelector("a")).toBeNull();
+  expect(api.route).not.toHaveBeenCalled(); expect(api.updateMode).not.toHaveBeenCalled();
+  await act(async () => container.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
+  const choice = [...container.querySelectorAll<HTMLButtonElement>("button[role=option]")].find(b => b.textContent?.includes("자동차"))!;
+  await act(async () => choice.click());
+  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 1, "DRIVING"));
+  expect(api.updateMode).toHaveBeenCalledExactlyOnceWith("room", 10, 1, { travelMode: "DRIVING" });
+});
+it.each(["DRIVING", "WALKING", "TRANSIT"])("queries supported %s without saving it", async mode => {
+  await render(mode);
+  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 1, mode));
+  expect(api.updateMode).not.toHaveBeenCalled();
 });

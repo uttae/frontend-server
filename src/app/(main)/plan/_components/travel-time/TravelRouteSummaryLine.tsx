@@ -1,4 +1,4 @@
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
 import { formatRouteDistance, formatRouteDuration } from "@/lib/plan/routeFormat";
@@ -37,13 +37,13 @@ export function TravelRouteSummaryLine({
 
   if (isFetching) {
     return (
-      <LoadingIndicator label="이동 시간 불러오는 중" size={14} />
+      <Spinner aria-label="이동 시간 불러오는 중" size={16} />
     );
   }
 
   if (isPending) {
     return (
-      <LoadingIndicator label="이동 시간 불러오는 중" size={14} />
+      <Spinner aria-label="이동 시간 불러오는 중" size={16} />
     );
   }
   if (isError) return <span className="text-status-negative">경로 조회 오류</span>;

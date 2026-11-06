@@ -176,7 +176,7 @@ export function useScheduleItemRoute(
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
-  travelMode: ScheduleTravelModeValue,
+  travelMode: ScheduleTravelModeValue | null,
   /** 일정 장소 목록상 구간 소스 아이디가 존재·목록 안정 후에만 true */
   routeQueryEnabled = true,
   /** 빈 문자열이면 LS 미사용 — `scheduleFingerprint` 지문 필요 */
@@ -462,7 +462,7 @@ export function useDeleteScheduleItem() {
   });
 }
 
-/** 순서 변경 — 응답 반영과 시작 시각 연쇄 PATCH를 `onSuccess`에서 기다리므로 `isPending`이 그 끝까지 이어진다 */
+/** 순서 변경 — 응답 반영을 `onSuccess`에서 기다리므로 `isPending`이 그 끝까지 이어진다 */
 export function useReorderScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({

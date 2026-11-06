@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   bumpForDirections: vi.fn(),
   bumpPlanMapRouteSegments: vi.fn(),
   createScheduleItem: vi.fn(),
+  updateScheduleItem: vi.fn(),
   fetchPlacePreview: vi.fn(),
   getScheduleItems: vi.fn(),
   invalidateScheduleItemRouteForSources: vi.fn(),
@@ -24,7 +25,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/lib/api/rooms/schedule-items", () => ({
   createScheduleItem: mocks.createScheduleItem,
   getScheduleItems: mocks.getScheduleItems,
-  updateScheduleItem: vi.fn(),
+  updateScheduleItem: mocks.updateScheduleItem,
 }));
 
 vi.mock("@/lib/places/place-queries", () => ({
@@ -242,4 +243,32 @@ describe("cross-schedule refresh sequencing", () => {
     expect(invalidate).toHaveBeenCalledTimes(1);
     expect(mocks.invalidateScheduleItemRouteForWholeSchedule).not.toHaveBeenCalled();
   });
+});
+
+describe("reorder preserves user times", () => {
+  it.each([
+    [null, null], ["12:45", null], ["23:00", "01:00"], ["00:00", "00:00"],
+  ])("keeps %s / %s and never sends a time PATCH", async (startTime, endTime) => {
+    vi.clearAllMocks();
+    const { syncPlanPlacesAfterReorderSuccess } = await import("./scheduleItemPlaces");
+    const client = new QueryClient();
+    const key = scheduleItemsQueryKey("room", 10);
+    client.setQueryData(key, [1, 2].map((itemId) => ({ id: `item-${itemId}`, itemId, title: "Place" })));
+    const items = [
+      { ...scheduleItem(2, 0), startTime, endTime },
+      { ...scheduleItem(1, 1), startTime: null, endTime: null },
+    ];
+    await syncPlanPlacesAfterReorderSuccess(client, "room", 10, items, 1);
+    expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
+    client.clear();
+  });
+});
+
+it("cross-day move refresh never sends a time PATCH", async () => {
+  vi.clearAllMocks();
+  const client = new QueryClient();
+  vi.spyOn(client, "invalidateQueries").mockResolvedValue(undefined);
+  await syncAfterCrossScheduleItemMove(client, "room", 10, 20, 2, []);
+  expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
+  client.clear();
 });

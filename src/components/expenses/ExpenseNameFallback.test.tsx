@@ -1,4 +1,7 @@
+// @vitest-environment jsdom
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { act as domAct } from "react";
+import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { ExpenseList } from "./ExpenseViews";
@@ -28,12 +31,22 @@ it.each([26, null])("uses category only in ledger titles regardless of linked pl
   expect(JSON.stringify(renderer.toJSON())).toContain("별도 메모");
 });
 it("keeps scoped expense titles and edit labels category-only, with memo and place separate", async () => {
-  await act(async () => { renderer = create(<QueryClientProvider client={client}><ExpenseScopePanel scope={{ scheduleId: 2, label: "2일차" }} roomId="room" expenses={[expense]} isPending={false} isError={false} canManage busy={false} onAdd={vi.fn()} onEdit={vi.fn()} onDelete={async () => {}} onRetry={vi.fn()} onClose={vi.fn()} /></QueryClientProvider>); });
-  const edit = renderer.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 수정"))!;
-  expect(edit.props["aria-label"]).toBe("식비 1,000 KRW 비용 수정");
-  expect(renderer.root.findByType("li").findAllByType("span").some(span => span.children.length === 1 && span.children[0] === "식비")).toBe(true);
-  expect(JSON.stringify(renderer.toJSON())).toContain("별도 메모");
-  expect(JSON.stringify(renderer.toJSON())).toContain("경복궁");
+  // 비용 목록 대화상자는 Base UI Dialog라 body로 포털된다(react-test-renderer는 포털을 못 그린다)
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  try {
+    await domAct(async () => root.render(<QueryClientProvider client={client}><ExpenseScopePanel scope={{ scheduleId: 2, label: "2일차" }} roomId="room" expenses={[expense]} isPending={false} isError={false} canManage busy={false} onAdd={vi.fn()} onEdit={vi.fn()} onDelete={async () => {}} onRetry={vi.fn()} onClose={vi.fn()} /></QueryClientProvider>));
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"]')!;
+    const edit = [...dialog.querySelectorAll("button")].find(b => b.getAttribute("aria-label")?.endsWith("비용 수정"))!;
+    expect(edit.getAttribute("aria-label")).toBe("식비 1,000 KRW 비용 수정");
+    expect([...dialog.querySelector("li")!.querySelectorAll("span")].some(span => span.childNodes.length === 1 && span.textContent === "식비")).toBe(true);
+    expect(dialog.textContent).toContain("별도 메모");
+    expect(dialog.textContent).toContain("경복궁");
+  } finally {
+    await domAct(async () => root.unmount());
+    host.remove();
+  }
 });
 
 it("uses persisted names for ledger titles while keeping category and memo separate", async () => {

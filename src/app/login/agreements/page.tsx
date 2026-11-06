@@ -20,6 +20,7 @@ import { AgreementConsentSection } from "@/components/agreements/AgreementConsen
 import type { AgreementConsentState } from "@/components/agreements/AgreementConsentSection";
 import { AuthFlowSpinner } from "@/components/auth/AuthFlowSpinner";
 import { BrandLogo } from "@/components/BrandLogo";
+import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 
 const SIGNUP_EXPIRED_MESSAGE =
   "가입 요청이 만료되었거나 다른 로그인 시도로 무효화되었습니다. 다시 로그인해 주세요.";
@@ -172,23 +173,20 @@ export default function LoginAgreementsPage() {
           </div>
 
           {errorMessage && (
-            <div
-              role="alert"
-              className="w-full rounded-xl border border-primary/35 bg-primary/[0.06] px-4 py-3 text-left"
-            >
-              <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">
-                {errorMessage}
-              </p>
+            <Alert tone="brand" size="lg" className="self-stretch">
+              <AlertTitle>{errorMessage}</AlertTitle>
               {isExpired && (
-                <button
-                  type="button"
-                  onClick={returnToLogin}
-                  className="mt-3 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-primary underline-offset-2 hover:underline"
-                >
-                  Google 로그인 다시 시작하기
-                </button>
+                <AlertAction>
+                  <button
+                    type="button"
+                    onClick={returnToLogin}
+                    className="text-label-l-emphasis mobile:text-label-m-emphasis text-primary underline-offset-2 hover:underline"
+                  >
+                    Google 로그인 다시 시작하기
+                  </button>
+                </AlertAction>
               )}
-            </div>
+            </Alert>
           )}
 
           <AgreementConsentSection onStateChange={setConsentState} />

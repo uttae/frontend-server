@@ -18,7 +18,7 @@ const FIELDS: { edge: RangeEdge; label: string }[] = [
 
 /**
  * Figma Date Picker Usage `Input Field와 함께 쓰일 때` — `Text Field Emphasis` 두 칸과 기간 달력.
- * 웹은 누른 칸 아래에 그 칸 폭으로 붙이고, 모바일·`popupOnly`는 팝업으로 띄운다.
+ * 웹은 누른 칸 아래에 그 칸 폭으로 붙이고(Popover), 모바일·`popupOnly`는 팝업(Dialog)으로 띄운다.
  */
 export function DateRangeField({
   idPrefix,
@@ -38,6 +38,7 @@ export function DateRangeField({
   onChange: (next: DateRange) => void;
 }>) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fieldRefs = { start: useRef<HTMLDivElement>(null), end: useRef<HTMLDivElement>(null) };
   const { isMobileDevice } = useMobileView();
   const draft = useDateRangeDraft(value, onChange);
   const presentation = popupOnly || isMobileDevice ? "popup" : "anchored";
@@ -45,6 +46,7 @@ export function DateRangeField({
   const picker = draft.isOpen ? (
     <DatePickerLayer
       presentation={presentation}
+      anchorRef={draft.anchorEdge ? fieldRefs[draft.anchorEdge] : undefined}
       boundaryRef={containerRef}
       label="날짜 선택"
       onDismiss={draft.confirm}
@@ -80,7 +82,7 @@ export function DateRangeField({
         );
 
         return (
-          <div key={edge} className="relative min-w-0">
+          <div key={edge} ref={fieldRefs[edge]} className="min-w-0">
             {readOnly ? (
               <div className="flex w-full min-w-0 flex-col gap-0.5 rounded-md border border-border bg-fill pb-1.5 pl-3 pr-2 pt-3">
                 <span className="pl-1 pr-2 text-label-xs-regular text-text-subtle">{label}</span>
@@ -105,6 +107,7 @@ export function DateRangeField({
                 {text}
               </button>
             )}
+            {/* 달력은 포털로 뜨지만 React 위치는 그 칸 안에 둔다. 칸을 바꾸면 달력이 새로 열리고, Tab 순서가 칸 바로 뒤로 이어진다 */}
             {presentation === "anchored" && draft.anchorEdge === edge ? picker : null}
           </div>
         );

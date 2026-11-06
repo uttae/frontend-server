@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { act } from "react";
+import { createRoot } from "react-dom/client";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -44,11 +46,23 @@ describe("planning chrome", () => {
     expect(link?.getAttribute("title")).toBe("버그 제보");
     expect(container.querySelector('[role="dialog"]')).toBeNull();
   });
-  it("uses the creation label in the bookmark tab and modal", () => {
+  it("uses the creation label in the bookmark tab and modal", async () => {
     const html = renderToStaticMarkup(<BookmarkFoldersView />);
     expect(html).toContain("새 북마크 생성");
     expect(html).not.toContain("새 북마크 추가");
-    const modal = renderToStaticMarkup(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={vi.fn()} />);
-    expect(modal).toContain("새 북마크 생성");
+    // 대화상자는 Base UI Dialog라 document.body로 포털된다(서버 렌더 문자열에는 없다)
+    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    try {
+      await act(async () => root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={vi.fn()} />));
+      const dialog = document.querySelector('[role="dialog"]')!;
+      expect(dialog).not.toBeNull();
+      expect(document.getElementById(dialog.getAttribute("aria-labelledby")!)?.textContent).toBe("새 북마크 생성");
+    } finally {
+      await act(async () => root.unmount());
+      host.remove();
+    }
   });
 });

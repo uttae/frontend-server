@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCurrentAgreements } from "@/hooks/useCurrentAgreements";
 import { findAgreementByType } from "@/lib/agreements/paths";
@@ -21,7 +21,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-10 text-center shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm">
         <PolicyHomeLink />
-        <LoadingIndicator label="문서 불러오는 중" />
+        <Spinner aria-label="문서 불러오는 중" />
       </div>
     );
   }

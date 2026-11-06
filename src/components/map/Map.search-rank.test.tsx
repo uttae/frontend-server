@@ -508,7 +508,10 @@ it.each(["whole", "specific"] as const)("%s search resets discover filters witho
   await act(async () => button("음식점").click());
   await act(async () => button("영업 중").click());
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!.click());
-  await act(async () => button("4.5 이상").click());
+  // 평점 목록은 ui Select(Base UI)라 document.body로 포털된 role="option"이다
+  const ratingOption = (text: string) => [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(o => o.textContent === text)!;
+  await act(async () => ratingOption("4.5 이상").click());
+  expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("4.5 이상");
   await act(async () => { useMapPinsFocusStore.getState().claimFocus("discover"); });
   boundary.page.mockResolvedValue({ items, nextPageToken: null });
   await act(async () => {

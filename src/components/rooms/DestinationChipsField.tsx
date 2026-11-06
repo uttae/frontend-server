@@ -1,22 +1,21 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useState } from "react";
 
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
+import { Chip, ChipRemove } from "@/components/ui/chip";
 
 type Props = {
   values: string[];
   onChange: (next: string[]) => void;
-  readOnly?: boolean;
   maxCount: number;
   maxLength: number;
 };
 
+/** 목적지 검색 칸 → 고른 칩 → 경고 순서. 새 여행 만들기(`TripFormFields`)와 여행 정보 수정(`RoomTripEditForm`)이 같이 쓰고, 간격은 감싸는 Field가 준다 */
 export function DestinationChipsField({
   values,
   onChange,
-  readOnly = false,
   maxCount,
   maxLength,
 }: Props) {
@@ -50,48 +49,10 @@ export function DestinationChipsField({
     setDraft("");
   }
 
-  if (readOnly) {
-    if (!values.length) {
-      return <p className="text-body-m-regular mobile:text-body-s-regular text-dark-gray">—</p>;
-    }
-    return (
-      <div className="flex flex-wrap gap-2">
-        {values.map((v, i) => (
-          <span
-            key={`${v}-${i}`}
-            className="inline-flex items-center rounded-full bg-bubble-gray/60 px-3 py-1 text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
-          >
-            {v}
-          </span>
-        ))}
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-2">
-      {values.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {values.map((v, i) => (
-            <span
-              key={`${v}-${i}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 py-1.5 pl-3 pr-1.5 text-body-s-regular mobile:text-body-xs-regular text-primary"
-            >
-              {v}
-              <button
-                type="button"
-                onClick={() => remove(i)}
-                aria-label={`${v} 삭제`}
-                className="rounded-full p-0.5 transition hover:bg-primary/20"
-              >
-                <X size={14} />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
+    <>
       {atMax ? (
-        <p className="text-body-s-regular mobile:text-body-xs-regular text-light-gray">
+        <p className="flex h-12 w-full min-w-0 items-center rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 text-body-m-regular mobile:text-body-s-regular text-text-disabled">
           최대 {maxCount}개까지 추가할 수 있어요
         </p>
       ) : (
@@ -99,13 +60,24 @@ export function DestinationChipsField({
           value={draft}
           onChange={setDraft}
           onResolvedPlace={handleResolved}
+          placeholder="여행지를 검색해 선택하세요"
           selectionOnly
-          leadingIconType="search"
+          appearance="field"
         />
       )}
+      {values.length > 0 ? (
+        <div className="mt-1 flex flex-wrap gap-2">
+          {values.map((v, i) => (
+            <Chip key={`${v}-${i}`} variant="outline" size="md" selected className="max-w-full">
+              <span className="min-w-0 truncate">{v}</span>
+              <ChipRemove aria-label={`${v} 삭제`} onClick={() => remove(i)} />
+            </Chip>
+          ))}
+        </div>
+      ) : null}
       {inlineWarning ? (
         <p className="text-body-s-regular mobile:text-body-xs-regular text-primary">{inlineWarning}</p>
       ) : null}
-    </div>
+    </>
   );
 }
