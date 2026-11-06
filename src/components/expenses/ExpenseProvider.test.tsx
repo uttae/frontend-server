@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 const mocks = vi.hoisted(() => ({
   members: vi.fn<() => Promise<unknown>>(() => new Promise(() => {})),
-  list: vi.fn<() => Promise<Expense[]>>(async () => []),
+  list: vi.fn<(roomId?: string, signal?: AbortSignal) => Promise<Expense[]>>(async () => []),
   summary: vi.fn<() => Promise<unknown>>(async () => ({ currencies: [] })),
   budget: vi.fn(async () => ({
     budgetKrw: null as string | null,
@@ -263,6 +263,40 @@ it("forwards the reviewed version and reflects PATCH before summary refresh comp
     finish({ currencies: [] });
     await saving;
   });
+});
+it("본인 저장 뒤 반향 알림이 와도 목록은 최대 2번 받고 앞 요청은 끊으며, 받은 목록은 한 번만 반영한다", async () => {
+  await mountMutations();
+  const updated = { ...record, version: 3, memo: "saved" };
+  mocks.patch.mockResolvedValueOnce(updated);
+  const reads: { signal?: AbortSignal; finish: (value: Expense[]) => void }[] = [];
+  mocks.list.mockImplementation((_roomId, signal) => new Promise((resolve) => reads.push({ signal, finish: resolve })));
+  // 저장 응답을 넣는 setQueryData(manual)를 빼고, 조회가 목록을 바꾼 횟수를 센다
+  let fetchedLists = 0;
+  const stopCounting = client.getQueryCache().subscribe((event) => {
+    if (event.type === "updated" && event.action.type === "success" && !event.action.manual
+      && event.query.queryKey[2] === "list") fetchedLists += 1;
+  });
+  try {
+    let saving!: Promise<void>;
+    await act(async () => { saving = context.save({ ...record, memo: "saved" }, 10, 2); });
+    expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+    expect(reads).toHaveLength(1);
+    // 서버가 저장 뒤 보낸 알림 — 누가 바꿨는지 알 수 없어 그대로 다시 받는다
+    await act(async () => {
+      stomp.subscribe.mock.lastCall![1]({ body: JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }) });
+    });
+    expect(reads).toHaveLength(2);
+    expect(reads[0]!.signal?.aborted).toBe(true);
+    await act(async () => {
+      reads[0]!.finish([record]);
+      reads[1]!.finish([updated]);
+      await saving;
+    });
+    expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+    expect(fetchedLists).toBe(1);
+  } finally {
+    stopCounting();
+  }
 });
 it("uses a fresh list read for recovery and propagates read failure without returning cached data", async () => {
   await mountMutations();
@@ -906,7 +940,7 @@ it("isolates AND-filtered KRW snapshots and refreshes them on expense invalidati
   const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
   await act(async () => getExpenseRecovery(client, "r").message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" })));
   expect(mocks.krw).toHaveBeenCalledWith("r", filters, expect.any(AbortSignal));
-  expect(mocks.krw).toHaveBeenCalledWith("r");
+  expect(mocks.krw).toHaveBeenCalledWith("r", {}, expect.any(AbortSignal));
 });
 
 it("keeps whole-room state ready while a new filter snapshot loads", async () => {

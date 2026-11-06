@@ -1,16 +1,18 @@
-import type { QueryClient } from "@tanstack/react-query";
-import {
-  getExpenses,
-  getExpenseSummary,
-  getExpenseKrwSummary,
-  getExpenseBudget,
-  getExpenseCurrencies,
-} from "@/lib/api/rooms/expenses";
-import { getRoomMembers } from "@/lib/api/rooms/members";
+import { isCancelledError, type QueryClient } from "@tanstack/react-query";
 import { expenseKeys } from "./expense-queries";
 
 type Scope = "all" | "expenses" | "budget" | "visible";
 type Status = "pending" | "refreshing" | "ready" | "error" | "revoked";
+type ReadKey = "list" | "summary" | "summary-krw" | "budget" | "currencies" | "members";
+const ALL_READS: readonly ReadKey[] = ["list", "summary", "summary-krw", "budget", "currencies", "members"];
+const SCOPE_READS: Record<Scope, readonly ReadKey[]> = {
+  all: ALL_READS,
+  visible: ALL_READS,
+  expenses: ["list", "summary", "summary-krw"],
+  budget: ["budget"],
+};
+/** 같은 틱에 들어온 다시 받기 요청을 한 번에 무효화한다 */
+type Batch = { keys: Set<ReadKey>; restartFirstLoads: boolean; promise: Promise<void> };
 let generation = 0;
 let revocation = 0;
 const controllers = new WeakMap<
@@ -73,8 +75,9 @@ class ExpenseRecovery {
   readonly generation = ++generation;
   private status: Status = "pending";
   private readonly listeners = new Set<() => void>();
-  private readonly pending = new Set<string>();
   private readonly failed = new Set<string>();
+  private queued: Batch | null = null;
+  private inFlight = 0;
   private running: Promise<void> | null = null;
   private readonly unsubscribeQueryCache: () => void;
   // Advances for authoritative reads and local writes, fencing late mutations.
@@ -114,7 +117,6 @@ class ExpenseRecovery {
     if (store.current === this) store.lastRevocation = ++revocation;
     this.unsubscribeQueryCache();
     this.listRevision++;
-    this.pending.clear();
     this.setStatus("revoked");
     void this.client.cancelQueries({ queryKey: expenseKeys.room(this.roomId) });
     this.client.removeQueries({ queryKey: expenseKeys.room(this.roomId) });
@@ -139,72 +141,76 @@ class ExpenseRecovery {
     }
     return Promise.resolve();
   };
+  /**
+   * 범위의 가계부 조회를 무효화한다. 화면에 있는 조회(ExpenseProvider)만 그 queryFn으로 바로 다시 받고,
+   * 나머지는 다시 볼 때 받는다. 받는 중인 옛 조회는 TanStack이 취소하고(그 응답은 버려짐) 새로 받는다.
+   * 같은 틱에 온 요청(중복 프레임·변경 알림 여러 개)은 한 번에 무효화해 요청을 반복하지 않는다.
+   */
   refresh = (scope: Scope): Promise<void> => {
     if (this.status === "revoked") return Promise.resolve();
     // A tab return revalidates cached data without clearing the visible ledger.
     // focus and visibilitychange can describe the same return.
     if (scope === "visible" && this.status === "refreshing" && this.running) return this.running;
     const background = scope === "visible" && this.status === "ready";
-    let keys = ["list", "summary", "summary-krw", "budget", "currencies", "members"];
-    if (scope === "budget") keys = ["budget"];
-    else if (scope === "expenses") keys = ["list", "summary", "summary-krw"];
-    keys.forEach((key) => this.pending.add(key));
     this.setStatus(background ? "refreshing" : "pending");
-    this.running ??= Promise.resolve()
-      .then(() => this.drain())
-      .finally(() => {
-        this.running = null;
-      });
-    return this.running;
+    const batch = (this.queued ??= this.startBatch());
+    SCOPE_READS[scope].forEach((key) => batch.keys.add(key));
+    // 변경 알림·본인 저장 뒤에는 그 변경 전에 출발했을 수 있는 첫 조회도 다시 받는다.
+    // 입장·연결 복구의 첫 조회는 구독 뒤에 출발했으므로 합류한다
+    if (scope === "expenses" || scope === "budget") batch.restartFirstLoads = true;
+    return batch.promise;
   };
-  private async drain() {
+  private startBatch(): Batch {
+    const batch: Batch = {
+      keys: new Set(),
+      restartFirstLoads: false,
+      promise: Promise.resolve(),
+    };
+    this.inFlight++;
+    // 다음 마이크로태스크에 보낸다 — 같은 틱의 요청을 모으고, 입장 때는 조회 observer가 붙은 뒤에 무효화한다
+    batch.promise = Promise.resolve()
+      .then(() => {
+        if (this.queued === batch) this.queued = null;
+        return this.invalidate([...batch.keys], batch.restartFirstLoads);
+      })
+      .finally(() => {
+        if (--this.inFlight > 0 || this.status === "revoked") return;
+        this.running = null;
+        this.setStatus(this.failed.size ? "error" : "ready");
+      });
+    this.running = batch.promise;
+    return batch;
+  }
+  private async invalidate(keys: ReadKey[], restartFirstLoads: boolean) {
+    if (this.status === "revoked") return;
     let failure: unknown;
-    while (this.pending.size && this.status !== "revoked") {
-      const keys = [...this.pending];
-      this.pending.clear();
-      const reads: Record<string, () => Promise<unknown>> = {
-        list: () => getExpenses(this.roomId),
-        summary: () => getExpenseSummary(this.roomId),
-        "summary-krw": () => getExpenseKrwSummary(this.roomId),
-        budget: () => getExpenseBudget(this.roomId),
-        currencies: () => getExpenseCurrencies(this.roomId),
-        members: () => getRoomMembers(this.roomId),
-      };
-      const results = await Promise.allSettled(
-        keys.map(async (key) => {
-          const queryKey = ["room-expenses", this.roomId, key];
-          await this.client.cancelQueries({ queryKey, exact: true });
-          if (this.getSnapshot() === "revoked") return;
-          try {
-            await this.client.fetchQuery({
-              queryKey,
-              queryFn: reads[key],
-              staleTime: 0,
-              retry: false,
-            });
-            if (key === "summary-krw" && this.getSnapshot() !== "revoked") {
-              // Invalidate all filter snapshots; refresh active ones through their own queryFn.
-              await this.client.invalidateQueries({
-                queryKey,
-                predicate: (query) => query.queryKey.length > 3,
-              }, { throwOnError: true });
-            }
-            this.failed.delete(key);
-          } catch (error) {
-            this.failed.add(key);
-            this.handleError(error);
-            throw error;
-          }
-        }),
-      );
-      for (const result of results)
-        if (result.status === "rejected") {
-          failure = result.reason;
-          this.handleError(failure);
+    const results = await Promise.allSettled(
+      keys.map(async (key) => {
+        const queryKey = [...expenseKeys.room(this.roomId), key];
+        if (restartFirstLoads) {
+          // 데이터가 없는(처음 받는 중인) 조회는 TanStack이 취소하지 않고 합류만 한다
+          await this.client.cancelQueries({
+            queryKey,
+            predicate: (query) => query.state.data === undefined,
+          });
         }
-    }
-    if (this.status !== "revoked")
-      this.setStatus(this.failed.size ? "error" : "ready");
-    if (failure) throw failure;
+        try {
+          // summary-krw는 접두로 필터별 스냅샷도 함께 무효화한다(보는 필터만 다시 받는다)
+          await this.client.invalidateQueries({ queryKey }, { throwOnError: true });
+          this.failed.delete(key);
+        } catch (error) {
+          // 더 새 조회로 바뀌었거나 화면이 사라져 취소된 조회는 실패가 아니다
+          if (isCancelledError(error)) return;
+          this.failed.add(key);
+          throw error;
+        }
+      }),
+    );
+    for (const result of results)
+      if (result.status === "rejected") {
+        failure ??= result.reason;
+        this.handleError(result.reason);
+      }
+    if (failure !== undefined) throw failure;
   }
 }
