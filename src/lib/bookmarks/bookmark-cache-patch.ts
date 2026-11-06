@@ -17,7 +17,8 @@ export function appendBookmarkCategoryToCache(
   queryClient.setQueryData<BookmarkCategory[]>(
     bookmarkCategoriesQueryKey(rid),
     (prev) => {
-      if (!prev?.length) return [category];
+      // 목록을 받은 적이 없으면 한 건짜리 목록을 만들지 않고 처음 조회에 맡긴다
+      if (!prev) return prev;
       if (prev.some((c) => c.categoryId === category.categoryId)) {
         return prev.map((c) =>
           c.categoryId === category.categoryId ? category : c,

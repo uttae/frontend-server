@@ -754,6 +754,12 @@ export function useCreateBookmarkCategory() {
     onSuccess: (created, { roomId }) => {
       appendBookmarkCategoryToCache(queryClient, roomId, created);
     },
+    // 응답을 이미 넣었으므로 기다리지 않는다(대화상자는 바로 닫힌다). 본인 STOMP 반향은 버려 바꾼 탭은 여기서 맞춘다
+    onSettled: (_created, _error, { roomId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: bookmarkCategoriesQueryKey(roomId),
+      });
+    },
   });
 }
 
@@ -771,8 +777,21 @@ export function useUpdateBookmarkCategory() {
       name: string;
       colorCode: string;
     }) => updateBookmarkCategory(roomId, categoryId, { name, colorCode }),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({
+    // 수정 응답의 placeCount는 세지 않은 값(0)이라 이름·색만 반영한다
+    onSuccess: (updated, { roomId, categoryId }) => {
+      queryClient.setQueryData<BookmarkCategory[]>(
+        bookmarkCategoriesQueryKey(roomId),
+        (prev) =>
+          prev?.map((c) =>
+            c.categoryId === categoryId
+              ? { ...c, name: updated.name, colorCode: updated.colorCode }
+              : c,
+          ),
+      );
+    },
+    // 응답을 이미 반영했으므로 기다리지 않는다(대화상자는 바로 닫힌다)
+    onSettled: (_updated, _error, { roomId }) => {
+      void queryClient.invalidateQueries({
         queryKey: bookmarkCategoriesQueryKey(roomId),
       });
     },
@@ -930,13 +949,17 @@ export function useMoveRoomBookmark() {
       categoryId: number;
       fromCategoryId: number;
     }) => patchRoomBookmarkCategory(roomId, bookmarkId, { categoryId }),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(roomId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: roomAllBookmarksQueryKey(roomId),
-      });
+    // 옮긴 북마크로 바꿔 넣어 지금 폴더 목록에서 바로 빠지게 한다
+    onSuccess: (moved, { roomId }) => {
+      queryClient.setQueryData<RoomBookmark[]>(
+        roomAllBookmarksQueryKey(roomId),
+        (prev) =>
+          prev?.map((b) => (b.bookmarkId === moved.bookmarkId ? moved : b)),
+      );
+    },
+    // 응답을 이미 반영했으므로 기다리지 않는다(메뉴는 바로 닫힌다). 폴더별 장소 개수와 정렬은 다시 받아 맞춘다
+    onSettled: (_moved, _error, { roomId }) => {
+      void invalidateRoomBookmarkLists(queryClient, roomId);
     },
   });
 }
@@ -949,13 +972,8 @@ export function useDeleteRoomBookmarkItem() {
       bookmarkId: number;
       categoryId: number;
     }) => deleteRoomBookmark(input.roomId, input.bookmarkId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(roomId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: roomAllBookmarksQueryKey(roomId),
-      });
-    },
+    // 응답 본문이 없어 목록에서 빠질 때까지 기다린다 — 확인창이 닫힌 뒤 지운 장소가 잠깐 남지 않게
+    onSettled: (_data, _error, { roomId }) =>
+      invalidateRoomBookmarkLists(queryClient, roomId),
   });
 }
