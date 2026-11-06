@@ -28,7 +28,6 @@ export function LeaveConfirmModal({ room, onClose }: Props) {
 
   return (
     <ConfirmDialog
-      appearance="ledger"
       destructive
       title="방에서 나가시겠어요?"
       description={"방을 나가면 이 여행의 일정과 대화에\n더 이상 접근할 수 없어요."}

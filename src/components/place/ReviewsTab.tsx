@@ -1,5 +1,7 @@
 import { ExternalLink } from "lucide-react";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import { StarRow } from "./StarRow";
 import type { PlaceReview } from "./types";
 
@@ -73,9 +75,9 @@ export function ReviewsTab({
       <div className="space-y-4">
         {reviews.map((review, i) => (
           <div key={i} className="flex gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gray-100 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-dark-gray">
-              {review.authorDisplayName?.charAt(0)}
-            </div>
+            <Avatar size={32} tone="neutral" aria-hidden>
+              <AvatarFallback>{review.authorDisplayName?.charAt(0)}</AvatarFallback>
+            </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <span className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-[#364153]">

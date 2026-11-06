@@ -44,8 +44,6 @@ export const chatAssets = {
 export const packingIcons = {
   plusWhite: "/icons/packing/plus-white.svg",
   plus: "/icons/packing/plus.svg",
-  checkbox: "/icons/packing/checkbox.svg",
-  checkboxChecked: "/icons/packing/checkbox-checked.svg",
   menu: "/icons/packing/menu.svg",
   edit: "/icons/packing/edit.svg",
   delete: "/icons/packing/delete.svg",

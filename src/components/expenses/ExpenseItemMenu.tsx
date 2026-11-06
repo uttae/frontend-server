@@ -1,6 +1,12 @@
 "use client";
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState } from "react";
 import { TrashIcon, WriteIcon } from "@/assets/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function ExpenseItemMenu({
   label,
@@ -14,82 +20,35 @@ export function ExpenseItemMenu({
   onDelete: () => void;
 }>) {
   const [open, setOpen] = useState(false);
-  const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const id = useId();
-  useEffect(() => {
-    if (!open || !root.current) return;
-    const element = root.current;
-    const outside = (event: PointerEvent) => {
-      if (!element.contains(event.target as Node)) setOpen(false);
-    };
-    element.ownerDocument.addEventListener("pointerdown", outside);
-  return () =>
-      element.ownerDocument.removeEventListener("pointerdown", outside);
-  }, [open]);
+  // 항목이 여는 대화상자(비용 편집·삭제 확인)가 닫힌 뒤 포커스가 이 트리거로 돌아오도록, 동작 전에 트리거로 먼저 옮긴다(지금 동작).
+  // 메뉴 항목은 닫히면서 사라져 대화상자가 그 항목을 복귀 대상으로 잡으면 안 된다
   function choose(action: () => void) {
-    if (busy) return;
     trigger.current?.focus();
-    setOpen(false);
     action();
   }
-  function handleEscape(event: KeyboardEvent<HTMLButtonElement>) {
-    if (event.key !== "Escape" || !open) return;
-    event.preventDefault();
-    event.stopPropagation();
-    setOpen(false);
-    trigger.current?.focus();
-  }
+  // 처리 중(busy)에는 트리거가 비활성이고 열려 있던 메뉴도 숨긴다(지금 동작)
   return (
-    <div
-      ref={root}
-      className="relative z-20 self-start"
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
-
-    >
-      <button
+    <DropdownMenu open={open && !busy} onOpenChange={setOpen}>
+      <DropdownMenuTrigger
         ref={trigger}
-        type="button"
-        onKeyDown={handleEscape}
         aria-label={`${label} 비용 더보기`}
-        aria-expanded={open && !busy}
-        aria-controls={open && !busy ? id : undefined}
         disabled={busy}
-        onClick={() => setOpen(!open)}
         className="flex size-8 @min-[800px]/expense-list:w-6 cursor-pointer items-center justify-center rounded-md text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-50"
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- local Figma vector asset */}
         <img src="/expenses/more.svg" alt="" className="max-w-none" />
-      </button>
-      {open && !busy && (
-        <div
-          id={id}
-          className="absolute right-0 top-8 z-30 w-40 rounded-lg border border-border-subtle bg-white py-1 shadow-lg"
-        >
-          <button
-            type="button"
-        onKeyDown={handleEscape}
-            aria-label="비용 수정"
-            onClick={() => choose(onEdit)}
-            className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 text-body-s-regular hover:bg-fill focus-visible:outline-primary"
-          >
-            <WriteIcon size={16} />
-            수정
-          </button>
-          <button
-            type="button"
-        onKeyDown={handleEscape}
-            aria-label="비용 삭제"
-            onClick={() => choose(onDelete)}
-            className="flex min-h-11 w-full cursor-pointer items-center gap-2 px-4 text-body-s-regular text-status-negative hover:bg-fill focus-visible:outline-primary"
-          >
-            <TrashIcon size={16} />
-            삭제
-          </button>
-        </div>
-      )}
-    </div>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem aria-label="비용 수정" onClick={() => choose(onEdit)}>
+          <WriteIcon />
+          수정
+        </DropdownMenuItem>
+        <DropdownMenuItem variant="destructive" aria-label="비용 삭제" onClick={() => choose(onDelete)}>
+          <TrashIcon />
+          삭제
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

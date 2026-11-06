@@ -2,6 +2,7 @@
 
 import { MapPin } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { useInViewport } from "@/hooks/useInViewport";
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
 import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
@@ -79,9 +80,9 @@ export function BookmarkPlacePreviewCard({
             {name}
           </h3>
           {primaryTypeDisplayName ? (
-            <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-body-xs-emphasis font-medium leading-none text-dark-gray">
+            <Badge size="md">
               {primaryTypeDisplayName}
-            </span>
+            </Badge>
           ) : null}
         </div>
         {address ? (

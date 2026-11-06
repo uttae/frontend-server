@@ -19,6 +19,15 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { CookieConsentBanner } from "./CookieConsentBanner";
 import { ConsentGatedAnalytics } from "./ConsentGatedAnalytics";
 
+// 쿠키 설정은 ui Dialog(Base UI)라 document.body로 포털된 role="dialog"다
+const dialogs = () => document.querySelectorAll<HTMLElement>('[role="dialog"]');
+// Base UI는 처음 포커스를 requestAnimationFrame 뒤에 옮긴다
+const settle = () =>
+  act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
 it("opens the same dialog from footer and banner without navigation, even with analytics disabled", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   window.history.replaceState({}, "", "/home");
@@ -42,13 +51,17 @@ it("opens the same dialog from footer and banner without navigation, even with a
     expect(triggers).toHaveLength(2);
     for (const trigger of triggers) {
       await act(async () => trigger.click());
-      expect(document.querySelectorAll('dialog[open]')).toHaveLength(1);
+      await settle();
+      expect(dialogs()).toHaveLength(1);
+      expect(dialogs()[0].contains(document.activeElement)).toBe(true);
       expect(window.location.pathname).toBe("/home");
       await act(async () =>
         document
           .querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!
           .click(),
       );
+      await settle();
+      expect(dialogs()).toHaveLength(0);
       expect(document.activeElement).toBe(trigger);
     }
     expect(accept).not.toHaveBeenCalled();
@@ -112,8 +125,9 @@ it("returns focus to the footer when saving consent removes the original banner 
       (node) => node.textContent === "쿠키 설정",
     )!;
     await act(async () => trigger.click());
+    await settle();
     const dialogButtons = () => [
-      ...document.querySelectorAll('dialog[open] button'),
+      ...document.querySelectorAll('[role="dialog"] button'),
     ];
     await act(async () =>
       (
@@ -123,11 +137,14 @@ it("returns focus to the footer when saving consent removes the original banner 
       ).click(),
     );
     expect(host.querySelector('[aria-label="쿠키 동의"]')).toBeNull();
+    expect(dialogs()).toHaveLength(1);
     await act(async () =>
       document
         .querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!
         .click(),
     );
+    await settle();
+    expect(dialogs()).toHaveLength(0);
     expect(document.activeElement).toBe(host.querySelector("footer button"));
   } finally {
     await act(async () => root.unmount());
