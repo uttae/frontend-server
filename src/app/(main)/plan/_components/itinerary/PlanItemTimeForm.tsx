@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { TimeClockIcon } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
+import { Field, FieldError } from "@/components/ui/field";
 import {
   Dialog,
   DialogClose,
@@ -18,8 +19,10 @@ import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import {
   computeDurationMinutesFromRange,
+  createScheduleTimeSchema,
   normalizeStartTimeToHm,
-  validateScheduleTimeDraft,
+  resolveScheduleTimeDraft,
+  type ScheduleTimeDraft,
 } from "@/lib/plan/scheduleTime";
 
 import { TimeInput } from "./TimeInput";
@@ -33,17 +36,10 @@ type PlanItemTimeEditorProps = {
   onClose: () => void;
 };
 
-/** 칸 값이 undefined면 사용자가 아직 고치지 않은 칸이라 재조회된 서버 값을 따른다. ""는 비운 칸(초기화)이다 */
-type TimeDraftValues = { start: string | undefined; end: string | undefined };
-
-const UNTOUCHED_DRAFT: TimeDraftValues = { start: undefined, end: undefined };
+// 칸 값이 undefined면 사용자가 아직 고치지 않은 칸이라 재조회된 서버 값을 따른다
+const UNTOUCHED_DRAFT: ScheduleTimeDraft = { start: undefined, end: undefined };
 
 const fieldLabelClass = PLAN_PLACE_CARD_TW.timeFieldLabel;
-
-function canonicalDraft(value: string): string {
-  if (!/^\d{1,2}:\d{1,2}$/.test(value)) return value;
-  return value.split(":").map((part) => part.padStart(2, "0")).join(":");
-}
 
 export function PlanItemTimeEditor({
   roomId,
@@ -60,30 +56,19 @@ export function PlanItemTimeEditor({
   const formRef = useRef<HTMLFormElement>(null);
   const savingRef = useRef(false);
 
-  // 서버 값과 합친 시각. 렌더 중(안내 문장·미리보기)과 제출 검증이 같은 계산을 쓴다
-  const resolveTimes = (values: TimeDraftValues) => ({
-    startHm: canonicalDraft(values.start ?? serverStartHm),
-    endHm: canonicalDraft(values.end ?? serverEndHm),
-  });
+  // 서버 값과 합친 시각을 검증한다. 렌더 중(오류 문장)과 제출이 같은 스키마를 쓴다
+  const timeSchema = createScheduleTimeSchema({ serverStartHm, serverEndHm });
 
   const form = useForm({
     // 편집한 칸의 초안만 값으로 들고 나머지는 서버 값을 따른다. defaultValues에 서버 값을 넣으면
     // 한 칸만 고쳐도 폼 전체가 touched가 되어 다른 칸이 재조회 값을 따라가지 못한다(FormApi.update)
     defaultValues: UNTOUCHED_DRAFT,
     validators: {
-      // 시작·종료 교차 검증이라 폼 단위다. 화면 안내 문장은 재조회로 서버 값이 바뀌어도 맞도록 렌더 중에 같은 함수로 계산한다
-      onSubmit: ({ value }) => {
-        const { startHm, endHm } = resolveTimes(value);
-        const result = validateScheduleTimeDraft(startHm, endHm);
-        return result.valid ? undefined : result.message;
-      },
-    },
-    onSubmitInvalid: ({ formApi }) => {
-      const [message] = formApi.state.errors;
-      if (message) toast.error(message);
+      // 시작·종료 교차 검증이라 폼 단위다. 오류 문장은 입력 즉시 렌더 중에 보이므로, 여기서는 Enter로 들어온 제출만 막는다
+      onSubmit: timeSchema,
     },
     onSubmit: async ({ value }) => {
-      const { startHm, endHm } = resolveTimes(value);
+      const { startHm, endHm } = timeSchema.parse(value);
       savingRef.current = true;
       try {
         await mutateAsync({
@@ -111,12 +96,12 @@ export function PlanItemTimeEditor({
   });
 
   const draft = useStore(form.store, (state) => state.values);
-  const { startHm, endHm } = resolveTimes(draft);
+  const { startHm, endHm } = resolveScheduleTimeDraft(draft, { serverStartHm, serverEndHm });
   const durationPreview =
     startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
   const dirty = serverStartHm !== startHm || serverEndHm !== endHm;
-  const validation = validateScheduleTimeDraft(startHm, endHm);
-  const describedBy = validation.valid ? `${formId}-help` : `${formId}-help ${formId}-error`;
+  // 칸 오류는 입력 즉시, 재조회로 서버 값이 바뀌어도 맞게 렌더 중에 계산한다. 칸 validators는 그 칸을 바꿀 때만 돌아 서버 값 변화를 놓친다
+  const timeIssue = timeSchema.safeParse(draft).error?.issues[0];
 
   function submit() {
     // 라이브러리는 연타를 막지 않는다. isPending은 다음 렌더에 바뀌어 ref 락을 함께 본다
@@ -176,34 +161,38 @@ export function PlanItemTimeEditor({
             { name: "end", label: "종료", serverValue: serverEndHm, disabled: isPending || !normalizeStartTimeToHm(startHm) },
           ] as const).map(({ name, label, serverValue, disabled }) => (
             <form.Field key={name} name={name}>
-              {(field) => (
-                <div className="flex items-center gap-3">
-                  <span className={`${fieldLabelClass} w-10 shrink-0 text-center`}>
-                    {label}
-                  </span>
-                  <TimeInput
-                    label={label}
-                    value={field.state.value ?? serverValue}
-                    onChange={field.handleChange}
-                    disabled={disabled}
-                    describedBy={describedBy}
-                    // 적용 버튼이 비활성이어도 Enter로 검증 실패 안내를 보여 준다.
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        submit();
-                      }
-                    }}
-                  />
-                </div>
-              )}
+              {(field) => {
+                const issue = timeIssue?.path[0] === name ? timeIssue : undefined;
+                const errorId = `${formId}-${name}-error`;
+                return (
+                  <Field>
+                    <div className="flex items-center gap-3">
+                      <span className={`${fieldLabelClass} w-10 shrink-0 text-center`}>
+                        {label}
+                      </span>
+                      <TimeInput
+                        label={label}
+                        value={field.state.value ?? serverValue}
+                        onChange={field.handleChange}
+                        disabled={disabled}
+                        describedBy={issue ? `${formId}-help ${errorId}` : `${formId}-help`}
+                        // 적용 버튼이 비활성이어도 Enter로 제출을 시도한다. 틀린 값이면 폼 스키마가 막고 오류는 칸 아래 그대로다
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            submit();
+                          }
+                        }}
+                      />
+                    </div>
+                    <FieldError id={errorId}>
+                      {issue ? `${issue.message} 시는 00–23, 분은 00–59로 입력해 주세요.` : null}
+                    </FieldError>
+                  </Field>
+                );
+              }}
             </form.Field>
           ))}
-          {!validation.valid ? (
-            <p id={`${formId}-error`} role="alert" className="text-body-xs-regular text-red-600">
-              {validation.message} 시는 00–23, 분은 00–59로 입력해 주세요.
-            </p>
-          ) : null}
 
           <div className="min-h-[16px] text-center text-body-xs-regular">
             {startHm.length === 0 ? (
@@ -228,7 +217,7 @@ export function PlanItemTimeEditor({
           <Button
             type="submit"
             form={formId}
-            disabled={!dirty || !validation.valid}
+            disabled={!dirty || Boolean(timeIssue)}
             loading={isPending}
             loadingLabel="저장 중"
           >

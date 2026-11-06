@@ -163,6 +163,10 @@ describe("schedule time editor", () => {
     await type(2, "02");
     props = { ...props, startTime: "", endTime: null };
     await render();
+    // 재조회로 바뀐 서버 값도 렌더 중에 다시 검증해 시작 칸 아래에 보인다
+    const alert = document.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("시작 시각 없이 종료 시각만 설정할 수 없어요.");
+    expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
     await click("적용");
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
   });
@@ -189,16 +193,30 @@ describe("web time editing", () => {
     await key(input(column), "Enter");
     expect(body()).toEqual({ startTime: "08:05" });
   });
-  it.each(["24", "-1", "abc", "", "100"])("shows invalid hour %s without saving", async (value) => {
+  it.each(["24", "-1", "abc", "", "100"])("shows invalid hour %s under the start field without saving", async (value) => {
     await render();
     await type(0, value);
     expect(input(0).getAttribute("aria-invalid")).toBe("true");
-    expect(document.querySelector('[role="alert"]')?.textContent).toBeTruthy();
+    const alert = document.querySelector('[role="alert"]');
+    expect(alert?.textContent).toBe("시간을 올바르게 선택해 주세요. 시는 00–23, 분은 00–59로 입력해 주세요.");
+    expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
+    expect(input(2).getAttribute("aria-describedby")).not.toContain(alert!.id);
+    // Enter로 제출해도 막히고, 오류는 칸 아래 문장 하나뿐이다(토스트를 겹쳐 띄우지 않는다)
     await key(input(0), "Enter");
-    expect(mocks.error).toHaveBeenCalledOnce();
+    expect(mocks.error).not.toHaveBeenCalled();
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    expect(document.querySelectorAll('[role="alert"]')).toHaveLength(1);
     await type(0, "22");
     expect(input(0).getAttribute("aria-invalid")).toBe("false");
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+  });
+  it("puts an invalid end time under the end field", async () => {
+    await render();
+    await type(3, "60");
+    const alert = document.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("시간을 올바르게 선택해 주세요.");
+    expect(input(3).getAttribute("aria-describedby")).toContain(alert!.id);
+    expect(input(0).getAttribute("aria-describedby")).not.toContain(alert!.id);
   });
   it("rejects invalid minutes and does not auto-save on blur", async () => {
     await render();
