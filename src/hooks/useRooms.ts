@@ -17,7 +17,6 @@ import {
   HttpError,
   approveJoinRequest,
   createBookmarkCategory,
-  createRoomBookmark,
   createRoomBookmarks,
   createRoom,
   createRoomSchedule,
@@ -832,35 +831,6 @@ export function useRoomBookmarks(
     ...roomBookmarksQueryOptions(idOk ? roomId : null),
     enabled: !!roomId && idOk,
     select: (bookmarks) => bookmarks.filter((b) => b.categoryId === categoryId),
-  });
-}
-
-export function useCreateRoomBookmark() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      roomId,
-      googlePlaceId,
-      categoryId,
-    }: {
-      roomId: string;
-      googlePlaceId: string;
-      categoryId: number;
-    }) => createRoomBookmark(roomId, { googlePlaceId, categoryId }),
-    onSuccess: (created, { roomId, categoryId }) => {
-      queryClient.setQueryData<BookmarkCategory[]>(
-        bookmarkCategoriesQueryKey(roomId),
-        (prev) => {
-          if (!prev?.length) return prev;
-          return prev.map((c) =>
-            c.categoryId === categoryId
-              ? { ...c, placeCount: c.placeCount + 1 }
-              : c,
-          );
-        },
-      );
-      appendRoomBookmarksToCache(queryClient, roomId, [created]);
-    },
   });
 }
 

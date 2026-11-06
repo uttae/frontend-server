@@ -15,7 +15,6 @@ import type {
   RoomBookmark,
   RoomBookmarkBulkCreateRequest,
   RoomBookmarkCategoryPatchRequest,
-  RoomBookmarkCreateRequest,
 } from "./types";
 
 function normalizeBookmarksResponse(body: unknown): RoomBookmark[] {
@@ -75,21 +74,6 @@ export async function createRoomBookmarks(
   }
 
   return normalizeBookmarksResponse(parsed);
-}
-
-export async function createRoomBookmark(
-  roomId: string,
-  body: RoomBookmarkCreateRequest,
-): Promise<RoomBookmark> {
-  const list = await createRoomBookmarks(roomId, {
-    googlePlaceId: body.googlePlaceId,
-    categoryIds: [body.categoryId],
-  });
-  const first = list[0];
-  if (!first) {
-    throw new HttpError(409, "이미 북마크에 추가된 장소입니다");
-  }
-  return first;
 }
 
 export async function patchRoomBookmarkCategory(
