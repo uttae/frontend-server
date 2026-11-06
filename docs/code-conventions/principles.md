@@ -429,27 +429,43 @@ const sorted = [...data.places].sort(byOrder);
 
 ### 2-9. 폼은 TanStack Form, 검증은 칸마다 (Forms)
 
-입력 값·검증·제출 상태를 `useState`로 하나씩 들면 오류가 폼 아래 문장 하나로 뭉치고, 어느 칸이 틀렸는지 화면이 모른다. 대화상자·시트 안의 폼은 `@tanstack/react-form`으로 쓴다.
+입력 값·검증·제출 상태를 `useState`로 하나씩 들면 오류가 폼 아래 문장 하나로 뭉치고, 어느 칸이 틀렸는지 화면이 모른다. 페이지 안의 폼과 대화상자·시트 안의 폼은 `@tanstack/react-form`으로 쓰고, 규칙은 zod 스키마로 둔다.
 
-- 값은 `useForm({ defaultValues })`가 갖고, 칸은 `form.Field`로 그린다. 검증은 칸마다 `validators`에 함수로 둔다(zod는 아직 쓰지 않는다 — 나중에 같은 자리에 스키마를 넣는다). 검증 함수는 `src/lib`의 순수 함수를 부른다.
+- 값은 `useForm({ defaultValues })`가 갖고, 칸은 `form.Field`로 그린다.
+- 규칙은 `src/lib`의 zod 스키마에 두고, 문구·한도는 그 도메인 규칙 파일의 상수·판정 함수를 쓴다. 칸 하나 규칙은 그 칸 `validators`에 칸 스키마로, 다른 칸·서버 값을 함께 보는 교차 규칙은 폼 단위 스키마(`onSubmit`, 또는 `revalidateLogic()` + `onDynamic`)로 둔다. 폼 단위 `onChange` 스키마는 쓰지 않는다(칸 하나만 바꿔도 건드리지 않은 칸에 오류가 붙는다).
+- 스키마 오류는 issue 객체다. `errors[0]?.message`로 그리고, 한 폼에서 문자열을 돌려주는 함수 validator와 섞지 않는다(문자열 쪽은 `.message`가 없다).
+- issue `path`는 오류를 보일 `form.Field`의 `name`과 같게 둔다(`path: ["endDate"]`). 원소별 path(`destinations[0]`)나 path 없는 루트 refine은 어느 칸에도 보이지 않는다.
+- 폼 값 타입은 스키마에서 만든다(`z.input<typeof schema>`). `onSubmit`의 `value`는 다듬기 전 값이라 저장에는 `schema.parse(value)` 결과(trim 등)를 넘기고, 버튼 잠금은 `schema.safeParse(values).success`로 계산한다.
 - 칸 오류는 그 칸에 `aria-invalid`와 `FieldError`로 그린다. Select처럼 Figma에 오류 상태가 없는 칸도 Text Field 오류 모양을 쓴다. 권한·저장 실패·충돌처럼 칸이 없는 오류는 폼 아래 문장으로 둔다.
 - 제출은 `form.handleSubmit()` → `onSubmit`에서 mutation의 `mutateAsync`. 버튼 `loading`과 대화상자 `closeDisabled`는 그 mutation의 `isPending` 하나로 정한다(2-4).
 
 ```tsx
+// src/lib/expenses/expense-form.ts — 규칙과 문구는 스키마 한 곳에
+export const expenseBudgetSchema = z.string().regex(/^\d{1,15}$/, EXPENSE_BUDGET_INVALID_MESSAGE);
+
+// 교차 규칙은 폼 스키마에서 오류를 보일 칸의 name을 path로 준다
+const tripDatesSchema = z.object({ startDate: z.string(), endDate: z.string() }).superRefine(({ startDate, endDate }, ctx) => {
+  if (endDate < startDate) ctx.addIssue({ code: "custom", path: ["endDate"], message: TRIP_DATE_RANGE_INVALID_MESSAGE });
+});
+
+// 컴포넌트
 const form = useForm({
   defaultValues: { budget: initial.budgetKrw ?? "" },
   onSubmit: ({ value }) => saveBudget.mutateAsync({ budgetKrw: value.budget }),
 });
 
-<form.Field name="budget" validators={{ onSubmit: ({ value }) => budgetError(value) }}>
-  {(field) => (
-    <Field>
-      <FieldLabel htmlFor={field.name}>예산 (KRW)</FieldLabel>
-      <Input id={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)}
-        aria-invalid={field.state.meta.errors.length > 0} />
-      <FieldError>{field.state.meta.errors[0]}</FieldError>
-    </Field>
-  )}
+<form.Field name="budget" validators={{ onSubmit: expenseBudgetSchema }}>
+  {(field) => {
+    const error = field.state.meta.errors[0]?.message;
+    return (
+      <Field>
+        <FieldLabel htmlFor={field.name}>예산 (KRW)</FieldLabel>
+        <Input id={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)}
+          aria-invalid={error ? true : undefined} />
+        <FieldError>{error}</FieldError>
+      </Field>
+    );
+  }}
 </form.Field>
 <Button type="submit" loading={saveBudget.isPending} loadingLabel="저장 중">저장</Button>
 ```
