@@ -8,6 +8,7 @@ import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 const mocks = vi.hoisted(() => ({
   invalidateSchedulePlanPlaces: vi.fn(),
   syncAfterCrossScheduleItemMove: vi.fn(),
+  syncRoomDetailFromServer: vi.fn(),
 }));
 
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
@@ -16,8 +17,11 @@ vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
 }));
 
 vi.mock("@/lib/rooms", () => ({
-  syncRoomDetailFromServer: vi.fn(),
+  syncRoomDetailFromServer: mocks.syncRoomDetailFromServer,
 }));
+
+vi.mock("@/lib/tab-id", () => ({ getTabId: () => "tab-a" }));
+const MY_TAB_ID = "tab-a";
 
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 
@@ -119,4 +123,81 @@ describe("expense synchronization on existing schedule events",()=>{
   for(const suffix of ["list","summary"])expect(client.getQueryState(["room-expenses","room-1",suffix])?.isInvalidated).toBe(true);
   client.clear();
  });
+});
+
+describe("echo of this tab vs. other tabs of the same account", () => {
+  const SKIPPABLE_TYPES = [
+    "ROOM_SCHEDULES_RESYNCED",
+    "SCHEDULE_ITEM_MOVED",
+    "SCHEDULE_ITEM_DELETED",
+    "SCHEDULE_ITEM_CREATED",
+    "SCHEDULE_ITEMS_REORDERED",
+    "SCHEDULE_ITEM_TRAVEL_MODE_UPDATED",
+  ] as const;
+  let queryClient: QueryClient;
+
+  /** itemEvent의 actorUserId(99)가 이 계정이다 */
+  function ownAccountEvent(
+    type: RoomScheduleChangedEvent["type"],
+    originTabId: string | null,
+  ): RoomScheduleChangedEvent {
+    return { ...itemEvent(type, [20]), scheduleIds: [10, 11], originTabId };
+  }
+
+  /** 일차 목록·일정 전체·방 상세 중 어느 것이든 다시 받은 횟수 */
+  const refetchCount = () =>
+    mocks.invalidateSchedulePlanPlaces.mock.calls.length +
+    mocks.syncAfterCrossScheduleItemMove.mock.calls.length +
+    mocks.syncRoomDetailFromServer.mock.calls.length;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    mocks.invalidateSchedulePlanPlaces.mockResolvedValue(undefined);
+    mocks.syncAfterCrossScheduleItemMove.mockResolvedValue(undefined);
+    queryClient = new QueryClient();
+    queryClient.setQueryData(sessionUserQueryKey, { id: 99 });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    queryClient.clear();
+  });
+
+  it.each(SKIPPABLE_TYPES)("skips %s sent from this tab", async (type) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, MY_TAB_ID));
+    await vi.runAllTimersAsync();
+
+    expect(refetchCount()).toBe(0);
+  });
+
+  it.each(SKIPPABLE_TYPES)("applies %s sent from another tab of the same account", async (type) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, "tab-b"));
+    await vi.runAllTimersAsync();
+
+    expect(refetchCount()).toBe(1);
+  });
+
+  it.each(SKIPPABLE_TYPES)("still skips %s of the same account without a tab ID (backend before originTabId)", async (type) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, null));
+    await vi.runAllTimersAsync();
+
+    expect(refetchCount()).toBe(0);
+  });
+
+  it("skips a time update sent from this tab — its own settled refetch already has it", async () => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", MY_TAB_ID));
+    await vi.runAllTimersAsync();
+
+    expect(mocks.invalidateSchedulePlanPlaces).not.toHaveBeenCalled();
+  });
+
+  it("refetches a time update from another tab of the same account without joining an in-flight load", async () => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", "tab-b"));
+    await vi.runAllTimersAsync();
+
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10, {
+      joinInFlight: false,
+    });
+  });
 });

@@ -3,7 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
 import type { PlanPlace } from "@/lib/plan/types";
-import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
+import {
+  roomSchedulesQueryKey,
+  scheduleItemsQueryKey,
+  sessionUserQueryKey,
+} from "@/lib/query-keys";
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 
 const fixtures = vi.hoisted(() => ({
@@ -42,6 +46,7 @@ vi.mock("@/lib/rooms", () => ({
 vi.mock("@/lib/query-client", () => ({
   getQueryClient: () => null,
 }));
+vi.mock("@/lib/tab-id", () => ({ getTabId: () => "tab-a" }));
 
 import {
   removeScheduleItemFromPlanPlacesCache,
@@ -234,6 +239,23 @@ describe("schedule day list refetch order", () => {
 
     await vi.waitFor(() => expect(dayItemIds()).toEqual([100, 102]));
     expect(fixtures.getScheduleItems).toHaveBeenCalledOnce();
+  });
+
+  it("shows a reorder made in another tab of the same account", async () => {
+    // remoteEvent의 actorUserId(2)가 이 계정 — 예전에는 계정이 같아 버렸다
+    client.setQueryData(sessionUserQueryKey, { id: 2 });
+    client.setQueryData(DAY_KEY, [100, 101, 102].map(fixtures.place));
+    watchDayList();
+    fixtures.getScheduleItems.mockResolvedValue(items(102, 100, 101));
+
+    await dispatchRoomScheduleEvent(client, {
+      ...remoteEvent("SCHEDULE_ITEMS_REORDERED", 102),
+      originTabId: "tab-b",
+    });
+    await settle();
+
+    expect(fixtures.getScheduleItems).toHaveBeenCalledOnce();
+    expect(dayItemIds()).toEqual([102, 100, 101]);
   });
 
   it("fetches from the server when the day list is invalidated", async () => {
