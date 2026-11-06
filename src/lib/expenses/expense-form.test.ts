@@ -4,6 +4,8 @@ import type { RoomMember } from "@/lib/api/rooms/types";
 
 import {
   createExpenseFormSchema,
+  EXPENSE_BUDGET_INVALID_MESSAGE,
+  expenseBudgetSchema,
   expenseCategorySchema,
   expenseMemoSchema,
   expenseNameSchema,
@@ -80,5 +82,16 @@ describe("expense field schemas", () => {
     ]);
     expect(expenseNameSchema.safeParse(undefined).success).toBe(true);
     expect(expenseMemoSchema.safeParse(null).success).toBe(true);
+  });
+});
+
+describe("expenseBudgetSchema", () => {
+  it.each(["0", "1", "999999999999999"])("accepts %s", (value) => {
+    expect(expenseBudgetSchema.safeParse(value).success).toBe(true);
+  });
+  it.each(["", "-1", "1.5", " 1", "1000000000000000"])("rejects %s with the budget message", (value) => {
+    expect(issuesOf(expenseBudgetSchema.safeParse(value))).toEqual([
+      { path: [], message: EXPENSE_BUDGET_INVALID_MESSAGE },
+    ]);
   });
 });

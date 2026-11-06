@@ -77,3 +77,9 @@ export function createExpenseFormSchema({ currencies, members, original, daysOf 
 
 /** 입력 중인 비용 폼 값 */
 export type ExpenseFormValues = z.input<ReturnType<typeof createExpenseFormSchema>>;
+
+export const EXPENSE_BUDGET_INVALID_MESSAGE =
+  "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요." as const;
+
+/** 공유 예산(KRW) 칸. 정수 1~15자리만 받는다 */
+export const expenseBudgetSchema = z.string().regex(/^\d{1,15}$/, EXPENSE_BUDGET_INVALID_MESSAGE);
