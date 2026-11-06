@@ -98,6 +98,7 @@ import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epo
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { applyHostTransferToCache } from "@/lib/rooms/host-transfer-cache";
 import { readSessionUserId } from "@/lib/session-user-cache";
+import { evictRoomFromClientCaches } from "@/lib/stomp/forced-room-exit-dispatch";
 
 export function useRoomsList() {
   return useQuery({
@@ -673,8 +674,14 @@ export function useLeaveRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (roomId: string) => leaveRoom(roomId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
+    // 나간 방은 접근 권한을 잃어 방 범위 조회가 403을 받는다 — 다시 받지 않고 바로 지운다(AGENTS.md: 권한 상실 시 즉시 제거).
+    // 다른 탭은 STOMP 본인 MEMBER_LEFT(onSelfLeftRoom)가 같은 정리를 한다
+    onSuccess: (_, roomId) => {
+      evictRoomFromClientCaches(queryClient, roomId);
+    },
+    // 방 목록만 서버 기준으로 맞춘다. 나간 방은 위에서 이미 목록에서 뺐으므로 기다리지 않는다
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });
 }
