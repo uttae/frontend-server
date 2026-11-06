@@ -73,26 +73,6 @@ export function isTripDateRangeInvalid(startDate: string, endDate: string) {
   return Boolean(startDate && endDate && endDate < startDate);
 }
 
-/*
- * 여행 정보 칸별 검증. 오류 문장을 돌려주고 통과면 undefined다.
- * TanStack Form 칸 validators와 적용하기 잠금이 같이 쓴다. zod를 붙이면 이 함수들 자리에 스키마를 넣는다
- */
-export function tripTitleError(title: string): string | undefined {
-  return title.trim() ? undefined : TRIP_TITLE_REQUIRED_MESSAGE;
-}
-
-export function tripDestinationsError(destinations: string[]): string | undefined {
-  if (destinations.length === 0) return TRIP_DESTINATIONS_REQUIRED_MESSAGE;
-  return isTripDestinationsValid(destinations) ? undefined : TRIP_DESTINATIONS_INVALID_MESSAGE;
-}
-
-export function tripDateRangeError(startDate: string, endDate: string): string | undefined {
-  if (!startDate || !endDate) return TRIP_DATES_REQUIRED_MESSAGE;
-  if (isTripDateRangeInvalid(startDate, endDate)) return TRIP_DATE_RANGE_INVALID_MESSAGE;
-  if (isTripScheduleDayLimitExceeded(startDate, endDate)) return TRIP_SCHEDULE_DAY_LIMIT_MESSAGE;
-  return undefined;
-}
-
 function tripDatesMessage(startDate: string, endDate: string, startDateMin?: string): string | undefined {
   if (!startDate || !endDate) return TRIP_DATES_REQUIRED_MESSAGE;
   if (startDateMin != null && isTripStartBeforeMin(startDate, startDateMin)) return TRIP_START_BEFORE_MIN_MESSAGE;

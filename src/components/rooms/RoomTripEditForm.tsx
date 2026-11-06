@@ -15,16 +15,21 @@ import { useRoomSchedules, type useUpdateRoom } from "@/hooks/useRooms";
 import { countSchedulesTrimmedByDateChange } from "@/lib/plan/schedulePolicy";
 import {
   areDestinationsEqual,
+  createTripDatesSchema,
+  createTripFormSchema,
   ROOM_TRIP_TITLE_MAX_LENGTH,
   toTripFormValues,
   TRIP_DESTINATION_MAX_LENGTH,
   TRIP_DESTINATIONS_MAX_COUNT,
-  tripDateRangeError,
-  tripDestinationsError,
-  tripTitleError,
+  tripDestinationsSchema,
+  tripTitleSchema,
   type RoomTripFormSource,
   type TripFormValues,
 } from "@/lib/rooms/trip-form";
+
+// 여행 정보 수정은 시작일 하한이 없다(#251)
+const tripFormSchema = createTripFormSchema();
+const tripDatesSchema = createTripDatesSchema();
 
 type Props = {
   room: RoomTripFormSource;
@@ -61,12 +66,8 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
     updateRoom(
       {
         roomId: room.id,
-        data: {
-          title: value.title.trim().slice(0, ROOM_TRIP_TITLE_MAX_LENGTH),
-          destinations: value.destinations.map((d) => d.trim()),
-          startDate: value.startDate,
-          endDate: value.endDate,
-        },
+        // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
+        data: tripFormSchema.parse(value),
         previousStartDate: latest.startDate,
         previousEndDate: latest.endDate,
       },
@@ -115,14 +116,9 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
     startDate !== opened.startDate ||
     endDate !== opened.endDate;
 
-  // 칸 오류는 각 form.Field의 validators가 입력할 때마다 칸 아래에 보인다. 적용하기는 같은 검증 함수로 잠근다
+  // 칸 오류는 각 form.Field의 validators가 입력할 때마다 칸 아래에 보인다. 적용하기는 같은 스키마로 잠근다
   // (validators는 건드린 칸에서만 돌아서, 연 순간부터 비어 있던 칸(기간 없는 방 등)도 잠그려면 값으로 다시 본다)
-  const canApply =
-    !tripTitleError(title) &&
-    !tripDestinationsError(destinations) &&
-    !tripDateRangeError(startDate, endDate) &&
-    !isPending &&
-    isDirty;
+  const canApply = tripFormSchema.safeParse(values).success && !isPending && isDirty;
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
@@ -130,9 +126,9 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
         <RoomTripReadOnlyFields idPrefix={idPrefix} values={latest} />
       ) : (
         <div className="flex min-w-0 flex-col gap-6">
-          <form.Field name="title" validators={{ onChange: ({ value }) => tripTitleError(value) }}>
+          <form.Field name="title" validators={{ onChange: tripTitleSchema }}>
             {(field) => {
-              const fieldError = field.state.meta.errors[0];
+              const fieldError = field.state.meta.errors[0]?.message;
               return (
                 <Field>
                   <FieldLabel htmlFor={`${idPrefix}-title`}>여행 제목</FieldLabel>
@@ -153,7 +149,7 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
             }}
           </form.Field>
 
-          <form.Field name="destinations" validators={{ onChange: ({ value }) => tripDestinationsError(value) }}>
+          <form.Field name="destinations" validators={{ onChange: tripDestinationsSchema }}>
             {(field) => (
               <Field>
                 {/* 검색 입력이 DestinationSearchInput 안에 있어 label로 잇지 못한다. 입력 이름은 aria-label '목적지 검색'이다 */}
@@ -164,15 +160,19 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
                   maxCount={TRIP_DESTINATIONS_MAX_COUNT}
                   maxLength={TRIP_DESTINATION_MAX_LENGTH}
                 />
-                <FieldError>{field.state.meta.errors[0]}</FieldError>
+                <FieldError>{field.state.meta.errors[0]?.message}</FieldError>
               </Field>
             )}
           </form.Field>
 
-          {/* 기간은 칸 하나(DateRangeField)가 두 값을 바꾼다. 오류는 끝 날짜 칸이 시작 날짜와 함께 검증해 기간 아래에 보인다 */}
+          {/* 기간은 칸 하나(DateRangeField)가 두 값을 바꾼다. 기간 스키마의 오류(path endDate)를 끝 날짜 칸이 기간 아래에 보인다 */}
           <form.Field
             name="endDate"
-            validators={{ onChange: ({ value, fieldApi }) => tripDateRangeError(fieldApi.form.getFieldValue("startDate"), value) }}
+            validators={{
+              onChange: ({ value, fieldApi }) =>
+                tripDatesSchema.safeParse({ startDate: fieldApi.form.getFieldValue("startDate"), endDate: value }).error
+                  ?.issues,
+            }}
           >
             {(field) => (
               <div className="flex min-w-0 flex-col gap-2">
@@ -186,7 +186,7 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
                     field.handleChange(next.end);
                   }}
                 />
-                <FieldError>{field.state.meta.errors[0]}</FieldError>
+                <FieldError>{field.state.meta.errors[0]?.message}</FieldError>
               </div>
             )}
           </form.Field>
