@@ -4,10 +4,10 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { expect, it, vi } from 'vitest';
 import { bookmarkCategoriesQueryKey, roomAllBookmarksQueryKey } from '@/lib/query-keys';
-import { useAllRoomBookmarks, useBookmarkCategories, useDeleteBookmarkCategory } from './useRooms';
+import { useAllRoomBookmarks, useBookmarkCategories, useCreateRoomBookmarksInCategories, useDeleteBookmarkCategory } from './useRooms';
 import { applyRoomBookmarkStompMessage } from '@/lib/stomp/bookmarks-dispatch';
-const api = vi.hoisted(() => ({ get: vi.fn(), getAll: vi.fn(), deleteCategory: vi.fn() }));
-vi.mock('@/lib/api/rooms', async importOriginal => ({...await importOriginal<object>(), getBookmarkCategories: api.get, getAllRoomBookmarks: api.getAll, deleteBookmarkCategory: api.deleteCategory}));
+const api = vi.hoisted(() => ({ get: vi.fn(), getAll: vi.fn(), deleteCategory: vi.fn(), createBookmarks: vi.fn() }));
+vi.mock('@/lib/api/rooms', async importOriginal => ({...await importOriginal<object>(), getBookmarkCategories: api.get, getAllRoomBookmarks: api.getAll, deleteBookmarkCategory: api.deleteCategory, createRoomBookmarks: api.createBookmarks}));
 function Probe() { const query=useBookmarkCategories('room');return <p>{query.data?.[0]?.name}</p>; }
 it('reuses folders on reentry but fetches changes broadcast while mounted or away', async () => {
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT',true);
@@ -68,5 +68,25 @@ it('폴더를 지우면 폴더 목록과 그 안의 북마크가 빠진 뒤에 �
   // 본인 CATEGORY_DELETED는 STOMP에서 버리므로 mutation이 두 목록을 다시 받고, 받은 뒤에 끝난다
   expect(client.getQueryData(bookmarkCategoriesQueryKey('room'))).toEqual([{ categoryId: 2, name: '카페', placeCount: 0 }]);
   expect(client.getQueryData(roomAllBookmarksQueryKey('room'))).toEqual([]);
+ } finally { await view.unmount(); client.clear(); vi.unstubAllGlobals(); }
+});
+
+it('여러 폴더에 북마크 추가가 실패해도 두 목록을 다시 받도록 표시한다', async () => {
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+ api.createBookmarks.mockRejectedValue(new Error('network'));
+ const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+ client.setQueryData(bookmarkCategoriesQueryKey('room'), [{ categoryId: 1, name: '맛집', placeCount: 0 }]);
+ client.setQueryData(roomAllBookmarksQueryKey('room'), []);
+ const view = renderHooks(client, () => useCreateRoomBookmarksInCategories());
+ try {
+  await view.mount();
+  let result: Awaited<ReturnType<typeof view.result.current.mutateAsync>> | undefined;
+  await act(async () => { result = await view.result.current.mutateAsync({ roomId: 'room', googlePlaceId: 'place', categoryIds: [1] }); });
+
+  // 오류는 결과 객체로 돌려주므로(throw 없음) onSettled가 실패 경로도 맡는다
+  expect(result?.firstHardError?.message).toBe('network');
+  expect(client.getQueryData(roomAllBookmarksQueryKey('room'))).toEqual([]);
+  expect(client.getQueryState(bookmarkCategoriesQueryKey('room'))?.isInvalidated).toBe(true);
+  expect(client.getQueryState(roomAllBookmarksQueryKey('room'))?.isInvalidated).toBe(true);
  } finally { await view.unmount(); client.clear(); vi.unstubAllGlobals(); }
 });

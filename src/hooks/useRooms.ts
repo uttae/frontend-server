@@ -874,7 +874,10 @@ export type CreateRoomBookmarksInCategoriesResult = {
   bookmarks: RoomBookmark[];
 };
 
-/** POST 한 번으로 `googlePlaceId` + `categoryIds` 배열 전달. STOMP와 함께 목록 캐시도 즉시 무효화합니다. */
+/**
+ * POST 한 번으로 `googlePlaceId` + `categoryIds` 배열 전달. 추가된 북마크는 응답으로 전체 목록·폴더 개수에 바로 넣고,
+ * 끝나면 두 목록을 서버 기준으로 다시 받습니다. 오류도 결과 객체로 돌려줘(throw 없음) 실패한 추가도 `onSettled`가 맞춥니다.
+ */
 export function useCreateRoomBookmarksInCategories() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -936,6 +939,10 @@ export function useCreateRoomBookmarksInCategories() {
         },
       );
       appendRoomBookmarksToCache(queryClient, roomId, result.bookmarks);
+    },
+    // 응답을 이미 반영했으므로 기다리지 않는다(대화상자는 바로 닫힌다). 409(이미 있음)·실패도 다른 탭·사람의 추가일 수 있어 다시 받는다
+    onSettled: (_result, _error, { roomId }) => {
+      void invalidateRoomBookmarkLists(queryClient, roomId);
     },
   });
 }
