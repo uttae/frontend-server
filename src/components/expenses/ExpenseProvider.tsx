@@ -287,7 +287,9 @@ function useExpenses(roomId: string) {
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
     if (reads.some(query => query.isError)) resolvedSyncStatus = "error";
-    else if (reads.some(query => !query.isSuccess || query.isFetching)) resolvedSyncStatus = "pending";
+    else if (reads.some(query => !query.isSuccess)) resolvedSyncStatus = "pending";
+    // 다른 화면의 무효화(일정 변경·멤버 이벤트 등)로 있던 값을 두고 다시 받는 중 — 금액을 비우지 않는다
+    else if (reads.some(query => query.isFetching)) resolvedSyncStatus = "refreshing";
   }
   return {
     roomId,

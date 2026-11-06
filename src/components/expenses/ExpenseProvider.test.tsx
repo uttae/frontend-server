@@ -176,7 +176,7 @@ it("does not treat partial STOMP member cache as a successful full member query"
 });
 
 import type { Expense, ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
-import { expenseKeys } from "@/lib/expenses/expense-queries";
+import { expenseKeys, invalidateExpenses } from "@/lib/expenses/expense-queries";
 let context: ReturnType<typeof useExpenseContext>;
 function MutationProbe() {
   const value = useExpenseContext();
@@ -257,6 +257,9 @@ it("forwards the reviewed version and reflects PATCH before summary refresh comp
     expect.objectContaining({ expectedVersion: 2 }),
   );
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+  // 저장 뒤 다시 받는 동안 보이던 예산·합계를 두고 갱신한다('—'로 바꾸지 않는다)
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+  expect(context.syncStatus).toBe("refreshing");
   expect(analytics.send.mock.calls).toEqual([sentEvent("expense_updated")]);
   await act(async () => {
     finishList([updated]);
@@ -297,6 +300,21 @@ it("본인 저장 뒤 반향 알림이 와도 목록은 최대 2번 받고 앞 �
   } finally {
     stopCounting();
   }
+});
+it("다른 화면의 무효화로 다시 받는 동안에도 장부를 비우지 않고 refreshing으로 둔다", async () => {
+  await mountMutations();
+  expect(context.syncStatus).toBe("ready");
+  let finish!: (value: unknown) => void;
+  mocks.summary.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  // 일정 삭제 등 다른 mutation이 가계부 전체를 무효화한다
+  await act(async () => {
+    void invalidateExpenses(client, "r");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(context.syncStatus).toBe("refreshing");
+  expect(context.budget.data).toBeDefined();
+  await act(async () => { finish({ currencies: [] }); await new Promise((resolve) => setTimeout(resolve, 20)); });
+  expect(context.syncStatus).toBe("ready");
 });
 it("uses a fresh list read for recovery and propagates read failure without returning cached data", async () => {
   await mountMutations();

@@ -151,7 +151,10 @@ class ExpenseRecovery {
     // A tab return revalidates cached data without clearing the visible ledger.
     // focus and visibilitychange can describe the same return.
     if (scope === "visible" && this.status === "refreshing" && this.running) return this.running;
-    const background = scope === "visible" && this.status === "ready";
+    // 보이던 장부를 두고 다시 받는다(refreshing): 탭 복귀·변경 알림·본인 저장 뒤. 금액을 '—'로 바꾸지 않는다(AGENTS.md 로딩 원칙).
+    // 입장·연결 복구·재시도(all)와 아직 맞춰지지 않은 장부(pending·error)는 처음부터 맞춘다(pending)
+    const background =
+      scope !== "all" && (this.status === "ready" || this.status === "refreshing");
     this.setStatus(background ? "refreshing" : "pending");
     const batch = (this.queued ??= this.startBatch());
     SCOPE_READS[scope].forEach((key) => batch.keys.add(key));

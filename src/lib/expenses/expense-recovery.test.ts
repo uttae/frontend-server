@@ -343,7 +343,7 @@ it("revalidates a ready room in the background and coalesces overlapping tab-ret
  }
 });
 
-it("promotes background revalidation to pending for a real expense change", async () => {
+it("keeps the ledger visible (refreshing) when a real expense change arrives during background revalidation", async () => {
  const client = new QueryClient();
  const recovery = await loadedRecovery(client);
  let finish!: (value: never[]) => void;
@@ -353,7 +353,7 @@ it("promotes background revalidation to pending for a real expense change", asyn
   await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
   expect(recovery.getSnapshot()).toBe("refreshing");
   const change = recovery.message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }));
-  expect(recovery.getSnapshot()).toBe("pending");
+  expect(recovery.getSnapshot()).toBe("refreshing");
   finish([]);
   await Promise.all([first, change]);
   expect(recovery.getSnapshot()).toBe("ready");
@@ -362,4 +362,16 @@ it("promotes background revalidation to pending for a real expense change", asyn
   await first.catch(() => {});
   client.clear();
  }
+});
+it.each(["expenses", "budget"] as const)("a %s change on a ready ledger refreshes in the background, but entry recovery is a foreground load", async (scope) => {
+ const client = new QueryClient();
+ const recovery = await loadedRecovery(client);
+ const change = recovery.refresh(scope);
+ expect(recovery.getSnapshot()).toBe("refreshing");
+ await change;
+ const entry = recovery.refresh("all");
+ expect(recovery.getSnapshot()).toBe("pending");
+ await entry;
+ expect(recovery.getSnapshot()).toBe("ready");
+ client.clear();
 });
