@@ -122,5 +122,3 @@ export function createTripFormSchema({ startDateMin }: TripSchemaOptions = {}) {
 
 /** 입력 중인 폼 값 */
 export type TripFormValues = z.input<ReturnType<typeof createTripFormSchema>>;
-/** 저장할 값 — 제목·목적지를 trim했다 */
-export type TripFormOutput = z.output<ReturnType<typeof createTripFormSchema>>;
