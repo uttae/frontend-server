@@ -63,11 +63,10 @@ export async function dispatchRoomScheduleEvent(
   ) {
     await invalidateExpenses(queryClient, rid);
   }
+  if (isOwnEcho(event)) return;
 
   switch (event.type) {
     case "ROOM_SCHEDULES_RESYNCED": {
-      if (isOwnEcho(event)) return;
-
       // 일정 전체 재조회는 room-schedules 조회 하나로 한다 — 진행 중인 옛 조회가 취소돼 새 일정을 덮지 않는다
       await queryClient.invalidateQueries({ queryKey: roomSchedulesQueryKey(rid) });
       await syncRoomDetailFromServer(queryClient, rid);
@@ -80,8 +79,6 @@ export async function dispatchRoomScheduleEvent(
 
       const sourceScheduleId = scheduleIds[0]!;
       const targetScheduleId = scheduleIds[1]!;
-
-      if (isOwnEcho(event)) return;
 
       await syncAfterCrossScheduleItemMove(
         queryClient,
@@ -97,8 +94,6 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(event)) return;
-
       await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       return;
     }
@@ -107,8 +102,6 @@ export async function dispatchRoomScheduleEvent(
       const sid = event.scheduleId;
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
-
-      if (isOwnEcho(event)) return;
 
       await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       return;
@@ -119,8 +112,6 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(event)) return;
-
       await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       return;
     }
@@ -130,8 +121,6 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(event)) return;
-
       enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
       return;
     }
@@ -140,8 +129,6 @@ export async function dispatchRoomScheduleEvent(
       const sid = event.scheduleId;
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
-
-      if (isOwnEcho(event)) return;
 
       enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
       return;
