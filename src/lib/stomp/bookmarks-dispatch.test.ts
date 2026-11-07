@@ -57,19 +57,11 @@ describe("applyRoomBookmarkStompMessage — echo of this tab", () => {
   });
 
   it.each([null, undefined])(
-    "skips a change of the same account without a tab ID (%s, backend before originTabId)",
+    "applies a change of the same account without a tab ID (%s) — it may come from another tab",
     async (originTabId) => {
       await applyRoomBookmarkStompMessage(queryClient, categoryCreated(originTabId));
 
-      expect(mocks.invalidateRoomBookmarkQueries).not.toHaveBeenCalled();
+      expect(mocks.invalidateRoomBookmarkQueries).toHaveBeenCalledOnce();
     },
   );
-
-  it("applies a change of another account without a tab ID", async () => {
-    queryClient.setQueryData(sessionUserQueryKey, { id: ME + 1 });
-
-    await applyRoomBookmarkStompMessage(queryClient, categoryCreated(null));
-
-    expect(mocks.invalidateRoomBookmarkQueries).toHaveBeenCalledOnce();
-  });
 });

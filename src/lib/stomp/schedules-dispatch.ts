@@ -15,32 +15,23 @@ const syncSchedulePlacesFromItemsDebouncers = new Map<
   string,
   ReturnType<typeof setTimeout>
 >();
-/** 모으는 동안 이 탭의 반향이 아닌 변경이 하나라도 들어온 일차 */
-const syncSchedulePlacesRemoteChangePending = new Set<string>();
 const DEBOUNCE_ITEMS_GET_MS = 90;
 
 function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
   queryClient: QueryClient,
   rid: string,
   sid: number,
-  ownEcho: boolean,
 ): void {
   const mapKey = `${rid}:${sid}`;
-  if (!ownEcho) syncSchedulePlacesRemoteChangePending.add(mapKey);
   const pending = syncSchedulePlacesFromItemsDebouncers.get(mapKey);
   if (pending !== undefined) clearTimeout(pending);
   syncSchedulePlacesFromItemsDebouncers.set(
     mapKey,
     setTimeout(() => {
       syncSchedulePlacesFromItemsDebouncers.delete(mapKey);
-      // 모은 이벤트가 모두 반향이면(탭 ID 없는 옛 이벤트), 저장이 끝나며 보낸 조회가 이미 그 변경을 담고 있어 합류한다
-      const joinInFlight = !syncSchedulePlacesRemoteChangePending.has(mapKey);
-      syncSchedulePlacesRemoteChangePending.delete(mapKey);
       void (async () => {
         try {
-          await invalidateSchedulePlanPlaces(queryClient, rid, sid, {
-            joinInFlight,
-          });
+          await invalidateSchedulePlanPlaces(queryClient, rid, sid);
         } catch {
           //
         }
@@ -52,12 +43,12 @@ function enqueueDebouncedHydratePlacesFromScheduleItemsApi(
 /**
  * Plan 화면 등이 쓰는 캐시만, 스키마의 `type`별로 갱신합니다.
  * — 이 탭이 보낸 변경의 반향(`isOwnEcho`)은 건너뛴다. 그 탭의 mutation이 캐시를 맞춘다.
- *   같은 계정의 다른 탭은 `originTabId`가 달라 다른 사람의 변경처럼 받는다
+ *   같은 계정의 다른 탭과 탭 ID가 없는 변경은 다른 사람의 변경처럼 받는다
  * — `ROOM_SCHEDULES_RESYNCED`: `room-schedules` 전체 재조회 + 방 상세 동기화
  * — `schedule-items`: 그 일차 장소 목록을 무효화해 다시 받는다(보는 화면이 없으면 그 화면에 들어갈 때)
  * — `schedule-item-route`: 무효화하지 않는다 — key에 도착 항목·이동수단이 있어, 순서·수단이 바뀐 구간은
  *   새 목록을 그릴 때 새 key로 받고 되돌리면 받아 둔 값을 쓴다
- * — `SCHEDULE_ITEM_UPDATED`: 탭 ID 없는 옛 이벤트는 계정 단위 반향도 진행 중인 조회에 합류해 받는다
+ * — `SCHEDULE_ITEM_UPDATED`·`SCHEDULE_ITEM_TRAVEL_MODE_UPDATED`: 연속 이벤트를 모아 그 일차를 한 번만 다시 받는다
  */
 export async function dispatchRoomScheduleEvent(
   queryClient: QueryClient,
@@ -75,7 +66,7 @@ export async function dispatchRoomScheduleEvent(
 
   switch (event.type) {
     case "ROOM_SCHEDULES_RESYNCED": {
-      if (isOwnEcho(queryClient, event)) return;
+      if (isOwnEcho(event)) return;
 
       // 일정 전체 재조회는 room-schedules 조회 하나로 한다 — 진행 중인 옛 조회가 취소돼 새 일정을 덮지 않는다
       await queryClient.invalidateQueries({ queryKey: roomSchedulesQueryKey(rid) });
@@ -90,7 +81,7 @@ export async function dispatchRoomScheduleEvent(
       const sourceScheduleId = scheduleIds[0]!;
       const targetScheduleId = scheduleIds[1]!;
 
-      if (isOwnEcho(queryClient, event)) return;
+      if (isOwnEcho(event)) return;
 
       await syncAfterCrossScheduleItemMove(
         queryClient,
@@ -106,7 +97,7 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(queryClient, event)) return;
+      if (isOwnEcho(event)) return;
 
       await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       return;
@@ -117,7 +108,7 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(queryClient, event)) return;
+      if (isOwnEcho(event)) return;
 
       await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       return;
@@ -128,7 +119,7 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(queryClient, event)) return;
+      if (isOwnEcho(event)) return;
 
       await invalidateSchedulePlanPlaces(queryClient, rid, sid);
       return;
@@ -139,17 +130,9 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      const ownEcho = isOwnEcho(queryClient, event);
-      // 탭 ID로 확인한 이 탭의 반향은 저장이 끝나며 보낸 조회(onSettled)가 이미 받는다.
-      // 탭 ID 없는 옛 이벤트는 같은 계정의 다른 탭일 수도 있어, 반향이어도 진행 중인 조회에 합류해 받는다
-      if (ownEcho && event.originTabId) return;
+      if (isOwnEcho(event)) return;
 
-      enqueueDebouncedHydratePlacesFromScheduleItemsApi(
-        queryClient,
-        rid,
-        sid,
-        ownEcho,
-      );
+      enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
       return;
     }
 
@@ -158,14 +141,9 @@ export async function dispatchRoomScheduleEvent(
       const itemId = event.itemId;
       if (sid == null || itemId == null) return;
 
-      if (isOwnEcho(queryClient, event)) return;
+      if (isOwnEcho(event)) return;
 
-      enqueueDebouncedHydratePlacesFromScheduleItemsApi(
-        queryClient,
-        rid,
-        sid,
-        false,
-      );
+      enqueueDebouncedHydratePlacesFromScheduleItemsApi(queryClient, rid, sid);
       return;
     }
   }

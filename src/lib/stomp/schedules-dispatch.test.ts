@@ -58,17 +58,14 @@ describe("dispatchRoomScheduleEvent", () => {
     queryClient.clear();
   });
 
-  it.each([false, true])("refetches ID-only time updates, including own-user tabs (%s)", async (ownUser) => {
+  it("refetches consecutive ID-only time updates once", async () => {
     vi.useFakeTimers();
-    if (ownUser) queryClient.setQueryData(sessionUserQueryKey, { id: 99 });
     const event = itemEvent("SCHEDULE_ITEM_UPDATED", []);
     await dispatchRoomScheduleEvent(queryClient, event);
     await dispatchRoomScheduleEvent(queryClient, event);
     await vi.runAllTimersAsync();
-    // 본인 반향만 모였으면 본인 저장이 끝나며 다시 받는 조회에 합류한다
-    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10, {
-      joinInFlight: ownUser,
-    });
+
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
     expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
   });
 
@@ -107,9 +104,7 @@ describe("dispatchRoomScheduleEvent", () => {
     );
     await vi.runAllTimersAsync();
 
-    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10, {
-      joinInFlight: false,
-    });
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
     expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
   });
 });
@@ -178,11 +173,11 @@ describe("echo of this tab vs. other tabs of the same account", () => {
     expect(refetchCount()).toBe(1);
   });
 
-  it.each(SKIPPABLE_TYPES)("still skips %s of the same account without a tab ID (backend before originTabId)", async (type) => {
+  it.each(SKIPPABLE_TYPES)("applies %s of the same account without a tab ID — it may come from another tab", async (type) => {
     await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, null));
     await vi.runAllTimersAsync();
 
-    expect(refetchCount()).toBe(0);
+    expect(refetchCount()).toBe(1);
   });
 
   it("skips a time update sent from this tab — its own settled refetch already has it", async () => {
@@ -192,12 +187,10 @@ describe("echo of this tab vs. other tabs of the same account", () => {
     expect(mocks.invalidateSchedulePlanPlaces).not.toHaveBeenCalled();
   });
 
-  it("refetches a time update from another tab of the same account without joining an in-flight load", async () => {
-    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", "tab-b"));
+  it.each(["tab-b", null])("refetches a time update of the same account from another tab (%s)", async (originTabId) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", originTabId));
     await vi.runAllTimersAsync();
 
-    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10, {
-      joinInFlight: false,
-    });
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
   });
 });

@@ -1,38 +1,28 @@
-import { QueryClient } from "@tanstack/react-query";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import { sessionUserQueryKey } from "@/lib/query-keys";
+const tab = vi.hoisted(() => ({ id: "tab-a" as string | null }));
 
-vi.mock("@/lib/tab-id", () => ({ getTabId: () => "tab-a" }));
+vi.mock("@/lib/tab-id", () => ({ getTabId: () => tab.id }));
 
 import { isOwnEcho } from "@/lib/stomp/own-echo";
 
-const ME = 7;
-const OTHER = 8;
-
 describe("isOwnEcho", () => {
-  const queryClient = new QueryClient();
-
-  afterEach(() => {
-    queryClient.clear();
-  });
-
   it.each([
-    // 탭 ID가 있으면 계정과 상관없이 탭으로만 판정한다
-    { name: "this tab", originTabId: "tab-a", actorUserId: ME, expected: true },
-    { name: "same account, other tab", originTabId: "tab-b", actorUserId: ME, expected: false },
-    { name: "other account, other tab", originTabId: "tab-b", actorUserId: OTHER, expected: false },
-    // 탭 ID가 없으면(옛 백엔드·HTTP 밖 변경) 계정으로 판정한다
-    { name: "no tab ID, same account", originTabId: null, actorUserId: ME, expected: true },
-    { name: "tab ID field missing, same account", originTabId: undefined, actorUserId: ME, expected: true },
-    { name: "no tab ID, other account", originTabId: null, actorUserId: OTHER, expected: false },
-  ])("$name → $expected", ({ originTabId, actorUserId, expected }) => {
-    queryClient.setQueryData(sessionUserQueryKey, { id: ME });
+    { name: "sent from this tab", originTabId: "tab-a", expected: true },
+    { name: "sent from another tab", originTabId: "tab-b", expected: false },
+    // 탭 ID가 없으면 어느 탭 것인지 몰라 놓치지 않도록 받는다
+    { name: "no tab ID", originTabId: null, expected: false },
+    { name: "tab ID field missing", originTabId: undefined, expected: false },
+    { name: "empty tab ID", originTabId: "", expected: false },
+  ])("$name → $expected", ({ originTabId, expected }) => {
+    tab.id = "tab-a";
 
-    expect(isOwnEcho(queryClient, { actorUserId, originTabId })).toBe(expected);
+    expect(isOwnEcho({ originTabId })).toBe(expected);
   });
 
-  it("treats an event without a tab ID as remote while the session user is unknown", () => {
-    expect(isOwnEcho(queryClient, { actorUserId: ME, originTabId: null })).toBe(false);
+  it("does not match a tab-less event in a tab that could not make an ID", () => {
+    tab.id = null;
+
+    expect(isOwnEcho({ originTabId: null })).toBe(false);
   });
 });

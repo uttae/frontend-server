@@ -16,7 +16,7 @@ export async function applyRoomBookmarkStompMessage(
   if (!rid) return;
 
   /** 본인 탭의 변경은 그 탭의 mutation이 캐시를 맞춘다 */
-  if (isOwnEcho(queryClient, event)) {
+  if (isOwnEcho(event)) {
     return;
   }
 
