@@ -180,6 +180,14 @@ describe("echo of this tab vs. other tabs of the same account", () => {
     expect(refetchCount()).toBe(1);
   });
 
+  it("applies a change whose tab ID matches this tab but comes from another account", async () => {
+    queryClient.setQueryData(sessionUserQueryKey, { id: 100 });
+
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_DELETED", MY_TAB_ID));
+
+    expect(refetchCount()).toBe(1);
+  });
+
   it("skips a time update sent from this tab — its own settled refetch already has it", async () => {
     await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", MY_TAB_ID));
     await vi.runAllTimersAsync();

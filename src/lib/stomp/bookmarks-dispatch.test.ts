@@ -50,6 +50,14 @@ describe("applyRoomBookmarkStompMessage — echo of this tab", () => {
     expect(mocks.invalidateRoomBookmarkQueries).not.toHaveBeenCalled();
   });
 
+  it("applies a change whose tab ID matches this tab but comes from another account", async () => {
+    queryClient.setQueryData(sessionUserQueryKey, { id: ME + 1 });
+
+    await applyRoomBookmarkStompMessage(queryClient, categoryCreated("tab-a"));
+
+    expect(mocks.invalidateRoomBookmarkQueries).toHaveBeenCalledOnce();
+  });
+
   it("applies a change sent from another tab of the same account", async () => {
     await applyRoomBookmarkStompMessage(queryClient, categoryCreated("tab-b"));
 

@@ -63,7 +63,7 @@ export async function dispatchRoomScheduleEvent(
   ) {
     await invalidateExpenses(queryClient, rid);
   }
-  if (isOwnEcho(event)) return;
+  if (isOwnEcho(queryClient, event)) return;
 
   switch (event.type) {
     case "ROOM_SCHEDULES_RESYNCED": {
