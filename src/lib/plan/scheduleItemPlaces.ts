@@ -187,25 +187,20 @@ export function removeScheduleItemFromPlanPlacesCache(
  * STOMP·뮤테이션 동기화: 그 일차 장소 목록을 서버에서 다시 받게 합니다. 보는 화면이 있으면 바로 받고,
  * 없으면 다시 받을 목록으로 표시해 두었다가 그 화면에 들어갈 때 받습니다.
  * 같은 일차를 받는 중이면 그 조회는 이 변경 전에 보낸 요청이라 취소하고 새로 받습니다(늦게 온 옛 응답은 버려짐).
- * 본인 저장의 반향처럼 받는 중인 조회가 이미 그 변경 뒤에 보낸 것이면 `joinInFlight`로 합류해 요청을 아낍니다.
  * 다시 받지 못하면 throw합니다.
  */
 export async function invalidateSchedulePlanPlaces(
   queryClient: QueryClient,
   roomId: string,
   scheduleId: number,
-  { joinInFlight = false }: { joinInFlight?: boolean } = {},
 ): Promise<void> {
   const queryKey = scheduleItemsQueryKey(roomId.trim(), scheduleId);
   // 목록이 아직 없으면 TanStack은 진행 중인 첫 조회를 취소하지 않고 합류만 한다
   const state = queryClient.getQueryState(queryKey);
-  if (!joinInFlight && state?.data === undefined && state?.fetchStatus === "fetching") {
+  if (state?.data === undefined && state?.fetchStatus === "fetching") {
     await queryClient.cancelQueries({ queryKey, exact: true });
   }
-  await queryClient.invalidateQueries(
-    { queryKey, exact: true },
-    { throwOnError: true, cancelRefetch: !joinInFlight },
-  );
+  await queryClient.invalidateQueries({ queryKey, exact: true }, { throwOnError: true });
 }
 
 /**
