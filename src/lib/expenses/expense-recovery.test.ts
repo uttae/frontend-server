@@ -4,7 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { beginExpenseRoomAdmission, getExpenseRecovery } from "./expense-recovery";
 import { expenseKeys } from "./expense-queries";
 const api = vi.hoisted(() => ({
-  read: vi.fn<(_key: string) => Promise<never[]>>(async () => []),
+  read: vi.fn<(_key: string) => Promise<unknown>>(async () => []),
 }));
 vi.mock("@/lib/api/rooms/members", () => ({
   getRoomMembers: () => api.read("members"),
@@ -113,7 +113,7 @@ it("coalesces a burst but reruns events received during reads", async () => {
 it("restarts a first load in flight when a change arrives instead of joining it", async () => {
   const client = new QueryClient();
   const recovery = getExpenseRecovery(client, "r");
-  const reads: ((v: never[]) => void)[] = [];
+  const reads: ((v: unknown) => void)[] = [];
   api.read.mockImplementation((key) =>
     key === "budget" ? new Promise((resolve) => reads.push(resolve)) : Promise.resolve([]),
   );
@@ -123,9 +123,11 @@ it("restarts a first load in flight when a change arrives instead of joining it"
     // 처음 받는 중(데이터 없음)인 조회는 이 변경 전에 출발했을 수 있다
     const change = recovery.refresh("budget");
     await vi.waitFor(() => expect(reads).toHaveLength(2));
-    reads[1]!([]);
-    reads[0]!([]);
+    // 변경 뒤에 출발한 조회가 먼저 끝나고, 변경 전에 출발한 첫 조회가 늦게 온다
+    reads[1]!({ budgetKrw: "200", version: 2 });
+    reads[0]!({ budgetKrw: "100", version: 1 });
     await change;
+    expect(client.getQueryData(expenseKeys.budget("r"))).toEqual({ budgetKrw: "200", version: 2 });
     expect(recovery.getSnapshot()).toBe("ready");
   } finally {
     api.read.mockImplementation(async () => []);
