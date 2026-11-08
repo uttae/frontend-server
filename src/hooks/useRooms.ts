@@ -338,8 +338,6 @@ export function useMoveScheduleItemToSchedule() {
       itemId: number;
       targetScheduleId: number;
       targetOrderIndex: number;
-      /** 저장하는 동안 대상 일차에 먼저 보여 줄 카드(모바일 편집 목록) — 요청에는 쓰지 않는다 */
-      place?: PlanPlace;
     }) => {
       if (sourceScheduleId === targetScheduleId) {
         throw new Error("같은 일차 안에서는 순서 변경만 가능해요.");

@@ -32,7 +32,7 @@ import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-rout
 import { PlanTravelTime } from "../travel-time/PlanTravelTime";
 import { MobilePlanPlaceCard } from "./MobilePlanPlaceCard";
 import { MobilePlanPlaceSheets, openPlaceExpenses, type MobilePlanPlaceSheet } from "./MobilePlanPlaceSheets";
-import { applyPendingPlanMove, useMobilePlanDrag } from "./mobilePlanDrag";
+import { useMobilePlanDrag } from "./mobilePlanDrag";
 
 const EMPTY_PLACES: PlanPlace[] = [];
 
@@ -61,14 +61,10 @@ export function MobilePlanItinerary({
   const router = useRouter();
   const { data: schedules } = useRoomSchedules(roomId);
   const { data, isLoading, isFetching, isError } = useSchedulePlanPlaces(roomId, scheduleId);
-  const serverPlaces = data ?? EMPTY_PLACES;
+  // 옮긴 결과는 저장 응답 전에 캐시가 먼저 바뀐다(mutation onMutate) — 캐시를 그대로 그린다
+  const places = data ?? EMPTY_PLACES;
   const drag = useMobilePlanDrag();
   const { editing, registerPlaces } = drag;
-  // 옮긴 결과를 서버 반영 전까지 먼저 보여준다
-  const places = useMemo(
-    () => applyPendingPlanMove(scheduleId, serverPlaces, drag.pending),
-    [drag.pending, scheduleId, serverPlaces],
-  );
   useEffect(() => {
     registerPlaces(scheduleId, places);
   }, [places, registerPlaces, scheduleId]);
@@ -83,18 +79,18 @@ export function MobilePlanItinerary({
     [roomId, scheduleId, visibleByScheduleId],
   );
 
-  const scheduleFingerprint = useMemo(() => schedulePlacesFingerprint(serverPlaces), [serverPlaces]);
+  const scheduleFingerprint = useMemo(() => schedulePlacesFingerprint(places), [places]);
   const routesBatchSettled = usePrefetchScheduleRoutes(
     roomId,
     scheduleId,
-    serverPlaces,
-    !isLoading && !isFetching && !isError && serverPlaces.length >= 2 && scheduleFingerprint.length > 0,
+    places,
+    !isLoading && !isFetching && !isError && places.length >= 2 && scheduleFingerprint.length > 0,
   );
   // 장소 이동을 저장하는 동안 캐시는 새 순서지만 서버는 아직 옛 순서다 — 저장이 끝날 때까지 새 구간 경로를 받지 않는다
   const isSavingPlaceMove = useScheduleItemMoveSavingDays(roomId).includes(scheduleId);
   const existingItemIds = useMemo(
-    () => new Set(serverPlaces.map((p) => p.itemId).filter((id): id is number => typeof id === "number")),
-    [serverPlaces],
+    () => new Set(places.map((p) => p.itemId).filter((id): id is number => typeof id === "number")),
+    [places],
   );
 
   const [sheet, setSheet] = useState<MobilePlanPlaceSheet | null>(null);
@@ -150,7 +146,7 @@ export function MobilePlanItinerary({
               key={place.id}
               data-plan-item-id={place.itemId}
               ref={(el) => drag.registerRow(scheduleId, index, el)}
-              style={drag.rowStyle(scheduleId, index)}
+              style={drag.rowStyle(scheduleId, index, places)}
             >
               <MobilePlanPlaceCard
                 place={place}
@@ -164,7 +160,7 @@ export function MobilePlanItinerary({
                 onEditMemo={() => setSheet({ kind: "memo", place })}
                 onEditTime={() => setSheet({ kind: "time", place })}
                 editing={editing}
-                dragDisabled={drag.dragDisabled || typeof place.itemId !== "number"}
+                dragDisabled={typeof place.itemId !== "number"}
                 onHandlePointerDown={(e) => drag.startDrag(scheduleId, index, e)}
               />
               <PlaceTravelSegment
