@@ -27,7 +27,7 @@ function removesViewer(queryClient: QueryClient, event: RoomMemberPayload): bool
  * members STOMP 한 건 — 바뀐 멤버 목록을 서버에서 다시 받게 한다. 이벤트 내용으로 캐시를 고치지 않는다:
  * 이벤트 전에 출발한 조회가 늦게 와도 TanStack이 그 조회를 취소하고 버린다(패치는 그 응답에 덮였다).
  * 화면에 있는 목록만 바로 다시 받고 나머지는 다시 볼 때 받는다.
- * 채팅 발신자 이름은 `room-members`에서 찾으므로, 새 멤버의 이름은 다시 받을 때까지 '(알 수 없음)'으로 보인다.
+ * 채팅 발신자 이름은 `room-members`에서 찾으므로, 채팅은 새 멤버의 메시지를 이 목록을 다시 받을 때까지 그리지 않는다(`useChatMessages`).
  */
 export function dispatchRoomMemberEvent(
   queryClient: QueryClient,

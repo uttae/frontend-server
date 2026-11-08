@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ServerChatMessage } from "@/types/chat";
 
 import {
+  chatMessageUserIds,
   mergeServerMessageLists,
   partitionLiveMessages,
   replaceExistingServerMessages,
@@ -136,5 +137,18 @@ describe("tailCursorOf", () => {
 
   it("has no cursor when no message carries a sequence", () => {
     expect(tailCursorOf([msg(undefined, "legacy")])).toBeUndefined();
+  });
+});
+
+describe("chatMessageUserIds", () => {
+  it("메시지를 그릴 때 이름이 필요한 사람을 돌려준다", () => {
+    expect(chatMessageUserIds({ ...msg(1), senderId: 9 })).toEqual([9]);
+    expect(chatMessageUserIds({ ...msg(2), messageType: "SYSTEM", metadata: { eventType: "MEMBER_JOINED", userId: "9" } })).toEqual([9]);
+    expect(chatMessageUserIds({
+      ...msg(3),
+      messageType: "SYSTEM",
+      metadata: { eventType: "HOST_DELEGATED", previousHostUserId: "1", newHostUserId: "9" },
+    })).toEqual([9]);
+    expect(chatMessageUserIds({ ...msg(4), messageType: "AI_RESPONSE" })).toEqual([]);
   });
 });
