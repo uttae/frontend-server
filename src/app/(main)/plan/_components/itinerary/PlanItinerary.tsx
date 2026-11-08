@@ -2,7 +2,6 @@
 import { Spinner } from "@/components/ui/spinner";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useReducedMotion } from "framer-motion";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 import { toast } from "sonner";
 
@@ -13,15 +12,13 @@ import {
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
-import { usePlanItineraryReorder } from "@/hooks/usePlanItineraryReorder";
-import { PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR } from "@/lib/plan/planItemReorder";
+import { usePlanItemDrag } from "@/hooks/usePlanItemDragController";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import {
   scheduleIdsToRouteColors,
   sortedScheduleIdsForRouteColors,
 } from "@/lib/plan/planRouteDayColors";
-import { usePlanItemCrossDayDragStore } from "@/stores/plan-item-cross-day-drag-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { cn } from "@/lib/utils";
 
@@ -105,20 +102,8 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
     insertIndex?: number;
   } | null>(null);
 
-  const prefersReducedMotion = useReducedMotion();
-
-  const {
-    getRowProps,
-    listContainerProps,
-    isDraggingActive,
-    listReservePaddingBottom,
-  } = usePlanItineraryReorder({
-    roomId,
-    scheduleId,
-    places,
-    interactionLocked:
-      isAdding || activeInsertIndex !== null,
-  });
+  const { dropZoneProps, isItemDragActive, reservePaddingBottom, getRowProps } =
+    usePlanItemDrag().getListProps(scheduleId, places);
 
   useEffect(() => {
     if (activeInsertIndex === null) return;
@@ -171,18 +156,13 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
 
   const addControlsDisabled = isAdding;
 
-  const crossDayItemDragActive = usePlanItemCrossDayDragStore(
-    (s) => s.sourceScheduleId !== null,
-  );
-
   return (
     <div
-      {...listContainerProps}
-      {...{ [PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR]: "" }}
+      {...dropZoneProps}
       className={cn(
         !isLoading &&
           places.length === 0 &&
-          crossDayItemDragActive &&
+          isItemDragActive &&
           "min-h-12",
       )}
     >
@@ -205,17 +185,13 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
       <div
         className="flex flex-col gap-0"
         style={
-          listReservePaddingBottom > 0
-            ? { paddingBottom: listReservePaddingBottom }
+          reservePaddingBottom > 0
+            ? { paddingBottom: reservePaddingBottom }
             : undefined
         }
       >
         {places.map((place, index) => {
-          const motionEnabled = isDraggingActive && !prefersReducedMotion;
-          const { ref, style, placeCardDragProps } = getRowProps(
-            index,
-            motionEnabled,
-          );
+          const { ref, style, placeCardDragProps } = getRowProps(index);
           const insertIndex = index + 1;
           const segmentActive = activeInsertIndex === insertIndex;
           const nextItemId = places[index + 1]?.itemId;
