@@ -3,11 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 
 import { ChevronLeftIcon } from "@/assets/icons";
 import { BrandLogo } from "@/components/BrandLogo";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLinkItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSessionPromptVisible } from "@/hooks/useSessionPromptVisible";
 import { FEEDBACK_FORM_URL } from "@/lib/contact";
@@ -51,13 +52,10 @@ const HeaderBar = ({
   const [editOpen, setEditOpen] = useState(false);
   const pathname = usePathname();
   const [menuState, setMenuState] = useState({ path: pathname, open: false });
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuButtonRef = useRef<HTMLButtonElement>(null);
   const closeEdit = useCallback(() => setEditOpen(false), []);
   const { isMobileDevice } = useMobileView();
   if (menuState.path !== pathname) setMenuState({ path: pathname, open: false });
   const menuOpen = menuState.path === pathname && menuState.open;
-  const closeMenu = () => setMenuState({ path: pathname, open: false });
   const isMapPanel = isMobileMapPathname(pathname ?? "");
   const showMapShortcut = isPlanPathname(pathname ?? "") || isMapPanel || isChatPathname(pathname ?? "") || pathname === "/bookmark" || pathname === "/cost" || isPackingPath(pathname ?? "");
   const { dismiss: dismissFeedbackPrompt } = useSessionPromptVisible(FEEDBACK_FORM_CLICKED_KEY);
@@ -103,24 +101,6 @@ const HeaderBar = ({
     </span>
   );
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    function closeOnOutside(event: PointerEvent) {
-      if (!menuRef.current?.contains(event.target as Node)) setMenuState({ path: pathname, open: false });
-    }
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      setMenuState({ path: pathname, open: false });
-      menuButtonRef.current?.focus();
-    }
-    document.addEventListener("pointerdown", closeOnOutside);
-    document.addEventListener("keydown", closeOnEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutside);
-      document.removeEventListener("keydown", closeOnEscape);
-    };
-  }, [menuOpen, pathname]);
-
   return (
     <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "h-14 shrink-0 border-b-2 border-primary"}>
       {isMobileDevice ? (
@@ -144,34 +124,30 @@ const HeaderBar = ({
             {showMapShortcut ? <Link href={mapHref} aria-label={isMapPanel ? "일정 보기" : "지도 보기"} className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden className="block size-6 bg-icon" style={{ mask: `url('${isMapPanel ? mobileIcon.calendar : mobileIcon.map}') center / contain no-repeat` }} />
             </Link> : null}
-            <div ref={menuRef} className="relative">
-              <button
-                ref={menuButtonRef}
-                type="button"
+            {/* 경로가 바뀌면 닫는다(menuState.path). 바깥 누름·Esc·포커스 복귀·항목 선택 뒤 닫기는 Base UI Menu가 맡는다 */}
+            <DropdownMenu open={menuOpen} onOpenChange={(open) => setMenuState({ path: pathname, open })}>
+              <DropdownMenuTrigger
                 aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
-                aria-expanded={menuOpen}
-                onClick={() => setMenuState({ path: pathname, open: !menuOpen })}
                 className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary"
               >
                 <span aria-hidden className="block size-6 bg-icon" style={{ mask: `url('${mobileIcon.menu}') center / contain no-repeat` }} />
-              </button>
-              {menuOpen ? (
-                <nav aria-label="여행방 메뉴" className="absolute right-0 top-[38px] z-50 min-w-40 overflow-hidden rounded-xl bg-white shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-                  <button type="button" onClick={() => { closeMenu(); setEditOpen(true); }} className="flex min-h-12 w-full items-center gap-2 border-b border-border-subtle px-4 text-left text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
-                    <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
-                  </button>
-                  <Link href="/member-settings" onClick={closeMenu} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
-                    <MobileMenuIcon src={mobileIcon.members} />초대하기
-                  </Link>
-                  <a href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={() => { dismissFeedbackPrompt(); closeMenu(); }} className="flex min-h-12 items-center gap-2 border-b border-border-subtle px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
-                    <MobileMenuIcon src={mobileIcon.feedback} />피드백
-                  </a>
-                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header" target="_blank" rel="noopener noreferrer" onClick={closeMenu} className="flex min-h-12 items-center gap-2 px-4 text-[14px] font-medium tracking-[-0.02em] text-text hover:bg-fill active:bg-fill active:bg-fill">
-                    <MobileMenuIcon src={mobileIcon.bug} />버그 제보
-                  </a>
-                </nav>
-              ) : null}
-            </div>
+              </DropdownMenuTrigger>
+              {/* 지금 위치: 44px 버튼 아래 끝에서 6px 위(top 38px), 오른쪽 끝 맞춤 */}
+              <DropdownMenuContent align="end" sideOffset={-6} aria-label="여행방 메뉴">
+                <DropdownMenuItem onClick={() => setEditOpen(true)}>
+                  <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
+                </DropdownMenuItem>
+                <DropdownMenuLinkItem render={<Link href="/member-settings" />}>
+                  <MobileMenuIcon src={mobileIcon.members} />초대하기
+                </DropdownMenuLinkItem>
+                <DropdownMenuLinkItem href={FEEDBACK_FORM_URL} target="_blank" rel="noopener noreferrer" onClick={dismissFeedbackPrompt}>
+                  <MobileMenuIcon src={mobileIcon.feedback} />피드백
+                </DropdownMenuLinkItem>
+                <DropdownMenuLinkItem href="https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header" target="_blank" rel="noopener noreferrer">
+                  <MobileMenuIcon src={mobileIcon.bug} />버그 제보
+                </DropdownMenuLinkItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div> : null}
         </div>
       ) : (

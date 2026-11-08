@@ -1,8 +1,8 @@
 "use client";
 
+import { ChatSenderAvatar } from "@/components/chat/messages/ChatSenderAvatar";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "@/types/chat";
-import { ChatMemberAvatarRing } from "./ChatMemberAvatarRing";
 
 export const PLACE_SHARE_PREVIEW_TEXT = "장소를 공유했습니다.";
 
@@ -36,16 +36,7 @@ export function NewMessagePreviewButton({
           isMinimized && "gap-1.5 py-1 pl-1 pr-3",
         )}
       >
-        <ChatMemberAvatarRing
-          chromeAvatarClassName={cn(
-            "shrink-0 overflow-hidden rounded-lg ring-1 ring-border",
-            isMinimized ? "h-6 w-6" : "h-7 w-7",
-          )}
-          avatarUrl={message.avatar}
-          alt=""
-          senderNotInRoom={message.senderNotInRoom}
-          reduceMotion
-        />
+        <ChatSenderAvatar message={message} size={isMinimized ? 24 : 28} ring="default" />
         <span
           className={cn(
             "shrink-0 text-primary",

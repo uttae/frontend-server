@@ -1,92 +1,59 @@
 "use client";
-import { useSheetDrag } from "@/components/mobile/useSheetDrag";
-import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
 
-import { useEffect, useId, useRef, type ReactNode } from "react";
-import { CloseIcon } from "@/assets/icons";
+import type { ReactNode } from "react";
 
-/** Native modal focus containment, with a sheet surface on small screens. */
+import {
+  ResponsiveDialog,
+  ResponsiveDialogBody,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
+import { useMobileView } from "@/contexts/MobileViewContext";
+
+/**
+ * 가계부 읽기 전용 대화상자(정산 요약). PC는 Dialog(720), 모바일 기기는 아래 시트(ResponsiveDialog).
+ * 조건부로 마운트해 열고, 닫기 요청(Esc·딤·X·스와이프)은 onClose로 받는다.
+ */
 export function ExpenseDialog({
   title,
   onClose,
   children,
   footer,
-  settlement = false,
   description,
 }: Readonly<{
   title: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
-  settlement?: boolean;
+  /** 시트에서만 제목 아래 보조 줄로 보인다(지금 화면과 같음) */
   description?: ReactNode;
 }>) {
-  const sheetDrag = useSheetDrag(onClose);
-  const ref = useRef<HTMLDialogElement>(null);
-  const titleId = useId();
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    const element = ref.current;
-    const trigger = element?.ownerDocument.activeElement;
-    element?.showModal();
-    heading.current?.focus({ preventScroll: true });
-    return () => {
-      element?.close();
-      if (trigger && trigger instanceof HTMLElement && trigger.isConnected)
-        trigger.focus();
-    };
-  }, []);
-  useEffect(() => {
-    const element = ref.current;
-    const dismissBackdrop = (event: MouseEvent) => {
-      if (event.target === element) onClose();
-    };
-    element?.addEventListener("click", dismissBackdrop);
-    return () => element?.removeEventListener("click", dismissBackdrop);
-  }, [onClose]);
+  const { isMobileDevice } = useMobileView();
   return (
-    <dialog
-      ref={ref}
-      style={sheetDrag.surfaceStyle}
-      aria-labelledby={titleId}
-      onCancel={(event) => {
-        event.preventDefault();
-        onClose();
+    <ResponsiveDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      className={`fixed inset-0 m-auto ${settlement ? "mobile:h-[calc(100dvh-92px)] mobile:max-h-[calc(100dvh-92px)]" : "mobile:h-[70dvh] mobile:max-h-[70dvh]"} max-h-[calc(100dvh-3rem)] w-[calc(100%-2rem)] max-w-[720px] overflow-hidden rounded-xl border-0 bg-white p-0 text-text shadow-xl backdrop:bg-black/40 mobile:backdrop:bg-[#0f1724]/35 mobile:backdrop:animate-in mobile:backdrop:fade-in-0 mobile:backdrop:duration-200 mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200 mobile:mb-0 mobile:w-full mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px]`}
     >
-      <div className="flex max-h-[calc(100dvh-3rem)] flex-col mobile:h-full mobile:max-h-full">
-        <BottomSheetDragHandle drag={sheetDrag} className="mobile:pt-3">
-        <div
-          aria-hidden
-          className="mx-auto hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle mobile:block"
-        />
-        <header className="flex shrink-0 items-center justify-between px-8 pt-8 pb-6 mobile:px-5 mobile:pt-3 mobile:pb-3">
-          <div>
-          <h2 ref={heading} id={titleId} tabIndex={-1} className="focus:outline-none text-[24px] leading-[34px] font-bold mobile:text-title-m mobile:leading-7">
-            {title}
-          </h2>
-          {description && <p className="mt-1 hidden text-[12px] leading-5 text-text-subtle mobile:block">{description}</p>}
-          </div>
-          <button
-            type="button"
-            aria-label={`${title} 닫기`}
-            onClick={onClose}
-            className={`cursor-pointer flex size-6 items-center justify-center rounded-md mobile:-my-2.5 mobile:-mr-2.5 mobile:size-11 text-text-subtle hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary ${footer ? "mobile:hidden" : ""}`}
-          >
-            <CloseIcon size={24} />
-          </button>
-        </header>
-        </BottomSheetDragHandle>
-        <div className={`flex min-h-0 flex-col overflow-y-auto mobile:flex-1 overscroll-contain px-8 pb-6 [scrollbar-gutter:auto] mobile:px-5 ${footer ? "" : "mobile:pb-[max(1.5rem,env(safe-area-inset-bottom))]"}`}>
-          {children}
-        </div>
-        {footer && (
-          <footer className={`shrink-0 px-8 pb-8 mobile:px-5 mobile:pt-3 mobile:pb-[max(1.25rem,env(safe-area-inset-bottom))] ${settlement ? "" : "border-t border-border-subtle pt-4"}`}>
-            {footer}
-          </footer>
-        )}
-      </div>
-    </dialog>
+      <ResponsiveDialogContent
+        size="xl"
+        // 정산 요약 시트는 상단 내비 아래까지 채운다(Figma Bottom Sheet Height=BelowNav)
+        drawerSize="belowNav"
+        closeLabel={`${title} 닫기`}
+      >
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
+          {description && isMobileDevice ? (
+            <ResponsiveDialogDescription>{description}</ResponsiveDialogDescription>
+          ) : null}
+        </ResponsiveDialogHeader>
+        <ResponsiveDialogBody>{children}</ResponsiveDialogBody>
+        {footer ? <ResponsiveDialogFooter>{footer}</ResponsiveDialogFooter> : null}
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

@@ -7,10 +7,9 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { placePhotoUrlQueryKey } from "@/lib/place-photo-query";
 import { getQueryClient } from "@/lib/query-client";
 import { cn } from "@/lib/utils";
-import { chatMessageChrome } from "@/components/chat/chat-message-chrome";
 import { resolveChatMessageTypography } from "@/components/chat/chat-typography";
 import type { ChatMessage } from "@/types/chat";
-import { ChatMemberAvatarRing } from "@/components/chat/messages/ChatMemberAvatarRing";
+import { ChatSenderAvatar } from "@/components/chat/messages/ChatSenderAvatar";
 
 export function PlaceShareCard({
   message,
@@ -82,13 +81,7 @@ export function PlaceShareCard({
   return (
     <div className="flex gap-2">
       <div className="flex flex-col items-center gap-1">
-        <ChatMemberAvatarRing
-          chromeAvatarClassName={chatMessageChrome.avatarSm}
-          avatarUrl={message.avatar}
-          alt={message.sender ?? ""}
-          senderNotInRoom={message.senderNotInRoom}
-          reduceMotion
-        />
+        <ChatSenderAvatar message={message} size={40} ring="subtle" />
         <span
           className={cn("max-w-[4rem] truncate text-center", typo.metaMuted)}
         >

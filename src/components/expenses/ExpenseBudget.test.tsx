@@ -168,7 +168,11 @@ it.each([
   await submit();
   expect(mocks.save).not.toHaveBeenCalled();
   expect(input().value).toBe(value === "1000000000000000" ? "1,000,000,000,000,000" : value);
-  expect(document.querySelector('[role="alert"]')).not.toBeNull();
+  // 입력 오류는 칸의 오류 상태와 칸 아래 FieldError로 보인다
+  expect(input().getAttribute("aria-invalid")).toBe("true");
+  const error = document.getElementById(input().getAttribute("aria-describedby")!);
+  expect(error?.getAttribute("role")).toBe("alert");
+  expect(error?.textContent).toContain("1~15자리 숫자");
 });
 it("locks duplicate submit and close while pending, and preserves draft on failure", async () => {
   let reject!: (e: Error) => void;
@@ -182,7 +186,14 @@ it("locks duplicate submit and close while pending, and preserves draft on failu
   await type("456");
   await submit();
   await submit();
+  // 저장 중에는 저장 버튼이 progress로 바뀌고 접근성 이름은 '저장 중'이다
+  const saving = document.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+  expect(saving.getAttribute("aria-busy")).toBe("true");
+  expect(document.getElementById(saving.getAttribute("aria-labelledby")!)?.textContent).toBe("저장 중");
   await click("예산 수정 닫기");
+  await act(async () => {
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+  });
   expect(mocks.save).toHaveBeenCalledTimes(1);
   expect(mocks.close).not.toHaveBeenCalled();
   await act(async () => reject(new Error("offline")));
@@ -245,7 +256,9 @@ it("summary opens shared modal for unset or zero budget", async () => {
   expect(text()).not.toContain("미설정");
   expect([...host.querySelectorAll("h3")].find(h => h.textContent === "전체 예산")?.parentElement?.querySelector("p")?.textContent).toBe("—");
   await click("예산 설정");
-  expect(document.querySelector("dialog")).not.toBeNull();
+  const dialog = document.querySelector('[role="dialog"]');
+  expect(dialog?.hasAttribute("data-open")).toBe(true);
+  expect(dialog?.querySelector("h2")?.textContent).toBe("예산 설정");
   expect(input().value).toBe("");
 });
 it("shows the whole-room total without duplicating page-level rate information", async () => {

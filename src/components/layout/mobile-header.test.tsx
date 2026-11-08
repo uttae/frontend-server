@@ -30,6 +30,9 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
 async function rerender() { await act(async () => root.render(<HeaderBar />)); }
+// 메뉴는 Base UI Menu라 document.body로 포털된다. 항목은 role="menuitem"(방 정보 수정은 div, 이동 항목은 a)
+const menu = () => document.querySelector<HTMLElement>('[role="menu"][aria-label="여행방 메뉴"]');
+const menuButton = () => host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!;
 
 it("shows the room details and map action in the mobile top navigation", () => {
   expect(host.querySelector("header")?.textContent).toContain("가을 여행");
@@ -47,18 +50,20 @@ it("uses the back top navigation for a nested bookmark screen", async () => {
 });
 
 it("opens the mobile menu with working destinations and closes it with Escape", async () => {
-  const menuButton = host.querySelector<HTMLButtonElement>('button[aria-label="메뉴 열기"]')!;
-  expect(menuButton).not.toBeNull();
-  expect(host.querySelector('[aria-label="여행방 메뉴"]')).toBeNull();
-  await act(async () => menuButton.click());
-  const menu = host.querySelector('[aria-label="여행방 메뉴"]')!;
-  expect(menu).not.toBeNull();
-  expect(menu.querySelector('a[href="/member-settings"]')?.textContent).toContain("초대하기");
-  expect(menu.querySelectorAll("a[href^='http']")).toHaveLength(2);
-  expect(menu.querySelector('button')?.textContent).toContain("방 정보 수정");
+  const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="메뉴 열기"]')!;
+  expect(trigger).not.toBeNull();
+  expect(menu()).toBeNull();
+  await act(async () => trigger.click());
+  expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  expect(trigger.getAttribute("aria-label")).toBe("메뉴 닫기");
+  const items = [...menu()!.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+  expect(items.map(item => item.textContent)).toEqual(["방 정보 수정", "초대하기", "피드백", "버그 제보"]);
+  expect(menu()!.querySelector('a[role="menuitem"][href="/member-settings"]')?.textContent).toContain("초대하기");
+  expect(menu()!.querySelectorAll("a[role='menuitem'][href^='http']")).toHaveLength(2);
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
-  expect(host.querySelector('[aria-label="여행방 메뉴"]')).toBeNull();
-  expect(document.activeElement).toBe(menuButton);
+  expect(menu()).toBeNull();
+  expect(document.activeElement).toBe(trigger);
+  expect(trigger.getAttribute("aria-label")).toBe("메뉴 열기");
 });
 
 it.each(["/bookmark", "/cost", "/packing/12345678-1234-1234-1234-123456789abc"])("shows the map shortcut on %s", async pathname => {
@@ -88,23 +93,32 @@ it("keeps the map shortcut hidden on search", async () => {
 });
 
 it("closes the menu on an outside pointer event", async () => {
-  await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="메뉴 열기"]')!.click());
-  expect(host.querySelector('[aria-label="여행방 메뉴"]')).not.toBeNull();
+  await act(async () => menuButton().click());
+  expect(menu()).not.toBeNull();
   await act(async () => document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })));
-  expect(host.querySelector('[aria-label="여행방 메뉴"]')).toBeNull();
+  expect(menu()).toBeNull();
 });
 
 it("closes the open menu when the route changes", async () => {
-  await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="메뉴 열기"]')!.click());
+  await act(async () => menuButton().click());
+  expect(menu()).not.toBeNull();
   state.pathname = "/cost";
   await rerender();
-  expect(host.querySelector('[aria-label="여행방 메뉴"]')).toBeNull();
+  expect(menu()).toBeNull();
 });
 
 it("closes the menu when a destination is selected", async () => {
-  await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="메뉴 열기"]')!.click());
-  await act(async () => host.querySelector<HTMLAnchorElement>('a[href="/member-settings"]')!.click());
-  expect(host.querySelector('[aria-label="여행방 메뉴"]')).toBeNull();
+  await act(async () => menuButton().click());
+  await act(async () => menu()!.querySelector<HTMLAnchorElement>('a[href="/member-settings"]')!.click());
+  expect(menu()).toBeNull();
+});
+
+it("opens the trip edit dialog from the menu item and closes the menu", async () => {
+  await act(async () => menuButton().click());
+  const edit = [...menu()!.querySelectorAll<HTMLElement>('[role="menuitem"]')].find(item => item.textContent === "방 정보 수정")!;
+  await act(async () => edit.click());
+  expect(menu()).toBeNull();
+  expect(host.querySelector('[role="dialog"]')?.textContent).toBe("정보 수정");
 });
 
 it("keeps the folder's second back link hidden on mobile", () => {

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 import { JoinRequestsSection } from "@/app/(main)/member-settings/_components/JoinRequestsSection";
 import { MemberList } from "@/app/(main)/member-settings/_components/MemberList";
 import { useMemberActions } from "@/app/(main)/member-settings/_components/useMemberActions";
 import { ChevronDownIcon, SendIcon } from "@/assets/icons";
 import { InviteRoomDialog } from "@/components/rooms/InviteRoomDialog";
+import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import { useHostJoinRequestsBadgeCount } from "@/hooks/useHostJoinRequestsBadgeCount";
 import { selectHeaderMemberPreview } from "@/lib/rooms/member-preview";
@@ -44,109 +47,78 @@ export function HeaderMemberPreview() {
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
   const { visible, restCount } = selectHeaderMemberPreview(members, user?.id);
-
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Element;
-      // 구성원 옵션 메뉴는 body에 떠 있으므로 드롭다운 바깥으로 보지 않는다
-      if (dropdownRef.current?.contains(target) || target.closest("[data-floating-menu]")) return;
-      setDropdownOpen(false);
-    }
-    function handleEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setDropdownOpen(false);
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [dropdownOpen]);
 
   return (
     <div className="flex shrink-0 items-center gap-3">
       {visible.length > 0 ? (
-        <div ref={dropdownRef} className="relative">
-          <button
-            type="button"
+        // 패널 안 구성원 옵션 메뉴(MemberCard DropdownMenu)는 이 패널의 React 자식이라 Base UI가 안쪽으로 본다.
+        // 메뉴 포털은 패널 포털 안에 붙고(FloatingPortal parentPortalNode), 메뉴를 누르면 패널 Popup의 capture 핸들러가 먼저 '안쪽'으로 표시해(useDismiss insideReactTree) 패널이 닫히지 않는다
+        <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+          <PopoverTrigger
             aria-label={memberPreviewLabel(memberCount, pendingJoinRequestsCount)}
-            aria-haspopup="true"
-            aria-expanded={dropdownOpen}
-            onClick={() => setDropdownOpen((open) => !open)}
             className="isolate flex cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <span className="flex items-center">
+            <AvatarGroup>
               {visible.map(({ member, isOnline }, index) => (
-                <span
+                <UserAvatar
                   key={member.userId}
-                  aria-hidden
+                  user={member}
+                  size={28}
+                  tone={isOnline ? "primary" : "neutral"}
+                  ring={isOnline ? "online" : "offline"}
+                  // 앞사람(본인)이 위에 온다. +N(z-1)·화살표(z-0)보다 위 층이다
                   style={{ zIndex: visible.length - index + 1 }}
-                  className={index > 0 ? "relative -ml-1.5" : "relative"}
-                >
-                  <UserAvatar
-                    user={member}
-                    size={28}
-                    className={isOnline ? "bg-primary-subtle ring-2 ring-status-positive" : "bg-fill ring-2 ring-border grayscale brightness-110 contrast-75"}
-                    initialClassName={cn("font-medium", isOnline ? "text-primary" : "text-text-subtle")}
-                  />
-                </span>
+                />
               ))}
               {restCount > 0 ? (
-                <span
-                  aria-hidden
-                  className="relative z-[1] -ml-1.5 flex size-7 items-center justify-center rounded-full bg-fill text-label-m-regular text-text-subtle"
-                >
+                <AvatarGroupCount aria-hidden className="z-1">
                   +{restCount}
-                </span>
+                </AvatarGroupCount>
               ) : null}
-              <span aria-hidden className="relative z-0 -ml-1.5 flex size-7 items-center justify-center rounded-full bg-fill">
+              {/* 묶음(isolate) 밖에 두면 마지막 아바타를 덮으므로 안에서 가장 아래 층에 둔다 */}
+              <span aria-hidden className="relative z-0 flex size-7 items-center justify-center rounded-full bg-fill">
                 <ChevronDownIcon size={16} className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")} />
                 {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="-right-1 -top-1" /> : null}
               </span>
-            </span>
-          </button>
-
-          {dropdownOpen ? (
-            <div className="absolute right-0 top-full z-50 mt-2 flex w-[305px] flex-col gap-4 rounded-xl bg-fill-elevate p-6 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-              {isHost && roomId ? <JoinRequestsSection roomId={roomId} /> : null}
-              <section aria-label="구성원" className="flex flex-col gap-2">
-                <h2 className="flex items-baseline gap-2 text-title-s text-text">
-                  <span>구성원</span>
-                  <span className="text-body-m-regular font-medium text-primary">{memberCount}</span>
-                </h2>
-                <MemberList
-                  me={me}
-                  others={others}
-                  isHost={isHost}
-                  onKick={(member) => {
-                    setDropdownOpen(false);
-                    requestKick(member);
-                  }}
-                  onTransfer={(member) => {
-                    setDropdownOpen(false);
-                    requestTransfer(member);
-                  }}
-                  className={cn(MEMBER_LIST_MAX_HEIGHT_CLASS, "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0")}
-                />
-              </section>
-              <hr className="border-border-subtle" />
-              <button
-                type="button"
-                disabled={leaveDisabled}
-                onClick={() => {
+            </AvatarGroup>
+          </PopoverTrigger>
+          <PopoverContent align="end" aria-label="구성원 관리">
+            {isHost && roomId ? <JoinRequestsSection roomId={roomId} /> : null}
+            <section aria-label="구성원" className="flex flex-col gap-2">
+              <h2 className="flex items-baseline gap-2 text-title-s text-text">
+                <span>구성원</span>
+                <span className="text-body-m-regular font-medium text-primary">{memberCount}</span>
+              </h2>
+              <MemberList
+                me={me}
+                others={others}
+                isHost={isHost}
+                onKick={(member) => {
                   setDropdownOpen(false);
-                  openLeaveDialog();
+                  requestKick(member);
                 }}
-                className="h-12 w-full cursor-pointer rounded-lg border border-border bg-fill-subtle text-label-l-emphasis text-text transition-colors enabled:hover:bg-fill enabled:active:bg-fill-strong disabled:cursor-not-allowed disabled:bg-fill disabled:text-text-disabled"
-              >
-                방 나가기
-              </button>
-            </div>
-          ) : null}
-        </div>
+                onTransfer={(member) => {
+                  setDropdownOpen(false);
+                  requestTransfer(member);
+                }}
+                className={cn(MEMBER_LIST_MAX_HEIGHT_CLASS, "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0")}
+              />
+            </section>
+            <hr className="border-border-subtle" />
+            <Button
+              variant="outline"
+              disabled={leaveDisabled}
+              onClick={() => {
+                setDropdownOpen(false);
+                openLeaveDialog();
+              }}
+              className="w-full"
+            >
+              방 나가기
+            </Button>
+          </PopoverContent>
+        </Popover>
       ) : null}
 
       <button

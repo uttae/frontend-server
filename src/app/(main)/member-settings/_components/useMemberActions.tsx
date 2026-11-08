@@ -5,8 +5,15 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { alertDialogButtonClass } from "@/components/settings/SettingsActionButton";
-import { SettingsDialog } from "@/components/settings/SettingsDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useCurrentRoomMembership } from "@/hooks/useCurrentRoomMembership";
 import { showRoomLeftToast } from "@/lib/stomp/forced-room-exit-dispatch";
 import { useKickMember, useLeaveRoom, useTransferHost } from "@/hooks/useRooms";
@@ -32,12 +39,25 @@ function NoticeDialog({
   onClose: () => void;
 }>) {
   return (
-    <SettingsDialog title={title} onClose={onClose} appearance="alert" showCloseButton={false}>
-      <p className="whitespace-pre-line text-body-l-regular text-text">{description}</p>
-      <button type="button" className={`mt-4 w-full ${alertDialogButtonClass.neutral}`} onClick={onClose}>
-        {actionLabel}
-      </button>
-    </SettingsDialog>
+    <AlertDialog
+      open
+      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      {/* 지금처럼 딤을 눌러도 닫힌다 */}
+      <AlertDialogContent backdropCloseLabel={`${title} 배경 닫기`}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          {/* AlertDialogAction은 눌러도 저절로 닫히지 않는다 */}
+          <AlertDialogAction onClick={onClose}>{actionLabel}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -97,7 +117,6 @@ export function useMemberActions() {
     <>
       {leaveDialog === "confirm" ? (
         <ConfirmDialog
-          appearance="alert"
           destructive
           title="방에서 나가시겠어요?"
           description={"방을 나가면 이 여행의 일정과 대화에\n더 이상 접근할 수 없어요."}
@@ -129,7 +148,6 @@ export function useMemberActions() {
 
       {transferTarget && roomId ? (
         <ConfirmDialog
-          appearance="alert"
           title="방장을 위임하시겠어요?"
           description={`${transferTarget.nickname}님에게 방장을 넘기면\n나는 참여자가 돼요.`}
           confirmLabel="위임"
@@ -157,7 +175,6 @@ export function useMemberActions() {
 
       {kickTarget && roomId ? (
         <ConfirmDialog
-          appearance="alert"
           destructive
           title="강제 퇴장하시겠어요?"
           description={`${kickTarget.nickname}님을 이 여행에서 내보내요.`}

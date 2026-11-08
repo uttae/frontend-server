@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import {
   useCallback,
@@ -458,7 +458,7 @@ export function ChatMessageList({
                 isMinimized && "mb-1.5 min-h-4 text-body-xs-regular",
               )}
             >
-              <LoadingIndicator label="이전 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
+              <Spinner aria-label="이전 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
             </div>
           ) : null}
           {readMarkerMessageId != null &&
@@ -526,7 +526,7 @@ export function ChatMessageList({
                 isMinimized && "mt-1.5 min-h-4 text-body-xs-regular",
               )}
             >
-              <LoadingIndicator label="다음 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
+              <Spinner aria-label="다음 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
             </div>
           ) : null}
           <div

@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, type ReactNode, useState } from "react";
 
-import { LoginErrorAlert } from "@/app/login/login-error-alert";
 import { BrandLogo } from "@/components/BrandLogo";
+import { Alert, AlertAction, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   buildGoogleAuthorizationUrl,
   clearGoogleAgreementFlowSession,
@@ -94,7 +94,28 @@ function LoginPageContent() {
   return (
     <LoginShell>
       {errorMessage && (
-        <LoginErrorAlert message={errorMessage} onDismiss={clearError} />
+        <Alert tone="brand" size="lg" className="self-stretch">
+          {/* Alert에 아이콘 칸이 없어 '!' 원을 grid로 제목 줄 가운데에 맞춘다 */}
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
+            <span
+              className="inline-flex size-5 items-center justify-center rounded-full bg-primary-subtle text-label-m-emphasis mobile:text-label-xs-emphasis text-primary"
+              aria-hidden
+            >
+              !
+            </span>
+            <AlertTitle>로그인에 실패했습니다</AlertTitle>
+            <AlertDescription className="col-start-2">{errorMessage}</AlertDescription>
+            <AlertAction className="col-start-2">
+              <button
+                type="button"
+                onClick={clearError}
+                className="text-label-m-regular mobile:text-label-s-regular text-primary underline-offset-2 hover:underline"
+              >
+                닫기
+              </button>
+            </AlertAction>
+          </div>
+        </Alert>
       )}
       <button
         type="button"

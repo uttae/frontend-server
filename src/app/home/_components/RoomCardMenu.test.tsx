@@ -32,7 +32,10 @@ let host: HTMLDivElement;
 let root: Root;
 const onDelete = vi.fn();
 const onLeave = vi.fn();
-const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent?.trim() === label || b.getAttribute("aria-label") === label)!;
+// 메뉴 항목은 Base UI Menu.Item(role="menuitem")이라 버튼과 함께 찾는다
+const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>('button, [role="menuitem"]')].find(b => b.textContent?.trim() === label || b.getAttribute("aria-label") === label)!;
+const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
+const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const click = async (label: string) => {
   expect(button(label), `button: ${label}`).toBeDefined();
   await act(async () => button(label).click());
@@ -64,14 +67,15 @@ afterEach(async () => {
 
 it("opens the selected room's invite link without regenerating it and restores focus on Escape", async () => {
   await openInvite();
-  expect(document.querySelector("dialog[open] h2")?.textContent).toBe("초대하기");
+  expect(dialog()?.querySelector("h2")?.textContent).toBe("초대하기");
   expect(state.detailId).toHaveBeenCalledWith("selected-room");
   expect(state.regenerate).not.toHaveBeenCalled();
   await click("복사");
   expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/existing-code`);
   expect(button("복사됨")).toBeDefined();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
-  expect(document.querySelector("dialog[open]")).toBeNull();
+  await flush();
+  expect(dialog()).toBeNull();
   expect(document.activeElement).toBe(button("제주 여행 더보기"));
   expect(onDelete).not.toHaveBeenCalled();
 });

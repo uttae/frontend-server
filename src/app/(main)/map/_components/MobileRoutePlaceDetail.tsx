@@ -6,6 +6,8 @@ import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 import { HeroImage, HeroSkeleton } from "@/components/place/HeroSection";
 import { PlaceDetailTabs } from "@/components/place/PlaceDetailTabs";
 import { usePlaceDetailData } from "@/components/place/usePlaceDetailData";
+import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AnalyticsEvents, trackAnalyticsEvent, type AnalyticsSource } from "@/lib/analytics/track";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import type { SearchRankBucket } from "@/lib/analytics/context";
@@ -50,15 +52,19 @@ export function MobileRoutePlaceDetail({
 
   function renderDetail() {
     if (isError && !detail && active) return (
-      <div role="alert" className="m-3.5 rounded-md border border-border-subtle p-3 text-body-s-regular text-text">
-        <p>장소 정보를 불러오지 못했어요.</p>
-        <button type="button" onClick={() => void refetch()} className="mt-2 text-primary underline">다시 시도</button>
+      <div className="p-3.5">
+        <Alert>
+          <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
+          <AlertAction>
+            <button type="button" onClick={() => void refetch()} className="text-primary underline">다시 시도</button>
+          </AlertAction>
+        </Alert>
       </div>
     );
     if (showSkeleton) return (
       <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
-        <span className="h-5 w-24 animate-pulse rounded bg-fill-strong" />
-        <span className="h-16 w-full animate-pulse rounded-md bg-fill" />
+        <Skeleton render={<span />} className="h-5 w-24" />
+        <Skeleton render={<span />} tone="subtle" className="h-16 w-full rounded-md" />
       </output>
     );
     return (

@@ -57,19 +57,17 @@
     @apply font-sans;
   }
 
+  /* Base UI 권장: iOS 26 Safari에서 대화상자 딤(position: absolute)이 스크롤한 뒤에도 화면 전체를 덮게 한다 */
+  body {
+    position: relative;
+  }
+
   /* 스크롤바 공간 예약은 폭 유지가 필요한 본문·목록에서만 개별 지정한다. */
 }
 
 /* 모바일 하단 탭바(메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */
 html:has([data-mobile-main-tabs]) {
   --toast-bottom-inset: calc(52px + env(safe-area-inset-bottom));
-}
-
-/* Sonner 기본 [data-icon]는 16×16(상태 SVG용). 아바타 등은 24×24로 맞춤 */
-[data-sonner-toast][data-styled="true"] [data-icon] {
-  width: 24px;
-  height: 24px;
-  justify-content: center;
 }
 
 /**

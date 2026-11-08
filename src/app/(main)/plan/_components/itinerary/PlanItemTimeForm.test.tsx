@@ -5,13 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   mutateAsync: vi.fn(),
+  pending: false,
   success: vi.fn(),
   error: vi.fn(),
 }));
 vi.mock("@/hooks/useRooms", () => ({
   useUpdateScheduleItem: () => ({
     mutateAsync: mocks.mutateAsync,
-    isPending: false,
+    isPending: mocks.pending,
   }),
 }));
 vi.mock("sonner", () => ({
@@ -26,7 +27,7 @@ async function render() {
   await act(async () => root.render(<PlanItemTimeEditor {...props} />));
 }
 async function click(label: string) {
-  const button = [...container.querySelectorAll("button")].find(
+  const button = [...document.querySelectorAll("button")].find(
     (el) => el.getAttribute("aria-label") === label || el.textContent === label,
   );
   expect(button, label).toBeDefined();
@@ -34,7 +35,7 @@ async function click(label: string) {
 }
 const fields = ["시작 시", "시작 분", "종료 시", "종료 분"];
 function input(column: number) {
-  const el = container.querySelector<HTMLInputElement>(`input[aria-label="${fields[column]}"]`);
+  const el = document.querySelector<HTMLInputElement>(`input[aria-label="${fields[column]}"]`);
   expect(el, fields[column]).not.toBeNull();
   return el!;
 }
@@ -49,6 +50,12 @@ async function type(column: number, value: string) {
 async function key(el: Element, key: string, shiftKey = false) {
   await act(async () => el.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true })));
 }
+// Base UI는 처음 포커스를 다음 animation frame에 옮긴다
+async function nextFrame() {
+  await act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+  });
+}
 function body() {
   return mocks.mutateAsync.mock.calls.at(-1)?.[0].body;
 }
@@ -56,6 +63,7 @@ beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   HTMLElement.prototype.scrollTo = vi.fn();
   vi.clearAllMocks();
+  mocks.pending = false;
   mocks.mutateAsync.mockResolvedValue({});
   container = document.createElement("div");
   document.body.append(container);
@@ -168,24 +176,26 @@ describe("schedule time editor", () => {
 });
 
 describe("web time editing", () => {
-  it("prefills exact minutes and applies typed values with Enter", async () => {
+  it.each([0, 1, 2, 3])("prefills exact minutes and applies typed values with Enter from input %s", async (column) => {
     props.startTime = "09:07";
     props.endTime = "10:13";
     await render();
+    await nextFrame();
     expect(fields.map((_, i) => selected(i))).toEqual(["09", "07", "10", "13"]);
     expect(document.activeElement).toBe(input(0));
     await type(0, "8");
     expect(selected(0)).toBe("8");
     await type(1, "5");
-    await key(input(1), "Enter");
+    await key(input(column), "Enter");
     expect(body()).toEqual({ startTime: "08:05" });
   });
   it.each(["24", "-1", "abc", "", "100"])("shows invalid hour %s without saving", async (value) => {
     await render();
     await type(0, value);
     expect(input(0).getAttribute("aria-invalid")).toBe("true");
-    expect(container.querySelector('[role="alert"]')?.textContent).toBeTruthy();
+    expect(document.querySelector('[role="alert"]')?.textContent).toBeTruthy();
     await key(input(0), "Enter");
+    expect(mocks.error).toHaveBeenCalledOnce();
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
     await type(0, "22");
     expect(input(0).getAttribute("aria-invalid")).toBe("false");
@@ -201,23 +211,37 @@ describe("web time editing", () => {
     await click("적용");
     expect(body()).toEqual({ startTime: "23:59" });
   });
-  it("traps Tab at both ends and restores opener focus after Escape", async () => {
+  // Tab 순환(포커스 가두기)은 Base UI 대화상자가 맡는다. 바깥 요소는 aria-hidden으로 접근성 트리에서 빠진다
+  it("hides outside content while open and restores opener focus after Escape", async () => {
     const opener = document.createElement("button");
     document.body.append(opener);
     opener.focus();
     props.onClose = vi.fn(() => root.render(null));
     await render();
-    const focusable = [...container.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled)')];
-    focusable[0].focus();
-    await key(focusable[0], "Tab", true);
-    expect(document.activeElement).toBe(focusable.at(-1));
-    await key(focusable.at(-1)!, "Tab");
-    expect(document.activeElement).toBe(focusable[0]);
+    await nextFrame();
+    expect(document.querySelector('[role="dialog"]')?.contains(document.activeElement)).toBe(true);
+    expect(opener.getAttribute("aria-hidden")).toBe("true");
     await key(input(0), "Escape");
+    await nextFrame();
     expect(props.onClose).toHaveBeenCalledOnce();
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+    expect(opener.hasAttribute("aria-hidden")).toBe(false);
     expect(document.activeElement).toBe(opener);
     opener.remove();
+  });
+  it("does not close by Escape, X or cancel while saving and names the apply button as saving", async () => {
+    mocks.pending = true;
+    await render();
+    const apply = document.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    expect(apply.getAttribute("aria-busy")).toBe("true");
+    expect(apply.getAttribute("aria-disabled")).toBe("true");
+    expect(document.getElementById(apply.getAttribute("aria-labelledby")!)?.textContent).toBe("저장 중");
+    await key(document.querySelector('[role="dialog"]')!, "Escape");
+    await click("닫기");
+    await click("취소");
+    expect(props.onClose).not.toHaveBeenCalled();
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
   });
   it("keeps the draft open on server failure", async () => {
     mocks.mutateAsync.mockRejectedValue(new Error("synthetic failure"));
@@ -228,4 +252,16 @@ describe("web time editing", () => {
     expect(selected(0)).toBe("22");
     expect(mocks.error).toHaveBeenCalledWith("synthetic failure");
   });
+});
+
+
+it("opening and focusing unset desktop fields never enables saving or sends a PATCH", async () => {
+  props = { ...props, startTime: "", endTime: null };
+  await render();
+  await act(async () => { input(0).focus(); input(1).focus(); });
+  expect(fields.map((_, i) => selected(i))).toEqual(["", "", "", ""]);
+  const apply = [...document.querySelectorAll("button")].find(b => b.textContent === "적용")!;
+  expect(apply.disabled).toBe(true);
+  await click("적용");
+  expect(mocks.mutateAsync).not.toHaveBeenCalled();
 });

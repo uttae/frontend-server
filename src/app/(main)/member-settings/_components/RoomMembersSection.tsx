@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { AddMemberPanel } from "./AddMemberPanel";
 import { JoinRequestsSection } from "./JoinRequestsSection";
@@ -54,7 +54,7 @@ export function RoomMembersSection() {
           ) : null}
         </h2>
         {isMembersLoading ? (
-          <LoadingIndicator label="구성원 불러오는 중" className="flex min-h-36 w-full" />
+          <Spinner aria-label="구성원 불러오는 중" className="flex min-h-36 w-full" />
         ) : (
           <MemberList me={me} others={others} isHost={isHost} onKick={requestKick} onTransfer={requestTransfer} />
         )}
