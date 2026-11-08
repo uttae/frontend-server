@@ -9,7 +9,6 @@ import { usePlanScheduleDayReorder } from "./usePlanScheduleDayReorder";
 
 const move = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 vi.mock("@/hooks/useRooms", () => ({ useMoveRoomSchedule: () => move }));
-vi.mock("@/hooks/useScheduleResyncPending", () => ({ useScheduleResyncPending: () => false }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const HEIGHT = 200;
@@ -81,6 +80,40 @@ it("keeps the dropped day order on screen until the cache shows it, then draws t
       await dropping;
     });
     expect(hook.current.isDraggingActive).toBe(false);
+  } finally {
+    await hook.unmount();
+  }
+});
+
+it("starts the next day drag while the previous one is still saving, and the earlier save does not clear it", async () => {
+  let finish!: () => void;
+  move.mutateAsync.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
+  const schedules = [day(10, 1), day(20, 2), day(30, 3)];
+  const hook = hookHarness((list: RoomSchedule[]) => usePlanScheduleDayReorder({ roomId: "room-a", schedules: list }));
+  const sections = [0, 1, 2].map(section);
+  const transfer = dataTransfer();
+  try {
+    await hook.render(schedules);
+    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
+    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
+    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
+    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+    let dropping!: Promise<void>;
+    await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
+
+    // 저장 중에도 손잡이를 막지 않는다
+    const moved = [day(30, 1), day(10, 2), day(20, 3)];
+    await hook.render(moved);
+    expect(hook.current.getSectionProps(1).dragHandleProps.dragDisabled).toBe(false);
+    await act(async () => hook.current.getSectionProps(1).dragHandleProps.onDragStart(dragEvent(transfer, sections[1]!, 300)));
+
+    // 앞선 저장이 끝나도 지금 끄는 일차는 그대로다
+    await act(async () => {
+      finish();
+      await dropping;
+    });
+    expect(hook.current.isDraggingActive).toBe(true);
+    expect(hook.current.getSectionProps(1).dragHandleProps.isDragging).toBe(true);
   } finally {
     await hook.unmount();
   }

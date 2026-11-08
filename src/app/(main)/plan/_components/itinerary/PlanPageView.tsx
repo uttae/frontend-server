@@ -97,7 +97,6 @@ export function PlanPageView() {
     usePlanScheduleDayReorder({
       roomId,
       schedules: sortedSchedules,
-      interactionLocked: isCreatingSchedule || isDeletingSchedule,
     });
 
   // 장소 드래그는 여러 일차에 걸치므로 페이지에서 한 벌만 둔다(모바일은 MobilePlanView의 컨트롤러)
@@ -290,7 +289,7 @@ export function PlanPageView() {
                     isScheduleMenuDisabled={
                       isCreatingSchedule || isDeletingSchedule || isMovePending
                     }
-                      {...sectionProps}
+                    {...sectionProps}
                   />
                 );
               })}

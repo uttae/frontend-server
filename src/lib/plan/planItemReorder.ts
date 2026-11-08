@@ -7,10 +7,6 @@ export const PLAN_ITEM_DND_INDEX_MIME = "application/x-plan-item-index";
 
 export const PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR = "data-plan-itinerary-drop-zone";
 
-/** 연결이 끊긴 동안이나 놓친 변경을 다시 받는 동안 놓은 경우 */
-export const PLAN_ORDER_RESYNCING_MESSAGE =
-  "일정을 다시 맞추는 중이라 옮기지 않았어요. 잠시 후 다시 옮겨 주세요.";
-
 export const PLAN_ITEM_REORDER_ROW_TRANSITION =
   "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
 
