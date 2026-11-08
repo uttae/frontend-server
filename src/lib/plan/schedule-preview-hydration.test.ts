@@ -5,6 +5,11 @@ import type { PlanPlace } from "@/lib/plan/types";
 
 const requestPlacePreviewsBatch = vi.hoisted(() => vi.fn());
 const requestPlacePreview = vi.hoisted(() => vi.fn());
+const getScheduleItems = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/api/rooms/schedule-items", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>(),
+  getScheduleItems,
+}));
 
 vi.hoisted(() => {
   process.env.NEXT_PUBLIC_API_BASE_URL = "http://localhost:8080";
@@ -20,6 +25,7 @@ vi.mock("@/lib/api/places", async (importOriginal) => {
 
 let hydrateScheduleItemsFromSchedulesWithItems: typeof import("@/lib/plan/schedule-bulk-hydration").hydrateScheduleItemsFromSchedulesWithItems;
 let ensureSchedulePlanPlacesEnriched: typeof import("@/lib/plan/scheduleItemPlaces").ensureSchedulePlanPlacesEnriched;
+let schedulePlanPlacesQueryOptions: typeof import("@/lib/plan/scheduleItemPlaces").schedulePlanPlacesQueryOptions;
 let PLAN_PLACE_PREVIEW_ERROR_TITLE: string;
 let createQueryClient: typeof import("@/lib/query-client").createQueryClient;
 let scheduleItemsQueryKey: typeof import("@/lib/query-keys").scheduleItemsQueryKey;
@@ -30,7 +36,7 @@ beforeAll(async () => {
   ({ hydrateScheduleItemsFromSchedulesWithItems, PLAN_PLACE_PREVIEW_ERROR_TITLE } = await import(
     "@/lib/plan/schedule-bulk-hydration"
   ));
-  ({ ensureSchedulePlanPlacesEnriched } = await import("@/lib/plan/scheduleItemPlaces"));
+  ({ ensureSchedulePlanPlacesEnriched, schedulePlanPlacesQueryOptions } = await import("@/lib/plan/scheduleItemPlaces"));
   ({ createQueryClient } = await import("@/lib/query-client"));
   ({ scheduleItemsQueryKey, roomSchedulesQueryKey } = await import("@/lib/query-keys"));
   ({ HttpError } = await import("@/lib/api/errors"));
@@ -39,6 +45,7 @@ beforeAll(async () => {
 beforeEach(() => {
   requestPlacePreviewsBatch.mockReset();
   requestPlacePreview.mockReset();
+  getScheduleItems.mockReset();
 });
 
 const ROOM_ID = "room-1";
@@ -94,7 +101,7 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
     await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [
       schedule(1, ["a", "b"]),
       schedule(2, ["c", "d"]),
-    ]);
+    ], Date.now());
 
     expect(requestPlacePreviewsBatch.mock.calls).toEqual([[["a", "b", "c", "d"]], [["b", "d"]]]);
     expect(requestPlacePreview).not.toHaveBeenCalled();
@@ -106,7 +113,7 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
     const queryClient = createQueryClient();
     requestPlacePreviewsBatch.mockRejectedValueOnce(new HttpError(429, "요청이 너무 많습니다"));
 
-    await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [schedule(1, ["a", "b"])]);
+    await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [schedule(1, ["a", "b"])], Date.now());
 
     expect(requestPlacePreviewsBatch).toHaveBeenCalledTimes(1);
     expect(requestPlacePreview).not.toHaveBeenCalled();
@@ -197,5 +204,29 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
     expect(places.map((place) => place.title)).toEqual(["이름 a", "이름 b"]);
     expect(requestPlacePreview).toHaveBeenCalledExactlyOnceWith("a");
     expect(requestPlacePreviewsBatch).not.toHaveBeenCalled();
+  });
+});
+
+describe("schedulePlanPlacesQueryOptions after preview recovery merge", () => {
+  it("invalidated placeholder data fetches authoritative items instead of only enriching old items", async () => {
+    const queryClient = createQueryClient();
+    const key = scheduleItemsQueryKey(ROOM_ID, 1);
+    queryClient.setQueryData(key, [{ id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE }]);
+    await queryClient.invalidateQueries({ queryKey: key, refetchType: "none" });
+    getScheduleItems.mockResolvedValue([]);
+    await expect(queryClient.fetchQuery(schedulePlanPlacesQueryOptions(queryClient, ROOM_ID, 1))).resolves.toEqual([]);
+    expect(getScheduleItems).toHaveBeenCalledExactlyOnceWith(ROOM_ID, 1, expect.any(AbortSignal));
+    expect(requestPlacePreview).not.toHaveBeenCalled();
+  });
+
+  it("non-invalidated placeholder retry enriches only the surviving cached items", async () => {
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [{ id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE }]);
+    requestPlacePreview.mockResolvedValue(ok("a"));
+    const places = await queryClient.fetchQuery({ ...schedulePlanPlacesQueryOptions(queryClient, ROOM_ID, 1), staleTime: 0 });
+    expect(places.map((place) => place.itemId)).toEqual([100]);
+    expect(places[0].title).toBe("이름 a");
+    expect(getScheduleItems).not.toHaveBeenCalled();
+    expect(requestPlacePreview).toHaveBeenCalledExactlyOnceWith("a");
   });
 });

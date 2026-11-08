@@ -66,8 +66,16 @@ describe("schedule time JSON contract", () => {
         }),
       ),
     );
-    expect(await api.getScheduleItemRoute("room", 10, 1)).toMatchObject({
+    expect(await api.getScheduleItemRoute("room", 10, 1, 2)).toMatchObject({
       durationSeconds: 1200,
     });
+  });
+  it("asks the route to the given destination item", async () => {
+    apiFetch.mockResolvedValue(new Response(null, { status: 204 }));
+    await api.getScheduleItemRoute("room", 10, 1, 2, "WALKING");
+    const url = new URL(String(apiFetch.mock.calls.at(-1)?.[0]));
+    expect(url.pathname).toMatch(/\/rooms\/room\/schedules\/10\/items\/1\/route$/);
+    expect(url.searchParams.get("destinationItemId")).toBe("2");
+    expect(url.searchParams.get("travelMode")).toBe("WALKING");
   });
 });
