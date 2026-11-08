@@ -19,7 +19,6 @@ import {
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import {
-  SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
 } from "@/lib/plan/scheduleTravelMode";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -307,7 +306,8 @@ export function scheduleSegmentRoutesCached(
     if (typeof place.itemId !== "number") return true;
     const destination = destinationByItemId.get(place.itemId);
     if (destination === undefined) return true;
-    const mode = canonicalScheduleTravelMode(place.travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
+    const mode = canonicalScheduleTravelMode(place.travelMode);
+    if (!mode) return true;
     const state = queryClient.getQueryState(
       scheduleItemRouteQueryKey(rid, scheduleId, place.itemId, destination, mode),
     );
@@ -381,11 +381,10 @@ export async function hydrateScheduleRoutesBatch(
   const requestItems = segments.flatMap((place) => {
     const itemId = place.itemId;
     if (typeof itemId !== "number" || !Number.isFinite(itemId)) return [];
-    // 저장값이 표준 수단과 다르면(예: 고를 수 없게 된 자전거) 화면에 보이는 수단으로 계산해 달라고 지정한다 —
-    // 수단을 빼면 서버가 저장값으로 계산해, 자동차로 보이는 구간에 자전거 경로가 들어간다
     const saved = place.travelMode?.trim().toUpperCase() ?? "";
-    const shown = canonicalScheduleTravelMode(saved);
-    return [saved && shown && shown !== saved ? { itemId, travelMode: shown } : { itemId }];
+    const mode = canonicalScheduleTravelMode(saved);
+    if (!mode) return [];
+    return [mode === saved ? { itemId } : { itemId, travelMode: mode }];
   });
 
   if (!requestItems.length) return;

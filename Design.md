@@ -17,9 +17,9 @@
 예를들어서 피그마 페이지에 폰트가 17px이고 시멘틱 토큰과 css변수가 없다면 임의값을 사용한다.
 
 ### 1-3. 컴포넌트
-목표는 shadcn이다. 아직 설치 전이라 기존 공용 컴포넌트와 병행하고, 무엇을 쓸지는 [핵심 원칙 1-1](docs/code-conventions/principles.md)을 따른다.
+목표는 shadcn(Base UI)이다. 옮기는 동안 기존 공용 컴포넌트와 병행하고, 무엇을 쓸지는 [핵심 원칙 1-1](docs/code-conventions/principles.md)을 따른다.
 - 공용: `src/components/<도메인>/`(`layout`, `place`, `map`, `settings` …)
-- shadcn: 설치 후 `src/components/ui/`
+- shadcn: `src/components/ui/`
 - 특정 페이지 전용: `src/app/**/_components/`
 
 ### 1-4. Figma 디자인 시스템
@@ -35,7 +35,8 @@
 - 11 [Tabs](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5138-2632) — Tabs Line, Tabs Chip, Tab Item
 - 12 [Toast](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5285-4979) — Toast
 - 13 [Alert Dialog](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5619-553) — Alert Dialog
-- 14·15 [Chip · Badge](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5624-159) — Chip(Solid·Outline), Badge(Weak·Solid·Outline, 톤 6종)
+- 14 [Chips](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5624-159) — Chip(Solid·Outline)
+- 15 [Badges](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5864-12983) — Badge(Weak·Solid·Outline, 톤 6종)
 - [Update Log](https://www.figma.com/design/Va7ys9C4lx9PIHOGvlaAID/Design-System?node-id=5635-11) — 디자인 시스템 변경 기록
 
 ---
@@ -111,7 +112,7 @@ import { MapPinIcon } from "@/assets/icons";
 
 ### 3-3. 이벤트 피드백
 - 사용자 액션에는 결과 피드백이 있어야 한다
-- alert는 toast, confirm은 `ConfirmDialog`를 쓰고 요구조건에 맞춘다(shadcn 설치 후 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
+- alert는 toast, confirm은 `ConfirmDialog`(ui `AlertDialog` 위)를 쓰고 요구조건에 맞춘다(shadcn 부품으로 옮기는 기준은 [핵심 원칙 1-1](docs/code-conventions/principles.md))
 - 비동기 동작 중 중복 실행 방지(핵심 원칙 2-4)
 
 

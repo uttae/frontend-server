@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  SCHEDULE_TRAVEL_MODE_DEFAULT,
   SCHEDULE_TRAVEL_MODES,
   canonicalScheduleTravelMode,
-  scheduleTravelModeLabel,
 } from "./scheduleTravelMode";
 
 describe("scheduleTravelMode", () => {
@@ -12,11 +10,8 @@ describe("scheduleTravelMode", () => {
     expect(SCHEDULE_TRAVEL_MODES.map((m) => m.value)).toEqual(["WALKING", "TRANSIT", "DRIVING"]);
   });
 
-  it("예전에 자전거로 저장된 값은 기본값(자동차)으로 읽는다", () => {
-    expect(SCHEDULE_TRAVEL_MODE_DEFAULT).toBe("DRIVING");
-    expect(canonicalScheduleTravelMode("BICYCLING")).toBe("DRIVING");
-    expect(canonicalScheduleTravelMode("cycling")).toBe("DRIVING");
-    expect(scheduleTravelModeLabel("BICYCLING")).toBe("자동차");
+  it.each(["BICYCLING", "CYCLING", "BOAT", "", undefined])("미지원 값 %s를 다른 수단으로 바꾸지 않는다", (mode) => {
+    expect(canonicalScheduleTravelMode(mode)).toBeNull();
   });
 
   it("표준 수단과 예전 별칭은 그대로 읽는다", () => {

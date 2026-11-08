@@ -37,8 +37,8 @@
 - ✓ prop을 더하기 전에 계산 → slot → `variant` → 화면 훅 순서로 본다. `<PlaceCard variant="compact" action={<AddToScheduleButton placeId={place.id} />} />`(원칙 2-2·1-4)
 
 ### 6. 있는 부품 다시 만들기
-- 신호: 새 `fixed inset-0` 모달·바텀시트·로딩 표시, `SettingsActionButton`·`alertDialogButtonClass`가 맞는 자리에 복붙한 버튼 클래스, 새로 만든 범용 Button, `lucide-react`·새 아이콘 패키지
-- ✓ `ConfirmDialog`·`SettingsDialog`·`MobileBottomSheet`·`LoadingIndicator`를 먼저 쓴다. 버튼은 `SettingsActionButton`·`alertDialogButtonClass`가 맞으면 쓰고, 아니면 그 자리 `<button>`에 토큰 클래스로 쓴다(범용 Button은 보류). 아이콘은 `@/assets/icons`(원칙 1-1, Design.md 2장).
+- 신호: 새 `fixed inset-0` 모달·바텀시트·로딩 표시, 손으로 만든 메뉴·셀렉트·탭, `Button` 대신 복붙한 버튼 클래스, `useState`로 하나씩 든 대화상자 폼 값·오류, `lucide-react`·새 아이콘 패키지
+- ✓ `src/components/ui/`의 부품(`Button`·`Dialog`·`AlertDialog`·`Drawer`·`DropdownMenu`·`Select`·`Combobox`·`Popover`·`Tabs`·`Spinner`·`Skeleton` 등)과 확인창 `ConfirmDialog`를 먼저 쓴다. 대화상자 폼은 TanStack Form(원칙 2-9). 아이콘은 `@/assets/icons`(원칙 1-1, Design.md 2장).
 
 ### 7. 미리 만든 추상화
 - 신호: 사용처가 하나인 래퍼·옵션 객체·범용 컴포넌트, `useMount`·`useUpdateEffect` 같은 생명주기 훅, 쓰는 곳 없는 설정 레이어. 로직을 나누는 화면 훅은 사용처가 하나여도 걸리지 않는다.
@@ -87,7 +87,7 @@
 
 ### 17. 토큰 우회
 - 신호: 토큰에 있는 값을 `text-[16px] leading-6`·`rounded-[8px]`·`#333`으로 쓴다. `bg-gray-800`·`shadow-md`(Tailwind 기본값), `dark-gray`(레거시 별칭), `text-body-s`(없는 토큰 이름), 타이포 토큰에 붙인 `font-semibold`, 템플릿 리터럴 className, 조립한 클래스 이름(`` `bg-${tone}` ``)
-- ✓ `text-body-m-regular`, `rounded-md`, `text-text`, 클래스는 `cn("…", TONE_CLASS[tone], className)`(원칙 3-6).
+- ✓ `text-body-m-regular`, `rounded-md`, `text-text`, 변형은 cva로 두고 `cn(tagVariants({ tone }), className)`(원칙 3-6).
 
 ### 18. div 버튼과 지운 포커스
 - 신호: `<div onClick>`, 단순 이동을 `router.push` 버튼으로 만든다. 아이콘 버튼에 `aria-label`이 없다. placeholder만 있는 입력, `outline-none`으로 지운 포커스 표시

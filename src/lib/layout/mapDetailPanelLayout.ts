@@ -12,6 +12,3 @@ export const MAP_TOOLBAR_ELEVATED_Z_CLASS = "z-[25]" as const;
 
 /** 지도 툴바 기본 스택 */
 export const MAP_TOOLBAR_Z_CLASS = "z-[15]" as const;
-
-/** 툴바 elevated 스택 안 드롭다운 메뉴 */
-export const MAP_FILTER_DROPDOWN_MENU_Z_CLASS = "z-[30]" as const;

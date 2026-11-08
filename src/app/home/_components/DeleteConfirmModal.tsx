@@ -25,7 +25,6 @@ export function DeleteConfirmModal({ room, onClose, onDeleted }: Props) {
 
   return (
     <ConfirmDialog
-      appearance="ledger"
       destructive
       title="여행을 삭제하시겠어요?"
       description={`${room.title}의 모든 정보가 삭제되며,\n삭제한 여행은 복구할 수 없어요.`}

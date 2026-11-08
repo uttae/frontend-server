@@ -27,16 +27,21 @@ let root: Root;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.stubGlobal("matchMedia", () => ({ matches: true }));
-  HTMLDialogElement.prototype.showModal = function () {
-    this.setAttribute("open", "");
-  };
-  HTMLDialogElement.prototype.close = function () {
-    this.removeAttribute("open");
-  };
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
 });
+// Base UI는 열고 닫은 뒤 포커스·언마운트를 다음 틱(프레임)에 한다
+const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const sheet = () => document.querySelector<HTMLElement>('[role="dialog"]');
+// 딤·바깥 누르기: Base UI는 pointerdown·mousedown에서 시작해 click으로 끝난 누르기만 바깥 누르기로 본다
+async function pressOutside(target: HTMLElement) {
+  await act(async () => {
+    for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup", "click"]) {
+      target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0 }));
+    }
+  });
+}
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
@@ -61,34 +66,42 @@ it("chooses a mobile category and restores its trigger, while cancel leaves sele
   }
   await act(async () => root.render(<Filter />));
   const trigger = host.querySelector<HTMLButtonElement>('[role="combobox"]')!;
-  trigger.focus();
-  await act(async () => trigger.click());
-  expect(host.querySelector("dialog[open]")).not.toBeNull();
-  expect(document.activeElement).toBe(host.querySelector("dialog h2"));
+  const open = async () => {
+    trigger.focus();
+    await act(async () => trigger.click());
+    await flush();
+    expect(sheet()?.hasAttribute("data-open")).toBe(true);
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  };
+  const expectClosedOnTrigger = async () => {
+    await flush();
+    expect(sheet()).toBeNull();
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(trigger);
+  };
+  await open();
+  // 첫 포커스는 Base UI 기본대로 시트 안으로 간다
+  expect(sheet()!.contains(document.activeElement)).toBe(true);
+  expect(sheet()!.querySelector("h2")?.textContent).toBe("카테고리");
+  const food = [...sheet()!.querySelectorAll<HTMLElement>('[role="radio"]')]
+    .find((radio) => radio.closest("label")?.textContent?.includes("식비"))!;
+  await act(async () => food.click());
+  expect(trigger.textContent).toContain("식비");
+  await expectClosedOnTrigger();
+  await open();
   await act(async () =>
-    host.querySelector<HTMLInputElement>('input[value="FOOD"]')!.click(),
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
   );
+  await expectClosedOnTrigger();
   expect(trigger.textContent).toContain("식비");
-  expect(host.querySelector("dialog")).toBeNull();
-  expect(document.activeElement).toBe(trigger);
-  await act(async () => trigger.click());
-  await act(async () =>
-    host
-      .querySelector("dialog")!
-      .dispatchEvent(new Event("cancel", { cancelable: true })),
-  );
-  expect(host.querySelector("dialog")).toBeNull();
+  await open();
+  await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="카테고리 닫기"]')!.click());
+  await expectClosedOnTrigger();
   expect(trigger.textContent).toContain("식비");
-  await act(async () => trigger.click());
-  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="카테고리 닫기"]')!.click());
-  expect(host.querySelector("dialog")).toBeNull();
+  await open();
+  await pressOutside(document.querySelector<HTMLElement>('[data-slot="drawer-overlay"]')!);
+  await expectClosedOnTrigger();
   expect(trigger.textContent).toContain("식비");
-  expect(document.activeElement).toBe(trigger);
-  await act(async () => trigger.click());
-  await act(async () => host.querySelector("dialog")!.click());
-  expect(host.querySelector("dialog")).toBeNull();
-  expect(trigger.textContent).toContain("식비");
-  expect(document.activeElement).toBe(trigger);
 });
 
 it("closes the item disclosure on Escape, outside pointer and focus departure without acting", async () => {
@@ -107,29 +120,36 @@ it("closes the item disclosure on Escape, outside pointer and focus departure wi
       </>,
     ),
   );
-  const trigger = host.querySelector<HTMLButtonElement>("[aria-expanded]")!;
-  await act(async () => trigger.click());
-  const editButton = host.querySelector<HTMLButtonElement>(
-    '[aria-label="비용 수정"]',
-  )!;
-  editButton.focus();
+  const trigger = host.querySelector<HTMLButtonElement>('[aria-label="항공 비용 더보기"]')!;
+  const open = async () => {
+    await act(async () => trigger.click());
+    await flush();
+    expect(trigger.getAttribute("aria-expanded")).toBe("true");
+  };
+  await open();
+  // 메뉴는 body로 포털된다. 항목은 Base UI Menu.Item(role="menuitem")
+  const editItem = document.querySelector<HTMLElement>('[role="menuitem"][aria-label="비용 수정"]')!;
+  expect(editItem).not.toBeNull();
+  editItem.focus();
   await act(async () =>
-    editButton.dispatchEvent(
+    editItem.dispatchEvent(
       new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
     ),
   );
+  await flush();
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
   expect(document.activeElement).toBe(trigger);
-  await act(async () => trigger.click());
-  await act(async () =>
-    document.body.dispatchEvent(new Event("pointerdown", { bubbles: true })),
-  );
+  await open();
+  await pressOutside(document.body);
+  await flush();
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
-  await act(async () => trigger.click());
-  await act(async () =>
-    host.querySelector<HTMLButtonElement>("#outside")!.focus(),
-  );
+  await open();
+  // Tab으로 마지막 항목을 지나면 포커스가 메뉴 포털 끝의 포커스 가드로 간다. jsdom은 Tab 이동이 없어 그 가드로 직접 옮긴다
+  const guards = document.querySelectorAll<HTMLElement>("[data-base-ui-portal] [data-base-ui-focus-guard]");
+  await act(async () => guards[guards.length - 1].focus());
+  await flush();
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  expect(document.activeElement).toBe(host.querySelector("#outside"));
   expect(edit).not.toHaveBeenCalled();
   expect(remove).not.toHaveBeenCalled();
 });

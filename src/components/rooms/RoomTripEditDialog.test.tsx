@@ -27,7 +27,17 @@ import HeaderBar from "@/components/layout/HeaderBar";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let host: HTMLDivElement;
 let root: Root;
-const dialog = () => document.querySelector<HTMLDialogElement>("dialog[open]");
+// Base UI 대화상자는 document.body로 포털된다. 여행 정보 수정 대화상자는 제목(aria-labelledby)으로 찾는다
+const dialogs = () => [...document.querySelectorAll<HTMLElement>('[role="dialog"]')];
+const editDialogs = () =>
+  dialogs().filter((node) => document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent === "여행 정보 수정");
+const dialog = () => editDialogs()[0] ?? null;
+// 열림·닫힘 처리와 처음 포커스는 Base UI가 다음 animation frame에 마친다
+async function nextFrame() {
+  await act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+  });
+}
 const button = (label: string, scope: ParentNode = document) => {
   const node = [...scope.querySelectorAll<HTMLButtonElement>("button")].find(
     (item) => item.getAttribute("aria-label") === label || item.textContent === label,
@@ -51,10 +61,12 @@ async function open() {
   const trigger = button("여행 정보 수정", host);
   trigger.focus();
   await click("여행 정보 수정", host);
+  await nextFrame();
   return trigger;
 }
 const dateField = (edge: "start" | "end") => dialog()!.querySelector<HTMLButtonElement>(`#trip-room-${edge}`)!;
-const picker = () => dialog()!.querySelector<HTMLElement>('[role="dialog"][aria-label="날짜 선택"]');
+// 날짜 선택 팝업도 body로 포털돼 여행 정보 수정 대화상자 밖에 그려진다
+const picker = () => document.querySelector<HTMLElement>('[role="dialog"][aria-label="날짜 선택"]');
 const day = (ymd: string) => picker()!.querySelector<HTMLButtonElement>(`button[data-ymd="${ymd}"]`)!;
 /** 날짜 칸을 눌러 달력을 열고, 날짜를 차례로 누른 뒤 확인한다 */
 async function pickDates(edge: "start" | "end", ...days: string[]) {
@@ -75,10 +87,12 @@ afterEach(async () => { await act(async () => root.unmount()); host.remove(); })
 it("opens one named modal beside the title and closing discards its draft with focus restoration", async () => {
   const trigger = await open();
   expect(trigger.parentElement?.textContent).toContain("가을 여행");
-  expect(document.querySelectorAll("dialog[open]")).toHaveLength(1);
+  expect(dialogs()).toHaveLength(1);
+  expect(editDialogs()).toHaveLength(1);
   expect(document.getElementById(dialog()!.getAttribute("aria-labelledby")!)?.textContent).toBe("여행 정보 수정");
   await change('input[type="text"]', "임시 제목");
   await click("여행 정보 수정 닫기", dialog()!);
+  await nextFrame();
   expect(dialog()).toBeNull(); expect(document.activeElement).toBe(trigger);
   await open();
   expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("가을 여행");
@@ -97,6 +111,23 @@ it("uses the existing trimmed mutation payload and closes only after save succee
   expect(dialog()).toBeNull();
 });
 
+it("shows the title error under the title field and locks apply until a title is entered", async () => {
+  await open();
+  const title = () => dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!;
+  expect(title().hasAttribute("aria-invalid")).toBe(false);
+  await change('input[type="text"]', "   ");
+  expect(title().getAttribute("aria-invalid")).toBe("true");
+  const error = document.getElementById(title().getAttribute("aria-describedby")!);
+  expect(error?.getAttribute("role")).toBe("alert");
+  expect(error?.textContent).toBe("여행 제목을 입력해 주세요.");
+  expect(button("적용하기", dialog()!).disabled).toBe(true);
+  await change('input[type="text"]', "새 제목");
+  expect(title().hasAttribute("aria-invalid")).toBe(false);
+  expect(dialog()!.textContent).not.toContain("여행 제목을 입력해 주세요.");
+  expect(button("적용하기", dialog()!).disabled).toBe(false);
+  expect(state.update).not.toHaveBeenCalled();
+});
+
 it("allows an earlier start date and keeps date ordering and required destination validation", async () => {
   await open();
   // 저장된 시작일보다 이른 날짜로도 시작일을 앞당길 수 있다
@@ -110,6 +141,7 @@ it("allows an earlier start date and keeps date ordering and required destinatio
   expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
   await click("서울 삭제", dialog()!);
   expect(button("적용하기", dialog()!).disabled).toBe(true);
+  expect([...dialog()!.querySelectorAll('[role="alert"]')].map((node) => node.textContent)).toContain("여행지를 하나 이상 선택해 주세요.");
   expect(state.update).not.toHaveBeenCalled();
 });
 
@@ -168,25 +200,75 @@ it.each(["loading", "missing"])("does not offer editing for %s room data", async
   if (mode === "missing") expect(dialog()!.textContent).toContain("여행 정보를 불러오지 못했어요.");
 });
 
-it("contains shrink confirmation focus and Escape dismisses only confirmation, preserving the draft", async () => {
+// Tab 순환(포커스 가두기)은 Base UI 확인창이 맡는다. 여기서는 처음 포커스·Esc 범위·포커스 복귀를 본다
+it("focuses the shrink confirmation and Escape dismisses only confirmation, preserving the draft", async () => {
   await open();
   await pickDates("end", "2026-10-10");
   button("적용하기", dialog()!).focus();
   await click("적용하기", dialog()!);
-  const confirm = document.querySelector('[role="alertdialog"]')!;
+  await nextFrame();
+  const confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
   expect(confirm).not.toBeNull();
-  expect(confirm.contains(document.activeElement)).toBe(true);
-  await act(async () => {
-    button("계속하기", confirm).focus();
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", bubbles: true, cancelable: true }));
-  });
+  expect(document.getElementById(confirm.getAttribute("aria-labelledby")!)?.textContent).toBe("여행 기간을 줄일까요?");
+  // 확인창의 처음 포커스는 취소다(Enter 한 번에 삭제되는 계속하기가 실행되지 않게)
   expect(document.activeElement).toBe(button("취소", confirm));
+  expect(state.update).not.toHaveBeenCalled();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
   expect(document.querySelector('[role="alertdialog"]')).toBeNull();
   expect(dialog()).not.toBeNull();
   expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 10일");
   expect(document.activeElement).toBe(button("적용하기", dialog()!));
   expect(state.update).not.toHaveBeenCalled();
+});
+
+it("saves the shortened period from the confirmation and keeps it open while saving", async () => {
+  await open();
+  await pickDates("end", "2026-10-10");
+  await click("적용하기", dialog()!);
+  await nextFrame();
+  let confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
+  await click("계속하기", confirm);
+  expect(state.update).toHaveBeenCalledWith(expect.objectContaining({
+    roomId: "room", data: expect.objectContaining({ startDate: "2026-10-10", endDate: "2026-10-10" }),
+  }), expect.any(Object));
+  // 저장 중에는 확인창이 Esc로 닫히지 않고 계속하기가 진행 표시(저장 중)로 바뀐다
+  state.pending = true;
+  await act(async () => root.render(<HeaderBar />));
+  confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
+  const proceed = [...confirm.querySelectorAll<HTMLButtonElement>("button")].find((node) => node.getAttribute("aria-busy") === "true")!;
+  expect(proceed).toBeDefined();
+  expect(document.getElementById(proceed.getAttribute("aria-labelledby")!)?.textContent).toBe("저장 중");
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
+  expect(document.querySelector('[role="alertdialog"]')).not.toBeNull();
+  expect(dialog()).not.toBeNull();
+  state.pending = false;
+  await act(async () => state.update.mock.calls[0][1].onSuccess());
+  await nextFrame();
+  expect(document.querySelector('[role="alertdialog"]')).toBeNull();
+  expect(dialog()).toBeNull();
+});
+
+it("does not close the edit dialog by Escape or X while saving", async () => {
+  await open();
+  await change("#trip-room-title", "도쿄 2");
+  await click("적용하기", dialog()!);
+  expect(state.update).toHaveBeenCalledTimes(1);
+  state.pending = true;
+  await act(async () => root.render(<HeaderBar />));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
+  expect(dialog()).not.toBeNull();
+  const close = dialog()!.querySelector<HTMLButtonElement>('[aria-label="여행 정보 수정 닫기"]')!;
+  await act(async () => close.click());
+  await nextFrame();
+  expect(dialog()).not.toBeNull();
+  state.pending = false;
+  await act(async () => root.render(<HeaderBar />));
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
+  expect(dialog()).toBeNull();
 });
 
 it("names the existing title, destination and date fields", async () => {

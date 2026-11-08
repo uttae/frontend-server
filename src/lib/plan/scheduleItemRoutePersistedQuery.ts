@@ -32,7 +32,7 @@ export function persistedScheduleItemRouteQueryOptions(
   segmentSourceItemId: number | null,
   /** 다음 장소의 `itemId` — 없으면 구간이 정해지지 않아 조회하지 않는다 */
   destinationItemId: number | null,
-  travelMode: ScheduleTravelModeValue,
+  travelMode: ScheduleTravelModeValue | null,
   fingerprintTrimmed: string,
   flags: PersistedScheduleRoutePersistFlags,
 ): OmitKeyof<
@@ -51,7 +51,7 @@ export function persistedScheduleItemRouteQueryOptions(
   const fp = fingerprintTrimmed.trim();
 
   const keyEligible =
-    flags.segmentReady && rid.length > 0 && sidOk && itemOk && destOk;
+    flags.segmentReady && travelMode !== null && rid.length > 0 && sidOk && itemOk && destOk;
 
   const network =
     typeof flags.networkEnabled === "boolean"
@@ -96,7 +96,7 @@ export function persistedScheduleItemRouteQueryOptions(
         }
       : {}),
     queryFn: (): Promise<RouteCached> =>
-      resolveScheduleSegmentRoute({
+      travelMode === null ? Promise.resolve(null) : resolveScheduleSegmentRoute({
         roomId: rid,
         scheduleId: sid!,
         segmentSourceItemId: segmentSourceItemId!,

@@ -13,7 +13,6 @@ import { persistedScheduleItemRouteQueryOptions } from "@/lib/plan/scheduleItemR
 import { buildScheduleItemRouteSummariesByMode } from "@/lib/plan/scheduleItemRouteModes";
 import {
   SCHEDULE_TRAVEL_MODES,
-  SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
   type ScheduleTravelModeValue,
 } from "@/lib/plan/scheduleTravelMode";
@@ -44,7 +43,7 @@ export type PlanTravelTimeProps = {
   /** 다음 장소의 `itemId` — 경로를 이 항목까지 계산한다 */
   destinationItemId: number;
   scheduleFingerprint: string;
-  /** 서버 저장 공유 이동수단 (`schedule_items.travel_mode`) — 없으면 기본 `DRIVING` */
+  /** 서버 원본 공유 이동수단 — 미지원·미설정이면 선택을 기다립니다. */
   travelMode?: string;
   routeQueryEnabled?: boolean;
   originGooglePlaceId?: string;
@@ -79,7 +78,7 @@ export function PlanTravelTime({
   const rid = roomId.trim();
   /** 서버 저장값 기준 표준 이동수단 — 이 값이 곧 방 전체 공유 상태 */
   const serverMode =
-    canonicalScheduleTravelMode(travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
+    canonicalScheduleTravelMode(travelMode);
 
   const {
     mutate: mutateTravelMode,
@@ -92,7 +91,7 @@ export function PlanTravelTime({
       ? pendingTravelMode.travelMode
       : serverMode;
 
-  const googleMapsDirectionsUrl = buildGoogleMapsDirectionsUrl({
+  const googleMapsDirectionsUrl = selectedMode === null ? null : buildGoogleMapsDirectionsUrl({
     originPlaceId: originGooglePlaceId ?? "",
     originQuery: originPlaceName ?? "",
     destinationPlaceId: destinationGooglePlaceId ?? "",
@@ -171,6 +170,7 @@ export function PlanTravelTime({
   }, [selectedRoute, menuDeferredModes, deferredRouteQueries]);
 
   const displayRoute = useMemo(() => {
+    if (selectedMode === null) return undefined;
     const sel = modeRouteSummaries[selectedMode];
     if (
       sel != null &&
@@ -205,7 +205,7 @@ export function PlanTravelTime({
       );
     };
     // 고르지 않은 수단은 조회하지 않으니 고른 수단만 불러오는 중을 표시한다
-    if (routeQueryEnabled) {
+    if (routeQueryEnabled && selectedMode !== null) {
       out[selectedMode] =
         !hasSummary(selectedMode) && (selectedPending || selectedFetching);
     }
@@ -223,7 +223,7 @@ export function PlanTravelTime({
   const summaryFetching = !displayRoute && selectedFetching;
 
   const summaryPending =
-    !displayRoute && !selectedFetching && selectedPending;
+    selectedMode !== null && !displayRoute && !selectedFetching && selectedPending;
 
   // 마지막 답이 "경로 없음"(null)이면 다시 받다가 실패해도 그 답을 보여 준다 — 재조회 실패로 이미 받은 답을 오류로 바꾸지 않는다
   const summaryIsError =
@@ -282,7 +282,7 @@ export function PlanTravelTime({
       <TravelDirectionsCard
           menuOpen={menuOpen}
           onToggleMenu={() => setMenuOpen((o) => !o)}
-          summaryMode={selectedMode}
+          summaryMode={selectedMode ?? ""}
           route={displayRoute}
           routeQuery={{
             isPending: summaryPending,
@@ -293,8 +293,6 @@ export function PlanTravelTime({
           modeRouteSummaries={modeRouteSummaries}
           modeRouteRowLoading={modeRouteRowLoading}
           effectiveMode={selectedMode}
-          showUnknownOption={false}
-          modeRaw=""
           googleMapsDirectionsUrl={googleMapsDirectionsUrl ?? undefined}
           subtleDirectionsLink={!isMobileDevice}
           onSelectTravelMode={handleSelectTravelMode}

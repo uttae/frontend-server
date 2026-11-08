@@ -5,7 +5,7 @@ import { flushSync } from "react-dom";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 import { useSearchParams } from "next/navigation";
 import { MapPlaceSearchInput } from "@/components/search/MapPlaceSearchInput";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
 import type { SearchConfirmation } from "@/lib/places/search-session";
 import { useMapPlaceSearch } from "./useMapPlaceSearch";
@@ -101,7 +101,7 @@ function SearchFeedback({ status, error, hasItems, retry }: Readonly<{
   hasItems: boolean;
   retry: () => void;
 }>) {
-  if (status === "pending") return <LoadingIndicator label="장소 검색 중" />;
+  if (status === "pending") return <Spinner aria-label="장소 검색 중" />;
   if (status === "error") return (
     <div role="alert" className="flex items-center gap-2 text-body-s-regular text-text">
       <span>{error}</span>

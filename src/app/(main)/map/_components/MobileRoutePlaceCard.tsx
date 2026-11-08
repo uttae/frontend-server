@@ -4,6 +4,7 @@ import { useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNod
 
 import { MobilePlanPlaceCard } from "@/app/(main)/plan/_components/mobile/MobilePlanPlaceCard";
 import { DashedBorder, DashedPlaceholderBox } from "@/components/mobile/DashedPlaceholderBox";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -159,12 +160,12 @@ export function MobileRouteExpandedShell({
 /** 처음 불러오는 동안 — 카드와 같은 자리를 잡는다 */
 export function MobileRoutePlaceCardSkeleton() {
   return (
-    <output aria-label="장소 불러오는 중" aria-busy className={`${CARD_CLASS} flex min-h-[155px] gap-3 pl-3.5 pr-2 pt-3`}>
-      <span className="size-6 shrink-0 animate-pulse rounded-[5.5px] bg-fill-strong" />
+    <output aria-label="장소 불러오는 중" aria-busy className={cn(CARD_CLASS, "flex min-h-[155px] gap-3 pl-3.5 pr-2 pt-3")}>
+      <Skeleton render={<span />} className="size-6 shrink-0 rounded-[5.5px]" />
       <span className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
-        <span className="h-5 w-2/3 animate-pulse rounded bg-fill-strong" />
-        <span className="h-4 w-1/2 animate-pulse rounded bg-fill" />
-        <span className="mt-3 h-4 w-5/6 animate-pulse rounded bg-fill" />
+        <Skeleton render={<span />} className="h-5 w-2/3" />
+        <Skeleton render={<span />} tone="subtle" className="h-4 w-1/2" />
+        <Skeleton render={<span />} tone="subtle" className="mt-3 h-4 w-5/6" />
       </span>
     </output>
   );
