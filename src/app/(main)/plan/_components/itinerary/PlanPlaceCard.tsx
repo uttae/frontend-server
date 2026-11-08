@@ -5,10 +5,12 @@ import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
 import type { DragEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Loader2, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 import { CoinIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 import { useInViewport } from "@/hooks/useInViewport";
@@ -319,8 +321,8 @@ export function PlanPlaceCard({
 
         {(() => {
           const media = photoLoading ? (
-            <Loader2
-              className="absolute inset-0 m-auto h-5 w-5 animate-spin text-primary-strong"
+            <Spinner
+              className="absolute inset-0 m-auto h-5 w-5"
               aria-hidden
             />
           ) : visiblePhotoUrl ? (
@@ -377,9 +379,9 @@ export function PlanPlaceCard({
                 {place.title}
               </h3>
               {place.primaryTypeDisplayName ? (
-                <span className={PLAN_PLACE_CARD_TW.primaryTypeBadge}>
-                  {place.primaryTypeDisplayName}
-                </span>
+                <Badge size="md">
+                  <span className="truncate">{place.primaryTypeDisplayName}</span>
+                </Badge>
               ) : null}
             </div>
             {deleteButton ? (
@@ -469,6 +471,7 @@ export function PlanPlaceCard({
       ) : null}
       {confirmTarget === "item" ? (
         <ConfirmDialog
+          destructive
           title="일정에서 이 장소를 삭제할까요?"
           description="이 장소와 연결된 모든 비용도 함께 삭제돼요."
           confirmLabel="삭제"
@@ -479,6 +482,7 @@ export function PlanPlaceCard({
       ) : null}
       {confirmTarget === "memo" ? (
         <ConfirmDialog
+          destructive
           title="메모를 삭제할까요?"
           confirmLabel="삭제"
           isPending={isUpdatingItem}

@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
 import { BrandLogo } from "@/components/BrandLogo";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Badge } from "@/components/ui/badge";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCheckJoinStatus } from "@/hooks/useRooms";
 import { getRoomDetail, HttpError } from "@/lib/api/rooms";
@@ -69,16 +70,12 @@ function WaitingContent() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-fill-elevate px-4 py-12">
-      <BrandLogo variant="symbol" size="S" alt="우때 로고" />
+      <BrandLogo variant="combination" size="M" alt="우때 로고" />
 
       <div className="flex w-full max-w-[480px] flex-col gap-6 rounded-xl bg-fill-elevate p-6 shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-        <span
-          className={`self-start rounded p-1 text-label-xs-regular ${
-            isRejected ? "bg-fill text-text-subtle" : "bg-primary-subtle text-primary"
-          }`}
-        >
+        <Badge tone={isRejected ? "critical" : "brand"} size="md">
           {isRejected ? "참여 거절" : "승인 대기"}
-        </span>
+        </Badge>
 
         <h1 className="text-title-l text-text">
           {isRejected ? "참여 요청이 거절됐어요" : "참여 요청을 보냈어요"}
@@ -114,7 +111,7 @@ function WaitingContent() {
             aria-busy={isChecking}
             className="flex h-12 w-full cursor-pointer items-center justify-center rounded-lg bg-primary text-label-l-emphasis text-text-inverse transition-colors enabled:hover:bg-primary-strong disabled:cursor-not-allowed"
           >
-            {isChecking ? <LoadingIndicator label="승인 상태 확인 중" className="text-text-inverse" /> : "승인 상태 확인"}
+            {isChecking ? <Spinner aria-label="승인 상태 확인 중" variant="inverse" /> : "승인 상태 확인"}
           </button>
         )}
       </div>
@@ -133,7 +130,7 @@ export default function WaitingPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-fill-elevate">
-          <LoadingIndicator label="승인 대기 화면 준비 중" size={32} />
+          <Spinner aria-label="승인 대기 화면 준비 중" size={32} />
         </div>
       }
     >

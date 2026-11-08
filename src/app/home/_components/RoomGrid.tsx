@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Spinner } from "@/components/ui/spinner";
 import { RoomListItem } from "@/lib/api/rooms";
 import { RoomCard } from "./RoomCard";
 import { NewTripLink } from "./NewTripLink";
@@ -24,8 +25,8 @@ export function RoomGrid({
 }: Props) {
   if (isLoading) {
     return (
-      <div role="status" aria-label="여행 목록 불러오는 중" className="flex items-center justify-center py-20">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-border border-t-primary" />
+      <div className="flex items-center justify-center py-20">
+        <Spinner aria-label="여행 목록 불러오는 중" size={32} />
       </div>
     );
   }

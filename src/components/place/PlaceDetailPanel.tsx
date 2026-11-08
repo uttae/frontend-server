@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 import { useAnalyticsRoomId } from "@/hooks/useAnalyticsRoomId";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
@@ -195,9 +196,13 @@ export function PlaceDetailPanel({
     : undefined;
 
   const tabs = isDetailError && !detailData ? (
-    <div role="alert" className="m-3.5 rounded-md border border-border-subtle p-3 text-body-s-regular text-text">
-      <p>장소 정보를 불러오지 못했어요.</p>
-      <button type="button" onClick={() => void refetch()} className="mt-2 text-primary underline">다시 시도</button>
+    <div className="p-3.5">
+      <Alert>
+        <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
+        <AlertAction>
+          <button type="button" onClick={() => void refetch()} className="text-primary underline">다시 시도</button>
+        </AlertAction>
+      </Alert>
     </div>
   ) : (
     <PlaceDetailTabs

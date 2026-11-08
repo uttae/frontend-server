@@ -55,8 +55,6 @@ export const PLAN_PLACE_CARD_TW = {
     "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular mobile:text-body-xs-regular shadow-md",
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
   title: "truncate text-body-l-emphasis mobile:text-body-s-emphasis text-text",
-  primaryTypeBadge:
-    "w-fit max-w-full shrink-0 truncate rounded-full bg-fill px-1.5 py-0.5 text-body-xs-regular text-text-subtle",
   deleteButtonCompact: "p-1 @min-[370px]/plan:p-1.5",
   deleteIconSize: 16,
   /** 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄 — 버튼 배경이 카드 안쪽 여백보다 바깥에 오도록 좌우를 넓힌다 */
@@ -83,10 +81,6 @@ export const PLAN_PLACE_CARD_TW = {
   timeField: "flex min-w-0 w-full flex-col gap-1",
   timeInputCompact:
     "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-body-s-regular shadow-none transition focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary/30",
-  timeSaveButtonCompact:
-    "h-8 shrink-0 rounded-md px-3 text-label-xs-regular font-medium",
-  memoTextarea:
-    "min-h-[6rem] w-full resize-y rounded-lg border border-gray-200 bg-white px-3 py-2 text-body-s-regular leading-relaxed text-gray-900 shadow-none transition placeholder:text-dark-gray/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/30",
 } as const;
 
 /** 플랜 구간(경로) 카드 가로 고정폭(px). 좌측 패널 max(s2) 기준 본문 영역 근사 */

@@ -55,8 +55,7 @@ function JoinRequestCard({
       <UserAvatar
         user={request}
         size={36}
-        className="bg-primary-subtle"
-        initialClassName="font-medium text-primary"
+        tone="primary"
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
