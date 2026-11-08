@@ -10,6 +10,7 @@ import {
   GOOGLE_REACCEPTANCE_TOKEN_NOT_FOUND_ERROR_CODE,
   GOOGLE_SIGNUP_TOKEN_NOT_FOUND_ERROR_CODE,
 } from "@/lib/api/errors";
+import { pendingInviteAuthPath } from "@/lib/session-user-flow";
 import { finishGoogleLogin } from "@/lib/google-login-client";
 import {
   clearGoogleAgreementFlowSession,
@@ -50,7 +51,7 @@ export default function LoginAgreementsPage() {
   useEffect(() => {
     const storedFlow = readGoogleAgreementFlowSession();
     if (!storedFlow) {
-      router.replace("/login");
+      router.replace(pendingInviteAuthPath("/login"));
       return;
     }
 
@@ -69,7 +70,7 @@ export default function LoginAgreementsPage() {
 
   const returnToLogin = () => {
     clearGoogleAgreementFlowSession();
-    router.replace("/login");
+    router.replace(pendingInviteAuthPath("/login"));
   };
 
   const handleSubmit = async () => {
@@ -118,7 +119,7 @@ export default function LoginAgreementsPage() {
       }
 
       const destination = await finishGoogleLogin(queryClient);
-      router.replace(destination ?? "/login?error=OAuthCallback");
+      router.replace(destination ?? pendingInviteAuthPath("/login?error=OAuthCallback"));
     } catch {
       setErrorMessage(
         flow.kind === "reaccept"
