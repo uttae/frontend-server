@@ -184,3 +184,27 @@ it("keeps the extracted mobile delete sheet's room after its pending request com
     room_id: "room-a", item_count_bucket: "0",
   });
 });
+
+// Popup/backdrop containment must hold even when the modal belongs to a clickable place card.
+it.each(["bookmark", "schedule"])("contains %s modal pointer events and keeps backdrop dismissal", async kind => {
+  const outer = vi.fn();
+  const close = vi.fn();
+  const hostEvents = { onClick: outer, onMouseDown: outer, onPointerDown: outer, onTouchStart: outer };
+  await render(<div {...hostEvents}>
+    {kind === "bookmark"
+      ? <AddToBookmarkModal googlePlaceId="place" onClose={close} />
+      : <AddToScheduleModal googlePlaceId="place" onClose={close} />}
+  </div>);
+  const content = document.querySelector<HTMLElement>('[data-slot="dialog-content"]')!;
+  for (const type of ["mousedown", "pointerdown", "touchstart", "click"]) {
+    await act(async () => content.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true })));
+  }
+  expect(outer).not.toHaveBeenCalled();
+  expect(close).not.toHaveBeenCalled();
+  const backdrop = document.querySelector('[data-slot="dialog-overlay"]')!;
+  for (const type of ["mousedown", "pointerdown", "touchstart", "click"]) {
+    await act(async () => backdrop.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true })));
+  }
+  expect(outer).not.toHaveBeenCalled();
+  expect(close).toHaveBeenCalled();
+});

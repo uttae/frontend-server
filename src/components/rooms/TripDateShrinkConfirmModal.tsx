@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { CalendarRange } from "lucide-react";
-
 import {
-  SettingsActionButton,
-  SettingsActionButtonRow,
-} from "@/components/settings/SettingsActionButton";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Props = {
   isPending: boolean;
@@ -14,81 +17,42 @@ type Props = {
   onConfirm: () => void;
 };
 
+const TITLE = "여행 기간을 줄일까요?";
+
+/**
+ * 여행 기간 축소 확인(Figma Alert Dialog). 마운트되면 열린 상태라 RoomTripEditForm이 조건부로 그린다.
+ * 여행 정보 수정 대화상자의 React 자식이라 Esc·포커스 가두기는 이 확인창만 받고, 닫히면 수정 중인 입력이 그대로 남는다.
+ * 딤·Esc·취소는 onClose, 저장 중에는 모두 막힌다. 버튼 이름은 ConfirmDialog와 달리 저장 진행("저장 중")을 읽어 직접 조립한다
+ */
 export function TripDateShrinkConfirmModal({
   isPending,
   onClose,
   onConfirm,
-}: Props) {
-  const dialogRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const trigger = document.activeElement;
-    dialogRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
-    return () => {
-      queueMicrotask(() => {
-        if (trigger instanceof HTMLElement && trigger.isConnected) trigger.focus();
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isPending) onClose();
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [isPending, onClose]);
-
+}: Readonly<Props>) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isPending) onClose();
+    <AlertDialog
+      open
+      closeDisabled={isPending}
+      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
     >
-      <div
-        ref={dialogRef}
-        role="alertdialog"
-        aria-modal="true"
-        aria-labelledby="trip-date-shrink-dialog-title"
-        aria-describedby="trip-date-shrink-dialog-desc"
-        className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="px-6 pb-2 pt-6 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-status-negative/10">
-            <CalendarRange size={22} className="text-status-negative" />
-          </div>
-          <h2
-            id="trip-date-shrink-dialog-title"
-            className="text-title-s font-bold"
-          >
-            여행 기간을 줄일까요?
-          </h2>
-          <p
-            id="trip-date-shrink-dialog-desc"
-            className="mt-1.5 text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray"
-          >
-            여행 기간을 줄이면 제거되는 일차의 모든 장소와 비용도 함께 삭제돼요.
-            계속할까요?
-          </p>
-        </div>
-        <SettingsActionButtonRow className="px-6 py-5 pt-0">
-          <SettingsActionButton
-            variant="secondary"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            취소
-          </SettingsActionButton>
-          <SettingsActionButton
-            variant="primary"
-            onClick={onConfirm}
-            disabled={isPending}
-          >
-            {isPending ? "저장 중…" : "계속하기"}
-          </SettingsActionButton>
-        </SettingsActionButtonRow>
-      </div>
-    </div>
+      {/* 지금 확인창처럼 딤을 눌러도 닫힌다 */}
+      <AlertDialogContent backdropCloseLabel={`${TITLE} 배경 닫기`}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{TITLE}</AlertDialogTitle>
+          <AlertDialogDescription>
+            여행 기간을 줄이면 제거되는 일차의 모든 장소와 비용도 함께 삭제돼요. 계속할까요?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={isPending}>취소</AlertDialogCancel>
+          <AlertDialogAction loading={isPending} loadingLabel="저장 중" onClick={onConfirm}>
+            계속하기
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

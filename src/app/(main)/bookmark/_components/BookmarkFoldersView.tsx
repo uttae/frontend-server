@@ -3,7 +3,7 @@
 import { BookmarkPlus, MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
@@ -16,6 +16,12 @@ import {
 } from "@/components/layout/page-toolbar-button";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { pickUniqueUntitledBookmarkCategoryName } from "@/lib/bookmark-untitled-category-name";
 import {
@@ -38,7 +44,8 @@ export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const { folders } = useBookmarkFolders();
   useAllRoomBookmarks(roomId);
-  const { isPending, isError, error, refetch } = useBookmarkCategories(roomId);
+  const { isPending, isLoadingError, error, refetch } =
+    useBookmarkCategories(roomId);
   const { mutate: createCategory, isPending: isCreating } =
     useCreateBookmarkCategory();
   const {
@@ -62,25 +69,9 @@ export function BookmarkFoldersView() {
   const [editingFolder, setEditingFolder] = useState<BookmarkFolder | null>(
     null,
   );
-  const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [folderFormError, setFolderFormError] = useState<string | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const closeMenu = useCallback(() => setMenuOpenId(null), []);
-
-  useEffect(() => {
-    if (!menuOpenId) return;
-    const onPointer = (e: MouseEvent | TouchEvent) => {
-      const el = menuRef.current;
-      if (el && !el.contains(e.target as Node)) closeMenu();
-    };
-    document.addEventListener("mousedown", onPointer);
-    document.addEventListener("touchstart", onPointer);
-    return () => {
-      document.removeEventListener("mousedown", onPointer);
-      document.removeEventListener("touchstart", onPointer);
-    };
-  }, [menuOpenId, closeMenu]);
+  // 편집 대화상자는 메뉴 항목에서 열려 닫힌 뒤 돌아갈 항목이 없다. 마지막으로 연 행 메뉴 버튼으로 포커스를 돌려준다
+  const menuTriggerRef = useRef<HTMLElement | null>(null);
 
   const openCreate = () => {
     setFolderFormError(null);
@@ -91,7 +82,6 @@ export function BookmarkFoldersView() {
   };
 
   const openEdit = (folder: BookmarkFolder) => {
-    closeMenu();
     setFolderFormError(null);
     setModalKey((k) => k + 1);
     setModalMode("edit");
@@ -159,7 +149,6 @@ export function BookmarkFoldersView() {
     const categoryId = Number.parseInt(folder.id, 10);
     if (!Number.isFinite(categoryId)) return;
 
-    closeMenu();
     setFolderToDelete({ categoryId, title: folder.title });
   };
 
@@ -222,7 +211,8 @@ export function BookmarkFoldersView() {
     );
   }
 
-  if (isError) {
+  // 재조회 실패는 보이던 폴더를 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
+  if (isLoadingError) {
     return (
       <div className="space-y-2.5">
         <MainPageHeader title="북마크" />
@@ -282,53 +272,35 @@ export function BookmarkFoldersView() {
                       </p>
                     </div>
                   </Link>
-                  <div
-                    className="relative shrink-0"
-                    ref={menuOpenId === folder.id ? menuRef : null}
+                  <DropdownMenu
+                    onOpenChange={(open, { trigger }) => {
+                      if (open && trigger instanceof HTMLElement) menuTriggerRef.current = trigger;
+                    }}
                   >
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setMenuOpenId((id) =>
-                          id === folder.id ? null : folder.id,
-                        )
-                      }
+                    <DropdownMenuTrigger
                       disabled={rowMenuBusy(folder.id)}
-                      className="cursor-pointer rounded-lg p-2 text-dark-gray transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
+                      className="shrink-0 cursor-pointer rounded-lg p-2 text-dark-gray transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
                       aria-label="메뉴"
                     >
                       <MoreHorizontal className="size-5" />
-                    </button>
-                    {menuOpenId === folder.id && (
-                      <div
-                        className="absolute right-0 top-full z-20 mt-1 min-w-[120px] overflow-hidden rounded-xl border border-gray-border bg-white py-1 shadow-lg"
-                        role="menu"
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {/* 진행 중에는 항목을 비활성으로만 둔다(메뉴 항목은 Button이 아니라 progress가 없다) */}
+                      <DropdownMenuItem
+                        disabled={rowMenuBusy(folder.id)}
+                        onClick={() => openEdit(folder)}
                       >
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="block w-full cursor-pointer px-4 py-2 text-left text-label-l-regular mobile:text-label-m-regular text-neutral-900 hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-50"
-                          disabled={
-                            isRowDeleting(folder.id) || isRowUpdating(folder.id)
-                          }
-                          onClick={() => openEdit(folder)}
-                        >
-                          {isRowUpdating(folder.id) ? "편집 중…" : "편집"}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="block w-full cursor-pointer px-4 py-2 text-left text-label-l-regular mobile:text-label-m-regular text-status-negative hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                          disabled={
-                            isRowDeleting(folder.id) || isRowUpdating(folder.id)
-                          }
-                          onClick={() => handleDelete(folder)}
-                        >
-                          {isRowDeleting(folder.id) ? "삭제 중…" : "삭제"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                        편집
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        variant="destructive"
+                        disabled={rowMenuBusy(folder.id)}
+                        onClick={() => handleDelete(folder)}
+                      >
+                        삭제
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </li>
             ))}
@@ -356,10 +328,12 @@ export function BookmarkFoldersView() {
           }}
           onSave={handleSave}
           formError={folderFormError}
+          finalFocus={modalMode === "edit" ? menuTriggerRef : undefined}
         />
       )}
       {folderToDelete ? (
         <ConfirmDialog
+          destructive
           title={`「${folderToDelete.title}」 북마크 목록을 삭제할까요?`}
           description="소속 북마크 항목도 함께 삭제됩니다."
           confirmLabel="삭제"

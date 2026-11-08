@@ -13,14 +13,12 @@ import {
 } from "@/lib/places/place-batch-cache";
 import type { PlacePreview } from "@/lib/api/places";
 import {
-  fetchPlacePreview,
   placePreviewQueryKey,
   resolvePreviewGooglePlaceId,
 } from "@/lib/places/place-queries";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import {
-  SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
 } from "@/lib/plan/scheduleTravelMode";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -146,33 +144,19 @@ function buildPlanPlacesFromItemsWithCache(
   );
 }
 
-/** batch 시딩 후 preview 캐시 miss 항목만 GET `/preview`로 보강합니다. */
+/** preview 캐시 miss 항목만 batch로 받아 채웁니다 — 그래도 없는 장소는 단건으로 다시 받지 않고 자리표시자로 둡니다. */
 export async function buildPlanPlacesFromItemsWithPreviewEnrichment(
   queryClient: QueryClient,
   items: RoomScheduleItem[],
 ): Promise<PlanPlace[]> {
-  const sorted = sortRoomScheduleItemsByOrder(items);
-  const placeIds = sorted
+  const placeIds = items
     .map((item) => item.googlePlaceId)
     .filter((id) => typeof id === "string" && id.trim().length > 0);
 
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
   }
-
-  const out: PlanPlace[] = [];
-  for (const item of sorted) {
-    let preview = readCachedPreview(queryClient, item.googlePlaceId);
-    if (!preview) {
-      try {
-        preview = await fetchPlacePreview(item.googlePlaceId);
-      } catch {
-        preview = null;
-      }
-    }
-    out.push(planPlaceFromItemAndPreview(item, preview));
-  }
-  return out;
+  return buildPlanPlacesFromItemsWithCache(queryClient, items);
 }
 
 function collectGooglePlaceIdsFromSchedules(
@@ -189,30 +173,74 @@ function collectGooglePlaceIdsFromSchedules(
   return [...ids];
 }
 
-export async function hydrateScheduleItemsFromSchedulesWithItems(
+/**
+ * 일차별 장소 목록을 만들기만 합니다. 미리보기를 기다리는 동안 다른 변경이 들어올 수 있어
+ * 캐시 쓰기(`writeSchedulePlacesFromHydrate`)와 나눕니다.
+ */
+export async function buildSchedulePlacesFromSchedulesWithItems(
   queryClient: QueryClient,
-  roomId: string,
   schedules: readonly RoomScheduleWithItems[],
-): Promise<void> {
-  const rid = roomId.trim();
-  if (!rid.length) return;
-
+): Promise<Map<number, PlanPlace[]>> {
   const placeIds = collectGooglePlaceIdsFromSchedules(schedules);
   if (placeIds.length) {
     await fetchAndSeedPlacePreviews(placeIds, queryClient);
   }
 
+  const placesBySchedule = new Map<number, PlanPlace[]>();
   for (const schedule of schedules) {
     const sid = schedule.scheduleId;
     if (typeof sid !== "number" || !Number.isFinite(sid)) continue;
 
     const items = Array.isArray(schedule.items) ? schedule.items : [];
-    const places = await buildPlanPlacesFromItemsWithPreviewEnrichment(
-      queryClient,
-      items,
+    placesBySchedule.set(
+      sid,
+      buildPlanPlacesFromItemsWithCache(queryClient, items),
     );
-    queryClient.setQueryData(scheduleItemsQueryKey(rid, sid), places);
   }
+  return placesBySchedule;
+}
+
+/**
+ * 만든 일차 목록을 한 번에 씁니다. 경로는 도착 항목까지 key에 있어 순서가 바뀌어도 무효화하지 않습니다.
+ * `startedAt`(일정 전체 조회를 보낸 시각) 뒤에 바뀐 일차는 그쪽이 더 새 상태라 덮지 않고,
+ * 그 일차를 받는 중이면 이 조회보다 먼저 보낸 요청일 수 있어 다시 받게 합니다.
+ */
+export function writeSchedulePlacesFromHydrate(
+  queryClient: QueryClient,
+  roomId: string,
+  placesBySchedule: ReadonlyMap<number, PlanPlace[]>,
+  startedAt: number,
+): void {
+  const rid = roomId.trim();
+  if (!rid.length) return;
+
+  for (const [sid, places] of placesBySchedule) {
+    const key = scheduleItemsQueryKey(rid, sid);
+    const state = queryClient.getQueryState(key);
+    if (state && state.dataUpdatedAt > startedAt) continue;
+
+    queryClient.setQueryData(key, places);
+    if (state?.fetchStatus === "fetching") {
+      void queryClient.refetchQueries({ queryKey: key, exact: true });
+    }
+  }
+}
+
+export async function hydrateScheduleItemsFromSchedulesWithItems(
+  queryClient: QueryClient,
+  roomId: string,
+  schedules: readonly RoomScheduleWithItems[],
+  startedAt: number,
+): Promise<void> {
+  const rid = roomId.trim();
+  if (!rid.length) return;
+
+  writeSchedulePlacesFromHydrate(
+    queryClient,
+    rid,
+    await buildSchedulePlacesFromSchedulesWithItems(queryClient, schedules),
+    startedAt,
+  );
 }
 
 function batchRouteItemToResponse(
@@ -229,6 +257,10 @@ function batchRouteItemToResponse(
 const inFlightScheduleRoutesBatch = new Map<string, Promise<void>>();
 
 /**
+ * 실패가 아니라 "경로 없음"이라는 답인 batch 항목 — 단건으로 다시 물어도 같은 답(204·404)이 오므로
+ * 경로 없음(`null`)으로 시딩하고 다시 묻지 않는다.
+ */
+/**
  * in-flight dedup 키 — 일정 지문(`itemId` 순서·장소 정체성)을 포함해
  * 목적지만 바뀐 일정(`[A,B]`→`[A,C]`)이 이전 batch Promise를 공유하지 않게 합니다.
  */
@@ -240,9 +272,26 @@ function scheduleRoutesBatchKey(
   return `${roomId.trim()}:${scheduleId}:${placesFingerprint}`;
 }
 
+/** 구간 출발 항목 → 다음 장소의 `itemId` (마지막 장소와 항목 ID가 없는 구간은 뺀다) */
+function segmentDestinationsByItemId(places: readonly PlanPlace[]): Map<number, number> {
+  const out = new Map<number, number>();
+  for (let i = 0; i < places.length - 1; i += 1) {
+    const itemId = places[i]?.itemId;
+    const destination = places[i + 1]?.itemId;
+    if (isFiniteItemId(itemId) && isFiniteItemId(destination)) {
+      out.set(itemId, destination);
+    }
+  }
+  return out;
+}
+
+function isFiniteItemId(id: number | undefined): id is number {
+  return typeof id === "number" && Number.isFinite(id);
+}
+
 /**
  * 일차의 모든 구간 경로가 이미 캐시에 있는지 — 일정 화면에서 받아 뒀거나, 화면을 다시 열었거나,
- * 지도 경로 보기로 넘어온 경우다. 캐시가 지워졌거나(gc) 일정 변경으로 무효화된 구간이 하나라도 있으면 false.
+ * 지도 경로 보기로 넘어온 경우다. 받은 적 없거나(새 순서·gc) 무효화된 구간이 하나라도 있으면 false.
  */
 export function scheduleSegmentRoutesCached(
   queryClient: QueryClient,
@@ -251,13 +300,17 @@ export function scheduleSegmentRoutesCached(
   places: readonly PlanPlace[],
 ): boolean {
   const rid = roomId.trim();
-  const sources = places
-    .slice(0, -1)
-    .filter((p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number" && Number.isFinite(p.itemId));
-  if (!rid.length || !sources.length) return false;
-  return sources.every((place) => {
-    const mode = canonicalScheduleTravelMode(place.travelMode) ?? SCHEDULE_TRAVEL_MODE_DEFAULT;
-    const state = queryClient.getQueryState(scheduleItemRouteQueryKey(rid, scheduleId, place.itemId, mode));
+  const destinationByItemId = segmentDestinationsByItemId(places);
+  if (!rid.length || !destinationByItemId.size) return false;
+  return places.every((place) => {
+    if (typeof place.itemId !== "number") return true;
+    const destination = destinationByItemId.get(place.itemId);
+    if (destination === undefined) return true;
+    const mode = canonicalScheduleTravelMode(place.travelMode);
+    if (!mode) return true;
+    const state = queryClient.getQueryState(
+      scheduleItemRouteQueryKey(rid, scheduleId, place.itemId, destination, mode),
+    );
     return state?.status === "success" && !state.isInvalidated;
   });
 }
@@ -328,40 +381,30 @@ export async function hydrateScheduleRoutesBatch(
   const requestItems = segments.flatMap((place) => {
     const itemId = place.itemId;
     if (typeof itemId !== "number" || !Number.isFinite(itemId)) return [];
-    // 저장값이 표준 수단과 다르면(예: 고를 수 없게 된 자전거) 화면에 보이는 수단으로 계산해 달라고 지정한다 —
-    // 수단을 빼면 서버가 저장값으로 계산해, 자동차로 보이는 구간에 자전거 경로가 들어간다
     const saved = place.travelMode?.trim().toUpperCase() ?? "";
-    const shown = canonicalScheduleTravelMode(saved);
-    return [saved && shown && shown !== saved ? { itemId, travelMode: shown } : { itemId }];
+    const mode = canonicalScheduleTravelMode(saved);
+    if (!mode) return [];
+    return [mode === saved ? { itemId } : { itemId, travelMode: mode }];
   });
 
   if (!requestItems.length) return;
 
   const results = await getScheduleItemRoutesBatch(rid, scheduleId, requestItems);
 
-  /**
-   * 응답 대기 중 일정이 바뀌었으면(지문 불일치) 늦게 도착한 결과를 버립니다 —
-   * 구간 캐시 키는 출발 항목만 담고 있어 옛 목적지의 경로가 새 구간에 시딩될 수 있음.
-   */
-  const snapshotFp = schedulePlacesFingerprint([...places]);
-  const currentPlaces = queryClient.getQueryData<PlanPlace[]>(
-    scheduleItemsQueryKey(rid, scheduleId),
-  );
-  const currentFp = schedulePlacesFingerprint([...(currentPlaces ?? [])]);
-  if (!snapshotFp.length || snapshotFp !== currentFp) return;
-
+  // 서버는 요청을 받은 순간의 순서로 다음 항목을 정하므로, 응답이 알려 준 도착 항목(toItemId)의 구간으로 저장한다 —
+  // 기다리는 사이 순서가 바뀌었어도 그 구간의 값이라 버리지 않는다. 마지막 항목·항목 없음은 도착 항목이 없어
+  // 저장하지 않고, 그 칸이 도착 항목을 지정한 단건 조회로 받는다
   for (const result of results) {
-    if (!isBatchItemOk(result)) continue;
-    const route = batchRouteItemToResponse(result);
-    const itemId = result.itemId;
+    const { itemId, toItemId } = result;
     const mode = canonicalScheduleTravelMode(result.travelMode);
-    if (!mode) continue;
-    if (typeof itemId !== "number" || !Number.isFinite(itemId)) continue;
+    if (!mode || !isFiniteItemId(itemId) || !isFiniteItemId(toItemId)) continue;
 
-    queryClient.setQueryData(
-      scheduleItemRouteQueryKey(rid, scheduleId, itemId, mode),
-      route,
-    );
+    const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, itemId, toItemId, mode);
+    if (isBatchItemOk(result)) {
+      queryClient.setQueryData(routeKey, batchRouteItemToResponse(result));
+    } else if (result.errorCode === "NO_ROUTE") {
+      queryClient.setQueryData(routeKey, null);
+    }
   }
 }
 
@@ -372,9 +415,10 @@ export async function hydrateRoomSchedulesWithItems(
   const rid = roomId.trim();
   if (!rid.length) return [];
 
+  const startedAt = Date.now();
   const schedules = await getRoomSchedules(rid, { includeItems: true });
   const sorted = sortRoomSchedules(schedules);
-  await hydrateScheduleItemsFromSchedulesWithItems(queryClient, rid, sorted);
+  await hydrateScheduleItemsFromSchedulesWithItems(queryClient, rid, sorted, startedAt);
   return sorted;
 }
 

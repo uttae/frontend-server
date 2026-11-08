@@ -1,7 +1,7 @@
 import { API_BASE } from "./config";
 import { apiFetch } from "./client";
 import { chunkArray, PLACE_BATCH_MAX_SIZE } from "./batch-chunk";
-import { readUserFacingMessageFromApiBody } from "./errors";
+import { HttpError, readUserFacingMessageFromApiBody } from "./errors";
 import { apiUrl, jsonBody, requestJson, tryParseJson } from "./http";
 
 // ─── Response types ────────────────────────────────────────────────────────
@@ -156,7 +156,35 @@ export async function searchPlaces(params: {
   }
 
   const res = await apiFetch(url.toString());
-  if (!res.ok) throw new Error(`Places search failed: ${res.status}`);
+  if (!res.ok) throw new HttpError(res.status, `Places search failed: ${res.status}`);
+  return res.json();
+}
+
+/** 사각형(지금 보이는 지도 화면) 안의 장소만 찾는다. 다음 페이지는 같은 사각형으로 요청해야 한다 */
+export async function searchPlacesInArea(params: {
+  query: string;
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+  pageSize?: number;
+  pageToken?: string;
+}): Promise<PlaceSearchPageResponse> {
+  const url = new URL(`${API_BASE}/places/search/area`);
+  url.searchParams.set("query", params.query);
+  url.searchParams.set("south", String(params.south));
+  url.searchParams.set("west", String(params.west));
+  url.searchParams.set("north", String(params.north));
+  url.searchParams.set("east", String(params.east));
+  if (params.pageSize !== undefined) {
+    url.searchParams.set("pageSize", String(params.pageSize));
+  }
+  if (params.pageToken) {
+    url.searchParams.set("pageToken", params.pageToken);
+  }
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) throw new HttpError(res.status, `Places area search failed: ${res.status}`);
   return res.json();
 }
 
@@ -166,7 +194,7 @@ export async function requestPlaceDetail(
   const res = await apiFetch(
     `${API_BASE}/places/${encodeURIComponent(googlePlaceId)}`,
   );
-  if (!res.ok) throw new Error(`Place detail failed: ${res.status}`);
+  if (!res.ok) throw new HttpError(res.status, `Place detail failed: ${res.status}`);
   return res.json();
 }
 
@@ -176,7 +204,7 @@ export async function requestPlacePreview(
   const res = await apiFetch(
     `${API_BASE}/places/${encodeURIComponent(googlePlaceId)}/preview`,
   );
-  if (!res.ok) throw new Error(`Place preview failed: ${res.status}`);
+  if (!res.ok) throw new HttpError(res.status, `Place preview failed: ${res.status}`);
   return res.json();
 }
 
@@ -196,7 +224,7 @@ export async function requestPlacePhotoUrl(
   if (!res.ok) {
     const body = await tryParseJson(res);
     const detail = readUserFacingMessageFromApiBody(body);
-    throw new Error(detail ?? `Place photo failed: ${res.status}`);
+    throw new HttpError(res.status, detail ?? `Place photo failed: ${res.status}`);
   }
   const data: PlacePhotoResponse = await res.json();
   return typeof data.photoUrl === "string" ? data.photoUrl : "";
@@ -208,7 +236,7 @@ async function requestPlacePreviewsBatchChunk(
   const data = await requestJson<PlacePreviewBatchResponse>(
     apiUrl("/places/previews/batch"),
     { method: "POST", ...jsonBody({ googlePlaceIds }) },
-    { errorMessage: "장소 미리보기 일괄 조회 실패" },
+    { errorMessage: "장소 미리보기 일괄 조회 실패", useHttpError: true },
   );
   return readBatchResponseList<PlacePreviewBatchItem>(data, "previews");
 }
@@ -254,7 +282,7 @@ async function requestPlacePhotoUrlsBatchChunk(
   if (!res.ok) {
     const body = await tryParseJson(res);
     const detail = readUserFacingMessageFromApiBody(body);
-    throw new Error(detail ?? `장소 사진 URL 일괄 조회 실패: ${res.status}`);
+    throw new HttpError(res.status, detail ?? `장소 사진 URL 일괄 조회 실패: ${res.status}`);
   }
   const data = (await res.json()) as PlacePhotoUrlBatchResponse;
   return readBatchResponseList<PlacePhotoUrlBatchItem>(data, "photos");

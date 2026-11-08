@@ -1,5 +1,5 @@
 "use client";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "framer-motion";
@@ -218,6 +218,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
           );
           const insertIndex = index + 1;
           const segmentActive = activeInsertIndex === insertIndex;
+          const nextItemId = places[index + 1]?.itemId;
 
           return (
             <PlanItineraryReorderRow
@@ -234,7 +235,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
               />
               {index < places.length - 1 &&
               typeof place.itemId === "number" &&
-              typeof places[index + 1]?.itemId === "number" ?
+              typeof nextItemId === "number" ?
                 <PlanTravelSegment
                   isActive={segmentActive}
                   onActivate={() =>
@@ -264,6 +265,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
                     roomId={roomId}
                     scheduleId={scheduleId}
                     segmentSourceItemId={place.itemId}
+                    destinationItemId={nextItemId}
                     scheduleFingerprint={scheduleFingerprint}
                     travelMode={place.travelMode}
                     originGooglePlaceId={place.googlePlaceId}
@@ -275,7 +277,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
                       !isFetchingPlaces &&
                       routesBatchSettled &&
                       existingItemIds.has(place.itemId) &&
-                      existingItemIds.has(places[index + 1].itemId!)
+                      existingItemIds.has(nextItemId)
                     }
                   />
                 </PlanTravelSegment>
@@ -293,7 +295,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
           onOpenBookmark={() => setBookmarkModal({})}
         />
         {isAdding ?
-          <LoadingIndicator label="장소 추가 중" />
+          <Spinner aria-label="장소 추가 중" />
         : null}
       </div>
 

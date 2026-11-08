@@ -36,6 +36,7 @@ export type RoomScheduleWithItems = RoomSchedule & {
 
 export type GetRoomSchedulesOptions = {
   includeItems?: boolean;
+  signal?: AbortSignal;
 };
 
 export async function getRoomSchedules(
@@ -46,7 +47,7 @@ export async function getRoomSchedules(
   if (options?.includeItems) {
     url.searchParams.set("includeItems", "true");
   }
-  return requestJson(url.toString(), undefined, {
+  return requestJson(url.toString(), { signal: options?.signal }, {
     errorMessage: "일정 목록 조회 실패",
   });
 }

@@ -5,30 +5,18 @@ export const STOMP_CONNECTION_ISSUE_MESSAGE =
 
 interface StompConnectionStore {
   connectionIssue: string | null;
-  autoRecoverySuspended: boolean;
   setConnectionIssue: (message: string) => void;
   clearConnectionIssue: () => void;
-  resumeAutoRecovery: () => void;
 }
 
 export const useStompConnectionStore = create<StompConnectionStore>((set) => ({
   connectionIssue: null,
-  autoRecoverySuspended: false,
 
   setConnectionIssue: (message) => {
-    set({ connectionIssue: message, autoRecoverySuspended: true });
+    set({ connectionIssue: message });
   },
 
   clearConnectionIssue: () => {
-    set({ connectionIssue: null, autoRecoverySuspended: false });
-  },
-
-  resumeAutoRecovery: () => {
-    set({ autoRecoverySuspended: false });
+    set({ connectionIssue: null });
   },
 }));
-
-/** STOMP 복구 콜백 등 React 밖에서 자동 재시도 중단 여부 확인 */
-export function isStompAutoRecoverySuspended(): boolean {
-  return useStompConnectionStore.getState().autoRecoverySuspended;
-}

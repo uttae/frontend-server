@@ -1,15 +1,19 @@
+import {
+  isTripScheduleDayLimitExceeded,
+  TRIP_SCHEDULE_DAY_LIMIT_MESSAGE,
+} from "@/lib/plan/schedulePolicy";
+
 export const ROOM_TRIP_TITLE_MAX_LENGTH = 20;
 export const TRIP_DESTINATIONS_MAX_COUNT = 5;
 export const TRIP_DESTINATION_MAX_LENGTH = 100;
 
-export const TRIP_FORM_FIELD_CLASS =
-  "rounded-2xl border-2 border-gray-border bg-white px-5 py-4 transition focus-within:border-primary";
-
-export const TRIP_FORM_FIELD_READ_ONLY_CLASS =
-  "rounded-2xl border-2 border-gray-border bg-bubble-gray/30 px-5 py-4";
-
 export const TRIP_DATE_RANGE_INVALID_MESSAGE =
   "종료일은 시작일 이후여야 해요." as const;
+
+export const TRIP_TITLE_REQUIRED_MESSAGE = "여행 제목을 입력해 주세요." as const;
+export const TRIP_DESTINATIONS_REQUIRED_MESSAGE = "여행지를 하나 이상 선택해 주세요." as const;
+export const TRIP_DESTINATIONS_INVALID_MESSAGE = "여행지는 서로 다른 곳으로 5개까지 선택해 주세요." as const;
+export const TRIP_DATES_REQUIRED_MESSAGE = "여행 기간을 선택해 주세요." as const;
 
 export const TRIP_START_BEFORE_MIN_MESSAGE =
   "시작일은 최초 여행 시작일 이전으로 바꿀 수 없어요." as const;
@@ -72,4 +76,24 @@ export function areDestinationsEqual(a: string[], b: string[]): boolean {
 
 export function isTripDateRangeInvalid(startDate: string, endDate: string) {
   return Boolean(startDate && endDate && endDate < startDate);
+}
+
+/*
+ * 여행 정보 칸별 검증. 오류 문장을 돌려주고 통과면 undefined다.
+ * TanStack Form 칸 validators와 적용하기 잠금이 같이 쓴다. zod를 붙이면 이 함수들 자리에 스키마를 넣는다
+ */
+export function tripTitleError(title: string): string | undefined {
+  return title.trim() ? undefined : TRIP_TITLE_REQUIRED_MESSAGE;
+}
+
+export function tripDestinationsError(destinations: string[]): string | undefined {
+  if (destinations.length === 0) return TRIP_DESTINATIONS_REQUIRED_MESSAGE;
+  return isTripDestinationsValid(destinations) ? undefined : TRIP_DESTINATIONS_INVALID_MESSAGE;
+}
+
+export function tripDateRangeError(startDate: string, endDate: string): string | undefined {
+  if (!startDate || !endDate) return TRIP_DATES_REQUIRED_MESSAGE;
+  if (isTripDateRangeInvalid(startDate, endDate)) return TRIP_DATE_RANGE_INVALID_MESSAGE;
+  if (isTripScheduleDayLimitExceeded(startDate, endDate)) return TRIP_SCHEDULE_DAY_LIMIT_MESSAGE;
+  return undefined;
 }

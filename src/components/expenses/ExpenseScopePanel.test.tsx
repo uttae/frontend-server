@@ -20,29 +20,47 @@ function Harness({ canManage = true }: { canManage?: boolean }) {
     isPending={false} isError={false} canManage={canManage} busy={false} onAdd={() => {}} onEdit={() => {}}
     onDelete={async () => { await remove(); setExpenses([]); }} onRetry={() => {}} onClose={close} />;
 }
-const button = (label: string) => host.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
-const confirmation = () => host.querySelector<HTMLDialogElement>('dialog[role="alertdialog"]');
+// 목록 대화상자·확인창은 Base UI가 document.body로 포털한다
+const button = (label: string) => document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
+const listDialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
+const confirmation = () => document.querySelector<HTMLElement>('[role="alertdialog"]');
+const listHeading = () => [...document.querySelectorAll("h3")].find((heading) => heading.textContent === "내역");
+async function settle() {
+  // 닫힘 전환·finalFocus(microtask)·Base UI의 requestAnimationFrame을 기다린다
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+}
+async function pressEscape() {
+  await act(async () => {
+    (document.activeElement ?? document.body).dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }),
+    );
+  });
+  await settle();
+}
 async function openDelete() {
-  const trigger = host.querySelector<HTMLButtonElement>('[aria-label$="USD 비용 삭제"]')!;
+  const trigger = document.querySelector<HTMLButtonElement>('[aria-label$="USD 비용 삭제"]')!;
   trigger.focus();
   await act(async () => trigger.click());
+  await settle();
   return trigger;
 }
 beforeEach(async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  HTMLDialogElement.prototype.showModal = function () { this.open = true; };
-  HTMLDialogElement.prototype.close = function () { this.open = false; };
   close.mockReset(); remove.mockReset(); remove.mockResolvedValue(undefined);
   host = document.createElement("div"); document.body.append(host); root = createRoot(host);
   await act(async () => root.render(<Harness />));
+  await settle();
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals(); });
 
 it("opens a separate modal and restores the delete trigger after cancel", async () => {
   const trigger = await openDelete();
-  expect(confirmation()?.open).toBe(true);
+  expect(confirmation()).not.toBeNull();
+  expect(confirmation()!.textContent).toContain("비용을 삭제할까요?");
+  expect(listDialog()).not.toBeNull();
   expect(document.activeElement).toBe(button("비용 삭제 취소"));
   await act(async () => button("비용 삭제 취소").click());
+  await settle();
   expect(confirmation()).toBeNull();
   expect(document.activeElement).toBe(trigger);
   expect(remove).not.toHaveBeenCalled();
@@ -51,9 +69,10 @@ it("opens a separate modal and restores the delete trigger after cancel", async 
 it("Escape cancels only the confirmation and preserves the expense list", async () => {
   const trigger = await openDelete();
   expect(confirmation()).not.toBeNull();
-  await act(async () => confirmation()!.dispatchEvent(new Event("cancel", { bubbles: true, cancelable: true })));
+  await pressEscape();
   expect(close).not.toHaveBeenCalled();
   expect(confirmation()).toBeNull();
+  expect(listDialog()).not.toBeNull();
   expect(document.activeElement).toBe(trigger);
 });
 
@@ -63,22 +82,32 @@ it("blocks dismissal during deletion and restores focus to the list heading afte
   await openDelete();
   expect(confirmation()).not.toBeNull();
   await act(async () => button("비용 삭제 확인").click());
-  await act(async () => confirmation()!.dispatchEvent(new Event("cancel", { bubbles: true, cancelable: true })));
-  expect(confirmation()?.open).toBe(true);
-  expect(button("비용 삭제 취소").disabled).toBe(true);
+  const confirm = confirmation()!.querySelector<HTMLButtonElement>("[aria-busy='true']")!;
+  expect(confirm.getAttribute("aria-disabled")).toBe("true");
+  expect(document.getElementById(confirm.getAttribute("aria-labelledby")!)!.textContent).toBe("삭제 중");
+  await pressEscape();
+  expect(confirmation()).not.toBeNull();
+  const cancel = button("비용 삭제 취소");
+  expect(cancel.disabled).toBe(true);
+  await act(async () => cancel.click());
+  await settle();
+  expect(confirmation()).not.toBeNull();
   expect(close).not.toHaveBeenCalled();
+  expect(remove).toHaveBeenCalledOnce();
   await act(async () => finish());
+  await settle();
   expect(confirmation()).toBeNull();
-  expect(document.activeElement).toBe(host.querySelector("h2"));
-  expect(host.querySelectorAll("li")).toHaveLength(0);
+  expect(document.activeElement).toBe(listHeading());
+  expect(listDialog()!.querySelectorAll("li")).toHaveLength(0);
 });
 
 
 it("allows closing the list after management permission is lost during confirmation", async () => {
   await openDelete();
   await act(async () => root.render(<Harness canManage={false} />));
+  await settle();
   expect(confirmation()).toBeNull();
-  await act(async () => host.querySelector("dialog")!.dispatchEvent(new Event("cancel", { cancelable: true })));
+  await pressEscape();
   expect(close).toHaveBeenCalledOnce();
   expect(remove).not.toHaveBeenCalled();
 });

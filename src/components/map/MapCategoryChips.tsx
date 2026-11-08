@@ -1,11 +1,9 @@
 "use client";
 
-import { MapSearchIcon } from "./MapSearchIcon";
-
 import { cn } from "@/lib/utils";
 
+import { MapChipToggle } from "./MapChipToggle";
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
-import { mapChipButtonClassName } from "./map-chip-button";
 
 type MapCategoryChipsProps = {
   selectedCategoryId: string | null;
@@ -19,11 +17,6 @@ export function MapCategoryChips({
   onSelectCategory,
   className,
 }: MapCategoryChipsProps) {
-  function handleChipClick(categoryId: string) {
-    if (selectedCategoryId === categoryId) onSelectCategory(null);
-    else onSelectCategory(categoryId);
-  }
-
   return (
     <div
       className={cn(
@@ -31,24 +24,17 @@ export function MapCategoryChips({
         className,
       )}
     >
-      {MAP_PLACE_CATEGORIES.map((cat) => {
-        const active = selectedCategoryId === cat.id;
-        return (
-          <button
-            key={cat.id}
-            type="button"
-            onClick={() => handleChipClick(cat.id)}
-            aria-pressed={active}
-            className={cn(
-              "flex items-center gap-1.5",
-              mapChipButtonClassName(active),
-            )}
-          >
-            <MapSearchIcon name={cat.icon}/>
-            <span>{cat.label}</span>
-          </button>
-        );
-      })}
+      {MAP_PLACE_CATEGORIES.map((cat) => (
+        <MapChipToggle
+          key={cat.id}
+          pressed={selectedCategoryId === cat.id}
+          onPressedChange={(pressed) => onSelectCategory(pressed ? cat.id : null)}
+        >
+          {/* 카테고리 아이콘은 선택과 상관없이 파란색이다(교체 전 지도 칩 아이콘 #005bd9) */}
+          <cat.icon className="text-primary-strong" />
+          <span>{cat.label}</span>
+        </MapChipToggle>
+      ))}
     </div>
   );
 }

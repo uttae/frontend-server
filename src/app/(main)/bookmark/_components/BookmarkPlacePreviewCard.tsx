@@ -2,8 +2,10 @@
 
 import { MapPin } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { useInViewport } from "@/hooks/useInViewport";
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
+import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
 import { cn } from "@/lib/utils";
@@ -33,13 +35,14 @@ export function BookmarkPlacePreviewCard({
   const { data: imageUrl } = usePlacePhotoUrlQuery(googlePlaceId, {
     enabled: thumbnailInViewport,
   });
+  const { visibleUrl, markUnavailable } = useVisiblePlacePhotoUrl(imageUrl);
 
   const rawGid = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
 
-  const thumbnailMedia = imageUrl ? (
+  const thumbnailMedia = visibleUrl ? (
     // eslint-disable-next-line @next/next/no-img-element -- remote place photo URL
     <img
-      src={imageUrl}
+      src={visibleUrl}
       alt={name}
       className="h-full w-full object-cover"
       loading="lazy"
@@ -49,6 +52,7 @@ export function BookmarkPlacePreviewCard({
           googlePlaceId,
           placeName: name,
           image: event.currentTarget,
+          onPhotoUnavailable: markUnavailable,
         })
       }
     />
@@ -76,9 +80,9 @@ export function BookmarkPlacePreviewCard({
             {name}
           </h3>
           {primaryTypeDisplayName ? (
-            <span className="shrink-0 rounded-full bg-gray-100 px-1.5 py-0.5 text-body-xs-emphasis font-medium leading-none text-dark-gray">
+            <Badge size="md">
               {primaryTypeDisplayName}
-            </span>
+            </Badge>
           ) : null}
         </div>
         {address ? (

@@ -2,7 +2,6 @@
 
 import type { PlanPlace } from "@/lib/plan/types";
 import {
-  SCHEDULE_TRAVEL_MODE_DEFAULT,
   canonicalScheduleTravelMode,
   type ScheduleTravelModeValue,
 } from "@/lib/plan/scheduleTravelMode";
@@ -11,6 +10,8 @@ import {
 export type PlanItinerarySegmentDescriptor = {
   scheduleId: number;
   segmentSourceItemId: number;
+  /** 다음 장소의 `itemId` — 경로를 이 항목까지 계산한다 */
+  destinationItemId: number;
   originPlaceId: string;
   destPlaceId: string;
   travelModeCanon: ScheduleTravelModeValue;
@@ -36,17 +37,18 @@ export function flattenPlanItinerarySegmentsFromPlaces(
         typeof a.googlePlaceId === "string" ? a.googlePlaceId.trim() : "";
       const d =
         typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
-      if (typeof a.itemId !== "number" || !o.length || !d.length) {
+      if (typeof a.itemId !== "number" || typeof b.itemId !== "number" || !o.length || !d.length) {
         continue;
       }
+      const travelModeCanon = canonicalScheduleTravelMode(a.travelMode);
+      if (!travelModeCanon) continue;
       segments.push({
         scheduleId,
         segmentSourceItemId: a.itemId,
+        destinationItemId: b.itemId,
         originPlaceId: o,
         destPlaceId: d,
-        travelModeCanon:
-          canonicalScheduleTravelMode(a.travelMode) ??
-          SCHEDULE_TRAVEL_MODE_DEFAULT,
+        travelModeCanon,
         originLocation: a.location,
         destLocation: b.location,
       });

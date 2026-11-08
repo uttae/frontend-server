@@ -1,11 +1,20 @@
 "use client";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
-
 import { Check, Plus } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useMemo, useState, type SyntheticEvent } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
 
 import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
@@ -23,6 +32,16 @@ import {
 } from "@/lib/analytics/track";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/stores/session-store";
+
+// 포털 안 클릭·터치가 React 트리를 따라 부모(지도 상세 패널·시트 드래그, 검색 결과 카드)로 올라가지 않게 포털 표면과 배경에서 끊는다.
+// 딤은 표면 밖이므로 표면과 배경 각각에서 차단한다. 키보드는 Base UI에 그대로 전달한다
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
+const pointerBoundary = {
+  onClick: stopPropagation,
+  onMouseDown: stopPropagation,
+  onPointerDown: stopPropagation,
+  onTouchStart: stopPropagation,
+};
 
 type Props = {
   googlePlaceId: string;
@@ -68,15 +87,6 @@ export function AddToBookmarkModal({
     });
     setSubmitFeedback(null);
   }, []);
-
-  useEffect(() => {
-    if (createFolderModalOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, createFolderModalOpen]);
 
   const openCreateFolderModal = () => {
     setCreateFolderModalKey((k) => k + 1);
@@ -208,39 +218,24 @@ export function AddToBookmarkModal({
     return null;
   }
 
-  /* 부모(지도 상세 패널·시트)의 transform 때문에 fixed가 패널 기준이 되지 않도록 body로 포털 */
-  return createPortal(
-    <div
-      role="presentation"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-      onMouseDown={(ev) => {
-        ev.stopPropagation();
-        if (ev.target === ev.currentTarget) onClose();
+  return (
+    <Dialog
+      open
+      closeDisabled={isAddingBookmarks}
+      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 추가 중에는 Esc·딤·닫기를 막는다.
+      // 새 북마크 대화상자가 위에 열려 있으면 Esc는 위 대화상자만 닫는다(Base UI 중첩)
+      onOpenChange={(open) => {
+        if (!open) onClose();
       }}
-      onClick={(ev) => ev.stopPropagation()}
-      onPointerDown={(ev) => ev.stopPropagation()}
-      onTouchStart={(ev) => ev.stopPropagation()}
     >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-bookmark-modal-title"
-        onMouseDown={(e) => e.stopPropagation()}
-        className="flex max-h-[min(85vh,560px)] w-full max-w-sm flex-col overflow-hidden rounded-2xl border border-gray-border bg-white pb-3 shadow-lg"
-      >
-        <div className="shrink-0 px-5 pb-2 pt-4">
-          <h2
-            id="add-bookmark-modal-title"
-            className="text-title-l mobile:text-title-m font-semibold text-neutral-900"
-          >
-            북마크에 추가
-          </h2>
-          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
-            북마크를 선택한 뒤 추가해 주세요.
-          </p>
-        </div>
+      <DialogContent {...pointerBoundary} backdropProps={pointerBoundary} size="sm" showCloseButton={false} className="max-h-[min(85dvh,560px)]">
+        <DialogHeader>
+          <DialogTitle>북마크에 추가</DialogTitle>
+          <DialogDescription>북마크를 선택한 뒤 추가해 주세요.</DialogDescription>
+        </DialogHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-gutter:stable]">
+        {/* 제목 줄·버튼은 고정하고 목록만 스크롤한다. 행 구분선·hover 배경이 표면 끝까지 닿도록 표면 padding만큼 넓힌다 */}
+        <div className="-mx-5 min-h-0 overflow-y-auto border-b border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-gutter:stable]">
           <button
             type="button"
             disabled={isCreatingCategory || isAddingBookmarks}
@@ -256,7 +251,7 @@ export function AddToBookmarkModal({
 
           {categoriesLoading && (
             <div className="flex justify-center py-6">
-              <LoadingIndicator label="북마크 불러오는 중" />
+              <Spinner aria-label="북마크 불러오는 중" />
             </div>
           )}
 
@@ -344,45 +339,35 @@ export function AddToBookmarkModal({
           )}
         </div>
 
-        <div className="flex shrink-0 gap-2 border-t border-gray-border px-5 pt-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isAddingBookmarks}
-            className="flex-1 rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:opacity-60"
-          >
-            닫기
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirmAdd}
+        <DialogFooter>
+          <DialogClose render={<Button variant="weak" />}>닫기</DialogClose>
+          <Button
+            loading={isAddingBookmarks}
+            loadingLabel="추가 중"
             disabled={
-              isAddingBookmarks ||
               selectedIds.size === 0 ||
               (categories?.length === 0 && !categoriesLoading)
             }
-            className="flex-1 rounded-xl bg-primary py-2.5 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-white shadow-sm transition-opacity hover:opacity-95 disabled:opacity-55"
+            onClick={handleConfirmAdd}
           >
-            {isAddingBookmarks ? "추가 중…" : "추가"}
-          </button>
-        </div>
-      </div>
+            추가
+          </Button>
+        </DialogFooter>
 
-      {createFolderModalOpen && (
-        <AddBookmarkModal
-          key={createFolderModalKey}
-          mode="create"
-          initialFolder={null}
-          overlayZClass="z-[65]"
-          busy={isCreatingCategory || isAddingBookmarks}
-          untitledNameHint={pickUniqueUntitledBookmarkCategoryName(
-            (categories ?? []).map((c) => c.name),
-          )}
-          onClose={() => setCreateFolderModalOpen(false)}
-          onSave={handleCreateFolderSave}
-        />
-      )}
-    </div>,
-    document.body,
+        {createFolderModalOpen && (
+          <AddBookmarkModal
+            key={createFolderModalKey}
+            mode="create"
+            initialFolder={null}
+            busy={isCreatingCategory || isAddingBookmarks}
+            untitledNameHint={pickUniqueUntitledBookmarkCategoryName(
+              (categories ?? []).map((c) => c.name),
+            )}
+            onClose={() => setCreateFolderModalOpen(false)}
+            onSave={handleCreateFolderSave}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

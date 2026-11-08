@@ -1,12 +1,39 @@
+// @vitest-environment jsdom
 import { renderToStaticMarkup } from "react-dom/server";
+import { act, type ReactNode } from "react";
+import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import {
   ExpenseList,
   ExpenseSummaryView,
   ExpenseAnalysisView,
   ExpenseRolePicker,
 } from "./ExpenseViews";
+// 메뉴·탭은 Base UI라 react-dom으로 그리고 document에서 찾는다(메뉴 목록은 body로 포털된다)
+async function renderInDom(node: ReactNode) {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  await act(async () => root.render(node));
+  return {
+    host,
+    rerender: (next: ReactNode) => act(async () => root.render(next)),
+    cleanup: async () => {
+      await act(async () => root.unmount());
+      host.remove();
+      vi.unstubAllGlobals();
+    },
+  };
+}
+// Base UI는 메뉴를 닫은 뒤 다음 틱에 목록을 지운다
+const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const menuItem = (label: string) =>
+  document.querySelector<HTMLElement>(`[role="menuitem"][aria-label="${label}"]`);
+async function press(element: HTMLElement) {
+  await act(async () => element.click());
+  await flush();
+}
 const expense = {
   id: 10,
   expenseGroup: "PREPARATION" as const,
@@ -296,59 +323,56 @@ it("scales analysis bars against the largest amount and handles zero totals", ()
 });
 
 it("shows only the selected analysis graph and preserves exact daily amounts", async () => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  let renderer: ReactTestRenderer | undefined;
+  const view = await renderInDom(<ExpenseAnalysisView members={[]} memberStatus="success" schedules={[]} summary={{ currencies: [{
+    currency: "USD", totalAmount: "1234567.00", individuals: [], transfers: [],
+    categories: [{ category: "OTHER", totalAmount: "1234567.00" }],
+    days: [{ expenseGroup: "PREPARATION", scheduleId: null, totalAmount: "1234567.00" }],
+  }] }} />);
   try {
-    await act(async () => {
-      renderer = create(<ExpenseAnalysisView members={[]} memberStatus="success" schedules={[]} summary={{ currencies: [{
-        currency: "USD", totalAmount: "1234567.00", individuals: [], transfers: [],
-        categories: [{ category: "OTHER", totalAmount: "1234567.00" }],
-        days: [{ expenseGroup: "PREPARATION", scheduleId: null, totalAmount: "1234567.00" }],
-      }] }} />);
-    });
-    const graphs = () => renderer!.root.findAllByType("figure");
-    expect(graphs()).toHaveLength(1);
-    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 비용 그래프");
-    await act(async () => renderer!.root.findAllByType("button").find(b => b.children.includes("일차별"))!.props.onClick());
-    expect(graphs()).toHaveLength(1);
-    expect(graphs()[0].props["aria-label"]).toBe("USD 준비·일차별 비용 그래프");
-    expect(JSON.stringify(renderer!.toJSON())).toContain("여행 준비 · 1,234,567.00 USD");
-    await act(async () => renderer!.root.findAllByType("button").find(b => b.children.includes("카테고리별"))!.props.onClick());
-    expect(graphs()).toHaveLength(1);
-    expect(graphs()[0].props["aria-label"]).toBe("USD 카테고리별 비용 그래프");
+    const graphs = () => [...view.host.querySelectorAll("figure")].map(figure => figure.getAttribute("aria-label"));
+    // 분석 기준은 Tabs(role="tab", aria-selected)다
+    const tab = (label: string) => [...view.host.querySelectorAll<HTMLElement>('[role="tab"]')].find(t => t.textContent === label)!;
+    expect(view.host.querySelector('[role="tablist"]')?.getAttribute("aria-label")).toBe("비용 분석 기준");
+    expect(tab("카테고리별").getAttribute("aria-selected")).toBe("true");
+    expect(graphs()).toEqual(["USD 카테고리별 비용 그래프"]);
+    await press(tab("일차별"));
+    expect(tab("일차별").getAttribute("aria-selected")).toBe("true");
+    expect(tab("카테고리별").getAttribute("aria-selected")).toBe("false");
+    expect(graphs()).toEqual(["USD 준비·일차별 비용 그래프"]);
+    expect(view.host.innerHTML).toContain("여행 준비 · 1,234,567.00 USD");
+    await press(tab("카테고리별"));
+    expect(graphs()).toEqual(["USD 카테고리별 비용 그래프"]);
   } finally {
-    await act(async () => renderer?.unmount());
-    vi.unstubAllGlobals();
+    await view.cleanup();
   }
 });
 
 it("opens editing from the expense card and keeps deletion as a separate action", async () => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  let renderer: ReactTestRenderer | undefined;
   const onEdit = vi.fn();
   const onDelete = vi.fn();
   const render = (canManage: boolean, busy = false) => <ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage={canManage} busy={busy} onEdit={onEdit} onDelete={onDelete} />;
+  const view = await renderInDom(render(true));
   try {
-    await act(async () => { renderer = create(render(true)); });
-    expect(renderer!.root.findAllByType("details")).toHaveLength(0);
-    expect(JSON.stringify(renderer!.toJSON())).toContain("결제");
-    expect(JSON.stringify(renderer!.toJSON())).toContain("분담");
-    const more = () => renderer!.root.findAllByType("button").find(b => b.props["aria-label"]?.endsWith("비용 더보기"))!;
-    await act(async () => more().props.onClick());
-    await act(async () => renderer!.root.findByProps({ "aria-label": "비용 수정" }).props.onClick());
+    expect(view.host.querySelectorAll("details")).toHaveLength(0);
+    expect(view.host.textContent).toContain("결제");
+    expect(view.host.textContent).toContain("분담");
+    const more = () => [...view.host.querySelectorAll<HTMLButtonElement>("button")].find(b => b.getAttribute("aria-label")?.endsWith("비용 더보기"))!;
+    await press(more());
+    await press(menuItem("비용 수정")!);
     expect(onEdit).toHaveBeenCalledWith(expense);
     onEdit.mockClear();
-    await act(async () => more().props.onClick());
-    await act(async () => renderer!.root.findByProps({ "aria-label": "비용 삭제" }).props.onClick());
+    await press(more());
+    await press(menuItem("비용 삭제")!);
     expect(onDelete).toHaveBeenCalledWith(expense);
     expect(onEdit).not.toHaveBeenCalled();
-    await act(async () => renderer!.update(render(true, true)));
-    expect(renderer!.root.findAllByType("button").every(b => b.props.disabled)).toBe(true);
-    await act(async () => renderer!.update(render(false)));
-    expect(renderer!.root.findAllByType("button")).toHaveLength(0);
+    await view.rerender(render(true, true));
+    const buttons = [...view.host.querySelectorAll<HTMLButtonElement>("button")];
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(buttons.every(b => b.disabled)).toBe(true);
+    await view.rerender(render(false));
+    expect(view.host.querySelectorAll("button")).toHaveLength(0);
   } finally {
-    await act(async () => renderer?.unmount());
-    vi.unstubAllGlobals();
+    await view.cleanup();
   }
 });
 
@@ -360,18 +384,17 @@ it("announces unavailable identity before an empty personal settlement", () => {
 });
 
 it("opens a more disclosure before delete and uses category instead of memo as the name", async () => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  let renderer: ReactTestRenderer | undefined;
   const onDelete = vi.fn();
+  const view = await renderInDom(<ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage busy={false} onEdit={vi.fn()} onDelete={onDelete} />);
   try {
-    await act(async () => { renderer = create(<ExpenseList expenses={[expense]} members={[]} memberStatus="success" schedules={[]} canManage busy={false} onEdit={vi.fn()} onDelete={onDelete} />); });
-    const buttons = () => renderer!.root.findAllByType("button");
-    expect(buttons().find(b => b.props["aria-label"] === "비용 삭제")).toBeUndefined();
-    const more = buttons().find(b => b.props["aria-label"] === "기타 비용 더보기");
-    expect(more).toBeDefined();
-    await act(async () => more!.props.onClick());
-    await act(async () => buttons().find(b => b.props["aria-label"] === "비용 삭제")!.props.onClick());
+    expect(menuItem("비용 삭제")).toBeNull();
+    const more = view.host.querySelector<HTMLButtonElement>('button[aria-label="기타 비용 더보기"]');
+    expect(more).not.toBeNull();
+    await press(more!);
+    await press(menuItem("비용 삭제")!);
     expect(onDelete).toHaveBeenCalledWith(expense);
-    expect(buttons().find(b => b.props["aria-label"] === "비용 삭제")).toBeUndefined();
-  } finally { await act(async () => renderer?.unmount()); vi.unstubAllGlobals(); }
+    expect(menuItem("비용 삭제")).toBeNull();
+  } finally {
+    await view.cleanup();
+  }
 });

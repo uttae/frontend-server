@@ -2,16 +2,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { SignLogoutIcon, UserIcon } from "@/assets/icons";
 import { BrandLogo } from "@/components/BrandLogo";
+import { Avatar } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuHeader,
+  DropdownMenuHeaderDescription,
+  DropdownMenuHeaderTitle,
+  DropdownMenuItem,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/user/UserAvatar";
 
 import { useQueryClient } from "@tanstack/react-query";
 
-import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { logout } from "@/lib/api/auth";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { tearDownClientSession } from "@/lib/client-storage";
@@ -19,24 +28,8 @@ import { tearDownClientSession } from "@/lib/client-storage";
 export function HomeHeader() {
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const profileRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  useOnClickOutside(profileRef, () => setOpen(false));
 
   const { data: user } = useSessionUser();
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        buttonRef.current?.focus();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, [open]);
 
   const handleLogout = async () => {
     const result = await logout().catch(() => {});
@@ -56,53 +49,36 @@ export function HomeHeader() {
           <BrandLogo variant="combination" size="S" alt="로고" />
         </div>
 
-        <div ref={profileRef} className="relative">
-          <button
-            ref={buttonRef}
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="flex size-12 items-center justify-center rounded-[8px] transition hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
+        <DropdownMenu>
+          <DropdownMenuTrigger
             aria-label="프로필"
-            aria-expanded={open}
+            className="flex size-12 items-center justify-center rounded-[8px] transition hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
           >
             {user?.profileImageUrl ? (
               <UserAvatar user={user} size={36} />
             ) : (
-              <span className="size-9 rounded-full bg-fill-strong" aria-hidden />
+              <Avatar size={36} aria-hidden />
             )}
-          </button>
-
-          {open && (
-            <div className="absolute right-2 top-[48.5px] z-50 w-60 max-w-[calc(100vw-2rem)] overflow-hidden rounded-[12px] bg-white text-text shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
-              {user && (
-                <div className="py-5 pl-5 pr-4 shadow-[inset_0_-0.5px_0_var(--color-border-subtle)]">
-                  <p className="truncate text-label-xl-emphasis font-bold leading-[22px] tracking-[-0.02em]">
-                    {user.nickname}
-                  </p>
-                  <p className="mt-1 truncate text-body-s-regular text-text-subtle">
-                    {user.email}
-                  </p>
-                </div>
-              )}
-              <Link
-                href="/home/my-info"
-                onClick={() => setOpen(false)}
-                className="flex h-[52px] w-full items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
-              >
-                <Image src="/rooms/figma/user.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
-                내 정보
-              </Link>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="flex h-[52px] w-full cursor-pointer items-center gap-2 py-3.5 pl-5 pr-4 text-left text-label-l-regular shadow-[inset_0_-0.5px_0_var(--color-border-subtle)] hover:bg-fill focus-visible:bg-fill"
-              >
-                <Image src="/rooms/figma/logout.svg" alt="" width={20} height={20} className="size-5 shrink-0" />
-                로그아웃
-              </button>
-            </div>
-          )}
-        </div>
+          </DropdownMenuTrigger>
+          {/* 지금 자리 그대로: 48px 버튼 기준 right 8px, top 48.5px(Figma 프로필 오버레이 L 3314:3242) */}
+          <DropdownMenuContent align="end" alignOffset={8} sideOffset={0.5} size="lg" className="w-60">
+            {user && (
+              <DropdownMenuHeader>
+                <DropdownMenuHeaderTitle>{user.nickname}</DropdownMenuHeaderTitle>
+                <DropdownMenuHeaderDescription>{user.email}</DropdownMenuHeaderDescription>
+              </DropdownMenuHeader>
+            )}
+            <DropdownMenuLinkItem render={<Link href="/home/my-info" />}>
+              <UserIcon />
+              내 정보
+            </DropdownMenuLinkItem>
+            {/* 지금처럼 로그아웃 요청 중에도 메뉴를 열어 두고, 실패하면 토스트만 띄운다(성공하면 문서 이동) */}
+            <DropdownMenuItem closeOnClick={false} onClick={handleLogout}>
+              <SignLogoutIcon />
+              로그아웃
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

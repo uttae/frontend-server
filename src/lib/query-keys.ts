@@ -51,11 +51,10 @@ export function planItinerarySegmentMapPathQueryKey(
   rid: string,
   scheduleId: number,
   segmentSourceItemId: number,
+  destinationItemId: number,
   originPlaceId: string,
   destPlaceId: string,
   travelModeCanon: string,
-  roomDirectionsEpoch: number,
-  segmentEpoch: number,
 ) {
   return [
     "plan-itinerary-map-segment-path",
@@ -63,11 +62,10 @@ export function planItinerarySegmentMapPathQueryKey(
     rid,
     scheduleId,
     segmentSourceItemId,
+    destinationItemId,
     originPlaceId.trim(),
     destPlaceId.trim(),
     travelModeCanon,
-    roomDirectionsEpoch,
-    segmentEpoch,
   ] as const;
 }
 
@@ -107,6 +105,11 @@ export function joinRequestsQueryKey(roomId: string | null) {
   return ["join-requests", roomId] as const;
 }
 
+/** 모든 방의 입장 요청 조회에 공통 접두 */
+export function joinRequestsRootQueryKey() {
+  return ["join-requests"] as const;
+}
+
 // ─── Schedule items / routes ─────────────────────────────────────────────────
 
 export const scheduleItemsQueryKey = (
@@ -115,13 +118,15 @@ export const scheduleItemsQueryKey = (
 ) => ["schedule-items", roomId, scheduleId, "v2-loc"] as const;
 
 /**
- * 구간별 길찾기 API 결과 (`GET …/route?travelMode=…`).
- * 무효화: `["schedule-item-route", roomId]` prefix.
+ * 구간별 길찾기 API 결과 (`GET …/route?destinationItemId=…&travelMode=…`).
+ * 요청에 보내는 출발·도착 항목과 이동수단이 곧 key라, 순서가 바뀌면 다른 key가 되고
+ * 순서를 되돌리면 받아 둔 값을 그대로 쓴다. 일정이 바뀌어도 무효화하지 않는다.
  */
 export const scheduleItemRouteQueryKey = (
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
+  destinationItemId: number | null,
   travelMode: ScheduleTravelModeValue | null,
 ) =>
   [
@@ -129,6 +134,7 @@ export const scheduleItemRouteQueryKey = (
     roomId,
     scheduleId,
     segmentSourceItemId,
+    destinationItemId,
     travelMode,
   ] as const;
 

@@ -1,5 +1,7 @@
 "use client";
 
+import type { KeyboardEventHandler } from "react";
+
 /** Keep incomplete input in the draft; only canonical HH:mm reaches the API. */
 export function TimeInput({
   label,
@@ -7,12 +9,14 @@ export function TimeInput({
   onChange,
   disabled,
   describedBy,
+  onKeyDown,
 }: Readonly<{
   label: string;
   value: string;
   onChange: (value: string) => void;
   disabled: boolean;
   describedBy: string;
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
 }>) {
   const parts = value ? value.split(":") : ["", ""];
   const update = (index: number, next: string) => {
@@ -40,6 +44,7 @@ export function TimeInput({
                 value={part}
                 placeholder="--"
                 disabled={disabled}
+                onKeyDown={onKeyDown}
                 onFocus={(e) => e.currentTarget.select()}
                 onChange={(e) => update(index, e.target.value)}
                 className="h-10 w-full min-w-0 text-center text-body-m-regular tabular-nums outline-none disabled:opacity-40"

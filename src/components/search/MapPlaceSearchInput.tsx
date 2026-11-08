@@ -10,9 +10,10 @@ import {
 } from "react";
 import { flushSync } from "react-dom";
 import { MapSearchIcon } from "@/components/map/MapSearchIcon";
-import { ChevronLeftIcon, CircleCancelIcon, SearchIcon } from "@/assets/icons";
+import { SearchIcon } from "@/assets/icons";
+import { SearchBar, SearchBarBack, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
-import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
+import { PlaceSessionError, type PlacePrediction, type PlaceSession, type PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { cn } from "@/lib/utils";
@@ -44,18 +45,10 @@ const INPUT_STYLES = {
   mobile: {
     container: "flex min-h-0 w-full flex-col",
     form: "shrink-0 px-5 pb-2 pt-4",
-    field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
-    text: "text-body-m-regular",
-    clear: "h-full w-8",
-    iconSize: 20,
   },
   desktop: {
     container: "w-[353px] max-w-full",
     form: undefined,
-    field: "h-12 gap-2 rounded-lg pl-3.5 pr-2.5",
-    text: "text-body-m-regular",
-    clear: "size-8",
-    iconSize: 20,
   },
 } as const;
 
@@ -152,7 +145,8 @@ export function MapPlaceSearchInput({
           if (requestGeneration === generation.current) {
             flow.abandon();
             token.current = null;
-            setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof Error ? error.message : undefined });
+            // 서버가 준 안내(429 등)는 그대로, 네트워크 오류 원문("Failed to fetch")은 뜻이 없어 기본 안내로 보여 준다
+            setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof PlaceSessionError ? error.message : undefined });
           }
         },
       );
@@ -189,13 +183,14 @@ export function MapPlaceSearchInput({
       suggestions?.query === value && suggestions.status === "done"
         ? suggestions
         : null;
-    const prediction = index > 0 ? ready?.items[index - 1] : ready?.items[0];
+    // 모두검색(index ≤ 0)은 후보를 확정하지 않고 지도 중심에서 찾는다(confirmPlaceSearch)
+    const prediction = index > 0 ? ready?.items[index - 1] : undefined;
     if (index > 0 && !prediction) return;
-    if (ready?.session && ready.session.expiresAt <= Date.now()) {
+    const requestSession = prediction ? ready?.session ?? null : null;
+    if (requestSession && requestSession.expiresAt <= Date.now()) {
       token.current?.abandon(); token.current = null;
       schedule(value); return;
     }
-    const requestSession = ready?.session ?? null;
     cancel();
     const requestGeneration = generation.current;
     confirmGeneration.current = requestGeneration;
@@ -271,16 +266,15 @@ export function MapPlaceSearchInput({
           void confirm(active);
         }}
       >
-        <div className={cn(
-          "flex items-center border border-border bg-fill-subtle focus-within:border-primary",
-          appearance.field,
-        )}>
+        <SearchBar shape={mobile ? "pill" : "rounded"}>
           {onBack ? (
-            <button type="button" aria-label={backLabel} onClick={onBack} className="flex h-12 w-5 shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary">
-              <ChevronLeftIcon size={20} className="text-icon-subtle" />
-            </button>
-          ) : mobile ? <SearchIcon size={appearance.iconSize} className="shrink-0 text-icon-subtle" /> : <MapSearchIcon name="search" size={20} />}
-          <input
+            <SearchBarBack aria-label={backLabel} onClick={onBack} />
+          ) : (
+            <SearchBarIcon>
+              <SearchIcon size={20} />
+            </SearchBarIcon>
+          )}
+          <SearchBarInput
             ref={fieldRef}
             type="search"
             role="combobox"
@@ -347,26 +341,21 @@ export function MapPlaceSearchInput({
             }}
             placeholder="장소 검색"
             autoComplete="off"
-            className={cn(
-              "peer min-w-0 flex-1 bg-transparent pr-1 text-text outline-none placeholder:text-text-subtle [&::-webkit-search-cancel-button]:hidden",
-              appearance.text,
-            )}
+            // PC는 입력 중(포커스)에 지우기를 숨긴다(peer-focus:hidden)
+            className="peer"
           />
           {value ? (
-            <button
-              type="button"
+            <SearchBarClear
               aria-label="검색어 지우기"
               onClick={() => {
                 update("");
                 if (mobile) fieldRef.current?.focus();
                 else fieldRef.current?.blur();
               }}
-              className={cn("flex shrink-0 cursor-pointer items-center justify-center rounded hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary", appearance.clear, !mobile && "peer-focus:hidden")}
-            >
-              {mobile ? <CircleCancelIcon size={appearance.iconSize} className="text-icon-subtle" /> : <MapSearchIcon name="clear" size={20}/>}
-            </button>
+              className={cn(!mobile && "peer-focus:hidden")}
+            />
           ) : null}
-        </div>
+        </SearchBar>
       </form>
       {showDropdown ? <SearchSuggestions listId={listId} active={active} value={value} rows={rows}
         suggestions={suggestions} mobile={mobile} onConfirm={confirm} onActiveChange={setActive} /> : null}

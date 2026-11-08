@@ -10,6 +10,7 @@ import {
   GOOGLE_REACCEPTANCE_TOKEN_NOT_FOUND_ERROR_CODE,
   GOOGLE_SIGNUP_TOKEN_NOT_FOUND_ERROR_CODE,
 } from "@/lib/api/errors";
+import { pendingInviteAuthPath } from "@/lib/session-user-flow";
 import { finishGoogleLogin } from "@/lib/google-login-client";
 import {
   clearGoogleAgreementFlowSession,
@@ -20,6 +21,7 @@ import { AgreementConsentSection } from "@/components/agreements/AgreementConsen
 import type { AgreementConsentState } from "@/components/agreements/AgreementConsentSection";
 import { AuthFlowSpinner } from "@/components/auth/AuthFlowSpinner";
 import { BrandLogo } from "@/components/BrandLogo";
+import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 
 const SIGNUP_EXPIRED_MESSAGE =
   "가입 요청이 만료되었거나 다른 로그인 시도로 무효화되었습니다. 다시 로그인해 주세요.";
@@ -49,7 +51,7 @@ export default function LoginAgreementsPage() {
   useEffect(() => {
     const storedFlow = readGoogleAgreementFlowSession();
     if (!storedFlow) {
-      router.replace("/login");
+      router.replace(pendingInviteAuthPath("/login"));
       return;
     }
 
@@ -68,7 +70,7 @@ export default function LoginAgreementsPage() {
 
   const returnToLogin = () => {
     clearGoogleAgreementFlowSession();
-    router.replace("/login");
+    router.replace(pendingInviteAuthPath("/login"));
   };
 
   const handleSubmit = async () => {
@@ -117,7 +119,7 @@ export default function LoginAgreementsPage() {
       }
 
       const destination = await finishGoogleLogin(queryClient);
-      router.replace(destination ?? "/login?error=OAuthCallback");
+      router.replace(destination ?? pendingInviteAuthPath("/login?error=OAuthCallback"));
     } catch {
       setErrorMessage(
         flow.kind === "reaccept"
@@ -172,23 +174,20 @@ export default function LoginAgreementsPage() {
           </div>
 
           {errorMessage && (
-            <div
-              role="alert"
-              className="w-full rounded-xl border border-primary/35 bg-primary/[0.06] px-4 py-3 text-left"
-            >
-              <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-primary">
-                {errorMessage}
-              </p>
+            <Alert tone="brand" size="lg" className="self-stretch">
+              <AlertTitle>{errorMessage}</AlertTitle>
               {isExpired && (
-                <button
-                  type="button"
-                  onClick={returnToLogin}
-                  className="mt-3 text-label-l-emphasis mobile:text-label-m-emphasis font-semibold text-primary underline-offset-2 hover:underline"
-                >
-                  Google 로그인 다시 시작하기
-                </button>
+                <AlertAction>
+                  <button
+                    type="button"
+                    onClick={returnToLogin}
+                    className="text-label-l-emphasis mobile:text-label-m-emphasis text-primary underline-offset-2 hover:underline"
+                  >
+                    Google 로그인 다시 시작하기
+                  </button>
+                </AlertAction>
               )}
-            </div>
+            </Alert>
           )}
 
           <AgreementConsentSection onStateChange={setConsentState} />

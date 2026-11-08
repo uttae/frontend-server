@@ -1,5 +1,6 @@
 import type {
   OmitKeyof,
+  QueryClient,
   QueryKey,
   UseQueryOptions,
 } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ type RouteCached = ScheduleItemRouteResponse | null;
 
 /**
  * — `segmentReady`: 네트워크 패치·sessionStorage 시드 허용(`routeQueryEnabled`). 쿼리 키는 이것과 무관하게
- *   `(room, schedule, 구간, 모드)`로 고정 — 일정 refetch 중 잠깐 false가 되어도 구간끼리 캐시를 공유하지 않음
+ *   `(room, schedule, 출발 항목, 도착 항목, 모드)`로 고정 — 일정 refetch 중 잠깐 false가 되어도 구간끼리 캐시를 공유하지 않음
  * — `networkEnabled` 생략 시 `segmentReady`와 동일; 지연 수단은 메뉴 열림 시만 `true`
  */
 export type PersistedScheduleRoutePersistFlags = {
@@ -24,12 +25,14 @@ export type PersistedScheduleRoutePersistFlags = {
   networkEnabled?: boolean;
 };
 
-/** `GET …/route?travelMode=…` — sessionStorage(`scheduleFingerprint` 일치) ↔ React Query */
+/** `GET …/route?destinationItemId=…&travelMode=…` — sessionStorage(`scheduleFingerprint` 일치) ↔ React Query */
 export function persistedScheduleItemRouteQueryOptions(
   roomIdTrimmed: string,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
-  travelMode: ScheduleTravelModeValue,
+  /** 다음 장소의 `itemId` — 없으면 구간이 정해지지 않아 조회하지 않는다 */
+  destinationItemId: number | null,
+  travelMode: ScheduleTravelModeValue | null,
   fingerprintTrimmed: string,
   flags: PersistedScheduleRoutePersistFlags,
 ): OmitKeyof<
@@ -42,10 +45,13 @@ export function persistedScheduleItemRouteQueryOptions(
   const itemOk =
     typeof segmentSourceItemId === "number" &&
     Number.isFinite(segmentSourceItemId);
+  const destOk =
+    typeof destinationItemId === "number" &&
+    Number.isFinite(destinationItemId);
   const fp = fingerprintTrimmed.trim();
 
   const keyEligible =
-    flags.segmentReady && rid.length > 0 && sidOk && itemOk;
+    flags.segmentReady && travelMode !== null && rid.length > 0 && sidOk && itemOk && destOk;
 
   const network =
     typeof flags.networkEnabled === "boolean"
@@ -57,8 +63,8 @@ export function persistedScheduleItemRouteQueryOptions(
   const keyRoom = rid.length > 0 ? rid : null;
   const keySchedule = sidOk ? sid : null;
   const keySegment = itemOk ? segmentSourceItemId : null;
-  const keyMode =
-    sidOk && itemOk && rid.length > 0 ? travelMode : null;
+  const keyDestination = destOk ? destinationItemId : null;
+  const keyMode = sidOk && itemOk && destOk && rid.length > 0 ? travelMode : null;
 
   const sessionSeed: RouteCached | undefined =
     fp.length > 0 &&
@@ -69,6 +75,7 @@ export function persistedScheduleItemRouteQueryOptions(
           rid,
           sid!,
           segmentSourceItemId!,
+          destinationItemId!,
           travelMode,
           fp,
         )
@@ -79,6 +86,7 @@ export function persistedScheduleItemRouteQueryOptions(
       keyRoom,
       keySchedule,
       keySegment,
+      keyDestination,
       keyMode,
     ),
     ...(sessionSeed !== undefined
@@ -88,10 +96,11 @@ export function persistedScheduleItemRouteQueryOptions(
         }
       : {}),
     queryFn: (): Promise<RouteCached> =>
-      resolveScheduleSegmentRoute({
+      travelMode === null ? Promise.resolve(null) : resolveScheduleSegmentRoute({
         roomId: rid,
         scheduleId: sid!,
         segmentSourceItemId: segmentSourceItemId!,
+        destinationItemId: destinationItemId!,
         travelMode,
         scheduleFingerprint: fp,
       }),
@@ -102,4 +111,19 @@ export function persistedScheduleItemRouteQueryOptions(
     refetchOnWindowFocus: false,
     retry: false,
   };
+}
+
+/**
+ * 지도 구간 경로 — 목록과 같은 경로 쿼리를 쓴다(진행 중이면 합류). 방금 받다가 실패한 구간은 다시 보내지 않고
+ * 가진 값(없으면 null)을 쓴다 — 실패(429·5xx) 직후 같은 구간을 지도가 또 요청하지 않게 한다.
+ */
+export async function loadScheduleItemRouteForMap(
+  queryClient: QueryClient,
+  options: ReturnType<typeof persistedScheduleItemRouteQueryOptions>,
+): Promise<RouteCached> {
+  const state = queryClient.getQueryState<RouteCached>(options.queryKey);
+  if (state?.status === "error" && state.fetchStatus === "idle") {
+    return state.data ?? null;
+  }
+  return queryClient.fetchQuery(options);
 }

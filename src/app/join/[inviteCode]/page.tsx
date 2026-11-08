@@ -4,10 +4,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 import { BrandLogo } from "@/components/BrandLogo";
 
 import { checkClientAuthenticated, setPendingInviteCode } from "@/lib/auth";
+import { consumePendingInviteCode, pendingInviteAuthPath } from "@/lib/session-user-flow";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { useJoinRoom } from "@/hooks/useRooms";
 import { getRoomDetail } from "@/lib/api/rooms";
@@ -36,6 +37,7 @@ export default function JoinPage() {
       });
     }
 
+    const entrySearch = window.location.search;
     let cancelled = false;
 
     void (async () => {
@@ -43,11 +45,13 @@ export default function JoinPage() {
       if (cancelled) return;
 
       if (!authenticated) {
-        setPendingInviteCode(inviteCode);
-        router.replace("/login");
+        setPendingInviteCode(inviteCode, entrySearch);
+        router.replace(pendingInviteAuthPath("/login"));
         return;
       }
 
+      // An authenticated re-entry completes the detour (or replaces an older invite).
+      consumePendingInviteCode();
       join(inviteCode, {
         onSuccess: async (data) => {
           if (data.httpStatus === 200) {
@@ -103,7 +107,7 @@ export default function JoinPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4">
       <BrandLogo variant="combination" size="M" alt="우때 로고" />
-      <LoadingIndicator label="입장 요청 중" size={40} />
+      <Spinner aria-label="입장 요청 중" size={32} />
     </div>
   );
 }

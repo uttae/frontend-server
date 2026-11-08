@@ -1,7 +1,9 @@
 "use client";
 
+import { buildSharedInviteUrl } from "@/lib/invite-campaign";
+
 import { CopyCheckIcon, CopyIcon, RefreshIcon, ShareIcon } from "@/assets/icons";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Spinner } from "@/components/ui/spinner";
 
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -37,7 +39,7 @@ function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetai
   isRegenerating: boolean;
 }>) {
   if (isRoomDetailLoading || isRegenerating) {
-    return <LoadingIndicator label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
+    return <Spinner aria-label={isRoomDetailLoading ? "방 정보 불러오는 중" : "초대 링크 발급 중"} />;
   }
   let message = "발급에 실패했어요. 아래에서 재발급을 눌러 주세요.";
   if (isRoomDetailError) message = "방 정보를 불러오지 못했어요.";
@@ -113,7 +115,7 @@ export function AddMemberPanel({
   const displayedCode =
     issuedCode === undefined ? detailInviteCode || null : issuedCode;
   const inviteUrl = canShareInvite && displayedCode
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${displayedCode}`
+    ? buildSharedInviteUrl(`${typeof window !== "undefined" ? window.location.origin : ""}/join/${encodeURIComponent(displayedCode)}`)
     : null;
 
   async function handleCopy() {

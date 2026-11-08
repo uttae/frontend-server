@@ -1,7 +1,16 @@
 "use client";
-import { useSheetDrag } from "@/components/mobile/useSheetDrag";
-import { BottomSheetDragHandle } from "@/components/mobile/BottomSheetDragHandle";
-import { LoadingIndicator } from "@/components/loading/LoadingIndicator";
+import { Button } from "@/components/ui/button";
+import {
+  ResponsiveDialog,
+  ResponsiveDialogBody,
+  ResponsiveDialogClose,
+  ResponsiveDialogContent,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+} from "@/components/ui/responsive-dialog";
+import { Spinner } from "@/components/ui/spinner";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
 import { useQueries } from "@tanstack/react-query";
@@ -54,7 +63,7 @@ export function AddFromBookmarkModal({
   const {
     data: categories,
     isPending: categoriesLoading,
-    isError: categoriesError,
+    isLoadingError: categoriesError,
     error: categoriesErr,
     refetch: refetchCategories,
   } = useBookmarkCategories(roomId);
@@ -71,18 +80,10 @@ export function AddFromBookmarkModal({
     });
   }, [categories]);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   const {
     data: bookmarkRows,
     isPending: bookmarksLoading,
-    isError: bookmarksError,
+    isLoadingError: bookmarksError,
     error: bookmarksErr,
     refetch: refetchBookmarks,
   } = useRoomBookmarks(roomId, selectedCategoryId);
@@ -148,7 +149,6 @@ export function AddFromBookmarkModal({
     useCreateScheduleItem();
 
   const busy = isCreatingItem || addingGooglePlaceId != null;
-  const sheetDrag = useSheetDrag(onClose, busy);
 
   const handleAddPlace = useCallback(
     async (googlePlaceId: string) => {
@@ -163,7 +163,7 @@ export function AddFromBookmarkModal({
       setAddingGooglePlaceId(gid);
       const index = insertIndex ?? places.length;
       try {
-        const created = await createItem({
+        const { createdItem: created } = await createItem({
           roomId,
           scheduleId,
           googlePlaceId: gid,
@@ -224,52 +224,29 @@ export function AddFromBookmarkModal({
   );
 
   return (
-    <div
-      role="presentation"
-      className="fixed inset-0 z-[60] flex flex-col justify-center px-4 mobile:justify-end mobile:px-0"
+    // PC는 가운데 대화상자, 모바일 기기는 아래 시트(DECISIONS 'Dialog' 반응형). 추가 중(busy)에는 Esc·딤·닫기·스와이프로 닫히지 않는다
+    <ResponsiveDialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      closeDisabled={busy}
     >
-      {/* 딤은 시트와 따로 둬서 기준 시트처럼 딤만 서서히 나타나고 시트는 아래에서 올라온다 */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-black/40 mobile:bg-[#0f1724]/35 mobile:animate-in mobile:fade-in-0 mobile:duration-200"
-        onMouseDown={onClose}
-      />
-      <div
-        style={sheetDrag.surfaceStyle}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-from-bookmark-modal-title"
-        onMouseDown={(e) => e.stopPropagation()}
-        className={cn(
-          "relative flex max-h-[min(85vh,560px)] w-full flex-col overflow-hidden",
-          // PC는 가운데 모달, 모바일 기기는 화면 폭과 관계없이 바텀시트
-          "mx-auto max-w-md rounded-2xl border border-gray-border bg-white shadow-lg",
-          "mobile:max-w-none mobile:rounded-b-none mobile:rounded-t-[20px] mobile:border-x-0 mobile:border-b-0 mobile:shadow-[0_-8px_32px_-8px_rgba(0,0,0,0.12)]",
-          "mobile:animate-in mobile:slide-in-from-bottom mobile:duration-200",
-          "pb-[max(env(safe-area-inset-bottom,0px),12px)]",
-        )}
+      {/* 높이 상한은 지금 값. 폴더 칩·제목은 고정하고 장소 목록만 스크롤한다. 지금 PC 모달에는 닫기 X가 없다(아래 닫기 버튼) */}
+      <ResponsiveDialogContent
+        size="md"
+        showCloseButton={false}
+        closeLabel="북마크에서 추가 닫기"
+        className="max-h-[min(85vh,560px)]"
       >
-        <BottomSheetDragHandle drag={sheetDrag}>
-        <div
-          aria-hidden
-          className="mx-auto mt-[11px] hidden h-1 w-9 shrink-0 rounded-[2px] bg-border-subtle mobile:block"
-        />
+        <ResponsiveDialogHeader>
+          <ResponsiveDialogTitle>북마크에서 추가</ResponsiveDialogTitle>
+          <ResponsiveDialogDescription>북마크 장소를 이 일차에 추가해요.</ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
-        <div className="shrink-0 px-5 pb-2 pt-3">
-          <h2
-            id="add-from-bookmark-modal-title"
-            className="text-title-l mobile:text-title-m font-semibold mobile:font-bold text-neutral-900"
-          >
-            북마크에서 추가
-          </h2>
-          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
-            북마크 장소를 이 일차에 추가해요.
-          </p>
-        </div>
-
-        </BottomSheetDragHandle>
+        <ResponsiveDialogBody className="min-h-0 flex-1 gap-3">
         {categoriesLoading ? (
-          <div className="px-5 py-6 text-center"><LoadingIndicator label="북마크 불러오는 중" /></div>
+          <div className="px-5 py-6 text-center"><Spinner aria-label="북마크 불러오는 중" /></div>
         ) : categoriesError ? (
           <div className="space-y-2 px-5 py-6 text-center">
             <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
@@ -293,7 +270,8 @@ export function AddFromBookmarkModal({
           </div>
         ) : (
           <>
-            <div className="shrink-0 overflow-x-auto overscroll-x-contain px-5 pb-3 [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15">
+            {/* 칩 줄과 목록은 지금처럼 표면 끝까지 닿는다. 표면(Dialog p-5·시트 Body px-5)의 좌우 20px만큼 넓힌다 */}
+            <div className="-mx-5 shrink-0 overflow-x-auto overscroll-x-contain px-5 [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15">
               <div className="flex w-max gap-2">
                 {categories.map((c) => {
                   const selected = selectedCategoryId === c.categoryId;
@@ -322,7 +300,7 @@ export function AddFromBookmarkModal({
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto border-t border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent]">
+            <div className="-mx-5 min-h-0 flex-1 overflow-y-auto border-t border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent]">
               {bookmarksLoading ? (
                 <PlanLoadingSkeleton places className="px-5" />
               ) : bookmarksError ? (
@@ -377,17 +355,12 @@ export function AddFromBookmarkModal({
           </>
         )}
 
-        <div className="shrink-0 border-t border-gray-border px-5 pt-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={busy}
-            className="w-full cursor-pointer rounded-xl border border-gray-border py-2.5 text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-800 transition-colors hover:bg-bubble-gray disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            닫기
-          </button>
-        </div>
-      </div>
-    </div>
+        </ResponsiveDialogBody>
+
+        <ResponsiveDialogFooter>
+          <ResponsiveDialogClose render={<Button variant="weak" />}>닫기</ResponsiveDialogClose>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

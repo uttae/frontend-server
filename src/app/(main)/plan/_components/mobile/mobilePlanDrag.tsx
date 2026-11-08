@@ -17,9 +17,13 @@ import {
   useMoveScheduleItemToSchedule,
   useReorderScheduleItem,
 } from "@/hooks/useRooms";
+import { useScheduleResyncPending } from "@/hooks/useScheduleResyncPending";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
-import { clampCrossDayTargetOrderIndex } from "@/lib/plan/planItemReorder";
+import {
+  clampCrossDayTargetOrderIndex,
+  PLAN_ORDER_RESYNCING_MESSAGE,
+} from "@/lib/plan/planItemReorder";
 import { newOrderIndexAfterMove } from "@/lib/plan/scheduleItemPlaces";
 import type { PlanPlace } from "@/lib/plan/types";
 
@@ -48,9 +52,9 @@ type ActiveDrag = {
   targetIndex: number;
 };
 
-/** 서버 반영 전 먼저 보여줄 이동 */
+/** 저장 중인 순서 변경·일차 이동 — 응답 전에 새 자리를 먼저 보여 준다(mutation 요청 값에서 계산) */
 export type PendingPlanMove =
-  | { kind: "reorder"; scheduleId: number; order: string[] }
+  | { kind: "reorder"; scheduleId: number; itemId: number; newOrderIndex: number }
   | { kind: "move"; place: PlanPlace; fromScheduleId: number; toScheduleId: number; toIndex: number };
 
 type MobilePlanDragValue = {
@@ -89,9 +93,11 @@ export function applyPendingPlanMove(
   if (!pending) return places;
   if (pending.kind === "reorder") {
     if (pending.scheduleId !== scheduleId) return places;
-    const byId = new Map(places.map((p) => [p.id, p]));
-    const ordered = pending.order.map((id) => byId.get(id)).filter((p): p is PlanPlace => !!p);
-    return ordered.length === places.length ? ordered : places;
+    const from = places.findIndex((p) => p.itemId === pending.itemId);
+    if (from < 0) return places;
+    const next = [...places];
+    next.splice(pending.newOrderIndex, 0, ...next.splice(from, 1));
+    return next;
   }
   const itemId = pending.place.itemId;
   if (pending.fromScheduleId === scheduleId) {
@@ -158,12 +164,38 @@ export function useMobilePlanDragController({
   const placesBySchedule = useRef(new Map<number, PlanPlace[]>());
   const activeRef = useRef<ActiveDrag | null>(null);
   const [active, setActive] = useState<ActiveDrag | null>(null);
-  const [pending, setPending] = useState<PendingPlanMove | null>(null);
   const rafRef = useRef<number | null>(null);
 
-  const { mutateAsync: reorderMutate, isReorderSettling } = useReorderScheduleItem();
-  const { mutateAsync: moveMutate, isPending: isMovePending } = useMoveScheduleItemToSchedule();
-  const dragDisabled = isReorderSettling || isMovePending || pending !== null;
+  const {
+    mutateAsync: reorderMutate,
+    isPending: isReorderPending,
+    variables: reorderVariables,
+  } = useReorderScheduleItem();
+  const {
+    mutateAsync: moveMutate,
+    isPending: isMovePending,
+    variables: moveVariables,
+  } = useMoveScheduleItemToSchedule();
+  const scheduleResyncPending = useScheduleResyncPending(roomId);
+  const dragDisabled = isReorderPending || isMovePending || scheduleResyncPending;
+  // 결과가 편집 목록에만 보이므로 캐시를 고치지 않고, 저장하는 동안 요청 값으로 새 자리를 그린다
+  let pending: PendingPlanMove | null = null;
+  if (isReorderPending && reorderVariables) {
+    pending = {
+      kind: "reorder",
+      scheduleId: reorderVariables.scheduleId,
+      itemId: reorderVariables.itemId,
+      newOrderIndex: reorderVariables.body.newOrderIndex,
+    };
+  } else if (isMovePending && moveVariables?.place) {
+    pending = {
+      kind: "move",
+      place: moveVariables.place,
+      fromScheduleId: moveVariables.sourceScheduleId,
+      toScheduleId: moveVariables.targetScheduleId,
+      toIndex: moveVariables.targetOrderIndex,
+    };
+  }
 
   const updateActive = useCallback((next: ActiveDrag | null) => {
     activeRef.current = next;
@@ -236,12 +268,14 @@ export function useMobilePlanDragController({
     if (typeof itemId !== "number") return;
     const sourcePlaces = placesBySchedule.current.get(sourceScheduleId) ?? [];
 
+    // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
+    if (scheduleResyncPending) {
+      toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
+      return;
+    }
+
     if (targetScheduleId === sourceScheduleId) {
       if (targetIndex === sourceIndex) return;
-      const order = sourcePlaces.map((p) => p.id);
-      const [moved] = order.splice(sourceIndex, 1);
-      order.splice(targetIndex, 0, moved!);
-      setPending({ kind: "reorder", scheduleId: sourceScheduleId, order });
       try {
         await reorderMutate({
           roomId,
@@ -256,31 +290,26 @@ export function useMobilePlanDragController({
         });
       } catch {
         toast.error("순서를 바꾸지 못했어요.");
-      } finally {
-        setPending(null);
       }
       return;
     }
 
     const targetLength = placesBySchedule.current.get(targetScheduleId)?.length ?? 0;
-    const toIndex = clampCrossDayTargetOrderIndex(targetIndex, targetLength);
-    setPending({ kind: "move", place, fromScheduleId: sourceScheduleId, toScheduleId: targetScheduleId, toIndex });
     try {
       await moveMutate({
         roomId,
         sourceScheduleId,
         itemId,
         targetScheduleId,
-        targetOrderIndex: toIndex,
+        targetOrderIndex: clampCrossDayTargetOrderIndex(targetIndex, targetLength),
+        place,
       });
     } catch (err) {
       toast.error(
         err instanceof Error && err.message.trim() ? err.message : "다른 일차로 옮기지 못했어요.",
       );
-    } finally {
-      setPending(null);
     }
-  }, [moveMutate, reorderMutate, roomId, updateActive]);
+  }, [moveMutate, reorderMutate, roomId, scheduleResyncPending, updateActive]);
 
   const startDrag = useCallback(
     (scheduleId: number, index: number, e: ReactPointerEvent<HTMLElement>) => {

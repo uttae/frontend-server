@@ -2,6 +2,7 @@
 
 import { useParams, notFound } from "next/navigation";
 import { useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { SetSectionMaxWidth } from "@/contexts/SectionWidthContext";
 import { useBookmarkCategories } from "@/hooks/useRooms";
 import { useSessionStore } from "@/stores/session-store";
@@ -11,19 +12,19 @@ import { BookmarkFolderDetailView } from "../_components/BookmarkFolderDetailVie
 function FolderDetailSkeleton() {
   return (
     <div
-      className="flex h-full min-h-0 animate-pulse flex-col border-b border-gray-border"
+      className="flex h-full min-h-0 flex-col border-b border-gray-border"
       aria-busy="true"
       aria-label="북마크 폴더를 불러오는 중"
     >
       <SetSectionMaxWidth value="s1" />
       <div className="flex items-center justify-between border-b border-gray-border pb-5">
-        <div className="h-7 w-48 rounded bg-gray-200" />
-        <div className="h-9 w-32 rounded-full bg-gray-200" />
+        <Skeleton className="h-7 w-48" />
+        <Skeleton className="h-9 w-32 rounded-full" />
       </div>
       <div className="space-y-3 py-5">
-        <div className="h-16 rounded-xl bg-gray-200" />
-        <div className="h-16 rounded-xl bg-gray-200" />
-        <div className="h-16 rounded-xl bg-gray-200" />
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
+        <Skeleton className="h-16 rounded-xl" />
       </div>
     </div>
   );

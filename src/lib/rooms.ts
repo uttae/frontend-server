@@ -1,4 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query";
+import { isCancelledError, type QueryClient } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api/client";
 import type {
@@ -10,7 +10,10 @@ import { getRoomDetail, getRoomSchedules } from "@/lib/api/rooms";
 import type { RoomScheduleWithItems } from "@/lib/api/rooms/schedules";
 import { apiUrl } from "@/lib/api/http";
 import { clearPersistedScheduleRoutesForSchedule } from "@/lib/plan/planTravelLocalStorage";
-import { hydrateScheduleItemsFromSchedulesWithItems } from "@/lib/plan/schedule-bulk-hydration";
+import {
+  buildSchedulePlacesFromSchedulesWithItems,
+  writeSchedulePlacesFromHydrate,
+} from "@/lib/plan/schedule-bulk-hydration";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
 import {
@@ -96,21 +99,30 @@ export function selectHostRoom(
 }
 
 /**
- * `GET /rooms/{roomId}/schedules`로 서버 일정을 **항상** 재조회해 React Query 캐시에 넣습니다.
- * `fetchQuery`는 `staleTime: Infinity` 캐시를 재사용할 수 있어 일차 이동(dayNumber shift) 후
- * 순서가 UI에 반영되지 않을 수 있으므로 API를 직접 호출합니다.
+ * `room-schedules`의 queryFn — `GET /rooms/{roomId}/schedules?includeItems=true`로 일차 목록과
+ * 일차별 장소(`schedule-items`) 캐시를 함께 채웁니다. 직접 부르지 말고 조회(`useRoomSchedules`·
+ * `refreshRoomSchedules`)를 거쳐야 진행 중인 옛 조회가 취소됩니다.
  * 신규 일차만 항목 캐시를 `[]`로 시딩하고, 기존 scheduleId의 항목 캐시는 보존합니다.
  */
 export async function hydrateRoomSchedulesFromServer(
   queryClient: QueryClient,
   roomId: string,
+  signal?: AbortSignal,
 ): Promise<RoomScheduleWithItems[]> {
   const rid = roomId.trim();
   if (!rid.length) return [];
 
-  const schedules = await getRoomSchedules(rid, { includeItems: true });
+  const startedAt = Date.now();
+  const schedules = await getRoomSchedules(rid, { includeItems: true, signal });
   const sorted = sortRoomSchedules(schedules);
+  const placesBySchedule = await buildSchedulePlacesFromSchedulesWithItems(
+    queryClient,
+    sorted,
+  );
+  // 더 늦게 시작한 조회가 이 조회를 취소했으면 이 응답은 옛 스냅샷이다 — 캐시를 덮지 않는다
+  if (signal?.aborted) return sorted;
 
+  // 미리보기를 기다리는 동안 들어온 변경을 덮지 않도록 캐시는 여기서 한 번에 쓴다
   const prevSchedules =
     queryClient.getQueryData<RoomScheduleWithItems[]>(
       roomSchedulesQueryKey(rid),
@@ -129,11 +141,7 @@ export async function hydrateRoomSchedulesFromServer(
     }
   }
 
-  await hydrateScheduleItemsFromSchedulesWithItems(
-    queryClient,
-    rid,
-    sorted as RoomScheduleWithItems[],
-  );
+  writeSchedulePlacesFromHydrate(queryClient, rid, placesBySchedule, startedAt);
 
   for (const s of sorted) {
     const key = scheduleItemsQueryKey(rid, s.scheduleId);
@@ -155,8 +163,63 @@ export async function awaitRoomSchedulesHydrated(
 
   return queryClient.fetchQuery({
     queryKey: roomSchedulesQueryKey(rid),
-    queryFn: () => hydrateRoomSchedulesFromServer(queryClient, rid),
+    queryFn: ({ signal }) =>
+      hydrateRoomSchedulesFromServer(queryClient, rid, signal),
     staleTime: Infinity,
+  });
+}
+
+/**
+ * `useRoomSchedules`의 일정 불러오기가 진행 중이면 끝날 때까지 기다리고 true를 돌려줍니다.
+ * 진행 중인 요청에 합류할 뿐 새로 보내지 않습니다 — 진행 중이 아니면 바로 false입니다.
+ * 기다리던 불러오기가 취소되고 새로 시작되면 새 불러오기를 기다립니다.
+ */
+export async function waitForRoomSchedulesHydration(
+  queryClient: QueryClient,
+  roomId: string,
+): Promise<boolean> {
+  const rid = roomId.trim();
+  const queryKey = roomSchedulesQueryKey(rid);
+  if (!rid.length || queryClient.isFetching({ queryKey, exact: true }) === 0) {
+    return false;
+  }
+
+  // 합류한 불러오기가 취소되면 그 promise는 CancelledError로 끝난다. 그대로 던지면 이 함수를 부른
+  // 일차 조회가 성공도 실패도 아닌 '조회 중'으로 남는다(TanStack이 취소 에러는 상태로 남기지 않음)
+  while (queryClient.isFetching({ queryKey, exact: true }) > 0) {
+    try {
+      await queryClient.fetchQuery({
+        queryKey,
+        queryFn: () => hydrateRoomSchedulesFromServer(queryClient, rid),
+        staleTime: 0,
+      });
+      return true;
+    } catch (error) {
+      if (!isCancelledError(error)) throw error;
+    }
+  }
+  return true;
+}
+
+/**
+ * 일정 전체를 다시 받습니다(본인의 일차 생성·삭제·이동, 여행 날짜 변경 직후).
+ * 진행 중이던 조회는 이 변경 전 스냅샷이라 취소하고, `room-schedules` 조회 하나로 받아
+ * 마지막에 시작한 조회만 캐시에 쓰게 합니다.
+ */
+export async function refreshRoomSchedules(
+  queryClient: QueryClient,
+  roomId: string,
+): Promise<RoomScheduleWithItems[]> {
+  const rid = roomId.trim();
+  if (!rid.length) return [];
+
+  const queryKey = roomSchedulesQueryKey(rid);
+  await queryClient.cancelQueries({ queryKey, exact: true });
+  return queryClient.fetchQuery({
+    queryKey,
+    queryFn: ({ signal }) =>
+      hydrateRoomSchedulesFromServer(queryClient, rid, signal),
+    staleTime: 0,
   });
 }
 

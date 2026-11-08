@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { ChevronLeftIcon } from "@/assets/icons";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useRoomSchedules } from "@/hooks/useRooms";
-import { readSchedulePlanPlacesFromCache } from "@/lib/plan/scheduleItemPlaces";
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import {
   PLAN_MAP_FOCUS_NO_LOCATION_MESSAGE,
   planPlaceFocusTarget,
@@ -32,13 +31,10 @@ export function PlanRouteStepper({ roomId }: Readonly<{ roomId: string | null }>
   const focusPlace = usePlanMapFocusStore((s) => s.focusPlace);
   const scheduleId = focus?.scheduleId ?? null;
 
-  // 지도 경로(`PlanItineraryMapRoutes`)와 같은 일정 항목 캐시를 읽는다 — 따로 조회하지 않는다
+  // 일정 목록·지도 경로(`PlanItineraryMapRoutes`)와 같은 일차 조회다 — 캐시가 있으면 따로 받지 않는다
   const { data: places = [] } = useQuery({
-    queryKey: scheduleItemsQueryKey(rid || null, scheduleId),
-    queryFn: () => (scheduleId === null ? [] : readSchedulePlanPlacesFromCache(queryClient, rid, scheduleId)),
+    ...schedulePlanPlacesQueryOptions(queryClient, rid, scheduleId),
     enabled: rid.length > 0 && scheduleId !== null && schedulesHydrated,
-    staleTime: Infinity,
-    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 

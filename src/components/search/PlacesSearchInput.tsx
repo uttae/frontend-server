@@ -8,9 +8,11 @@ import {
   useState,
 } from "react";
 import { createPortal } from "react-dom";
-import { Search, MapPin, X } from "lucide-react";
+import { MapPin } from "lucide-react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
+import { LocationIcon, SearchIcon } from "@/assets/icons";
+import { SearchBar, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { useDebouncedPlacePredictions } from "@/hooks/useDebouncedPlacePredictions";
 import {
   circleLocationBias,
@@ -294,19 +296,11 @@ export function PlacesSearchInput({
   return (
     <div ref={containerRef} className="relative">
       <form onSubmit={handleSubmit} className="flex items-center gap-1">
-        <div className="relative flex w-full min-w-0 items-center">
-          {leadingIcon === "pin" ? (
-            <MapPin
-              className="pointer-events-none absolute left-3 h-4 w-4 text-dark-gray"
-              aria-hidden
-            />
-          ) : (
-            <Search
-              className="pointer-events-none absolute left-3 h-4 w-4 text-dark-gray"
-              aria-hidden
-            />
-          )}
-          <input
+        <SearchBar>
+          <SearchBarIcon>
+            {leadingIcon === "pin" ? <LocationIcon size={20} /> : <SearchIcon size={20} />}
+          </SearchBarIcon>
+          <SearchBarInput
             ref={inputRef}
             type="text"
             value={inputValue}
@@ -316,19 +310,9 @@ export function PlacesSearchInput({
             onFocus={() => predictions.length > 0 && setIsOpen(true)}
             placeholder={placeholder}
             autoComplete="off"
-            className="w-full rounded-lg border border-gray-border bg-white py-2 pl-9 pr-8 text-body-m-regular outline-none placeholder:text-[#99A1AF] focus:border-primary focus:ring-2 focus:ring-primary/30 focus:ring-inset disabled:cursor-not-allowed disabled:opacity-60"
           />
-          {inputValue ? (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="absolute right-2.5 text-[#99A1AF] hover:text-[#364153]"
-              aria-label="지우기"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
-        </div>
+          {inputValue ? <SearchBarClear onClick={handleClear} aria-label="지우기" /> : null}
+        </SearchBar>
         {!pickOnly ? (
           <button
             type="submit"

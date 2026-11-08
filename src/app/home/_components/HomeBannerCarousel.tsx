@@ -3,6 +3,8 @@
 import { useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+import { FEEDBACK_FORM_URL } from "@/lib/contact";
+
 import { FeedbackBanner } from "./FeedbackBanner";
 
 export type HomeBanner = {
@@ -14,9 +16,9 @@ export type HomeBanner = {
 
 export const HOME_BANNERS: readonly HomeBanner[] = [
   {
-    id: "feedback-event",
-    href: "https://forms.gle/giYqRzrhCYF9Hz1M9",
-    label: "피드백 이벤트: 피드백 남기고 싸이버거 받아 가세요! 이벤트 기간 ~10/25일, 참여하기 (새 창)",
+    id: "feedback",
+    href: FEEDBACK_FORM_URL,
+    label: "피드백 남기기: 우때는 여러분의 피드백으로 더 좋은 여행계획 도구로 발전 중! (새 창)",
     content: <FeedbackBanner />,
   },
 ];
@@ -30,7 +32,7 @@ export function HomeBannerCarousel({ banners }: { banners: readonly HomeBanner[]
   const banner = banners[currentIndex];
 
   return (
-    <section aria-label="이벤트 배너" className="pt-8 pb-8 mobile:pt-6 mobile:pb-6">
+    <section aria-label="배너" className="pt-8 pb-8 mobile:pt-6 mobile:pb-6">
       <a
         key={banner.id}
         href={banner.href}

@@ -7,7 +7,7 @@ type GoogleMapsUrlModule = typeof maps & {
     originQuery: string;
     destinationPlaceId: string;
     destinationQuery: string;
-    travelMode: "WALKING" | "TRANSIT" | "DRIVING" | "BICYCLING";
+    travelMode: "WALKING" | "TRANSIT" | "DRIVING";
   }) => string | null;
 };
 

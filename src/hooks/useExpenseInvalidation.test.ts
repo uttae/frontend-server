@@ -3,7 +3,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 const mock = vi.hoisted(() => ({
   client: null as unknown,
   mutation: vi.fn(),
-  hydrate: vi.fn(async () => []),
+  refresh: vi.fn(async () => []),
 }));
 vi.mock("@tanstack/react-query", async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -12,12 +12,12 @@ vi.mock("@tanstack/react-query", async (importOriginal) => ({
 }));
 vi.mock("@/lib/rooms", async (importOriginal) => ({
   ...(await importOriginal<object>()),
-  hydrateRoomSchedulesFromServer: mock.hydrate,
+  refreshRoomSchedules: mock.refresh,
   syncRoomDetailFromServer: vi.fn(),
 }));
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
   syncAfterCrossScheduleItemMove: vi.fn(),
-  applyScheduleItemDeletedOnClient: vi.fn(),
+  removeScheduleItemFromPlanPlacesCache: vi.fn(),
 }));
 import {
   useMoveRoomSchedule,
@@ -32,7 +32,7 @@ beforeEach(() => {
   client = new QueryClient();
   mock.client = client;
   mock.mutation.mockReset();
-  mock.hydrate.mockResolvedValue([]);
+  mock.refresh.mockResolvedValue([]);
   for (const suffix of ["list", "summary"])
     client.setQueryData(["room-expenses", "r", suffix], []);
   client.setQueryData(["room-expenses", "other", "list"], []);

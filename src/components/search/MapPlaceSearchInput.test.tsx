@@ -69,7 +69,7 @@ async function key(key: string) {
       .dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })),
   );
 }
-it("puts all results first; unselected Enter retains original query and first prediction", async () => {
+it("puts all results first; unselected Enter confirms the original query without a prediction", async () => {
   await type("원래");
   await wait();
   expect(host.querySelector('[role="option"]')?.textContent).toContain(
@@ -77,7 +77,7 @@ it("puts all results first; unselected Enter retains original query and first pr
   );
   await key("Enter");
   expect(confirm).toHaveBeenCalledWith(
-    expect.objectContaining({ query: "원래", kind: "whole", prediction: p }),
+    expect.objectContaining({ query: "원래", kind: "whole", prediction: undefined, session: null }),
   );
 });
 it("arrow-selected recommendation Enter confirms only that prediction", async () => {
@@ -166,6 +166,14 @@ it("429 respects shared wait without request loop on further input", async () =>
   await type("첫"); await wait(); await type("다음"); await wait();
   expect(sdk.fetch).toHaveBeenCalledTimes(1);
   expect(host.textContent).toContain("잠시 후");
+});
+it("network failure shows the default notice under all results instead of the raw error", async () => {
+  sdk.fetch.mockRejectedValue(new TypeError("Failed to fetch"));
+  await type("원래"); await wait();
+  expect([...host.querySelectorAll('[role="option"]')].map((option) => option.textContent))
+    .toEqual(["'원래' 모든 결과보기"]);
+  expect(host.textContent).toContain("검색 추천을 불러오지 못했어요. 다시 입력해주세요.");
+  expect(host.textContent).not.toContain("Failed to fetch");
 });
 it("nullable structured main text falls back to actual complete prediction text", async () => {
   await act(async () => vi.advanceTimersByTimeAsync(61000));

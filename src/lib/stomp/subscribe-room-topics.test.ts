@@ -1,7 +1,7 @@
 import type { Client, IMessage } from "@stomp/stompjs";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { expect, it, vi } from "vitest";
-import { roomUnreadCountQueryKey, sessionUserQueryKey } from "@/lib/query-keys";
+import { roomSchedulesQueryKey, roomUnreadCountQueryKey, sessionUserQueryKey } from "@/lib/query-keys";
 import { subscribeRoomStompTopics } from "./subscribe-room-topics";
 
 vi.mock("@/lib/stomp/bookmarks-dispatch", () => ({ applyRoomBookmarkStompMessage: vi.fn() }));
@@ -70,6 +70,21 @@ it("본인 MEMBER_LEFT만 onSelfLeftRoom으로 알린다 — 다른 탭에서 �
     expect(onSelfLeftRoom).not.toHaveBeenCalled();
     memberEvent("MEMBER_LEFT", 1);
     expect(onSelfLeftRoom).toHaveBeenCalledWith("room");
+  } finally {
+    unsubscribe();
+    queryClient.clear();
+  }
+});
+
+it("구독할 때마다 구독하지 않던 동안 놓친 일정 변경을 받도록 일정을 무효화한다", () => {
+  const client = {
+    subscribe: () => ({ unsubscribe: () => {} }),
+  } as unknown as Client;
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(roomSchedulesQueryKey("room"), []);
+  const unsubscribe = subscribeRoomStompTopics(client, "room", { current: queryClient }, {});
+  try {
+    expect(queryClient.getQueryState(roomSchedulesQueryKey("room"))?.isInvalidated).toBe(true);
   } finally {
     unsubscribe();
     queryClient.clear();

@@ -30,6 +30,7 @@ describe("AnalyticsConsentSettingsView", () => {
         consent={consent}
         draft={consent}
         onSave={vi.fn()}
+        onCancel={vi.fn()}
         message=""
         onGrant={vi.fn()}
         onDeny={vi.fn()}
@@ -54,6 +55,7 @@ describe("AnalyticsConsentSettingsView", () => {
         consent="denied"
         draft="denied"
         onSave={vi.fn()}
+        onCancel={vi.fn()}
         message={message}
         onGrant={vi.fn()}
         onDeny={vi.fn()}
@@ -72,6 +74,7 @@ it("preserves the policy destination and all consent notice meanings in a disclo
       draft="pending"
       message=""
       onSave={vi.fn()}
+      onCancel={vi.fn()}
       onGrant={vi.fn()}
       onDeny={vi.fn()}
     />,

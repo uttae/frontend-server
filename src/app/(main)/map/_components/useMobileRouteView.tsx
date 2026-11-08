@@ -21,10 +21,9 @@ import {
   scheduleIdsToRouteColors,
   sortedScheduleIdsForRouteColors,
 } from "@/lib/plan/planRouteDayColors";
-import { readSchedulePlanPlacesFromCache } from "@/lib/plan/scheduleItemPlaces";
+import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 
 import {
@@ -118,14 +117,12 @@ export function useMobileRouteView({
   const schedulesQuery = useRoomSchedules(rid || null);
   const schedules = useMemo(() => sortRoomSchedules(schedulesQuery.data ?? []), [schedulesQuery.data]);
 
-  // 일정 목록을 불러올 때 모든 일차의 장소(미리보기 포함)가 캐시에 채워지므로 캐시만 읽는다
+  // 일정 목록을 불러올 때 모든 일차의 장소(미리보기 포함)가 캐시에 채워진다 — 일정 화면과 같은 조회라 무효화된 일차만 다시 받는다
   const dayPlacesQueries = useQueries({
     queries: schedules.map((s) => ({
-      queryKey: scheduleItemsQueryKey(rid || null, s.scheduleId),
-      queryFn: () => readSchedulePlanPlacesFromCache(queryClient, rid, s.scheduleId),
-      enabled: active && rid.length > 0 && schedulesQuery.isSuccess,
-      staleTime: Infinity,
-      refetchOnMount: false,
+      ...schedulePlanPlacesQueryOptions(queryClient, rid, s.scheduleId),
+      // 재조회가 실패해도(status 'error') 받아 둔 일정으로 계속 그린다
+      enabled: active && rid.length > 0 && schedulesQuery.data !== undefined,
       refetchOnWindowFocus: false,
     })),
   });
@@ -425,7 +422,7 @@ export function useMobileRouteView({
     return null;
   } else if (schedulesQuery.isLoading || (schedules.length > 0 && entries.length === 0)) {
     return <RouteCardSlot><MobileRoutePlaceCardSkeleton /></RouteCardSlot>;
-  } else if (schedulesQuery.isError) {
+  } else if (schedulesQuery.isLoadingError) {
     return (
       <RouteCardSlot>
         <MobileRouteMessageCard tone="error" title="일정을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." />

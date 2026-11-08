@@ -5,6 +5,7 @@ import { useState } from "react";
 import { CloseIcon, PlusIcon, ReactionStarIcon } from "@/assets/icons";
 import { DashedBorder } from "@/components/mobile/DashedPlaceholderBox";
 import { usePlaceDetailData } from "@/components/place/usePlaceDetailData";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import { MobileRouteExpandedShell } from "./MobileRoutePlaceCard";
@@ -78,8 +79,8 @@ export function MobileRouteCandidateCard({
               aria-busy
               className="flex flex-col gap-1.5 pt-0.5"
             >
-              <span className="h-5 w-2/3 animate-pulse rounded bg-fill-strong" />
-              <span className="h-4 w-1/2 animate-pulse rounded bg-fill" />
+              <Skeleton render={<span />} className="h-5 w-2/3" />
+              <Skeleton render={<span />} tone="subtle" className="h-4 w-1/2" />
             </output>
           ) : (
             <>

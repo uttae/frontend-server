@@ -11,14 +11,14 @@ import { roomDetailQueryKey, roomMembersQueryKey, sessionUserQueryKey } from "@/
 import { useSessionStore } from "@/stores/session-store";
 
 const calls = vi.hoisted(() => ({
-  issue: vi.fn(), update: vi.fn(), hydrate: vi.fn(),
+  issue: vi.fn(), update: vi.fn(), refresh: vi.fn(),
   track: vi.fn(), initAll: vi.fn(async () => {}), setUserId: vi.fn(), setOptOut: vi.fn(), reset: vi.fn(),
 }));
 vi.mock("@/lib/api/rooms", async (original) => ({
   ...await original<object>(), regenerateInviteCode: calls.issue, updateRoom: calls.update,
 }));
 vi.mock("@/lib/rooms", async (original) => ({
-  ...await original<object>(), hydrateRoomSchedulesFromServer: calls.hydrate,
+  ...await original<object>(), refreshRoomSchedules: calls.refresh,
 }));
 vi.mock("@amplitude/unified", () => ({
   track: calls.track, initAll: calls.initAll, setUserId: calls.setUserId, setOptOut: calls.setOptOut, reset: calls.reset,
@@ -57,7 +57,7 @@ beforeEach(async () => {
   await Promise.resolve(); await Promise.resolve();
   calls.issue.mockResolvedValue({ inviteCode: "new-private-code" });
   calls.update.mockResolvedValue({ ...detail, title: "changed-private-title" });
-  calls.hydrate.mockResolvedValue([]);
+  calls.refresh.mockResolvedValue([]);
   await act(async () => { renderer = create(<QueryClientProvider client={client}><Harness /></QueryClientProvider>); });
 });
 afterEach(async () => {
@@ -84,7 +84,7 @@ it("does not count automatic fallback or failed issuance", async () => {
 });
 it("uses the actual PATCH response role and counts success before a failing follow-up refresh", async () => {
   client.setQueryData(roomDetailQueryKey(detail.id), { ...detail, role: "HOST" });
-  calls.hydrate.mockRejectedValue(new Error("refresh failed"));
+  calls.refresh.mockRejectedValue(new Error("refresh failed"));
   await act(async () => { await expect(update.mutateAsync({ ...variables, data: { endDate: "2026-10-13" } })).rejects.toThrow("refresh failed"); });
   expect(events()).toEqual([{ event_type: "room_info_updated", event_properties: { room_id: detail.id, role: "member", page_path: "/", page_location: window.location.origin + "/" }, groups: { room_id: detail.id } }]);
 });
