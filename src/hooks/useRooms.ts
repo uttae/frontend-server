@@ -59,8 +59,8 @@ import {
 import {
   applyCreatedScheduleItemToPlanPlaces,
   applyRoomScheduleItemToPlanPlaces,
-  applyScheduleItemDeletedOnClient,
   createScheduleItemAtPlanIndex,
+  removeScheduleItemFromPlanPlacesCache,
   schedulePlanPlacesQueryOptions,
   syncAfterCrossScheduleItemMove,
   syncPlanPlacesAfterReorderSuccess,
@@ -92,9 +92,7 @@ import {
   pathSuspendsStomp,
 } from "@/lib/stomp/stompPathPolicy";
 import { persistedScheduleItemRouteQueryOptions } from "@/lib/plan/scheduleItemRoutePersistedQuery";
-import { invalidateScheduleItemRouteForWholeSchedule } from "@/lib/plan/scheduleStompRouteScope";
 import type { ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
-import { usePlanMapDirectionsEpochStore } from "@/stores/plan-map-directions-epoch-store";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { applyHostTransferToCache } from "@/lib/rooms/host-transfer-cache";
 import { readSessionUserId } from "@/lib/session-user-cache";
@@ -176,6 +174,8 @@ export function useScheduleItemRoute(
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
+  /** 다음 장소의 `itemId` */
+  destinationItemId: number | null,
   travelMode: ScheduleTravelModeValue | null,
   /** 일정 장소 목록상 구간 소스 아이디가 존재·목록 안정 후에만 true */
   routeQueryEnabled = true,
@@ -189,6 +189,7 @@ export function useScheduleItemRoute(
       rid,
       scheduleId,
       segmentSourceItemId,
+      destinationItemId,
       travelMode,
       scheduleFingerprint,
       { segmentReady: Boolean(routeQueryEnabled) },
@@ -206,22 +207,12 @@ export function useDeleteRoomSchedule() {
       roomId: string;
       scheduleId: number;
     }) => deleteRoomSchedule(roomId, scheduleId),
-    onSuccess: async (_data, { roomId, scheduleId }) => {
+    onSuccess: async (_data, { roomId }) => {
       await invalidateExpenses(queryClient, roomId);
       const id = roomId.trim();
       if (!id.length) return;
 
-      const sorted = await refreshRoomSchedules(queryClient, id);
-      const scheduleStillExists = sorted.some((s) => s.scheduleId === scheduleId);
-      if (scheduleStillExists) {
-        await invalidateScheduleItemRouteForWholeSchedule(
-          queryClient,
-          id,
-          scheduleId,
-        );
-        usePlanMapDirectionsEpochStore.getState().bumpForDirections(id);
-      }
-
+      await refreshRoomSchedules(queryClient, id);
       await syncRoomDetailFromServer(queryClient, id);
     },
   });
@@ -300,7 +291,7 @@ export function useMoveScheduleItemToSchedule() {
     },
     onSuccess: async (
       _moved,
-      { roomId, sourceScheduleId, targetScheduleId, itemId },
+      { roomId, sourceScheduleId, targetScheduleId },
     ) => {
       await invalidateExpenses(queryClient, roomId);
       await syncAfterCrossScheduleItemMove(
@@ -308,7 +299,6 @@ export function useMoveScheduleItemToSchedule() {
         roomId,
         sourceScheduleId,
         targetScheduleId,
-        itemId,
       );
     },
   });
@@ -450,7 +440,7 @@ export function useDeleteScheduleItem() {
     }) => deleteScheduleItem(vars.roomId, vars.scheduleId, vars.itemId),
     onSuccess: async (_, { roomId, scheduleId, itemId }) => {
       await invalidateExpenses(queryClient, roomId);
-      await applyScheduleItemDeletedOnClient(
+      removeScheduleItemFromPlanPlacesCache(
         queryClient,
         roomId,
         scheduleId,
@@ -478,13 +468,12 @@ export function useReorderScheduleItem() {
         vars.itemId,
         vars.body,
       ),
-    onSuccess: (items, { roomId, scheduleId, itemId }) =>
+    onSuccess: (items, { roomId, scheduleId }) =>
       syncPlanPlacesAfterReorderSuccess(
         queryClient,
         roomId,
         scheduleId,
         items,
-        itemId,
       ),
     onSettled: (_items, _error, { roomId, scheduleId }) =>
       invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),

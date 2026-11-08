@@ -17,7 +17,7 @@ vi.mock("@/lib/rooms", async (importOriginal) => ({
 }));
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
   syncAfterCrossScheduleItemMove: vi.fn(),
-  applyScheduleItemDeletedOnClient: vi.fn(),
+  removeScheduleItemFromPlanPlacesCache: vi.fn(),
 }));
 import {
   useMoveRoomSchedule,

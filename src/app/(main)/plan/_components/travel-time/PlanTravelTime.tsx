@@ -40,6 +40,8 @@ export type PlanTravelTimeProps = {
   roomId: string;
   scheduleId: number;
   segmentSourceItemId: number;
+  /** 다음 장소의 `itemId` — 경로를 이 항목까지 계산한다 */
+  destinationItemId: number;
   scheduleFingerprint: string;
   /** 서버 원본 공유 이동수단 — 미지원·미설정이면 선택을 기다립니다. */
   travelMode?: string;
@@ -57,6 +59,7 @@ export function PlanTravelTime({
   roomId,
   scheduleId,
   segmentSourceItemId,
+  destinationItemId,
   scheduleFingerprint,
   travelMode,
   routeQueryEnabled = true,
@@ -105,6 +108,7 @@ export function PlanTravelTime({
     roomId,
     scheduleId,
     segmentSourceItemId,
+    destinationItemId,
     selectedMode,
     routeQueryEnabled,
     fpTrim,
@@ -126,6 +130,7 @@ export function PlanTravelTime({
         rid,
         scheduleId,
         segmentSourceItemId,
+        destinationItemId,
         mode,
         fpTrim,
         {

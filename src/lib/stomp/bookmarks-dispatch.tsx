@@ -3,7 +3,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { invalidateRoomBookmarkQueries } from "@/lib/bookmarks-invalidation";
-import { readSessionUserId } from "@/lib/session-user-cache";
+import { isOwnEcho } from "@/lib/stomp/own-echo";
 import type { RoomBookmarkChangedEvent } from "@/types/roomBookmarkStomp";
 
 /** bookmarks 토픽 STOMP — React Query 무효화만 (토스트·선 fetch 없음) */
@@ -15,13 +15,8 @@ export async function applyRoomBookmarkStompMessage(
   const rid = String(event.roomId ?? "").trim();
   if (!rid) return;
 
-  const me = readSessionUserId(queryClient);
-  const actorIsMe =
-    typeof me === "number" &&
-    Number.isFinite(me) &&
-    me === event.actorUserId;
-  /** 본인 mutation은 `onSuccess`에서 캐시 패치 */
-  if (actorIsMe) {
+  /** 본인 탭의 변경은 그 탭의 mutation이 캐시를 맞춘다 */
+  if (isOwnEcho(queryClient, event)) {
     return;
   }
 

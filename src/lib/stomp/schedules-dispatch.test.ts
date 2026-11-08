@@ -1,20 +1,14 @@
 import { QueryClient } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { sessionUserQueryKey } from "@/lib/query-keys";
+import { scheduleItemRouteQueryKey, sessionUserQueryKey } from "@/lib/query-keys";
 
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 
 const mocks = vi.hoisted(() => ({
-  collectSegmentSourcesForCreate: vi.fn(),
-  collectSegmentSourcesForDelete: vi.fn(),
-  collectSegmentSourcesForReorder: vi.fn(),
   invalidateSchedulePlanPlaces: vi.fn(),
-  invalidateScheduleItemRouteForSources: vi.fn(),
-  invalidateScheduleItemRouteForWholeSchedule: vi.fn(),
-  readOrderedItemIdsFromScheduleItemsCache: vi.fn(),
-  removeRouteQueriesForDeletedItemSource: vi.fn(),
   syncAfterCrossScheduleItemMove: vi.fn(),
+  syncRoomDetailFromServer: vi.fn(),
 }));
 
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
@@ -22,32 +16,12 @@ vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
   syncAfterCrossScheduleItemMove: mocks.syncAfterCrossScheduleItemMove,
 }));
 
-vi.mock("@/lib/plan/scheduleStompRouteScope", () => ({
-  collectSegmentSourcesForCreate: mocks.collectSegmentSourcesForCreate,
-  collectSegmentSourcesForDelete: mocks.collectSegmentSourcesForDelete,
-  collectSegmentSourcesForReorder: mocks.collectSegmentSourcesForReorder,
-  invalidateScheduleItemRouteForSources:
-    mocks.invalidateScheduleItemRouteForSources,
-  invalidateScheduleItemRouteForWholeSchedule:
-    mocks.invalidateScheduleItemRouteForWholeSchedule,
-  readOrderedItemIdsFromScheduleItemsCache:
-    mocks.readOrderedItemIdsFromScheduleItemsCache,
-  removeRouteQueriesForDeletedItemSource:
-    mocks.removeRouteQueriesForDeletedItemSource,
-}));
-
 vi.mock("@/lib/rooms", () => ({
-  syncRoomDetailFromServer: vi.fn(),
+  syncRoomDetailFromServer: mocks.syncRoomDetailFromServer,
 }));
 
-vi.mock("@/stores/plan-map-directions-epoch-store", () => ({
-  usePlanMapDirectionsEpochStore: {
-    getState: () => ({
-      bumpForDirections: vi.fn(),
-      bumpSegments: vi.fn(),
-    }),
-  },
-}));
+vi.mock("@/lib/tab-id", () => ({ getTabId: () => "tab-a" }));
+const MY_TAB_ID = "tab-a";
 
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 
@@ -68,15 +42,14 @@ function itemEvent(
 
 describe("dispatchRoomScheduleEvent", () => {
   let queryClient: QueryClient;
+  // 경로는 도착 항목까지 key에 있어 일정이 바뀌어도 무효화하지 않는다 — 순서가 바뀐 구간은 새 key로 받는다
+  const routeKey = scheduleItemRouteQueryKey("room-1", 10, 20, 21, "DRIVING");
 
   beforeEach(() => {
     queryClient = new QueryClient();
+    queryClient.setQueryData(routeKey, { travelMode: "DRIVING", distanceMeters: 100, durationSeconds: 60 });
     vi.clearAllMocks();
     mocks.invalidateSchedulePlanPlaces.mockResolvedValue(undefined);
-    mocks.invalidateScheduleItemRouteForSources.mockResolvedValue(undefined);
-    mocks.invalidateScheduleItemRouteForWholeSchedule.mockResolvedValue(
-      undefined,
-    );
     mocks.syncAfterCrossScheduleItemMove.mockResolvedValue(undefined);
   });
 
@@ -85,85 +58,28 @@ describe("dispatchRoomScheduleEvent", () => {
     queryClient.clear();
   });
 
-  it.each([false, true])("refetches ID-only time updates, including own-user tabs (%s)", async (ownUser) => {
+  it("refetches consecutive ID-only time updates once", async () => {
     vi.useFakeTimers();
-    if (ownUser) queryClient.setQueryData(sessionUserQueryKey, { id: 99 });
     const event = itemEvent("SCHEDULE_ITEM_UPDATED", []);
     await dispatchRoomScheduleEvent(queryClient, event);
     await dispatchRoomScheduleEvent(queryClient, event);
     await vi.runAllTimersAsync();
-    // 본인 반향만 모였으면 본인 저장이 끝나며 다시 받는 조회에 합류한다
-    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10, {
-      joinInFlight: ownUser,
-    });
-    expect(mocks.invalidateScheduleItemRouteForSources).not.toHaveBeenCalled();
-    expect(mocks.invalidateScheduleItemRouteForWholeSchedule).not.toHaveBeenCalled();
+
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
+    expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
   });
 
-  it("uses affectedRouteItemIds instead of calculating routes for a created item", async () => {
-    mocks.readOrderedItemIdsFromScheduleItemsCache.mockReturnValue([10, 20]);
-    mocks.collectSegmentSourcesForCreate.mockReturnValue({
-      sources: [10, 20],
-      useFallback: false,
-    });
+  it.each(["SCHEDULE_ITEM_CREATED", "SCHEDULE_ITEM_DELETED", "SCHEDULE_ITEMS_REORDERED"] as const)(
+    "refetches the day list without invalidating route caches for %s",
+    async (type) => {
+      await dispatchRoomScheduleEvent(queryClient, itemEvent(type, [20]));
 
-    await dispatchRoomScheduleEvent(
-      queryClient,
-      itemEvent("SCHEDULE_ITEM_CREATED", [777]),
-    );
+      expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
+      expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
+    },
+  );
 
-    expect(mocks.collectSegmentSourcesForCreate).not.toHaveBeenCalled();
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      [777],
-    );
-  });
-
-  it("uses affectedRouteItemIds instead of calculating routes for a deleted item", async () => {
-    mocks.collectSegmentSourcesForDelete.mockReturnValue({
-      sources: [10],
-      useFallback: false,
-    });
-
-    await dispatchRoomScheduleEvent(
-      queryClient,
-      itemEvent("SCHEDULE_ITEM_DELETED", [888]),
-    );
-
-    expect(mocks.collectSegmentSourcesForDelete).not.toHaveBeenCalled();
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      [888],
-    );
-  });
-
-  it("uses affectedRouteItemIds instead of calculating routes after reorder", async () => {
-    vi.useFakeTimers();
-    mocks.collectSegmentSourcesForReorder.mockReturnValue({
-      sources: [10, 20],
-      useFallback: false,
-    });
-
-    await dispatchRoomScheduleEvent(
-      queryClient,
-      itemEvent("SCHEDULE_ITEMS_REORDERED", [999]),
-    );
-    await vi.runAllTimersAsync();
-
-    expect(mocks.collectSegmentSourcesForReorder).not.toHaveBeenCalled();
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      [999],
-    );
-  });
-
-  it("passes affectedRouteItemIds through a cross-schedule move", async () => {
+  it("refetches both days after a cross-schedule move", async () => {
     const event = itemEvent("SCHEDULE_ITEM_MOVED", [11, 21, 20]);
     event.scheduleId = 20;
     event.scheduleIds = [10, 20];
@@ -175,20 +91,12 @@ describe("dispatchRoomScheduleEvent", () => {
       "room-1",
       10,
       20,
-      20,
-      [11, 21, 20],
     );
+    expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
   });
 
-  it("refreshes travel mode before invalidating affectedRouteItemIds", async () => {
+  it("refetches the day list after another member changes a travel mode, leaving route caches as they are", async () => {
     vi.useFakeTimers();
-    const order: string[] = [];
-    mocks.invalidateSchedulePlanPlaces.mockImplementation(async () => {
-      order.push("refetch");
-    });
-    mocks.invalidateScheduleItemRouteForSources.mockImplementation(async () => {
-      order.push("invalidate");
-    });
 
     await dispatchRoomScheduleEvent(
       queryClient,
@@ -196,52 +104,8 @@ describe("dispatchRoomScheduleEvent", () => {
     );
     await vi.runAllTimersAsync();
 
-    expect(order).toEqual(["refetch", "invalidate"]);
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      [20],
-    );
-  });
-
-  it("preserves a newer route bucket when an earlier travel-mode refresh fails", async () => {
-    vi.useFakeTimers();
-    let rejectFirst!: (reason?: unknown) => void;
-    let resolveSecond!: () => void;
-    const first = new Promise<void>((_, reject) => {
-      rejectFirst = reject;
-    });
-    const second = new Promise<void>((resolve) => {
-      resolveSecond = resolve;
-    });
-    mocks.invalidateSchedulePlanPlaces
-      .mockReturnValueOnce(first)
-      .mockReturnValueOnce(second);
-
-    await dispatchRoomScheduleEvent(
-      queryClient,
-      itemEvent("SCHEDULE_ITEM_TRAVEL_MODE_UPDATED", [20]),
-    );
-    await vi.advanceTimersByTimeAsync(90);
-
-    await dispatchRoomScheduleEvent(
-      queryClient,
-      itemEvent("SCHEDULE_ITEM_TRAVEL_MODE_UPDATED", [30]),
-    );
-    await vi.advanceTimersByTimeAsync(90);
-
-    rejectFirst(new Error("first refresh failed"));
-    resolveSecond();
-    await vi.runAllTimersAsync();
-
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledTimes(1);
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      [30],
-    );
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
+    expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
   });
 });
 
@@ -254,4 +118,87 @@ describe("expense synchronization on existing schedule events",()=>{
   for(const suffix of ["list","summary"])expect(client.getQueryState(["room-expenses","room-1",suffix])?.isInvalidated).toBe(true);
   client.clear();
  });
+});
+
+describe("echo of this tab vs. other tabs of the same account", () => {
+  const SKIPPABLE_TYPES = [
+    "ROOM_SCHEDULES_RESYNCED",
+    "SCHEDULE_ITEM_MOVED",
+    "SCHEDULE_ITEM_DELETED",
+    "SCHEDULE_ITEM_CREATED",
+    "SCHEDULE_ITEMS_REORDERED",
+    "SCHEDULE_ITEM_TRAVEL_MODE_UPDATED",
+  ] as const;
+  let queryClient: QueryClient;
+
+  /** itemEvent의 actorUserId(99)가 이 계정이다 */
+  function ownAccountEvent(
+    type: RoomScheduleChangedEvent["type"],
+    originTabId: string | null,
+  ): RoomScheduleChangedEvent {
+    return { ...itemEvent(type, [20]), scheduleIds: [10, 11], originTabId };
+  }
+
+  /** 일차 목록·일정 전체·방 상세 중 어느 것이든 다시 받은 횟수 */
+  const refetchCount = () =>
+    mocks.invalidateSchedulePlanPlaces.mock.calls.length +
+    mocks.syncAfterCrossScheduleItemMove.mock.calls.length +
+    mocks.syncRoomDetailFromServer.mock.calls.length;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.clearAllMocks();
+    mocks.invalidateSchedulePlanPlaces.mockResolvedValue(undefined);
+    mocks.syncAfterCrossScheduleItemMove.mockResolvedValue(undefined);
+    queryClient = new QueryClient();
+    queryClient.setQueryData(sessionUserQueryKey, { id: 99 });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    queryClient.clear();
+  });
+
+  it.each(SKIPPABLE_TYPES)("skips %s sent from this tab", async (type) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, MY_TAB_ID));
+    await vi.runAllTimersAsync();
+
+    expect(refetchCount()).toBe(0);
+  });
+
+  it.each(SKIPPABLE_TYPES)("applies %s sent from another tab of the same account", async (type) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, "tab-b"));
+    await vi.runAllTimersAsync();
+
+    expect(refetchCount()).toBe(1);
+  });
+
+  it.each(SKIPPABLE_TYPES)("applies %s of the same account without a tab ID — it may come from another tab", async (type) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, null));
+    await vi.runAllTimersAsync();
+
+    expect(refetchCount()).toBe(1);
+  });
+
+  it("applies a change whose tab ID matches this tab but comes from another account", async () => {
+    queryClient.setQueryData(sessionUserQueryKey, { id: 100 });
+
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_DELETED", MY_TAB_ID));
+
+    expect(refetchCount()).toBe(1);
+  });
+
+  it("skips a time update sent from this tab — its own settled refetch already has it", async () => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", MY_TAB_ID));
+    await vi.runAllTimersAsync();
+
+    expect(mocks.invalidateSchedulePlanPlaces).not.toHaveBeenCalled();
+  });
+
+  it.each(["tab-b", null])("refetches a time update of the same account from another tab (%s)", async (originTabId) => {
+    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent("SCHEDULE_ITEM_UPDATED", originTabId));
+    await vi.runAllTimersAsync();
+
+    expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
+  });
 });
