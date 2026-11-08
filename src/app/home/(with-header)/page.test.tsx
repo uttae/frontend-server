@@ -2,6 +2,8 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { FEEDBACK_FORM_URL } from "@/lib/contact";
+
 import HomePage from "./page";
 
 const state = vi.hoisted(() => ({ isMobileDevice: true }));
@@ -53,10 +55,10 @@ it("includes the room-list site footer in the mobile empty page", async () => {
 it("places the feedback banner before the room list and links it to the form", async () => {
   await act(async () => root.render(<HomePage />));
 
-  const banner = host.querySelector<HTMLAnchorElement>('a[href="https://forms.gle/giYqRzrhCYF9Hz1M9"]');
+  const banner = host.querySelector<HTMLAnchorElement>(`a[href="${FEEDBACK_FORM_URL}"]`);
   const heading = host.querySelector("h1");
   expect(banner).not.toBeNull();
   expect(heading).not.toBeNull();
-  expect(banner?.getAttribute("aria-label")).toContain("피드백 이벤트");
+  expect(banner?.getAttribute("aria-label")).toContain("피드백 남기기");
   expect(banner?.compareDocumentPosition(heading!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
 });

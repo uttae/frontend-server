@@ -3,8 +3,8 @@
   container-type: inline-size;
   overflow: hidden;
   border-radius: 8px;
-  background: #d6f2ff;
-  color: #000;
+  background: var(--color-primary-subtle);
+  color: var(--color-text-default);
 }
 
 /* Scale the Figma canvas with its container, keeping text sharp at any DPR. */
@@ -41,19 +41,7 @@
 }
 
 .feedback {
-  color: #0183ff;
-}
-
-.reward {
-  color: #ff5521;
-}
-
-.period {
-  left: calc(367 * var(--unit));
-  top: calc(124 * var(--unit));
-  font-size: calc(13 * var(--unit));
-  line-height: calc(24 * var(--unit));
-  letter-spacing: calc(-0.26 * var(--unit));
+  color: var(--color-primary-default);
 }
 
 .cta {
@@ -61,7 +49,7 @@
   inset: auto 0 0;
   height: calc(62 * var(--unit));
   padding: calc(19 * var(--unit)) calc(49 * var(--unit));
-  background: linear-gradient(to right, #0183ff, #a6d3ff);
+  background: linear-gradient(to right, var(--color-primary-default), #a6d3ff);
   color: #fff;
   font-size: calc(16 * var(--unit));
   font-weight: 700;
@@ -79,17 +67,13 @@
   box-shadow: 0 calc(10 * var(--unit)) calc(10 * var(--unit)) rgb(0 0 0 / 25%);
 }
 
-.burger {
+.reviewIcon {
   position: absolute;
-  left: calc(690 * var(--unit));
-  top: calc(55 * var(--unit));
-  width: calc(224 * var(--unit));
-  height: calc(179 * var(--unit));
-  background: url("/rooms/banners/feedback/burger.webp") center / cover no-repeat;
-}
-
-.badge {
-  display: none;
+  left: calc(680 * var(--unit));
+  top: calc(45 * var(--unit));
+  width: calc(180 * var(--unit));
+  height: calc(180 * var(--unit));
+  background: url("/rooms/banners/feedback/review-icon.webp") center / contain no-repeat;
 }
 
 :global(.is-mobile-device) .canvas {
@@ -98,49 +82,43 @@
 }
 
 :global(.is-mobile-device) .subtitle {
-  left: calc(55 * var(--unit));
-  top: calc(6 * var(--unit));
-  font-size: calc(12 * var(--unit));
-  letter-spacing: calc(-0.24 * var(--unit));
+  left: calc(13 * var(--unit));
+  top: calc(12 * var(--unit));
+  font-size: calc(11 * var(--unit));
+  line-height: calc(16 * var(--unit));
+  letter-spacing: calc(-0.22 * var(--unit));
 }
 
 :global(.is-mobile-device) .title {
   left: calc(13 * var(--unit));
-  top: calc(27 * var(--unit));
-  font-size: calc(28 * var(--unit));
-  line-height: calc(32 * var(--unit));
+  top: calc(32 * var(--unit));
+  font-size: calc(16 * var(--unit));
+  line-height: calc(22 * var(--unit));
+  letter-spacing: calc(-0.32 * var(--unit));
 }
 
-:global(.is-mobile-device) .period {
-  left: calc(10 * var(--unit));
-  top: calc(89 * var(--unit));
+/* Mobile Figma shows the CTA as a blue text line instead of the desktop gradient bar. */
+:global(.is-mobile-device) .cta {
+  inset: auto;
+  left: calc(13 * var(--unit));
+  top: calc(82 * var(--unit));
+  height: auto;
+  padding: 0;
+  background: none;
+  color: var(--color-primary-default);
   font-size: calc(11 * var(--unit));
+  font-weight: 600;
+  line-height: calc(16 * var(--unit));
   letter-spacing: calc(-0.22 * var(--unit));
 }
 
-:global(.is-mobile-device) .burger {
-  left: calc(246 * var(--unit));
-  top: calc(15 * var(--unit));
-  width: calc(147 * var(--unit));
-  height: calc(117 * var(--unit));
+:global(.is-mobile-device) .reviewIcon {
+  left: calc(279 * var(--unit));
+  top: calc(30 * var(--unit));
+  width: calc(72 * var(--unit));
+  height: calc(72 * var(--unit));
 }
 
-:global(.is-mobile-device) .badge {
-  display: block;
-  position: absolute;
-  left: calc(10 * var(--unit));
-  top: calc(10 * var(--unit));
-  width: calc(42 * var(--unit));
-  height: calc(14 * var(--unit));
-  border-radius: 14px;
-  background: #beff0c;
-  font-size: calc(10 * var(--unit));
-  line-height: calc(14 * var(--unit));
-  letter-spacing: calc(-0.2 * var(--unit));
-  text-align: center;
-}
-
-:global(.is-mobile-device) .cta,
 :global(.is-mobile-device) .appPreview {
   display: none;
 }
