@@ -4,7 +4,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { expect, it, vi } from 'vitest';
 import { bookmarkCategoriesQueryKey, roomAllBookmarksQueryKey } from '@/lib/query-keys';
-import { useAllRoomBookmarks, useBookmarkCategories, useCreateRoomBookmarksInCategories, useDeleteBookmarkCategory, useMoveRoomBookmark, useUpdateBookmarkCategory } from './useRooms';
+import { useAllRoomBookmarks, useBookmarkCategories, useCreateRoomBookmarksInCategories, useDeleteBookmarkCategory, useMoveRoomBookmark, useRoomBookmarks, useUpdateBookmarkCategory } from './useRooms';
 import { applyRoomBookmarkStompMessage } from '@/lib/stomp/bookmarks-dispatch';
 const api = vi.hoisted(() => ({ get: vi.fn(), getAll: vi.fn(), deleteCategory: vi.fn(), createBookmarks: vi.fn(), updateCategory: vi.fn(), moveBookmark: vi.fn() }));
 vi.mock('@/lib/api/rooms', async importOriginal => ({...await importOriginal<object>(), getBookmarkCategories: api.get, getAllRoomBookmarks: api.getAll, deleteBookmarkCategory: api.deleteCategory, createRoomBookmarks: api.createBookmarks, updateBookmarkCategory: api.updateCategory, patchRoomBookmarkCategory: api.moveBookmark}));
@@ -125,5 +125,34 @@ it('북마크를 다른 폴더로 옮기면 지금 폴더에서 바로 빠지고
   await act(async () => { await expect(view.result.current.mutateAsync({ roomId: 'room', bookmarkId: 10, categoryId: 1, fromCategoryId: 2 })).rejects.toThrow('conflict'); });
   expect(client.getQueryState(bookmarkCategoriesQueryKey('room'))?.isInvalidated).toBe(true);
   expect(client.getQueryState(roomAllBookmarksQueryKey('room'))?.isInvalidated).toBe(true);
+ } finally { await view.unmount(); client.clear(); vi.unstubAllGlobals(); }
+});
+
+it('폴더별 북마크는 전체 목록 한 번을 걸러 쓰고, 폴더를 바꿔도 다시 받지 않는다', async () => {
+ vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+ api.getAll.mockReset().mockResolvedValue([
+  { bookmarkId: 10, categoryId: 1, googlePlaceId: 'a' },
+  { bookmarkId: 11, categoryId: 2, googlePlaceId: 'b' },
+  { bookmarkId: 12, categoryId: 1, googlePlaceId: 'c' },
+ ]);
+ const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+ let categoryId: number | null = 1;
+ const view = renderHooks(client, () => useRoomBookmarks('room', categoryId));
+ try {
+  await view.mount();
+  await vi.waitFor(() => expect(view.result.current.data?.map((b) => b.bookmarkId)).toEqual([10, 12]));
+
+  categoryId = 2;
+  await view.mount();
+  expect(view.result.current.isPending).toBe(false);
+  expect(view.result.current.data?.map((b) => b.bookmarkId)).toEqual([11]);
+  expect(api.getAll).toHaveBeenCalledTimes(1);
+
+  // 폴더를 고르기 전에는 빈 목록이 아니라 '조회 전'으로 둔다(빈 상태 문구가 잠깐 보이지 않게)
+  categoryId = null;
+  await view.mount();
+  expect(view.result.current.isPending).toBe(true);
+  expect(view.result.current.data).toBeUndefined();
+  expect(api.getAll).toHaveBeenCalledTimes(1);
  } finally { await view.unmount(); client.clear(); vi.unstubAllGlobals(); }
 });
