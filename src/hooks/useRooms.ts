@@ -1,4 +1,5 @@
-import { AnalyticsEvents } from "@/lib/analytics/track";
+import { bucketItemCount } from "@/lib/analytics/context";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { trackRoomMutation } from "@/lib/analytics/room-mutation";
 import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
 import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
@@ -576,6 +577,15 @@ export function useReorderScheduleItem() {
         scheduleItemsQueryKey(roomId.trim(), scheduleId),
         context?.previous,
       );
+    },
+    onSuccess: (items, { roomId }) => {
+      // 서버가 확인한 순서 변경만 기록한다(낙관적 표시는 쓰기 이벤트가 아님). 순서 변경은 드래그로만 하고,
+      // 응답은 그 일차 전체라 길이가 곧 일차의 장소 수다
+      trackAnalyticsEvent(AnalyticsEvents.reorderItinerary, {
+        room_id: roomId,
+        item_count_bucket: bucketItemCount(items.length),
+        method: "drag_drop",
+      });
     },
     onSettled: (_items, _error, { roomId, scheduleId }) =>
       isLastItemMoveOf(queryClient, roomId, scheduleId)

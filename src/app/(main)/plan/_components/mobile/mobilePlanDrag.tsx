@@ -18,8 +18,6 @@ import {
   useReorderScheduleItem,
 } from "@/hooks/useRooms";
 import { useScheduleResyncPending } from "@/hooks/useScheduleResyncPending";
-import { bucketItemCount } from "@/lib/analytics/context";
-import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import {
   clampCrossDayTargetOrderIndex,
   PLAN_ORDER_RESYNCING_MESSAGE,
@@ -282,11 +280,6 @@ export function useMobilePlanDragController({
           scheduleId: sourceScheduleId,
           itemId,
           body: { newOrderIndex: newOrderIndexAfterMove(sourceIndex, targetIndex, sourcePlaces.length) },
-        });
-        trackAnalyticsEvent(AnalyticsEvents.reorderItinerary, {
-          room_id: roomId,
-          item_count_bucket: bucketItemCount(sourcePlaces.length),
-          method: "drag_drop",
         });
       } catch {
         toast.error("순서를 바꾸지 못했어요.");
