@@ -476,23 +476,6 @@ export async function applyCreatedScheduleItemToPlanPlaces(
   );
 }
 
-/** 드래그를 `toIndex` 자리에 놓았을 때 PATCH에 넣을 `newOrderIndex`(0-based) */
-export function newOrderIndexAfterMove(
-  fromIndex: number,
-  toIndex: number,
-  length: number,
-): number {
-  if (length <= 0 || fromIndex < 0 || toIndex < 0 || fromIndex >= length) {
-    return Math.min(Math.max(toIndex, 0), Math.max(length - 1, 0));
-  }
-  const cappedTo = Math.min(toIndex, length - 1);
-  if (fromIndex === cappedTo) return fromIndex;
-  const order = Array.from({ length }, (_, i) => i);
-  const [moved] = order.splice(fromIndex, 1);
-  order.splice(cappedTo, 0, moved);
-  return order.indexOf(moved);
-}
-
 export async function fetchScheduleItemsAsPlanPlaces(
   roomId: string,
   scheduleId: number,
