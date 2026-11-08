@@ -24,18 +24,18 @@ function setup(overrides = {}) {
   return { search, args: { query: "원래 검색어", kind: "whole" as const,
     prediction: { placeId: "first", text: null, structuredFormat: null },
     session: { sessionToken: "server-token", expiresAt: Date.now() + 60000 },
-    mapCenter: { lat: 1, lng: 2 }, isCurrent: () => true, search, ...overrides } };
+    mapCenter: { lat: 1, lng: 2 }, radius: 5000, isCurrent: () => true, search, ...overrides } };
 }
 describe("server session confirmation", () => {
   it("resolves same server token once and seeds full raw detail before publishing anchor", async () => {
-    const { args, search } = setup();
+    const { args, search } = setup({ kind: "specific" });
     const onAnchor = vi.fn(() => expect(client.getQueryData(placeDetailQueryKey("first"))).toEqual(detail));
     const result = await confirmPlaceSearch({ ...args, onAnchor });
     expect(apiFetch).toHaveBeenCalledExactlyOnceWith(expect.stringContaining("/places/resolve"), expect.objectContaining({ method: "POST", body: JSON.stringify({ sessionToken: "server-token", googlePlaceId: "first" }) }));
     expect(result?.anchor?.detail).toEqual(detail);
     expect(result?.termination).toBe("SUCCEEDED");
     expect(onAnchor).toHaveBeenCalledTimes(1);
-    expect(search).toHaveBeenCalledExactlyOnceWith({ query: "원래 검색어", latitude: 37, longitude: 127, radius: 5000 });
+    expect(search).not.toHaveBeenCalled();
   });
   it("frontend cache HIT still resolves; keeps server HIT distinct from termination", async () => {
     client.setQueryData(placeDetailQueryKey("first"), detail);
@@ -51,15 +51,13 @@ describe("server session confirmation", () => {
     expect((await confirmPlaceSearch(args))?.anchor?.detail.rating).toBe(4.5);
     expect(search).not.toHaveBeenCalled();
   });
-  it.each(["absent", "failed", "null coordinates"])("whole uses map-center fallback for %s without another Google call", async mode => {
-    const { args, search } = setup(mode === "absent" ? { prediction: undefined } : {});
-    if (mode === "failed") vi.mocked(apiFetch).mockResolvedValue(Response.json({ code: "EXTERNAL_API_ERROR", message: "실패" }, { status: 502 }));
-    if (mode === "null coordinates") vi.mocked(apiFetch).mockResolvedValue(Response.json({ ...response, detail: { ...detail, location: null } }));
+  // 도쿄 지도에서 '음식점' 첫 후보가 용인의 '음식점' 가게여도 지도 중심에서 찾는다
+  it.each(["with", "without"])("whole searches around the map center %s a first suggestion and never resolves it", async mode => {
+    const { args, search } = setup({ radius: 1234, ...(mode === "without" ? { prediction: undefined } : {}) });
     const result = await confirmPlaceSearch(args);
-    expect(result?.fallback).toBe(true);
-    expect(search).toHaveBeenCalledExactlyOnceWith({ query: "원래 검색어", latitude: 1, longitude: 2, radius: 5000 });
-    expect(apiFetch).toHaveBeenCalledTimes(mode === "absent" ? 0 : 1);
-    if (mode === "null coordinates") expect(result?.termination).toBe("SUCCEEDED");
+    expect(apiFetch).not.toHaveBeenCalled();
+    expect(search).toHaveBeenCalledExactlyOnceWith({ query: "원래 검색어", latitude: 1, longitude: 2, radius: 1234 });
+    expect(result).toMatchObject({ anchor: null, termination: "not-requested" });
   });
   it("specific null coordinates cannot fake location or make supplementary requests", async () => {
     vi.mocked(apiFetch).mockResolvedValue(Response.json({ ...response, detail: { ...detail, location: null } }));
@@ -70,7 +68,7 @@ describe("server session confirmation", () => {
   it("late resolve cannot seed scope cache or publish search", async () => {
     let finish!: (v: Response) => void; let current = true;
     vi.mocked(apiFetch).mockReturnValue(new Promise(r => { finish = r; }));
-    const { args, search } = setup({ isCurrent: () => current });
+    const { args, search } = setup({ kind: "specific", isCurrent: () => current });
     const pending = confirmPlaceSearch(args); current = false; finish(Response.json(response));
     expect(await pending).toBeNull();
     expect(client.getQueryData(placeDetailQueryKey("first"))).toBeUndefined();

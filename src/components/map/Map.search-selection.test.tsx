@@ -50,6 +50,7 @@ vi.mock("@/contexts/MobileViewContext", () => ({
 }));
 vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: boundary.page,
+  fetchPlacesAreaPage: vi.fn(),
 }));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { search: "search" },
