@@ -594,7 +594,8 @@ export function useRoomMembers(roomId: string | null) {
 
   return useQuery({
     queryKey: roomMembersQueryKey(roomId),
-    queryFn: () => getRoomMembers(roomId!),
+    // 멤버 이벤트·접속 변화로 받는 중인 조회가 취소되면 그 HTTP 요청도 끊는다
+    queryFn: ({ signal }) => getRoomMembers(roomId!, signal),
     enabled: !!roomId && (!waitForStompBeforeMembers || stompConnected),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
