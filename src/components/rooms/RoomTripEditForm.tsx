@@ -116,9 +116,8 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
     startDate !== opened.startDate ||
     endDate !== opened.endDate;
 
-  // 칸 오류는 각 form.Field의 validators가 입력할 때마다 칸 아래에 보인다. 적용하기는 같은 스키마로 잠근다
-  // (validators는 건드린 칸에서만 돌아서, 연 순간부터 비어 있던 칸(기간 없는 방 등)도 잠그려면 값으로 다시 본다)
-  const canApply = tripFormSchema.safeParse(values).success && !isPending && isDirty;
+  // 규칙 위반으로는 잠그지 않는다. 틀린 채 누르면 handleSubmit이 칸 검사(연 순간부터 비어 있던 칸 포함)로 막고 칸 아래에 오류를 보인다
+  const canApply = !isPending && isDirty;
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
