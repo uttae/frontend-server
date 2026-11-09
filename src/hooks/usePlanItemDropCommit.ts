@@ -5,6 +5,7 @@ import {
   useMoveScheduleItemToSchedule,
   useReorderScheduleItem,
 } from "@/hooks/useRooms";
+import { messageForSaveError } from "@/lib/api/errors";
 import { resolvePlanItemDrop, type PlanItemDrop } from "@/lib/plan/planItemDrop";
 
 /**
@@ -28,11 +29,7 @@ export function usePlanItemDropCommit(roomId: string) {
         save.kind === "reorder"
           ? reorderAsync(save.vars).catch(() => toast.error("순서를 바꾸지 못했어요."))
           : moveAsync(save.vars).catch((err: unknown) =>
-              toast.error(
-                err instanceof Error && err.message.trim()
-                  ? err.message
-                  : "다른 일차로 옮기지 못했어요.",
-              ),
+              toast.error(messageForSaveError(err, "다른 일차로 옮기지 못했어요.")),
             );
       void saving.finally(onSettled);
       return true;

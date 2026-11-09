@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
 import { useMoveRoomSchedule } from "@/hooks/useRooms";
+import { messageForSaveError } from "@/lib/api/errors";
 import type { RoomSchedule } from "@/lib/api/rooms";
 import {
   computeRowTranslateY,
@@ -185,11 +186,7 @@ export function usePlanScheduleDayReorder({
           targetDayNumber,
         });
       } catch (err) {
-        toast.error(
-          err instanceof Error && err.message.trim()
-            ? err.message
-            : "일차 순서를 바꾸지 못했어요.",
-        );
+        toast.error(messageForSaveError(err, "일차 순서를 바꾸지 못했어요."));
       } finally {
         if (pendingDropRef.current === drop) {
           pendingDropRef.current = null;

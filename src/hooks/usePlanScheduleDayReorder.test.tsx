@@ -9,6 +9,8 @@ import { usePlanScheduleDayReorder } from "./usePlanScheduleDayReorder";
 
 const move = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 vi.mock("@/hooks/useRooms", () => ({ useMoveRoomSchedule: () => move }));
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock("sonner", () => ({ toast: { error: toastError } }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const HEIGHT = 200;
@@ -44,6 +46,7 @@ function dragEvent(transfer: DataTransfer, target: Element, clientY: number) {
 }
 
 beforeEach(() => {
+  toastError.mockClear();
   move.mutateAsync.mockReset();
   move.isPending = false;
 });
@@ -114,6 +117,27 @@ it("starts the next day drag while the previous one is still saving, and the ear
     });
     expect(hook.current.isDraggingActive).toBe(true);
     expect(hook.current.getSectionProps(1).dragHandleProps.isDragging).toBe(true);
+  } finally {
+    await hook.unmount();
+  }
+});
+
+it("puts the days back with a plain message when the day move cannot reach the server", async () => {
+  move.mutateAsync.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  const schedules = [day(10, 1), day(20, 2), day(30, 3)];
+  const hook = hookHarness((list: RoomSchedule[]) => usePlanScheduleDayReorder({ roomId: "room-a", schedules: list }));
+  const sections = [0, 1, 2].map(section);
+  const transfer = dataTransfer();
+  try {
+    await hook.render(schedules);
+    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
+    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
+    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
+    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+    await act(async () => { await hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
+
+    expect(toastError).toHaveBeenCalledWith("일차 순서를 바꾸지 못했어요.");
+    expect(hook.current.isDraggingActive).toBe(false);
   } finally {
     await hook.unmount();
   }

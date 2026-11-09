@@ -242,6 +242,15 @@ export function isNetworkError(error: unknown): boolean {
   return error instanceof TypeError;
 }
 
+/**
+ * 저장 실패 토스트 문구 — 서버가 준 문구가 있으면 그 문구, 응답을 받지 못한 네트워크 오류는 `fallback`.
+ * 네트워크 오류의 메시지는 브라우저 문구(`Failed to fetch`)라 사용자에게 보이지 않는다
+ */
+export function messageForSaveError(error: unknown, fallback: string): string {
+  if (isNetworkError(error) || !(error instanceof Error)) return fallback;
+  return error.message.trim() || fallback;
+}
+
 /** 방 생성·수정 API의 여행지 관련 서버 에러(HTTP 4xx) → 한국어 사용자 메시지 */
 export function messageForRoomDestinationError(
   body: unknown,
