@@ -15,10 +15,10 @@ import {
 
 /*
  * 비용 추가·수정 폼 스키마. 문구와 판정은 expense-name·expense-policy의 규칙 함수를 그대로 쓴다.
- * 칸 하나 규칙(제목·카테고리·메모)은 칸 스키마로 그 칸 validators에 두고,
- * 다른 값이나 서버 목록을 함께 봐야 하는 규칙(금액×통화, 일차×연결 장소, 결제자×부담자)은 폼 스키마에 둔다
+ * 칸 규칙과 교차 규칙을 한 스키마에 두고 폼 validators 하나로 검사한다. 칸에 따로 validator를 두면
+ * TanStack 제출이 칸 검사에서 멈춰 폼 검사(교차 규칙)가 돌지 않으므로, 첫 저장에 모든 칸 오류가 함께 보이도록 한 곳에서 본다
  */
-export const expenseNameSchema = z
+const expenseNameSchema = z
   .string()
   .nullish()
   .superRefine((name, ctx) => {
@@ -27,12 +27,12 @@ export const expenseNameSchema = z
   });
 
 // 새 비용은 카테고리를 고르기 전까지 빈 값이다
-export const expenseCategorySchema = z.custom<ExpenseCategory | "">().superRefine((category, ctx) => {
+const expenseCategorySchema = z.custom<ExpenseCategory | "">().superRefine((category, ctx) => {
   const message = expenseCategoryError(category);
   if (message) ctx.addIssue({ code: "custom", message });
 });
 
-export const expenseMemoSchema = z
+const expenseMemoSchema = z
   .string()
   .nullable()
   .superRefine((memo, ctx) => {
@@ -49,7 +49,7 @@ type ExpenseFormContext = {
   daysOf: (scheduleId: number | null) => ExpenseDay[];
 };
 
-/** 교차 규칙만 본다. 오류는 화면의 칸(form.Field name)에 붙도록 path를 금액·연결 장소·결제자 칸으로 둔다 */
+/** 오류는 화면의 칸(form.Field name)에 붙도록, 교차 규칙은 금액·연결 장소·결제자 칸을 path로 준다 */
 export function createExpenseFormSchema({ currencies, members, original, daysOf }: ExpenseFormContext) {
   return z
     .object({
@@ -58,9 +58,9 @@ export function createExpenseFormSchema({ currencies, members, original, daysOf 
       scheduleItemId: z.number().nullable(),
       totalAmount: z.string(),
       currency: z.string(),
-      category: z.custom<ExpenseCategory | "">(),
-      name: z.string().nullish(),
-      memo: z.string().nullable(),
+      category: expenseCategorySchema,
+      name: expenseNameSchema,
+      memo: expenseMemoSchema,
       payerUserIds: z.array(z.number()),
       participantUserIds: z.array(z.number()),
     })

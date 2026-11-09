@@ -6,9 +6,6 @@ import {
   createExpenseFormSchema,
   EXPENSE_BUDGET_INVALID_MESSAGE,
   expenseBudgetSchema,
-  expenseCategorySchema,
-  expenseMemoSchema,
-  expenseNameSchema,
 } from "./expense-form";
 
 const usd = { currency: "USD", fractionDigits: 2, maximumAmount: "999999999999999.99" };
@@ -66,22 +63,28 @@ describe("createExpenseFormSchema", () => {
     ]);
   });
 
-  it("leaves single-field rules to the field schemas", () => {
-    expect(schema.safeParse({ ...values, category: "", memo: "가".repeat(1001) }).success).toBe(true);
+  it("puts single-field issues on their own fields", () => {
+    expect(issuesOf(schema.safeParse({ ...values, category: "" }))).toEqual([
+      { path: ["category"], message: "카테고리를 선택해 주세요." },
+    ]);
+    expect(issuesOf(schema.safeParse({ ...values, memo: "가".repeat(1001) }))).toEqual([
+      { path: ["memo"], message: "메모는 1000자까지 입력할 수 있어요." },
+    ]);
+    expect(issuesOf(schema.safeParse({ ...values, name: "가".repeat(101) }))).toEqual([
+      { path: ["name"], message: "제목은 공백을 포함해 100자 이내로 입력해 주세요." },
+    ]);
+    expect(schema.safeParse({ ...values, name: undefined, memo: null }).success).toBe(true);
   });
-});
 
-describe("expense field schemas", () => {
-  it("returns one issue with the existing message", () => {
-    expect(issuesOf(expenseCategorySchema.safeParse(""))).toEqual([{ path: [], message: "카테고리를 선택해 주세요." }]);
-    expect(issuesOf(expenseMemoSchema.safeParse("가".repeat(1001)))).toEqual([
-      { path: [], message: "메모는 1000자까지 입력할 수 있어요." },
+  // 칸 오류가 있어도 교차 규칙이 함께 돌아야 첫 저장에 모든 칸 오류가 한 번에 보인다
+  it("reports field and cross-field issues together", () => {
+    expect(issuesOf(schema.safeParse({ ...values, category: "", totalAmount: "10.001" }))).toEqual([
+      { path: ["category"], message: "카테고리를 선택해 주세요." },
+      {
+        path: ["totalAmount"],
+        message: "금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.",
+      },
     ]);
-    expect(issuesOf(expenseNameSchema.safeParse("가".repeat(101)))).toEqual([
-      { path: [], message: "제목은 공백을 포함해 100자 이내로 입력해 주세요." },
-    ]);
-    expect(expenseNameSchema.safeParse(undefined).success).toBe(true);
-    expect(expenseMemoSchema.safeParse(null).success).toBe(true);
   });
 });
 
