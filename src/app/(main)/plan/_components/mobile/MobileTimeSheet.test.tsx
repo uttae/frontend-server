@@ -33,10 +33,12 @@ it("opening an unset time fills start with 10:00 AM and saves it as is", async (
   await click("확인");
   expect(save).toHaveBeenCalledExactlyOnceWith({ roomId: "room", scheduleId: 10, itemId: 1, body: { startTime: "10:00" } });
 });
-it("opening an unset end does not invent a duration", async () => {
+it("opening an unset end fills it with the start time and saves it as is", async () => {
   props = { ...props, startTime: "14:30" }; await render(); await click("종료 시간");
-  expect(button("종료 시간").getAttribute("aria-label")).toContain("미설정");
-  expect(button("확인").disabled).toBe(true); expect(save).not.toHaveBeenCalled();
+  expect(button("종료 시간").getAttribute("aria-label")).toContain("오후 2:30");
+  expect(button("확인").disabled).toBe(false);
+  await click("확인");
+  expect(save.mock.calls[0][0].body).toEqual({ endTime: "14:30" });
 });
 it("adjusting the prefilled start saves the chosen time", async () => {
   await render();
@@ -70,17 +72,19 @@ it("deletes both times only on confirmation", async () => {
   expect(save).not.toHaveBeenCalled(); await click("확인");
   expect(save.mock.calls[0][0].body).toEqual({ startTime: null, endTime: null });
 });
-it("cannot save a start change while the end has only been partially chosen", async () => {
+// 오전/오후·시만 바꾸고 분은 안 건드려도 "선택 중"에 멈추지 않고 저장된다
+it("saves an end where only some columns were changed", async () => {
   props = { ...props, startTime: "09:07" }; await render();
-  await choose("분", "8"); await click("종료 시간"); await choose("오전/오후", "AM");
-  expect(button("확인").disabled).toBe(true);
-  await click("확인"); expect(save).not.toHaveBeenCalled();
+  await choose("분", "8"); await click("종료 시간"); await choose("오전/오후", "PM"); await choose("시", "3");
+  expect(button("종료 시간").getAttribute("aria-label")).toContain("오후 3:08");
+  await click("확인");
+  expect(save.mock.calls[0][0].body).toEqual({ startTime: "09:08", endTime: "15:08" });
 });
-it("keeps partial end choices when switching fields and never fills the missing minute", async () => {
+it("keeps end choices when switching fields instead of refilling them", async () => {
   props = { ...props, startTime: "09:07" }; await render();
   await click("종료 시간"); await choose("오전/오후", "AM"); await choose("시", "1");
   await click("시작 시간"); await click("종료 시간");
-  expect(button("확인").disabled).toBe(true); expect(save).not.toHaveBeenCalled();
+  expect(button("종료 시간").getAttribute("aria-label")).toContain("오전 1:07");
   await choose("분", "5"); await click("확인");
   expect(save.mock.calls[0][0].body).toEqual({ endTime: "01:05" });
 });
