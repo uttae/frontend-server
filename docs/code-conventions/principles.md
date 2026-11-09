@@ -432,7 +432,11 @@ const sorted = [...data.places].sort(byOrder);
 입력 값·검증·제출 상태를 `useState`로 하나씩 들면 오류가 폼 아래 문장 하나로 뭉치고, 어느 칸이 틀렸는지 화면이 모른다. 페이지 안의 폼과 대화상자·시트 안의 폼은 `@tanstack/react-form`으로 쓰고, 규칙은 zod 스키마로 둔다.
 
 - 값은 `useForm({ defaultValues })`가 갖고, 칸은 `form.Field`로 그린다.
-- 규칙은 `src/lib`의 zod 스키마에 두고, 문구·한도는 그 도메인 규칙 파일의 상수·판정 함수를 쓴다. 칸 하나 규칙은 그 칸 `validators`에 칸 스키마로, 다른 칸·서버 값을 함께 보는 교차 규칙은 폼 단위 스키마(`onSubmit`, 또는 `revalidateLogic()` + `onDynamic`)로 둔다. 폼 단위 `onChange` 스키마는 쓰지 않는다(칸 하나만 바꿔도 건드리지 않은 칸에 오류가 붙는다).
+- 규칙은 `src/lib`의 zod 스키마에 두고, 문구·한도는 그 도메인 규칙 파일의 상수·판정 함수를 쓴다. 칸 하나만 보는 규칙뿐이면 그 칸 `validators`에 칸 스키마를 둔다.
+- 다른 칸을 함께 보는 교차 규칙이 있으면 칸 validators와 폼 validators에 규칙을 나눠 두지 않는다. TanStack 제출은 칸 검사가 하나라도 실패하면 폼 검사를 건너뛰어, 교차 오류가 첫 저장에 빠진다.
+  - 저장할 때 검사하는 폼은 칸 규칙까지 폼 스키마 하나에 두고 `revalidateLogic()` + `onDynamic`으로 붙인다. 칸 validators는 두지 않는다.
+  - 입력 즉시 검사하는 폼은 교차 규칙을 오류를 보일 칸의 validator에서 돌린다(`endDate` 칸이 기간 스키마를 돌린다). 폼 단위 `onChange` 스키마는 쓰지 않는다(칸 하나만 바꿔도 건드리지 않은 칸에 오류가 붙는다).
+  - 서버 값처럼 폼 밖의 값과 합쳐 보는 규칙은 렌더 중 `safeParse` 하나로 오류 문장·버튼·제출을 함께 막는다. 폼 validators는 폼 밖의 값이 바뀌어도 다시 돌지 않아, 실패한 오류가 남는다.
 - 스키마 오류는 issue 객체다. `errors[0]?.message`로 그리고, 한 폼에서 문자열을 돌려주는 함수 validator와 섞지 않는다(문자열 쪽은 `.message`가 없다).
 - issue `path`는 오류를 보일 `form.Field`의 `name`과 같게 둔다(`path: ["endDate"]`). 원소별 path(`destinations[0]`)나 path 없는 루트 refine은 어느 칸에도 보이지 않는다.
 - 폼 값 타입은 스키마에서 만든다(`z.input<typeof schema>`). `onSubmit`의 `value`는 다듬기 전 값이라 저장에는 `schema.parse(value)` 결과(trim 등)를 넘기고, 버튼 잠금은 `schema.safeParse(values).success`로 계산한다.
