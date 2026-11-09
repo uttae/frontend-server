@@ -55,19 +55,20 @@ const me = member(1, "나");
 const friend = member(2, "친구");
 const newcomer = member(9, "강신규");
 const at = (second: number) => new Date(Date.UTC(2026, 10, 8, 6, 0, second)).toISOString();
-const chat = (id: string, senderId: number, second: number): ServerChatMessage => ({
-  roomId: ROOM, id, senderId, messageType: "CHAT", content: id, createdAt: at(second), sequence: second,
+// sequence는 빈 방 다음 1번부터 이어져야 실시간 메시지가 바로 붙는다(건너뛰면 빠진 구간으로 보고 따라잡기 조회)
+const chat = (id: string, senderId: number, sequence: number): ServerChatMessage => ({
+  roomId: ROOM, id, senderId, messageType: "CHAT", content: id, createdAt: at(sequence), sequence,
 });
-const joined: ServerChatMessage = {
+const joined = (sequence: number): ServerChatMessage => ({
   roomId: ROOM,
   id: "join-9",
   senderId: 0,
   messageType: "SYSTEM",
   content: "",
-  createdAt: at(10),
-  sequence: 10,
+  createdAt: at(sequence),
+  sequence,
   metadata: { eventType: "MEMBER_JOINED", userId: "9" },
-};
+});
 const history = (serverSlice: ServerChatMessage[]): InitialRoomHistoryLoadResult => ({
   serverSlice,
   hasMoreOlder: false,
@@ -114,9 +115,9 @@ it("멤버 목록에 없는 사람의 메시지는 목록을 다시 받는 동�
   mocks.getMembers.mockReturnValueOnce(refetch.promise);
 
   await act(async () => {
-    mocks.stomp.handler?.(chat("before", 2, 5));
-    mocks.stomp.handler?.(joined);
-    mocks.stomp.handler?.(chat("after", 2, 20));
+    mocks.stomp.handler?.(chat("before", 2, 1));
+    mocks.stomp.handler?.(joined(2));
+    mocks.stomp.handler?.(chat("after", 2, 3));
   });
 
   // 받자마자 목록을 다시 받기 시작했고, 그 렌더에서 이미 숨겨져 '(알 수 없음)'이 잠깐도 보이지 않는다
@@ -139,7 +140,7 @@ it("다시 받은 목록에도 없으면 (알 수 없음)으로 보인다", asyn
   await hook.flush();
 
   await act(async () => {
-    mocks.stomp.handler?.(joined);
+    mocks.stomp.handler?.(joined(1));
   });
   await hook.flush();
 
@@ -183,7 +184,7 @@ it("첫 멤버 목록을 받는 중에 새 멤버가 들어와도, 그 사람이
   await hook.flush();
 
   await act(async () => {
-    mocks.stomp.handler?.(joined);
+    mocks.stomp.handler?.(joined(1));
   });
   // 첫 조회에 합류하지 않고 새로 받기 시작했다
   expect(mocks.getMembers).toHaveBeenCalledTimes(2);
