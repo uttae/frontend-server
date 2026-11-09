@@ -71,13 +71,15 @@ it("lets mobile users stay on the form, validates dates, and enters the created 
   const { container, unmount } = await renderPage();
   try {
     expect(state.replace).not.toHaveBeenCalled();
-    expect(submitButton(container).disabled).toBe(true);
     await typeTitle(container, "  여름 여행  ");
     await act(async () => state.destinations!.onChange(["서울"]));
     await changeDates("2099-07-10", "2099-07-09");
-    expect(submitButton(container).disabled).toBe(true);
-    await changeDates("2099-07-10", "2099-07-12");
+    // 규칙 위반으로는 잠그지 않는다. 눌러도 만들지 않고 기간 아래에 오류가 남는다
     expect(submitButton(container).disabled).toBe(false);
+    await act(async () => submitButton(container).click());
+    expect(state.create).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
+    await changeDates("2099-07-10", "2099-07-12");
     await act(async () => submitButton(container).click());
     // 제목은 trim한 값으로 보낸다
     expect(state.create).toHaveBeenCalledWith({
@@ -130,11 +132,24 @@ it("shows errors only under the fields the user touched", async () => {
     expect(container.textContent).toContain("시작일은 최초 여행 시작일 이전으로 바꿀 수 없어요.");
     await changeDates("2099-07-10", "2099-07-09");
     expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
-    expect(submitButton(container).disabled).toBe(true);
     await changeDates("2099-07-10", "2099-07-12");
     expect(container.querySelector("[role=alert]")).toBeNull();
-    expect(submitButton(container).disabled).toBe(false);
     expect(state.create).not.toHaveBeenCalled();
+  } finally {
+    await unmount();
+  }
+});
+
+it("shows every field error at once when submitting an empty form", async () => {
+  const { container, unmount } = await renderPage();
+  try {
+    expect(submitButton(container).disabled).toBe(false);
+    await act(async () => submitButton(container).click());
+    expect(state.create).not.toHaveBeenCalled();
+    expect(titleInput(container).getAttribute("aria-invalid")).toBe("true");
+    expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+    expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
+    expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
   } finally {
     await unmount();
   }

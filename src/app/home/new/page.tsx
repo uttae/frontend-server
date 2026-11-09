@@ -63,8 +63,6 @@ export default function NewTripPage() {
     },
   });
   const values = useStore(form.store, (state) => state.values);
-  // 칸 오류는 건드린 칸에만 보이고, 버튼은 아직 건드리지 않은 칸까지 값으로 다시 보고 잠근다
-  const canSubmit = !isPending && tripSchema.safeParse(values).success;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-white px-4 py-12">
@@ -173,8 +171,9 @@ export default function NewTripPage() {
 
         <button
           type="button"
+          // 규칙 위반으로는 잠그지 않는다. 틀린 채 누르면 handleSubmit이 칸 검사로 막고 틀린 칸 아래에 오류를 보인다
           onClick={() => void form.handleSubmit()}
-          disabled={!canSubmit}
+          disabled={isPending}
           className="mt-8 w-full rounded-full bg-primary py-4 text-label-xl-emphasis mobile:text-label-l-emphasis font-semibold text-white shadow transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isPending ? "생성 중…" : "계획을 시작하세요"}
