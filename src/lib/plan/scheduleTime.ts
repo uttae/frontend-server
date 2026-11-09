@@ -47,10 +47,14 @@ export function resolveScheduleTimeDraft(draft: ScheduleTimeDraft, { serverStart
   };
 }
 
-/**
- * 일정 시간 폼 스키마. 서버 값을 받아 폼 값과 합친 시각을 검증하고, 통과하면 합친 시각({ startHm, endHm })을 돌려준다.
- * 오류는 시작이 맞는 시각이면 종료 칸에, 시작이 틀렸거나 비어 있으면(종료만 있음) 시작 칸에 붙인다 — 종료 칸은 시작이 없으면 비활성이다
- */
+// 오류를 붙일 칸. 형식이 틀린 칸이 있으면 그 칸, 없으면(종료만 있음) 채워야 할 시작 칸이다 — 종료 칸은 시작이 없으면 비활성이다
+function scheduleTimeIssueField({ startHm, endHm }: { startHm: string; endHm: string }): "start" | "end" {
+  if (startHm && !normalizeStartTimeToHm(startHm)) return "start";
+  if (endHm && !normalizeStartTimeToHm(endHm)) return "end";
+  return "start";
+}
+
+/** 일정 시간 폼 스키마. 서버 값을 받아 폼 값과 합친 시각을 검증하고, 통과하면 합친 시각({ startHm, endHm })을 돌려준다 */
 export function createScheduleTimeSchema(server: ScheduleServerTimes) {
   return z
     .object({ start: z.string().or(z.undefined()), end: z.string().or(z.undefined()) })
@@ -58,11 +62,7 @@ export function createScheduleTimeSchema(server: ScheduleServerTimes) {
       const times = resolveScheduleTimeDraft(draft, server);
       const result = validateScheduleTimeDraft(times.startHm, times.endHm);
       if (result.valid) return times;
-      ctx.addIssue({
-        code: "custom",
-        path: [normalizeStartTimeToHm(times.startHm) ? "end" : "start"],
-        message: result.message,
-      });
+      ctx.addIssue({ code: "custom", path: [scheduleTimeIssueField(times)], message: result.message });
       return z.NEVER;
     });
 }

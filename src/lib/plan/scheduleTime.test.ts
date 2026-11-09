@@ -86,6 +86,13 @@ describe("createScheduleTimeSchema", () => {
     ]);
   });
 
+  // 시작이 비어 있어도 형식이 틀린 칸은 종료다
+  it("puts a wrong end on end even when start is empty", () => {
+    expect(issuesOf({ start: "", end: "25:00" })).toEqual([
+      { path: ["end"], message: "시간을 올바르게 선택해 주세요." },
+    ]);
+  });
+
   it("puts an end without start on start, whose field is the one to fill", () => {
     expect(issuesOf({ start: "", end: undefined })).toEqual([
       { path: ["start"], message: "시작 시각 없이 종료 시각만 설정할 수 없어요." },
