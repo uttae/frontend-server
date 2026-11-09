@@ -1,4 +1,5 @@
 import { isCancelledError, type QueryClient } from "@tanstack/react-query";
+import { invalidateAfterChange } from "@/lib/query-client";
 import { expenseKeys } from "./expense-queries";
 
 type Scope = "all" | "expenses" | "budget" | "visible";
@@ -190,16 +191,12 @@ class ExpenseRecovery {
     const results = await Promise.allSettled(
       keys.map(async (key) => {
         const queryKey = [...expenseKeys.room(this.roomId), key];
-        if (restartFirstLoads) {
-          // 데이터가 없는(처음 받는 중인) 조회는 TanStack이 취소하지 않고 합류만 한다
-          await this.client.cancelQueries({
-            queryKey,
-            predicate: (query) => query.state.data === undefined,
-          });
-        }
         try {
-          // summary-krw는 접두로 필터별 스냅샷도 함께 무효화한다(보는 필터만 다시 받는다)
-          await this.client.invalidateQueries({ queryKey }, { throwOnError: true });
+          // summary-krw는 접두로 필터별 스냅샷도 함께 무효화한다(보는 필터만 다시 받는다).
+          // 변경 알림·본인 저장 뒤에는 받는 중인 첫 조회도 취소하고 새로 받는다
+          await (restartFirstLoads
+            ? invalidateAfterChange(this.client, { queryKey }, { throwOnError: true })
+            : this.client.invalidateQueries({ queryKey }, { throwOnError: true }));
           this.failed.delete(key);
         } catch (error) {
           // 더 새 조회로 바뀌었거나 화면이 사라져 취소된 조회는 실패가 아니다

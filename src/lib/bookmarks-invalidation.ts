@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query";
 
+import { invalidateAfterChange } from "@/lib/query-client";
 import {
   bookmarkCategoriesQueryKey,
   roomAllBookmarksQueryKey,
@@ -8,7 +9,7 @@ import type { RoomBookmarkChangedEvent } from "@/types/roomBookmarkStomp";
 
 /**
  * 폴더 목록(장소 개수 포함)과 방 전체 북마크를 함께 무효화합니다. 북마크가 바뀌는 STOMP 이벤트와
- * 본인 변경(mutation `onSettled`)이 같이 씁니다. 받는 중인 옛 조회는 TanStack이 취소하고 새로 받습니다.
+ * 본인 변경(mutation `onSettled`)이 같이 씁니다. 받는 중인 옛 조회는 첫 조회라도 취소하고 새로 받습니다.
  */
 export async function invalidateRoomBookmarkLists(
   queryClient: QueryClient,
@@ -16,8 +17,8 @@ export async function invalidateRoomBookmarkLists(
 ): Promise<void> {
   const rid = roomId.trim();
   await Promise.all([
-    queryClient.invalidateQueries({ queryKey: bookmarkCategoriesQueryKey(rid) }),
-    queryClient.invalidateQueries({ queryKey: roomAllBookmarksQueryKey(rid) }),
+    invalidateAfterChange(queryClient, { queryKey: bookmarkCategoriesQueryKey(rid) }),
+    invalidateAfterChange(queryClient, { queryKey: roomAllBookmarksQueryKey(rid) }),
   ]);
 }
 
@@ -43,7 +44,7 @@ export async function invalidateRoomBookmarkQueries(
 
     case "CATEGORY_CREATED":
     case "CATEGORY_UPDATED":
-      await queryClient.invalidateQueries({
+      await invalidateAfterChange(queryClient, {
         queryKey: bookmarkCategoriesQueryKey(rid),
       });
       break;
