@@ -891,6 +891,8 @@ export function useChatMessages(
 
   return {
     messages,
+    /** 보낸 사람 이름을 찾을 멤버 목록을 아직 한 번도 받지 못했다 — 목록 대신 로딩 표시를 둔다 */
+    waitingForMembers: Boolean(roomId) && membersPending,
     sendChatMessage,
     sendAiMessage,
     sendCancelAiRequest,

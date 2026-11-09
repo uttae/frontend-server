@@ -160,16 +160,18 @@ it("이미 있던 메시지의 사람이 목록에 없으면(탈퇴) 다른 이�
   expect(shown()).toEqual([["old", "(알 수 없음)"]]);
 });
 
-it("멤버 목록을 처음 받는 중이면 이름을 모르는 메시지는 그리지 않고, 내 메시지는 그린다", async () => {
+it("멤버 목록을 처음 받는 중이면 로딩 상태이고, 이름을 모르는 메시지는 그리지 않는다", async () => {
   const firstLoad = deferred<{ members: Member[] }>();
   mocks.getMembers.mockReturnValueOnce(firstLoad.promise);
   mocks.initial.mockResolvedValue(history([chat("mine", 1, 1), chat("theirs", 2, 2)]));
   await hook.render(ROOM);
   await hook.flush();
+  expect(hook.current.waitingForMembers).toBe(true);
   expect(hook.current.messages.map((m) => m.id)).toEqual(["mine"]);
 
   await act(async () => firstLoad.resolve({ members: [me, friend] }));
   await hook.flush();
+  expect(hook.current.waitingForMembers).toBe(false);
   expect(shown()).toEqual([["mine", "나"], ["theirs", "친구"]]);
 });
 
