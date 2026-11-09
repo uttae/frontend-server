@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { flushSync } from "react-dom";
+import { RefreshIcon } from "@/assets/icons";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 import { useSearchParams } from "next/navigation";
 import { MapPlaceSearchInput } from "@/components/search/MapPlaceSearchInput";
@@ -26,6 +27,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   const items = usePlaceSearchStore((s) => s.items);
   const inputRef = useRef<HTMLInputElement>(null);
   const confirmationKind = usePlaceSearchStore((s) => s.confirmationKind);
+  const searchMode = usePlaceSearchStore((s) => s.searchMode);
   const query = usePlaceSearchStore((s) => s.query);
   const focus = useMapPinsFocusStore((s) => s.focus);
   const { selectedPlace } = useSelectedPlace();
@@ -44,8 +46,9 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
     }
     void confirm({ query, kind: "whole", session: null, generation: 0 });
   };
-  const hasFeedback = status === "pending" || status === "error" ||
-    (status === "done" && !items.length);
+  // 「현 위치에서 검색」의 실패·결과 없음은 검색창이 아니라 그 버튼 자리에서 알린다(MapSearchHereButton)
+  const hasFeedback = status === "pending" || (searchMode === "text" &&
+    (status === "error" || (status === "done" && !items.length)));
   const feedback = hasFeedback ? (
     <SearchFeedback status={status} error={error} hasItems={items.length > 0} retry={retry} />
   ) : null;
@@ -63,7 +66,7 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
         <div
           data-tutorial-target="search"
           hidden={hidden}
-          className="pointer-events-auto relative min-w-0 max-w-[calc(100%-60px)] shrink-0"
+          className="group/search pointer-events-auto relative min-w-0 max-w-[calc(100%-60px)] shrink-0"
         >
           <MapPlaceSearchInput
             key={`${scopeKey}:${initialQuery}`}
@@ -76,8 +79,9 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
             onInvalidate={invalidate}
             onClear={clearSearch}
           />
+          {/* 다시 검색하려고 검색창에 들어가면 추천 목록과 같은 자리라 안내를 숨긴다 */}
           {feedback ? (
-            <div className="absolute right-0 top-full mt-1 w-[353px] max-w-full rounded-lg border border-border-subtle bg-fill-subtle p-3">
+            <div className="absolute right-0 top-full mt-1 w-[353px] max-w-full rounded-lg border border-border-subtle bg-fill-subtle p-3 group-has-[input:focus]/search:hidden">
               {feedback}
             </div>
           ) : null}
@@ -103,10 +107,12 @@ function SearchFeedback({ status, error, hasItems, retry }: Readonly<{
 }>) {
   if (status === "pending") return <Spinner aria-label="장소 검색 중" />;
   if (status === "error") return (
-    <div role="alert" className="flex items-center gap-2 text-body-s-regular text-text">
-      <span>{error}</span>
-      <button type="button" className="shrink-0 cursor-pointer text-primary underline hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary" onClick={retry}>
-        다시 시도
+    <div role="alert" className="flex items-center justify-between gap-2 text-body-s-regular text-text">
+      <span className="min-w-0">{error}</span>
+      {/* 아이콘은 20px, 누르는 영역은 44px */}
+      <button type="button" aria-label="다시 시도" onClick={retry}
+        className="-m-3 grid size-11 shrink-0 cursor-pointer place-items-center text-icon-subtle hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary">
+        <RefreshIcon size={20} />
       </button>
     </div>
   );

@@ -1,4 +1,4 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
@@ -155,11 +155,24 @@ describe("cross-schedule refresh sequencing", () => {
   });
 });
 
-it("cross-day move refresh never sends a time PATCH", async () => {
+it("cross-day move refresh preserves unset and partial times without a time PATCH", async () => {
   vi.clearAllMocks();
   const client = new QueryClient();
-  vi.spyOn(client, "invalidateQueries").mockResolvedValue(undefined);
+  client.setQueryData(scheduleItemsQueryKey("room", 10), [{ id: "item-1", itemId: 1, title: "One" }]);
+  client.setQueryData(scheduleItemsQueryKey("room", 20), [{ id: "item-2", itemId: 2, title: "Two" }]);
+  mocks.getScheduleItems.mockImplementation(async (_room, scheduleId) => scheduleId === 10
+    ? [scheduleItem(1, 0)]
+    : [{ ...scheduleItem(2, 0), scheduleId: 20, startTime: "12:45", endTime: null }]);
+  const { schedulePlanPlacesQueryOptions } = await import("./scheduleItemPlaces");
+  const unsubscribe = [10, 20].map((scheduleId) =>
+    new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room", scheduleId))
+      .subscribe(() => {}),
+  );
   await syncAfterCrossScheduleItemMove(client, "room", 10, 20);
   expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
+  expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 10))?.[0]).not.toHaveProperty("startTime");
+  expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0]).toMatchObject({ startTime: "12:45" });
+  expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0]).not.toHaveProperty("endTime");
+  unsubscribe.forEach((stop) => stop());
   client.clear();
 });

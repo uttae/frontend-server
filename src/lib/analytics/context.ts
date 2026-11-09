@@ -34,7 +34,7 @@ const dynamicPagePaths: ReadonlyArray<readonly [RegExp, string]> = [
   [/^\/bookmark\/[^/]+$/, "/bookmark/[folderId]"],
 ];
 
-const analyticsCampaignParameterNames = [
+export const analyticsCampaignParameterNames = [
   "utm_id",
   "utm_source",
   "utm_medium",

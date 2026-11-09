@@ -15,6 +15,7 @@ import {
   clearGoogleAgreementFlowSession,
   readGoogleAgreementFlowSession,
 } from "@/lib/google-oauth";
+import { pendingInviteReturnPath } from "@/lib/session-user-flow";
 import { setSessionUserCache } from "@/lib/session-user-cache";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -32,6 +33,7 @@ export async function finishGoogleLogin(
   setSessionUserCache(queryClient, me);
   useSessionStore.getState().setSessionReady(true);
   const agreementFlow = readGoogleAgreementFlowSession();
+  const inviteDestination = pendingInviteReturnPath();
   const pendingInviteCode = consumePendingInviteCode();
   clearGoogleAgreementFlowSession();
   setAnalyticsUserId(me.id);
@@ -45,5 +47,5 @@ export async function finishGoogleLogin(
     },
   );
 
-  return pendingInviteCode ? `/join/${pendingInviteCode}` : "/home";
+  return inviteDestination ?? "/home";
 }
