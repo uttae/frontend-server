@@ -23,6 +23,7 @@ function renderSummary() {
       roomId: "room-1",
       scheduleId: 1,
       segmentSourceItemId: 100,
+      destinationItemId: 101,
       scheduleFingerprint: "100:a:|101:b:",
       travelMode: "DRIVING",
       contentOnly: true,

@@ -112,6 +112,7 @@ export async function hydrateRoomSchedulesFromServer(
   const rid = roomId.trim();
   if (!rid.length) return [];
 
+  const startedAt = Date.now();
   const schedules = await getRoomSchedules(rid, { includeItems: true, signal });
   const sorted = sortRoomSchedules(schedules);
   const placesBySchedule = await buildSchedulePlacesFromSchedulesWithItems(
@@ -140,7 +141,7 @@ export async function hydrateRoomSchedulesFromServer(
     }
   }
 
-  writeSchedulePlacesFromHydrate(queryClient, rid, placesBySchedule);
+  writeSchedulePlacesFromHydrate(queryClient, rid, placesBySchedule, startedAt);
 
   for (const s of sorted) {
     const key = scheduleItemsQueryKey(rid, s.scheduleId);

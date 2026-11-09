@@ -160,6 +160,34 @@ export async function searchPlaces(params: {
   return res.json();
 }
 
+/** 사각형(지금 보이는 지도 화면) 안의 장소만 찾는다. 다음 페이지는 같은 사각형으로 요청해야 한다 */
+export async function searchPlacesInArea(params: {
+  query: string;
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+  pageSize?: number;
+  pageToken?: string;
+}): Promise<PlaceSearchPageResponse> {
+  const url = new URL(`${API_BASE}/places/search/area`);
+  url.searchParams.set("query", params.query);
+  url.searchParams.set("south", String(params.south));
+  url.searchParams.set("west", String(params.west));
+  url.searchParams.set("north", String(params.north));
+  url.searchParams.set("east", String(params.east));
+  if (params.pageSize !== undefined) {
+    url.searchParams.set("pageSize", String(params.pageSize));
+  }
+  if (params.pageToken) {
+    url.searchParams.set("pageToken", params.pageToken);
+  }
+
+  const res = await apiFetch(url.toString());
+  if (!res.ok) throw new HttpError(res.status, `Places area search failed: ${res.status}`);
+  return res.json();
+}
+
 export async function requestPlaceDetail(
   googlePlaceId: string,
 ): Promise<PlaceDetail> {
