@@ -22,6 +22,7 @@ vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room
 vi.mock("@/hooks/useRooms", () => ({
   useRoomSchedules: () => ({ data: fixtures.schedules, isSuccess: true }),
   useSchedulePlanPlaces: () => ({ data: fixtures.places, isSuccess: true, isFetching: false }),
+  useScheduleItemMoveSavingDays: () => [],
 }));
 vi.mock("@/hooks/usePrefetchScheduleRoutes", () => ({ usePrefetchScheduleRoutes: () => true }));
 vi.mock("@/components/expenses/ExpenseProvider", () => ({

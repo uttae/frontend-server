@@ -9,7 +9,11 @@ import { PlusIcon } from "@/assets/icons";
 import { DashedPlaceholderBox } from "@/components/mobile/DashedPlaceholderBox";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
-import { useRoomSchedules, useSchedulePlanPlaces } from "@/hooks/useRooms";
+import {
+  useRoomSchedules,
+  useScheduleItemMoveSavingDays,
+  useSchedulePlanPlaces,
+} from "@/hooks/useRooms";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
 import { buildMapRouteHref } from "@/lib/mobile-view";
 import type { InsertAnchor } from "@/lib/plan/insertPosition";
@@ -86,6 +90,8 @@ export function MobilePlanItinerary({
     serverPlaces,
     !isLoading && !isFetching && !isError && serverPlaces.length >= 2 && scheduleFingerprint.length > 0,
   );
+  // 장소 이동을 저장하는 동안 캐시는 새 순서지만 서버는 아직 옛 순서다 — 저장이 끝날 때까지 새 구간 경로를 받지 않는다
+  const isSavingPlaceMove = useScheduleItemMoveSavingDays(roomId).includes(scheduleId);
   const existingItemIds = useMemo(
     () => new Set(serverPlaces.map((p) => p.itemId).filter((id): id is number => typeof id === "number")),
     [serverPlaces],
@@ -168,7 +174,7 @@ export function MobilePlanItinerary({
                 roomId={roomId}
                 scheduleId={scheduleId}
                 scheduleFingerprint={scheduleFingerprint}
-                routesReady={data !== undefined && !isFetching && routesBatchSettled}
+                routesReady={data !== undefined && !isFetching && !isSavingPlaceMove && routesBatchSettled}
                 existingItemIds={existingItemIds}
               />
             </div>

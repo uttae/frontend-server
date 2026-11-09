@@ -6,6 +6,7 @@ import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   useMutation,
+  useMutationState,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -268,7 +269,7 @@ export function useMoveRoomSchedule() {
 
 /**
  * 장소 순서 변경·일차 간 이동 저장 — 진행 중인 저장을 이 key로 찾는다.
- * 같은 일차의 마지막 저장이 끝날 때만 다시 받는다(`isLastItemMoveOf`)
+ * 같은 일차의 마지막 저장이 끝날 때만 다시 받고(`isLastItemMoveOf`), 저장하는 동안 그 일차의 경로를 조회하지 않는다(`useScheduleItemMoveSavingDays`)
  */
 const SCHEDULE_ITEM_MOVE_MUTATION_KEY = ["schedule-item-move"] as const;
 
@@ -302,6 +303,19 @@ function isLastItemMoveOf(
         scheduleIdsOfItemMove(mutation.state.variables, rid).includes(scheduleId),
     }) <= 1
   );
+}
+
+/**
+ * 이 방에서 장소 이동을 저장하는 중인 일차. 캐시는 저장 응답 전에 새 순서지만 서버는 아직 옛 순서라,
+ * 그 일차의 구간 경로를 지금 조회하면 옛 이웃까지의 경로가 새 구간 key에 저장된다 — 저장이 끝날 때까지 조회하지 않는다.
+ * (여러 일차를 한 번에 그리는 지도를 위해 일차 목록으로 돌려준다)
+ */
+export function useScheduleItemMoveSavingDays(roomId: string): number[] {
+  const rid = roomId.trim();
+  return useMutationState({
+    filters: { mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY, status: "pending" },
+    select: (mutation) => scheduleIdsOfItemMove(mutation.state.variables, rid),
+  }).flat();
 }
 
 /**

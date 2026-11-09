@@ -17,6 +17,7 @@ import {
   useDeleteScheduleItem,
   useMoveScheduleItemToSchedule,
   useReorderScheduleItem,
+  useScheduleItemMoveSavingDays,
 } from "./useRooms";
 
 const api = vi.hoisted(() => ({
@@ -126,20 +127,21 @@ it("shows the new order before the reorder response and puts the previous list b
   const reorder = deferred<RoomScheduleItem[]>();
   api.reorderScheduleItem.mockReturnValueOnce(reorder.promise);
   const hook = hookHarness(
-    () => useReorderScheduleItem(),
+    () => ({ reorder: useReorderScheduleItem(), savingDays: useScheduleItemMoveSavingDays("room-1") }),
     (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
   try {
     await hook.render(undefined);
     let saving!: Promise<unknown>;
     await act(async () => {
-      saving = hook.current
+      saving = hook.current.reorder
         .mutateAsync({ roomId: "room-1", scheduleId: 10, itemId: 102, body: { newOrderIndex: 0 } })
         .catch((error: unknown) => error);
     });
     await hook.flush();
-    // 응답 전 — 캐시가 이미 새 순서다
+    // 응답 전 — 캐시가 이미 새 순서이고, 그 일차는 저장 중이다
     expect(ids(client.getQueryData<PlanPlace[]>(key))).toEqual([102, 100, 101]);
+    expect(hook.current.savingDays).toEqual([10]);
 
     reorder.reject(new Error("저장 실패"));
     await act(async () => {
@@ -147,6 +149,8 @@ it("shows the new order before the reorder response and puts the previous list b
     });
     expect(ids(client.getQueryData<PlanPlace[]>(key))).toEqual([100, 101, 102]);
     expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    await hook.flush();
+    expect(hook.current.savingDays).toEqual([]);
   } finally {
     await hook.unmount();
     client.clear();
@@ -196,20 +200,21 @@ it("moves the place out of the source day and into the target day before the res
   const move = deferred<unknown>();
   api.moveScheduleItemToSchedule.mockReturnValueOnce(move.promise);
   const hook = hookHarness(
-    () => useMoveScheduleItemToSchedule(),
+    () => ({ move: useMoveScheduleItemToSchedule(), savingDays: useScheduleItemMoveSavingDays("room-1") }),
     (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
   try {
     await hook.render(undefined);
     let saving!: Promise<unknown>;
     await act(async () => {
-      saving = hook.current
+      saving = hook.current.move
         .mutateAsync({ roomId: "room-1", sourceScheduleId: 10, itemId: 101, targetScheduleId: 20, targetOrderIndex: 0 })
         .catch((error: unknown) => error);
     });
     await hook.flush();
     expect(ids(client.getQueryData<PlanPlace[]>(sourceKey))).toEqual([100]);
     expect(ids(client.getQueryData<PlanPlace[]>(targetKey))).toEqual([101, 200]);
+    expect(hook.current.savingDays.sort()).toEqual([10, 20]);
 
     move.reject(new Error("저장 실패"));
     await act(async () => {
