@@ -25,6 +25,7 @@ import {
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { pickUniqueUntitledBookmarkCategoryName } from "@/lib/bookmark-untitled-category-name";
 import {
+  useAllRoomBookmarks,
   useBookmarkCategories,
   useCreateBookmarkCategory,
   useDeleteBookmarkCategory,
@@ -42,6 +43,8 @@ import { FolderRibbonIcon } from "./FolderRibbonIcon";
 export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const { folders } = useBookmarkFolders();
+  // 폴더를 열기 전에 북마크를 미리 받아 둔다 — 지도(같은 목록을 받음)가 없는 모바일에서도 폴더가 바로 열리게. 같은 key라 요청은 1번
+  useAllRoomBookmarks(roomId);
   const { isPending, isLoadingError, error, refetch } =
     useBookmarkCategories(roomId);
   const { mutate: createCategory, isPending: isCreating } =

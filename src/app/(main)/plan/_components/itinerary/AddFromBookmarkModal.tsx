@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { FolderRibbonIcon } from "@/app/(main)/bookmark/_components/FolderRibbonIcon";
 import { BookmarkPlacePreviewCard } from "@/app/(main)/bookmark/_components/BookmarkPlacePreviewCard";
 import {
+  useAllRoomBookmarks,
   useBookmarkCategories,
   useCreateScheduleItem,
   useRoomBookmarks,
@@ -66,6 +67,8 @@ export function AddFromBookmarkModal({
     error: categoriesErr,
     refetch: refetchCategories,
   } = useBookmarkCategories(roomId);
+  // 첫 폴더가 정해지기 전에 북마크를 폴더 목록과 함께 받기 시작한다(폴더 → 북마크 순서로 기다리지 않게)
+  useAllRoomBookmarks(roomId);
 
   useEffect(() => {
     if (!categories?.length) return;

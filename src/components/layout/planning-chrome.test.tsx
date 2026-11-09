@@ -11,6 +11,7 @@ vi.mock("@/hooks/useCurrentRoomMembership", () => ({ useCurrentRoomMembership: (
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: undefined }) }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomsList: () => ({ data: { rooms: [] }, isPending: false }),
+  useAllRoomBookmarks: vi.fn(),
   useBookmarkCategories: () => ({ isPending: false, isError: false }),
   useCreateBookmarkCategory: () => ({}),
   useDeleteBookmarkCategory: () => ({}),
