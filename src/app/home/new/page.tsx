@@ -46,6 +46,8 @@ export default function NewTripPage() {
 
   const form = useForm({
     defaultValues: EMPTY_TRIP,
+    // 제출 전에 이미 칸 오류가 있으면 TanStack은 첫 제출에서 칸 검사를 건너뛴다. 첫 제출부터 모든 칸 오류를 보이게 한다(저장은 칸 검사가 막는다)
+    canSubmitWhenInvalid: true,
     // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
     onSubmit: ({ value }) => {
       createRoom(tripSchema.parse(value), {

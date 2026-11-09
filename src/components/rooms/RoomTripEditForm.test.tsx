@@ -213,3 +213,19 @@ it("blocks apply for a room opened without dates and shows the period error", as
   expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
   await act(async () => root.unmount());
 });
+
+// 제목을 비워 이미 오류가 있는 채로 처음 적용해도, 건드리지 않은 기간 칸 오류까지 함께 보여야 한다
+it("shows untouched field errors on the first apply even when another field already has an error", async () => {
+  state.update.mockClear();
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const room = { id: "r", title: "A", destinations: ["서울"], startDate: null, endDate: null };
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
+  await typeTitle(container, " ");
+  expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+  await act(async () => applyButton(container).click());
+  expect(state.update).not.toHaveBeenCalled();
+  expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+  expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  await act(async () => root.unmount());
+});

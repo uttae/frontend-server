@@ -154,3 +154,22 @@ it("shows every field error at once when submitting an empty form", async () => 
     await unmount();
   }
 });
+
+// 버튼을 누르면 자동 포커스된 제목 칸이 먼저 blur돼 제목 오류가 생긴다. 그 뒤 첫 제출에서도 나머지 칸 오류가 함께 보여야 한다
+it("shows every field error on the first submit even when the title already has an error from blur", async () => {
+  const { container, unmount } = await renderPage();
+  try {
+    await act(async () => {
+      titleInput(container).dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+    });
+    expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+    expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
+    await act(async () => submitButton(container).click());
+    expect(state.create).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+    expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
+    expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  } finally {
+    await unmount();
+  }
+});

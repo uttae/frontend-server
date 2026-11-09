@@ -87,6 +87,8 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
 
   const form = useForm({
     defaultValues: opened,
+    // 제출 전에 이미 칸 오류가 있으면 TanStack은 첫 제출에서 칸 검사를 건너뛴다. 첫 제출부터 모든 칸 오류를 보이게 한다(저장은 칸 검사가 막는다)
+    canSubmitWhenInvalid: true,
     onSubmit: ({ value }) => {
       // 서버는 지금 기간에서 잘라내므로, 열 때가 아니라 서버 최신 기간과 저장할 폼 기간을 비교한다
       const trimCount = countSchedulesTrimmedByDateChange(
