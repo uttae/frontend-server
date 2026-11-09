@@ -8,7 +8,7 @@ import { useMemo, type JSX } from "react";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
-import { useRoomSchedules } from "@/hooks/useRooms";
+import { useRoomSchedules, useScheduleItemMoveSavingDays } from "@/hooks/useRooms";
 import {
   buildPlanItineraryRouteConnectorDotIcons,
   buildPlanItineraryRouteConnectorPaths,
@@ -140,6 +140,9 @@ export function PlanItineraryMapRoutes({
     })),
   });
 
+  // 장소 이동을 저장하는 동안 그 일차는 캐시만 새 순서고 서버는 옛 순서다 — 새 구간 경로를 받지 않는다(핀은 새 순서로 그린다)
+  const savingMoveScheduleIds = useScheduleItemMoveSavingDays(rid);
+
   const buckets = orderedScheduleIdsForQueries.map(
     (_, idx) => placesQueries[idx]?.data ?? [],
   );
@@ -192,7 +195,10 @@ export function PlanItineraryMapRoutes({
           ),
         };
       },
-      enabled: rid.length > 0 && segments.length > 0,
+      enabled:
+        rid.length > 0 &&
+        segments.length > 0 &&
+        !savingMoveScheduleIds.includes(seg.scheduleId),
       staleTime: Infinity,
       refetchOnMount: false,
       refetchOnWindowFocus: false,

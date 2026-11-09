@@ -1,10 +1,12 @@
-import { AnalyticsEvents } from "@/lib/analytics/track";
+import { bucketItemCount } from "@/lib/analytics/context";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { trackRoomMutation } from "@/lib/analytics/room-mutation";
 import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
 import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   useMutation,
+  useMutationState,
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
@@ -46,6 +48,7 @@ import {
   type RoomBookmark,
   type RoomCreateRequest,
   type RoomScheduleCreateRequest,
+  type RoomScheduleWithItems,
   type ReorderScheduleItemRequest,
   type RoomScheduleItemUpdateRequest,
   type RoomUpdateRequest,
@@ -62,9 +65,13 @@ import {
   createScheduleItemAtPlanIndex,
   removeScheduleItemFromPlanPlacesCache,
   schedulePlanPlacesQueryOptions,
-  syncAfterCrossScheduleItemMove,
-  syncPlanPlacesAfterReorderSuccess,
 } from "@/lib/plan/scheduleItemPlaces";
+import {
+  insertPlanPlace,
+  movePlanPlaceWithinDay,
+  moveRoomScheduleToDay,
+  removePlanPlace,
+} from "@/lib/plan/planListMove";
 import { fetchAndSeedAllRoomBookmarks } from "@/lib/bookmarks/bookmark-bulk-cache";
 import {
   appendBookmarkCategoryToCache,
@@ -240,10 +247,17 @@ export function useCreateRoomSchedule() {
   });
 }
 
-/** 일차(schedule) 이동 — shift 후 전체 재조회로 갱신 (원격: STOMP `ROOM_SCHEDULES_RESYNCED`) */
+/**
+ * 일차(schedule) 이동 — 일차 순서·날짜 라벨이 일정 전체에 보여 응답 전에 `room-schedules`를 새 순서로 고치고(onMutate),
+ * 실패하면 되돌린다. 성공·실패 모두 마지막 저장이 끝날 때 일정을 다시 받는다 (원격: STOMP `ROOM_SCHEDULES_RESYNCED`)
+ */
+/** 일차 순서 변경 저장 — 마지막 저장이 끝날 때만 일정을 다시 받도록 진행 중인 저장을 이 key로 센다 */
+const ROOM_SCHEDULE_MOVE_MUTATION_KEY = ["room-schedule-move"] as const;
+
 export function useMoveRoomSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY,
     mutationFn: ({
       roomId,
       scheduleId,
@@ -253,19 +267,99 @@ export function useMoveRoomSchedule() {
       scheduleId: number;
       targetDayNumber: number;
     }) => moveRoomSchedule(roomId, scheduleId, { targetDayNumber }),
+    onMutate: async ({ roomId, scheduleId, targetDayNumber }) => {
+      const key = roomSchedulesQueryKey(roomId.trim());
+      // 진행 중인 일정 조회의 옛 순서가 먼저 고친 순서를 덮지 않게 취소한다
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const previous = queryClient.getQueryData<RoomScheduleWithItems[]>(key);
+      queryClient.setQueryData<RoomScheduleWithItems[]>(
+        key,
+        (old) => old && moveRoomScheduleToDay(old, scheduleId, targetDayNumber),
+      );
+      return { previous };
+    },
+    // 되돌린 값은 그사이 들어온 다른 사람의 변경을 지울 수 있다 — onSettled가 일정을 다시 받아 맞춘다
+    onError: (_error, { roomId }, context) => {
+      queryClient.setQueryData(roomSchedulesQueryKey(roomId.trim()), context?.previous);
+    },
     onSuccess: async (_data, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
       await invalidateExpenses(queryClient, id);
-      await refreshRoomSchedules(queryClient, id);
+    },
+    // 연달아 옮기면 앞 저장이 끝날 때 다시 받은 일정이 뒤 저장 전 순서를 그린다 — 마지막 저장이 끝날 때 한 번만 받는다.
+    // onSettled 안에서는 끝나는 저장도 아직 진행 중으로 세므로 1 이하면 남은 저장이 없다.
+    // 다시 받기는 기다리지 않는다 — 기다리면 그 GET이 끝날 때까지 실패 토스트가 늦게 뜬다
+    onSettled: (_data, _error, { roomId }) => {
+      if (queryClient.isMutating({ mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY }) <= 1) {
+        void queryClient.invalidateQueries({
+          queryKey: roomSchedulesQueryKey(roomId.trim()),
+          exact: true,
+        });
+      }
     },
   });
 }
 
-/** 일정 항목을 다른 일차로 이동 — 같은 일차 내 순서는 `useReorderScheduleItem` 사용 */
+/**
+ * 장소 순서 변경·일차 간 이동 저장 — 진행 중인 저장을 이 key로 찾는다.
+ * 같은 일차의 마지막 저장이 끝날 때만 다시 받고(`isLastItemMoveOf`), 저장하는 동안 그 일차의 경로를 조회하지 않는다(`useScheduleItemMoveSavingDays`)
+ */
+const SCHEDULE_ITEM_MOVE_MUTATION_KEY = ["schedule-item-move"] as const;
+
+/** 진행 중인 장소 이동 저장이 바꾸는 이 방의 일차 — mutation 캐시는 variables 타입을 모르므로 필드를 확인해 읽는다 */
+function scheduleIdsOfItemMove(variables: unknown, roomId: string): number[] {
+  if (typeof variables !== "object" || variables === null) return [];
+  if (!("roomId" in variables) || typeof variables.roomId !== "string") return [];
+  if (variables.roomId.trim() !== roomId) return [];
+  const ids: unknown[] = [];
+  if ("scheduleId" in variables) ids.push(variables.scheduleId);
+  if ("sourceScheduleId" in variables) ids.push(variables.sourceScheduleId);
+  if ("targetScheduleId" in variables) ids.push(variables.targetScheduleId);
+  return ids.filter((id): id is number => typeof id === "number");
+}
+
+/**
+ * 이 일차를 바꾸는 장소 이동 저장이 지금 끝나는 것 하나뿐인지. 연달아 놓았을 때 앞 저장이 끝날 때마다 다시 받으면
+ * 뒤 저장 전의 서버 순서가 잠깐 그려진다 — 같은 일차의 마지막 저장이 끝날 때 한 번만 다시 받는다(TanStack 동시 낙관적 갱신).
+ * onSettled 안에서는 끝나는 저장도 아직 진행 중으로 세므로 1 이하면 남은 저장이 없다
+ */
+function isLastItemMoveOf(
+  queryClient: ReturnType<typeof useQueryClient>,
+  roomId: string,
+  scheduleId: number,
+): boolean {
+  const rid = roomId.trim();
+  return (
+    queryClient.isMutating({
+      mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY,
+      predicate: (mutation) =>
+        scheduleIdsOfItemMove(mutation.state.variables, rid).includes(scheduleId),
+    }) <= 1
+  );
+}
+
+/**
+ * 이 방에서 장소 이동을 저장하는 중인 일차. 캐시는 저장 응답 전에 새 순서지만 서버는 아직 옛 순서라,
+ * 그 일차의 구간 경로를 지금 조회하면 옛 이웃까지의 경로가 새 구간 key에 저장된다 — 저장이 끝날 때까지 조회하지 않는다.
+ * (여러 일차를 한 번에 그리는 지도를 위해 일차 목록으로 돌려준다)
+ */
+export function useScheduleItemMoveSavingDays(roomId: string): number[] {
+  const rid = roomId.trim();
+  return useMutationState({
+    filters: { mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY, status: "pending" },
+    select: (mutation) => scheduleIdsOfItemMove(mutation.state.variables, rid),
+  }).flat();
+}
+
+/**
+ * 일정 항목을 다른 일차로 이동 — 같은 일차 내 순서는 `useReorderScheduleItem` 사용.
+ * 결과가 두 일차 목록과 지도에 함께 보여 응답 전에 두 일차 캐시를 먼저 고치고(onMutate), 실패하면 되돌린다.
+ */
 export function useMoveScheduleItemToSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY,
     mutationFn: ({
       roomId,
       sourceScheduleId,
@@ -278,8 +372,6 @@ export function useMoveScheduleItemToSchedule() {
       itemId: number;
       targetScheduleId: number;
       targetOrderIndex: number;
-      /** 저장하는 동안 대상 일차에 먼저 보여 줄 카드(모바일 편집 목록) — 요청에는 쓰지 않는다 */
-      place?: PlanPlace;
     }) => {
       if (sourceScheduleId === targetScheduleId) {
         throw new Error("같은 일차 안에서는 순서 변경만 가능해요.");
@@ -289,17 +381,60 @@ export function useMoveScheduleItemToSchedule() {
         targetOrderIndex,
       });
     },
-    onSuccess: async (
-      _moved,
-      { roomId, sourceScheduleId, targetScheduleId },
-    ) => {
-      await invalidateExpenses(queryClient, roomId);
-      await syncAfterCrossScheduleItemMove(
-        queryClient,
-        roomId,
-        sourceScheduleId,
-        targetScheduleId,
+    onMutate: async ({
+      roomId,
+      sourceScheduleId,
+      itemId,
+      targetScheduleId,
+      targetOrderIndex,
+    }) => {
+      const rid = roomId.trim();
+      const sourceKey = scheduleItemsQueryKey(rid, sourceScheduleId);
+      const targetKey = scheduleItemsQueryKey(rid, targetScheduleId);
+      // 진행 중인 조회의 옛 목록이 먼저 고친 목록을 덮지 않게 취소한다
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: sourceKey, exact: true }),
+        queryClient.cancelQueries({ queryKey: targetKey, exact: true }),
+      ]);
+      const previousSource = queryClient.getQueryData<PlanPlace[]>(sourceKey);
+      const previousTarget = queryClient.getQueryData<PlanPlace[]>(targetKey);
+      // 옮길 장소는 출발 일차 캐시에서 꺼낸다
+      const moved = previousSource?.find((p) => p.itemId === itemId);
+      if (moved) {
+        queryClient.setQueryData<PlanPlace[]>(
+          sourceKey,
+          (old) => old && removePlanPlace(old, itemId),
+        );
+        queryClient.setQueryData<PlanPlace[]>(
+          targetKey,
+          (old) => old && insertPlanPlace(old, moved, targetOrderIndex),
+        );
+      }
+      return { previousSource, previousTarget };
+    },
+    // 되돌린 값은 그사이 들어온 다른 사람의 변경을 지울 수 있다 — onSettled가 두 일차를 다시 받아 맞춘다
+    onError: (_error, { roomId, sourceScheduleId, targetScheduleId }, context) => {
+      const rid = roomId.trim();
+      queryClient.setQueryData(
+        scheduleItemsQueryKey(rid, sourceScheduleId),
+        context?.previousSource,
       );
+      queryClient.setQueryData(
+        scheduleItemsQueryKey(rid, targetScheduleId),
+        context?.previousTarget,
+      );
+    },
+    onSuccess: (_moved, { roomId }) => invalidateExpenses(queryClient, roomId),
+    // 출발·대상 일차를 다시 받는다(성공·실패 모두). 그 일차를 바꾸는 저장이 더 남았으면 그 저장이 끝날 때 받는다.
+    // `syncAfterCrossScheduleItemMove`는 출발 일차 재조회가 실패하면 throw해서, 여기서 쓰면 저장된 이동이 실패로 바뀌고
+    // onError가 화면을 되돌린다
+    // 다시 받기는 기다리지 않는다 — 기다리면 그 GET이 끝날 때까지 mutateAsync가 끝나지 않아 실패 토스트가 늦게 뜬다
+    onSettled: (_moved, _error, { roomId, sourceScheduleId, targetScheduleId }) => {
+      for (const scheduleId of [sourceScheduleId, targetScheduleId]) {
+        if (isLastItemMoveOf(queryClient, roomId, scheduleId)) {
+          void invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+        }
+      }
     },
   });
 }
@@ -452,10 +587,15 @@ export function useDeleteScheduleItem() {
   });
 }
 
-/** 순서 변경 — 응답·경로 캐시 반영과 일차 재조회를 기다리므로 `isPending`이 그 끝까지 이어진다 */
+/**
+ * 순서 변경 — 결과가 일차 목록·지도에 함께 보여 응답 전에 그 일차 캐시를 새 순서로 고치고(onMutate), 실패하면 되돌린다.
+ * 응답은 캐시에 쓰지 않는다 — 이미 새 순서로 그렸고, 연달아 놓으면 앞 응답이 뒤 저장 전 순서를 다시 그린다.
+ * 서버 상태는 그 일차의 마지막 저장이 끝날 때 다시 받아 맞춘다(onSettled)
+ */
 export function useReorderScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY,
     mutationFn: (vars: {
       roomId: string;
       scheduleId: number;
@@ -468,15 +608,39 @@ export function useReorderScheduleItem() {
         vars.itemId,
         vars.body,
       ),
-    onSuccess: (items, { roomId, scheduleId }) =>
-      syncPlanPlacesAfterReorderSuccess(
-        queryClient,
-        roomId,
-        scheduleId,
-        items,
-      ),
-    onSettled: (_items, _error, { roomId, scheduleId }) =>
-      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
+    onMutate: async ({ roomId, scheduleId, itemId, body }) => {
+      const key = scheduleItemsQueryKey(roomId.trim(), scheduleId);
+      // 진행 중인 조회의 옛 목록이 먼저 고친 목록을 덮지 않게 취소한다
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const previous = queryClient.getQueryData<PlanPlace[]>(key);
+      queryClient.setQueryData<PlanPlace[]>(
+        key,
+        (old) => old && movePlanPlaceWithinDay(old, itemId, body.newOrderIndex),
+      );
+      return { previous };
+    },
+    // 되돌린 값은 그사이 들어온 다른 사람의 변경을 지울 수 있다 — onSettled가 그 일차를 다시 받아 맞춘다
+    onError: (_error, { roomId, scheduleId }, context) => {
+      queryClient.setQueryData(
+        scheduleItemsQueryKey(roomId.trim(), scheduleId),
+        context?.previous,
+      );
+    },
+    onSuccess: (items, { roomId }) => {
+      // 서버가 확인한 순서 변경만 기록한다(낙관적 표시는 쓰기 이벤트가 아님). 순서 변경은 드래그로만 하고,
+      // 응답은 그 일차 전체라 길이가 곧 일차의 장소 수다
+      trackAnalyticsEvent(AnalyticsEvents.reorderItinerary, {
+        room_id: roomId,
+        item_count_bucket: bucketItemCount(items.length),
+        method: "drag_drop",
+      });
+    },
+    // 다시 받기는 기다리지 않는다 — 기다리면 그 GET이 끝날 때까지 mutateAsync가 끝나지 않아 실패 토스트가 늦게 뜬다
+    onSettled: (_items, _error, { roomId, scheduleId }) => {
+      if (isLastItemMoveOf(queryClient, roomId, scheduleId)) {
+        void invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+      }
+    },
   });
 }
 

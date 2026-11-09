@@ -22,6 +22,7 @@ vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room
 vi.mock("@/hooks/useRooms", () => ({
   useRoomSchedules: () => ({ data: fixtures.schedules, isSuccess: true }),
   useSchedulePlanPlaces: () => ({ data: fixtures.places, isSuccess: true, isFetching: false }),
+  useScheduleItemMoveSavingDays: () => [],
 }));
 vi.mock("@/hooks/usePrefetchScheduleRoutes", () => ({ usePrefetchScheduleRoutes: () => true }));
 vi.mock("@/components/expenses/ExpenseProvider", () => ({
@@ -128,7 +129,7 @@ it.each([
   document.body.append(host);
   const root = createRoot(host);
   function Route() { return useMobileRouteView({ active: true, day: 1, initialItemId: 101 }).overlay; }
-  const drag = { editing: false, dragDisabled: false, pending: null, dropTargetScheduleId: null,
+  const drag = { editing: false, dropTargetScheduleId: null,
     registerList: vi.fn(), registerRow: vi.fn(), registerPlaces: vi.fn(), startDrag: vi.fn(), rowStyle: () => undefined };
   try {
     await act(async () => root.render(<QueryClientProvider client={queryClient}>

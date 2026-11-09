@@ -697,6 +697,7 @@ it("shares one room subscription across route children and resets it on selected
 
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: undefined }) }));
 vi.mock("@/hooks/usePlanScheduleDayReorder", () => ({ usePlanScheduleDayReorder: () => ({ getSectionProps: () => ({}), listContainerProps: {}, isMovePending: false }) }));
+vi.mock("@/hooks/usePlanItemDropCommit", () => ({ usePlanItemDropCommit: () => ({ commitPlanItemDrop: vi.fn() }) }));
 vi.mock("@/app/(main)/plan/_components/itinerary/PlanScheduleDayBlock", () => ({ PlanScheduleDayBlock: () => null }));
 import { PlanPageView } from "@/app/(main)/plan/_components/itinerary/PlanPageView";
 

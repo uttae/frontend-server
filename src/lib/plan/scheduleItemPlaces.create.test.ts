@@ -155,28 +155,6 @@ describe("cross-schedule refresh sequencing", () => {
   });
 });
 
-describe("reorder preserves user times", () => {
-  it.each([
-    [null, null], ["12:45", null], ["23:00", "01:00"], ["00:00", "00:00"],
-  ])("keeps %s / %s and never sends a time PATCH", async (startTime, endTime) => {
-    vi.clearAllMocks();
-    const { syncPlanPlacesAfterReorderSuccess } = await import("./scheduleItemPlaces");
-    const client = new QueryClient();
-    const key = scheduleItemsQueryKey("room", 10);
-    client.setQueryData(key, [1, 2].map((itemId) => ({ id: `item-${itemId}`, itemId, title: "Place" })));
-    const items = [
-      { ...scheduleItem(2, 0), startTime, endTime },
-      { ...scheduleItem(1, 1), startTime: null, endTime: null },
-    ];
-    await syncPlanPlacesAfterReorderSuccess(client, "room", 10, items);
-    expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
-    expect(client.getQueryData<Array<{ itemId: number; startTime?: string; endTime?: string }>>(key)?.map(p =>
-      [p.itemId, p.startTime ?? null, p.endTime ?? null])).toEqual([[2, startTime, endTime], [1, null, null]]);
-    client.clear();
-  });
-});
-
-
 it("cross-day move refresh preserves unset and partial times without a time PATCH", async () => {
   vi.clearAllMocks();
   const client = new QueryClient();

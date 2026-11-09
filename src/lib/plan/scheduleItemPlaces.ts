@@ -195,26 +195,6 @@ export async function invalidateSchedulePlanPlaces(
 }
 
 /**
- * `reorderScheduleItem` 응답(`RoomScheduleItem[]`)으로 캐시된 PlanPlace를 갱신하고,
- * 머지 불가 시에만 전체 enrich를 다시 가져옵니다.
- */
-export async function mergeOrRefetchSchedulePlanPlacesFromItems(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number,
-  items: RoomScheduleItem[],
-): Promise<void> {
-  const key = scheduleItemsQueryKey(roomId.trim(), scheduleId);
-  queryClient.setQueryData(
-    key,
-    (await mergeScheduleItemsIntoPlanPlaces(
-      queryClient.getQueryData<PlanPlace[]>(key),
-      items,
-    )) ?? (await buildPlanPlacesFromScheduleItems(items)),
-  );
-}
-
-/**
  * 다른 일차로 옮긴 뒤 두 일차 장소 목록을 다시 받습니다. 경로는 도착 항목까지 key에 있어
  * 순서가 바뀐 구간은 새 key로 받으므로 따로 무효화하지 않습니다.
  */
@@ -346,24 +326,6 @@ export async function fetchSchedulePlanPlacesFromCacheOrApi(
   }
 
   return fetchScheduleItemsAsPlanPlaces(rid, scheduleId);
-}
-
-/** 순서 응답을 반영합니다. 경로 캐시는 출발·도착 항목 키로 구분합니다. */
-export async function syncPlanPlacesAfterReorderSuccess(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number,
-  items: RoomScheduleItem[],
-): Promise<void> {
-  const rid = roomId.trim();
-  if (!rid.length) return;
-
-  await mergeOrRefetchSchedulePlanPlacesFromItems(
-    queryClient,
-    roomId,
-    scheduleId,
-    items,
-  );
 }
 
 /** PATCH 응답 한 건으로 로컬 PlanPlace 캐시만 갱신(같은 목록에 itemId가 있을 때). */
@@ -507,23 +469,6 @@ export async function applyCreatedScheduleItemToPlanPlaces(
     scheduleItemsQueryKey(roomId.trim(), scheduleId),
     (old) => mergeCreatedScheduleItemDelta(old, createdPlace, response) ?? old,
   );
-}
-
-/** 드래그를 `toIndex` 자리에 놓았을 때 PATCH에 넣을 `newOrderIndex`(0-based) */
-export function newOrderIndexAfterMove(
-  fromIndex: number,
-  toIndex: number,
-  length: number,
-): number {
-  if (length <= 0 || fromIndex < 0 || toIndex < 0 || fromIndex >= length) {
-    return Math.min(Math.max(toIndex, 0), Math.max(length - 1, 0));
-  }
-  const cappedTo = Math.min(toIndex, length - 1);
-  if (fromIndex === cappedTo) return fromIndex;
-  const order = Array.from({ length }, (_, i) => i);
-  const [moved] = order.splice(fromIndex, 1);
-  order.splice(cappedTo, 0, moved);
-  return order.indexOf(moved);
 }
 
 export async function fetchScheduleItemsAsPlanPlaces(

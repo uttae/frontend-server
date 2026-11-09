@@ -16,9 +16,9 @@ vi.mock("@/lib/rooms", async (importOriginal) => ({
   syncRoomDetailFromServer: vi.fn(),
 }));
 vi.mock("@/lib/plan/scheduleItemPlaces", () => ({
-  syncAfterCrossScheduleItemMove: vi.fn(),
   removeScheduleItemFromPlanPlacesCache: vi.fn(),
 }));
+import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 import {
   useMoveRoomSchedule,
   useDeleteRoomSchedule,
@@ -85,4 +85,23 @@ it("evicts expenses on room deletion", async () => {
     client.getQueryData(["room-expenses", "r", "summary"]),
   ).toBeUndefined();
   expect(client.getQueryData(["room-expenses", "other", "list"])).toEqual([]);
+});
+it("refreshes both days after a place move, but leaves expenses alone when the move failed", async () => {
+  useMoveScheduleItemToSchedule();
+  for (const scheduleId of [1, 2]) client.setQueryData(scheduleItemsQueryKey("r", scheduleId), []);
+  await mock.mutation.mock.lastCall![0].onSettled(undefined, new Error("failed"), {
+    roomId: "r", sourceScheduleId: 1, targetScheduleId: 2, itemId: 2, targetOrderIndex: 0,
+  });
+  for (const scheduleId of [1, 2])
+    expect(client.getQueryState(scheduleItemsQueryKey("r", scheduleId))?.isInvalidated).toBe(true);
+  expect(client.getQueryState(["room-expenses", "r", "list"])?.isInvalidated).toBe(false);
+});
+it("refreshes the room schedules after day reordering whether or not it saved", async () => {
+  useMoveRoomSchedule();
+  client.setQueryData(roomSchedulesQueryKey("r"), []);
+  await mock.mutation.mock.lastCall![0].onSettled(undefined, new Error("failed"), {
+    roomId: "r", scheduleId: 1, targetDayNumber: 2,
+  });
+  expect(client.getQueryState(roomSchedulesQueryKey("r"))?.isInvalidated).toBe(true);
+  expect(client.getQueryState(["room-expenses", "r", "list"])?.isInvalidated).toBe(false);
 });
