@@ -40,6 +40,13 @@ export function usePlanScheduleDayReorder({
     useMoveRoomSchedule();
   const [dragFromIndex, setDragFromIndex] = useState<number | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  /**
+   * 놓아서 저장하는 중 — 놓을 때 일정 목록. 캐시(onMutate)가 목록을 바꿀 때까지 놓은 모양을 그대로 둔다.
+   * 먼저 풀면 캐시가 바뀌기 전 한 프레임 동안 옛 순서가 보인다(캐시 알림은 setTimeout 0 뒤)
+   */
+  const [droppedSchedules, setDroppedSchedules] = useState<RoomSchedule[] | null>(null);
+  // dragend는 drop 바로 뒤에 와서 렌더 전 값을 봐야 한다
+  const droppedRef = useRef(false);
 
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const layoutSnapshotRef = useRef(new PlanItemRowLayoutSnapshot());
@@ -106,6 +113,8 @@ export function usePlanScheduleDayReorder({
   );
 
   const handleDragEnd = useCallback(() => {
+    // 놓아서 저장 중이면 저장이 끝날 때 푼다
+    if (droppedRef.current) return;
     if (dragOverRafRef.current) {
       cancelAnimationFrame(dragOverRafRef.current);
       dragOverRafRef.current = 0;
@@ -145,10 +154,9 @@ export function usePlanScheduleDayReorder({
         previewIndex ??
         (Number.isFinite(fromIndex) ? fromIndex : null);
 
-      resetDragPreview();
-
       // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
       if (scheduleResyncPending) {
+        resetDragPreview();
         toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
         return;
       }
@@ -162,14 +170,20 @@ export function usePlanScheduleDayReorder({
         toIndex >= schedules.length ||
         fromIndex === toIndex
       ) {
+        resetDragPreview();
         return;
       }
 
       const scheduleId = schedules[fromIndex]?.scheduleId;
-      if (typeof scheduleId !== "number") return;
+      if (typeof scheduleId !== "number") {
+        resetDragPreview();
+        return;
+      }
 
       const targetDayNumber = toIndex + 1;
 
+      droppedRef.current = true;
+      setDroppedSchedules(schedules);
       try {
         await moveMutate({
           roomId,
@@ -182,14 +196,21 @@ export function usePlanScheduleDayReorder({
             ? err.message
             : "일차 순서를 바꾸지 못했어요.",
         );
+      } finally {
+        droppedRef.current = false;
+        setDroppedSchedules(null);
+        resetDragPreview();
       }
     },
     [moveMutate, previewIndex, resetDragPreview, roomId, scheduleResyncPending, schedules],
   );
 
+  // 저장 중에는 캐시가 놓을 때 목록 그대로인 동안만 놓은 모양을 그린다
+  const previewActive = droppedSchedules === null || droppedSchedules === schedules;
+
   const getSectionProps = useCallback(
     (index: number) => {
-      const fromIdx = dragFromIndex;
+      const fromIdx = previewActive ? dragFromIndex : null;
       const previewIdx = previewIndex;
       const snapshot = layoutSnapshotRef.current;
 
@@ -215,7 +236,7 @@ export function usePlanScheduleDayReorder({
         sectionStyle: getPlanItemRowReorderStyle({
           translateY,
           isDragging,
-          motionEnabled: isDraggingActive,
+          motionEnabled: isDraggingActive && previewActive,
         }),
         dragHandleProps: {
           dragDisabled:
@@ -232,6 +253,7 @@ export function usePlanScheduleDayReorder({
       handleDragEnd,
       handleDragStart,
       isDraggingActive,
+      previewActive,
       previewIndex,
       scheduleResyncPending,
       schedules,

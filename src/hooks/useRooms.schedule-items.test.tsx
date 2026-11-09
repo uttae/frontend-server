@@ -10,11 +10,13 @@ import { expect, it, vi } from "vitest";
 import type { RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
 import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import type { PlanPlace } from "@/lib/plan/types";
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
+import type { RoomSchedule } from "@/lib/api/rooms/schedules";
 import { hookHarness } from "@/test/hook-harness";
 
 import {
   useDeleteScheduleItem,
+  useMoveRoomSchedule,
   useMoveScheduleItemToSchedule,
   useReorderScheduleItem,
   useScheduleItemMoveSavingDays,
@@ -25,6 +27,7 @@ const api = vi.hoisted(() => ({
   getScheduleItems: vi.fn(),
   reorderScheduleItem: vi.fn(),
   moveScheduleItemToSchedule: vi.fn(),
+  moveRoomSchedule: vi.fn(),
 }));
 vi.mock("@/lib/client-env", () => ({
   clientEnv: { NEXT_PUBLIC_API_BASE_URL: "https://api.example.test" },
@@ -35,6 +38,10 @@ vi.mock("@/lib/api/rooms/schedule-items", async (original) => ({
   getScheduleItems: api.getScheduleItems,
   reorderScheduleItem: api.reorderScheduleItem,
   moveScheduleItemToSchedule: api.moveScheduleItemToSchedule,
+}));
+vi.mock("@/lib/api/rooms/schedules", async (original) => ({
+  ...(await original<object>()),
+  moveRoomSchedule: api.moveRoomSchedule,
 }));
 vi.mock("@/contexts/StompContext", () => ({
   useStompContext: () => ({ connected: true }),
@@ -259,6 +266,57 @@ it("keeps a saved cross-day move as saved even when the follow-up day refetch fa
   }
 });
 
+it("moves the day and renumbers day numbers and dates before the response, and restores them when saving fails", async () => {
+  const client = newClient();
+  const key = roomSchedulesQueryKey("room-1");
+  const day = (scheduleId: number, dayNumber: number): RoomSchedule => ({
+    scheduleId,
+    roomId: "room-1",
+    dayNumber,
+    date: `2026-10-0${dayNumber}`,
+    createdAt: "",
+  });
+  client.setQueryData(key, [day(10, 1), day(20, 2), day(30, 3)]);
+  const move = deferred<unknown>();
+  api.moveRoomSchedule.mockReturnValueOnce(move.promise);
+  const hook = hookHarness(
+    () => useMoveRoomSchedule(),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+  );
+  const shown = () =>
+    client.getQueryData<RoomSchedule[]>(key)?.map((s) => [s.scheduleId, s.dayNumber, s.date]);
+  try {
+    await hook.render(undefined);
+    let saving!: Promise<unknown>;
+    await act(async () => {
+      saving = hook.current
+        .mutateAsync({ roomId: "room-1", scheduleId: 30, targetDayNumber: 1 })
+        .catch((error: unknown) => error);
+    });
+    await hook.flush();
+    // 날짜 라벨은 date, 정렬은 dayNumber로 하므로 둘 다 새 자리대로 — 날짜는 자리에 남는다
+    expect(shown()).toEqual([
+      [30, 1, "2026-10-01"],
+      [10, 2, "2026-10-02"],
+      [20, 3, "2026-10-03"],
+    ]);
+
+    move.reject(new Error("저장 실패"));
+    await act(async () => {
+      await saving;
+    });
+    expect(shown()).toEqual([
+      [10, 1, "2026-10-01"],
+      [20, 2, "2026-10-02"],
+      [30, 3, "2026-10-03"],
+    ]);
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  } finally {
+    await hook.unmount();
+    client.clear();
+  }
+});
+
 it("draws only the latest order when two reorders on the same day overlap, and refetches the day once after the last save", async () => {
   const client = newClient();
   const key = scheduleItemsQueryKey("room-1", 10);
@@ -308,6 +366,52 @@ it("draws only the latest order when two reorders on the same day overlap, and r
     expect(ids(client.getQueryData<PlanPlace[]>(key))).toEqual([102, 100, 101]);
   } finally {
     unwatch();
+    await hook.unmount();
+    client.clear();
+  }
+});
+
+it("refetches the room schedules once, after the last of two overlapping day moves", async () => {
+  const client = newClient();
+  const key = roomSchedulesQueryKey("room-1");
+  const day = (scheduleId: number, dayNumber: number): RoomSchedule => ({
+    scheduleId,
+    roomId: "room-1",
+    dayNumber,
+    date: `2026-10-0${dayNumber}`,
+    createdAt: "",
+  });
+  client.setQueryData(key, [day(10, 1), day(20, 2), day(30, 3)]);
+  const first = deferred<unknown>();
+  const second = deferred<unknown>();
+  api.moveRoomSchedule.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+  const hook = hookHarness(
+    () => useMoveRoomSchedule(),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+  );
+  try {
+    await hook.render(undefined);
+    let firstSaving!: Promise<unknown>;
+    let secondSaving!: Promise<unknown>;
+    await act(async () => {
+      firstSaving = hook.current.mutateAsync({ roomId: "room-1", scheduleId: 30, targetDayNumber: 1 });
+      secondSaving = hook.current.mutateAsync({ roomId: "room-1", scheduleId: 10, targetDayNumber: 3 });
+    });
+    await hook.flush();
+
+    // 앞 저장이 끝나도 뒤 저장이 남았으면 다시 받지 않는다
+    await act(async () => {
+      first.resolve({});
+      await firstSaving;
+    });
+    expect(client.getQueryState(key)?.isInvalidated).toBe(false);
+
+    await act(async () => {
+      second.resolve({});
+      await secondSaving;
+    });
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+  } finally {
     await hook.unmount();
     client.clear();
   }

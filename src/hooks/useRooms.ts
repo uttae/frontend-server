@@ -48,6 +48,7 @@ import {
   type RoomBookmark,
   type RoomCreateRequest,
   type RoomScheduleCreateRequest,
+  type RoomScheduleWithItems,
   type ReorderScheduleItemRequest,
   type RoomScheduleItemUpdateRequest,
   type RoomUpdateRequest,
@@ -68,6 +69,7 @@ import {
 import {
   insertPlanPlace,
   movePlanPlaceWithinDay,
+  moveRoomScheduleToDay,
   removePlanPlace,
 } from "@/lib/plan/planListMove";
 import { fetchAndSeedAllRoomBookmarks } from "@/lib/bookmarks/bookmark-bulk-cache";
@@ -245,10 +247,17 @@ export function useCreateRoomSchedule() {
   });
 }
 
-/** 일차(schedule) 이동 — shift 후 전체 재조회로 갱신 (원격: STOMP `ROOM_SCHEDULES_RESYNCED`) */
+/**
+ * 일차(schedule) 이동 — 일차 순서·날짜 라벨이 일정 전체에 보여 응답 전에 `room-schedules`를 새 순서로 고치고(onMutate),
+ * 실패하면 되돌린다. 성공·실패 모두 마지막 저장이 끝날 때 일정을 다시 받는다 (원격: STOMP `ROOM_SCHEDULES_RESYNCED`)
+ */
+/** 일차 순서 변경 저장 — 마지막 저장이 끝날 때만 일정을 다시 받도록 진행 중인 저장을 이 key로 센다 */
+const ROOM_SCHEDULE_MOVE_MUTATION_KEY = ["room-schedule-move"] as const;
+
 export function useMoveRoomSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY,
     mutationFn: ({
       roomId,
       scheduleId,
@@ -258,12 +267,35 @@ export function useMoveRoomSchedule() {
       scheduleId: number;
       targetDayNumber: number;
     }) => moveRoomSchedule(roomId, scheduleId, { targetDayNumber }),
+    onMutate: async ({ roomId, scheduleId, targetDayNumber }) => {
+      const key = roomSchedulesQueryKey(roomId.trim());
+      // 진행 중인 일정 조회의 옛 순서가 먼저 고친 순서를 덮지 않게 취소한다
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const previous = queryClient.getQueryData<RoomScheduleWithItems[]>(key);
+      queryClient.setQueryData<RoomScheduleWithItems[]>(
+        key,
+        (old) => old && moveRoomScheduleToDay(old, scheduleId, targetDayNumber),
+      );
+      return { previous };
+    },
+    // 되돌린 값은 그사이 들어온 다른 사람의 변경을 지울 수 있다 — onSettled가 일정을 다시 받아 맞춘다
+    onError: (_error, { roomId }, context) => {
+      queryClient.setQueryData(roomSchedulesQueryKey(roomId.trim()), context?.previous);
+    },
     onSuccess: async (_data, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
       await invalidateExpenses(queryClient, id);
-      await refreshRoomSchedules(queryClient, id);
     },
+    // 연달아 옮기면 앞 저장이 끝날 때 다시 받은 일정이 뒤 저장 전 순서를 그린다 — 마지막 저장이 끝날 때 한 번만 받는다.
+    // onSettled 안에서는 끝나는 저장도 아직 진행 중으로 세므로 1 이하면 남은 저장이 없다
+    onSettled: (_data, _error, { roomId }) =>
+      queryClient.isMutating({ mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY }) <= 1
+        ? queryClient.invalidateQueries({
+            queryKey: roomSchedulesQueryKey(roomId.trim()),
+            exact: true,
+          })
+        : undefined,
   });
 }
 
