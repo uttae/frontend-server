@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { BrandLogo } from "@/components/BrandLogo";
 
 import { checkClientAuthenticated, setPendingInviteCode } from "@/lib/auth";
+import { consumePendingInviteCode, pendingInviteAuthPath } from "@/lib/session-user-flow";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { useJoinRoom } from "@/hooks/useRooms";
 import { getRoomDetail } from "@/lib/api/rooms";
@@ -36,6 +37,7 @@ export default function JoinPage() {
       });
     }
 
+    const entrySearch = window.location.search;
     let cancelled = false;
 
     void (async () => {
@@ -43,11 +45,13 @@ export default function JoinPage() {
       if (cancelled) return;
 
       if (!authenticated) {
-        setPendingInviteCode(inviteCode);
-        router.replace("/login");
+        setPendingInviteCode(inviteCode, entrySearch);
+        router.replace(pendingInviteAuthPath("/login"));
         return;
       }
 
+      // An authenticated re-entry completes the detour (or replaces an older invite).
+      consumePendingInviteCode();
       join(inviteCode, {
         onSuccess: async (data) => {
           if (data.httpStatus === 200) {

@@ -61,6 +61,7 @@ export function MobileMapSearch({
     usePlaceSearchStore.setState({
       query: entry.name,
       confirmationKind: "specific",
+      searchMode: "text",
       status: "pending",
       error: null,
     });
@@ -89,7 +90,6 @@ export function MobileMapSearch({
         expanded: false,
         status: "done",
         error: null,
-        fallback: false,
         termination: "not-requested",
         resolution: null,
         query: item.name,

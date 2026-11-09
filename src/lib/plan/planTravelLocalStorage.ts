@@ -8,13 +8,15 @@ function roundCoord(n: number): string {
 
 const NS_ROUTE = "hau:plan:route:v1";
 
+/** 구간 = 출발 항목 → 도착 항목. 도착 항목이 없던 예전 형식(`…:출발:수단`)은 이 key와 겹치지 않아 읽지 않는다 */
 function routeStorageKey(
   roomId: string,
   scheduleId: number,
   segmentSourceItemId: number,
+  destinationItemId: number,
   travelMode: string,
 ): string {
-  return `${NS_ROUTE}:${roomId.trim()}:${scheduleId}:${segmentSourceItemId}:${travelMode.trim()}`;
+  return `${NS_ROUTE}:${roomId.trim()}:${scheduleId}:${segmentSourceItemId}:${destinationItemId}:${travelMode.trim()}`;
 }
 
 type PersistedRouteV1 = {
@@ -75,21 +77,6 @@ function removeSessionStorageKeysMatchingPrefixes(prefixes: string[]): void {
   }
 }
 
-/** 지정 구간(`segmentSourceItemId`)의 경로 sessionStorage만 제거 */
-export function clearPersistedScheduleRoutesForSegmentSources(
-  roomId: string,
-  scheduleId: number,
-  segmentSourceItemIds: number[],
-): void {
-  const rid = roomId.trim();
-  if (!rid.length || segmentSourceItemIds.length === 0) return;
-  removeSessionStorageKeysMatchingPrefixes(
-    segmentSourceItemIds.map(
-      (id) => `${NS_ROUTE}:${rid}:${scheduleId}:${id}:`,
-    ),
-  );
-}
-
 /** 해당 일차 경로 sessionStorage 항목 일괄 제거 */
 export function clearPersistedScheduleRoutesForSchedule(
   roomId: string,
@@ -110,13 +97,14 @@ export function readScheduleRouteFromSessionStorage(
   roomId: string,
   scheduleId: number,
   segmentSourceItemId: number,
+  destinationItemId: number,
   travelMode: string,
   expectedFp: string,
 ): ScheduleItemRouteResponse | null | undefined {
   if (typeof window === "undefined" || !expectedFp) return undefined;
   try {
     const raw = sessionStorage.getItem(
-      routeStorageKey(roomId, scheduleId, segmentSourceItemId, travelMode),
+      routeStorageKey(roomId, scheduleId, segmentSourceItemId, destinationItemId, travelMode),
     );
     if (!raw) return undefined;
     const o = JSON.parse(raw) as PersistedRouteV1;
@@ -133,6 +121,7 @@ export function writeScheduleRouteToSessionStorage(
   roomId: string,
   scheduleId: number,
   segmentSourceItemId: number,
+  destinationItemId: number,
   travelMode: string,
   fp: string,
   data: ScheduleItemRouteResponse | null,
@@ -143,6 +132,7 @@ export function writeScheduleRouteToSessionStorage(
       roomId,
       scheduleId,
       segmentSourceItemId,
+      destinationItemId,
       travelMode,
     );
     if (data === null) {

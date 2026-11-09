@@ -45,3 +45,15 @@ it("does not record a rejected copy or cancelled native share", async () => {
   }
   expect(commands).not.toHaveBeenCalled();
 });
+it.each(["복사", "공유"])("provides the same tagged external URL to %s", async label => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  const share = vi.fn().mockResolvedValue(undefined);
+  vi.stubGlobal("navigator", { clipboard: { writeText }, share });
+  await mount();
+  const button = renderer.root.findAllByType("button").find(b => b.children.includes(label))!;
+  await act(async () => { await button.props.onClick(); });
+  const url = "https://example.test/join/private-access-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite";
+  if (label === "복사") expect(writeText).toHaveBeenCalledWith(url);
+  else expect(share).toHaveBeenCalledWith({ title: "우때 여행 초대", url });
+  expect(JSON.stringify(commands.mock.calls)).not.toContain("private-access-code");
+});

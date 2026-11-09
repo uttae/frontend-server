@@ -12,8 +12,10 @@ import { registerQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { useSessionStore } from "@/stores/session-store";
+import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 const network = vi.hoisted(() => ({
   page: vi.fn(),
+  area: vi.fn(),
   detail: vi.fn(),
   select: vi.fn(),
   track: vi.fn(),
@@ -22,6 +24,7 @@ const network = vi.hoisted(() => ({
 }));
 vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: network.page,
+  fetchPlacesAreaPage: network.area,
 }));
 vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 vi.mock("@/contexts/SelectedPlaceContext", () => ({
@@ -70,6 +73,7 @@ beforeEach(async () => {
     if (String(url).endsWith("/places/resolve")) return Response.json({ detail: rawDetail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" });
     throw new Error(`Unexpected HTTP ${String(url)}`);
   });
+  network.area.mockReset().mockResolvedValue({ items: [], nextPageToken: null });
   network.page.mockReset().mockResolvedValue({
     items: [
       {
@@ -95,7 +99,7 @@ beforeEach(async () => {
   network.track.mockReset();
   useSessionStore.setState({ currentRoomId: "room" });
   usePlaceSearchStore.getState().clear();
-  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12 });
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 12, radiusMeters: null, bounds: null });
   host = document.createElement("div");
   root = createRoot(host);
   await act(async () => root.render(<Harness />));
@@ -110,9 +114,11 @@ it("web whole search publishes only Text Search pins without selecting a detail 
   expect(usePlaceSearchStore.getState().selectedId).toBeNull();
   expect(usePlaceSearchStore.getState().items.map(x => x.googlePlaceId)).toEqual(["other"]);
   expect(usePlaceSearchStore.getState().items[0].rating).toBe(4.2);
-  expect(client.getQueryData(placeDetailQueryKey("first"))).toEqual(rawDetail);
+  expect(network.page).toHaveBeenCalledWith(expect.objectContaining({ latitude: 1, longitude: 2, radius: 5000 }));
+  expect(vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/resolve"))).toHaveLength(0);
+  expect(client.getQueryData(placeDetailQueryKey("first"))).toBeUndefined();
 });
-it("mobile whole search keeps cards collapsed and reuses resolved full detail without GET supplement", async () => {
+it("mobile whole search keeps cards collapsed without detail requests", async () => {
   await act(async () => root.render(<Harness mobile />));
   await act(async () => {
     await api.confirm(confirmation());
@@ -138,6 +144,40 @@ it("mobile specific reuses chosen resolved detail without Text Search", async ()
     expect.objectContaining({ googlePlaceId: "first", name: "추천" }),
     expect.objectContaining({ analyticsSource: "search", itinerarySource: "search" }),
   );
+});
+// 센소지를 찾은 뒤 지도를 옮겨 재검색할 때 위치 우선(bias)으로 찾으면 Google이 센소지를 다시 돌려줬다
+it.each([
+  ["shows what Google finds inside the visible map", ["inside"]],
+  ["shows no results when Google finds nothing inside the visible map", []],
+] as const)("search here asks Google for the visible map only and %s", async (_, expected) => {
+  await act(async () => { await api.confirm(confirmation()); });
+  const bounds = { south: 0, west: 1, north: 2, east: 3 };
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234, bounds });
+  const inside = { googlePlaceId: "inside", name: "화면 안", location: { lat: 1.5, lng: 2.5 } };
+  network.area.mockResolvedValueOnce({ items: expected.length ? [inside] : [], nextPageToken: null });
+  await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
+  await vi.waitFor(() => expect(usePlaceSearchStore.getState().status).toBe("done"));
+  expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(expected);
+  expect(network.area).toHaveBeenCalledExactlyOnceWith({ query: "원래 검색어", area: bounds, pageSize: expect.any(Number) });
+  expect(network.page).toHaveBeenCalledTimes(1);
+});
+it("search box failure shows one message instead of the raw error", async () => {
+  network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  await act(async () => { await api.confirm(confirmation()); });
+  expect(usePlaceSearchStore.getState()).toMatchObject({ status: "error", error: "검색에 실패했어요.", searchMode: "text" });
+});
+// 「현 위치에서 검색」 실패는 검색창 문구 없이 그 버튼이 「다시 시도」로 알리고, 보이던 결과는 그대로 둔다
+it("search here failure keeps the shown results and leaves the message to the button", async () => {
+  await act(async () => { await api.confirm(confirmation()); });
+  useMapCenterStore.setState({
+    mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234,
+    bounds: { south: 0, west: 1, north: 2, east: 3 },
+  });
+  network.area.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+  await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
+  await vi.waitFor(() => expect(usePlaceSearchStore.getState().status).toBe("error"));
+  expect(usePlaceSearchStore.getState()).toMatchObject({ searchMode: "map_recenter", error: null });
+  expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(["other"]);
 });
 it("editing input suppresses a late response and analytics", async () => {
   let finish!: (v: unknown) => void;

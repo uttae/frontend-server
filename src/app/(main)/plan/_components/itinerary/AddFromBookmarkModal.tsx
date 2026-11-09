@@ -163,7 +163,7 @@ export function AddFromBookmarkModal({
       setAddingGooglePlaceId(gid);
       const index = insertIndex ?? places.length;
       try {
-        const created = await createItem({
+        const { createdItem: created } = await createItem({
           roomId,
           scheduleId,
           googlePlaceId: gid,

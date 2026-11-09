@@ -1,24 +1,18 @@
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   CreateScheduleItemResponse,
   RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
+import type { PlanPlace } from "@/lib/plan/types";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 
 const mocks = vi.hoisted(() => ({
-  bumpForDirections: vi.fn(),
-  bumpPlanMapRouteSegments: vi.fn(),
   createScheduleItem: vi.fn(),
   updateScheduleItem: vi.fn(),
   fetchPlacePreview: vi.fn(),
   getScheduleItems: vi.fn(),
-  invalidateScheduleItemRouteForSources: vi.fn(),
-  invalidateScheduleItemRouteForWholeSchedule: vi.fn(),
-  invalidateScheduleItemRoutesAfterDelete: vi.fn(),
-  invalidateScheduleItemRoutesAfterItemCreated: vi.fn(),
-  readOrderedItemIdsFromScheduleItemsCache: vi.fn(),
 }));
 
 vi.mock("@/lib/api/rooms/schedule-items", () => ({
@@ -31,22 +25,6 @@ vi.mock("@/lib/places/place-queries", () => ({
   fetchPlacePreview: mocks.fetchPlacePreview,
 }));
 
-vi.mock("@/lib/plan/scheduleStompRouteScope", () => ({
-  bumpPlanMapRouteSegments: mocks.bumpPlanMapRouteSegments,
-  invalidateScheduleItemRouteForSources:
-    mocks.invalidateScheduleItemRouteForSources,
-  invalidateScheduleItemRouteForWholeSchedule:
-    mocks.invalidateScheduleItemRouteForWholeSchedule,
-  invalidateScheduleItemRoutesAfterDelete:
-    mocks.invalidateScheduleItemRoutesAfterDelete,
-  invalidateScheduleItemRoutesAfterItemCreated:
-    mocks.invalidateScheduleItemRoutesAfterItemCreated,
-  invalidateScheduleItemRoutesAfterReorder: vi.fn(),
-  readOrderedItemIdsFromScheduleItemsCache:
-    mocks.readOrderedItemIdsFromScheduleItemsCache,
-  removeRouteQueriesForDeletedItemSource: vi.fn(),
-}));
-
 vi.mock("@/lib/rooms", () => ({
   awaitRoomSchedulesHydrated: vi.fn(),
 }));
@@ -55,13 +33,8 @@ vi.mock("@/lib/query-client", () => ({
   getQueryClient: vi.fn(),
 }));
 
-vi.mock("@/stores/plan-map-directions-epoch-store", () => ({
-  usePlanMapDirectionsEpochStore: {
-    getState: () => ({ bumpForDirections: mocks.bumpForDirections }),
-  },
-}));
-
 let createScheduleItemAtPlanIndex: typeof import("@/lib/plan/scheduleItemPlaces").createScheduleItemAtPlanIndex;
+let applyCreatedScheduleItemToPlanPlaces: typeof import("@/lib/plan/scheduleItemPlaces").applyCreatedScheduleItemToPlanPlaces;
 let syncAfterCrossScheduleItemMove: typeof import("@/lib/plan/scheduleItemPlaces").syncAfterCrossScheduleItemMove;
 
 beforeAll(async () => {
@@ -70,8 +43,11 @@ beforeAll(async () => {
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
 
-  ({ createScheduleItemAtPlanIndex, syncAfterCrossScheduleItemMove } =
-    await import("@/lib/plan/scheduleItemPlaces"));
+  ({
+    createScheduleItemAtPlanIndex,
+    applyCreatedScheduleItemToPlanPlaces,
+    syncAfterCrossScheduleItemMove,
+  } = await import("@/lib/plan/scheduleItemPlaces"));
 });
 
 const scheduleItem = (itemId: number, orderIndex: number): RoomScheduleItem => ({
@@ -92,126 +68,92 @@ describe("createScheduleItemAtPlanIndex", () => {
       name: "Created place",
       formattedAddress: "Address",
     });
-    mocks.invalidateScheduleItemRouteForSources.mockResolvedValue(undefined);
-    mocks.invalidateScheduleItemRoutesAfterItemCreated.mockResolvedValue(
-      undefined,
-    );
   });
 
-  it("invalidates the route IDs returned by the create response", async () => {
-    const queryClient = new QueryClient();
-    const response: CreateScheduleItemResponse = {
-      createdItem: scheduleItem(3, 1),
-      updatedItems: [scheduleItem(2, 2)],
-      affectedRouteItemIds: [777],
-    };
-    mocks.createScheduleItem.mockResolvedValue(response);
-    const places = [
-      { id: "item-1", itemId: 1, googlePlaceId: "place-1", title: "One" },
-      { id: "item-2", itemId: 2, googlePlaceId: "place-2", title: "Two" },
-    ];
-    queryClient.setQueryData(scheduleItemsQueryKey("room-1", 10), places);
+  const response: CreateScheduleItemResponse = {
+    createdItem: scheduleItem(3, 1),
+    updatedItems: [scheduleItem(2, 2)],
+    affectedRouteItemIds: [777],
+  };
+  const places = [
+    { id: "item-1", itemId: 1, googlePlaceId: "place-1", title: "One" },
+    { id: "item-2", itemId: 2, googlePlaceId: "place-2", title: "Two" },
+  ];
 
-    await createScheduleItemAtPlanIndex(queryClient, {
-      roomId: "room-1",
-      scheduleId: 10,
-      places,
-      insertIndex: 1,
+  it("sends the dropped position as the server order index", async () => {
+    mocks.createScheduleItem.mockResolvedValue(response);
+
+    await expect(
+      createScheduleItemAtPlanIndex({
+        roomId: " room-1 ",
+        scheduleId: 10,
+        places,
+        insertIndex: 5,
+        googlePlaceId: "place-3",
+      }),
+    ).resolves.toBe(response);
+
+    expect(mocks.createScheduleItem).toHaveBeenCalledWith("room-1", 10, {
       googlePlaceId: "place-3",
+      orderIndex: 2,
     });
-
-    expect(
-      mocks.invalidateScheduleItemRoutesAfterItemCreated,
-    ).not.toHaveBeenCalled();
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      [777],
-    );
-    expect(mocks.bumpPlanMapRouteSegments).toHaveBeenCalledWith(
-      "room-1",
-      10,
-      [777],
-    );
   });
 
-  it("returns the created item when post-create route synchronization fails", async () => {
+  it("merges the create response into the day list", async () => {
     const queryClient = new QueryClient();
-    const response: CreateScheduleItemResponse = {
-      createdItem: scheduleItem(3, 1),
-      updatedItems: [scheduleItem(2, 2)],
-      affectedRouteItemIds: [777],
-    };
-    mocks.createScheduleItem.mockResolvedValue(response);
-    mocks.invalidateScheduleItemRouteForSources.mockRejectedValueOnce(
-      new Error("route sync failed"),
-    );
-    const places = [
-      { id: "item-1", itemId: 1, googlePlaceId: "place-1", title: "One" },
-      { id: "item-2", itemId: 2, googlePlaceId: "place-2", title: "Two" },
-    ];
     const key = scheduleItemsQueryKey("room-1", 10);
     queryClient.setQueryData(key, places);
 
-    await expect(
-      createScheduleItemAtPlanIndex(queryClient, {
-        roomId: "room-1",
-        scheduleId: 10,
-        places,
-        insertIndex: 1,
-        googlePlaceId: "place-3",
-      }),
-    ).resolves.toEqual(response.createdItem);
+    await applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response);
 
-    expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
     expect(
-      mocks.invalidateScheduleItemRouteForWholeSchedule,
-    ).toHaveBeenCalledWith(queryClient, "room-1", 10);
-    expect(mocks.bumpForDirections).toHaveBeenCalledWith("room-1");
+      queryClient.getQueryData<PlanPlace[]>(key)?.map((place) => place.itemId),
+    ).toEqual([1, 3, 2]);
   });
 
-  it("maps server-provided move route IDs to the refreshed schedules", async () => {
+  it("merges a placeholder place when the created place preview fails", async () => {
     const queryClient = new QueryClient();
-    mocks.getScheduleItems.mockResolvedValue([]);
-    mocks.readOrderedItemIdsFromScheduleItemsCache.mockImplementation(
-      (_queryClient: QueryClient, _roomId: string, scheduleId: number) =>
-        scheduleId === 10 ? [11] : [20, 21],
-    );
+    const key = scheduleItemsQueryKey("room-1", 10);
+    mocks.fetchPlacePreview.mockRejectedValueOnce(new Error("preview 429"));
+    queryClient.setQueryData(key, places);
 
-    await syncAfterCrossScheduleItemMove(
-      queryClient,
-      "room-1",
-      10,
-      20,
-      20,
-      [11, 21, 20],
-    );
+    await expect(
+      applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response),
+    ).resolves.toBeUndefined();
 
-    expect(mocks.invalidateScheduleItemRoutesAfterDelete).not.toHaveBeenCalled();
-    expect(
-      mocks.invalidateScheduleItemRoutesAfterItemCreated,
-    ).not.toHaveBeenCalled();
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenNthCalledWith(
-      1,
-      queryClient,
-      "room-1",
-      10,
-      [11],
-    );
-    expect(mocks.invalidateScheduleItemRouteForSources).toHaveBeenNthCalledWith(
-      2,
-      queryClient,
-      "room-1",
-      20,
-      [21, 20],
-    );
-    expect(
-      mocks.invalidateScheduleItemRouteForWholeSchedule,
-    ).not.toHaveBeenCalled();
+    expect(queryClient.getQueryData<PlanPlace[]>(key)?.[1]).toMatchObject({
+      itemId: 3,
+      title: "장소 정보를 불러올 수 없음",
+    });
   });
 });
 
+describe("cross-schedule refresh sequencing", () => {
+  it("waits for source refresh before target", async () => {
+    const client = new QueryClient();
+    let finishSource!: () => void;
+    const source = new Promise<void>((resolve) => { finishSource = resolve; });
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockReturnValueOnce(source).mockResolvedValue(undefined);
+    const syncing = syncAfterCrossScheduleItemMove(client, "room-1", 10, 20);
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate.mock.calls[0][0]?.queryKey).toEqual(scheduleItemsQueryKey("room-1", 10));
+    finishSource();
+    await syncing;
+    expect(invalidate.mock.calls[1][0]?.queryKey).toEqual(scheduleItemsQueryKey("room-1", 20));
+  });
+  it("refreshes identical source and target once", async () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockResolvedValue(undefined);
+    await syncAfterCrossScheduleItemMove(client, "room-1", 10, 10);
+    expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+  it("does not refresh target when source refresh fails", async () => {
+    const client = new QueryClient();
+    const invalidate = vi.spyOn(client, "invalidateQueries").mockRejectedValue(new Error("source failed"));
+    await expect(syncAfterCrossScheduleItemMove(client, "room-1", 10, 20)).rejects.toThrow("source failed");
+    expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe("reorder preserves user times", () => {
   it.each([
@@ -226,7 +168,7 @@ describe("reorder preserves user times", () => {
       { ...scheduleItem(2, 0), startTime, endTime },
       { ...scheduleItem(1, 1), startTime: null, endTime: null },
     ];
-    await syncPlanPlacesAfterReorderSuccess(client, "room", 10, items, 1);
+    await syncPlanPlacesAfterReorderSuccess(client, "room", 10, items);
     expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
     expect(client.getQueryData<Array<{ itemId: number; startTime?: string; endTime?: string }>>(key)?.map(p =>
       [p.itemId, p.startTime ?? null, p.endTime ?? null])).toEqual([[2, startTime, endTime], [1, null, null]]);
@@ -243,10 +185,16 @@ it("cross-day move refresh preserves unset and partial times without a time PATC
   mocks.getScheduleItems.mockImplementation(async (_room, scheduleId) => scheduleId === 10
     ? [scheduleItem(1, 0)]
     : [{ ...scheduleItem(2, 0), scheduleId: 20, startTime: "12:45", endTime: null }]);
-  await syncAfterCrossScheduleItemMove(client, "room", 10, 20, 2, []);
+  const { schedulePlanPlacesQueryOptions } = await import("./scheduleItemPlaces");
+  const unsubscribe = [10, 20].map((scheduleId) =>
+    new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room", scheduleId))
+      .subscribe(() => {}),
+  );
+  await syncAfterCrossScheduleItemMove(client, "room", 10, 20);
   expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
   expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 10))?.[0]).not.toHaveProperty("startTime");
   expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0]).toMatchObject({ startTime: "12:45" });
   expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0]).not.toHaveProperty("endTime");
+  unsubscribe.forEach((stop) => stop());
   client.clear();
 });

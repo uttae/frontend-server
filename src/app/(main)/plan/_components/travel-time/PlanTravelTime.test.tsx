@@ -15,7 +15,7 @@ let container: HTMLDivElement;
 let client: QueryClient;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  api.route.mockReset().mockImplementation(async (_r, _s, _i, travelMode) => ({ travelMode, distanceMeters: 100, durationSeconds: 60 }));
+  api.route.mockReset().mockImplementation(async (_r, _s, _i, _d, travelMode) => ({ travelMode, distanceMeters: 100, durationSeconds: 60 }));
   api.updateMode.mockReset().mockImplementation(async (_r, _s, itemId, body) => ({ itemId, scheduleId: 10, googlePlaceId: "a", orderIndex: 0, startTime: null, endTime: null, createdAt: "2026-10-28", ...body }));
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   container = document.createElement("div"); document.body.append(container); root = createRoot(container);
@@ -23,7 +23,7 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); client.clear(); vi.unstubAllGlobals(); });
 async function render(travelMode?: string) {
   await act(async () => root.render(<QueryClientProvider client={client}><PlanTravelTime
-    roomId="room" scheduleId={10} segmentSourceItemId={1} scheduleFingerprint=""
+    roomId="room" scheduleId={10} segmentSourceItemId={1} destinationItemId={2} scheduleFingerprint=""
     travelMode={travelMode} originGooglePlaceId="a" destinationGooglePlaceId="b"
   /></QueryClientProvider>));
 }
@@ -35,11 +35,11 @@ it.each([undefined, "BICYCLING", "CYCLING", "BOAT"])("does not query or save uns
   await act(async () => container.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
   const choice = [...container.querySelectorAll<HTMLButtonElement>("button[role=option]")].find(b => b.textContent?.includes("자동차"))!;
   await act(async () => choice.click());
-  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 1, "DRIVING"));
+  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 1, 2, "DRIVING"));
   expect(api.updateMode).toHaveBeenCalledExactlyOnceWith("room", 10, 1, { travelMode: "DRIVING" });
 });
 it.each(["DRIVING", "WALKING", "TRANSIT"])("queries supported %s without saving it", async mode => {
   await render(mode);
-  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 1, mode));
+  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 1, 2, mode));
   expect(api.updateMode).not.toHaveBeenCalled();
 });

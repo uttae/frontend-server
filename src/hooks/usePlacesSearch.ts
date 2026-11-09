@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 
 import {
   searchPlaces,
+  searchPlacesInArea,
   type PlaceSearchItem,
 } from "@/lib/api/places";
 import type { SearchResultCardProps } from "@/types/place";
@@ -53,6 +54,19 @@ export async function fetchPlacesPageWithPhotos(args: {
 
   const itemsBase = rawItems.map((item) => mapPlaceSearchItem(item));
   return { items: itemsBase, nextPageToken };
+}
+
+export async function fetchPlacesAreaPage(args: {
+  query: string;
+  area: google.maps.LatLngBoundsLiteral;
+  pageSize: number;
+}): Promise<PlaceSearchPage> {
+  const { items, nextPageToken } = await searchPlacesInArea({
+    query: args.query,
+    ...args.area,
+    pageSize: args.pageSize,
+  });
+  return { items: items.map((item) => mapPlaceSearchItem(item)), nextPageToken };
 }
 
 export function placesSearchQueryKey(

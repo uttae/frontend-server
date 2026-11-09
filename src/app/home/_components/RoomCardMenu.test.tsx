@@ -71,7 +71,7 @@ it("opens the selected room's invite link without regenerating it and restores f
   expect(state.detailId).toHaveBeenCalledWith("selected-room");
   expect(state.regenerate).not.toHaveBeenCalled();
   await click("복사");
-  expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/existing-code`);
+  expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
   expect(button("복사됨")).toBeDefined();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await flush();
@@ -87,7 +87,7 @@ it("issues a link once when the room detail confirms no existing code", async ()
   expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "automatic" });
   await act(async () => state.regenerate.mock.calls[0][1].onSuccess({ inviteCode: "first-code" }));
   await click("복사");
-  expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/first-code`);
+  expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/first-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
 });
 
 it.each(["loading", "error"])("does not issue links while detail is %s", async (mode) => {
@@ -115,7 +115,7 @@ it.each(["loading", "error"])("does not issue links while detail is %s", async (
   await render();
   expect(button("다시 시도")).toBeUndefined();
   await click("복사");
-  expect(state.copy).toHaveBeenCalledExactlyOnceWith(`${window.location.origin}/join/recovered-code`);
+  expect(state.copy).toHaveBeenCalledExactlyOnceWith(`${window.location.origin}/join/recovered-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
   expect(state.regenerate).not.toHaveBeenCalled();
 });
 
@@ -133,11 +133,11 @@ it("regenerates only on request and keeps the existing link when regeneration fa
   expect(state.regenerate).toHaveBeenCalledTimes(1);
   await act(async () => state.regenerate.mock.calls[0][1].onError());
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code`);
+  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
   await click("초대 링크 재발급");
   await act(async () => state.regenerate.mock.calls[1][1].onSuccess({ inviteCode: "new-code" }));
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/new-code`);
+  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/new-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
 });
 
 it("blocks copying and sharing the old link while regeneration is pending", async () => {
@@ -152,7 +152,7 @@ it("blocks copying and sharing the old link while regeneration is pending", asyn
   await act(async () => state.regenerate.mock.calls[0][1].onSuccess({ inviteCode: "new-code" }));
   await render();
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/new-code`);
+  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/new-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
 });
 
 it("preserves host deletion and member leave permissions", async () => {
@@ -173,7 +173,7 @@ it("lets a member copy and share the existing link without issuing or regenerati
   await render("MEMBER");
   await click("제주 여행 더보기"); await click("초대하기");
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code`);
+  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
   await click("공유");
   expect(state.copy).toHaveBeenCalledTimes(2);
   expect(button("초대 링크 재발급")).toBeDefined();

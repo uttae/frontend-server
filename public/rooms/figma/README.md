@@ -8,7 +8,7 @@
 - `plus-mobile.svg`: 모바일 생성 버튼의 20px 원본 아이콘.
 - `invite.svg`: 방 더보기 오버레이 원본 아이콘 (`3449:3613`). 더보기 버튼·프로필 메뉴·삭제 아이콘은 디자인 시스템 아이콘(`@/assets/icons`)을 쓴다.
 
-광고 배너 영역에는 [마케팅 시안](https://www.figma.com/design/asf1pKmEosGS4xUx1qn3MV/%EB%A7%88%EC%BC%80%ED%8C%85?node-id=0-1)의 데스크톱·모바일 완성 배너 이미지를 각각 그대로 사용한다. 에셋은 만료되는 Figma 다운로드 URL 대신 로컬 파일을 참조한다.
+광고 배너 영역은 [마케팅 시안 · 피드백 배너 광고](https://www.figma.com/design/asf1pKmEosGS4xUx1qn3MV/%EB%A7%88%EC%BC%80%ED%8C%85?node-id=141-13)의 데스크톱·모바일 배너를 따른다. 문구는 코드의 텍스트로 그리고, 사진만 `public/rooms/banners/feedback/`의 로컬 파일(`app-preview.webp`·`review-icon.webp`)을 참조한다.
 
 ## 상태별 기준 프레임
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   AUTOCOMPLETE_SUGGEST_DEBOUNCE_MS,
@@ -42,23 +42,32 @@ export function useDebouncedPlacePredictions(options: {
     useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const fetchGenRef = useRef(0);
 
+  // 취소 = 예약한 타이머 취소 + 이미 보낸 요청의 응답 무시(번호 올리기). 취소하는 모든 경로가 이 함수를 거친다
+  const cancelPending = useCallback(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+    fetchGenRef.current += 1;
+  }, []);
+
+  // 입력 직후 화면이 닫히면 대기 중인 타이머가 Google 자동완성을 한 번 더 보낸다(건별 과금)
+  useEffect(() => cancelPending, [cancelPending]);
+
   const invalidateSession = useCallback(() => {
     sessionTokenRef.current = null;
   }, []);
 
   const clearSuggestionUi = useCallback(() => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-      debounceRef.current = null;
-    }
+    cancelPending();
     setPredictions([]);
     setIsOpen(false);
     setActiveIndex(-1);
-  }, []);
+  }, [cancelPending]);
 
   const scheduleFetch = useCallback(
     (value: string) => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
+      cancelPending();
 
       if (!value.trim()) {
         sessionTokenRef.current = null;
@@ -74,11 +83,10 @@ export function useDebouncedPlacePredictions(options: {
         return;
       }
 
+      // 번호는 예약할 때 잡는다. 그래야 예약 뒤의 취소(다시 입력·닫기·선택)를 모두 알아챈다
+      const gen = fetchGenRef.current;
       debounceRef.current = setTimeout(() => {
         void (async () => {
-          fetchGenRef.current += 1;
-          const gen = fetchGenRef.current;
-
           if (!sessionTokenRef.current) {
             sessionTokenRef.current = newAutocompleteSessionToken();
           }
@@ -103,7 +111,7 @@ export function useDebouncedPlacePredictions(options: {
         })();
       }, debounceMs);
     },
-    [buildRequest, debounceMs, disabled, minInputLength, placesLibReady],
+    [buildRequest, cancelPending, debounceMs, disabled, minInputLength, placesLibReady],
   );
 
   return {

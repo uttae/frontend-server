@@ -4,6 +4,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
+  fetchPlacesAreaPage,
   fetchPlacesPageWithPhotos,
   type PlaceSearchResult,
 } from "@/hooks/usePlacesSearch";
@@ -21,6 +22,7 @@ import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { getQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
+import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
 import {
   confirmPlaceSearch,
   type ResolvedSearchAnchor,
@@ -32,9 +34,14 @@ import {
   useMapPinsFocusStore,
 } from "@/stores/map-pins-focus-store";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
-import { usePlaceSearchStore } from "@/stores/place-search-store";
+import {
+  usePlaceSearchStore,
+  type PlaceSearchMode,
+} from "@/stores/place-search-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 import { useSessionStore } from "@/stores/session-store";
+
+const SEARCH_BIAS_RADIUS_METERS = 5000;
 
 export function useMapPlaceSearch(mobile: boolean) {
   const roomId = useSessionStore((s) => s.currentRoomId);
@@ -102,7 +109,7 @@ export function useMapPlaceSearch(mobile: boolean) {
   function applySearchResult(
     result: NonNullable<Awaited<ReturnType<typeof confirmPlaceSearch<PlaceSearchResult>>>>,
     confirmation: SearchConfirmation,
-    mode: "text" | "map_recenter",
+    mode: PlaceSearchMode,
   ) {
     const searchRankBuckets: Record<string, SearchRankBucket> =
       confirmation.kind === "whole"
@@ -126,7 +133,6 @@ export function useMapPlaceSearch(mobile: boolean) {
       searchRankBuckets,
       selectedId,
       status: "done",
-      fallback: result.fallback,
       termination: result.termination,
     });
     setActiveSearchMapPins(placeSearchResultsToMapPins(items));
@@ -155,7 +161,7 @@ export function useMapPlaceSearch(mobile: boolean) {
 
   async function confirm(
     confirmation: SearchConfirmation,
-    mode: "text" | "map_recenter" = "text",
+    mode: PlaceSearchMode = "text",
   ): Promise<boolean> {
     const query = confirmation.query.trim();
     if (!query) return false;
@@ -167,10 +173,14 @@ export function useMapPlaceSearch(mobile: boolean) {
       usePlaceSearchStore.getState().scope === scopeKey &&
       useSessionStore.getState().currentRoomId === roomId &&
       searchPinWriteStillValid(epoch);
-    const mapCenter = useMapCenterStore.getState().mapCenter;
+    const { mapCenter, radiusMeters, bounds } = useMapCenterStore.getState();
+    // 「현 위치에서 검색」은 Google에 지금 화면 사각형 안만 찾게 한다(locationRestriction).
+    // 위치 우선(locationBias)으로 찾으면 화면 밖 결과가 섞여 이동 전 장소로 지도가 되돌아간다.
+    const searchArea = mode === "map_recenter" ? bounds : null;
     usePlaceSearchStore.setState({
       query,
       confirmationKind: confirmation.kind,
+      searchMode: mode,
       status: "pending",
       error: null,
       expanded: false,
@@ -186,6 +196,10 @@ export function useMapPlaceSearch(mobile: boolean) {
       const result = await confirmPlaceSearch({
         ...confirmation,
         mapCenter,
+        // 화면 검색의 반경은 버튼이 다시 뜨는 이동 거리 기준(searchSnapshot)으로만 쓴다
+        radius: searchArea
+          ? clampPlacesSearchRadiusMeters(radiusMeters ?? SEARCH_BIAS_RADIUS_METERS)
+          : SEARCH_BIAS_RADIUS_METERS,
         isCurrent,
         onResolved: (resolved) => {
           usePlaceSearchStore.setState({
@@ -204,11 +218,17 @@ export function useMapPlaceSearch(mobile: boolean) {
             zoom: useMapCenterStore.getState().zoom,
             radius: params.radius,
           });
-          const page = await fetchPlacesPageWithPhotos({
-            ...params,
-            pageSize: PLACES_SEARCH_PAGE_SIZE,
-            pageToken: undefined,
-          });
+          const page = searchArea
+            ? await fetchPlacesAreaPage({
+                query: params.query,
+                area: searchArea,
+                pageSize: PLACES_SEARCH_PAGE_SIZE,
+              })
+            : await fetchPlacesPageWithPhotos({
+                ...params,
+                pageSize: PLACES_SEARCH_PAGE_SIZE,
+                pageToken: undefined,
+              });
           return page.items;
         },
       });
@@ -220,10 +240,7 @@ export function useMapPlaceSearch(mobile: boolean) {
       usePlaceSearchStore.setState({
         status: "error",
         termination: failedTermination(confirmation),
-        error:
-          error instanceof Error
-            ? error.message
-            : "검색에 실패했어요. 다시 시도해주세요.",
+        error: searchFailureMessage(confirmation, mode, error),
       });
       return false;
     }
@@ -273,6 +290,18 @@ function toAnchor(
     isOpen: anchor.detail.regularOpeningHours?.openNow ?? null,
     location: anchor.location,
   };
+}
+
+// 「현 위치에서 검색」 실패는 그 버튼이 「다시 시도」로 알리므로 검색창 문구가 없다.
+// 모두검색 실패의 원문(네트워크 오류면 "Failed to fetch")은 사용자에게 뜻이 없어 한 문구로 보여 준다
+function searchFailureMessage(
+  confirmation: SearchConfirmation,
+  mode: PlaceSearchMode,
+  error: unknown,
+) {
+  if (mode === "map_recenter") return null;
+  if (confirmation.kind === "whole") return "검색에 실패했어요.";
+  return error instanceof Error ? error.message : "검색에 실패했어요. 다시 시도해주세요.";
 }
 
 function failedTermination(confirmation: SearchConfirmation) {

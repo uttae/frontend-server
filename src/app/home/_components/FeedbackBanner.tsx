@@ -4,18 +4,16 @@ export function FeedbackBanner() {
   return (
     <div aria-hidden="true" className={styles.banner}>
       <div className={styles.canvas}>
-        <span className={styles.badge}>EVENT</span>
         <p className={styles.subtitle}>
-          우때를 써보고 <strong>아쉬운 점</strong>이나 <strong>좋았던 점</strong>이 있었다면? 🥹
+          우때 써보니 어떠셨나요? <strong>짧은 한마디</strong>도 큰 힘이 돼요!
         </p>
         <p className={styles.title}>
-          <span className={styles.feedback}>피드백</span> 남기고<br />
-          <span className={styles.reward}>싸이버거</span> 받아 가세요!
+          우때는 여러분의 <span className={styles.feedback}>피드백</span>으로<br />
+          더 좋은 여행계획 도구로 발전 중!
         </p>
-        <p className={styles.period}>이벤트 기간 : ~10/25일</p>
-        <div className={styles.cta}>피드백 남기러가기 &gt;</div>
+        <div className={styles.cta}>지금 피드백 남기기 &gt;</div>
         <div className={styles.appPreview} />
-        <div className={styles.burger} />
+        <div className={styles.reviewIcon} />
       </div>
     </div>
   );

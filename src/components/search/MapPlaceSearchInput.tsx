@@ -13,7 +13,7 @@ import { MapSearchIcon } from "@/components/map/MapSearchIcon";
 import { SearchIcon } from "@/assets/icons";
 import { SearchBar, SearchBarBack, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
-import type { PlacePrediction, PlaceSession, PredictionText } from "@/lib/api/place-sessions";
+import { PlaceSessionError, type PlacePrediction, type PlaceSession, type PredictionText } from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { cn } from "@/lib/utils";
@@ -145,7 +145,8 @@ export function MapPlaceSearchInput({
           if (requestGeneration === generation.current) {
             flow.abandon();
             token.current = null;
-            setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof Error ? error.message : undefined });
+            // 서버가 준 안내(429 등)는 그대로, 네트워크 오류 원문("Failed to fetch")은 뜻이 없어 기본 안내로 보여 준다
+            setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof PlaceSessionError ? error.message : undefined });
           }
         },
       );
@@ -182,13 +183,14 @@ export function MapPlaceSearchInput({
       suggestions?.query === value && suggestions.status === "done"
         ? suggestions
         : null;
-    const prediction = index > 0 ? ready?.items[index - 1] : ready?.items[0];
+    // 모두검색(index ≤ 0)은 후보를 확정하지 않고 지도 중심에서 찾는다(confirmPlaceSearch)
+    const prediction = index > 0 ? ready?.items[index - 1] : undefined;
     if (index > 0 && !prediction) return;
-    if (ready?.session && ready.session.expiresAt <= Date.now()) {
+    const requestSession = prediction ? ready?.session ?? null : null;
+    if (requestSession && requestSession.expiresAt <= Date.now()) {
       token.current?.abandon(); token.current = null;
       schedule(value); return;
     }
-    const requestSession = ready?.session ?? null;
     cancel();
     const requestGeneration = generation.current;
     confirmGeneration.current = requestGeneration;

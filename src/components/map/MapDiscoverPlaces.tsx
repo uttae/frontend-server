@@ -63,6 +63,8 @@ export type MapDiscoverPlacesProps = {
   selectedCategoryId: string | null;
   rating: RatingValue;
   openNow: OpenValue;
+  /** 검색이 실패하면 true, 새 검색을 시작하면 false. 바뀌지 않는 함수(useState의 set)를 넘긴다 */
+  onSearchFailedChange: (failed: boolean) => void;
 };
 
 function DiscoverMarkerPin({
@@ -115,6 +117,7 @@ export function MapDiscoverPlaces({
   selectedCategoryId,
   rating,
   openNow,
+  onSearchFailedChange,
 }: MapDiscoverPlacesProps) {
   const map = useMap();
   const placesLib = useMapsLibrary("places");
@@ -140,6 +143,7 @@ export function MapDiscoverPlaces({
       writeEpoch: number,
     ) => {
       const seq = ++searchSeqRef.current;
+      onSearchFailedChange(false);
 
       if (!placesLib) {
         if (
@@ -237,9 +241,10 @@ export function MapDiscoverPlaces({
           return;
         }
         setMarkers([]);
+        onSearchFailedChange(true);
       }
     },
-    [placesLib],
+    [placesLib, onSearchFailedChange],
   );
 
   /** Search가 맵 핀 소유 시 디스커버 마커 비우기·비행 응답 무효화 */

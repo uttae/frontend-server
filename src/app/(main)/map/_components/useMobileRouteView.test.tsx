@@ -31,7 +31,16 @@ vi.mock("@/contexts/SelectedPlaceContext", () => ({
   useSelectedPlace: () => ({ setSelectedPlace: fixtures.setSelectedPlace }),
 }));
 vi.mock("@/components/place/usePlaceDetailData", () => ({ usePlaceDetailData: () => ({}) }));
-vi.mock("@/lib/plan/scheduleItemPlaces", () => ({ readSchedulePlanPlacesFromCache: () => fixtures.places }));
+vi.mock("@/lib/plan/scheduleItemPlaces", async () => {
+  const { scheduleItemsQueryKey } = await vi.importActual<typeof import("@/lib/query-keys")>("@/lib/query-keys");
+  return {
+    schedulePlanPlacesQueryOptions: (_queryClient: unknown, roomId: string, scheduleId: number | null) => ({
+      queryKey: scheduleItemsQueryKey(roomId, scheduleId),
+      queryFn: () => fixtures.places,
+      staleTime: Infinity,
+    }),
+  };
+});
 vi.mock("@/app/(main)/plan/_components/mobile/useMobileAddPlaceSearch", () => ({
   useMobileAddPlaceSearch: () => ({ recentlyAddedItemId: null, screen: null }),
 }));

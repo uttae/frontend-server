@@ -60,7 +60,7 @@ export function usePlanItineraryReorder({
   places,
   interactionLocked = false,
 }: UsePlanItineraryReorderArgs) {
-  const { mutateAsync: reorderMutate, isReorderSettling } =
+  const { mutateAsync: reorderMutate, isPending: isReorderPending } =
     useReorderScheduleItem();
   const { mutateAsync: moveMutate, isPending: isMovePending } =
     useMoveScheduleItemToSchedule();
@@ -82,7 +82,7 @@ export function usePlanItineraryReorder({
   const externalCaptureRafRef = useRef(0);
 
   const mutationLocked =
-    interactionLocked || isReorderSettling || isMovePending;
+    interactionLocked || isReorderPending || isMovePending;
   const scheduleResyncPending = useScheduleResyncPending(roomId);
   const isDraggingActive = dragFromIndex !== null || incomingExternalDrag;
 
@@ -429,7 +429,7 @@ export function usePlanItineraryReorder({
     getRowProps,
     listContainerProps,
     isDraggingActive,
-    isReorderSettling: isReorderSettling || isMovePending,
+    isReorderSettling: isReorderPending || isMovePending,
     listReservePaddingBottom,
   };
 }

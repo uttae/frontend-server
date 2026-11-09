@@ -1,5 +1,7 @@
 "use client";
 
+import { buildSharedInviteUrl } from "@/lib/invite-campaign";
+
 import { CopyCheckIcon, CopyIcon, RefreshIcon, ShareIcon } from "@/assets/icons";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -113,7 +115,7 @@ export function AddMemberPanel({
   const displayedCode =
     issuedCode === undefined ? detailInviteCode || null : issuedCode;
   const inviteUrl = canShareInvite && displayedCode
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/join/${displayedCode}`
+    ? buildSharedInviteUrl(`${typeof window !== "undefined" ? window.location.origin : ""}/join/${encodeURIComponent(displayedCode)}`)
     : null;
 
   async function handleCopy() {

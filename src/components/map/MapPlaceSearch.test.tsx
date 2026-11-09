@@ -30,6 +30,7 @@ vi.mock("@/contexts/SelectedPlaceContext", () => ({
 }));
 vi.mock("@/hooks/usePlacesSearch", () => ({
   fetchPlacesPageWithPhotos: boundary.page,
+  fetchPlacesAreaPage: vi.fn(),
 }));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { search: "search" },
@@ -84,9 +85,7 @@ it("specific Details failure retry returns to that input with a fresh session an
     (buttons[1] as HTMLButtonElement).click();
   });
   expect(usePlaceSearchStore.getState().status).toBe("error");
-  const retry = [...host.querySelectorAll("button")].find(
-    (button) => button.textContent === "다시 시도",
-  )!;
+  const retry = host.querySelector<HTMLButtonElement>('button[aria-label="다시 시도"]')!;
   await act(async () => retry.click());
   expect(boundary.page).not.toHaveBeenCalled();
   expect(document.activeElement).toBe(input);
@@ -105,4 +104,22 @@ it("specific Details failure retry returns to that input with a fresh session an
   expect(resolves).toBe(2);
   expect(boundary.page).not.toHaveBeenCalled();
   expect(usePlaceSearchStore.getState().selectedId).toBe("chosen");
+});
+// 버튼으로 한 「현 위치에서 검색」의 결과 없음은 검색창 아래가 아니라 버튼 자리에서 알린다
+it("search here no results stay out of the search box", async () => {
+  useSessionStore.setState({ currentRoomId: "room" });
+  useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
+  usePlaceSearchStore.getState().clear();
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  cleanup = async () => {
+    await act(async () => root.unmount());
+    host.remove();
+  };
+  await act(async () => root.render(<MapPlaceSearch mobile={false} />));
+  await act(async () => usePlaceSearchStore.setState({ searchMode: "map_recenter", status: "done", items: [] }));
+  expect(host.textContent).not.toContain("검색 결과가 없어요");
+  await act(async () => usePlaceSearchStore.setState({ searchMode: "text" }));
+  expect(host.textContent).toContain("검색 결과가 없어요");
 });

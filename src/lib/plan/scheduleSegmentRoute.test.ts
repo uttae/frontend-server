@@ -18,6 +18,7 @@ let getScheduleItemRouteMock: ReturnType<typeof vi.fn>;
 const ROOM_ID = "room-1";
 const SCHEDULE_ID = 10;
 const ITEM_ID = 1;
+const DESTINATION = 2;
 
 const ROUTE = {
   distanceMeters: 1200,
@@ -50,14 +51,15 @@ beforeEach(() => {
   registerQueryClient(queryClient);
 });
 
-const ROUTE_KEY = () =>
-  scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, ITEM_ID, "DRIVING");
+const ROUTE_KEY = (destination = DESTINATION) =>
+  scheduleItemRouteQueryKey(ROOM_ID, SCHEDULE_ID, ITEM_ID, destination, "DRIVING");
 
-function resolve() {
+function resolve(destinationItemId = DESTINATION) {
   return resolveScheduleSegmentRoute({
     roomId: ROOM_ID,
     scheduleId: SCHEDULE_ID,
     segmentSourceItemId: ITEM_ID,
+    destinationItemId,
     travelMode: "DRIVING",
   });
 }
@@ -70,11 +72,17 @@ describe("resolveScheduleSegmentRoute", () => {
     expect(getScheduleItemRouteMock).not.toHaveBeenCalled();
   });
 
-  it("캐시 miss면 단건 GET 결과를 반환한다", async () => {
+  it("캐시 miss면 도착 항목을 지정한 단건 GET 결과를 반환한다", async () => {
     getScheduleItemRouteMock.mockResolvedValue(ROUTE);
 
     await expect(resolve()).resolves.toEqual(ROUTE);
-    expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
+    expect(getScheduleItemRouteMock).toHaveBeenCalledExactlyOnceWith(
+      ROOM_ID,
+      SCHEDULE_ID,
+      ITEM_ID,
+      DESTINATION,
+      "DRIVING",
+    );
   });
 
   it("경로 없음(204)은 null을 반환한다", async () => {
@@ -83,10 +91,16 @@ describe("resolveScheduleSegmentRoute", () => {
     await expect(resolve()).resolves.toBeNull();
   });
 
-  /**
-   * 재정렬로 무효화된 구간은 같은 키라도 목적지가 달라져 있습니다.
-   * 낡은 값을 그대로 돌려주면 지도에 이전 순서의 폴리라인이 남습니다.
-   */
+  it("같은 출발 항목이라도 도착 항목이 다르면 그 도착 항목의 경로를 받고, 순서를 되돌리면 받아 둔 경로를 쓴다", async () => {
+    queryClient.setQueryData(ROUTE_KEY(2), ROUTE);
+    const toC = { ...ROUTE, distanceMeters: 999, encodedPolyline: "zzz" };
+    getScheduleItemRouteMock.mockResolvedValue(toC);
+
+    await expect(resolve(3)).resolves.toEqual(toC);
+    await expect(resolve(2)).resolves.toEqual(ROUTE);
+    expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
+  });
+
   it("캐시가 무효화된 상태면 낡은 값을 쓰지 않고 다시 조회한다", async () => {
     queryClient.setQueryData(ROUTE_KEY(), ROUTE);
     await queryClient.invalidateQueries({
@@ -101,10 +115,7 @@ describe("resolveScheduleSegmentRoute", () => {
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * 캐시 쓰기는 React Query가 소유합니다. 리졸버가 직접 setQueryData 하면
-   * 무효화 플래그까지 지워져 재정렬 뒤 낡은 경로가 유효한 값으로 굳습니다.
-   */
+  /** 캐시 쓰기는 이 리졸버를 queryFn으로 쓰는 쿼리가 맡는다 */
   it("캐시에 직접 쓰지 않는다", async () => {
     getScheduleItemRouteMock.mockResolvedValue(ROUTE);
 
