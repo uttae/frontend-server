@@ -288,14 +288,16 @@ export function useMoveRoomSchedule() {
       await invalidateExpenses(queryClient, id);
     },
     // 연달아 옮기면 앞 저장이 끝날 때 다시 받은 일정이 뒤 저장 전 순서를 그린다 — 마지막 저장이 끝날 때 한 번만 받는다.
-    // onSettled 안에서는 끝나는 저장도 아직 진행 중으로 세므로 1 이하면 남은 저장이 없다
-    onSettled: (_data, _error, { roomId }) =>
-      queryClient.isMutating({ mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY }) <= 1
-        ? queryClient.invalidateQueries({
-            queryKey: roomSchedulesQueryKey(roomId.trim()),
-            exact: true,
-          })
-        : undefined,
+    // onSettled 안에서는 끝나는 저장도 아직 진행 중으로 세므로 1 이하면 남은 저장이 없다.
+    // 다시 받기는 기다리지 않는다 — 기다리면 그 GET이 끝날 때까지 실패 토스트가 늦게 뜬다
+    onSettled: (_data, _error, { roomId }) => {
+      if (queryClient.isMutating({ mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY }) <= 1) {
+        void queryClient.invalidateQueries({
+          queryKey: roomSchedulesQueryKey(roomId.trim()),
+          exact: true,
+        });
+      }
+    },
   });
 }
 
@@ -426,12 +428,14 @@ export function useMoveScheduleItemToSchedule() {
     // 출발·대상 일차를 다시 받는다(성공·실패 모두). 그 일차를 바꾸는 저장이 더 남았으면 그 저장이 끝날 때 받는다.
     // `syncAfterCrossScheduleItemMove`는 출발 일차 재조회가 실패하면 throw해서, 여기서 쓰면 저장된 이동이 실패로 바뀌고
     // onError가 화면을 되돌린다
-    onSettled: (_moved, _error, { roomId, sourceScheduleId, targetScheduleId }) =>
-      Promise.all(
-        [sourceScheduleId, targetScheduleId]
-          .filter((scheduleId) => isLastItemMoveOf(queryClient, roomId, scheduleId))
-          .map((scheduleId) => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId)),
-      ),
+    // 다시 받기는 기다리지 않는다 — 기다리면 그 GET이 끝날 때까지 mutateAsync가 끝나지 않아 실패 토스트가 늦게 뜬다
+    onSettled: (_moved, _error, { roomId, sourceScheduleId, targetScheduleId }) => {
+      for (const scheduleId of [sourceScheduleId, targetScheduleId]) {
+        if (isLastItemMoveOf(queryClient, roomId, scheduleId)) {
+          void invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+        }
+      }
+    },
   });
 }
 
@@ -631,10 +635,12 @@ export function useReorderScheduleItem() {
         method: "drag_drop",
       });
     },
-    onSettled: (_items, _error, { roomId, scheduleId }) =>
-      isLastItemMoveOf(queryClient, roomId, scheduleId)
-        ? invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId)
-        : undefined,
+    // 다시 받기는 기다리지 않는다 — 기다리면 그 GET이 끝날 때까지 mutateAsync가 끝나지 않아 실패 토스트가 늦게 뜬다
+    onSettled: (_items, _error, { roomId, scheduleId }) => {
+      if (isLastItemMoveOf(queryClient, roomId, scheduleId)) {
+        void invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+      }
+    },
   });
 }
 

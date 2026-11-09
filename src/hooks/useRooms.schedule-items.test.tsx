@@ -362,6 +362,7 @@ it("draws only the latest order when two reorders on the same day overlap, and r
       second.resolve(items(102, 100, 101));
       await secondSaving;
     });
+    await hook.flush();
     expect(api.getScheduleItems).toHaveBeenCalledTimes(1);
     expect(ids(client.getQueryData<PlanPlace[]>(key))).toEqual([102, 100, 101]);
   } finally {
@@ -412,6 +413,37 @@ it("refetches the room schedules once, after the last of two overlapping day mov
     });
     expect(client.getQueryState(key)?.isInvalidated).toBe(true);
   } finally {
+    await hook.unmount();
+    client.clear();
+  }
+});
+
+it("rejects a failed reorder right away without waiting for the day refetch, so the failure toast is not late", async () => {
+  const client = newClient();
+  const key = scheduleItemsQueryKey("room-1", 10);
+  client.setQueryData(key, [place(100), place(101)]);
+  const unwatch = new QueryObserver(
+    client,
+    schedulePlanPlacesQueryOptions(client, "room-1", 10),
+  ).subscribe(() => {});
+  api.reorderScheduleItem.mockRejectedValueOnce(new Error("저장 실패"));
+  // 다시 받기가 끝나지 않아도 실패는 바로 알려야 한다
+  api.getScheduleItems.mockReset().mockReturnValue(new Promise<RoomScheduleItem[]>(() => {}));
+  const hook = hookHarness(
+    () => useReorderScheduleItem(),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+  );
+  try {
+    await hook.render(undefined);
+    await act(async () => {
+      await expect(
+        hook.current.mutateAsync({ roomId: "room-1", scheduleId: 10, itemId: 101, body: { newOrderIndex: 0 } }),
+      ).rejects.toThrow("저장 실패");
+    });
+    expect(ids(client.getQueryData<PlanPlace[]>(key))).toEqual([100, 101]);
+    expect(api.getScheduleItems).toHaveBeenCalledTimes(1);
+  } finally {
+    unwatch();
     await hook.unmount();
     client.clear();
   }
