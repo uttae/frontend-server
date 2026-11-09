@@ -5,6 +5,7 @@ import { expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   bookmarkCategoriesQueryKey,
   joinRequestsQueryKey,
+  roomAllBookmarksQueryKey,
   roomSchedulesQueryKey,
   roomUnreadCountQueryKey,
 } from "@/lib/query-keys";
@@ -39,12 +40,15 @@ describe("resyncRoomDataAfterSubscribe", () => {
     const stop = observer.subscribe(() => {});
     await observer.refetch();
     client.setQueryData(bookmarkCategoriesQueryKey("room"), []);
+    client.setQueryData(roomAllBookmarksQueryKey("room"), []);
     client.setQueryData(roomUnreadCountQueryKey("room"), { unreadCount: 0 });
 
     resyncRoomDataAfterSubscribe(client, "room");
 
     await expect.poll(() => scheduleFetches).toBe(2);
     expect(client.getQueryState(bookmarkCategoriesQueryKey("room"))?.isInvalidated).toBe(true);
+    // 카테고리별 북마크는 전체 목록에서 거르므로 전체 목록 하나만 무효화하면 된다
+    expect(client.getQueryState(roomAllBookmarksQueryKey("room"))?.isInvalidated).toBe(true);
     expect(client.getQueryState(roomUnreadCountQueryKey("room"))?.isInvalidated).toBe(true);
     stop();
   });
