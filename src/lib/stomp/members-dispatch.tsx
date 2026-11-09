@@ -9,6 +9,7 @@ import {
   roomDetailQueryKey,
   roomMembersQueryKey,
 } from "@/lib/query-keys";
+import { invalidateAfterChange } from "@/lib/query-client";
 import { readSessionUserId } from "@/lib/session-user-cache";
 
 import type { RoomMemberPayload } from "./member-events";
@@ -25,7 +26,7 @@ function removesViewer(queryClient: QueryClient, event: RoomMemberPayload): bool
 
 /**
  * members STOMP 한 건 — 바뀐 멤버 목록을 서버에서 다시 받게 한다. 이벤트 내용으로 캐시를 고치지 않는다:
- * 이벤트 전에 출발한 조회가 늦게 와도 TanStack이 그 조회를 취소하고 버린다(패치는 그 응답에 덮였다).
+ * 이벤트 전에 출발한 조회는 첫 조회라도 취소하고 새로 받는다(`invalidateAfterChange` — 패치는 그 응답에 덮였다).
  * 화면에 있는 목록만 바로 다시 받고 나머지는 다시 볼 때 받는다.
  * 채팅 발신자 이름은 `room-members`에서 찾으므로, 채팅은 새 멤버의 메시지를 이 목록을 다시 받을 때까지 그리지 않는다(`useChatMessages`).
  */
@@ -37,13 +38,13 @@ export function dispatchRoomMemberEvent(
   const rid = String(event.roomId ?? "").trim() || subscribedRoomId;
   if (!rid || removesViewer(queryClient, event)) return;
 
-  void queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(rid) });
-  void queryClient.invalidateQueries({ queryKey: expenseKeys.members(rid) });
+  void invalidateAfterChange(queryClient, { queryKey: roomMembersQueryKey(rid) });
+  void invalidateAfterChange(queryClient, { queryKey: expenseKeys.members(rid) });
 
   if (event.type === "HOST_DELEGATED") {
     // 방장 판정은 방 목록·방 상세·멤버 세 출처 중 하나라도 HOST면 방장으로 본다(resolveViewerIsHost).
     // 하나라도 옛 역할이 남으면 이전 방장에게 "먼저 방장을 위임해 주세요"가 다시 뜬다
-    void queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
-    void queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(rid) });
+    void invalidateAfterChange(queryClient, { queryKey: ROOMS_QUERY_KEY });
+    void invalidateAfterChange(queryClient, { queryKey: roomDetailQueryKey(rid) });
   }
 }

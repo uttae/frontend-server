@@ -116,6 +116,24 @@ describe("dispatchRoomMemberEvent", () => {
       .toEqual([ME, 2]);
   });
 
+  it("첫 목록을 받는 중에 온 입장도, 그 첫 조회를 버리고 새로 받은 목록을 쓴다", async () => {
+    const client = newClient();
+    const responses: ((value: RoomMemberListResponse) => void)[] = [];
+    watch(client, KEY, () => new Promise<RoomMemberListResponse>((resolve) => responses.push(resolve)));
+    // 마운트하자마자 나간 첫 조회(2번 입장 전 상태를 받아 올 조회)
+    await expect.poll(() => responses.length).toBe(1);
+
+    dispatchRoomMemberEvent(client, ROOM_ID, joined(2));
+    await expect.poll(() => responses.length).toBe(2);
+
+    responses[1]!({ members: [member(ME), member(2)] });
+    responses[0]!({ members: [member(ME)] });
+
+    await expect
+      .poll(() => client.getQueryData<RoomMemberListResponse>(KEY)?.members.map((m) => m.userId))
+      .toEqual([ME, 2]);
+  });
+
   it("목록을 받은 적이 없으면 한 명짜리 목록을 만들지 않는다", () => {
     const client = newClient();
 

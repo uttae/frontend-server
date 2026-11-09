@@ -172,3 +172,26 @@ it("멤버 목록을 처음 받는 중이면 이름을 모르는 메시지는 �
   await hook.flush();
   expect(shown()).toEqual([["mine", "나"], ["theirs", "친구"]]);
 });
+
+it("첫 멤버 목록을 받는 중에 새 멤버가 들어와도, 그 사람이 있는 새 목록으로 이름이 보인다", async () => {
+  const firstLoad = deferred<{ members: Member[] }>();
+  const refetch = deferred<{ members: Member[] }>();
+  mocks.getMembers.mockReturnValueOnce(firstLoad.promise).mockReturnValueOnce(refetch.promise);
+  await hook.render(ROOM);
+  await hook.flush();
+
+  await act(async () => {
+    mocks.stomp.handler?.(joined);
+  });
+  // 첫 조회에 합류하지 않고 새로 받기 시작했다
+  expect(mocks.getMembers).toHaveBeenCalledTimes(2);
+
+  await act(async () => {
+    refetch.resolve({ members: [me, friend, newcomer] });
+    // 입장 전에 출발한 첫 응답이 늦게 와도 버려진다
+    firstLoad.resolve({ members: [me, friend] });
+  });
+  await hook.flush();
+
+  expect(shown()).toEqual([["join-9", "강신규님이 입장했어요"]]);
+});

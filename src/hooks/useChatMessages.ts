@@ -27,6 +27,7 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { getRoomMessageReadStatus, getRoomMessages } from "@/lib/api/rooms";
 import type { RoomMember } from "@/lib/api/rooms";
 import { useRoomMembers } from "@/hooks/useRooms";
+import { invalidateAfterChange } from "@/lib/query-client";
 import { roomMembersQueryKey } from "@/lib/query-keys";
 import { useChatActions } from "@/hooks/useChatActions";
 import { useChatMessageRead } from "@/hooks/useChatMessageRead";
@@ -863,8 +864,8 @@ export function useChatMessages(
       );
       if (nameMissing) {
         // 방금 입장한 사람 등 — 멤버 목록을 지금 다시 받는다. 받는 중인 조회는 이 사람이 들어오기 전에 출발했을 수
-        // 있어 TanStack 기본값대로 취소하고 새로 받는다. 받는 동안 이 메시지는 그리지 않는다(위 messages)
-        void queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(rid), exact: true });
+        // 있어 첫 조회라도 취소하고 새로 받는다. 받는 동안 이 메시지는 그리지 않는다(위 messages)
+        void invalidateAfterChange(queryClient, { queryKey: roomMembersQueryKey(rid), exact: true });
         setAwaitingNameIds((prev) => new Set(prev).add(msg.id));
       }
       if (liveBufferRef.current) {

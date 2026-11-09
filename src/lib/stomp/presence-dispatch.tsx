@@ -4,6 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import type { RoomMemberListResponse } from "@/lib/api/rooms";
 import type { RoomPresenceChangedEvent } from "@/lib/stomp/events";
+import { invalidateAfterChange } from "@/lib/query-client";
 import { roomMembersQueryKey } from "@/lib/query-keys";
 import { readSessionUserId } from "@/lib/session-user-cache";
 
@@ -28,9 +29,9 @@ function patchMemberOnline(
 
   const queryKey = roomMembersQueryKey(rid);
   const state = queryClient.getQueryState<RoomMemberListResponse>(queryKey);
-  // 옛 조회를 취소하고 새로 받는다. 목록이 아직 없는 첫 조회는 TanStack이 취소하지 않고 합류하며, 구독 직후 재동기화가 맞춘다
+  // 받는 중인 조회는 이 접속 변화 전에 출발했을 수 있어, 첫 조회라도 취소하고 새로 받는다
   if (state?.fetchStatus === "fetching") {
-    void queryClient.invalidateQueries({ queryKey, exact: true });
+    void invalidateAfterChange(queryClient, { queryKey, exact: true });
     return;
   }
   // 무효화돼 다시 받을 목록은 패치하지 않는다 — setQueryData가 '갱신 필요' 표시를 지워 재조회가 사라진다
