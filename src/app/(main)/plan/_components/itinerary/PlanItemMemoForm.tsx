@@ -154,7 +154,8 @@ export function PlanItemMemoEditor({
         </div>
 
         <div className={PLAN_PLACE_CARD_TW.editorBody}>
-          <form.Field name="memo" validators={{ onSubmit: scheduleItemMemoSchema }}>
+          {/* 길이 제한은 입력 칸이 아니라 스키마가 쓰는 동안 본다(모바일 메모 시트와 같음) */}
+          <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
             {(field) => {
               const error = field.state.meta.errors[0]?.message;
               return (
@@ -162,7 +163,6 @@ export function PlanItemMemoEditor({
                   <Textarea
                     aria-label="일정 메모"
                     value={field.state.value}
-                    maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH}
                     placeholder="여기에 메모를 작성하세요"
                     disabled={isPending}
                     onMouseDown={stopCardActivation}

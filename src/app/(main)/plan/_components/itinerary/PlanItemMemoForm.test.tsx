@@ -89,6 +89,9 @@ it("shows the length error under the memo instead of a toast", async () => {
   try {
     // 한글 조합 중 maxLength를 넘어 들어온 값
     await type(container, "가".repeat(2001));
+    // 입력 칸이 자르지 않고, 쓰는 동안 바로 칸 아래에 오류가 보인다
+    expect(textarea(container).value).toHaveLength(2001);
+    expect(container.querySelector("[role=alert]")?.textContent).toBe("메모는 2000자 이하여야 해요.");
     await act(async () => saveButton(container).click());
     expect(state.update).not.toHaveBeenCalled();
     expect(state.toastError).not.toHaveBeenCalled();

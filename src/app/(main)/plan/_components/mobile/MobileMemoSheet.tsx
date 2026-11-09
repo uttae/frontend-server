@@ -14,7 +14,7 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldCount, FieldDescription, FieldError, FieldFooter, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
@@ -97,7 +97,8 @@ export function MobileMemoSheet({
               void form.handleSubmit();
             }}
           >
-            <form.Field name="memo" validators={{ onSubmit: scheduleItemMemoSchema }}>
+            {/* 길이 제한은 입력 칸(maxLength)이 아니라 스키마가 쓰는 동안 본다. maxLength를 두면 안드로이드 한글 입력에서 넘친 글자가 안내 없이 잘린다 */}
+            <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
               {(field) => {
                 const error = field.state.meta.errors[0]?.message;
                 return (
@@ -107,7 +108,6 @@ export function MobileMemoSheet({
                       id={memoId}
                       ref={textareaRef}
                       value={field.state.value}
-                      maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH}
                       onChange={(event) => field.handleChange(event.target.value)}
                       onBlur={field.handleBlur}
                       disabled={isWriting}
@@ -120,7 +120,12 @@ export function MobileMemoSheet({
                     <FieldDescription id={descriptionId}>
                       예약 정보나 함께 기억할 내용을 남겨보세요.
                     </FieldDescription>
-                    <FieldError id={errorId}>{error}</FieldError>
+                    <FieldFooter>
+                      <FieldError id={errorId}>{error}</FieldError>
+                      <FieldCount>
+                        {field.state.value.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
+                      </FieldCount>
+                    </FieldFooter>
                   </Field>
                 );
               }}
