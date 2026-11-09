@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import {
   formatTimePickerValue,
+  defaultEndHm,
   TIME_PICKER_DEFAULT_START_HM,
   timePartsFromHm,
   timePartsToHm,
@@ -90,10 +91,10 @@ export function MobileTimeSheet({
 
   function openField(field: Field) {
     // 빈 칸의 휠을 열면 바로 값을 넣는다. 오전/오후·시·분 중 하나라도 안 고르면 "선택 중"으로 남아 저장되지 않기 때문이다
-    // 시작은 오전 10:00(초기화 뒤 다시 열 때 포함), 종료는 시작과 같은 시각에서 출발한다
+    // 시작은 오전 10:00(초기화 뒤 다시 열 때 포함), 종료는 시작 + 1시간
     if (field === "end") {
       if (!start) return;
-      if (activeField !== "end" && end === "") setEnd(timePartsFromHm(start));
+      if (activeField !== "end" && end === "") setEnd(timePartsFromHm(defaultEndHm(start)));
     } else if (activeField !== "start" && start === "") {
       setStart(timePartsFromHm(TIME_PICKER_DEFAULT_START_HM));
     }
