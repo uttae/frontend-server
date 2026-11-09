@@ -63,10 +63,8 @@ export function PlanItemTimeEditor({
     // 편집한 칸의 초안만 값으로 들고 나머지는 서버 값을 따른다. defaultValues에 서버 값을 넣으면
     // 한 칸만 고쳐도 폼 전체가 touched가 되어 다른 칸이 재조회 값을 따라가지 못한다(FormApi.update)
     defaultValues: UNTOUCHED_DRAFT,
-    validators: {
-      // 시작·종료 교차 검증이라 폼 단위다. 오류 문장은 입력 즉시 렌더 중에 보이므로, 여기서는 Enter로 들어온 제출만 막는다
-      onSubmit: timeSchema,
-    },
+    // 검증은 렌더 중 timeIssue 하나가 맡고 submit()이 막는다. 폼 validators를 따로 두면 제출 실패 오류가 칸에 남아,
+    // 재조회로 값이 맞아져도 다음 제출이 막힌다
     onSubmit: async ({ value }) => {
       const { startHm, endHm } = timeSchema.parse(value);
       savingRef.current = true;
@@ -105,7 +103,7 @@ export function PlanItemTimeEditor({
 
   function submit() {
     // 라이브러리는 연타를 막지 않는다. isPending은 다음 렌더에 바뀌어 ref 락을 함께 본다
-    if (isPending || savingRef.current || form.state.isSubmitting || !dirty) return;
+    if (isPending || savingRef.current || form.state.isSubmitting || !dirty || timeIssue) return;
     void form.handleSubmit();
   }
 

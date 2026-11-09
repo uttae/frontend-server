@@ -170,6 +170,20 @@ describe("schedule time editor", () => {
     await click("적용");
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
   });
+  it("saves once a refetch makes a draft that failed on Enter valid again", async () => {
+    await render();
+    // 시작을 비우면 종료(서버 01:00)만 남아 시작 칸에 오류, Enter도 막힌다
+    await type(0, "");
+    await type(1, "");
+    await key(input(0), "Enter");
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    // 재조회로 서버 종료가 비워지면 오류가 사라지고 적용으로 저장된다
+    props = { ...props, endTime: null };
+    await render();
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+    await click("적용");
+    expect(body()).toEqual({ startTime: null, endTime: null });
+  });
   it("cancels without sending a PATCH", async () => {
     await render();
     await type(2, "02");
