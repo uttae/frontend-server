@@ -7,6 +7,9 @@ export type TimeParts = {
   minute: number | null;
 };
 
+/** 빈 시작 시간의 휠을 열면 들어가는 값(오전 10:00). 휠의 미리보기(오전·10·00)와 같다 */
+export const TIME_PICKER_DEFAULT_START_HM = "10:00";
+
 export function timePartsFromHm(value: string): TimeParts {
   if (!normalizeStartTimeToHm(value)) return { period: null, hour: null, minute: null };
   const [hour, minute] = value.split(":").map(Number);

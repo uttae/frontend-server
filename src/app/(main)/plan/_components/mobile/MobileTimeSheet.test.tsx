@@ -24,24 +24,33 @@ beforeEach(() => {
   props = { roomId: "room", scheduleId: 10, itemId: 1, placeName: "Place", startTime: null, endTime: null, onClose: vi.fn() };
 });
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.unstubAllGlobals(); });
-it("opening an unset time leaves both unset and cannot save", async () => {
+it("opening an unset time fills start with 10:00 AM and saves it as is", async () => {
   await render();
-  expect(button("시작 시간").getAttribute("aria-label")).toContain("미설정");
+  expect(button("시작 시간").getAttribute("aria-label")).toContain("오전 10:00");
+  expect(button("시작 시간").getAttribute("aria-expanded")).toBe("true");
   expect(button("종료 시간").getAttribute("aria-label")).toContain("미설정");
-  expect(button("확인").disabled).toBe(true);
-  await click("확인"); expect(save).not.toHaveBeenCalled();
+  expect(button("확인").disabled).toBe(false);
+  await click("확인");
+  expect(save).toHaveBeenCalledExactlyOnceWith({ roomId: "room", scheduleId: 10, itemId: 1, body: { startTime: "10:00" } });
 });
 it("opening an unset end does not invent a duration", async () => {
   props = { ...props, startTime: "14:30" }; await render(); await click("종료 시간");
   expect(button("종료 시간").getAttribute("aria-label")).toContain("미설정");
   expect(button("확인").disabled).toBe(true); expect(save).not.toHaveBeenCalled();
 });
-it("requires explicit period, hour and minute before saving start only", async () => {
-  await render(); await click("시작 시간");
-  await choose("시", "0"); expect(button("확인").disabled).toBe(true);
-  await choose("분", "0"); expect(button("확인").disabled).toBe(true);
-  await choose("오전/오후", "AM"); await click("확인");
+it("adjusting the prefilled start saves the chosen time", async () => {
+  await render();
+  await choose("시", "0"); await click("확인");
   expect(save).toHaveBeenCalledExactlyOnceWith({ roomId: "room", scheduleId: 10, itemId: 1, body: { startTime: "00:00" } });
+});
+it("reopening an emptied start after reset fills 10:00 AM again", async () => {
+  props = { ...props, startTime: "09:07" }; await render();
+  await click("초기화");
+  expect(button("시작 시간").getAttribute("aria-label")).toContain("미설정");
+  await click("시작 시간");
+  expect(button("시작 시간").getAttribute("aria-label")).toContain("오전 10:00");
+  await click("확인");
+  expect(save.mock.calls[0][0].body).toEqual({ startTime: "10:00" });
 });
 it("explicitly sets an overnight end without rewriting start", async () => {
   props = { ...props, startTime: "23:15" }; await render(); await click("종료 시간");
@@ -76,7 +85,7 @@ it("keeps partial end choices when switching fields and never fills the missing 
   expect(save.mock.calls[0][0].body).toEqual({ endTime: "01:05" });
 });
 it.each([["AM", "00:07"], ["PM", "12:07"]])("explicit %s twelve saves %s", async (period, expected) => {
-  await render(); await click("시작 시간");
+  await render();
   await choose("오전/오후", period); await choose("시", "0"); await choose("분", "7");
   await click("확인"); expect(save.mock.calls[0][0].body).toEqual({ startTime: expected });
 });

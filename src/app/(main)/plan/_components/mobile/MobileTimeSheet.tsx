@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { formatTimePickerValue, timePartsFromHm, timePartsToHm, type TimeParts } from "@/lib/plan/timePickerDraft";
+import {
+  formatTimePickerValue,
+  TIME_PICKER_DEFAULT_START_HM,
+  timePartsFromHm,
+  timePartsToHm,
+  type TimeParts,
+} from "@/lib/plan/timePickerDraft";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -53,13 +59,16 @@ export function MobileTimeSheet({
 }: MobileTimeSheetProps) {
   const serverStart = normalizeStartTimeToHm(startTime ?? "");
   const serverEnd = normalizeStartTimeToHm(endTime ?? "");
-  const [draftStart, setStart] = useState<TimeParts>();
+  // 시작 시간이 없으면 열자마자 오전 10:00을 넣고 시작 휠을 연다. 그대로 확인하면 10:00으로 저장된다
+  const [draftStart, setStart] = useState<TimeParts | undefined>(() =>
+    serverStart ? undefined : timePartsFromHm(TIME_PICKER_DEFAULT_START_HM),
+  );
   const [draftEnd, setEnd] = useState<TimeParts>();
   const startParts = draftStart ?? timePartsFromHm(serverStart);
   const endParts = draftEnd ?? timePartsFromHm(serverEnd);
   const start = timePartsToHm(startParts);
   const end = timePartsToHm(endParts);
-  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : serverStart ? "start" : null);
+  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : "start");
   const [isWheelSettling, setWheelSettling] = useState(false);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
 
@@ -81,6 +90,8 @@ export function MobileTimeSheet({
 
   function openField(field: Field) {
     if (field === "end" && !start) return;
+    // 초기화 뒤 빈 시작 휠을 다시 열 때도 열자마자 오전 10:00을 넣는다
+    if (field === "start" && activeField !== "start" && start === "") setStart(timePartsFromHm(TIME_PICKER_DEFAULT_START_HM));
     setActiveField((current) => (current === field ? null : field));
   }
 
