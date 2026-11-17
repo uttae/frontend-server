@@ -344,7 +344,7 @@ it('creates the desktop map lazily and preserves the same map through full-width
 it.each([
   ['/plan/room', '일정'],
   ['/bookmark', '북마크'],
-  ['/cost', '가계부'],
+  ['/cost', '지출'],
   ['/packing/12345678-1234-1234-1234-123456789abc', '준비물'],
 ])('selects the visible route after minimizing chat on %s', async (pathname, label) => {
   state.pathname = pathname;
