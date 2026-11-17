@@ -13,7 +13,6 @@ import { Switch } from "@/components/ui/switch";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
-import { usePlanItemCrossDayDragStore } from "@/stores/plan-item-cross-day-drag-store";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { useCallback, useId, useState } from "react";
@@ -54,11 +53,14 @@ export type PlanDaySectionProps = {
   sectionRef?: Ref<HTMLElement>;
   sectionStyle?: CSSProperties;
   dragHandleProps?: PlanDaySectionDragHandleProps;
-  /** item cross-day D&D — 헤더·접힌 일차 drop (PlanItinerary list와 병행) */
-  crossDaySectionDropProps?: {
-    onDragOver: (e: DragEvent<Element>) => void;
-    onDragLeave: (e: DragEvent<Element>) => void;
-    onDrop: (e: DragEvent<Element>) => void;
+  /** 다른 일차 장소 놓기 — 헤더·접힌 일차 놓을 영역(목록은 PlanItinerary가 받는다)과 놓을 대상 강조 */
+  crossDayDrop?: {
+    props?: {
+      onDragOver: (e: DragEvent<Element>) => void;
+      onDragLeave: (e: DragEvent<Element>) => void;
+      onDrop: (e: DragEvent<Element>) => void;
+    };
+    isTarget: boolean;
   };
 };
 
@@ -88,7 +90,7 @@ export function PlanDaySection({
   sectionRef,
   sectionStyle,
   dragHandleProps,
-  crossDaySectionDropProps,
+  crossDayDrop,
 }: PlanDaySectionProps) {
   const panelId = useId();
 
@@ -142,18 +144,6 @@ export function PlanDaySection({
   const dragDisabled = dragHandleProps?.dragDisabled ?? true;
   const isDragging = dragHandleProps?.isDragging ?? false;
 
-  const sourceScheduleId = usePlanItemCrossDayDragStore(
-    (s) => s.sourceScheduleId,
-  );
-  const hoverTargetScheduleId = usePlanItemCrossDayDragStore(
-    (s) => s.hoverTargetScheduleId,
-  );
-  const isCrossDayItemDropTarget =
-    trackedSid !== undefined &&
-    sourceScheduleId !== null &&
-    sourceScheduleId !== trackedSid &&
-    hoverTargetScheduleId === trackedSid;
-
   const showScheduleMenu =
     onRequestAddExpense != null || onRequestDeleteSchedule != null || onRequestInsertScheduleAfter != null;
 
@@ -163,11 +153,11 @@ export function PlanDaySection({
     <section
       ref={sectionRef}
       style={sectionStyle}
-      {...crossDaySectionDropProps}
+      {...crossDayDrop?.props}
       className={cn(
         "rounded-2xl border border-gray-border bg-white",
         isDragging && "border-primary/80 ring-4 ring-inset ring-primary/45",
-        isCrossDayItemDropTarget &&
+        crossDayDrop?.isTarget &&
           "border-primary ring-3 ring-inset ring-primary/50",
       )}
       aria-label={subtitle ? `${title} ${subtitle}` : title}
