@@ -1,9 +1,10 @@
 "use client";
 
 import { useForm, useStore } from "@tanstack/react-form";
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -44,6 +45,12 @@ export function MobileMemoSheet({
   onClose,
 }: MobileMemoSheetProps) {
   const initial = memo.trim();
+  // 처음 손댄(입력·포커스 해제) 순간의 서버 메모. 손대기 전(null)에는 TanStack이 바뀐 서버 메모를 입력에 그대로 반영하지만(isTouched 전 defaultValues 변경),
+  // 손댄 뒤에는 반영하지 않는다. 그사이 다른 멤버가 메모를 바꿨으면 저장 전에 덮어쓰기를 확인한다(PC PlanItemMemoForm과 같은 확인창)
+  const [editStartMemo, setEditStartMemo] = useState<string | null>(null);
+  const hasRemoteChange = editStartMemo !== null && editStartMemo !== initial;
+  const [isOverwriteConfirmOpen, setIsOverwriteConfirmOpen] = useState(false);
+  const markEditStart = () => setEditStartMemo((prev) => prev ?? initial);
   // 저장과 삭제는 같은 API지만 진행 표시를 누른 버튼에만 두려고 따로 꺼낸다
   const { mutateAsync: saveMemo, isPending: isSaving } = useUpdateScheduleItem();
   const { mutateAsync: deleteMemo, isPending: isDeleting } = useUpdateScheduleItem();
@@ -67,7 +74,13 @@ export function MobileMemoSheet({
 
   const form = useForm({
     defaultValues: { memo: initial },
-    onSubmit: ({ value }) => writeMemo(saveMemo, value.memo.trim()),
+    onSubmit: ({ value }) => {
+      if (hasRemoteChange) {
+        setIsOverwriteConfirmOpen(true);
+        return;
+      }
+      return writeMemo(saveMemo, value.memo.trim());
+    },
   });
   const hasMemo = initial.length > 0;
   // TanStack isDirty는 한 번 바뀌면 남아서, 되돌리면 다시 꺼지는 지금 기준(앞뒤 공백 무시 비교)을 그대로 쓴다
@@ -113,8 +126,14 @@ export function MobileMemoSheet({
                       ref={textareaRef}
                       value={field.state.value}
                       maxLength={MEMO_MAX_LENGTH}
-                      onChange={(event) => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
+                      onChange={(event) => {
+                        markEditStart();
+                        field.handleChange(event.target.value);
+                      }}
+                      onBlur={() => {
+                        markEditStart();
+                        field.handleBlur();
+                      }}
                       disabled={isWriting}
                       rows={5}
                       placeholder="메모를 입력하세요"
@@ -154,6 +173,16 @@ export function MobileMemoSheet({
             저장
           </Button>
         </DrawerFooter>
+        {/* 확인창은 시트의 React 자식으로 둔다. Base UI가 위 레이어(확인창)에만 Esc·포커스를 준다 */}
+        {isOverwriteConfirmOpen ? (
+          <ConfirmDialog
+            title="다른 사람의 입력을 덮어씁니다!"
+            description="다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다."
+            isPending={isSaving}
+            onConfirm={() => void writeMemo(saveMemo, form.state.values.memo.trim())}
+            onCancel={() => setIsOverwriteConfirmOpen(false)}
+          />
+        ) : null}
       </DrawerContent>
     </Drawer>
   );
