@@ -135,8 +135,11 @@ it("saves a drop on another day as a cross-day move without a reorder_itinerary 
   }
 });
 
-it("shows the server message when a cross-day move fails", async () => {
-  api.move.mockRejectedValueOnce(new Error("대상 일차를 찾을 수 없어요."));
+it.each([
+  ["server message", new Error("대상 일차를 찾을 수 없어요."), "대상 일차를 찾을 수 없어요."],
+  ["plain network message", new TypeError("Failed to fetch"), "다른 일차로 옮기지 못했어요."],
+])("shows the %s when a cross-day move fails", async (_name, error, expectedMessage) => {
+  api.move.mockRejectedValueOnce(error);
   const hook = renderCommit(client);
   try {
     await hook.render("room-a");
@@ -144,23 +147,7 @@ it("shows the server message when a cross-day move fails", async () => {
       hook.current.commitPlanItemDrop(drop({ to: { scheduleId: 20, index: 1, length: 2 } }), vi.fn());
     });
     await hook.flush();
-    expect(toastError).toHaveBeenCalledWith("대상 일차를 찾을 수 없어요.");
-  } finally {
-    await hook.unmount();
-    client.clear();
-  }
-});
-
-it("shows the plain message instead of the browser's network error when a cross-day move cannot reach the server", async () => {
-  api.move.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-  const hook = renderCommit(client);
-  try {
-    await hook.render("room-a");
-    await act(async () => {
-      hook.current.commitPlanItemDrop(drop({ to: { scheduleId: 20, index: 1, length: 2 } }), vi.fn());
-    });
-    await hook.flush();
-    expect(toastError).toHaveBeenCalledWith("다른 일차로 옮기지 못했어요.");
+    expect(toastError).toHaveBeenCalledWith(expectedMessage);
   } finally {
     await hook.unmount();
     client.clear();

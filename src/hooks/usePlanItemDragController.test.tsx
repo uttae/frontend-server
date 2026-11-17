@@ -54,6 +54,17 @@ function renderController() {
   return hookHarness((roomId: string) => usePlanItemDragController(roomId));
 }
 
+async function startFirstItemDrag(
+  hook: ReturnType<typeof renderController>,
+  day: PlanPlace[],
+  els: HTMLElement[],
+  transfer: DataTransfer,
+) {
+  await hook.render("room-a");
+  els.forEach((el, i) => hook.current.getListProps(10, day).getRowProps(i).ref(el));
+  await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)));
+}
+
 beforeEach(() => {
   commit.fn.mockReset().mockReturnValue(true);
 });
@@ -64,9 +75,7 @@ it("saves the dragged item at the dropped index even when the day's list changed
   const els = rows(2);
   const transfer = dataTransfer();
   try {
-    await hook.render("room-a");
-    els.forEach((el, i) => hook.current.getListProps(10, day).getRowProps(i).ref(el));
-    await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)));
+    await startFirstItemDrag(hook, day, els, transfer);
     await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDragOver(dragEvent(transfer, els[0]!, 190)));
     await nextFrame();
     // 드래그하는 동안 다른 사람이 맨 앞에 장소를 추가했다 — 놓은 자리(몇 번째) 그대로 저장한다
@@ -88,9 +97,7 @@ it("keeps the dropped order on screen until the cache shows it, then draws the c
   const els = rows(3);
   const transfer = dataTransfer();
   try {
-    await hook.render("room-a");
-    els.forEach((el, i) => hook.current.getListProps(10, day).getRowProps(i).ref(el));
-    await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)));
+    await startFirstItemDrag(hook, day, els, transfer);
     await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDragOver(dragEvent(transfer, els[0]!, 290)));
     await nextFrame();
     await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDrop(dragEvent(transfer, els[0]!, 290)));
@@ -168,9 +175,7 @@ it("clears the preview right away when the drop is not saved", async () => {
   const els = rows(2);
   const transfer = dataTransfer();
   try {
-    await hook.render("room-a");
-    els.forEach((el, i) => hook.current.getListProps(10, day).getRowProps(i).ref(el));
-    await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)));
+    await startFirstItemDrag(hook, day, els, transfer);
     await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDrop(dragEvent(transfer, els[0]!, 190)));
     expect(hook.current.getListProps(10, day).isItemDragActive).toBe(false);
   } finally {
@@ -184,10 +189,8 @@ it("starts the next drag while the previous drop is still saving, and the earlie
   const els = rows(3);
   const transfer = dataTransfer();
   try {
-    await hook.render("room-a");
-    els.forEach((el, i) => hook.current.getListProps(10, day).getRowProps(i).ref(el));
     // 첫 장소를 놓아 저장 중이다(손잡이는 막지 않는다)
-    await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)));
+    await startFirstItemDrag(hook, day, els, transfer);
     await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDrop(dragEvent(transfer, els[0]!, 190)));
     const [, firstSave] = commit.fn.mock.lastCall!;
     expect(hook.current.getListProps(10, day).getRowProps(1).placeCardDragProps.dragDisabled).toBe(false);

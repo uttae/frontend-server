@@ -287,12 +287,11 @@ export function usePlanItemDragController(roomId: string): PlanItemDragValue {
         e.preventDefault();
         const current = dragRef.current;
         if (!current || current.dropped) return;
+        const fallbackIndex = scheduleId === current.sourceScheduleId ? current.sourceIndex : 0;
         const targetIndex =
           current.overScheduleId === scheduleId && current.overIndex !== null
             ? current.overIndex
-            : scheduleId === current.sourceScheduleId
-              ? current.sourceIndex
-              : 0;
+            : fallbackIndex;
         dropOn(scheduleId, targetIndex, places);
       };
 

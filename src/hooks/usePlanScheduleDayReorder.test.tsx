@@ -45,6 +45,27 @@ function dragEvent(transfer: DataTransfer, target: Element, clientY: number) {
   return { ...event, nativeEvent: event } as unknown as DragEvent<Element>;
 }
 
+function dayDragFixture() {
+  const schedules = [day(10, 1), day(20, 2), day(30, 3)];
+  const hook = hookHarness((list: RoomSchedule[]) => usePlanScheduleDayReorder({ roomId: "room-a", schedules: list }));
+  const sections = [0, 1, 2].map(section);
+  const transfer = dataTransfer();
+  return { hook, sections, transfer, schedules };
+}
+
+async function previewLastDayFirst(
+  hook: ReturnType<typeof dayDragFixture>["hook"],
+  schedules: RoomSchedule[],
+  sections: HTMLElement[],
+  transfer: DataTransfer,
+) {
+    await hook.render(schedules);
+    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
+    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
+    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
+    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+}
+
 beforeEach(() => {
   toastError.mockClear();
   move.mutateAsync.mockReset();
@@ -54,16 +75,9 @@ beforeEach(() => {
 it("keeps the dropped day order on screen until the cache shows it, then draws the cache as is", async () => {
   let finish!: () => void;
   move.mutateAsync.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
-  const schedules = [day(10, 1), day(20, 2), day(30, 3)];
-  const hook = hookHarness((list: RoomSchedule[]) => usePlanScheduleDayReorder({ roomId: "room-a", schedules: list }));
-  const sections = [0, 1, 2].map(section);
-  const transfer = dataTransfer();
+  const { hook, sections, transfer, schedules } = dayDragFixture();
   try {
-    await hook.render(schedules);
-    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
-    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
-    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
-    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+    await previewLastDayFirst(hook, schedules, sections, transfer);
 
     let dropping!: Promise<void>;
     await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
@@ -91,16 +105,9 @@ it("keeps the dropped day order on screen until the cache shows it, then draws t
 it("starts the next day drag while the previous one is still saving, and the earlier save does not clear it", async () => {
   let finish!: () => void;
   move.mutateAsync.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
-  const schedules = [day(10, 1), day(20, 2), day(30, 3)];
-  const hook = hookHarness((list: RoomSchedule[]) => usePlanScheduleDayReorder({ roomId: "room-a", schedules: list }));
-  const sections = [0, 1, 2].map(section);
-  const transfer = dataTransfer();
+  const { hook, sections, transfer, schedules } = dayDragFixture();
   try {
-    await hook.render(schedules);
-    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
-    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
-    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
-    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+    await previewLastDayFirst(hook, schedules, sections, transfer);
     let dropping!: Promise<void>;
     await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
 
@@ -124,16 +131,9 @@ it("starts the next day drag while the previous one is still saving, and the ear
 
 it("puts the days back with a plain message when the day move cannot reach the server", async () => {
   move.mutateAsync.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-  const schedules = [day(10, 1), day(20, 2), day(30, 3)];
-  const hook = hookHarness((list: RoomSchedule[]) => usePlanScheduleDayReorder({ roomId: "room-a", schedules: list }));
-  const sections = [0, 1, 2].map(section);
-  const transfer = dataTransfer();
+  const { hook, sections, transfer, schedules } = dayDragFixture();
   try {
-    await hook.render(schedules);
-    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
-    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
-    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
-    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+    await previewLastDayFirst(hook, schedules, sections, transfer);
     await act(async () => { await hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
 
     expect(toastError).toHaveBeenCalledWith("일차 순서를 바꾸지 못했어요.");

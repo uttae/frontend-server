@@ -66,6 +66,19 @@ const items = (...itemIds: number[]): RoomScheduleItem[] =>
     createdAt: "",
   }));
 
+function seedThreeScheduleDays(client: QueryClient) {
+  const key = roomSchedulesQueryKey("room-1");
+  const day = (scheduleId: number, dayNumber: number): RoomSchedule => ({
+    scheduleId,
+    roomId: "room-1",
+    dayNumber,
+    date: `2026-10-0${dayNumber}`,
+    createdAt: "",
+  });
+  client.setQueryData(key, [day(10, 1), day(20, 2), day(30, 3)]);
+  return key;
+}
+
 it("refetches the day after the user's own delete so an older in-flight refetch cannot bring the place back", async () => {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -268,15 +281,7 @@ it("keeps a saved cross-day move as saved even when the follow-up day refetch fa
 
 it("moves the day and renumbers day numbers and dates before the response, and restores them when saving fails", async () => {
   const client = newClient();
-  const key = roomSchedulesQueryKey("room-1");
-  const day = (scheduleId: number, dayNumber: number): RoomSchedule => ({
-    scheduleId,
-    roomId: "room-1",
-    dayNumber,
-    date: `2026-10-0${dayNumber}`,
-    createdAt: "",
-  });
-  client.setQueryData(key, [day(10, 1), day(20, 2), day(30, 3)]);
+  const key = seedThreeScheduleDays(client);
   const move = deferred<unknown>();
   api.moveRoomSchedule.mockReturnValueOnce(move.promise);
   const hook = hookHarness(
@@ -374,15 +379,7 @@ it("draws only the latest order when two reorders on the same day overlap, and r
 
 it("refetches the room schedules once, after the last of two overlapping day moves", async () => {
   const client = newClient();
-  const key = roomSchedulesQueryKey("room-1");
-  const day = (scheduleId: number, dayNumber: number): RoomSchedule => ({
-    scheduleId,
-    roomId: "room-1",
-    dayNumber,
-    date: `2026-10-0${dayNumber}`,
-    createdAt: "",
-  });
-  client.setQueryData(key, [day(10, 1), day(20, 2), day(30, 3)]);
+  const key = seedThreeScheduleDays(client);
   const first = deferred<unknown>();
   const second = deferred<unknown>();
   api.moveRoomSchedule.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);

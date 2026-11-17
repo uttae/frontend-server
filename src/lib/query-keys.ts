@@ -3,27 +3,13 @@ import type { ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 // ─── Bookmarks ───────────────────────────────────────────────────────────────
 
 export const BOOKMARK_CATEGORIES_SEGMENT = "bookmark-categories" as const;
-export const ROOM_BOOKMARKS_SEGMENT = "room-bookmarks" as const;
 export const PLACE_CARD_BOOKMARK_SEGMENT = "place-card-bookmark" as const;
 
 const BOOKMARK_CATEGORIES = BOOKMARK_CATEGORIES_SEGMENT;
-const ROOM_BOOKMARKS = ROOM_BOOKMARKS_SEGMENT;
 const PLACE_CARD_BOOKMARK = PLACE_CARD_BOOKMARK_SEGMENT;
 
 export function bookmarkCategoriesQueryKey(roomId: string | null) {
   return [BOOKMARK_CATEGORIES, roomId] as const;
-}
-
-export function roomBookmarksQueryKey(
-  roomId: string | null,
-  categoryId: number | null,
-) {
-  return [ROOM_BOOKMARKS, roomId, categoryId] as const;
-}
-
-/** 해당 방의 모든 카테고리별 북마크 목록 쿼리에 공통 접두 */
-export function roomBookmarksByRoomRootQueryKey(roomId: string) {
-  return [ROOM_BOOKMARKS, roomId] as const;
 }
 
 export function roomAllBookmarksQueryKey(roomId: string | null) {
