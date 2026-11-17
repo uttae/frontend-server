@@ -6,7 +6,7 @@ import { PlaceDetailPanel } from "@/components/place/PlaceDetailPanel";
 import { MapToolbarLayoutProvider } from "@/contexts/MapToolbarLayoutContext";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapDiscoverToolbarOffset } from "@/hooks/useMapDiscoverToolbarOffset";
-import { MAIN_MAP_MIN_WIDTH_PX } from "@/lib/layout-tokens";
+import { MAIN_MAP_MIN_WIDTH_PX, MAP_DETAIL_PANEL_WIDTH } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
 
 import Map, { type MapRouteView } from "./Map";
@@ -64,12 +64,12 @@ export function MapWithDetailPanel({
 
       {/* Detail panel — 데스크톱: 지도 왼쪽에서 슬라이드 / 모바일: 헤더 아래 12px까지 펼쳐지는 바텀 시트 */}
       <div
-        style={mobileInline ? undefined : { top: panelTopPx }}
+        style={mobileInline ? undefined : { top: panelTopPx, width: MAP_DETAIL_PANEL_WIDTH }}
         className={cn(
           "absolute z-20 flex flex-col duration-300 ease-out",
           mobileInline
             ? "pointer-events-none inset-x-0 bottom-0 top-3 transition-transform"
-            : "bottom-3 left-2.5 w-[360px] overflow-hidden rounded-xl shadow-[6px_0_24px_-4px_rgba(0,0,0,0.12),16px_0_32px_-6px_rgba(0,0,0,0.08)] transition-[transform,top]",
+            : "bottom-3 left-2.5 overflow-hidden rounded-xl shadow-[6px_0_24px_-4px_rgba(0,0,0,0.12),16px_0_32px_-6px_rgba(0,0,0,0.08)] transition-[transform,top]",
           selectedPlace
             ? cn("translate-x-0 translate-y-0", !mobileInline && "pointer-events-auto")
             : mobileInline

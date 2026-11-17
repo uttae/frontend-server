@@ -19,8 +19,14 @@ export const MAIN_WORKSPACE_MIN_WIDTH_PX = 384 as const;
 /** 데스크톱 지도 최소 폭 — Figma `Web/일정/768`의 Map 폭(좌측 영역 384와 합쳐 768) */
 export const MAIN_MAP_MIN_WIDTH_PX = 384 as const;
 
-/** 데스크톱 장소 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5`(10) + `w-[360px]`와 같게 유지 */
-export const MAP_DETAIL_PANEL_COVER_WIDTH_PX = 370 as const;
+/**
+ * 데스크톱 장소 상세 패널 폭(`%`는 지도 폭). 지도가 넓으면 360, 좁아지면 지도 오른쪽이 94px 이상 보이게 함께 줄고,
+ * 버튼("일정에 추가"·"북마크에 추가")·리뷰 요약이 깨지지 않는 280에서 멈춘다(지도 최소 384에서 280)
+ */
+export const MAP_DETAIL_PANEL_WIDTH = "clamp(280px, calc(100% - 104px), 360px)" as const;
+
+/** 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5` + 패널 폭. 지도와 같은 폭 칸 안에서만 쓴다 */
+export const MAP_DETAIL_PANEL_COVER_WIDTH = `calc(0.625rem + ${MAP_DETAIL_PANEL_WIDTH})` as const;
 
 /** 데스크톱 준비물 상세 패널 폭 — `PackingPage.module.css`의 `.detail`과 같게 유지 */
 export const PACKING_DETAIL_WIDTH_PX = 440 as const;
@@ -57,7 +63,8 @@ export const PLAN_PLACE_CARD_TW = {
   title: "truncate text-body-l-emphasis text-text",
   /** Figma Tags 프레임 — 디자인 시스템 Badge(둥글기 4)가 아니라 알약 모양 */
   tag: "inline-flex w-fit max-w-full items-center rounded-full bg-fill-strong px-2 py-0.5 text-label-xs-regular text-text-subtle",
-  address: "flex min-w-0 items-center gap-0.5 text-label-m-regular text-text-subtle",
+  /** Figma Address — 좁은 카드에서 두 줄까지 줄바꿈한다. 아이콘은 첫 줄 높이(20) 칸 가운데 */
+  address: "flex min-w-0 items-start gap-0.5 text-label-m-regular text-text-subtle",
   /** 사진 왼쪽 위에 붙는 번호 — 사진 둥글기가 모서리를 자른다. 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 둔다 */
   orderBadgeCompact:
     "absolute left-0 top-0 z-10 box-content size-7 border-b border-r border-white/40 text-label-m-emphasis text-text-inverse",
@@ -67,9 +74,11 @@ export const PLAN_PLACE_CARD_TW = {
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
   /**
    * 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄. Figma 구분선은 위 줄(Contents)의 아래 선인데,
-   * 도구 줄이 없는 카드(저장 전 장소)에 선만 남지 않게 이 줄의 위 선으로 둔다
+   * 도구 줄이 없는 카드(저장 전 장소)에 선만 남지 않게 이 줄의 위 선으로 둔다.
+   * Figma Tools는 wrap이라 좁으면 메모가 다음 줄로, 값이 길면 시간·비용도 한 줄씩 내려간다.
+   * Figma 선은 크기에 들어가지 않는 안쪽 stroke라 위 여백 4에서 선 1을 뺀다(한 줄 44·두 줄 80 유지)
    */
-  actionBar: "flex min-h-11 min-w-0 items-center justify-between gap-2 border-t border-border-subtle",
+  actionBar: "flex min-w-0 flex-wrap items-center justify-between gap-x-2 border-t border-border-subtle pt-0.75 pb-1",
   /** Figma Button Neutral Weak sm — 인스턴스에 바탕이 없다. 좌우 여백 10, 아이콘 16, 라벨(`span`) 좌우 여백 6. 누를 수 있어 hover 바탕은 둔다 */
   actionButton:
     "flex min-h-9 shrink-0 cursor-pointer items-center rounded-md px-2.5 py-2 text-body-s-emphasis text-text transition-colors hover:bg-fill disabled:cursor-not-allowed disabled:opacity-50 [&>span]:px-1.5",

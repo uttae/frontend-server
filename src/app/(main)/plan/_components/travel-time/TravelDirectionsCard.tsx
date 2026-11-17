@@ -83,11 +83,17 @@ export function TravelDirectionsCard({
 
   return (
     <div className="relative">
-      <div className="flex min-w-0 items-center">
+      <div
+        className={cn(
+          "flex min-w-0 items-center",
+          // 좁은 일정 칸에서는 요약 글자를 쪼개는 대신 길찾기를 다음 줄 오른쪽으로 내린다
+          variant === "web" && "flex-wrap justify-end",
+        )}
+      >
         <button
           type="button"
           className={cn(
-            "inline-flex min-h-10 min-w-0 flex-1 cursor-pointer items-center gap-1.5 text-left",
+            "inline-flex min-h-10 min-w-0 grow cursor-pointer items-center gap-1.5 text-left",
             variant === "mobile" && "py-1 pl-1 pr-1.5",
           )}
           aria-expanded={menuOpen}
@@ -98,7 +104,7 @@ export function TravelDirectionsCard({
             className={cn(
               "inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep",
               variant === "web"
-                ? "text-body-s-emphasis text-text [&_[data-route-distance]]:text-body-s-regular [&_[data-route-distance]]:text-text-subtle"
+                ? "text-body-s-emphasis text-text [&_[data-route-distance]]:text-body-s-regular [&_[data-route-distance]]:text-text-subtle [&_[data-route-separator]]:mx-0.5"
                 : "text-body-s-emphasis mobile:text-body-xs-emphasis font-medium leading-tight text-gray-900",
             )}
           >

@@ -36,7 +36,7 @@ import {
   readRoomMapViewport,
   writeRoomMapViewport,
 } from "@/lib/map-room-viewport-storage";
-import { MAP_DETAIL_PANEL_COVER_WIDTH_PX } from "@/lib/layout-tokens";
+import { MAP_DETAIL_PANEL_COVER_WIDTH } from "@/lib/layout-tokens";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
 import { settleSearchSnapshotAfterMove } from "@/lib/map-viewport-commit";
@@ -644,7 +644,7 @@ export default function TripMap({
       {bootstrap.ready && !routeView && !isMobileDevice && isPlanPage ? (
         <div
           style={{
-            paddingLeft: selectedPlace ? MAP_DETAIL_PANEL_COVER_WIDTH_PX : 0,
+            paddingLeft: selectedPlace ? MAP_DETAIL_PANEL_COVER_WIDTH : 0,
             gridTemplateColumns: `minmax(0, 1fr) auto minmax(${ZOOM_CONTROL_CLEARANCE_PX}px, 1fr)`,
           }}
           className="pointer-events-none absolute inset-x-0 bottom-6 z-[16] grid justify-end transition-[padding] duration-300 ease-out"

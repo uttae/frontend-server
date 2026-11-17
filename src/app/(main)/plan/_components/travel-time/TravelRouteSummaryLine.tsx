@@ -29,8 +29,8 @@ export function TravelRouteSummaryLine({
     return (
       <>
         {formatRouteDuration(route.durationSeconds)}
-        <span className="mx-1 text-light-gray">·</span>
-        {/* PC 일정(TravelDirectionsCard web)은 거리만 회색 보통 굵기로 낮춘다 */}
+        <span data-route-separator className="mx-1 text-light-gray">·</span>
+        {/* PC 일정(TravelDirectionsCard web)은 거리만 회색 보통 굵기로, 점 좌우 간격은 Figma Info gap 2로 줄인다 */}
         <span data-route-distance>{formatRouteDistance(route.distanceMeters)}</span>
       </>
     );

@@ -382,8 +382,10 @@ export function PlanPlaceCard({
 
               {place.subtitle ? (
                 <p className={PLAN_PLACE_CARD_TW.address} title={place.subtitle}>
-                  <LocationIcon size={16} className="shrink-0 text-icon-subtle" />
-                  <span className="truncate">{place.subtitle}</span>
+                  <span className="flex h-5 shrink-0 items-center text-icon-subtle">
+                    <LocationIcon size={16} />
+                  </span>
+                  <span className="line-clamp-2 min-w-0 break-words">{place.subtitle}</span>
                 </p>
               ) : null}
 
@@ -411,7 +413,7 @@ export function PlanPlaceCard({
 
         {canEditScheduleItem ? (
           <div className={PLAN_PLACE_CARD_TW.actionBar}>
-            <div className="flex min-w-0 items-center">
+            <div className="flex min-w-0 flex-wrap items-center">
               {timeTrigger}
               {scheduleTimeEdit && scheduleItemId !== null && (
                 <ExpenseEntryButton
@@ -419,8 +421,7 @@ export function PlanPlaceCard({
                   scheduleItemId={scheduleItemId}
                   scopeLabel={place.title}
                   label="비용"
-                  // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
-                  className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
+                  className={PLAN_PLACE_CARD_TW.actionButton}
                   icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
                 />
               )}
