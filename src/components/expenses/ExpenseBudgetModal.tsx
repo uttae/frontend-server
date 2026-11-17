@@ -18,15 +18,10 @@ import {
   ExpenseApiError,
   type ExpenseBudget,
 } from "@/lib/api/rooms/expenses";
+import { expenseBudgetSchema } from "@/lib/expenses/expense-form";
 import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { useExpenseContext } from "./ExpenseProvider";
 import { formatExpenseAmount } from "./ExpenseViews";
-
-function budgetError(value: string) {
-  return /^\d{1,15}$/.test(value)
-    ? undefined
-    : "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.";
-}
 
 export function ExpenseBudgetModal({
   initial,
@@ -134,9 +129,9 @@ export function ExpenseBudgetModal({
           className="flex flex-col gap-6"
           onSubmit={handleFormSubmit}
         >
-          <form.Field name="budget" validators={{ onSubmit: ({ value }) => budgetError(value) }}>
+          <form.Field name="budget" validators={{ onSubmit: expenseBudgetSchema }}>
             {(field) => {
-              const fieldError = field.state.meta.errors[0];
+              const fieldError = field.state.meta.errors[0]?.message;
               return (
                 <Field>
                   <FieldLabel htmlFor={inputId}>예산 (KRW)</FieldLabel>

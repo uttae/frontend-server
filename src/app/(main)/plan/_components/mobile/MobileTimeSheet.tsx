@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { formatTimePickerValue, timePartsFromHm, timePartsToHm, type TimeParts } from "@/lib/plan/timePickerDraft";
+import {
+  formatTimePickerValue,
+  defaultEndHm,
+  TIME_PICKER_DEFAULT_START_HM,
+  timePartsFromHm,
+  timePartsToHm,
+  type TimeParts,
+} from "@/lib/plan/timePickerDraft";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,9 +26,8 @@ import {
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
   computeDurationMinutesFromRange,
+  createScheduleTimeSchema,
   normalizeStartTimeToHm,
-  validateScheduleTimeDraft,
-  type ScheduleTimeDraftValidation,
 } from "@/lib/plan/scheduleTime";
 import { cn } from "@/lib/utils";
 
@@ -54,13 +60,16 @@ export function MobileTimeSheet({
 }: MobileTimeSheetProps) {
   const serverStart = normalizeStartTimeToHm(startTime ?? "");
   const serverEnd = normalizeStartTimeToHm(endTime ?? "");
-  const [draftStart, setStart] = useState<TimeParts>();
+  // 시작 시간이 없으면 열자마자 오전 10:00을 넣고 시작 휠을 연다. 그대로 확인하면 10:00으로 저장된다
+  const [draftStart, setStart] = useState<TimeParts | undefined>(() =>
+    serverStart ? undefined : timePartsFromHm(TIME_PICKER_DEFAULT_START_HM),
+  );
   const [draftEnd, setEnd] = useState<TimeParts>();
   const startParts = draftStart ?? timePartsFromHm(serverStart);
   const endParts = draftEnd ?? timePartsFromHm(serverEnd);
   const start = timePartsToHm(startParts);
   const end = timePartsToHm(endParts);
-  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : serverStart ? "start" : null);
+  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : "start");
   const [isWheelSettling, setWheelSettling] = useState(false);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
 
@@ -73,19 +82,29 @@ export function MobileTimeSheet({
   ]
     .filter(Boolean)
     .join(" · ");
-  const validation: ScheduleTimeDraftValidation = start === null || end === null
-    ? { valid: false, message: "오전/오후, 시, 분을 모두 선택해 주세요." }
-    : validateScheduleTimeDraft(start, end);
+  // 확인 버튼을 잠그는 오류. 휠에서 오전/오후·시·분을 다 고르지 않은 칸(null)은 스키마 전에 막는다
+  const timeError =
+    start === null || end === null
+      ? "오전/오후, 시, 분을 모두 선택해 주세요."
+      : createScheduleTimeSchema({ serverStartHm: serverStart, serverEndHm: serverEnd }).safeParse({ start, end }).error
+          ?.issues[0]?.message;
 
   function openField(field: Field) {
-    if (field === "end" && !start) return;
+    // 빈 칸의 휠을 열면 바로 값을 넣는다. 오전/오후·시·분 중 하나라도 안 고르면 "선택 중"으로 남아 저장되지 않기 때문이다
+    // 시작은 오전 10:00(초기화 뒤 다시 열 때 포함), 종료는 시작 + 1시간
+    if (field === "end") {
+      if (!start) return;
+      if (activeField !== "end" && end === "") setEnd(timePartsFromHm(defaultEndHm(start)));
+    } else if (activeField !== "start" && start === "") {
+      setStart(timePartsFromHm(TIME_PICKER_DEFAULT_START_HM));
+    }
     setActiveField((current) => (current === field ? null : field));
   }
 
   async function handleSave() {
     if (isPending || isWheelSettling || !dirty) return;
-    if (!validation.valid) {
-      toast.error(validation.message);
+    if (timeError) {
+      toast.error(timeError);
       return;
     }
     try {
@@ -182,7 +201,7 @@ export function MobileTimeSheet({
           <Button
             loading={isPending}
             loadingLabel="저장 중"
-            disabled={isWheelSettling || !dirty || !validation.valid}
+            disabled={isWheelSettling || !dirty || Boolean(timeError)}
             onClick={() => void handleSave()}
           >
             확인

@@ -25,14 +25,8 @@ import {
   type Expense,
   type ExpenseInput,
 } from "@/lib/api/rooms/expenses";
-import { expenseTitle, normalizeExpenseName, expenseNameError } from "@/lib/expenses/expense-name";
-import {
-  amountError,
-  expenseCategoryError,
-  expenseLinkError,
-  expenseMemoError,
-  expenseRolesError,
-} from "@/lib/expenses/expense-policy";
+import { expenseTitle, normalizeExpenseName } from "@/lib/expenses/expense-name";
+import { createExpenseFormSchema, type ExpenseFormValues } from "@/lib/expenses/expense-form";
 import { preferredExpenseCurrency, rememberExpenseCurrency } from "@/lib/expenses/expense-currency-preference";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
 
@@ -47,9 +41,6 @@ export type ExpenseEntry = {
   scheduleId?: number;
   scheduleItemId?: number;
 };
-
-// 카테고리는 새 비용에서 고르기 전까지 빈 값이다
-type ExpenseDraft = Omit<ExpenseInput, "category"> & { category: ExpenseInput["category"] | "" };
 
 function ExpenseEditorConflict({
   conflict,
@@ -160,7 +151,7 @@ export function ExpenseEditor({
       ? context.currentUserId
       : undefined;
   // 연 순간의 값으로 폼을 채운다. 열린 동안 서버 값이 바뀌어도(충돌 확인 뒤 original 교체 포함) 입력 칸은 다시 채우지 않는다
-  const [defaultValues] = useState<ExpenseDraft>(() =>
+  const [defaultValues] = useState<ExpenseFormValues>(() =>
     original
       ? { ...original }
       : {
@@ -207,8 +198,19 @@ export function ExpenseEditor({
 
   const form = useForm({
     defaultValues,
-    // 제출 전에는 검증하지 않고, 한 번 제출한 뒤에는 입력할 때마다 그 칸을 다시 검증한다
+    // 제출 전에는 검증하지 않고, 한 번 제출한 뒤에는 입력할 때마다 다시 검증한다
     validationLogic: revalidateLogic(),
+    // 칸 규칙·교차 규칙을 폼 스키마 하나가 맡고 issue path로 각 칸에 나눈다. 어느 칸을 바꿔도 다시 보므로
+    // 통화를 바꾸면 금액, 부담자를 바꾸면 결제자 칸 오류도 갱신된다
+    validators: {
+      onDynamic: createExpenseFormSchema({
+        currencies: context.currencies.data ?? [],
+        members: context.members,
+        original,
+        // days는 고른 일차의 장소 조회(아래 places)를 쓰므로 폼 뒤에 정의된다. 검증할 때 부른다
+        daysOf: (scheduleId) => days(scheduleId),
+      }),
+    },
     // 어느 칸이든 바꾸면 폼 아래 문장(저장 실패 등)을 지운다(지금 동작)
     listeners: { onChange: () => reportError("") },
     onSubmit: async ({ value }) => {
@@ -368,9 +370,9 @@ export function ExpenseEditor({
             aria-describedby={error ? errorId : undefined}
           >
             <fieldset disabled={pending} className="flex min-w-0 flex-col gap-5 mobile:gap-4">
-              <form.Field name="name" validators={{ onDynamic: ({ value }) => expenseNameError(value) ?? undefined }}>
+              <form.Field name="name">
                 {(field) => {
-                  const fieldError = field.state.meta.errors[0];
+                  const fieldError = field.state.meta.errors[0]?.message;
                   return (
                     <Field>
                       <FieldLabel htmlFor={nameId}>제목 (선택)</FieldLabel>
@@ -402,17 +404,9 @@ export function ExpenseEditor({
                     />
                   )}
                 </form.Field>
-                <form.Field
-                  name="totalAmount"
-                  validators={{
-                    // 통화마다 소수 자리·최대 금액이 달라 통화를 바꾸면 금액도 다시 검증한다
-                    onChangeListenTo: ["currency"],
-                    onDynamic: ({ value, fieldApi }) =>
-                      amountError(value, currencyOf(fieldApi.form.getFieldValue("currency"))) ?? undefined,
-                  }}
-                >
+                <form.Field name="totalAmount">
                   {(field) => {
-                    const fieldError = field.state.meta.errors[0];
+                    const fieldError = field.state.meta.errors[0]?.message;
                     return (
                       <Field>
                         <FieldLabel htmlFor={amountId}>금액</FieldLabel>
@@ -464,18 +458,10 @@ export function ExpenseEditor({
                   }}
                 />
               </Field>
-              <form.Field
-                name="scheduleItemId"
-                validators={{
-                  // 일차는 칸이 따로 없어 일차 구분 onChange가 이 칸 값을 비우면서 다시 검증된다
-                  onDynamic: ({ fieldApi }) => {
-                    const values = fieldApi.form.state.values;
-                    return expenseLinkError(values, days(values.scheduleId)) ?? undefined;
-                  },
-                }}
-              >
+              {/* 일차는 칸이 따로 없어 일차·장소 오류는 연결 장소 칸에 붙는다 */}
+              <form.Field name="scheduleItemId">
                 {(field) => {
-                  const fieldError = field.state.meta.errors[0];
+                  const fieldError = field.state.meta.errors[0]?.message;
                   return (
                     <Field>
                       <FieldLabel htmlFor={placeId}>연결 장소 (선택)</FieldLabel>
@@ -505,9 +491,9 @@ export function ExpenseEditor({
                   );
                 }}
               </form.Field>
-              <form.Field name="category" validators={{ onDynamic: ({ value }) => expenseCategoryError(value) ?? undefined }}>
+              <form.Field name="category">
                 {(field) => {
-                  const fieldError = field.state.meta.errors[0];
+                  const fieldError = field.state.meta.errors[0]?.message;
                   return (
                     <Field>
                       <FieldLabel htmlFor={categoryId}>카테고리</FieldLabel>
@@ -531,14 +517,7 @@ export function ExpenseEditor({
               </form.Field>
               {context.memberStatus === "success" ? (
                 // 결제자·부담자는 함께 검증한다(각각 한 명 이상·중복 없음·고를 수 있는 멤버). 오류는 두 칸 아래 하나로 보인다
-                <form.Field
-                  name="payerUserIds"
-                  validators={{
-                    onChangeListenTo: ["participantUserIds"],
-                    onDynamic: ({ fieldApi }) =>
-                      expenseRolesError(fieldApi.form.state.values, context.members, original) ?? undefined,
-                  }}
-                >
+                <form.Field name="payerUserIds">
                   {(payers) => (
                     <div className="flex min-w-0 flex-col gap-1">
                       <div className="grid min-w-0 grid-cols-2 gap-4 mobile:gap-3">
@@ -565,16 +544,16 @@ export function ExpenseEditor({
                           )}
                         </form.Field>
                       </div>
-                      <FieldError>{payers.state.meta.errors[0]}</FieldError>
+                      <FieldError>{payers.state.meta.errors[0]?.message}</FieldError>
                     </div>
                   )}
                 </form.Field>
               ) : (
                 memberFallback
               )}
-              <form.Field name="memo" validators={{ onDynamic: ({ value }) => expenseMemoError(value) ?? undefined }}>
+              <form.Field name="memo">
                 {(field) => {
-                  const fieldError = field.state.meta.errors[0];
+                  const fieldError = field.state.meta.errors[0]?.message;
                   return (
                     <Field>
                       <FieldLabel htmlFor={memoId}>메모 (선택)</FieldLabel>

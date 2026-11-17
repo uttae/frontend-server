@@ -25,6 +25,10 @@ import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 
 import { usePlanScheduleDayReorder } from "@/hooks/usePlanScheduleDayReorder";
+import {
+  PlanItemDragProvider,
+  usePlanItemDragController,
+} from "@/hooks/usePlanItemDragController";
 import { planCopy } from "@/lib/plan/planCopy";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import {
@@ -93,8 +97,10 @@ export function PlanPageView() {
     usePlanScheduleDayReorder({
       roomId,
       schedules: sortedSchedules,
-      interactionLocked: isCreatingSchedule || isDeletingSchedule,
     });
+
+  // 장소 드래그는 여러 일차에 걸치므로 페이지에서 한 벌만 둔다(모바일은 MobilePlanView의 컨트롤러)
+  const planItemDrag = usePlanItemDragController(roomId);
 
   const scheduleExpansionSyncKey = useMemo(
     () => sortedSchedules.map((s) => s.scheduleId).join(","),
@@ -257,37 +263,38 @@ export function PlanPageView() {
         ) : null}
 
         {planDays.length > 0 ? (
-          <div className="space-y-2.5" {...listContainerProps}>
-            {planDays.map((day, dayIndex) => {
-              const sectionProps = getSectionProps(dayIndex);
+          <PlanItemDragProvider value={planItemDrag}>
+            <div className="space-y-2.5" {...listContainerProps}>
+              {planDays.map((day, dayIndex) => {
+                const sectionProps = getSectionProps(dayIndex);
 
-              return (
-                <PlanScheduleDayBlock
-                  key={day.id}
-                  roomId={roomId}
-                  scheduleId={sortedSchedules[dayIndex]!.scheduleId}
-                  title={day.dayLabel}
-                  subtitle={day.dateLabel}
-                  dateHeading={day.shortDateLabel}
-                  onRequestDeleteSchedule={
-                    sortedSchedules[dayIndex]
-                      ? () => handleDeleteScheduleDay(dayIndex)
-                      : undefined
-                  }
-                  onRequestInsertScheduleAfter={
-                    sortedSchedules[dayIndex]
-                      ? () => handleInsertScheduleAfter(dayIndex)
-                      : undefined
-                  }
-                  isScheduleMenuDisabled={
-                    isCreatingSchedule || isDeletingSchedule || isMovePending
-                  }
-                  interactionLocked={isCreatingSchedule || isDeletingSchedule}
-                  {...sectionProps}
-                />
-              );
-            })}
-          </div>
+                return (
+                  <PlanScheduleDayBlock
+                    key={day.id}
+                    roomId={roomId}
+                    scheduleId={sortedSchedules[dayIndex]!.scheduleId}
+                    title={day.dayLabel}
+                    subtitle={day.dateLabel}
+                    dateHeading={day.shortDateLabel}
+                    onRequestDeleteSchedule={
+                      sortedSchedules[dayIndex]
+                        ? () => handleDeleteScheduleDay(dayIndex)
+                        : undefined
+                    }
+                    onRequestInsertScheduleAfter={
+                      sortedSchedules[dayIndex]
+                        ? () => handleInsertScheduleAfter(dayIndex)
+                        : undefined
+                    }
+                    isScheduleMenuDisabled={
+                      isCreatingSchedule || isDeletingSchedule || isMovePending
+                    }
+                    {...sectionProps}
+                  />
+                );
+              })}
+            </div>
+          </PlanItemDragProvider>
         ) : null}
       </div>
       {deleteDayDialog}

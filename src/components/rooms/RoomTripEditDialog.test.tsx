@@ -111,7 +111,7 @@ it("uses the existing trimmed mutation payload and closes only after save succee
   expect(dialog()).toBeNull();
 });
 
-it("shows the title error under the title field and locks apply until a title is entered", async () => {
+it("shows the title error under the title field and blocks apply until a title is entered", async () => {
   await open();
   const title = () => dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!;
   expect(title().hasAttribute("aria-invalid")).toBe(false);
@@ -120,7 +120,11 @@ it("shows the title error under the title field and locks apply until a title is
   const error = document.getElementById(title().getAttribute("aria-describedby")!);
   expect(error?.getAttribute("role")).toBe("alert");
   expect(error?.textContent).toBe("여행 제목을 입력해 주세요.");
-  expect(button("적용하기", dialog()!).disabled).toBe(true);
+  // 규칙 위반으로는 버튼을 잠그지 않는다. 눌러도 저장하지 않고 오류는 칸 아래에 남는다
+  expect(button("적용하기", dialog()!).disabled).toBe(false);
+  await click("적용하기", dialog()!);
+  expect(state.update).not.toHaveBeenCalled();
+  expect(error?.textContent).toBe("여행 제목을 입력해 주세요.");
   await change('input[type="text"]', "새 제목");
   expect(title().hasAttribute("aria-invalid")).toBe(false);
   expect(dialog()!.textContent).not.toContain("여행 제목을 입력해 주세요.");
@@ -140,7 +144,8 @@ it("allows an earlier start date and keeps date ordering and required destinatio
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
   expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
   await click("서울 삭제", dialog()!);
-  expect(button("적용하기", dialog()!).disabled).toBe(true);
+  expect(button("적용하기", dialog()!).disabled).toBe(false);
+  await click("적용하기", dialog()!);
   expect([...dialog()!.querySelectorAll('[role="alert"]')].map((node) => node.textContent)).toContain("여행지를 하나 이상 선택해 주세요.");
   expect(state.update).not.toHaveBeenCalled();
 });
