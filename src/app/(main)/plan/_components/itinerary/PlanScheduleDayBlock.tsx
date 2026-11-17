@@ -5,7 +5,7 @@ import { ExpenseEntryButton, useExpenseContext } from "@/components/expenses/Exp
 
 import type { CSSProperties, Ref } from "react";
 
-import { usePlanDaySectionCrossDayDrop } from "@/hooks/usePlanDaySectionCrossDayDrop";
+import { usePlanItemDrag } from "@/hooks/usePlanItemDragController";
 import { useSchedulePlanPlaces } from "@/hooks/useRooms";
 
 import {
@@ -28,7 +28,6 @@ type PlanScheduleDayBlockProps = {
   sectionRef?: Ref<HTMLElement>;
   sectionStyle?: CSSProperties;
   dragHandleProps?: PlanDaySectionDragHandleProps;
-  interactionLocked?: boolean;
 };
 
 export function PlanScheduleDayBlock({
@@ -43,18 +42,11 @@ export function PlanScheduleDayBlock({
   sectionRef,
   sectionStyle,
   dragHandleProps,
-  interactionLocked = false,
 }: PlanScheduleDayBlockProps) {
   const expenses = useExpenseContext();
   const { data: placesData } = useSchedulePlanPlaces(roomId, scheduleId);
-  const placesCount = placesData?.length ?? 0;
-
-  const { crossDaySectionDropProps } = usePlanDaySectionCrossDayDrop({
-    roomId,
-    scheduleId,
-    placesCount,
-    interactionLocked,
-  });
+  // 다른 일차의 장소를 헤더·접힌 일차에 놓으면 맨 앞에 넣는다
+  const crossDayDrop = usePlanItemDrag().getSectionDrop(scheduleId, placesData);
 
   return (
     <PlanDaySection
@@ -78,7 +70,7 @@ export function PlanScheduleDayBlock({
       sectionRef={sectionRef}
       sectionStyle={sectionStyle}
       dragHandleProps={dragHandleProps}
-      crossDaySectionDropProps={crossDaySectionDropProps}
+      crossDayDrop={crossDayDrop}
     >
       <PlanItinerary roomId={roomId} scheduleId={scheduleId} />
     </PlanDaySection>

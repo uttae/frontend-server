@@ -9,6 +9,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type { ServerChatMessage } from "@/types/chat";
 import {
+  chatMessageUserIds,
   deriveAiRequestConversationState,
   maxSequenceInMessages,
   mergeServerMessageLists,
@@ -26,6 +27,8 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { getRoomMessageReadStatus, getRoomMessages } from "@/lib/api/rooms";
 import type { RoomMember } from "@/lib/api/rooms";
 import { useRoomMembers } from "@/hooks/useRooms";
+import { invalidateAfterChange } from "@/lib/query-client";
+import { roomMembersQueryKey } from "@/lib/query-keys";
 import { useChatActions } from "@/hooks/useChatActions";
 import { useChatMessageRead } from "@/hooks/useChatMessageRead";
 import { warmPlacePhotoQueriesFromChatHistory } from "@/lib/places/warmChatHistoryPlacePhotos";
@@ -116,8 +119,16 @@ export function useChatMessages(
   const { setRoomChatMessageHandler, connected } = useStompContext();
   const { data: sessionUser } = useSessionUser();
   const userId = sessionUser?.id;
-  const { data: membersData } = useRoomMembers(roomId);
+  const {
+    data: membersData,
+    isPending: membersPending,
+    isFetching: membersFetching,
+  } = useRoomMembers(roomId);
   const [rawMessages, setRawMessages] = useState<ServerChatMessage[]>([]);
+  /** STOMP로 받았을 때 보낸 사람·입장한 사람이 멤버 목록에 없던 메시지 — 목록을 다시 받는 동안 그리지 않는다 */
+  const [awaitingNameIds, setAwaitingNameIds] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [hasMore, setHasMore] = useState(true);
   const [isFetchingOlder, setIsFetchingOlder] = useState(false);
   const [isFetchingNewer, setIsFetchingNewer] = useState(false);
@@ -194,6 +205,7 @@ export function useChatMessages(
   const isFetchingOlderRef = useRef(false);
   const isFetchingNewerRef = useRef(false);
   const rawMessagesRef = useRef<ServerChatMessage[]>([]);
+  const membersRef = useRef(membersData);
 
   const roomLifetimeRef = useRef(0);
   useLayoutEffect(() => {
@@ -209,7 +221,8 @@ export function useChatMessages(
     rawMessagesRef.current = rawMessages;
     activeRoomIdRef.current = roomId?.trim() ?? "";
     fetchHistoryRef.current = fetchHistory;
-  }, [rawMessages, roomId, fetchHistory]);
+    membersRef.current = membersData;
+  }, [rawMessages, roomId, fetchHistory, membersData]);
 
   const { markMessagesRead, resetReadDedup, onIncomingMessage } =
     useChatMessageRead({
@@ -246,16 +259,29 @@ export function useChatMessages(
 
   const messages = useMemo(
     () =>
-      rawMessages.map((m) =>
-        serverMessageToChatMessage(
-          m,
-          userId,
-          memberMap,
-          fulfilledAiRequestIds,
-          aiRequestReplyLookup,
-          roomMembersResolved,
+      rawMessages
+        // 이름을 아직 모르는 메시지는 '(알 수 없음)' 대신 그리지 않는다. 멤버 목록을 받으면 제자리에 이름과 함께
+        // 보인다(AGENTS.md 로딩 UI 원칙). 목록을 처음 받는 중이거나, STOMP로 막 받은 메시지인데 목록을 다시 받는
+        // 중일 때만이다 — 이미 있던 메시지의 사람이 목록에 없으면(탈퇴) 재조회 중에도 '(알 수 없음)'으로 둔다
+        .filter((m) => {
+          const nameMissing = chatMessageUserIds(m).some(
+            (id) => id !== userId && !memberMap.has(id),
+          );
+          return !(
+            nameMissing &&
+            (membersPending || (membersFetching && awaitingNameIds.has(m.id)))
+          );
+        })
+        .map((m) =>
+          serverMessageToChatMessage(
+            m,
+            userId,
+            memberMap,
+            fulfilledAiRequestIds,
+            aiRequestReplyLookup,
+            roomMembersResolved,
+          ),
         ),
-      ),
     [
       rawMessages,
       userId,
@@ -263,6 +289,9 @@ export function useChatMessages(
       fulfilledAiRequestIds,
       aiRequestReplyLookup,
       roomMembersResolved,
+      membersPending,
+      membersFetching,
+      awaitingNameIds,
     ],
   );
 
@@ -829,6 +858,16 @@ export function useChatMessages(
     const rid = roomId.trim();
     const handler = (msg: ServerChatMessage) => {
       if (activeRoomIdRef.current !== rid) return;
+      const members = membersRef.current?.members ?? [];
+      const nameMissing = chatMessageUserIds(msg).some(
+        (id) => id !== userId && !members.some((m) => m.userId === id),
+      );
+      if (nameMissing) {
+        // 방금 입장한 사람 등 — 멤버 목록을 지금 다시 받는다. 받는 중인 조회는 이 사람이 들어오기 전에 출발했을 수
+        // 있어 첫 조회라도 취소하고 새로 받는다. 받는 동안 이 메시지는 그리지 않는다(위 messages)
+        void invalidateAfterChange(queryClient, { queryKey: roomMembersQueryKey(rid), exact: true });
+        setAwaitingNameIds((prev) => new Set(prev).add(msg.id));
+      }
       if (liveBufferRef.current) {
         liveBufferRef.current.push(msg);
         return;
@@ -837,7 +876,7 @@ export function useChatMessages(
     };
     setRoomChatMessageHandler(handler);
     return () => setRoomChatMessageHandler(null);
-  }, [roomId, setRoomChatMessageHandler, applyLiveMessages]);
+  }, [roomId, userId, queryClient, setRoomChatMessageHandler, applyLiveMessages]);
 
   const rid = roomId?.trim() ?? "";
   const effectiveReadMarkerMessageId =
@@ -852,6 +891,8 @@ export function useChatMessages(
 
   return {
     messages,
+    /** 보낸 사람 이름을 찾을 멤버 목록을 아직 한 번도 받지 못했다 — 목록 대신 로딩 표시를 둔다 */
+    waitingForMembers: Boolean(roomId) && membersPending,
     sendChatMessage,
     sendAiMessage,
     sendCancelAiRequest,
