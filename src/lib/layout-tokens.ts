@@ -6,14 +6,18 @@ export const width = {
 /** Figma 사이드바 1049:2992 · HeaderBar 홈 열 공통 폭 */
 export const MAIN_SIDEBAR_RAIL_WIDTH = "68px" as const;
 
-/** 채팅·일정 등 좌측 패널 최소 폭(사이드바 레일 제외) */
+/** 채팅 패널을 붙여 둘 때 폭(사이드바 레일 제외) — 최소화 창 크기 계산이 따른다 */
 export const CHAT_PANEL_DOCKED_WIDTH = width.s1;
 
 /**
- * 데스크톱 지도 최소 폭 — 장소 상세 패널(360) + 좌우 여백 10.
- * 좌측 영역(레일 + 패널 400)과 합친 폭보다 화면이 좁으면 레이아웃 안에서 가로 스크롤한다.
+ * 데스크톱 최소 폭 768(Figma `Web/일정/768`)을 좌측 영역과 지도가 384씩 나눈다.
+ * 좌측 영역 값은 사이드바 레일·오른쪽 테두리를 포함한다.
+ * 화면이 768보다 좁아도 모바일로 바꾸지 않고 레이아웃 안에서 가로 스크롤한다.
  */
-export const MAIN_MAP_MIN_WIDTH_PX = 380 as const;
+export const MAIN_WORKSPACE_MIN_WIDTH_PX = 384 as const;
+
+/** 데스크톱 지도 최소 폭 — Figma `Web/일정/768`의 Map 폭(좌측 영역 384와 합쳐 768) */
+export const MAIN_MAP_MIN_WIDTH_PX = 384 as const;
 
 /** 데스크톱 장소 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5`(10) + `w-[360px]`와 같게 유지 */
 export const MAP_DETAIL_PANEL_COVER_WIDTH_PX = 370 as const;
@@ -23,7 +27,7 @@ export const PACKING_DETAIL_WIDTH_PX = 440 as const;
 
 /**
  * 플랜 루트 콘텐츠 박스 인라인 폭이 이 값 미만이면 narrow.
- * `width.s1`(채팅·좌측 최소 400px) 과 맞춤.
+ * `width.s1`(400px)과 맞춤.
  */
 export const PLAN_CONTAINER_NARROW_MAX_INLINE_PX = 400 as const;
 
@@ -51,8 +55,12 @@ export const PLAN_PLACE_CARD_TW = {
   titleRow: "flex min-w-0 items-start gap-2.5",
   subtitle: "truncate text-caption-l-regular text-text-subtle",
   controlsStack: "flex min-w-0 flex-col gap-0.5",
+  /** 사진 왼쪽 위에 붙는 번호 — 사진 둥글기가 모서리를 자른다. 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 둔다 */
   orderBadgeCompact:
-    "absolute -left-2 -top-2 z-10 h-8 w-8 rounded-lg border-2 border-white text-body-s-regular mobile:text-body-xs-regular shadow-md",
+    "absolute left-0 top-0 z-10 box-content size-7 border-b border-r border-white/40 text-label-m-emphasis text-text-inverse",
+  /** 사진 오른쪽 아래 지도 표시 — 테두리는 Figma의 안쪽 stroke */
+  thumbnailMapMark:
+    "pointer-events-none absolute bottom-1 right-1 z-10 flex size-6 items-center justify-center rounded-md border-[0.5px] border-white/20 bg-black/40 text-icon-inverse",
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
   title: "truncate text-body-l-emphasis mobile:text-body-s-emphasis text-text",
   deleteButtonCompact: "p-1 @min-[370px]/plan:p-1.5",
@@ -64,8 +72,10 @@ export const PLAN_PLACE_CARD_TW = {
     "flex h-9 shrink-0 cursor-pointer items-center rounded-md bg-fill-subtle px-2.5 text-body-s-emphasis text-text transition-colors hover:bg-fill disabled:cursor-not-allowed disabled:opacity-50 [&>span]:px-1.5",
   /** 메모 버튼만 Button Base 좌우 여백이 4다(디자인) */
   actionButtonTrailing: "px-1",
-  actionIcon: "shrink-0 text-primary",
-  actionIconEmpty: "shrink-0 text-text",
+  /** 값이 있으면 버튼의 `data-filled`로 파랑 — 비용 버튼(`ExpenseEntryButton`)과 같은 방식 */
+  actionIcon: "shrink-0 text-icon group-data-filled:text-primary",
+  /** 메모만 비어 있을 때 icon/subtle(디자인) */
+  memoActionIcon: "shrink-0 text-icon-subtle group-data-filled:text-primary",
   editorModule:
     "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular mobile:text-body-xs-regular text-gray-900",
   editorSideLabelWrapper:

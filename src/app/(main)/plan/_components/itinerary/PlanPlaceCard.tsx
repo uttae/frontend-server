@@ -5,9 +5,8 @@ import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
 import type { DragEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
 
-import { CoinIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
+import { CoinIcon, LocationIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
@@ -266,12 +265,14 @@ export function PlanPlaceCard({
       }}
       aria-expanded={memoOpen}
       aria-label={hasMemo ? "메모 수정" : "메모 추가"}
+      data-filled={hasMemo ? "" : undefined}
       className={cn(
+        "group",
         PLAN_PLACE_CARD_TW.actionButton,
         PLAN_PLACE_CARD_TW.actionButtonTrailing,
       )}
     >
-      <MemoAddIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
+      <MemoAddIcon size={16} className={PLAN_PLACE_CARD_TW.memoActionIcon} />
       <span>메모</span>
     </button>
   ) : null;
@@ -287,9 +288,10 @@ export function PlanPlaceCard({
       }}
       aria-expanded={timeOpen}
       aria-label={hasTime ? `시간 ${timeRange} 수정` : "시간 설정"}
-      className={cn(PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
+      data-filled={hasTime ? "" : undefined}
+      className={cn("group", PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
     >
-      <TimeClockIcon size={16} className={hasTime ? PLAN_PLACE_CARD_TW.actionIcon : PLAN_PLACE_CARD_TW.actionIconEmpty} />
+      <TimeClockIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
       <span>{timeRange || "시간"}</span>
     </button>
   ) : null;
@@ -314,11 +316,6 @@ export function PlanPlaceCard({
         )}
         aria-grabbed={isDragging}
       >
-        <PlanOrderIndexBadge
-          orderIndex={displayOrderIndex}
-          backgroundColorHex={orderBadgeColor}
-        />
-
         {(() => {
           const media = photoLoading ? (
             <Spinner
@@ -344,11 +341,18 @@ export function PlanPlaceCard({
               }
             />
           ) : null;
+          const orderBadge = (
+            <PlanOrderIndexBadge
+              orderIndex={displayOrderIndex}
+              backgroundColorHex={orderBadgeColor}
+            />
+          );
 
           if (!hasGooglePlace) {
             return (
               <div ref={thumbnailRef} className={PLAN_PLACE_CARD_TW.thumbnail}>
                 {media}
+                {orderBadge}
               </div>
             );
           }
@@ -362,11 +366,9 @@ export function PlanPlaceCard({
               )}
             >
               {media}
-              <span
-                className="pointer-events-none absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-md bg-black/60 text-white shadow-sm ring-1 ring-white/25"
-                aria-hidden
-              >
-                <MapPin className="h-3 w-3" strokeWidth={2.4} />
+              {orderBadge}
+              <span className={PLAN_PLACE_CARD_TW.thumbnailMapMark} aria-hidden>
+                <LocationIcon size={14} />
               </span>
             </div>
           );
@@ -426,8 +428,7 @@ export function PlanPlaceCard({
                     label="비용"
                     // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
                     className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
-                    // 금액이 있을 때만 파랑 — 버튼의 `data-filled`로 바꾼다
-                    icon={<CoinIcon size={16} className={cn(PLAN_PLACE_CARD_TW.actionIconEmpty, "group-data-filled:text-primary")} />}
+                    icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
                   />
                 )}
               </div>

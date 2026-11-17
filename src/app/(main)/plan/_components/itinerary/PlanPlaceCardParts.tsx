@@ -35,7 +35,7 @@ export function PlanOrderIndexBadge({
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-md font-bold text-white",
+        "flex shrink-0 items-center justify-center",
         PLAN_PLACE_CARD_TW.orderBadgeCompact,
         !customBg && "bg-primary",
         className,
