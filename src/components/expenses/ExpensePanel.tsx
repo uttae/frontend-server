@@ -11,7 +11,7 @@ import { ExpenseSelect } from "./ExpenseSelect";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ExpenseKrwAmount, ExpenseRateNote } from "./ExpenseKrw";
-import { PlusIcon, RefreshIcon } from "@/assets/icons";
+import { PaymentIcon, PlusIcon, RefreshIcon } from "@/assets/icons";
 import { ExpenseDialog } from "./ExpenseDialog";
 import { ExpenseCategorySummary } from "./ExpenseCategorySummary";
 import { totalsByCurrency } from "@/lib/expenses/expense-scope";
@@ -322,15 +322,16 @@ export function ExpensePanel() {
     >
       <MainPageHeader
         title="가계부"
-        description="여행 비용과 정산을 한눈에 확인해요."
-        className="mb-6 min-h-[72px] items-center mobile:hidden max-sm:hidden [&_h1]:text-[32px] [&_h1]:leading-[42px]"
+        description="여행 경비를 한 번에 관리하세요."
+        className="mobile:hidden max-sm:hidden"
         action={
-          <div className="flex gap-3">
-            <Button variant="outline" size="sm" className="min-w-[111px]" onClick={() => setTab("summary")}>
+          <div className="flex gap-2.5">
+            <Button variant="outline" size="sm" onClick={() => setTab("summary")}>
+              <PaymentIcon data-icon="inline-start" />
               정산 요약
             </Button>
             {context.canManage && (
-              <Button tone="brand" size="sm" className="min-w-[111px]" aria-label="비용 추가" disabled={context.busy} onClick={openNewExpense}>
+              <Button tone="brand" size="sm" aria-label="비용 추가" disabled={context.busy} onClick={openNewExpense}>
                 <PlusIcon data-icon="inline-start" />
                 비용 추가
               </Button>
@@ -347,7 +348,8 @@ export function ExpensePanel() {
         </output>
       )}
       <div className="grid min-w-0 gap-4 @min-[800px]/expenses:gap-6 @min-[800px]/expenses:grid-cols-[minmax(300px,26%)_minmax(0,1fr)]">
-        <aside className="min-w-0 self-stretch rounded-xl border border-border-subtle bg-white p-4 @min-[800px]/expenses:min-h-[calc(100dvh-216px)] @min-[800px]/expenses:p-6">
+        {/* 넓은 화면에서 요약 칸을 화면 아래까지 채운다. 177 = 상단 헤더 69 + 탭 헤더 76 + 아래 여백 32 */}
+        <aside className="min-w-0 self-stretch rounded-xl border border-border-subtle bg-white p-4 @min-[800px]/expenses:min-h-[calc(100dvh-177px)] @min-[800px]/expenses:p-6">
           <ExpenseBudgetSummary />
           <ExpenseCategorySummary />
           {readFailed && (

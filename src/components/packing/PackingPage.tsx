@@ -370,9 +370,8 @@ function PackingContent({context}: {context:Context}) {
           </button>}
           {loading && <span aria-hidden="true" className={`${styles.addCategory} ${styles.loadingAction}`}/>}
           <div className={styles.summary}>
-            <p>해외여행 공통 준비물</p>
             {state.data && <p className={styles.progress} aria-label="전체 준비 현황">
-              <strong>{items.filter(item=>item.checked).length} / {items.length}</strong><span>개 준비 완료</span>
+              <strong>{items.filter(item=>item.checked).length}/{items.length}</strong><span>개 준비 완료</span>
             </p>}
             {loading && <span aria-hidden="true" className={styles.loadingProgress}/>}
           </div>

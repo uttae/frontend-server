@@ -7,7 +7,6 @@ import {
   MAIN_PAGE_INLINE_PADDING_CLASS,
   MAIN_SCROLLBAR_GUTTER_CLASS,
 } from "@/lib/layout-tokens";
-import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { cn } from "@/lib/utils";
 
 /**
@@ -31,8 +30,6 @@ export function MainContentScrollArea({
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchPage = isSearchPath(pathname);
   const ledgerPage = pathname === "/cost" && !fill;
-  // 일정은 디자인 여백(위 14 · 왼쪽 20 · 오른쪽은 스크롤바 포함 24)에 맞춰 스크롤바 자리를 오른쪽에만 둔다
-  const planPage = isPlanPath(pathname) && !fill;
 
   useEffect(() => {
     scrollRef.current?.scrollTo(0, 0);
@@ -44,26 +41,22 @@ export function MainContentScrollArea({
       data-main-content-scroll
       className={cn(
         "min-h-0 min-w-0 flex-1",
-        !fill && !ledgerPage && (planPage ? "pt-3.5" : "pt-2.5"),
+        // PC 탭 화면은 제목 줄(MainPageHeader)이 위 여백 12를 갖는다
+        !fill && !ledgerPage && (searchPage ? "pt-2.5" : "mobile:pt-2.5"),
         ledgerPage && "bg-fill-subtle mobile:bg-fill max-sm:bg-fill",
         fill
           ? "flex flex-col overflow-hidden"
           : searchPage
             ? "flex flex-col overflow-hidden"
-            : cn(
-                "overflow-x-hidden overflow-y-auto",
-                MAIN_SCROLLBAR_GUTTER_CLASS,
-                planPage && "[scrollbar-gutter:stable]",
-              ),
+            : cn("overflow-x-hidden overflow-y-auto", MAIN_SCROLLBAR_GUTTER_CLASS),
       )}
     >
       <div
         className={cn(
           "min-w-0",
           (fill || searchPage) && "flex min-h-0 flex-1 flex-col",
-          !fill && !searchPage && !ledgerPage && !planPage && MAIN_PAGE_INLINE_PADDING_CLASS,
-          planPage && "pl-5 pr-2.5",
-          ledgerPage && "p-8 mobile:p-5 max-sm:p-5",
+          !fill && !searchPage && MAIN_PAGE_INLINE_PADDING_CLASS,
+          ledgerPage && "pb-8 mobile:p-5 max-sm:p-5",
         )}
       >
         {children}

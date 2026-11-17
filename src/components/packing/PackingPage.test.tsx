@@ -98,7 +98,7 @@ it('shows four ordered category columns and authoritative progress',async()=>{
   await mount();
   const board=document.querySelector('[aria-label="준비물 카테고리"]')!;
   expect(Array.from(board.querySelectorAll('section')).map(node=>node.getAttribute('aria-label'))).toEqual(['여권·예약·결제','통신·전자기기','옷·가방','세면·건강']);
-  expect(document.querySelector('[aria-label="전체 준비 현황"] strong')!.textContent).toContain('1 / 2');
+  expect(document.querySelector('[aria-label="전체 준비 현황"] strong')!.textContent).toContain('1/2');
 });
 it('renders added categories after the four defaults even when they share backend column 2',async()=>{
   state.data!.parts.push({id:5,name:'추가 준비 1',column:2,position:8,items:[]},{id:6,name:'추가 준비 2',column:2,position:9,items:[]});

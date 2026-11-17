@@ -48,7 +48,10 @@ describe("planning chrome", () => {
   });
   it("uses the creation label in the bookmark tab and modal", async () => {
     const html = renderToStaticMarkup(<BookmarkFoldersView />);
-    expect(html).toContain("새 북마크 생성");
+    const tab = document.createElement("div");
+    tab.innerHTML = html;
+    // 대화상자 제목 "새 북마크 생성"이 "새 북마크"를 포함해서, 탭 버튼은 문구 전체가 같은지 본다
+    expect(Array.from(tab.querySelectorAll("button"), (button) => button.textContent)).toContain("새 북마크");
     expect(html).not.toContain("새 북마크 추가");
     // 대화상자는 Base UI Dialog라 document.body로 포털된다(서버 렌더 문자열에는 없다)
     Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });

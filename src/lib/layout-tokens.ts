@@ -86,12 +86,15 @@ export const PLAN_PLACE_CARD_TW = {
 /** 플랜 구간(경로) 카드 가로 고정폭(px). 좌측 패널 max(s2) 기준 본문 영역 근사 */
 export const PLAN_ROUTE_CARD_WIDTH_PX = 620 as const;
 
-/** (main) 스크롤 컨테이너 — 양쪽 gutter 로 좌우 대칭 (`MainContentScrollArea`, search 제외) */
+/** (main) 스크롤 컨테이너 — 스크롤바 자리는 오른쪽에만 둔다. 왼쪽에도 두면 본문 왼쪽 여백이 20보다 넓어진다 (`MainContentScrollArea`, search 제외) */
 export const MAIN_SCROLLBAR_GUTTER_CLASS =
-  "[scrollbar-gutter:stable_both-edges] [scrollbar-color:rgba(0,0,0,0.2)_transparent]" as const;
+  "[scrollbar-gutter:stable] [scrollbar-color:rgba(0,0,0,0.2)_transparent]" as const;
 
-/** (main) 본문 콘텐츠 래퍼 좌우 여백 — 스크롤 gutter 와 분리 (`MainContentScrollArea` inner) */
-export const MAIN_PAGE_INLINE_PADDING_CLASS = "px-6" as const;
+/**
+ * (main) 본문 콘텐츠 래퍼 좌우 여백 — 스크롤 gutter 와 분리 (`MainContentScrollArea` inner).
+ * PC는 Figma 페이지 컨테이너(가계부 6576:26325 등) 왼쪽 20 · 오른쪽 12, 모바일은 24.
+ */
+export const MAIN_PAGE_INLINE_PADDING_CLASS = "pl-5 pr-3 mobile:px-6" as const;
 
 /** bordered 카드·리스트 행 내부 좌우 여백 (`MemberCard`, `PlanDaySection` 등) */
 export const MAIN_CARD_INNER_PADDING_X_CLASS = "px-3" as const;

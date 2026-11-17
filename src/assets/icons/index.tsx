@@ -1,3 +1,5 @@
+import ArrowMaximizeSvg from "@/assets/icons/arrow-maximize.svg";
+import ArrowMinimizeSvg from "@/assets/icons/arrow-minimize.svg";
 import ArrowSortSvg from "@/assets/icons/arrow-sort.svg";
 import CalendarAddSvg from "@/assets/icons/calendar-add.svg";
 import CalendarSvg from "@/assets/icons/calendar.svg";
@@ -23,6 +25,7 @@ import MemoAddSvg from "@/assets/icons/memo-add.svg";
 import MenuDotHorizontalSvg from "@/assets/icons/menu-dot-horizontal.svg";
 import MenuDotVerticalSvg from "@/assets/icons/menu-dot-vertical.svg";
 import MenuHamburgerSvg from "@/assets/icons/menu-hamburger.svg";
+import PaymentSvg from "@/assets/icons/payment.svg";
 import PlusSvg from "@/assets/icons/plus.svg";
 import ProgressSvg from "@/assets/icons/progress.svg";
 import RadioButtonSvg from "@/assets/icons/radio-button.svg";
@@ -53,6 +56,8 @@ import { createIcon } from "./create-icon";
 
 export type { IconProps } from "./create-icon";
 
+export const ArrowMaximizeIcon = createIcon(ArrowMaximizeSvg, "ArrowMaximizeIcon");
+export const ArrowMinimizeIcon = createIcon(ArrowMinimizeSvg, "ArrowMinimizeIcon");
 export const ArrowSortIcon = createIcon(ArrowSortSvg, "ArrowSortIcon");
 export const CalendarAddIcon = createIcon(CalendarAddSvg, "CalendarAddIcon");
 export const CalendarIcon = createIcon(CalendarSvg, "CalendarIcon");
@@ -78,6 +83,7 @@ export const MemoAddIcon = createIcon(MemoAddSvg, "MemoAddIcon");
 export const MenuDotHorizontalIcon = createIcon(MenuDotHorizontalSvg, "MenuDotHorizontalIcon");
 export const MenuDotVerticalIcon = createIcon(MenuDotVerticalSvg, "MenuDotVerticalIcon");
 export const MenuHamburgerIcon = createIcon(MenuHamburgerSvg, "MenuHamburgerIcon");
+export const PaymentIcon = createIcon(PaymentSvg, "PaymentIcon");
 export const PlusIcon = createIcon(PlusSvg, "PlusIcon");
 export const ProgressIcon = createIcon(ProgressSvg, "ProgressIcon");
 export const RadioButtonIcon = createIcon(RadioButtonSvg, "RadioButtonIcon");
