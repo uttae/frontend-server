@@ -159,13 +159,15 @@ function AlertDialogTitle({ className, ...props }: Readonly<AlertDialogPrimitive
   );
 }
 
-// text/subtle(5621:2820). 글자는 Figma body/lg(18)가 제목에 비해 커 보여 body/md(16)로 고정한다(사용자 결정 2026-11-01).
-// 설명 문자열의 줄바꿈(\n)은 지금 확인창처럼 그대로 보인다(ConfirmDialog whitespace-pre-line)
+// body/lg/regular · text/subtle(6058:514). Figma Typography가 웹·모바일 공용이라 모바일에서도 줄이지 않는다.
+// 설명 문자열의 줄바꿈(\n)은 지금 확인창처럼 그대로 보인다(ConfirmDialog whitespace-pre-line).
+// 그 한 줄이 좁은 폰(360·393)에서 넘치면 단어 중간이 아니라 띄어쓰기에서 꺾는다(break-keep).
+// 띄어쓰기 없이 한 줄보다 긴 단어(사용자가 입력한 여행 제목·닉네임, URL)만 그 안에서 끊어 표면에 옆 스크롤이 생기지 않게 한다(wrap-break-word)
 function AlertDialogDescription({ className, ...props }: Readonly<AlertDialogPrimitive.Description.Props>) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-body-m-regular whitespace-pre-line text-text-subtle", className)}
+      className={cn("text-body-l-regular break-keep wrap-break-word whitespace-pre-line text-text-subtle", className)}
       {...props}
     />
   );
