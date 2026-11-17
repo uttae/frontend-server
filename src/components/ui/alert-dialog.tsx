@@ -160,12 +160,13 @@ function AlertDialogTitle({ className, ...props }: Readonly<AlertDialogPrimitive
 }
 
 // body/lg/regular · text/subtle(6058:514). Figma Typography가 웹·모바일 공용이라 모바일에서도 줄이지 않는다.
-// 설명 문자열의 줄바꿈(\n)은 지금 확인창처럼 그대로 보인다(ConfirmDialog whitespace-pre-line)
+// 설명 문자열의 줄바꿈(\n)은 지금 확인창처럼 그대로 보인다(ConfirmDialog whitespace-pre-line).
+// 그 한 줄이 좁은 폰(360·393)에서 넘치면 단어 중간이 아니라 띄어쓰기에서 꺾는다(break-keep)
 function AlertDialogDescription({ className, ...props }: Readonly<AlertDialogPrimitive.Description.Props>) {
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-body-l-regular whitespace-pre-line text-text-subtle", className)}
+      className={cn("text-body-l-regular break-keep whitespace-pre-line text-text-subtle", className)}
       {...props}
     />
   );
