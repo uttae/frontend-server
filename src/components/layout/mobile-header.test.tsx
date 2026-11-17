@@ -131,7 +131,7 @@ it("keeps the desktop title tokens and edit action", async () => {
   state.mobile = false;
   await rerender();
   const title = [...host.querySelectorAll("span")].find(x => x.textContent === "가을 여행");
-  expect(title?.className).toContain("text-body-m-emphasis");
+  expect(title?.className).toContain("text-title-s");
   expect(host.querySelector('button[aria-label="여행 정보 수정"]')).not.toBeNull();
   expect(host.querySelector('button[aria-label="메뉴 열기"]')).toBeNull();
 });
