@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCurrentAgreements } from "@/hooks/useCurrentAgreements";
+import { createAgreementConsentSchema } from "@/lib/agreements/consent";
 import { agreementPathForType } from "@/lib/agreements/paths";
 
 export type AgreementConsentState = {
@@ -29,8 +30,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
     () => items.map((item) => `${item.type}:${item.version}`),
     [items],
   );
-  const allAccepted =
-    itemIds.length > 0 && itemIds.every((id) => acceptedIds.has(id));
+  const allAccepted = createAgreementConsentSchema(itemIds).safeParse([...acceptedIds]).success;
   const canProceed = !isPending && !isError && allAccepted;
 
   useEffect(() => {

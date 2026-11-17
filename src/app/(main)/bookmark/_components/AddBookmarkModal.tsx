@@ -16,8 +16,11 @@ import { Field, FieldError, FieldHeader, FieldLabel, FieldSuffix } from "@/compo
 import { Input } from "@/components/ui/input";
 import type { BookmarkFolder } from "@/types/bookmark";
 import { UNTITLED_BOOKMARK_CATEGORY_LABEL } from "@/lib/bookmark-untitled-category-name";
-
-const TITLE_MAX_LENGTH = 50;
+import {
+  BOOKMARK_FOLDER_TITLE_MAX_LENGTH,
+  bookmarkFolderFormSchema,
+  bookmarkFolderTitleSchema,
+} from "@/lib/bookmarks/bookmark-folder-form";
 
 const COLOR_PRESETS = [
   "#EAB308",
@@ -34,7 +37,7 @@ type Mode = "create" | "edit";
 
 function initialTitle(mode: Mode, initialFolder: BookmarkFolder | null) {
   if (mode === "edit" && initialFolder) {
-    return initialFolder.title.slice(0, TITLE_MAX_LENGTH);
+    return initialFolder.title.slice(0, BOOKMARK_FOLDER_TITLE_MAX_LENGTH);
   }
   return "";
 }
@@ -42,11 +45,6 @@ function initialTitle(mode: Mode, initialFolder: BookmarkFolder | null) {
 function initialColor(mode: Mode, initialFolder: BookmarkFolder | null): string {
   if (mode === "edit" && initialFolder) return initialFolder.color;
   return COLOR_PRESETS[0];
-}
-
-// 빈 제목은 허용한다(저장하는 쪽이 "제목 없는 북마크 N"을 고른다). maxLength가 있어도 한글 조합 중에는 한 글자 넘게 들어갈 수 있어 제출 때 길이를 다시 본다
-function titleError(title: string) {
-  return title.length > TITLE_MAX_LENGTH ? `제목은 ${TITLE_MAX_LENGTH}자까지 쓸 수 있어요.` : undefined;
 }
 
 export function AddBookmarkModal({
@@ -78,8 +76,9 @@ export function AddBookmarkModal({
       title: initialTitle(mode, initialFolder),
       color: initialColor(mode, initialFolder),
     },
+    // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
     onSubmit: ({ value }) => {
-      onSave({ title: value.title.trim(), color: value.color });
+      onSave(bookmarkFolderFormSchema.parse(value));
     },
   });
 
@@ -113,9 +112,9 @@ export function AddBookmarkModal({
             void form.handleSubmit();
           }}
         >
-          <form.Field name="title" validators={{ onSubmit: ({ value }) => titleError(value) }}>
+          <form.Field name="title" validators={{ onSubmit: bookmarkFolderTitleSchema }}>
             {(field) => {
-              const error = field.state.meta.errors[0];
+              const error = field.state.meta.errors[0]?.message;
               const counterId = `${formId}-title-counter`;
               const errorId = `${formId}-title-error`;
               return (
@@ -123,7 +122,7 @@ export function AddBookmarkModal({
                   <FieldHeader>
                     <FieldLabel htmlFor={`${formId}-title`}>제목</FieldLabel>
                     <FieldSuffix id={counterId} aria-live="polite">
-                      {field.state.value.length}/{TITLE_MAX_LENGTH}
+                      {field.state.value.length}/{BOOKMARK_FOLDER_TITLE_MAX_LENGTH}
                     </FieldSuffix>
                   </FieldHeader>
                   <Input
@@ -132,7 +131,7 @@ export function AddBookmarkModal({
                     value={field.state.value}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
-                    maxLength={TITLE_MAX_LENGTH}
+                    maxLength={BOOKMARK_FOLDER_TITLE_MAX_LENGTH}
                     placeholder={untitledNameHint ?? UNTITLED_BOOKMARK_CATEGORY_LABEL}
                     aria-invalid={error ? true : undefined}
                     aria-describedby={error ? `${counterId} ${errorId}` : counterId}
