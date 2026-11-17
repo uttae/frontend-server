@@ -10,7 +10,6 @@ export type {
   RoomBookmark,
   RoomBookmarkBulkCreateRequest,
   RoomBookmarkCategoryPatchRequest,
-  RoomBookmarkCreateRequest,
   RoomCreateRequest,
   RoomCreateResponse,
   RoomDetail,
@@ -33,11 +32,9 @@ export {
 } from "./bookmark-categories";
 
 export {
-  createRoomBookmark,
   createRoomBookmarks,
   deleteRoomBookmark,
   getAllRoomBookmarks,
-  getRoomBookmarks,
   patchRoomBookmarkCategory,
 } from "./bookmarks";
 

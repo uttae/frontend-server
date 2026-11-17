@@ -15,16 +15,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldCount, FieldDescription, FieldError, FieldFooter, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
-
-const MEMO_MAX_LENGTH = 2000;
-
-// 입력은 maxLength로 막히지만 저장 전에 칸에서 한 번 더 확인한다. 문구는 PC 메모 편집(PlanItemMemoForm)과 같다
-function memoLengthError(memo: string) {
-  return memo.trim().length > MEMO_MAX_LENGTH ? `메모는 ${MEMO_MAX_LENGTH}자 이하여야 해요.` : undefined;
-}
+import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 
 type MobileMemoSheetProps = Readonly<{
   roomId: string;
@@ -79,7 +73,8 @@ export function MobileMemoSheet({
         setIsOverwriteConfirmOpen(true);
         return;
       }
-      return writeMemo(saveMemo, value.memo.trim());
+      // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
+      return writeMemo(saveMemo, scheduleItemMemoSchema.parse(value.memo));
     },
   });
   const hasMemo = initial.length > 0;
@@ -115,9 +110,10 @@ export function MobileMemoSheet({
               void form.handleSubmit();
             }}
           >
-            <form.Field name="memo" validators={{ onSubmit: ({ value }) => memoLengthError(value) }}>
+            {/* 길이 제한은 입력 칸(maxLength)이 아니라 스키마가 쓰는 동안 본다. maxLength를 두면 안드로이드 한글 입력에서 넘친 글자가 안내 없이 잘린다 */}
+            <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
               {(field) => {
-                const error = field.state.meta.errors[0];
+                const error = field.state.meta.errors[0]?.message;
                 return (
                   <Field>
                     <FieldLabel htmlFor={memoId}>메모</FieldLabel>
@@ -125,7 +121,6 @@ export function MobileMemoSheet({
                       id={memoId}
                       ref={textareaRef}
                       value={field.state.value}
-                      maxLength={MEMO_MAX_LENGTH}
                       onChange={(event) => {
                         markEditStart();
                         field.handleChange(event.target.value);
@@ -144,7 +139,12 @@ export function MobileMemoSheet({
                     <FieldDescription id={descriptionId}>
                       예약 정보나 함께 기억할 내용을 남겨보세요.
                     </FieldDescription>
-                    <FieldError id={errorId}>{error}</FieldError>
+                    <FieldFooter>
+                      <FieldError id={errorId}>{error}</FieldError>
+                      <FieldCount>
+                        {field.state.value.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
+                      </FieldCount>
+                    </FieldFooter>
                   </Field>
                 );
               }}
@@ -179,7 +179,7 @@ export function MobileMemoSheet({
             title="다른 사람의 입력을 덮어씁니다!"
             description="다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다."
             isPending={isSaving}
-            onConfirm={() => void writeMemo(saveMemo, form.state.values.memo.trim())}
+            onConfirm={() => void writeMemo(saveMemo, scheduleItemMemoSchema.parse(form.state.values.memo))}
             onCancel={() => setIsOverwriteConfirmOpen(false)}
           />
         ) : null}

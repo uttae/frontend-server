@@ -9,7 +9,6 @@ const placeQueries = vi.hoisted(() => ({ current: [] as unknown[] }));
 vi.mock("@/hooks/useOpenPlaceOnMap", () => ({ useOpenPlaceOnMap: () => vi.fn() }));
 vi.mock("@/stores/session-store", () => ({ useSessionStore: () => "room" }));
 vi.mock("@/hooks/useRooms", () => ({
-  useAllRoomBookmarks: () => undefined,
   useRoomBookmarks: () => ({ data: [{ bookmarkId: 1, googlePlaceId: "place" }], isPending: false }),
 }));
 vi.mock("@/lib/places/place-queries", () => ({ placePreviewQueryOptions: () => ({ queryKey: ["place"] }) }));

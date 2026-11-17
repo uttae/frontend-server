@@ -4,72 +4,31 @@ import { expenseKeys } from "@/lib/expenses/expense-queries";
 
 import type { QueryClient } from "@tanstack/react-query";
 
-import type {
-  RoomListResponse,
-  RoomMember,
-  RoomMemberListResponse,
-} from "@/lib/api/rooms";
-import { CHAT_UNKNOWN_SENDER_LABEL } from "@/lib/chat";
-import { ROOMS_QUERY_KEY, roomMembersQueryKey } from "@/lib/query-keys";
+import {
+  ROOMS_QUERY_KEY,
+  roomDetailQueryKey,
+  roomMembersQueryKey,
+} from "@/lib/query-keys";
+import { invalidateAfterChange } from "@/lib/query-client";
 import { readSessionUserId } from "@/lib/session-user-cache";
 
-import type {
-  MemberUserSnapshotDetail,
-  RoomMemberPayload,
-} from "./member-events";
+import type { RoomMemberPayload } from "./member-events";
 
-function upsertMemberRow(
-  members: RoomMember[],
-  userId: number,
-  patch: Partial<RoomMember> & Pick<RoomMember, "status">,
-  fallback: Omit<RoomMember, "userId">,
-): RoomMember[] {
-  const idx = members.findIndex((m) => m.userId === userId);
-  if (idx >= 0) {
-    const next = [...members];
-    const cur = next[idx]!;
-    next[idx] = { ...cur, ...patch };
-    return next;
-  }
-  return [...members, { userId, ...fallback, ...patch }];
-}
-
-function memberDisplayPatch(
-  d: MemberUserSnapshotDetail,
-): Partial<Pick<RoomMember, "nickname" | "profileImageUrl">> {
-  const patch: Partial<Pick<RoomMember, "nickname" | "profileImageUrl">> = {};
-  const nick = d.nickname?.trim();
-  if (nick && nick.length > 0) patch.nickname = nick;
-  if (d.profileImageUrl !== undefined) patch.profileImageUrl = d.profileImageUrl;
-  return patch;
-}
-
-function patchRoomsRoleForHostDelegation(
-  queryClient: QueryClient,
-  roomId: string,
-  previousHostUserId: number,
-  newHostUserId: number,
-): void {
-  const me = readSessionUserId(queryClient);
-  if (me == null) return;
-
-  queryClient.setQueryData<RoomListResponse>(ROOMS_QUERY_KEY, (prev) => {
-    if (!prev?.rooms?.length) return prev;
-    return {
-      ...prev,
-      rooms: prev.rooms.map((r) => {
-        if (r.id !== roomId) return r;
-        if (me === previousHostUserId) return { ...r, role: "MEMBER" };
-        if (me === newHostUserId) return { ...r, role: "HOST" };
-        return r;
-      }),
-    };
-  });
+/**
+ * 내가 이 방에서 나가거나 내보내진 이벤트인지 — 이미 접근을 잃은 방이라 다시 받으면 403을 받는다.
+ * 방 캐시는 나가기(`useLeaveRoom`·다른 탭은 `onSelfLeftRoom`)와 강퇴(개인 큐) 처리가 지운다.
+ * 누가 나갔는지 모르는 이벤트도 나일 수 있어 같이 건너뛴다.
+ */
+function removesViewer(queryClient: QueryClient, event: RoomMemberPayload): boolean {
+  if (event.type !== "MEMBER_LEFT" && event.type !== "MEMBER_KICKED") return false;
+  return event.detail == null || event.detail.userId === readSessionUserId(queryClient);
 }
 
 /**
- * members STOMP 한 건 — `metadata`만으로 `room-members`·방 목록(role) 캐시를 직접 갱신합니다.
- * 채팅 UI는 room-members 캐시의 userId와 메시지 senderId 매핑으로 발신자를 표시합니다.
+ * members STOMP 한 건 — 바뀐 멤버 목록을 서버에서 다시 받게 한다. 이벤트 내용으로 캐시를 고치지 않는다:
+ * 이벤트 전에 출발한 조회는 첫 조회라도 취소하고 새로 받는다(`invalidateAfterChange` — 패치는 그 응답에 덮였다).
+ * 화면에 있는 목록만 바로 다시 받고 나머지는 다시 볼 때 받는다.
+ * 채팅 발신자 이름은 `room-members`에서 찾으므로, 채팅은 새 멤버의 메시지를 이 목록을 다시 받을 때까지 그리지 않는다(`useChatMessages`).
  */
 export function dispatchRoomMemberEvent(
   queryClient: QueryClient,
@@ -77,129 +36,15 @@ export function dispatchRoomMemberEvent(
   event: RoomMemberPayload,
 ): void {
   const rid = String(event.roomId ?? "").trim() || subscribedRoomId;
-  if (!rid) return;
-  void queryClient.invalidateQueries({ queryKey: expenseKeys.members(rid) });
+  if (!rid || removesViewer(queryClient, event)) return;
 
-  // 무효화돼 다시 받을 목록은 패치하지 않는다 — setQueryData가 '갱신 필요' 표시를 지워 재조회가 사라진다.
-  // 방 목록 역할(HOST_DELEGATED)은 따로 맞춘다
-  const membersAwaitingRefetch =
-    queryClient.getQueryState(roomMembersQueryKey(rid))?.isInvalidated === true;
+  void invalidateAfterChange(queryClient, { queryKey: roomMembersQueryKey(rid) });
+  void invalidateAfterChange(queryClient, { queryKey: expenseKeys.members(rid) });
 
-  switch (event.type) {
-    case "MEMBER_JOINED": {
-      const d = event.detail;
-      if (!d || membersAwaitingRefetch) return;
-
-      queryClient.setQueryData<RoomMemberListResponse>(
-        roomMembersQueryKey(rid),
-        (prev) => {
-          // 목록을 받은 적이 없으면 한 명짜리 목록을 만들지 않고 처음 조회에 맡긴다
-          if (!prev) return prev;
-          const members = prev.members;
-          const joinedAt =
-            event.createdAt.trim().length > 0
-              ? event.createdAt
-              : new Date().toISOString();
-          const display = memberDisplayPatch(d);
-          const next = upsertMemberRow(
-            members,
-            d.userId,
-            {
-              ...display,
-              status: "ACTIVE",
-              isOnline: true,
-            },
-            {
-              nickname: display.nickname ?? CHAT_UNKNOWN_SENDER_LABEL,
-              profileImageUrl: display.profileImageUrl ?? null,
-              role: "MEMBER",
-              status: "ACTIVE",
-              joinedAt,
-              isOnline: true,
-            },
-          );
-          return { ...prev, members: next };
-        },
-      );
-      break;
-    }
-
-    case "MEMBER_LEFT":
-    case "MEMBER_KICKED": {
-      const d = event.detail;
-      if (!d || membersAwaitingRefetch) return;
-
-      queryClient.setQueryData<RoomMemberListResponse>(
-        roomMembersQueryKey(rid),
-        (prev) => {
-          if (!prev) return prev;
-          const members = prev.members;
-          const idx = members.findIndex((m) => m.userId === d.userId);
-          const display = memberDisplayPatch(d);
-
-          if (idx >= 0) {
-            const next = [...members];
-            const cur = next[idx]!;
-            next[idx] = {
-              ...cur,
-              ...display,
-              status: "LEFT",
-              isOnline: false,
-            };
-            return { ...prev, members: next };
-          }
-
-          const leftMember: RoomMember = {
-            userId: d.userId,
-            nickname: display.nickname ?? CHAT_UNKNOWN_SENDER_LABEL,
-            profileImageUrl: display.profileImageUrl ?? null,
-            role: "MEMBER",
-            status: "LEFT",
-            joinedAt:
-              event.createdAt.trim().length > 0
-                ? event.createdAt
-                : new Date().toISOString(),
-            isOnline: false,
-          };
-          return { ...prev, members: [...members, leftMember] };
-        },
-      );
-      break;
-    }
-
-    case "HOST_DELEGATED": {
-      const d = event.detail;
-      if (!d) return;
-
-      if (!membersAwaitingRefetch) {
-        queryClient.setQueryData<RoomMemberListResponse>(
-          roomMembersQueryKey(rid),
-          (prev) => {
-            if (!prev?.members?.length) return prev;
-            const members = prev.members.map((m) => {
-              if (m.userId === d.previousHostUserId) {
-                return { ...m, role: "MEMBER" as const };
-              }
-              if (m.userId === d.newHostUserId) {
-                return { ...m, role: "HOST" as const };
-              }
-              return m;
-            });
-            return { ...prev, members };
-          },
-        );
-      }
-
-      patchRoomsRoleForHostDelegation(
-        queryClient,
-        rid,
-        d.previousHostUserId,
-        d.newHostUserId,
-      );
-      break;
-    }
-
-    default:
-      break;
+  if (event.type === "HOST_DELEGATED") {
+    // 방장 판정은 방 목록·방 상세·멤버 세 출처 중 하나라도 HOST면 방장으로 본다(resolveViewerIsHost).
+    // 하나라도 옛 역할이 남으면 이전 방장에게 "먼저 방장을 위임해 주세요"가 다시 뜬다
+    void invalidateAfterChange(queryClient, { queryKey: ROOMS_QUERY_KEY });
+    void invalidateAfterChange(queryClient, { queryKey: roomDetailQueryKey(rid) });
   }
 }

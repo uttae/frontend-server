@@ -161,7 +161,7 @@ it("does not submit draft edits and submits once for rapid apply clicks", async 
   await act(async () => root.unmount());
 });
 
-it("shows each field's error under that field and locks apply until it is fixed", async () => {
+it("shows each field's error under that field and blocks apply without locking the button", async () => {
   state.update.mockClear();
   const container = document.createElement("div");
   const root = createRoot(container);
@@ -169,31 +169,63 @@ it("shows each field's error under that field and locks apply until it is fixed"
   await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
   expect(container.textContent).not.toContain("입력해 주세요");
 
-  // 제목을 비우면 제목 칸이 오류 상태가 되고 칸 아래에 문장이 붙는다
+  // 제목을 비우면 제목 칸이 오류 상태가 되고 칸 아래에 문장이 붙는다. 규칙 위반으로는 버튼을 잠그지 않고, 눌러도 저장하지 않는다
   await typeTitle(container, "  ");
   expect(titleInput(container).getAttribute("aria-invalid")).toBe("true");
   const titleError = container.querySelector(`#${titleInput(container).getAttribute("aria-describedby")}`);
   expect(titleError?.textContent).toBe("여행 제목을 입력해 주세요.");
-  expect(applyButton(container).disabled).toBe(true);
+  expect(applyButton(container).disabled).toBe(false);
+  await act(async () => applyButton(container).click());
+  expect(state.update).not.toHaveBeenCalled();
   await typeTitle(container, "B");
   expect(titleInput(container).hasAttribute("aria-invalid")).toBe(false);
   expect(container.textContent).not.toContain("여행 제목을 입력해 주세요.");
-  expect(applyButton(container).disabled).toBe(false);
 
   // 목적지를 모두 지우면 목적지 아래에 문장이 붙는다
   await act(async () => state.destinations!.onChange([]));
   expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
-  expect(applyButton(container).disabled).toBe(true);
+  await act(async () => applyButton(container).click());
+  expect(state.update).not.toHaveBeenCalled();
   await act(async () => state.destinations!.onChange(["부산"]));
   expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
 
   // 종료일이 시작일보다 앞서면 기간 아래에 문장이 붙는다
   await changeDates("2027-01-05", "2027-01-03");
   expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
-  expect(applyButton(container).disabled).toBe(true);
+  await act(async () => applyButton(container).click());
+  expect(state.update).not.toHaveBeenCalled();
   await changeDates("2027-01-01", "2027-01-03");
   expect(container.textContent).not.toContain("종료일은 시작일 이후여야 해요.");
-  expect(applyButton(container).disabled).toBe(false);
   expect(state.update).not.toHaveBeenCalled();
+  await act(async () => root.unmount());
+});
+
+// 연 순간부터 비어 있던 기간(기간 없는 방)은 건드리지 않아도, 적용을 누르면 칸 검사가 막고 기간 아래에 문장을 보인다
+it("blocks apply for a room opened without dates and shows the period error", async () => {
+  state.update.mockClear();
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const room = { id: "r", title: "A", destinations: ["서울"], startDate: null, endDate: null };
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
+  await typeTitle(container, "B");
+  await act(async () => applyButton(container).click());
+  expect(state.update).not.toHaveBeenCalled();
+  expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  await act(async () => root.unmount());
+});
+
+// 제목을 비워 이미 오류가 있는 채로 처음 적용해도, 건드리지 않은 기간 칸 오류까지 함께 보여야 한다
+it("shows untouched field errors on the first apply even when another field already has an error", async () => {
+  state.update.mockClear();
+  const container = document.createElement("div");
+  const root = createRoot(container);
+  const room = { id: "r", title: "A", destinations: ["서울"], startDate: null, endDate: null };
+  await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
+  await typeTitle(container, " ");
+  expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+  await act(async () => applyButton(container).click());
+  expect(state.update).not.toHaveBeenCalled();
+  expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+  expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
   await act(async () => root.unmount());
 });
