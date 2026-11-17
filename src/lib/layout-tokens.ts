@@ -90,7 +90,7 @@ export const PLAN_PLACE_CARD_TW = {
   memoActionIcon: "shrink-0 text-icon-subtle group-data-filled:text-primary",
   /** 메모 편집 칸 — Figma에 편집 상태가 없어 회색 일차 바탕 위에서 보이도록 읽기 메모 칸(Memo)과 같은 바탕·테두리를 쓴다 */
   editorModule:
-    "relative flex w-full items-start gap-3 rounded-[12px] bg-fill-strong px-4 py-3 ring-[0.5px] ring-border text-body-s-regular mobile:text-body-xs-regular text-gray-900",
+    "relative flex w-full items-start gap-3 rounded-[12px] bg-fill-strong px-4 py-3 ring-[0.5px] ring-border text-body-s-regular mobile:text-body-xs-regular text-text",
   editorSideLabelWrapper:
     "flex shrink-0 flex-col items-center justify-center gap-1 pt-0.5 text-dark-gray",
   editorSideLabelText:
