@@ -532,6 +532,26 @@ function lookupMemberNickname(
   return nick && nick.length > 0 ? nick : CHAT_UNKNOWN_SENDER_LABEL;
 }
 
+/**
+ * 메시지를 그릴 때 이름이 필요한 사람 — 보낸 사람(채팅·AI 요청·장소 공유), 입장·퇴장·추방된 사람, 새 방장.
+ * 이름은 멤버 목록에서 찾으므로 채팅은 이들이 목록에 있을 때 메시지를 넣는다(`useChatMessages`).
+ */
+export function chatMessageUserIds(msg: ServerChatMessage): number[] {
+  const kind = normalizeMessageKind(msg.messageType);
+  if (kind === "CHAT" || kind === "AI_REQUEST" || kind === "PLACE_SHARE") {
+    const senderId = parseFiniteNumber(msg.senderId);
+    return senderId === undefined ? [] : [senderId];
+  }
+  if (kind !== "SYSTEM") return [];
+  const eventType = readMetaString(msg.metadata, "eventType", "event_type");
+  const userId =
+    eventType === "HOST_DELEGATED"
+      ? readMetaString(msg.metadata, "newHostUserId", "new_host_user_id")
+      : readMetaString(msg.metadata, "userId", "user_id");
+  const id = parseFiniteNumber(userId);
+  return id === undefined ? [] : [id];
+}
+
 /** SYSTEM metadata.eventType + 멤버 맵 lookup으로 표시 문구 조립 */
 export function formatSystemEventMessage(
   metadata: Record<string, string> | undefined,

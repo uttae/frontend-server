@@ -25,7 +25,7 @@ beforeEach(() => {
 });
 const mocks = vi.hoisted(() => ({
   members: vi.fn<() => Promise<unknown>>(() => new Promise(() => {})),
-  list: vi.fn<() => Promise<Expense[]>>(async () => []),
+  list: vi.fn<(roomId?: string, signal?: AbortSignal) => Promise<Expense[]>>(async () => []),
   summary: vi.fn<() => Promise<unknown>>(async () => ({ currencies: [] })),
   budget: vi.fn(async () => ({
     budgetKrw: null as string | null,
@@ -176,7 +176,7 @@ it("does not treat partial STOMP member cache as a successful full member query"
 });
 
 import type { Expense, ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
-import { expenseKeys } from "@/lib/expenses/expense-queries";
+import { expenseKeys, invalidateExpenses } from "@/lib/expenses/expense-queries";
 let context: ReturnType<typeof useExpenseContext>;
 function MutationProbe() {
   const value = useExpenseContext();
@@ -257,12 +257,81 @@ it("forwards the reviewed version and reflects PATCH before summary refresh comp
     expect.objectContaining({ expectedVersion: 2 }),
   );
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+  // 저장 뒤 다시 받는 동안 보이던 예산·합계를 두고 갱신한다('—'로 바꾸지 않는다)
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+  expect(context.syncStatus).toBe("refreshing");
   expect(analytics.send.mock.calls).toEqual([sentEvent("expense_updated")]);
   await act(async () => {
     finishList([updated]);
     finish({ currencies: [] });
     await saving;
   });
+});
+it("본인 저장 뒤 반향 알림이 와도 목록은 최대 2번 받고 앞 요청은 끊으며, 받은 목록은 한 번만 반영한다", async () => {
+  await mountMutations();
+  const updated = { ...record, version: 3, memo: "saved" };
+  mocks.patch.mockResolvedValueOnce(updated);
+  const reads: { signal?: AbortSignal; finish: (value: Expense[]) => void }[] = [];
+  mocks.list.mockImplementation((_roomId, signal) => new Promise((resolve) => reads.push({ signal, finish: resolve })));
+  // 저장 응답을 넣는 setQueryData(manual)를 빼고, 조회가 목록을 바꾼 횟수를 센다
+  let fetchedLists = 0;
+  const stopCounting = client.getQueryCache().subscribe((event) => {
+    if (event.type === "updated" && event.action.type === "success" && !event.action.manual
+      && event.query.queryKey[2] === "list") fetchedLists += 1;
+  });
+  try {
+    let saving!: Promise<void>;
+    await act(async () => { saving = context.save({ ...record, memo: "saved" }, 10, 2); });
+    expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+    expect(reads).toHaveLength(1);
+    // 서버가 저장 뒤 보낸 알림 — 누가 바꿨는지 알 수 없어 그대로 다시 받는다
+    await act(async () => {
+      stomp.subscribe.mock.lastCall![1]({ body: JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }) });
+    });
+    expect(reads).toHaveLength(2);
+    expect(reads[0]!.signal?.aborted).toBe(true);
+    await act(async () => {
+      reads[0]!.finish([record]);
+      reads[1]!.finish([updated]);
+      await saving;
+    });
+    expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
+    expect(fetchedLists).toBe(1);
+  } finally {
+    stopCounting();
+  }
+});
+it("다른 화면의 무효화로 다시 받는 동안에도 장부를 비우지 않고 refreshing으로 둔다", async () => {
+  await mountMutations();
+  expect(context.syncStatus).toBe("ready");
+  let finish!: (value: unknown) => void;
+  mocks.summary.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
+  // 일정 삭제 등 다른 mutation이 가계부 전체를 무효화한다
+  await act(async () => {
+    void invalidateExpenses(client, "r");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(context.syncStatus).toBe("refreshing");
+  expect(context.budget.data).toBeDefined();
+  await act(async () => { finish({ currencies: [] }); await new Promise((resolve) => setTimeout(resolve, 20)); });
+  expect(context.syncStatus).toBe("ready");
+});
+it("다시 들어오면 재마운트 조회 없이 입장 복구 조회 한 번만 보낸다", async () => {
+  await mountMutations();
+  await act(async () => unmount());
+  const reads = [mocks.list, mocks.summary, mocks.budget, mocks.krw, mocks.members];
+  for (const read of reads) read.mockClear();
+  await act(async () => {
+    draw(
+      <QueryClientProvider client={client}>
+        <ExpenseProvider roomId="r"><MutationProbe /></ExpenseProvider>
+      </QueryClientProvider>,
+    );
+  });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+  // 남아 있던 캐시는 마운트만으로 다시 받지 않고, 놓친 알림을 메우는 입장 복구가 한 번씩 받는다
+  for (const read of reads) expect(read).toHaveBeenCalledTimes(1);
+  expect(context.syncStatus).toBe("ready");
 });
 it("uses a fresh list read for recovery and propagates read failure without returning cached data", async () => {
   await mountMutations();
@@ -899,14 +968,14 @@ it("isolates AND-filtered KRW snapshots and refreshes them on expense invalidati
   const filters = { expenseGroup: "TRIP_DAY" as const, scheduleId: 10, category: "FOOD" as const };
   await act(async () => context.setKrwFilters(filters));
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(mocks.krw).toHaveBeenCalledWith("r", filters);
+  expect(mocks.krw).toHaveBeenCalledWith("r", filters, expect.any(AbortSignal));
   expect(client.getQueryData(expenseKeys.krwSummary("r"))).toBeDefined();
   expect(client.getQueryData([...expenseKeys.krwSummary("r"), filters])).toBeDefined();
   mocks.krw.mockClear();
   const { getExpenseRecovery } = await import("@/lib/expenses/expense-recovery");
   await act(async () => getExpenseRecovery(client, "r").message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" })));
-  expect(mocks.krw).toHaveBeenCalledWith("r", filters);
-  expect(mocks.krw).toHaveBeenCalledWith("r");
+  expect(mocks.krw).toHaveBeenCalledWith("r", filters, expect.any(AbortSignal));
+  expect(mocks.krw).toHaveBeenCalledWith("r", {}, expect.any(AbortSignal));
 });
 
 it("keeps whole-room state ready while a new filter snapshot loads", async () => {
@@ -937,7 +1006,9 @@ it("returns to all expenses without refetching or blanking the whole-room summar
  const whole = context.krwSummary.data!;
  const previous = mocks.krw.getMockImplementation()!;
  let finish: ((value: ExpenseKrwSummary) => void) | undefined;
- mocks.krw.mockImplementation((...args) => args.length === 1 ? new Promise(resolve => { finish = resolve; }) : previous(...args));
+ // 필터 없는 방 전체 합계 조회만 붙잡는다(필터 인자가 없거나 빈 객체)
+ const wholeRoom = (args: unknown[]) => Object.keys((args[1] as object | undefined) ?? {}).length === 0;
+ mocks.krw.mockImplementation((...args) => wholeRoom(args) ? new Promise(resolve => { finish = resolve; }) : previous(...args));
  try {
   await act(async () => context.setKrwFilters({}));
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
