@@ -101,7 +101,7 @@ const HeaderBar = ({
   );
 
   return (
-    <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "shrink-0 border-b border-border-subtle bg-fill-subtle"}>
+    <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "@container/header shrink-0 border-b border-border-subtle bg-fill-subtle"}>
       {isMobileDevice ? (
         <div className={mobileBackHref ? "flex h-full min-w-0 items-center pl-1" : "flex h-full min-w-0 items-center gap-4 px-2"}>
           <div className="flex min-w-0 flex-1 items-center gap-2 pe-5">
@@ -155,7 +155,8 @@ const HeaderBar = ({
               <BrandLogo variant="symbol" size="S" alt="" />
             </Link>
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 px-5">
+          {/* 헤더가 놓이는 폭이 화면마다 달라 화면 폭이 아니라 헤더 폭 480px로 나눈다(Figma 설명 6663:5258·6663:5284) */}
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-5 ps-5 pe-3 @min-[480px]/header:pe-5">
             <div className="min-w-0">
               {currentRoom || displayTitle ? (
                 <>

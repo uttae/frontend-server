@@ -26,7 +26,7 @@
 
 - 변형은 `variant`·`size` 같은 유니온 prop으로 받고, 값은 Figma 컴포넌트 속성 값에 맞춘다. 변형별 클래스는 cva로 정의한다(3-6).
 - 화면은 부품의 색·글자를 덮지 않는다. 바깥에서 주는 `className`은 배치(폭·정렬·위치)에만 쓴다.
-- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
+- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical, 배경 없는 `variant="text"`(Neutral Text) × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
 - shadcn 코드를 받으면 디자인 시스템에 맞춘다.
   - 색·그림자·포커스 클래스(`secondary`·`*-foreground`·`muted`·`accent`·`input`·`ring`·`shadow-*`)는 시맨틱 토큰으로 바꾼다. 이름이 같아도 뜻이 다르고(`secondary`는 라임), 없는 이름은 CSS가 생기지 않는다.
   - `shadcn init`은 하지 않고 `add`로만 받는다. init이 `globals.css`에 넣는 색 변수(`:root`·`@theme inline`)는 기존 `primary`·`border`·`background` 토큰을 앱 전체에서 덮는다.

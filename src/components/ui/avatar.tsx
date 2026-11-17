@@ -5,9 +5,9 @@ import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
 // Figma DS에 Avatar 컴포넌트가 없어 지금 화면들의 아바타 모양을 옮긴다. Figma 근거는 Header Profile(5219:10776)의
-// 36px·fill/strong 원뿐이라 이것을 기본값으로 둔다. 크기는 글자 설정을 따라 커지지 않게 px로 둔다(원칙 3-2).
-// 대체 글자는 화면별 지금 크기·굵기(24 가계부, 28 헤더 미리보기, 32 리뷰, 36 구성원, 56 내 정보)에 가장 가까운 토큰이고,
-// 글자를 쓰는 곳이 없는 40은 크기의 44%(18px)다. 대체 아이콘은 지금 채팅 아바타처럼 크기의 58%에 가장 가까운 Figma 아이콘 크기다.
+// 36px·fill/strong 원과, 접속 상태 테두리(online·offline)를 그린 워크스페이스 GUI Avatar(6663:5225)뿐이다. 크기는 글자 설정을 따라 커지지 않게 px로 둔다(원칙 3-2).
+// 대체 글자는 화면별 지금 크기·굵기(24 가계부, 32 리뷰, 36 구성원, 56 내 정보)에 가장 가까운 토큰이고,
+// 글자를 쓰는 곳이 없는 28·40은 크기의 44%(12·18px)다. 대체 아이콘은 지금 채팅 아바타처럼 크기의 58%에 가장 가까운 Figma 아이콘 크기다.
 const avatarVariants = cva("relative flex shrink-0 select-none items-center justify-center overflow-hidden", {
   variants: {
     size: {
@@ -35,11 +35,12 @@ const avatarVariants = cva("relative flex shrink-0 select-none items-center just
     },
     ring: {
       none: "",
-      online: "ring-2 ring-status-positive",
-      // 구성원 카드는 옆에 접속 상태 글자가 있어 옅은 1px 링, 글자가 없는 헤더 미리보기(겹친 묶음)는 굵은 링과 흑백으로 그린다.
-      // 묶음 안인지로 나눠 쓰는 쪽은 접속 상태만 정한다
+      // Figma Avatar 테두리는 크기 안쪽 2px이라 border로 그린다. 사진(absolute inset-0)은 테두리 안쪽에 맞춰 크기 −4px가 된다.
+      // online 바탕은 tone의 배경을 덮는다(cva가 tone 뒤에 ring을 붙이고 cn이 뒤의 bg를 남긴다)
+      online: "border-2 border-primary bg-fill-elevate",
+      // 흑백은 Figma 자리표시 이미지로는 판단할 수 없어, 접속 상태 글자가 없는 헤더 미리보기(겹친 묶음)에만 지금처럼 남긴다
       offline:
-        "ring-1 ring-border-subtle in-data-[slot=avatar-group]:ring-2 in-data-[slot=avatar-group]:ring-border in-data-[slot=avatar-group]:grayscale in-data-[slot=avatar-group]:brightness-110 in-data-[slot=avatar-group]:contrast-75",
+        "border-2 border-border in-data-[slot=avatar-group]:grayscale in-data-[slot=avatar-group]:brightness-110 in-data-[slot=avatar-group]:contrast-75",
       // 채팅 목록 아바타. 그림자는 지금 쓰는 shadow-sm에 가장 가까운 Figma shadow/subtle(0 1 4 #1f2229 8%)이다
       subtle: "ring-1 ring-border-subtle shadow-[0_1px_4px_rgba(31,34,41,0.08)]",
       // 채팅 새 메시지 미리보기. 회색 버튼 바탕(background/strong) 위라 윤곽이 border/default다
@@ -98,26 +99,24 @@ function AvatarFallback({ className, ...props }: Readonly<AvatarFallbackProps>) 
   );
 }
 
-/** 버튼 안에도 두도록 span으로 그린다. 앞사람이 위에 오는 겹침 순서는 쓰는 쪽이 자식 className의 z로 정한다 */
+/** 버튼 안에도 두도록 span으로 그린다. 앞사람이 위에 오는 겹침 순서는 쓰는 쪽이 자식의 z로 정한다 */
 function AvatarGroup({ className, ...props }: Readonly<ComponentProps<"span">>) {
   return (
     <span
       data-slot="avatar-group"
-      className={cn("isolate flex items-center *:not-first:-ml-1.5", className)}
+      // Figma 헤더 미리보기 Profile의 간격 −12px
+      className={cn("isolate flex items-center *:not-first:-ml-3", className)}
       {...props}
     />
   );
 }
 
-/** 헤더 구성원 미리보기의 +N. 쓰는 곳이 28px 묶음뿐이라 크기를 고정한다 */
+/** 헤더 구성원 미리보기의 +N(Figma Number). 묶음 옆에 두고, 앞에 16px PlusIcon을 자식으로 넣는다 */
 function AvatarGroupCount({ className, ...props }: Readonly<ComponentProps<"span">>) {
   return (
     <span
       data-slot="avatar-group-count"
-      className={cn(
-        "relative flex size-[28px] shrink-0 items-center justify-center rounded-full bg-fill text-label-m-regular text-text-subtle",
-        className,
-      )}
+      className={cn("flex shrink-0 items-center text-label-l-emphasis text-text-subtle [&_svg]:text-icon-subtle", className)}
       {...props}
     />
   );
