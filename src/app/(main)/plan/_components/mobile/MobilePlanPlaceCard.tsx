@@ -5,10 +5,10 @@ import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEv
 import {
   ChevronDownIcon,
   CoinIcon,
-  MenuDotVerticalIcon,
+  MemoIcon,
+  MenuDotHorizontalIcon,
   MenuHamburgerIcon,
   TimeClockIcon,
-  WriteIcon,
 } from "@/assets/icons";
 import { useOnClickOutside } from "@/hooks/useOnClickOutside";
 import { formatScheduleTimeRange } from "@/lib/plan/scheduleTime";
@@ -31,7 +31,7 @@ type MobilePlanPlaceCardProps = Readonly<{
   openLabel?: string;
   onOpenActions: () => void;
   onOpenExpenses: () => void;
-  /** 메모 줄의 연필 아이콘 — 메모 수정 시트를 연다 */
+  /** 메모 줄의 메모 아이콘 — 메모 수정 시트를 연다 */
   onEditMemo: () => void;
   /** 시간 줄 — 방문 시간 시트를 연다 */
   onEditTime: () => void;
@@ -81,9 +81,9 @@ export function MobilePlanPlaceCard({
     <div className={cn("flex items-stretch gap-2", className)}>
       <article
         className={cn(
-          "relative min-w-0 flex-1 rounded-md border text-left transition-colors duration-500",
+          "relative min-w-0 flex-1 rounded-md border px-4 text-left transition-colors duration-500",
           // primary-subtle은 카드 배경으로 너무 진해 빈 일차 드롭존과 같은 원시 토큰을 쓴다
-          highlighted ? "border-primary bg-[var(--blue-50)]" : "border-border-subtle bg-fill-subtle",
+          highlighted ? "border-primary bg-[var(--blue-50)]" : "border-border bg-fill-subtle",
           articleClassName,
         )}
       >
@@ -95,19 +95,24 @@ export function MobilePlanPlaceCard({
             className="absolute inset-0 cursor-pointer rounded-md focus-visible:outline-2 focus-visible:outline-primary-strong"
           />
         ) : null}
-        <div className="pointer-events-none relative flex gap-3 pb-3 pl-3.5 pr-2 pt-3">
-          <span
-            aria-hidden
-            className="mt-px flex size-6 shrink-0 items-center justify-center rounded-[5.5px] text-body-s-emphasis text-text-inverse"
-            style={{ backgroundColor: badgeColor }}
-          >
-            {orderNumber}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h3 className="line-clamp-2 break-words text-title-s text-text">{place.title}</h3>
-            {meta ? <PlaceMeta place={place} meta={meta} /> : null}
-            <PlaceTimeAndExpense place={place} expenseSummary={expenseSummary}
-              addWhenEmpty={addWhenEmpty} onEditTime={onEditTime} onOpenExpenses={onOpenExpenses} />
+        <div className="pointer-events-none relative flex items-start gap-2.5 py-4">
+          <div className="flex min-w-0 flex-1 gap-2">
+            <span
+              aria-hidden
+              // 번호(24)를 제목 첫 줄(26) 가운데에 둔다. radius 4는 맞는 토큰이 없다(rounded-sm = 6px)
+              className="mt-px flex size-6 shrink-0 items-center justify-center rounded-[4px] text-body-s-emphasis text-text-inverse"
+              style={{ backgroundColor: badgeColor }}
+            >
+              {orderNumber}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+              <div className="flex min-w-0 flex-col gap-1">
+                <h3 className="line-clamp-2 break-words text-title-s text-text">{place.title}</h3>
+                {meta ? <PlaceMeta place={place} meta={meta} /> : null}
+              </div>
+              <PlaceTimeAndExpense place={place} expenseSummary={expenseSummary}
+                addWhenEmpty={addWhenEmpty} onEditTime={onEditTime} onOpenExpenses={onOpenExpenses} />
+            </div>
           </div>
           <button
             type="button"
@@ -116,9 +121,10 @@ export function MobilePlanPlaceCard({
               onOpenActions();
             }}
             aria-label={`${place.title} 일정 편집`}
-            className="pointer-events-auto -mt-1 flex size-8 shrink-0 items-center justify-center"
+            // 아이콘은 Figma 20, 누르는 영역은 40으로 넓히고 음수 margin으로 자리를 되돌린다
+            className="pointer-events-auto -m-2.5 flex size-10 shrink-0 items-center justify-center"
           >
-            <MenuDotVerticalIcon size={20} className="text-icon-subtle" />
+            <MenuDotHorizontalIcon size={20} className="text-icon-subtle" />
           </button>
         </div>
 
@@ -143,22 +149,10 @@ export function MobilePlanPlaceCard({
 /** 분류·주소 줄 — 좁은 화면에서 잘렸을 때만 눌러서 전체 주소를 아래 드롭다운으로 보여 준다 */
 function PlaceMeta({ place, meta }: Readonly<{ place: PlanPlace; meta: string }>) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLParagraphElement>(null);
+  const [textRef, truncated] = useTruncated<HTMLParagraphElement>(meta);
   const addressId = useId();
-  const [truncated, setTruncated] = useState(false);
   const [open, setOpen] = useState(false);
   useOnClickOutside(wrapRef, () => setOpen(false));
-
-  // 카드 폭(회전·넘겨 보기 칸)이 바뀌면 잘렸는지 다시 잰다
-  useEffect(() => {
-    const el = textRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const measure = () => setTruncated(el.scrollWidth > el.clientWidth);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [meta]);
 
   const expandable = truncated && Boolean(place.subtitle);
   return (
@@ -201,8 +195,8 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
             {timeRange || expenseSummary || addTime || addExpense ? (
               <div
                 className={cn(
-                  "mt-2 flex min-w-0 gap-y-1",
-                  addWhenEmpty ? "flex-col items-start" : "flex-wrap items-center gap-x-5",
+                  "flex min-w-0 gap-y-1",
+                  addWhenEmpty ? "flex-col items-start" : "flex-wrap items-center gap-x-4",
                 )}
               >
                 {timeRange ? (
@@ -213,9 +207,9 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onEditTime();
                     }}
                     aria-label={`${place.title} 방문 시간 수정`}
-                    className="pointer-events-auto flex items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    className="pointer-events-auto flex items-center gap-1.5 text-body-s-emphasis tabular-nums text-text"
                   >
-                    <TimeClockIcon size={18} className="text-icon-subtle" />
+                    <TimeClockIcon size={18} className="text-primary" />
                     {timeRange}
                   </button>
                 ) : null}
@@ -227,7 +221,7 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onEditTime();
                     }}
                     aria-label={`${place.title} 방문 시간 추가`}
-                    className="pointer-events-auto flex items-center gap-1 text-body-s-regular text-text-disabled"
+                    className="pointer-events-auto flex items-center gap-1.5 text-body-s-regular text-text-disabled"
                   >
                     <TimeClockIcon size={18} className="text-icon-disabled" />
                     시간 추가
@@ -242,9 +236,9 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                     }}
                     aria-label={`${place.title} 비용 보기`}
                     aria-describedby={summaryId}
-                    className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1 text-body-s-regular tabular-nums text-text-subtle"
+                    className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1.5 text-body-s-emphasis tabular-nums text-text"
                   >
-                    <CoinIcon size={18} className="text-icon-subtle" />
+                    <CoinIcon size={18} className="text-primary" />
                     <span id={summaryId} className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
                   </button>
                 ) : null}
@@ -256,7 +250,7 @@ function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, 
                       onOpenExpenses();
                     }}
                     aria-label={`${place.title} 비용 추가`}
-                    className="pointer-events-auto flex items-center gap-1 text-body-s-regular text-text-disabled"
+                    className="pointer-events-auto flex items-center gap-1.5 text-body-s-regular text-text-disabled"
                   >
                     <CoinIcon size={18} className="text-icon-disabled" />
                     비용 추가
@@ -271,10 +265,14 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
   Pick<MobilePlanPlaceCardProps, "place" | "addWhenEmpty" | "onEditMemo">) {
   const [memoExpanded, setMemoExpanded] = useState(false);
   const memo = place.memo?.trim() ?? "";
+  const [textRef, truncated] = useTruncated<HTMLSpanElement>(memo);
+  // Figma: 한 줄에 다 보이면 펼치기 화살표를 두지 않는다. 줄바꿈이 있으면 펼쳤을 때 줄이 늘어나므로 보인다
+  const showChevron = memoExpanded || truncated || memo.includes("\n");
   const addMemo = !memo && Boolean(addWhenEmpty?.memo);
   return <>
         {memo ? (
-          <div className="pointer-events-none relative mx-3.5 flex items-start gap-3.5 border-t border-border-subtle py-3">
+          // Figma 선은 높이 48 안의 안쪽 stroke라 위 여백에서 1을 뺀다
+          <div className="pointer-events-none relative flex items-start gap-2.5 border-t border-border pb-3.5 pl-1 pt-3.25">
             <button
               type="button"
               onClick={(e) => {
@@ -282,9 +280,9 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
                 onEditMemo();
               }}
               aria-label={`${place.title} 메모 수정`}
-              className="pointer-events-auto -m-1 shrink-0 p-1"
+              className="pointer-events-auto -m-2.5 grid size-10 shrink-0 place-items-center"
             >
-              <WriteIcon size={20} className="text-icon-subtle" />
+              <MemoIcon size={18} className="text-icon-subtle" />
             </button>
             <button
               type="button"
@@ -294,11 +292,12 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
               }}
               aria-expanded={memoExpanded}
               aria-label={memoExpanded ? "메모 접기" : "메모 펼치기"}
-              className="pointer-events-auto flex min-w-0 flex-1 items-start gap-3.5 text-left"
+              className="pointer-events-auto flex min-w-0 flex-1 items-start gap-0.5 text-left"
             >
               <span
+                ref={textRef}
                 className={cn(
-                  "min-w-0 flex-1 text-caption-l-regular leading-5 text-text-subtle",
+                  "min-w-0 flex-1 text-body-s-regular text-text-subtle",
                   memoExpanded ? "whitespace-pre-wrap break-words" : "truncate",
                 )}
               >
@@ -309,19 +308,21 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
                     })
                   : memo}
               </span>
-              <ChevronDownIcon
-                size={20}
-                className={cn(
-                  "shrink-0 text-icon-subtle transition-transform",
-                  memoExpanded && "rotate-180",
-                )}
-              />
+              {showChevron ? (
+                <ChevronDownIcon
+                  size={20}
+                  className={cn(
+                    "shrink-0 text-icon-subtle transition-transform",
+                    memoExpanded && "rotate-180",
+                  )}
+                />
+              ) : null}
             </button>
           </div>
         ) : null}
         {!memo && addMemo ? (
           // 메모가 있을 때와 같은 줄(구분선·아이콘)을 흐리게 — 펼칠 내용이 없어 꺾쇠는 두지 않는다. 누르면 메모 시트
-          <div className="pointer-events-none relative mx-3.5 border-t border-border-subtle py-3">
+          <div className="pointer-events-none relative border-t border-border pb-3.5 pl-1 pt-3.25">
             <button
               type="button"
               onClick={(e) => {
@@ -329,14 +330,30 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
                 onEditMemo();
               }}
               aria-label={`${place.title} 메모 추가`}
-              className="pointer-events-auto flex w-full min-w-0 items-center gap-3.5 text-left"
+              className="pointer-events-auto flex w-full min-w-0 items-center gap-2.5 text-left"
             >
-              <WriteIcon size={20} className="shrink-0 text-icon-disabled" />
-              <span className="min-w-0 flex-1 truncate text-caption-l-regular leading-5 text-text-disabled">
+              <MemoIcon size={18} className="shrink-0 text-icon-disabled" />
+              <span className="min-w-0 flex-1 truncate text-body-s-regular text-text-disabled">
                 메모를 추가해보세요.
               </span>
             </button>
           </div>
         ) : null}
   </>;
+}
+
+/** 한 줄 말줄임 글자가 잘렸는지 — 카드 폭(회전·넘겨 보기 칸)이 바뀌면 다시 잰다 */
+function useTruncated<T extends HTMLElement>(text: string) {
+  const ref = useRef<T>(null);
+  const [truncated, setTruncated] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setTruncated(el.scrollWidth > el.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text]);
+  return [ref, truncated] as const;
 }

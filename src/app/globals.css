@@ -65,9 +65,9 @@
   /* 스크롤바 공간 예약은 폭 유지가 필요한 본문·목록에서만 개별 지정한다. */
 }
 
-/* 모바일 하단 탭바(메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */
+/* 모바일 하단 탭바(위 선 1px + 메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */
 html:has([data-mobile-main-tabs]) {
-  --toast-bottom-inset: calc(52px + env(safe-area-inset-bottom));
+  --toast-bottom-inset: calc(53px + env(safe-area-inset-bottom));
 }
 
 /**

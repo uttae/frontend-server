@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, EyeOff } from "lucide-react";
+import { EyeOff } from "lucide-react";
 
 import { ChevronDownIcon, MapIcon } from "@/assets/icons";
 import { Spinner } from "@/components/ui/spinner";
@@ -41,8 +41,8 @@ export type TravelDirectionsCardProps = {
   effectiveMode: ScheduleTravelModeValue | null;
   googleMapsDirectionsUrl?: string;
   /**
-   * web은 PC 일정(Figma Route Info) — 이동 시간 강조·거리 회색, 길찾기는 지도 아이콘과 회색 12px.
-   * mobile은 모바일 일정 화면의 지금 모양
+   * 둘 다 Figma Route Info 모양(이동 시간 강조·거리 회색, 길찾기는 지도 아이콘과 회색 12px)이다.
+   * web은 좁은 일정 칸에서 길찾기를 다음 줄로 내리고, mobile은 Figma 모바일 간격(아이콘–정보 10)을 쓴다
    */
   variant?: "web" | "mobile";
   /** true면 목록은 참고용(클릭 선택 불가), `onSelectTravelMode` 미사용 */
@@ -94,20 +94,13 @@ export function TravelDirectionsCard({
           type="button"
           className={cn(
             "inline-flex min-h-10 min-w-0 grow cursor-pointer items-center gap-1.5 text-left",
-            variant === "mobile" && "py-1 pl-1 pr-1.5",
+            variant === "mobile" && "gap-2.5",
           )}
           aria-expanded={menuOpen}
           onClick={onToggleMenu}
         >
           <TravelModeGlyph mode={headerTravelMode} />
-          <span
-            className={cn(
-              "inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep",
-              variant === "web"
-                ? "text-body-s-emphasis text-text [&_[data-route-distance]]:text-body-s-regular [&_[data-route-distance]]:text-text-subtle [&_[data-route-separator]]:mx-0.5"
-                : "text-body-s-emphasis mobile:text-body-xs-emphasis font-medium leading-tight text-gray-900",
-            )}
-          >
+          <span className="inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep text-body-s-emphasis text-text [&_[data-route-distance]]:text-body-s-regular [&_[data-route-distance]]:text-text-subtle [&_[data-route-separator]]:mx-0.5">
             <span className="min-w-0">{summaryLine}</span>
             <ChevronDownIcon
               size={16}
@@ -125,24 +118,10 @@ export function TravelDirectionsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Google Maps에서 길찾기"
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center underline-offset-2 hover:underline",
-              variant === "web"
-                ? "gap-1.5 text-body-xs-regular text-text-subtle"
-                : "gap-1 px-2 text-label-xs-regular font-medium text-primary-strong",
-            )}
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 text-body-xs-regular text-text-subtle underline-offset-2 hover:underline"
           >
-            {variant === "web" ? (
-              <>
-                <MapIcon size={16} className="shrink-0 text-icon-subtle" />
-                Google 길찾기
-              </>
-            ) : (
-              <>
-                Google 길찾기
-                <ExternalLink className="h-3 w-3" aria-hidden />
-              </>
-            )}
+            <MapIcon size={16} className="shrink-0 text-icon-subtle" />
+            Google 길찾기
           </a>
         ) : null}
 

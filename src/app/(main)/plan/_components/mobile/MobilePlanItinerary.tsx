@@ -5,8 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
-import { PlusIcon } from "@/assets/icons";
+import { PlusIcon, SavedIcon } from "@/assets/icons";
 import { DashedPlaceholderBox } from "@/components/mobile/DashedPlaceholderBox";
+import { Button } from "@/components/ui/button";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
 import {
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 
 import { PlanTravelTime } from "../travel-time/PlanTravelTime";
+import { TravelRouteRail } from "../travel-time/TravelRouteRail";
 import { MobilePlanPlaceCard } from "./MobilePlanPlaceCard";
 import { MobilePlanPlaceSheets, openPlaceExpenses, type MobilePlanPlaceSheet } from "./MobilePlanPlaceSheets";
 import { useMobilePlanDrag } from "./mobilePlanDrag";
@@ -178,22 +180,29 @@ export function MobilePlanItinerary({
         })}
       </div>
 
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        <button
-          type="button"
+      <div className="mt-4 flex gap-2">
+        <Button
+          variant="outline"
+          tone="brand"
+          size="md"
+          // Figma Add Place는 아이콘·문구를 왼쪽에 붙인다
+          className="flex-1 justify-start"
           onClick={() => onRequestAddPlace(null)}
-          className="flex items-center justify-center rounded-lg border border-border-subtle bg-fill-subtle px-3.5 py-3"
         >
-          <PlusIcon size={20} className="text-icon-subtle" />
-          <span className="px-1.5 text-label-l-emphasis text-text-subtle">장소 추가</span>
-        </button>
-        <button
-          type="button"
+          <PlusIcon data-icon="inline-start" />
+          장소 추가
+        </Button>
+        <Button
+          variant="outline"
+          tone="brand"
+          size="md"
+          aria-label="북마크에서 장소 추가"
           onClick={() => setSheet({ kind: "bookmark", anchor: null })}
-          className="flex items-center justify-center rounded-lg border border-border-subtle bg-fill-subtle px-3.5 py-3"
+          // Figma 인스턴스가 둥글기만 999로 바꾼 48×48 아이콘 버튼이다
+          className="size-12 rounded-full px-0"
         >
-          <span className="px-1.5 text-label-l-emphasis text-text-subtle">북마크에서 추가</span>
-        </button>
+          <SavedIcon />
+        </Button>
       </div>
 
       <MobilePlanPlaceSheets
@@ -236,23 +245,26 @@ function PlaceTravelSegment({
     return <div className="h-2" />;
   }
   return (
-    <PlanTravelTime
-      contentOnly
-      className="py-1"
-      roomId={roomId}
-      scheduleId={scheduleId}
-      segmentSourceItemId={place.itemId}
-      destinationItemId={next.itemId}
-      scheduleFingerprint={scheduleFingerprint}
-      travelMode={place.travelMode}
-      originGooglePlaceId={place.googlePlaceId}
-      originPlaceName={place.title}
-      destinationGooglePlaceId={next.googlePlaceId}
-      destinationPlaceName={next.title}
-      routeQueryEnabled={
-        routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)
-      }
-    />
+    <div className="flex gap-2 py-1 pr-3">
+      <TravelRouteRail />
+      <PlanTravelTime
+        contentOnly
+        className="flex min-h-10 min-w-0 flex-1 items-center"
+        roomId={roomId}
+        scheduleId={scheduleId}
+        segmentSourceItemId={place.itemId}
+        destinationItemId={next.itemId}
+        scheduleFingerprint={scheduleFingerprint}
+        travelMode={place.travelMode}
+        originGooglePlaceId={place.googlePlaceId}
+        originPlaceName={place.title}
+        destinationGooglePlaceId={next.googlePlaceId}
+        destinationPlaceName={next.title}
+        routeQueryEnabled={
+          routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)
+        }
+      />
+    </div>
   );
 }
 
