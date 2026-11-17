@@ -14,6 +14,7 @@ import { FEEDBACK_FORM_URL } from "@/lib/contact";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 import { isChatPathname, isMobileMapPathname, isPlanPathname, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import { isPackingPath } from "@/lib/room-context-path";
+import { cn } from "@/lib/utils";
 import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
@@ -89,6 +90,8 @@ const HeaderBar = ({
     "";
 
   const mapHref = isMapPanel ? "/plan" : MOBILE_MAP_PATH;
+  // 모바일 상단 아래 선은 상단 영역의 마지막 줄이 갖는다. 일정은 일차 칩 줄, 가계부·준비물은 탭 줄이 그린다
+  const hasRowBelowMobileHeader = isPlanPathname(pathname ?? "") || pathname === "/cost" || isPackingPath(pathname ?? "");
   const mobileTitle = displayTitle ? (
     <>
       <div className="truncate text-label-l-emphasis text-text">{displayTitle}</div>
@@ -101,7 +104,13 @@ const HeaderBar = ({
   );
 
   return (
-    <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "@container/header shrink-0 border-b border-border-subtle bg-fill-subtle"}>
+    <header
+      className={
+        isMobileDevice
+          ? cn("relative z-30 h-14 shrink-0 bg-fill-subtle", !hasRowBelowMobileHeader && "border-b border-border")
+          : "@container/header shrink-0 border-b border-border-subtle bg-fill-subtle"
+      }
+    >
       {isMobileDevice ? (
         <div className={mobileBackHref ? "flex h-full min-w-0 items-center pl-1" : "flex h-full min-w-0 items-center gap-4 px-2"}>
           <div className="flex min-w-0 flex-1 items-center gap-2 pe-5">

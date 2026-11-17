@@ -37,9 +37,6 @@ import { FolderRibbonIcon } from "./FolderRibbonIcon";
 
 const BOOKMARK_PAGE_DESCRIPTION = "마음에 드는 장소를 저장하세요.";
 
-// PC는 제목 줄의 아래 여백 12가 목록과의 간격이다. 모바일 제목 줄에는 여백이 없어 간격 10을 여기서 준다
-const PAGE_STACK_CLASS = "flex flex-col mobile:gap-2.5";
-
 export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const { folders } = useBookmarkFolders();
@@ -197,7 +194,7 @@ export function BookmarkFoldersView() {
 
   if (isPending) {
     return (
-      <div className={PAGE_STACK_CLASS}>
+      <div className="flex flex-col">
         <MainPageHeader
           title="북마크"
           description={BOOKMARK_PAGE_DESCRIPTION}
@@ -211,7 +208,7 @@ export function BookmarkFoldersView() {
   // 재조회 실패는 보이던 폴더를 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
   if (isLoadingError) {
     return (
-      <div className={PAGE_STACK_CLASS}>
+      <div className="flex flex-col">
         <MainPageHeader title="북마크" description={BOOKMARK_PAGE_DESCRIPTION} />
         <div className="space-y-3 py-10 text-center">
           <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
@@ -232,7 +229,7 @@ export function BookmarkFoldersView() {
   }
 
   return (
-    <div className={cn(PAGE_STACK_CLASS, "pb-8")}>
+    <div className="flex flex-col pb-8">
       <MainPageHeader
         title="북마크"
         description={BOOKMARK_PAGE_DESCRIPTION}

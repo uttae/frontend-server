@@ -20,12 +20,16 @@ export function ChatPanelHeader({
   return (
     <div
       className={cn(
-        "flex shrink-0 bg-white py-3",
-        // 최대화 헤더는 설명 줄이 없어 가운데로 맞추면 제목이 위에서 23에 온다. 다른 탭 제목(12)과 맞추려고 위로 붙인다
-        isMinimized ? "min-h-16 items-center px-5" : "min-h-19 items-start pl-5 pr-3",
+        "flex shrink-0 items-center bg-white py-3",
+        isMinimized ? "min-h-16 pl-5 pr-2" : "min-h-19 pl-5 pr-3",
       )}
     >
-      <h2 className="mr-auto text-title-l text-text">채팅</h2>
+      <div className="mr-auto flex min-w-0 flex-col gap-0.5">
+        <h2 className="text-title-l text-text">채팅</h2>
+        {isMinimized ? null : (
+          <p className="text-body-s-regular text-text-subtle">친구들과 여행에 관한 이야기를 나누세요</p>
+        )}
+      </div>
       <button
         type="button"
         onClick={isMinimized ? onMaximize : onMinimize}

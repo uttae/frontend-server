@@ -41,8 +41,8 @@ export function MainContentScrollArea({
       data-main-content-scroll
       className={cn(
         "min-h-0 min-w-0 flex-1",
-        // PC 탭 화면은 제목 줄(MainPageHeader)이 위 여백 12를 갖는다
-        !fill && !ledgerPage && (searchPage ? "pt-2.5" : "mobile:pt-2.5"),
+        // 다른 탭 화면은 제목 줄(MainPageHeader)이 위 여백 12를 가져 검색에만 둔다
+        !fill && searchPage && "pt-2.5",
         ledgerPage && "bg-fill-subtle mobile:bg-fill max-sm:bg-fill",
         fill
           ? "flex flex-col overflow-hidden"
