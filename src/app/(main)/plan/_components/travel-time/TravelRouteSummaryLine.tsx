@@ -30,7 +30,8 @@ export function TravelRouteSummaryLine({
       <>
         {formatRouteDuration(route.durationSeconds)}
         <span className="mx-1 text-light-gray">·</span>
-        {formatRouteDistance(route.distanceMeters)}
+        {/* PC 일정(TravelDirectionsCard web)은 거리만 회색 보통 굵기로 낮춘다 */}
+        <span data-route-distance>{formatRouteDistance(route.distanceMeters)}</span>
       </>
     );
   }

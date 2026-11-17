@@ -1,11 +1,8 @@
 import type { RoomSchedule } from "@/lib/api/rooms/schedules";
 import type { PlanDayData } from "@/lib/plan/types";
 
-import {
-  formatKoreanDateLabel,
-  formatShortDateLabel,
-  parseLocalYmd,
-} from "@/lib/plan/tripRange";
+import { formatMobileDayDate } from "@/lib/plan/mobilePlanFormat";
+import { formatKoreanDateLabel, parseLocalYmd } from "@/lib/plan/tripRange";
 
 export function sortRoomSchedules<T extends { dayNumber: number }>(
   schedules: T[],
@@ -24,7 +21,7 @@ export function mergeSchedulesWithPlaces(schedules: RoomSchedule[]): PlanDayData
     id: `schedule-${s.scheduleId}`,
     dayLabel: `${i + 1}일차`,
     dateLabel: formatKoreanDateLabel(parseLocalYmd(s.date)),
-    shortDateLabel: formatShortDateLabel(parseLocalYmd(s.date)),
+    shortDateLabel: formatMobileDayDate(s.date),
     places: [],
   }));
 }

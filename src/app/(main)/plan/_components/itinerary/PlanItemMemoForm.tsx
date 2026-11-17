@@ -1,7 +1,6 @@
 "use client";
 
-import { TrashIcon } from "@/assets/icons";
-import { MemoIcon } from "@/components/icons";
+import { MemoIcon, TrashIcon } from "@/assets/icons";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
@@ -14,7 +13,6 @@ import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
-import { cn } from "@/lib/utils";
 
 const MEMO_LINK_CLASS_NAME =
   "break-all text-primary-strong underline underline-offset-2 hover:opacity-80";
@@ -52,17 +50,19 @@ export function PlanItemMemoReadOnly({
   if (!text.length) return null;
 
   return (
-    // 아이콘·간격은 카드 액션 버튼(16px 아이콘, 6px 간격)과 맞추고, 글자 시작·높이·휴지통 위치는 디자인 값에 맞춘다
-    <div className={cn(PLAN_PLACE_CARD_TW.editorModule, "gap-1.5 py-[13px] pl-[19px]")}>
-      <div className={cn(PLAN_PLACE_CARD_TW.editorSideLabelWrapper, "pt-1")}>
-        <MemoIcon className="h-4 w-4" />
+    // Figma Memo — 3줄까지는 그대로, 넘으면 3줄 높이에서 자르고 스크롤한다. 바깥 0.5px stroke는 크기에 들어가지 않는 ring
+    <div className="flex w-full items-start gap-2 rounded-[12px] bg-fill-strong py-3 pl-5 pr-3 ring-[0.5px] ring-border">
+      <div className="flex min-w-0 flex-1 items-start gap-1.5">
+        <span className="flex h-5 shrink-0 items-center text-icon">
+          <MemoIcon size={16} />
+        </span>
+        <p className="max-h-[3lh] min-w-0 flex-1 overflow-y-auto whitespace-pre-wrap break-words text-body-s-regular text-text">
+          {renderTextWithLinks(text, {
+            linkClassName: MEMO_LINK_CLASS_NAME,
+            onLinkClick: (e) => e.stopPropagation(),
+          })}
+        </p>
       </div>
-      <p className="min-w-0 flex-1 whitespace-pre-wrap break-words text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-gray-900">
-        {renderTextWithLinks(text, {
-          linkClassName: MEMO_LINK_CLASS_NAME,
-          onLinkClick: (e) => e.stopPropagation(),
-        })}
-      </p>
       {onDelete ? (
         <button
           type="button"
@@ -73,7 +73,8 @@ export function PlanItemMemoReadOnly({
             e.stopPropagation();
             onDelete();
           }}
-          className="-mr-[3px] shrink-0 cursor-pointer self-start rounded-md p-1 text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+          // 누르는 영역만 28px로 넓히고 줄 안에서는 Figma Delete 칸 20px만 차지한다
+          className="-m-1 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon-subtle transition hover:bg-fill hover:text-icon disabled:cursor-not-allowed disabled:opacity-40"
         >
           <TrashIcon size={16} />
         </button>
@@ -150,7 +151,7 @@ export function PlanItemMemoEditor({
         onClick={stopCardActivation}
       >
         <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
-          <MemoIcon className="h-6 w-6" />
+          <MemoIcon />
         </div>
 
         <div className={PLAN_PLACE_CARD_TW.editorBody}>

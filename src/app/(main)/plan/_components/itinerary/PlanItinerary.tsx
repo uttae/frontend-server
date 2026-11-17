@@ -269,7 +269,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
         })}
       </div>
 
-      <div className="mt-4 flex flex-col gap-2 border-t border-dashed border-gray-border pt-4">
+      <div className="mt-4 flex flex-col gap-2">
         <PlanAddPlaceControls
           coords={mapCenter}
           disabled={addControlsDisabled}

@@ -41,20 +41,23 @@ export const PLAN_PLACE_CARD_LAYOUT_WIDE_MIN_PX = 370 as const;
 export const PLAN_PLACE_CARD_MIN_SIZE_REM = "6rem" as const;
 
 /**
- * `PlanPlaceCard` 컨테이너 쿼리 유틸 — 문자열은 **템플릿으로 만들지 말 것**
- * (`@min-[370px]` 처럼 소스에 그대로 적혀야 Tailwind v4가 CSS를 생성함).
+ * `PlanPlaceCard` 클래스 묶음 — 문자열은 **템플릿으로 만들지 말 것**
+ * (소스에 그대로 적혀야 Tailwind v4가 CSS를 생성함).
  */
 export const PLAN_PLACE_CARD_TW = {
+  /** Figma Card/Place/Web — 테두리는 Figma의 바깥 0.5px stroke라 크기에 들어가지 않는 ring으로 그린다 */
   article:
-    "relative grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-3 rounded-xl border border-gray-border bg-white p-3.5 shadow-sm mobile:gap-x-2.5 mobile:p-2.5",
-  thumbnail:
-    "relative h-[6rem] w-[6rem] shrink-0 overflow-hidden rounded-lg bg-fill-strong mobile:h-[4.5rem] mobile:w-[4.5rem]",
-  /** 장소명·카테고리는 위, 주소는 썸네일 아래 끝에 맞춘다 */
-  contentColumn:
-    "flex min-h-[6rem] min-w-0 flex-col justify-between gap-2 pb-1 mobile:min-h-[4.5rem]",
-  titleRow: "flex min-w-0 items-start gap-2.5",
-  subtitle: "truncate text-caption-l-regular text-text-subtle",
-  controlsStack: "flex min-w-0 flex-col gap-0.5",
+    "flex flex-col rounded-[12px] bg-fill-elevate px-3 pt-3 ring-[0.5px] ring-border-subtle",
+  /** 사진·글과 오른쪽 위 메뉴 줄 */
+  contents: "flex min-w-0 items-start gap-3.5 pb-3",
+  placeInfo: "flex min-w-0 flex-1 items-center gap-3",
+  thumbnail: "relative size-25 shrink-0 overflow-hidden rounded-md bg-fill-strong",
+  /** 장소 이름·태그는 위, 주소는 사진 아래 끝에 맞춘다 */
+  contentColumn: "flex min-h-25 min-w-0 flex-1 flex-col justify-between gap-2",
+  title: "truncate text-body-l-emphasis text-text",
+  /** Figma Tags 프레임 — 디자인 시스템 Badge(둥글기 4)가 아니라 알약 모양 */
+  tag: "inline-flex w-fit max-w-full items-center rounded-full bg-fill-strong px-2 py-0.5 text-label-xs-regular text-text-subtle",
+  address: "flex min-w-0 items-center gap-0.5 text-label-m-regular text-text-subtle",
   /** 사진 왼쪽 위에 붙는 번호 — 사진 둥글기가 모서리를 자른다. 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 둔다 */
   orderBadgeCompact:
     "absolute left-0 top-0 z-10 box-content size-7 border-b border-r border-white/40 text-label-m-emphasis text-text-inverse",
@@ -62,22 +65,23 @@ export const PLAN_PLACE_CARD_TW = {
   thumbnailMapMark:
     "pointer-events-none absolute bottom-1 right-1 z-10 flex size-6 items-center justify-center rounded-md border-[0.5px] border-white/20 bg-black/40 text-icon-inverse",
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
-  title: "truncate text-body-l-emphasis mobile:text-body-s-emphasis text-text",
-  deleteButtonCompact: "p-1 @min-[370px]/plan:p-1.5",
-  deleteIconSize: 16,
-  /** 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄 — 버튼 배경이 카드 안쪽 여백보다 바깥에 오도록 좌우를 넓힌다 */
-  actionBar: "-mx-1.5 flex min-w-0 items-center justify-between gap-2",
-  /** 디자인 시스템 Button Base(sm) — 버튼 좌우 여백 10, 아이콘 16, 라벨(`span`) 좌우 여백 6 */
+  /**
+   * 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄. Figma 구분선은 위 줄(Contents)의 아래 선인데,
+   * 도구 줄이 없는 카드(저장 전 장소)에 선만 남지 않게 이 줄의 위 선으로 둔다
+   */
+  actionBar: "flex min-h-11 min-w-0 items-center justify-between gap-2 border-t border-border-subtle",
+  /** Figma Button Neutral Weak sm — 인스턴스에 바탕이 없다. 좌우 여백 10, 아이콘 16, 라벨(`span`) 좌우 여백 6. 누를 수 있어 hover 바탕은 둔다 */
   actionButton:
-    "flex h-9 shrink-0 cursor-pointer items-center rounded-md bg-fill-subtle px-2.5 text-body-s-emphasis text-text transition-colors hover:bg-fill disabled:cursor-not-allowed disabled:opacity-50 [&>span]:px-1.5",
-  /** 메모 버튼만 Button Base 좌우 여백이 4다(디자인) */
-  actionButtonTrailing: "px-1",
+    "flex min-h-9 shrink-0 cursor-pointer items-center rounded-md px-2.5 py-2 text-body-s-emphasis text-text transition-colors hover:bg-fill disabled:cursor-not-allowed disabled:opacity-50 [&>span]:px-1.5",
+  /** 메모 버튼만 Button Base 오른쪽 여백이 4다(디자인) */
+  actionButtonTrailing: "pr-1",
   /** 값이 있으면 버튼의 `data-filled`로 파랑 — 비용 버튼(`ExpenseEntryButton`)과 같은 방식 */
   actionIcon: "shrink-0 text-icon group-data-filled:text-primary",
   /** 메모만 비어 있을 때 icon/subtle(디자인) */
   memoActionIcon: "shrink-0 text-icon-subtle group-data-filled:text-primary",
+  /** 메모 편집 칸 — Figma에 편집 상태가 없어 회색 일차 바탕 위에서 보이도록 읽기 메모 칸(Memo)과 같은 바탕·테두리를 쓴다 */
   editorModule:
-    "relative flex w-full items-start gap-3 rounded-2xl bg-gray-100/70 px-4 py-3 text-body-s-regular mobile:text-body-xs-regular text-gray-900",
+    "relative flex w-full items-start gap-3 rounded-[12px] bg-fill-strong px-4 py-3 ring-[0.5px] ring-border text-body-s-regular mobile:text-body-xs-regular text-gray-900",
   editorSideLabelWrapper:
     "flex shrink-0 flex-col items-center justify-center gap-1 pt-0.5 text-dark-gray",
   editorSideLabelText:
