@@ -91,7 +91,8 @@ export function MobilePlanPlaceSheets({
     );
   }
 
-  const { place } = sheet;
+  // 시트 상태에는 연 시점의 장소가 들어 있다. 그사이 다른 멤버가 바꾼 메모·시간이 시트에 보이고 메모 덮어쓰기 확인이 동작하도록 최신 목록에서 같은 항목을 다시 찾는다
+  const place = places.find((p) => typeof p.itemId === "number" && p.itemId === sheet.place.itemId) ?? sheet.place;
   const itemId = typeof place.itemId === "number" ? place.itemId : null;
 
   async function handleDelete() {
