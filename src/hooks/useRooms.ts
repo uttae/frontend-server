@@ -13,7 +13,6 @@ import { usePathname } from "next/navigation";
 import { useStompContext } from "@/contexts/StompContext";
 
 import {
-  HttpError,
   approveJoinRequest,
   createBookmarkCategory,
   createRoomBookmark,
@@ -43,7 +42,6 @@ import {
   regenerateInviteCode,
   rejectJoinRequest,
   type BookmarkCategory,
-  type RoomBookmark,
   type RoomCreateRequest,
   type RoomScheduleCreateRequest,
   type ReorderScheduleItemRequest,
@@ -856,21 +854,14 @@ export function useCreateRoomBookmark() {
   });
 }
 
-export type CreateRoomBookmarksInCategoriesResult = {
-  added: number;
-  skippedDuplicate: number;
-  /** Stopped early; categories after this were not attempted. */
-  firstHardError: Error | null;
-  /** Categories that received a successful POST (for local cache only). */
-  addedCategoryIds: number[];
-  bookmarks: RoomBookmark[];
-};
-
-/** POST 한 번으로 `googlePlaceId` + `categoryIds` 배열 전달. STOMP와 함께 목록 캐시도 즉시 무효화합니다. */
+/**
+ * POST 한 번으로 `googlePlaceId` + `categoryIds` 배열 전달. 서버는 이미 이 장소가 있는 폴더를 건너뛰고
+ * 새로 만든 북마크만 돌려줍니다(모두 있으면 빈 목록). 409는 다른 요청이 같은 폴더에 동시에 넣은 경우라 실패로 둡니다.
+ */
 export function useCreateRoomBookmarksInCategories() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       roomId,
       googlePlaceId,
       categoryIds,
@@ -878,48 +869,14 @@ export function useCreateRoomBookmarksInCategories() {
       roomId: string;
       googlePlaceId: string;
       categoryIds: number[];
-    }): Promise<CreateRoomBookmarksInCategoriesResult> => {
-      try {
-        const bookmarks = await createRoomBookmarks(roomId, {
-          googlePlaceId,
-          categoryIds,
-        });
-        const addedCategoryIds = bookmarks.map((b) => b.categoryId);
-        const added = bookmarks.length;
-        const skippedDuplicate = Math.max(0, categoryIds.length - added);
-        return {
-          added,
-          skippedDuplicate,
-          firstHardError: null,
-          addedCategoryIds,
-          bookmarks,
-        };
-      } catch (e) {
-        if (e instanceof HttpError && e.status === 409) {
-          return {
-            added: 0,
-            skippedDuplicate: categoryIds.length,
-            firstHardError: null,
-            addedCategoryIds: [],
-            bookmarks: [],
-          };
-        }
-        return {
-          added: 0,
-          skippedDuplicate: 0,
-          firstHardError: e instanceof Error ? e : new Error(String(e)),
-          addedCategoryIds: [],
-          bookmarks: [],
-        };
-      }
-    },
-    onSuccess: (result, { roomId }) => {
-      if (!result.addedCategoryIds.length) return;
+    }) => createRoomBookmarks(roomId, { googlePlaceId, categoryIds }),
+    onSuccess: (bookmarks, { roomId }) => {
+      if (!bookmarks.length) return;
+      const bumped = new Set(bookmarks.map((b) => b.categoryId));
       queryClient.setQueryData<BookmarkCategory[]>(
         bookmarkCategoriesQueryKey(roomId),
         (prev) => {
           if (!prev?.length) return prev;
-          const bumped = new Set(result.addedCategoryIds);
           return prev.map((c) =>
             bumped.has(c.categoryId)
               ? { ...c, placeCount: c.placeCount + 1 }
@@ -927,7 +884,7 @@ export function useCreateRoomBookmarksInCategories() {
           );
         },
       );
-      appendRoomBookmarksToCache(queryClient, roomId, result.bookmarks);
+      appendRoomBookmarksToCache(queryClient, roomId, bookmarks);
     },
   });
 }
