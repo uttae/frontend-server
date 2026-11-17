@@ -2,18 +2,19 @@
 
 import { TrashIcon } from "@/assets/icons";
 import { MemoIcon } from "@/components/icons";
-import { useCallback, useEffect, useState } from "react";
+import { useForm, useStore } from "@tanstack/react-form";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Button } from "@/components/ui/button";
+import { FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
+import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { cn } from "@/lib/utils";
-
-const SCHEDULE_ITEM_MEMO_MAX_LENGTH = 2000;
 
 const MEMO_LINK_CLASS_NAME =
   "break-all text-primary-strong underline underline-offset-2 hover:opacity-80";
@@ -90,41 +91,14 @@ export function PlanItemMemoEditor({
 }: PlanItemMemoEditorProps) {
   const incomingMemo = memo ?? "";
   const [editStartMemo, setEditStartMemo] = useState(incomingMemo);
-  const [draft, setDraft] = useState(incomingMemo);
   const [hasRemoteConflict, setHasRemoteConflict] = useState(false);
   const [overwriteDialogOpen, setOverwriteDialogOpen] = useState(false);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
+  const errorId = useId();
 
-  /* eslint-disable react-hooks/set-state-in-effect -- 서버 메모 변경을 편집 draft와 충돌 상태에 동기화합니다. */
-  useEffect(() => {
-    if (!isLocallyDirty(draft, editStartMemo)) {
-      setDraft(incomingMemo);
-      setEditStartMemo(incomingMemo);
-      setHasRemoteConflict(false);
-      return;
-    }
-
-    if (normalizeMemoDraft(incomingMemo) !== normalizeMemoDraft(editStartMemo)) {
-      setHasRemoteConflict(true);
-    }
-  }, [incomingMemo, draft, editStartMemo]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  const dirty = isLocallyDirty(draft, editStartMemo);
-
-  const commitSave = useCallback(async () => {
-    const next = normalizeMemoDraft(draft);
-    if (next.length > SCHEDULE_ITEM_MEMO_MAX_LENGTH) {
-      toast.error(`메모는 ${SCHEDULE_ITEM_MEMO_MAX_LENGTH}자 이하여야 해요.`);
-      return;
-    }
+  async function commitSave(next: string) {
     try {
-      await mutateAsync({
-        roomId,
-        scheduleId,
-        itemId,
-        body: { memo: next.length > 0 ? next : "" },
-      });
+      await mutateAsync({ roomId, scheduleId, itemId, body: { memo: next } });
       setEditStartMemo(next);
       setHasRemoteConflict(false);
       setOverwriteDialogOpen(false);
@@ -133,20 +107,40 @@ export function PlanItemMemoEditor({
     } catch {
       toast.error("메모를 저장하지 못했어요.");
     }
-  }, [draft, itemId, mutateAsync, onClose, roomId, scheduleId]);
-
-  async function handleSave() {
-    const next = normalizeMemoDraft(draft);
-    if (next.length > SCHEDULE_ITEM_MEMO_MAX_LENGTH) {
-      toast.error(`메모는 ${SCHEDULE_ITEM_MEMO_MAX_LENGTH}자 이하여야 해요.`);
-      return;
-    }
-    if (hasRemoteConflict) {
-      setOverwriteDialogOpen(true);
-      return;
-    }
-    await commitSave();
   }
+
+  // 연 순간 값으로 시작한다. 서버 메모를 다시 채우는 것은 아래 effect가 form.reset으로 한다
+  const [defaultValues] = useState(() => ({ memo: incomingMemo }));
+  const form = useForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      if (hasRemoteConflict) {
+        setOverwriteDialogOpen(true);
+        return;
+      }
+      // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
+      await commitSave(scheduleItemMemoSchema.parse(value.memo));
+    },
+  });
+  const draft = useStore(form.store, (state) => state.values.memo);
+
+  /* eslint-disable react-hooks/set-state-in-effect -- 서버 메모 변경을 편집 draft와 충돌 상태에 동기화합니다. */
+  useEffect(() => {
+    if (!isLocallyDirty(draft, editStartMemo)) {
+      // 고치지 않았으면 서버 새 값으로 다시 채운다. keepDefaultValues가 없으면 다음 렌더에 useForm이 연 순간 값으로 되돌린다
+      if (draft !== incomingMemo) form.reset({ memo: incomingMemo }, { keepDefaultValues: true });
+      setEditStartMemo(incomingMemo);
+      setHasRemoteConflict(false);
+      return;
+    }
+
+    if (normalizeMemoDraft(incomingMemo) !== normalizeMemoDraft(editStartMemo)) {
+      setHasRemoteConflict(true);
+    }
+  }, [incomingMemo, draft, editStartMemo, form]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const dirty = isLocallyDirty(draft, editStartMemo);
 
   return (
     <>
@@ -160,18 +154,31 @@ export function PlanItemMemoEditor({
         </div>
 
         <div className={PLAN_PLACE_CARD_TW.editorBody}>
-          <Textarea
-            aria-label="일정 메모"
-            value={draft}
-            maxLength={SCHEDULE_ITEM_MEMO_MAX_LENGTH}
-            placeholder="여기에 메모를 작성하세요"
-            disabled={isPending}
-            onMouseDown={stopCardActivation}
-            onClick={stopCardActivation}
-            onChange={(e) => setDraft(e.target.value)}
-            // 카드(article)의 select-none과 잡기·기본 커서를 물려받지 않게 글자 선택·글자 커서로 되돌린다
-            className="select-text cursor-text"
-          />
+          {/* 길이 제한은 입력 칸이 아니라 스키마가 쓰는 동안 본다(모바일 메모 시트와 같음) */}
+          <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
+            {(field) => {
+              const error = field.state.meta.errors[0]?.message;
+              return (
+                <>
+                  <Textarea
+                    aria-label="일정 메모"
+                    value={field.state.value}
+                    placeholder="여기에 메모를 작성하세요"
+                    disabled={isPending}
+                    onMouseDown={stopCardActivation}
+                    onClick={stopCardActivation}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? errorId : undefined}
+                    // 카드(article)의 select-none과 잡기·기본 커서를 물려받지 않게 글자 선택·글자 커서로 되돌린다
+                    className="select-text cursor-text"
+                  />
+                  <FieldError id={errorId}>{error}</FieldError>
+                </>
+              );
+            }}
+          </form.Field>
           <div className={PLAN_PLACE_CARD_TW.editorFooterRow}>
             <span className="mr-auto text-caption-s-regular tabular-nums text-dark-gray/60">
               {draft.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
@@ -180,7 +187,7 @@ export function PlanItemMemoEditor({
               variant="outline"
               size="sm"
               onClick={() => {
-                setDraft(incomingMemo);
+                form.reset({ memo: incomingMemo }, { keepDefaultValues: true });
                 setEditStartMemo(normalizeMemoDraft(incomingMemo));
                 setHasRemoteConflict(false);
                 onClose();
@@ -192,7 +199,7 @@ export function PlanItemMemoEditor({
             <Button
               tone="brand"
               size="sm"
-              onClick={() => void handleSave()}
+              onClick={() => void form.handleSubmit()}
               disabled={!dirty}
               loading={isPending}
               loadingLabel="저장 중"
@@ -208,7 +215,7 @@ export function PlanItemMemoEditor({
           title="다른 사람의 입력을 덮어씁니다!"
           description="다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다."
           isPending={isPending}
-          onConfirm={() => void commitSave()}
+          onConfirm={() => void commitSave(scheduleItemMemoSchema.parse(form.state.values.memo))}
           onCancel={() => setOverwriteDialogOpen(false)}
         />
       ) : null}

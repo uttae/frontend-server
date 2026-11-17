@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 const MINUTES_PER_DAY = 24 * 60;
 
 export type ScheduleTimeDraftValidation =
@@ -25,6 +27,44 @@ export function validateScheduleTimeDraft(
     };
   }
   return { valid: true };
+}
+
+/** 칸 값이 undefined면 사용자가 아직 고치지 않은 칸이라 서버 값을 따른다. ""는 비운 칸(초기화)이다 */
+export type ScheduleTimeDraft = { start: string | undefined; end: string | undefined };
+type ScheduleServerTimes = { serverStartHm: string; serverEndHm: string };
+
+// "9:5"처럼 한 자리로 친 시·분을 "09:05"로 맞춘다. 모양이 다르면 그대로 둬서 검증이 잡게 한다
+function canonicalHm(value: string): string {
+  if (!/^\d{1,2}:\d{1,2}$/.test(value)) return value;
+  return value.split(":").map((part) => part.padStart(2, "0")).join(":");
+}
+
+/** 폼 값과 서버 값을 합친 시각. 고치지 않은 칸은 서버 값을 쓴다 */
+export function resolveScheduleTimeDraft(draft: ScheduleTimeDraft, { serverStartHm, serverEndHm }: ScheduleServerTimes) {
+  return {
+    startHm: canonicalHm(draft.start ?? serverStartHm),
+    endHm: canonicalHm(draft.end ?? serverEndHm),
+  };
+}
+
+// 오류를 붙일 칸. 형식이 틀린 칸이 있으면 그 칸, 없으면(종료만 있음) 채워야 할 시작 칸이다 — 종료 칸은 시작이 없으면 비활성이다
+function scheduleTimeIssueField({ startHm, endHm }: { startHm: string; endHm: string }): "start" | "end" {
+  if (startHm && !normalizeStartTimeToHm(startHm)) return "start";
+  if (endHm && !normalizeStartTimeToHm(endHm)) return "end";
+  return "start";
+}
+
+/** 일정 시간 폼 스키마. 서버 값을 받아 폼 값과 합친 시각을 검증하고, 통과하면 합친 시각({ startHm, endHm })을 돌려준다 */
+export function createScheduleTimeSchema(server: ScheduleServerTimes) {
+  return z
+    .object({ start: z.string().or(z.undefined()), end: z.string().or(z.undefined()) })
+    .transform((draft, ctx) => {
+      const times = resolveScheduleTimeDraft(draft, server);
+      const result = validateScheduleTimeDraft(times.startHm, times.endHm);
+      if (result.valid) return times;
+      ctx.addIssue({ code: "custom", path: [scheduleTimeIssueField(times)], message: result.message });
+      return z.NEVER;
+    });
 }
 
 /** 미정 종료와 같은 시각(0분)을 구별하고 익일 종료를 표시합니다. */

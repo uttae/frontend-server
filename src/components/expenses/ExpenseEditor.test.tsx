@@ -462,6 +462,23 @@ it("requires explicit selection and offers exactly seven labeled categories in a
   expect(options.map((option) => option.textContent)).toEqual(categories.map(([, label]) => label));
 });
 
+// 칸 규칙(카테고리)과 교차 규칙(금액×통화)이 함께 틀려도 첫 저장에 두 칸 오류가 한 번에 보인다
+it("shows field and cross-field errors together on the first save and updates the amount error when the currency changes", async () => {
+  await mount(null);
+  await chooseCurrency("USD");
+  await fillNewExpense();
+  await clickSave();
+  expect(mocks.save).not.toHaveBeenCalled();
+  expect(fieldError(selectTrigger("카테고리"))).toBe("카테고리를 선택해 주세요.");
+  expect(amountInput().getAttribute("aria-invalid")).toBe("true");
+  expect(fieldError(amountInput())).toBe("금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.");
+  // 금액은 그대로 두고 통화만 KRW로 바꾸면 "100"이 맞는 금액이 되어 오류가 사라진다
+  await chooseCurrency("KRW");
+  expect(amountInput().hasAttribute("aria-invalid")).toBe(false);
+  expect(fieldError(amountInput())).toBeNull();
+  expect(fieldError(selectTrigger("카테고리"))).toBe("카테고리를 선택해 주세요.");
+});
+
 it("shows the missing category under its field and clears it once a category is chosen", async () => {
   await mount(null);
   await fillNewExpense();

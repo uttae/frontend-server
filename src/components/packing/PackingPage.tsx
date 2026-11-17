@@ -18,7 +18,7 @@ import { useMobileView } from "@/contexts/MobileViewContext";
 import { SetSectionSideDetailWidth } from "@/contexts/SectionWidthContext";
 import { PACKING_DETAIL_WIDTH_PX } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
-import { normalizePackingMemo, normalizePackingName } from "@/lib/packing/validation";
+import { packingMemoSchema, packingNameSchema } from "@/lib/packing/form";
 import type { PackingItem, PackingPart } from "@/lib/packing/types";
 import { packingIcons } from "@/lib/public-assets";
 import styles from "./PackingPage.module.css";
@@ -29,24 +29,6 @@ const linked = (value:string) => renderTextWithLinks(value,{linkClassName:"text-
 
 // 이름·메모 대화상자나 삭제 확인창이 열려 있으면 Esc는 그쪽 몫이다. Base UI 표면은 <div role="dialog|alertdialog" data-open>이다
 const OPEN_DIALOG_SELECTOR = '[role="dialog"][data-open], [role="alertdialog"][data-open]';
-
-function nameError(value:string, kind:"part"|"item") {
-  try {
-    normalizePackingName(value, kind);
-    return undefined;
-  } catch (error) {
-    return error instanceof Error ? error.message : "이름을 확인해 주세요.";
-  }
-}
-
-function memoError(value:string) {
-  try {
-    normalizePackingMemo(value);
-    return undefined;
-  } catch (error) {
-    return error instanceof Error ? error.message : "메모를 확인해 주세요.";
-  }
-}
 
 function PackingIcon({name, size = 24}: {name:keyof typeof packingIcons; size?:number}) {
   const sourceSize = name === "plusWhite" ? 16 : name === "collapse" || name.startsWith("menu") && name !== "menu" ? 20 : 24;
@@ -105,9 +87,9 @@ function NameDialog({editor,context,finalFocus,onClose}: Readonly<{editor:Editor
         if(form.state.isSubmitting || composing.current || context.state.status!=="ready" || !context.coordinator) return;
         void form.handleSubmit();
       }}>
-        <form.Field name="name" validators={{onSubmit:({value})=>nameError(value,kind)}}>
+        <form.Field name="name" validators={{onSubmit:packingNameSchema[kind]}}>
           {field=>{
-            const error=field.state.meta.errors[0];
+            const error=field.state.meta.errors[0]?.message;
             return <Field>
               <FieldLabel htmlFor={`${formId}-name`}>{noun} 이름</FieldLabel>
               <Input id={`${formId}-name`} aria-label={`${noun} 이름`} aria-invalid={error ? true : undefined} aria-describedby={error ? `${formId}-name-error` : undefined}
@@ -199,9 +181,9 @@ function MemoPanel({item,memo}: Readonly<{item:PackingItem;memo:ReturnType<typeo
   const {form}=memo;
   return <section className={styles.memoPanel} aria-label="내 메모">
     <label htmlFor={`packing-memo-${item.id}`} className={styles.sectionTitle}>내 메모</label>
-    <form.Field name="memo" validators={{onSubmit:({value})=>memoError(value)}}>
+    <form.Field name="memo" validators={{onSubmit:packingMemoSchema}}>
       {field=>{
-        const error=field.state.meta.errors[0];
+        const error=field.state.meta.errors[0]?.message;
         return <Field>
           <Textarea id={`packing-memo-${item.id}`} aria-label="준비물 메모" aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined}
             value={field.state.value} onChange={event=>field.handleChange(event.target.value)} onBlur={field.handleBlur}

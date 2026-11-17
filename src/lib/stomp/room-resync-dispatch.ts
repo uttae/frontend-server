@@ -4,7 +4,6 @@ import {
   bookmarkCategoriesQueryKey,
   joinRequestsRootQueryKey,
   roomAllBookmarksQueryKey,
-  roomBookmarksByRoomRootQueryKey,
   roomSchedulesQueryKey,
   roomUnreadCountQueryKey,
 } from "@/lib/query-keys";
@@ -26,7 +25,6 @@ export function resyncRoomDataAfterSubscribe(
   for (const queryKey of [
     roomSchedulesQueryKey(rid),
     bookmarkCategoriesQueryKey(rid),
-    roomBookmarksByRoomRootQueryKey(rid),
     roomAllBookmarksQueryKey(rid),
     roomUnreadCountQueryKey(rid),
   ]) {

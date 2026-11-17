@@ -99,11 +99,11 @@ function useExpenses(roomId: string) {
   // The shared presence cache may contain only a partial STOMP member snapshot.
   const memberQuery = useQuery({
     queryKey: expenseKeys.members(roomId),
-    queryFn: () => getRoomMembers(roomId),
+    queryFn: ({ signal }) => getRoomMembers(roomId, signal),
     enabled,
     retry: false,
-    staleTime: 0,
-    refetchOnMount: "always",
+    // 다른 가계부 조회와 같이 복구·무효화로만 다시 받는다(멤버 이벤트도 이 key를 무효화한다)
+    staleTime: Infinity,
     // Visibility recovery already refreshes members with the other room data.
     refetchOnWindowFocus: false,
   });
@@ -112,32 +112,34 @@ function useExpenses(roomId: string) {
     !revoked && canManageExpenses(user?.id, members, memberQuery.status);
   const schedules = useRoomSchedules(revoked ? null : roomId || null);
   // Recovery owns focus/reconnect reads; manual refresh remains available.
+  // 입장·연결 성립 복구(refresh "all")와 변경 알림·본인 저장의 무효화로만 다시 받는다. 재마운트만으로는 받지 않아
+  // 입장 때 복구 조회와 겹치지 않는다. 화면 밖에서 무효화된 조회는 다시 붙을 때 받는다
   const options = {
     enabled,
     retry: false,
-    staleTime: 0,
+    staleTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   };
   const list = useQuery({
     ...options,
     queryKey: expenseKeys.list(roomId),
-    queryFn: () => getExpenses(roomId),
+    queryFn: ({ signal }) => getExpenses(roomId, signal),
   });
   const summary = useQuery({
     ...options,
     queryKey: expenseKeys.summary(roomId),
-    queryFn: () => getExpenseSummary(roomId),
+    queryFn: ({ signal }) => getExpenseSummary(roomId, signal),
   });
   const budget = useQuery({
     ...options,
     queryKey: expenseKeys.budget(roomId),
-    queryFn: () => getExpenseBudget(roomId),
+    queryFn: ({ signal }) => getExpenseBudget(roomId, signal),
   });
   const krwSummary = useQuery({
     ...options,
     queryKey: expenseKeys.krwSummary(roomId),
-    queryFn: () => getExpenseKrwSummary(roomId),
+    queryFn: ({ signal }) => getExpenseKrwSummary(roomId, {}, signal),
   });
   const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
   const filteredKrwSummary = useQuery({
@@ -146,7 +148,7 @@ function useExpenses(roomId: string) {
     // onto that stale query when returning to All and trigger a whole-room refetch.
     enabled: enabled && Object.keys(krwFilters).length > 0,
     queryKey: [...expenseKeys.krwSummary(roomId), krwFilters],
-    queryFn: () => getExpenseKrwSummary(roomId, krwFilters),
+    queryFn: ({ signal }) => getExpenseKrwSummary(roomId, krwFilters, signal),
   });
   const budgetMutation = useMutation({
     mutationFn: async (body: ExpenseBudgetInput) => {
@@ -196,7 +198,7 @@ function useExpenses(roomId: string) {
   const currencies = useQuery({
     ...options,
     queryKey: expenseKeys.currencies(roomId),
-    queryFn: () => getExpenseCurrencies(roomId),
+    queryFn: ({ signal }) => getExpenseCurrencies(roomId, signal),
   });
   const mutation = useMutation({
     mutationFn: async (
@@ -287,7 +289,9 @@ function useExpenses(roomId: string) {
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
     if (reads.some(query => query.isError)) resolvedSyncStatus = "error";
-    else if (reads.some(query => !query.isSuccess || query.isFetching)) resolvedSyncStatus = "pending";
+    else if (reads.some(query => !query.isSuccess)) resolvedSyncStatus = "pending";
+    // 다른 화면의 무효화(일정 변경·멤버 이벤트 등)로 있던 값을 두고 다시 받는 중 — 금액을 비우지 않는다
+    else if (reads.some(query => query.isFetching)) resolvedSyncStatus = "refreshing";
   }
   return {
     roomId,
@@ -320,7 +324,7 @@ function useExpenses(roomId: string) {
         throw new Error("방 접근 권한이 없어요.");
       return client.fetchQuery({
         queryKey: expenseKeys.budget(roomId),
-        queryFn: () => getExpenseBudget(roomId),
+        queryFn: ({ signal }) => getExpenseBudget(roomId, signal),
         staleTime: 0,
         retry: false,
       });
@@ -341,7 +345,7 @@ function useExpenses(roomId: string) {
         throw new Error("방 접근 권한이 없어요.");
       const records = await client.fetchQuery({
         queryKey: expenseKeys.list(roomId),
-        queryFn: () => getExpenses(roomId),
+        queryFn: ({ signal }) => getExpenses(roomId, signal),
         staleTime: 0,
         retry: false,
       });

@@ -1,4 +1,9 @@
-import { QueryClient } from "@tanstack/react-query";
+import {
+  QueryClient,
+  type InvalidateOptions,
+  type InvalidateQueryFilters,
+  type Query,
+} from "@tanstack/react-query";
 
 import { isNetworkError } from "@/lib/api/errors";
 
@@ -43,4 +48,28 @@ export function registerQueryClient(client: QueryClient): void {
 
 export function getQueryClient(): QueryClient | null {
   return registeredQueryClient;
+}
+
+/**
+ * 서버 값이 바뀌었다는 알림 뒤에 다시 받는다. 받는 중인 조회는 이 변경 전에 출발했을 수 있어 취소하고 새로 받는다.
+ * 데이터가 있는 조회는 무효화가 알아서 취소하지만, 데이터가 없는 첫 조회에는 TanStack이 합류해 버려서 먼저 취소한다.
+ * 예: 방 입장 직후 첫 멤버 조회 중에 새 멤버가 들어오면, 그 사람이 없는 첫 응답 대신 새로 받은 목록을 쓴다.
+ */
+export async function invalidateAfterChange(
+  queryClient: QueryClient,
+  filters: InvalidateQueryFilters,
+  options?: InvalidateOptions,
+): Promise<void> {
+  const firstLoads = {
+    ...filters,
+    predicate: (query: Query) =>
+      query.state.data === undefined &&
+      query.state.fetchStatus !== "idle" &&
+      (filters.predicate?.(query) ?? true),
+  };
+  // 취소할 첫 조회가 없으면 기다리지 않고 바로 무효화한다 — 같은 틱의 렌더가 '받는 중'을 보게
+  if (queryClient.getQueryCache().findAll(firstLoads).length > 0) {
+    await queryClient.cancelQueries(firstLoads);
+  }
+  await queryClient.invalidateQueries(filters, options);
 }

@@ -1,9 +1,10 @@
 "use client";
 
 import { useForm, useStore } from "@tanstack/react-form";
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -14,16 +15,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldCount, FieldDescription, FieldError, FieldFooter, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
-
-const MEMO_MAX_LENGTH = 2000;
-
-// 입력은 maxLength로 막히지만 저장 전에 칸에서 한 번 더 확인한다. 문구는 PC 메모 편집(PlanItemMemoForm)과 같다
-function memoLengthError(memo: string) {
-  return memo.trim().length > MEMO_MAX_LENGTH ? `메모는 ${MEMO_MAX_LENGTH}자 이하여야 해요.` : undefined;
-}
+import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 
 type MobileMemoSheetProps = Readonly<{
   roomId: string;
@@ -44,6 +39,12 @@ export function MobileMemoSheet({
   onClose,
 }: MobileMemoSheetProps) {
   const initial = memo.trim();
+  // 처음 손댄(입력·포커스 해제) 순간의 서버 메모. 손대기 전(null)에는 TanStack이 바뀐 서버 메모를 입력에 그대로 반영하지만(isTouched 전 defaultValues 변경),
+  // 손댄 뒤에는 반영하지 않는다. 그사이 다른 멤버가 메모를 바꿨으면 저장 전에 덮어쓰기를 확인한다(PC PlanItemMemoForm과 같은 확인창)
+  const [editStartMemo, setEditStartMemo] = useState<string | null>(null);
+  const hasRemoteChange = editStartMemo !== null && editStartMemo !== initial;
+  const [isOverwriteConfirmOpen, setIsOverwriteConfirmOpen] = useState(false);
+  const markEditStart = () => setEditStartMemo((prev) => prev ?? initial);
   // 저장과 삭제는 같은 API지만 진행 표시를 누른 버튼에만 두려고 따로 꺼낸다
   const { mutateAsync: saveMemo, isPending: isSaving } = useUpdateScheduleItem();
   const { mutateAsync: deleteMemo, isPending: isDeleting } = useUpdateScheduleItem();
@@ -67,7 +68,14 @@ export function MobileMemoSheet({
 
   const form = useForm({
     defaultValues: { memo: initial },
-    onSubmit: ({ value }) => writeMemo(saveMemo, value.memo.trim()),
+    onSubmit: ({ value }) => {
+      if (hasRemoteChange) {
+        setIsOverwriteConfirmOpen(true);
+        return;
+      }
+      // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
+      return writeMemo(saveMemo, scheduleItemMemoSchema.parse(value.memo));
+    },
   });
   const hasMemo = initial.length > 0;
   // TanStack isDirty는 한 번 바뀌면 남아서, 되돌리면 다시 꺼지는 지금 기준(앞뒤 공백 무시 비교)을 그대로 쓴다
@@ -102,9 +110,10 @@ export function MobileMemoSheet({
               void form.handleSubmit();
             }}
           >
-            <form.Field name="memo" validators={{ onSubmit: ({ value }) => memoLengthError(value) }}>
+            {/* 길이 제한은 입력 칸(maxLength)이 아니라 스키마가 쓰는 동안 본다. maxLength를 두면 안드로이드 한글 입력에서 넘친 글자가 안내 없이 잘린다 */}
+            <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
               {(field) => {
-                const error = field.state.meta.errors[0];
+                const error = field.state.meta.errors[0]?.message;
                 return (
                   <Field>
                     <FieldLabel htmlFor={memoId}>메모</FieldLabel>
@@ -112,9 +121,14 @@ export function MobileMemoSheet({
                       id={memoId}
                       ref={textareaRef}
                       value={field.state.value}
-                      maxLength={MEMO_MAX_LENGTH}
-                      onChange={(event) => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
+                      onChange={(event) => {
+                        markEditStart();
+                        field.handleChange(event.target.value);
+                      }}
+                      onBlur={() => {
+                        markEditStart();
+                        field.handleBlur();
+                      }}
                       disabled={isWriting}
                       rows={5}
                       placeholder="메모를 입력하세요"
@@ -125,7 +139,12 @@ export function MobileMemoSheet({
                     <FieldDescription id={descriptionId}>
                       예약 정보나 함께 기억할 내용을 남겨보세요.
                     </FieldDescription>
-                    <FieldError id={errorId}>{error}</FieldError>
+                    <FieldFooter>
+                      <FieldError id={errorId}>{error}</FieldError>
+                      <FieldCount>
+                        {field.state.value.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
+                      </FieldCount>
+                    </FieldFooter>
                   </Field>
                 );
               }}
@@ -154,6 +173,16 @@ export function MobileMemoSheet({
             저장
           </Button>
         </DrawerFooter>
+        {/* 확인창은 시트의 React 자식으로 둔다. Base UI가 위 레이어(확인창)에만 Esc·포커스를 준다 */}
+        {isOverwriteConfirmOpen ? (
+          <ConfirmDialog
+            title="다른 사람의 입력을 덮어씁니다!"
+            description="다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다."
+            isPending={isSaving}
+            onConfirm={() => void writeMemo(saveMemo, scheduleItemMemoSchema.parse(form.state.values.memo))}
+            onCancel={() => setIsOverwriteConfirmOpen(false)}
+          />
+        ) : null}
       </DrawerContent>
     </Drawer>
   );
