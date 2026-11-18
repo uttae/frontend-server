@@ -71,28 +71,8 @@
 .tipCard ul {display:flex;flex-direction:column;gap:16px;margin:0;padding:0;list-style:none}
 .tipCard li {color:var(--color-text-subtle);overflow-wrap:anywhere}
 
-/* 좁은 화면의 페이지 배치 — 상세 바텀시트는 화면 폭과 관계없이 모바일 기기에서만(PackingPage의 useMobileView).
+/* 모바일 기기의 페이지 배치(PC는 창이 좁아도 그대로 두고 레이아웃 최소 폭 안에서 가로 스크롤).
    제목 줄은 Figma Mobile/준비물/393 Header(6663:5860): 진행 현황·버튼 한 줄, 높이 64, 제목은 화면에서 숨기고 읽히게만 둔다 */
-@media (max-width:700px) {
-  .content {padding:0 20px 20px}
-  .pageHeader {grid-template-rows:auto;align-items:center;gap:0 8px;min-height:64px;margin-bottom:0;padding:14px 0}
-  .pageHeader h1 {position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  .progress strong {font-weight:700}
-  .addCategory {grid-row:1}
-  .summary {grid-row:1;font-size:16px;line-height:22px;font-weight:700}
-  .columns {flex-direction:column;gap:20px;overflow-x:visible;padding-bottom:0}
-  .part {width:100%;flex:auto;gap:8px}
-  .partHeader {min-height:44px}
-  .menuTrigger {width:44px;height:44px}
-  .menuContent {width:208px}
-  .items {gap:8px}
-  .item>.checkbox {top:8px;left:8px;width:44px;height:44px}
-  .itemSelect {padding:8px}
-  .itemSelect strong {min-height:44px;margin-left:48px}
-  .itemSelect small {margin-top:4px}
-  .addItem {min-height:44px}
-}
-
 :global(.is-mobile-device) .content {padding:0 20px 20px}
 :global(.is-mobile-device) .pageHeader {grid-template-rows:auto;align-items:center;gap:0 8px;min-height:64px;margin-bottom:0;padding:14px 0}
 :global(.is-mobile-device) .pageHeader h1 {position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
