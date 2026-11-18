@@ -5,9 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 
-import { PlusIcon, SavedIcon } from "@/assets/icons";
+import { PlusIcon } from "@/assets/icons";
 import { DashedPlaceholderBox } from "@/components/mobile/DashedPlaceholderBox";
-import { Button } from "@/components/ui/button";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
 import {
@@ -177,29 +176,22 @@ export function MobilePlanItinerary({
         })}
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <Button
-          variant="outline"
-          tone="brand"
-          size="md"
-          // Figma Add Place는 아이콘·문구를 왼쪽에 붙인다
-          className="flex-1 justify-start"
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button
+          type="button"
           onClick={() => onRequestAddPlace(null)}
+          className="flex items-center justify-center rounded-lg border border-border-subtle bg-fill-subtle px-3.5 py-3"
         >
-          <PlusIcon data-icon="inline-start" />
-          장소 추가
-        </Button>
-        <Button
-          variant="outline"
-          tone="brand"
-          size="md"
-          aria-label="북마크에서 장소 추가"
+          <PlusIcon size={20} className="text-icon-subtle" />
+          <span className="px-1.5 text-label-l-emphasis text-text-subtle">장소 추가</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setSheet({ kind: "bookmark", anchor: null })}
-          // Figma 인스턴스가 둥글기만 999로 바꾼 48×48 아이콘 버튼이다
-          className="size-12 rounded-full px-0"
+          className="flex items-center justify-center rounded-lg border border-border-subtle bg-fill-subtle px-3.5 py-3"
         >
-          <SavedIcon />
-        </Button>
+          <span className="px-1.5 text-label-l-emphasis text-text-subtle">북마크에서 추가</span>
+        </button>
       </div>
 
       <MobilePlanPlaceSheets
