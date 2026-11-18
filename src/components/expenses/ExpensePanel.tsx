@@ -321,7 +321,7 @@ export function ExpensePanel() {
       className="@container/expenses min-w-0 text-body-s-regular"
     >
       <MainPageHeader
-        title="가계부"
+        title="지출"
         description="여행 경비를 한 번에 관리하세요."
         className="mobile:hidden max-sm:hidden"
         action={

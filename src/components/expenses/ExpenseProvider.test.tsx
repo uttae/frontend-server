@@ -792,7 +792,7 @@ it("mobile plan shares the provider with the cost page while day/place entries k
   }
   const { default: CostPage } = await import("@/app/(main)/cost/page");
   await act(async () => { draw(<QueryClientProvider client={client}><MainRoomGate><CostPage /></MainRoomGate></QueryClientProvider>); });
-  expect(host!.querySelector("h1")!.textContent).toBe("가계부");
+  expect(host!.querySelector("h1")!.textContent).toBe("지출");
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   expect(stomp.unsubscribe).not.toHaveBeenCalled();
 });
@@ -806,7 +806,7 @@ it("cost page hides healthy refresh and retries failed reads through the same pr
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await act(async () => { draw(<QueryClientProvider client={client}><MainRoomGate><CostPage /></MainRoomGate></QueryClientProvider>); });
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 20)); });
-  expect(host!.querySelector("h1")!.textContent).toBe("가계부");
+  expect(host!.querySelector("h1")!.textContent).toBe("지출");
   expect(document.body.textContent).toContain("old");
   expect(stomp.subscribe).toHaveBeenCalledTimes(1);
   expect(buttons().filter(b => /새로고침|조회 다시 시도/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(0);

@@ -408,7 +408,7 @@ it.each(["initial load", "change", "reconnect"])(
     const section = host.querySelector('section[aria-label="비용 및 정산"]')!;
     const first = section.firstElementChild!;
     expect([...first.querySelectorAll("h1")].map((heading) => heading.textContent))
-      .toEqual(["가계부"]);
+      .toEqual(["지출"]);
     expect(text()).not.toMatch(/최근 비용 조회 완료|30초 간격/);
   },
 );

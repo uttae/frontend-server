@@ -16,7 +16,7 @@ export function TravelToolsSwitcher() {
 
   const isPacking = isPackingPath(pathname);
   const links = [
-    { label: "가계부", href: "/cost", active: !isPacking },
+    { label: "지출", href: "/cost", active: !isPacking },
     { label: "준비물", href: `/packing/${roomId}`, active: isPacking },
   ];
 
