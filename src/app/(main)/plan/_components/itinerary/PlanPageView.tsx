@@ -37,12 +37,10 @@ import {
 } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { PlanContainerRefProvider } from "../plan-container";
 import { MobilePlanView } from "../mobile/MobilePlanView";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
-  const planContainerRef = useRef<HTMLDivElement>(null);
   const { isMobileDevice } = useMobileView();
   // 일정 화면을 떠나면 고른 장소(카드 강조·지도의 "이 일차만 보기")를 푼다 — 검색·북마크 탭에서도 지도는 그대로라서
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
@@ -173,7 +171,7 @@ export function PlanPageView() {
     roomId.length > 0 && isPending && schedules === undefined,
   );
 
-  const pageContentClassName = "@container/plan overflow-x-auto pb-8";
+  const pageContentClassName = "overflow-x-auto pb-8";
 
   const pageHeader = (
     <MainPageHeader
@@ -217,24 +215,16 @@ export function PlanPageView() {
 
   if (showInitialLoading) {
     return (
-      <PlanContainerRefProvider containerRef={planContainerRef}>
-        <div
-          ref={planContainerRef}
-          className={pageContentClassName}
-        >
-          {pageHeader}
-          <PlanLoadingSkeleton />
-        </div>
-      </PlanContainerRefProvider>
+      <div className={pageContentClassName}>
+        {pageHeader}
+        <PlanLoadingSkeleton />
+      </div>
     );
   }
 
   return (
-    <PlanContainerRefProvider containerRef={planContainerRef}>
-      <div
-        ref={planContainerRef}
-        className={pageContentClassName}
-      >
+    <>
+      <div className={pageContentClassName}>
         {pageHeader}
 
         <div className="flex flex-col gap-2.5">
@@ -297,6 +287,6 @@ export function PlanPageView() {
         </div>
       </div>
       {deleteDayDialog}
-    </PlanContainerRefProvider>
+    </>
   );
 }

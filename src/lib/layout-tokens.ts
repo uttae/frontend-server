@@ -31,18 +31,6 @@ export const MAP_DETAIL_PANEL_COVER_WIDTH = `calc(0.625rem + ${MAP_DETAIL_PANEL_
 /** 데스크톱 준비물 상세 패널 폭 — `PackingPage.module.css`의 `.detail`과 같게 유지 */
 export const PACKING_DETAIL_WIDTH_PX = 440 as const;
 
-/**
- * 플랜 루트 콘텐츠 박스 인라인 폭이 이 값 미만이면 narrow.
- * `width.s1`(400px)과 맞춤.
- */
-export const PLAN_CONTAINER_NARROW_MAX_INLINE_PX = 400 as const;
-
-/**
- * `PlanPlaceCard` wide 레이아웃·시간 인라인 배치 공통 브레이크포인트(px).
- * 입력 2개+저장 버튼이 info 컬럼에 들어갈 최소 폭 확보 — 아래 `@min-[…px]/plan` 과 같게 유지.
- */
-export const PLAN_PLACE_CARD_LAYOUT_WIDE_MIN_PX = 370 as const;
-
 /** `PlanPlaceCard` 접힌 상태 기준 최소 높이·썸네일 한 변(px) — 사진·본문 열 동기화 */
 export const PLAN_PLACE_CARD_MIN_SIZE_REM = "6rem" as const;
 
