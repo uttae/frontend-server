@@ -292,7 +292,8 @@ function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
               }}
               aria-expanded={memoExpanded}
               aria-label={memoExpanded ? "메모 접기" : "메모 펼치기"}
-              className="pointer-events-auto flex min-w-0 flex-1 items-start gap-0.5 text-left"
+              // 글자 줄 20에 위아래·오른쪽 10씩 눌리는 자리를 더하고 같은 값의 음수 여백으로 배치는 그대로 둔다(높이 40, 왼쪽 메모 아이콘 버튼과 같음)
+              className="pointer-events-auto -my-2.5 -mr-2.5 flex min-w-0 flex-1 items-start gap-0.5 py-2.5 pr-2.5 text-left"
             >
               <span
                 ref={textRef}
