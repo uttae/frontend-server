@@ -52,10 +52,11 @@ export const PLAN_PLACE_CARD_TW = {
   address: "flex min-w-0 items-start gap-0.5 text-label-m-regular text-text-subtle",
   /**
    * 사진 왼쪽 위에 붙는 번호(Figma Image 6663:5322 Number) — 둥글기 `var(--radius-md) 0`, 오른쪽·아래 흰 40% 1px.
-   * 바탕은 그 일차의 지도 경로색(1일차는 Figma primary). 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 둔다
+   * 바탕은 그 일차의 지도 경로색(1일차는 Figma primary). 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 두고,
+   * 바탕이 테두리 밑까지 칠해지면 테두리가 연한 파랑으로 보여 `bg-clip-padding`으로 사진 위 반투명 흰색이 되게 한다
    */
   orderBadgeCompact:
-    "absolute left-0 top-0 z-10 box-content size-7 rounded-tl-md rounded-br-md border-b border-r border-white/40 text-label-m-emphasis text-text-inverse",
+    "absolute left-0 top-0 z-10 box-content size-7 rounded-tl-md rounded-br-md border-b border-r border-white/40 bg-clip-padding text-label-m-emphasis text-text-inverse",
   /** 사진 오른쪽 아래 지도 표시(Figma Location). 0.5px 안쪽 stroke는 border로 그리면 크롬이 1px로 올려 그려 inset ring으로 둔다 */
   thumbnailMapMark:
     "pointer-events-none absolute bottom-1 right-1 z-10 flex size-6 items-center justify-center rounded-md bg-black/40 text-icon-inverse ring-[0.5px] ring-inset ring-white/20",
