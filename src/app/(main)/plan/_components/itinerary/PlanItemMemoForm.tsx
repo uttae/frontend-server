@@ -151,7 +151,7 @@ export function PlanItemMemoEditor({
         onClick={stopCardActivation}
       >
         <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
-          <MemoIcon />
+          <MemoIcon size={16} />
         </div>
 
         <div className={PLAN_PLACE_CARD_TW.editorBody}>
