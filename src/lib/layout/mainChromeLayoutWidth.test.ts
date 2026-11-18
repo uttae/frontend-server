@@ -20,5 +20,4 @@ it("keeps the 384px workspace beside the map and holds map-less tools at the 768
   expect(resolveDesktopLeftSectionMinWidthPx("/chat")).toBe(384);
   expect(resolveDesktopLeftSectionMinWidthPx("/cost")).toBe(768);
   expect(resolveDesktopLeftSectionMinWidthPx("/packing/room")).toBe(768);
-  expect(resolveDesktopLeftSectionMinWidthPx("/packing/room", 440)).toBe(824);
 });

@@ -28,9 +28,6 @@ export const MAP_DETAIL_PANEL_WIDTH = "clamp(280px, calc(100% - 104px), 360px)" 
 /** 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5` + 패널 폭. 지도와 같은 폭 칸 안에서만 쓴다 */
 export const MAP_DETAIL_PANEL_COVER_WIDTH = `calc(0.625rem + ${MAP_DETAIL_PANEL_WIDTH})` as const;
 
-/** 데스크톱 준비물 상세 패널 폭 — `PackingPage.module.css`의 `.detail`과 같게 유지 */
-export const PACKING_DETAIL_WIDTH_PX = 440 as const;
-
 /** `PlanPlaceCard` 접힌 상태 기준 최소 높이·썸네일 한 변(px) — 사진·본문 열 동기화 */
 export const PLAN_PLACE_CARD_MIN_SIZE_REM = "6rem" as const;
 

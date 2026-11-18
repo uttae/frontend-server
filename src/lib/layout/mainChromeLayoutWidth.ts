@@ -110,14 +110,12 @@ export function resolveLeftSectionAnimateMaxWidth({
 /**
  * 데스크톱 좌측 영역 최소 폭(레일·테두리 포함).
  * - 일정·채팅 등: 384. 옆 지도 최소 384와 합쳐 레이아웃 최소 768.
- * - 지도 없이 전체 폭을 쓰는 가계부·준비물: 좌측 영역이 레이아웃 최소 768을 다 맡는다.
- * - 패널 오른쪽에 상세가 붙으면(준비물 상세 440) 384를 지킨 채 상세 폭을 더한다(824).
+ * - 지도 없이 전체 폭을 쓰는 지출·준비물: 좌측 영역이 레이아웃 최소 768을 다 맡는다. 준비물 상세(440)를 열어도 768이고 목록 칸이 줄어 그 안에서 가로 스크롤한다.
  * 화면이 이보다 좁으면 레이아웃 안에서 가로 스크롤한다.
  */
-export function resolveDesktopLeftSectionMinWidthPx(pathname = "", sideDetailWidthPx = 0): number {
-  const withDetailPx = MAIN_WORKSPACE_MIN_WIDTH_PX + Math.max(0, sideDetailWidthPx);
+export function resolveDesktopLeftSectionMinWidthPx(pathname = ""): number {
   if (pathname === "/cost" || isPackingPath(pathname)) {
-    return Math.max(MAIN_WORKSPACE_MIN_WIDTH_PX + MAIN_MAP_MIN_WIDTH_PX, withDetailPx);
+    return MAIN_WORKSPACE_MIN_WIDTH_PX + MAIN_MAP_MIN_WIDTH_PX;
   }
-  return withDetailPx;
+  return MAIN_WORKSPACE_MIN_WIDTH_PX;
 }
