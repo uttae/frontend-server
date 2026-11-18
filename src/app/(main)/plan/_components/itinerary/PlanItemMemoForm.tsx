@@ -175,15 +175,16 @@ export function PlanItemMemoEditor({
                     // 카드(article)의 select-none과 잡기·기본 커서를 물려받지 않게 글자 선택·글자 커서로 되돌린다
                     className="select-text cursor-text"
                   />
+                  {/* 글자 수는 입력 칸에 붙인다(editorBody 간격 8 대신 4) */}
+                  <span className="-mt-1 text-caption-s-regular tabular-nums text-dark-gray/60">
+                    {draft.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
+                  </span>
                   <FieldError id={errorId}>{error}</FieldError>
                 </>
               );
             }}
           </form.Field>
           <div className={PLAN_PLACE_CARD_TW.editorFooterRow}>
-            <span className="mr-auto text-caption-s-regular tabular-nums text-dark-gray/60">
-              {draft.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
-            </span>
             <Button
               variant="outline"
               size="sm"
