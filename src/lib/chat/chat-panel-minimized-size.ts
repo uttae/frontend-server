@@ -1,9 +1,9 @@
 const STORAGE_KEY = "hau:chat-panel-minimized-size:v1";
 
-/** `ChatPanel` minimized — `w-72` */
-export const CHAT_PANEL_MINIMIZED_MIN_WIDTH = 288;
-/** minimized 기본 높이 */
-export const CHAT_PANEL_MINIMIZED_MIN_HEIGHT = 460;
+/** 최소화 창 기본·최소 폭 — Figma Chat/Minimize(6663:4929) 344 */
+export const CHAT_PANEL_MINIMIZED_MIN_WIDTH = 344;
+/** 최소화 창 기본·최소 높이 — Figma 564(제목 줄 64 + 대화 400 + 입력 100) */
+export const CHAT_PANEL_MINIMIZED_MIN_HEIGHT = 564;
 
 /** [`CHAT_PANEL_DOCKED_WIDTH`](src/lib/layout-tokens.ts)와 정렬 */
 export const CHAT_PANEL_MINIMIZED_MAX_WIDTH = 400;
