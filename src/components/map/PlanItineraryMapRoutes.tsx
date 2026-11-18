@@ -121,11 +121,8 @@ export function PlanItineraryMapRoutes({
     () =>
       routeDayScheduleId !== null && routeDayColor
         ? new Map([[routeDayScheduleId, routeDayColor]])
-        : scheduleIdsToRouteColors(
-            sortedScheduleIdsForRouteColors(visibleByScheduleId),
-            rid || undefined,
-          ),
-    [routeDayColor, routeDayScheduleId, visibleByScheduleId, rid],
+        : scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)),
+    [routeDayColor, routeDayScheduleId, visibleByScheduleId],
   );
   const fallbackRouteStroke = "#f12d33";
 

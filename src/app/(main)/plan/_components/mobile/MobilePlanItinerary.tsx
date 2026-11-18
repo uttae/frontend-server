@@ -74,11 +74,8 @@ export function MobilePlanItinerary({
   const visibleByScheduleId = usePlanScheduleRouteVisibilityStore((s) => s.visibleByScheduleId);
   const badgeColor = useMemo(
     () =>
-      scheduleIdsToRouteColors(
-        sortedScheduleIdsForRouteColors(visibleByScheduleId),
-        roomId.trim() || undefined,
-      ).get(scheduleId) ?? "#f12d33",
-    [roomId, scheduleId, visibleByScheduleId],
+      scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)).get(scheduleId) ?? "#f12d33",
+    [scheduleId, visibleByScheduleId],
   );
 
   const scheduleFingerprint = useMemo(() => schedulePlacesFingerprint(places), [places]);

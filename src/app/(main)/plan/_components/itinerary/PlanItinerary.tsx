@@ -47,11 +47,8 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
   );
   const routeColorByScheduleId = useMemo(
     () =>
-      scheduleIdsToRouteColors(
-        sortedScheduleIdsForRouteColors(visibleByScheduleId),
-        roomId.trim() || undefined,
-      ),
-    [visibleByScheduleId, roomId],
+      scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)),
+    [visibleByScheduleId],
   );
   const orderBadgeColor =
     routeColorByScheduleId.get(scheduleId) ?? "#f12d33";

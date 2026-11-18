@@ -207,9 +207,8 @@ export function useMobileRouteView({
     () =>
       scheduleIdsToRouteColors(
         sortedScheduleIdsForRouteColors(Object.fromEntries(schedules.map((s) => [s.scheduleId, true]))),
-        rid || undefined,
       ),
-    [rid, schedules],
+    [schedules],
   );
   const dayColor = (scheduleId: number) => colorBySchedule.get(scheduleId) ?? FALLBACK_DAY_COLOR;
 
