@@ -84,8 +84,9 @@ export const PLAN_PLACE_CARD_TW = {
   editorSideLabelText:
     "text-body-xs-emphasis font-medium leading-none text-dark-gray",
   editorBody: "flex min-w-0 flex-1 flex-col gap-2",
+  /** 글자 수(왼쪽)는 입력 칸 바로 아래 붙고, 취소·저장(오른쪽)은 같은 줄 — editorBody 간격 8에서 4만 띄운다 */
   editorFooterRow:
-    "flex flex-wrap items-center justify-end gap-2 text-body-xs-regular",
+    "-mt-1 flex flex-wrap items-start justify-end gap-2 text-body-xs-regular",
   timeFieldLabel: "text-body-xs-emphasis font-medium leading-none text-dark-gray/90",
   timeFieldsRow:
     "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-2",
