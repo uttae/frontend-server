@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { JoinRequestsSection } from "@/app/(main)/member-settings/_components/JoinRequestsSection";
 import { MemberList } from "@/app/(main)/member-settings/_components/MemberList";
@@ -25,7 +25,10 @@ function memberPreviewLabel(memberCount: number, pendingJoinRequestsCount: numbe
   return pendingJoinRequestsCount > 0 ? `${label}, 참여 요청 ${pendingJoinRequestsCount}건` : label;
 }
 
-/** PC 헤더 우측 — 구성원 미리보기(드롭다운으로 구성원 관리)와 초대하기(모달). 미리보기는 헤더(@container/header) 폭 480px 이상에서만 보인다 */
+/**
+ * PC 헤더 우측 — 구성원 미리보기(드롭다운으로 구성원 관리)와 초대하기(모달).
+ * 헤더(@container/header) 폭 480px 미만이면 초대하기 버튼을 숨기고 드롭다운의 방 나가기 위에 넣는다
+ */
 export function HeaderMemberPreview() {
   const {
     user,
@@ -47,17 +50,33 @@ export function HeaderMemberPreview() {
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteInPanel, setInviteInPanel] = useState(false);
+  const headerInviteRef = useRef<HTMLButtonElement>(null);
   const { visible, restCount } = selectHeaderMemberPreview(members, user?.id);
 
+  const openInvite = () => {
+    setDropdownOpen(false);
+    setInviteOpen(true);
+  };
+
   return (
-    <div className="flex shrink-0 items-center">
+    <div data-tutorial-target="member-settings" className="flex shrink-0 items-center">
       {visible.length > 0 ? (
         // 패널 안 구성원 옵션 메뉴(MemberCard DropdownMenu)는 이 패널의 React 자식이라 Base UI가 안쪽으로 본다.
         // 메뉴 포털은 패널 포털 안에 붙고(FloatingPortal parentPortalNode), 메뉴를 누르면 패널 Popup의 capture 핸들러가 먼저 '안쪽'으로 표시해(useDismiss insideReactTree) 패널이 닫히지 않는다
-        <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <Popover
+          open={dropdownOpen}
+          onOpenChange={(open) => {
+            // 패널은 body 포털이라 헤더 컨테이너 쿼리가 닿지 않는다. 열 때 헤더 초대하기가 숨었는지 보고 패널에 넣는다
+            if (open && headerInviteRef.current) {
+              setInviteInPanel(getComputedStyle(headerInviteRef.current).display === "none");
+            }
+            setDropdownOpen(open);
+          }}
+        >
           <PopoverTrigger
             aria-label={memberPreviewLabel(memberCount, pendingJoinRequestsCount)}
-            className="hidden cursor-pointer items-center gap-0.5 rounded-full border border-border bg-fill py-1 ps-1 pe-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary @min-[480px]/header:flex"
+            className="flex cursor-pointer items-center gap-0.5 rounded-full border border-border bg-fill py-1 ps-1 pe-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <AvatarGroup>
               {visible.map(({ member, isOnline }, index) => (
@@ -106,29 +125,35 @@ export function HeaderMemberPreview() {
               />
             </section>
             <hr className="border-border-subtle" />
-            <Button
-              variant="outline"
-              disabled={leaveDisabled}
-              onClick={() => {
-                setDropdownOpen(false);
-                openLeaveDialog();
-              }}
-              className="w-full"
-            >
-              방 나가기
-            </Button>
+            <div className="flex flex-col gap-2">
+              {inviteInPanel ? (
+                <Button variant="outline" aria-haspopup="dialog" onClick={openInvite} className="w-full">
+                  <UserAddIcon data-icon="inline-start" className="text-primary" />
+                  초대하기
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                disabled={leaveDisabled}
+                onClick={() => {
+                  setDropdownOpen(false);
+                  openLeaveDialog();
+                }}
+                className="w-full"
+              >
+                방 나가기
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
       ) : null}
 
       <Button
+        ref={headerInviteRef}
         variant="text"
-        data-tutorial-target="member-settings"
         aria-haspopup="dialog"
-        onClick={() => {
-          setDropdownOpen(false);
-          setInviteOpen(true);
-        }}
+        onClick={openInvite}
+        className="hidden @min-[480px]/header:inline-flex"
       >
         <UserAddIcon data-icon="inline-start" className="text-primary" />
         초대하기
