@@ -20,10 +20,10 @@ export const MAIN_WORKSPACE_MIN_WIDTH_PX = 384 as const;
 export const MAIN_MAP_MIN_WIDTH_PX = 384 as const;
 
 /**
- * 데스크톱 장소 상세 패널 폭(`%`는 지도 폭). 지도가 넓으면 360, 좁아지면 지도 오른쪽이 94px 이상 보이게 함께 줄고,
- * 버튼("일정에 추가"·"북마크에 추가")·리뷰 요약이 깨지지 않는 280에서 멈춘다(지도 최소 384에서 280)
+ * 데스크톱 장소 상세 패널 폭. 지도 폭과 관계없이 360이고(지도 최소 384 − 왼쪽 여백 10 안에 들어간다),
+ * 지도가 좁아지면 오른쪽 아래 확대·축소(+/−)·북마크 버튼이 자리를 따로 차지하지 않고 패널(z-20) 뒤로 들어간다
  */
-export const MAP_DETAIL_PANEL_WIDTH = "clamp(280px, calc(100% - 104px), 360px)" as const;
+export const MAP_DETAIL_PANEL_WIDTH = "360px" as const;
 
 /** 상세 패널이 가리는 지도 왼쪽 폭 — `MapWithDetailPanel`의 `left-2.5` + 패널 폭. 지도와 같은 폭 칸 안에서만 쓴다 */
 export const MAP_DETAIL_PANEL_COVER_WIDTH = `calc(0.625rem + ${MAP_DETAIL_PANEL_WIDTH})` as const;
