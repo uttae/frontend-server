@@ -362,7 +362,8 @@ export function PlanPlaceCard({
                   {media}
                   {orderBadge}
                   <span className={PLAN_PLACE_CARD_TW.thumbnailMapMark} aria-hidden>
-                    <LocationIcon size={14} />
+                    {/* Figma Location 인스턴스만 선 굵기가 1.2(아이콘 기본 1.8) */}
+                    <LocationIcon size={14} className="[&_path]:[stroke-width:1.2]" />
                   </span>
                 </div>
               );

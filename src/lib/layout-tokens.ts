@@ -65,12 +65,15 @@ export const PLAN_PLACE_CARD_TW = {
   tag: "inline-flex w-fit max-w-full items-center rounded-full bg-fill-strong px-2 py-0.5 text-label-xs-regular text-text-subtle",
   /** Figma Address — 좁은 카드에서 두 줄까지 줄바꿈한다. 아이콘은 첫 줄 높이(20) 칸 가운데 */
   address: "flex min-w-0 items-start gap-0.5 text-label-m-regular text-text-subtle",
-  /** 사진 왼쪽 위에 붙는 번호 — 사진 둥글기가 모서리를 자른다. 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 둔다 */
+  /**
+   * 사진 왼쪽 위에 붙는 번호(Figma Image 6663:5322 Number). 테두리는 Figma의 바깥 stroke라 `box-content`로 28 밖에 둔다.
+   * CSS 둥글기는 테두리 바깥선 기준이라 오른쪽 아래를 9로 두어야 바탕 모서리가 Figma 8이 된다. 왼쪽 위 8은 사진 둥글기가 자른다
+   */
   orderBadgeCompact:
-    "absolute left-0 top-0 z-10 box-content size-7 border-b border-r border-white/40 text-label-m-emphasis text-text-inverse",
-  /** 사진 오른쪽 아래 지도 표시 — 테두리는 Figma의 안쪽 stroke */
+    "absolute left-0 top-0 z-10 box-content size-7 rounded-br-[9px] border-b border-r border-white/40 text-label-m-emphasis text-text-inverse",
+  /** 사진 오른쪽 아래 지도 표시(Figma Location). 0.5px 안쪽 stroke는 border로 그리면 크롬이 1px로 올려 그려 inset ring으로 둔다 */
   thumbnailMapMark:
-    "pointer-events-none absolute bottom-1 right-1 z-10 flex size-6 items-center justify-center rounded-md border-[0.5px] border-white/20 bg-black/40 text-icon-inverse",
+    "pointer-events-none absolute bottom-1 right-1 z-10 flex size-6 items-center justify-center rounded-md bg-black/40 text-icon-inverse ring-[0.5px] ring-inset ring-white/20",
   titleCompact: "text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-snug text-gray-900",
   /**
    * 카드 아래 시간·비용(왼쪽)과 메모(오른쪽) 버튼 줄. Figma 구분선은 위 줄(Contents)의 아래 선인데,
