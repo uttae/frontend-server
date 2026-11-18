@@ -350,7 +350,7 @@ export function ExpenseEditor({
       // PC는 딤을 눌러도 닫지 않고(입력 보호), 시트는 딤을 눌러 닫는다(지금 동작)
       disablePointerDismissal={!isMobileDevice}
     >
-      <ResponsiveDialogContent size="lg" drawerSize="belowNav">
+      <ResponsiveDialogContent size="lg" fixedWidth drawerSize="belowNav">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>{original ? "비용 수정" : "비용 추가"}</ResponsiveDialogTitle>
           {/* 보조 줄은 시트에서만 보인다(지금 화면과 같음) */}

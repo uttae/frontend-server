@@ -41,6 +41,7 @@ export function ExpenseDialog({
     >
       <ResponsiveDialogContent
         size="xl"
+        fixedWidth
         // 정산 요약 시트는 상단 내비 아래까지 채운다(Figma Bottom Sheet Height=BelowNav)
         drawerSize="belowNav"
         closeLabel={`${title} 닫기`}
