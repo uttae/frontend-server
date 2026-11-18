@@ -43,7 +43,7 @@ export function MainContentScrollArea({
         "min-h-0 min-w-0 flex-1",
         // 다른 탭 화면은 제목 줄(MainPageHeader)이 위 여백 12를 가져 검색에만 둔다
         !fill && searchPage && "pt-2.5",
-        ledgerPage && "bg-fill-subtle mobile:bg-fill max-sm:bg-fill",
+        ledgerPage && "bg-fill-subtle mobile:bg-fill",
         fill
           ? "flex flex-col overflow-hidden"
           : searchPage
@@ -56,7 +56,7 @@ export function MainContentScrollArea({
           "min-w-0",
           (fill || searchPage) && "flex min-h-0 flex-1 flex-col",
           !fill && !searchPage && MAIN_PAGE_INLINE_PADDING_CLASS,
-          ledgerPage && "pb-8 mobile:p-5 max-sm:p-5",
+          ledgerPage && "pb-8 mobile:p-5",
         )}
       >
         {children}

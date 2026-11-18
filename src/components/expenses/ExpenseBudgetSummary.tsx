@@ -23,7 +23,7 @@ export function ExpenseBudgetSummary() {
   return (
     <div className="@container/expense-budget space-y-3">
       <div className="space-y-3 text-body-s-regular mobile:text-body-xs-regular">
-        <h3 className="text-[16px] leading-6 font-medium text-text mobile:text-[14px] mobile:text-text-subtle max-sm:text-[14px] max-sm:text-text-subtle">
+        <h3 className="text-[16px] leading-6 font-medium text-text mobile:text-[14px] mobile:text-text-subtle">
           여행 전체 비용
         </h3>
         {krwSummary.isPending && (
@@ -52,7 +52,7 @@ export function ExpenseBudgetSummary() {
           </>
         )}
       </div>
-      <div className="flex flex-wrap items-center justify-between gap-2 bg-white mobile:pt-3 max-sm:pt-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-white mobile:pt-3">
         <div className="contents">
           <h3 className="text-[14px] leading-5 text-text-subtle">
             전체 예산
@@ -72,7 +72,7 @@ export function ExpenseBudgetSummary() {
             </p>
           )}
           {budget.isSuccess && (
-            <p className="ml-auto break-all text-[16px] leading-5 font-medium tabular-nums mobile:order-3 mobile:text-[18px] mobile:font-bold mobile:text-text-subtle max-sm:order-3 max-sm:text-[18px] max-sm:font-bold max-sm:text-text-subtle">
+            <p className="ml-auto break-all text-[16px] leading-5 font-medium tabular-nums mobile:order-3 mobile:text-[18px] mobile:font-bold mobile:text-text-subtle">
               {amount === null ? "—" : `${formatExpenseAmount(amount!)}원`}
             </p>
           )}
@@ -91,10 +91,10 @@ export function ExpenseBudgetSummary() {
       </div>
       <div
         aria-label="남은 예산"
-        className="flex items-center justify-between gap-2 text-[14px] leading-5 text-text-subtle mobile:text-primary max-sm:text-primary"
+        className="flex items-center justify-between gap-2 text-[14px] leading-5 text-text-subtle mobile:text-primary"
       >
         <span>남은 예산</span>
-        <p className="break-all text-right text-[18px] leading-[26px] font-bold text-text tabular-nums mobile:text-primary max-sm:text-primary">
+        <p className="break-all text-right text-[18px] leading-[26px] font-bold text-text tabular-nums mobile:text-primary">
           {(syncStatus === "ready" || syncStatus === "refreshing") &&
           budget.isSuccess &&
           !budget.isError &&

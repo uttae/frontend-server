@@ -65,7 +65,7 @@ export function ExpenseCurrencyPicker({
                 <>
                   <span className="block truncate">{currency.currency}</span>
                   {/* 좁은 칸(모바일 기기·좁은 화면)에서는 코드만 보인다. 비용 편집 폼이 이 조건에서 통화 칸을 줄인다 */}
-                  <span className="block truncate text-caption-m-regular text-text-subtle mobile:hidden max-sm:hidden">
+                  <span className="block truncate text-caption-m-regular text-text-subtle mobile:hidden">
                     {currencyName(currency.currency)}
                   </span>
                 </>

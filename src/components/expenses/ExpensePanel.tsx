@@ -323,7 +323,7 @@ export function ExpensePanel() {
       <MainPageHeader
         title="지출"
         description="여행 경비를 한 번에 관리하세요."
-        className="mobile:hidden max-sm:hidden"
+        className="mobile:hidden"
         action={
           <div className="flex gap-2.5">
             <Button variant="outline" size="sm" onClick={() => setTab("summary")}>
@@ -367,7 +367,7 @@ export function ExpensePanel() {
           )}
         </aside>
         <div className="min-w-0 space-y-4">
-          <div className="hidden grid-cols-2 gap-4 mobile:grid max-sm:grid">
+          <div className="hidden grid-cols-2 gap-4 mobile:grid">
             {context.canManage && (
               <Button tone="brand" aria-label="비용 추가" disabled={context.busy} onClick={openNewExpense}>
                 비용 추가
