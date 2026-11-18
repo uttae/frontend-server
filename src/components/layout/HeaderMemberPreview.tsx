@@ -76,7 +76,7 @@ export function HeaderMemberPreview() {
         >
           <PopoverTrigger
             aria-label={memberPreviewLabel(memberCount, pendingJoinRequestsCount)}
-            className="flex cursor-pointer items-center gap-0.5 rounded-full border border-border bg-fill py-1 ps-1 pe-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="relative flex cursor-pointer items-center gap-0.5 rounded-full border border-border bg-fill py-1 ps-1 pe-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <AvatarGroup>
               {visible.map(({ member, isOnline }, index) => (
@@ -97,10 +97,11 @@ export function HeaderMemberPreview() {
                 {restCount}
               </AvatarGroupCount>
             ) : null}
-            <span aria-hidden className="relative flex">
+            <span aria-hidden className="flex">
               <ChevronDownIcon size={20} className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")} />
-              {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="-right-1 -top-1" /> : null}
             </span>
+            {/* 참여 요청 점 — 꺾쇠와 떨어지게 알약 오른쪽 위 둥근 테두리에 걸친다(점 가운데가 오른쪽·위에서 6) */}
+            {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="-right-px -top-px" /> : null}
           </PopoverTrigger>
           <PopoverContent align="end" aria-label="구성원 관리">
             {isHost && roomId ? <JoinRequestsSection roomId={roomId} /> : null}
