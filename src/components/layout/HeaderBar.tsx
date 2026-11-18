@@ -77,12 +77,8 @@ const HeaderBar = ({
     ? (listRooms ?? []).find((r) => r.id === rid)
     : undefined;
 
-  const dateStr = currentRoom
-    ? formatRoomTripSubtitle(tripMeta.startYmd, tripMeta.endYmd)
-    : "";
-  const mobileDateStr = tripMeta.startYmd && tripMeta.endYmd
-    ? `${tripMeta.startYmd.slice(2).replaceAll("-", "/")} - ${tripMeta.endYmd.slice(2).replaceAll("-", "/")}`
-    : "일정 없음";
+  const tripDateLabel = formatRoomTripSubtitle(tripMeta.startYmd, tripMeta.endYmd);
+  const dateStr = currentRoom ? tripDateLabel : "";
 
   const displayTitle =
     currentRoom?.title?.trim() ||
@@ -95,7 +91,7 @@ const HeaderBar = ({
   const mobileTitle = displayTitle ? (
     <>
       <div className="truncate text-label-l-emphasis text-text">{displayTitle}</div>
-      <div className="truncate text-caption-s-regular text-text-subtle">{mobileDateStr}</div>
+      <div className="truncate text-caption-s-regular text-text-subtle">{tripDateLabel}</div>
     </>
   ) : (
     <span className="block truncate text-label-l-emphasis text-text" aria-busy={isPending}>
