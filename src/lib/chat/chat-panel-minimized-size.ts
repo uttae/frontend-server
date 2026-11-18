@@ -1,9 +1,8 @@
 const STORAGE_KEY = "hau:chat-panel-minimized-size:v1";
 
-/** 최소화 창 기본·최소 폭 — Figma Chat/Minimize(6663:4929) 344 */
-export const CHAT_PANEL_MINIMIZED_MIN_WIDTH = 344;
-/** 최소화 창 기본·최소 높이 — Figma 564(제목 줄 64 + 대화 400 + 입력 100) */
-export const CHAT_PANEL_MINIMIZED_MIN_HEIGHT = 564;
+/** 최소화 창을 줄일 수 있는 최소 크기 */
+export const CHAT_PANEL_MINIMIZED_MIN_WIDTH = 288;
+export const CHAT_PANEL_MINIMIZED_MIN_HEIGHT = 460;
 
 /** [`CHAT_PANEL_DOCKED_WIDTH`](src/lib/layout-tokens.ts)와 정렬 */
 export const CHAT_PANEL_MINIMIZED_MAX_WIDTH = 400;
@@ -19,9 +18,10 @@ export type ChatPanelMinimizedSize = {
   height: number;
 };
 
+/** 처음 여는 크기 — Figma Chat/Minimize(6663:4929) 344×564(제목 줄 64 + 대화 400 + 입력 100) */
 export const CHAT_PANEL_MINIMIZED_DEFAULT: ChatPanelMinimizedSize = {
-  width: CHAT_PANEL_MINIMIZED_MIN_WIDTH,
-  height: CHAT_PANEL_MINIMIZED_MIN_HEIGHT,
+  width: 344,
+  height: 564,
 };
 
 function isValidSize(value: unknown): value is ChatPanelMinimizedSize {
@@ -79,7 +79,8 @@ export function readChatPanelMinimizedSize(): ChatPanelMinimizedSize {
 
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return CHAT_PANEL_MINIMIZED_DEFAULT;
+    // 기본 크기도 창 높이가 낮으면 창 안에 들어오게 줄인다
+    if (!raw) return clampChatPanelMinimizedSize(CHAT_PANEL_MINIMIZED_DEFAULT.width, CHAT_PANEL_MINIMIZED_DEFAULT.height, window);
     const parsed = JSON.parse(raw) as unknown;
     if (!isValidSize(parsed)) return CHAT_PANEL_MINIMIZED_DEFAULT;
     return clampChatPanelMinimizedSize(parsed.width, parsed.height, window);
