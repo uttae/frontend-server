@@ -23,8 +23,6 @@ type Props = {
   role?: string;
   isRoomDetailLoading: boolean;
   isRoomDetailError: boolean;
-  /** 안내 문구 — 모달처럼 바깥에서 본문으로 보여줄 때는 false */
-  showDescription?: boolean;
 };
 
 function normalizeInviteCode(inviteCode: string | null | undefined): string {
@@ -55,7 +53,6 @@ export function AddMemberPanel({
   role,
   isRoomDetailLoading,
   isRoomDetailError,
-  showDescription = true,
 }: Readonly<Props>) {
   const roomIdTrim = roomId.trim();
   const canShareInvite = isRoomMemberRole(role) && !isRoomDetailError;
@@ -187,12 +184,6 @@ export function AddMemberPanel({
   return (
     <div className="min-w-0">
       <div className="flex flex-col gap-3">
-        {showDescription ? (
-          <p className="text-body-s-regular mobile:text-body-xs-regular text-text-subtle">
-            링크를 공유해 함께 여행을 계획해 보세요.
-          </p>
-        ) : null}
-
         <div className="flex h-12 min-w-0 items-center gap-1 rounded-lg border border-border bg-fill pl-3.5 pr-1.5">
           <div className="flex min-w-0 flex-1 items-center">
             {inviteUrl ? (
