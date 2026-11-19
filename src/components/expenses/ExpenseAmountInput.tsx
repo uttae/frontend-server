@@ -39,7 +39,6 @@ export function ExpenseAmountInput({
     <Input
       {...inputProps}
       ref={input}
-      // 가계부의 다른 금액 표시처럼 고정폭 숫자로 그린다. Input의 글자 토큰(크기·굵기·색)은 덮지 않는다
       className={cn("tabular-nums", inputProps.className)}
       inputMode={inputProps.inputMode ?? "decimal"}
       value={formatted}
@@ -54,7 +53,6 @@ export function ExpenseAmountInput({
           !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)
         )
           return;
-        // Work on decimal strings: pad or truncate, never round via floating point.
         const [integer, fraction = ""] = value.split(".");
         const normalized =
           (integer || "0") +
@@ -83,7 +81,6 @@ export function ExpenseAmountInput({
           event.nativeEvent.isComposing
         )
           return;
-        // Treat separators as formatting when deleting, rather than reinserting them forever.
         if (event.key === "Backspace" && element.value[start - 1] === ",")
           element.setSelectionRange(start - 1, start - 1);
         if (event.key === "Delete" && element.value[start] === ",")

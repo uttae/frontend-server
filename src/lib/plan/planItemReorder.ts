@@ -10,13 +10,8 @@ export const PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR = "data-plan-itinerary-drop-zone
 export const PLAN_ITEM_REORDER_ROW_TRANSITION =
   "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
 
-/** 행 bounding rect — `getBoundingClientRect()` 결과와 호환 */
 export type PlanItemRowRect = Pick<DOMRect, "top" | "height">;
 
-/**
- * HTML5 드래그 시작 — 끌기 이미지와 dataTransfer만 채운다. 무엇을 끄는지는 드래그 컨트롤러 상태가 갖고,
- * dataTransfer 값은 읽지 않는다(Firefox는 setData가 없으면 드래그를 시작하지 않는다)
- */
 export function beginPlanItemDrag(
   event: DragEvent,
   source: HTMLElement,
@@ -56,7 +51,6 @@ function adjustRowRectsForScrollDelta(
   return rects.map((r) => ({ top: r.top - scrollDelta, height: r.height }));
 }
 
-/** 드래그 시작 시점 행 레이아웃 — transform 적용 전 rect로 preview hit-test */
 export class PlanItemRowLayoutSnapshot {
   private rects: PlanItemRowRect[] = [];
   private scrollTopAtCapture = 0;
@@ -86,7 +80,6 @@ export class PlanItemRowLayoutSnapshot {
   }
 }
 
-/** 포인터 Y가 각 행의 세로 중간선을 넘을 때 삽입 위치(previewIndex)를 계산합니다. */
 export function computePreviewIndex(
   pointerY: number,
   rowRects: readonly PlanItemRowRect[],
@@ -111,7 +104,6 @@ export function computePreviewIndex(
   return length - 1;
 }
 
-/** 외부(다른 일차)에서 삽입 시 `previewIndex` 이상 행을 아래로 밀기 */
 export function computeInsertTranslateY(
   index: number,
   previewIndex: number,
@@ -121,7 +113,6 @@ export function computeInsertTranslateY(
   return index >= previewIndex ? insertHeight : 0;
 }
 
-/** 외부 삽입 드래그 중 order badge 1-based 순번 */
 export function computeInsertDisplayOrderIndex(
   index: number,
   previewIndex: number,
@@ -142,7 +133,6 @@ export type PlanItemRowPreviewMode =
       insertHeight: number;
     };
 
-/** 일차 내 reorder·일차 간 insert 공통 translateY */
 export function computePlanItemRowPreviewTranslateY(
   index: number,
   mode: PlanItemRowPreviewMode | null,
@@ -163,7 +153,6 @@ export function computePlanItemRowPreviewTranslateY(
   );
 }
 
-/** 일차 내 reorder·일차 간 insert 공통 order badge */
 export function computePlanItemRowPreviewOrderIndex(
   index: number,
   placesLength: number,
@@ -181,7 +170,6 @@ export function computePlanItemRowPreviewOrderIndex(
   );
 }
 
-/** `fromIndex` → `previewIndex` 이동 시 i번 행의 translateY(px). */
 export function computeRowTranslateY(
   index: number,
   fromIndex: number,
@@ -208,7 +196,6 @@ export function computeRowTranslateY(
   return 0;
 }
 
-/** 드래그 중 order badge에 표시할 1-based 순번 */
 export function computeDisplayOrderIndex(
   index: number,
   fromIndex: number,

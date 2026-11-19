@@ -11,7 +11,6 @@ import { useSessionStore } from "@/stores/session-store";
 
 const EMPTY = new Set<string>();
 
-/** 지도에 정류장 마커가 그려지는(=경로 표시 ON) 일차 장소의 정규화된 `googlePlaceId` — 북마크 핀 중복 숨김용. */
 export function usePlanItineraryStopNormalizedPlaceIds(
   enabled: boolean,
 ): ReadonlySet<string> {

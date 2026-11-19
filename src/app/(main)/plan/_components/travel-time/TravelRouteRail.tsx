@@ -10,9 +10,7 @@ import {
 
 type TravelRouteRailProps = {
   className?: string;
-  /** 구간에 마우스를 올리면 `+`(이 위치에 장소 추가) */
   showAddOnHover?: boolean;
-  /** 장소 추가 칸이 열려 있으면 `−`(닫기) */
   isAddVisible?: boolean;
   onAddClick?: () => void;
   addDisabled?: boolean;

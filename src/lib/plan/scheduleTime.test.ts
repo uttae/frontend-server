@@ -76,7 +76,6 @@ describe("createScheduleTimeSchema", () => {
     expect(schema.parse({ start: "", end: "" })).toEqual({ startHm: "", endHm: "" });
   });
 
-  // issue path가 화면의 form.Field name(start·end)과 같아야 그 칸에 붙는다
   it("puts a wrong start on start and a wrong end on end", () => {
     expect(issuesOf({ start: "24:00", end: undefined })).toEqual([
       { path: ["start"], message: "시간을 올바르게 선택해 주세요." },
@@ -86,7 +85,6 @@ describe("createScheduleTimeSchema", () => {
     ]);
   });
 
-  // 시작이 비어 있어도 형식이 틀린 칸은 종료다
   it("puts a wrong end on end even when start is empty", () => {
     expect(issuesOf({ start: "", end: "25:00" })).toEqual([
       { path: ["end"], message: "시간을 올바르게 선택해 주세요." },

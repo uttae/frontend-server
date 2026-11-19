@@ -8,7 +8,6 @@ import {
 
 import type { YearMonth } from "./calendar";
 
-/** Figma Date Picker `Month` — 행 40px. 링을 크게 잡아 위아래 3행이 시안 간격(40px)에 가깝게 보이고, 284px 밖은 잘라낸다 */
 const OPTION_HEIGHT = 40;
 const VISIBLE_COUNT = 28;
 
@@ -18,7 +17,6 @@ const CLASS_NAMES = {
   highlightItem: "text-text",
 };
 
-/** 연도·월 휠 — `min`보다 이른 달은 고를 수 없다 */
 export function MonthYearWheel({
   value,
   min,

@@ -2,7 +2,6 @@ import { apiFetch } from "@/lib/api/client";
 import { apiUrl, jsonBody, tryParseJson } from "@/lib/api/http";
 
 export type ExpenseGroup = "PREPARATION" | "TRIP_DAY";
-// Approved API enum order; labels are client-side display text.
 export const expenseCategories = [
   { value: "FLIGHT", label: "항공" },
   { value: "ACCOMMODATION", label: "숙박" },
@@ -96,7 +95,6 @@ async function request<T>(
   }
   return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);
 }
-/** 조회 함수는 TanStack이 넘기는 `signal`을 받는다 — 무효화로 취소된 옛 조회의 HTTP 요청도 끊는다 */
 const readInit = (signal?: AbortSignal): RequestInit | undefined =>
   signal ? { signal } : undefined;
 export const getExpenses = (roomId: string, signal?: AbortSignal) =>

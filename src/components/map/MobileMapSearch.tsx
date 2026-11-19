@@ -22,7 +22,6 @@ type Props = {
   scopeKey: string;
   initialQuery?: string;
 };
-/** Existing mobile entry, with session-connected confirmation and cached result cards. */
 export function MobileMapSearch({
   confirm,
   invalidate,
@@ -56,7 +55,6 @@ export function MobileMapSearch({
     entry: MapSearchPlaceEntry,
   ): Promise<MapSearchPlaceEntry | null> {
     const generation = usePlaceSearchStore.getState().invalidate();
-    // Saved-place selection owns the mobile result surface just like a new confirmation.
     setSelectedPlace(null);
     usePlaceSearchStore.setState({
       query: entry.name,

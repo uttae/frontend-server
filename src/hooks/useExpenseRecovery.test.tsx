@@ -23,7 +23,6 @@ vi.mock("@/lib/api/rooms/expenses", () => ({
   getExpenseKrwSummary: () => mocks.read("krw"),
   getExpenseCurrencies: () => mocks.read("currencies"),
 }));
-/** ExpenseProvider가 붙이는 6개 조회와 같은 key·옵션 — 복구는 무효화만 하고 이 조회들이 다시 받는다 */
 const EXPENSE_READS = [
   ["list", "list"],
   ["summary", "summary"],
@@ -218,7 +217,6 @@ it.each([
     });
     const stale = (key: string) => key === "budget" ? { budgetKrw: "260000", version: 1 } : [{ revision: 1 }];
     const latest = (key: string) => key === "budget" ? { budgetKrw: "270000", version: 2 } : [{ revision: 2 }];
-    // Hold all recovery reads so frames arrive while older responses are in flight.
     mocks.read.mockImplementation((key) => new Promise((resolve) => deferred.set(key, resolve)));
     let reading!: Promise<void>;
     await act(async () => { reading = recovery.refresh("all"); });
@@ -232,12 +230,9 @@ it.each([
       deliver(second);
       deliver(second);
     });
-    // 같은 틱의 중복 프레임은 한 번만 다시 받는다. 받는 중이던 옛 조회는 취소된다
     expect(mocks.read.mock.calls.map(([key]) => key).sort()).toEqual(["budget", "krw", "list", "summary"]);
-    // 아직 끝나지 않은 입장 복구(통화·멤버)가 남아 있다
     expect(recovery.getSnapshot()).toBe("pending");
     await act(async () => {
-      // 취소된 옛 응답이 늦게 와도 새 값을 덮지 않는다
       for (const [key, resolve] of [...deferred].reverse()) resolve(stale(key));
       await reading;
     });

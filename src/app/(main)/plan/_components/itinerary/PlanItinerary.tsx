@@ -81,8 +81,6 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
     routeQueryEnabled,
   );
 
-  // 장소 이동을 저장하는 동안 캐시는 새 순서지만 서버는 아직 옛 순서다 — 지금 새 구간 경로를 받으면
-  // 옛 이웃까지의 경로가 새 구간 key에 남는다. 저장이 끝나면(다시 받은 목록으로) 조회한다
   const isSavingPlaceMove = useScheduleItemMoveSavingDays(roomId).includes(scheduleId);
 
   const existingItemIds = useMemo(
@@ -238,7 +236,6 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
                 >
                   <PlanTravelTime
                     contentOnly
-                    // 구간 줄을 카드 폭만큼 채워 Google 길찾기를 오른쪽 끝에 둔다
                     className="w-full"
                     roomId={roomId}
                     scheduleId={scheduleId}

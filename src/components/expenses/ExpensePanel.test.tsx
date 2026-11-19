@@ -19,7 +19,6 @@ vi.mock("./ExpenseProvider", () => ({
   ExpenseEntryButton: () => <button>준비 비용 추가</button>,
 }));
 
-// 메뉴·정산 요약 대화상자·삭제 확인창은 Base UI라 body로 포털된다. react-dom으로 그리고 document에서 찾는다
 let host: HTMLDivElement;
 let root: Root;
 beforeEach(() => {
@@ -105,10 +104,8 @@ async function mount() {
 async function rerender() {
   await act(async () => root.render(<ExpensePanel />));
 }
-// Base UI는 열고 닫은 뒤 포커스 이동·언마운트를 다음 틱에 한다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 
-// 접근성 이름: aria-labelledby(Button loading이면 loadingLabel span) → aria-label → 글자
 function accessibleName(element: Element) {
   const labelledBy = element.getAttribute("aria-labelledby");
   if (labelledBy)
@@ -133,7 +130,6 @@ const expenseRows = (id: number) => host.querySelectorAll(`[data-expense-id="${i
 const summaryDialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
 const confirmDialog = () => document.querySelector<HTMLElement>('[role="alertdialog"]');
 const selectedTotal = () => host.querySelector<HTMLElement>('[aria-label="선택한 비용 합계"]')!;
-// ExpenseKrwAmount는 원화 합계가 아직 없으면 '원화 금액 확인 중' 대시를 그린다
 const krwPending = (scope: Element) => scope.querySelector('[aria-label="원화 금액 확인 중"]') !== null;
 
 async function openFirstMenu() {
@@ -380,7 +376,6 @@ it.each(["sync", "members", "list", "summary", "budget", "krwSummary"])(
     let finish!: () => void;
     mocks.refresh.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
     await act(async () => retry()!.click());
-    // 패널(대화상자 밖) 재시도는 문구와 native disabled로 진행을 보인다
     expect((retry() as HTMLButtonElement).disabled).toBe(true);
     expect(accessibleName(retry()!)).toBe("조회 다시 시도 중");
     await act(async () => { mocks.state = healthy; finish(); });
@@ -484,19 +479,16 @@ it("shows retry progress in the summary modal button while the panel retry stays
   let finish!: () => void;
   mocks.refresh.mockImplementationOnce(() => new Promise<void>((resolve) => { finish = resolve; }));
   await press("조회 다시 시도", dialog);
-  // 대화상자 안 버튼은 progress(loading): 접근성 이름은 loadingLabel, 포커스는 남고 native disabled 대신 aria-disabled
   const modalRetry = button("조회 다시 시도 중", dialog) as HTMLButtonElement;
   expect(modalRetry).toBeDefined();
   expect(modalRetry.getAttribute("aria-busy")).toBe("true");
   expect(modalRetry.getAttribute("aria-disabled")).toBe("true");
   expect(modalRetry.disabled).toBe(false);
-  // 패널(대화상자 밖) 재시도는 지금처럼 문구가 바뀌고 native disabled
   const panelRetry = button("조회 다시 시도 중", host) as HTMLButtonElement;
   expect(panelRetry).toBeDefined();
   expect(panelRetry.disabled).toBe(true);
   expect(panelRetry.hasAttribute("aria-busy")).toBe(false);
   expect(panelRetry.textContent).toContain("조회 다시 시도 중");
-  // 진행 중에 다시 눌러도 요청은 한 번이다
   await act(async () => modalRetry.click());
   expect(mocks.refresh).toHaveBeenCalledOnce();
   await act(async () => finish());
@@ -514,7 +506,6 @@ it("renders a complete filtered snapshot independently of a partial whole room a
   await rerender();
   expect(selectedTotal().textContent).toContain("501원");
   expect(selectedTotal().textContent).not.toContain("508원");
-  // 방 전체 합계는 부분 합계(508원)와 원화 합계 안내를 함께 보여 준다
   const wholeAmount = [...host.querySelectorAll("span")].find((span) => span.textContent === "508원");
   expect(wholeAmount?.parentElement?.querySelector('button[aria-label="원화 합계 안내"]')).not.toBeNull();
   await press("Day 1 비용");
@@ -561,7 +552,6 @@ it("switches category rows and day totals together without an intermediate curre
   const whole = { ...current.krwSummary.data, expenses: [food, other].map((expense) => ({ expense, convertedAmountKrw: "100", isComplete: true, missingCurrencies: [] })), days: [{ expenseGroup: "TRIP_DAY", scheduleId: 10, total }] };
   mocks.state = { ...(mocks.state as object), list: { isSuccess: true, data: [food, other] }, krwSummary: { isSuccess: true, data: whole }, krwFilters: {}, setKrwFilters: vi.fn(), filteredKrwSummary: { isPending: true, isFetching: true } };
   await rerender();
-  // 일차 묶음의 제목 줄(목록 위)에 그 일차의 원화 합계가 보인다
   const dayAmount = () => host.querySelector('section[aria-label="1일차 비용"]')!.firstElementChild!.textContent!.match(/([\d,]+)원/)?.[1];
   expect(dayAmount()).toBe("200");
   await chooseCategory("식비");

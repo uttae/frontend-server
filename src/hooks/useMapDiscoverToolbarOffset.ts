@@ -12,10 +12,6 @@ import {
   MAP_DETAIL_PANEL_MIN_TOP_PX,
 } from "@/lib/layout/mapDetailPanelLayout";
 
-/**
- * Map 섹션 상단 ~ 툴바 하단 + gap → PlaceDetailPanel `top`(px).
- * 필터 한 줄 아래가 최솟값이라, 툴바를 숨기면(`hidden`, 높이 0) 그 자리로 돌아온다
- */
 export function useMapDiscoverToolbarOffset(mapSectionEl: HTMLElement | null): {
   setToolbarRef: RefCallback<HTMLElement>;
   panelTopPx: number;

@@ -39,7 +39,6 @@ import { JumpToBottomButton } from "./JumpToBottomButton";
 import { NewMessagePreviewButton } from "./NewMessagePreviewButton";
 import { ChatReadDivider } from "./ChatReadDivider";
 
-/** 일반 채팅(내 것 포함)·장소 공유만 하단 미리보기 대상 — AI·시스템 제외 */
 function isPreviewMessage(message: ChatMessage): boolean {
   return (
     message.type === "other" ||
@@ -82,17 +81,11 @@ export function ChatMessageList({
   hasMoreNewer?: boolean;
   isLoadingNewer?: boolean;
   onJumpToLatest?: () => void;
-  /** 패널 열림 세션 동안 고정되는 읽음 구분선 기준 메시지 id */
   readMarkerMessageId?: string | null;
-  /** 세션 시작 시 고정된 구분선 DOM 위치 */
   readDividerPlacement?: ReadDividerPlacement | null;
-  /** read-status·bridge 후 스크롤 요청 — key가 바뀔 때마다 1회 적용 */
   scrollToAnchor?: ChatScrollAnchorRequest | null;
-  /** 스크롤이 하단 근처일 때 읽음 처리 */
   onAtBottom?: () => void;
 }) {
-  // 읽음 구분선이 같은 발신자의 후속 메시지와 한 그룹으로 합쳐지면 그룹 끝을
-  // 따라 내려간다. 세션 시작 때 정한 메시지 바로 뒤에서 그룹을 끊어 DOM 위치를 고정한다.
   const groups = groupConsecutiveMessages(
     messages,
     readDividerPlacement?.afterMessageId,
@@ -105,21 +98,14 @@ export function ChatMessageList({
   const prevFirstIdRef = useRef<string | undefined>(undefined);
   const scrollPreserveRef = useRef({ sh: 0, st: 0 });
   const didInitialScrollRef = useRef(false);
-  /** 이미 처리한 scrollToAnchor key — 같은 요청 중복 스크롤 방지 */
   const lastScrollAnchorKeyRef = useRef<number | null>(null);
-  /** 사용자가 직접 스크롤할 때만 갱신. 레이아웃만 바뀌어 dist가 커져도 끊기지 않게 함 */
   const followTailRef = useRef(true);
-  /** 패널 리사이즈·최소화 전환 시 하단에서 떨어진 거리(px) 복원용 */
   const distFromBottomRef = useRef(0);
-  /** 절취선으로 이동하며 발생한 scroll 이벤트가 최신 메시지 추적을 켜지 않도록 보호 */
   const restoringReadBoundaryRef = useRef(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  /** 하단으로 부드럽게 이동 중 상태 정리용 */
   const [smoothJumpToBottom, setSmoothJumpToBottom] = useState(false);
-  /** 위로 스크롤한 동안 도착한 다른 멤버의 최신 메시지 */
   const [newMessagePreview, setNewMessagePreview] =
     useState<ChatMessage | null>(null);
-  /** 스크롤바 폭(px) — 하단 버튼이 스크롤바에 가리지 않게 그만큼 오른쪽을 비운다 */
   const [scrollbarWidth, setScrollbarWidth] = useState(0);
 
   const scrollToBottomSmooth = useCallback(() => {
@@ -251,7 +237,6 @@ export function ChatMessageList({
       newest &&
       isPreviewMessage(newest)
     ) {
-      // 스크롤 보정이 끝난 다음 프레임에 표시 — 그 사이 하단에 닿았으면 띄우지 않는다
       requestAnimationFrame(() => {
         const r = scrollRootRef.current;
         if (!r) return;
@@ -375,7 +360,6 @@ export function ChatMessageList({
     };
   }, [smoothJumpToBottom]);
 
-  /** 최소화↔확대·패널 높이 변경 시 scrollTop만 유지되면 위로 밀려 보이므로 앵커 복원 */
   useLayoutEffect(() => {
     const root = scrollRootRef.current;
     if (!root) return;

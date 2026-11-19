@@ -27,7 +27,6 @@ it("keeps the selected category, applies rating/open filters, and reset clears a
   expect(button("음식점").getAttribute("aria-pressed")).toBe("true");
   expect(host.textContent).not.toContain("호텔");
   await act(async () => button("영업 중").click());
-  // 평점 필터는 ui Select(Base UI)라 트리거는 combobox, 목록은 document.body로 포털된 listbox·option이다
   const trigger = host.querySelector<HTMLButtonElement>('[role="combobox"][aria-label="평점 필터"]')!;
   expect(trigger.textContent).toBe("평점");
   await act(async () => trigger.click());
@@ -39,7 +38,6 @@ it("keeps the selected category, applies rating/open filters, and reset clears a
   expect(document.activeElement?.getAttribute("role")).toBe("option");
   expect(document.activeElement?.textContent).toBe("전체");
   expect(document.activeElement?.getAttribute("aria-selected")).toBe("true");
-  // The list is portalled out of the horizontal scroll clip, but its choices must still work.
   const ratingChoice = [...listbox.querySelectorAll<HTMLElement>('[role="option"]')].find(o => o.textContent === "4.0 이상")!;
   await act(async () => ratingChoice.click());
   expect(JSON.parse(host.querySelector("output")!.textContent!)).toEqual({ category: "restaurant", rating: "4.0", open: "open" });

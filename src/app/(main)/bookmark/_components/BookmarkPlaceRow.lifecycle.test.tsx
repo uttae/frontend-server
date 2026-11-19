@@ -32,7 +32,6 @@ const item = (name: string) =>
     (candidate) => candidate.textContent?.trim() === name,
   )!;
 
-// 위치 계산(트리거 아래 배치·화면 크기 변경)은 Base UI Positioner가 맡아 픽셀 값은 검사하지 않는다
 it("switches to the category phase inside the open menu, closes outside, and reopens on the main phase", async () => {
   const container = document.createElement("div");
   document.body.append(container);

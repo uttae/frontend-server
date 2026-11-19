@@ -10,10 +10,6 @@ export type ScheduleItemRouteSummary = Pick<
   "distanceMeters" | "durationSeconds"
 >;
 
-/**
- * 서버가 `GET …/route`(travelMode 미지정) 한 번으로 수단별 요약을 내려줄 때,
- * 단일 레그 또는 `routes` / `modeRoutes` 배열을 합쳐 표준 수단 키로 인덱싱합니다.
- */
 export function buildScheduleItemRouteSummariesByMode(
   route: ScheduleItemRouteResponse | null | undefined,
 ): Partial<Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>> {

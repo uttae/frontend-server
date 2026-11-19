@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// Place-cache subscriptions are covered by ExpensePlaceLabel.test.tsx.
 vi.mock("./ExpensePlaceLabel", () => ({ ExpensePlaceLabel: () => null }));
 vi.mock("@/lib/api/config", () => ({ API_BASE: "http://fixture" }));
 import { act, type ReactNode } from "react";
@@ -58,7 +57,6 @@ const categories = [
 
 let host: HTMLDivElement;
 let root: Root;
-// 오류 문장을 보이는 곳까지 스크롤하는 동작을 본다. jsdom에는 scrollIntoView가 없다
 const scrollIntoView = vi.fn();
 beforeEach(() => {
   localStorage.clear();
@@ -111,13 +109,11 @@ async function mount(original: Expense | null = base, entry: ExpenseEntry = {}) 
   await render(null);
   await render(<ExpenseEditor initial={original ? { expense: original } : entry} onClose={mocks.close} />);
 }
-// 새 비용 편집기를 다시 연다(닫았다 다시 연 것과 같다). 저장된 통화 선호를 연 순간에 읽는다
 async function reopenNewEditor() {
   await render(null);
   await render(<ExpenseEditor initial={{}} onClose={mocks.close} />);
 }
 
-// Base UI는 열고 닫을 때 microtask·timeout으로 포커스·목록을 옮긴다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"][data-slot="dialog-content"]');
 const form = () => dialog()!.querySelector("form")!;
@@ -132,14 +128,12 @@ const memoInput = () => dialog()!.querySelector("textarea")!;
 const selectTrigger = (label: string) =>
   dialog()!.querySelector<HTMLElement>(`[role="combobox"][aria-label="${label}"]`)!;
 const currencyTrigger = () => dialog()!.querySelector<HTMLElement>('[role="combobox"][aria-haspopup="dialog"]')!;
-// 통화 트리거는 코드 + 한국어 이름을 보이고, 값이 없으면 "통화 선택"을 보인다
 const currencyValue = () => {
   const text = currencyTrigger().textContent ?? "";
   return text === "통화 선택" ? "" : text.slice(0, 3);
 };
 const fieldOf = (element: Element) => element.closest('[data-slot="field"]')!;
 const fieldError = (element: Element) => fieldOf(element).querySelector('[data-slot="field-error"]')?.textContent ?? null;
-// 폼 아래 문장(저장 실패·권한·충돌 등). 칸 오류(FieldError)는 각 칸 안에 있다
 const formMessage = () => form().querySelector(":scope > p[role=\"alert\"]")?.textContent ?? null;
 
 async function key(target: Element, key: string) {
@@ -179,7 +173,6 @@ async function clickSave() {
   await click(saveButton());
   await flush();
 }
-// 저장 버튼이 비활성인 상태에서도 제출 경로(Enter 등)가 저장을 막는지 본다
 async function submitForm() {
   await act(async () => form().requestSubmit());
   await flush();
@@ -462,7 +455,6 @@ it("requires explicit selection and offers exactly seven labeled categories in a
   expect(options.map((option) => option.textContent)).toEqual(categories.map(([, label]) => label));
 });
 
-// 칸 규칙(카테고리)과 교차 규칙(금액×통화)이 함께 틀려도 첫 저장에 두 칸 오류가 한 번에 보인다
 it("shows field and cross-field errors together on the first save and updates the amount error when the currency changes", async () => {
   await mount(null);
   await chooseCurrency("USD");
@@ -472,7 +464,6 @@ it("shows field and cross-field errors together on the first save and updates th
   expect(fieldError(selectTrigger("카테고리"))).toBe("카테고리를 선택해 주세요.");
   expect(amountInput().getAttribute("aria-invalid")).toBe("true");
   expect(fieldError(amountInput())).toBe("금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.");
-  // 금액은 그대로 두고 통화만 KRW로 바꾸면 "100"이 맞는 금액이 되어 오류가 사라진다
   await chooseCurrency("KRW");
   expect(amountInput().hasAttribute("aria-invalid")).toBe(false);
   expect(fieldError(amountInput())).toBeNull();
@@ -487,10 +478,8 @@ it("shows the missing category under its field and clears it once a category is 
   const category = selectTrigger("카테고리");
   expect(category.getAttribute("aria-invalid")).toBe("true");
   expect(fieldError(category)).toBe("카테고리를 선택해 주세요.");
-  // 칸 오류는 폼 아래 문장으로 겹쳐 보이지 않는다
   expect(formMessage()).toBeNull();
   expect(form().hasAttribute("aria-describedby")).toBe(false);
-  // 다른 칸은 오류가 없다
   expect(fieldError(amountInput())).toBeNull();
   await choose("카테고리", "식비");
   expect(selectTrigger("카테고리").hasAttribute("aria-invalid")).toBe(false);
@@ -552,7 +541,6 @@ it.each([false, true])("closes from the backdrop only on mobile devices (mobile:
   expect(mocks.close).toHaveBeenCalledTimes(mobile ? 1 : 0);
 });
 
-// 편집기를 연 버튼에 포커스를 두고 열고, 닫히면(onClose) 부모처럼 편집기를 내린다
 async function mountWithOpener() {
   const opener = document.createElement("button");
   opener.textContent = "비용 추가";
@@ -560,7 +548,6 @@ async function mountWithOpener() {
   opener.focus();
   await mount();
   mocks.close.mockImplementation(() => root.render(null));
-  // Base UI는 다음 프레임에 대화상자 안 첫 포커스 요소로 포커스를 옮긴다
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
   expect(dialog()!.contains(document.activeElement)).toBe(true);
   return opener;
@@ -719,7 +706,6 @@ it("reveals repeated field errors without smooth scrolling when reduced motion i
   for (let attempt = 0; attempt < 2; attempt++) await clickSave();
   expect(scrollIntoView).toHaveBeenCalledTimes(2);
   expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest", behavior: "instant" });
-  // 첫 칸 오류(금액)를 보여 준다
   expect((scrollIntoView.mock.contexts[1] as Element).getAttribute("data-slot")).toBe("field-error");
   expect(fieldOf(scrollIntoView.mock.contexts[1] as Element)).toBe(fieldOf(amountInput()));
   expect(mocks.save).not.toHaveBeenCalled();

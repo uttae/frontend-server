@@ -1,4 +1,3 @@
-/** Decimal arithmetic for display totals; never round through JS Number. */
 function scaled(value: string, precision: number) {
   const negative = value.startsWith("-");
   const [integer, fraction = ""] = value.replace(/^-/, "").split(".");

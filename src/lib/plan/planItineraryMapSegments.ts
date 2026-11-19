@@ -1,23 +1,17 @@
-/// <reference types="google.maps" />
-
 import type { PlanPlace } from "@/lib/plan/types";
 import {
   canonicalScheduleTravelMode,
   type ScheduleTravelModeValue,
 } from "@/lib/plan/scheduleTravelMode";
 
-/** 펼친 일차 일정 순서에서 인접 두 장소로 만든 Directions 구간 단위 */
 export type PlanItinerarySegmentDescriptor = {
   scheduleId: number;
   segmentSourceItemId: number;
-  /** 다음 장소의 `itemId` — 경로를 이 항목까지 계산한다 */
   destinationItemId: number;
   originPlaceId: string;
   destPlaceId: string;
   travelModeCanon: ScheduleTravelModeValue;
-  /** 순서상 앞(작은 번호) 장소 — 경로 방향 보정 */
   originLocation?: google.maps.LatLngLiteral;
-  /** 순서상 뒤(큰 번호) 장소 — 경로 방향 보정 */
   destLocation?: google.maps.LatLngLiteral;
 };
 

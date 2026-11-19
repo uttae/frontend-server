@@ -1,7 +1,5 @@
 "use client";
 
-/// <reference types="google.maps" />
-
 import { AdvancedMarker, Polyline } from "@vis.gl/react-google-maps";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useMemo, type JSX } from "react";
@@ -40,21 +38,10 @@ import { useSessionStore } from "@/stores/session-store";
 
 import { PlanItineraryStopMapPin } from "./PlanItineraryStopMapPin";
 
-/**
- * 일차별 "지도에 경로 표시" 토글(`usePlanScheduleRouteVisibilityStore`) ON인
- * 일차만 지도에 경로(polyline)와 정류장 마커를 그립니다.
- * `routeDay`가 있으면(모바일 경로 보기) 토글과 관계없이 그 일차만 그립니다.
- * 폴리라인 travelMode는 서버에 저장된 구간별 공유 이동수단을 따릅니다.
- */
-/** 모바일 경로 보기 — 고른 일차 하나만 그린다 */
 export type PlanItineraryRouteDay = {
-  /** 일차를 아직 못 정했으면(불러오는 중·일차 없음) 아무것도 그리지 않는다 */
   scheduleId: number | null;
-  /** 일정 화면과 같은 일차 색 */
   color: string;
-  /** 카드로 고른 장소 — 핀을 크게 강조한다 */
   focusedItemId: number | null;
-  /** 일차 구간 경로 batch(`usePrefetchScheduleRoutes`)가 끝나기 전에는 구간을 조회하지 않는다 */
   routesReady: boolean;
   onStopClick: (itemId: number) => void;
 };
@@ -72,14 +59,11 @@ export function PlanItineraryMapRoutes({
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
   const focusPlace = usePlanMapFocusStore((s) => s.focusPlace);
-  // 웹 일정에서 고른 장소 — 그 일차 경로만 그리고 번호 핀을 키운다. 모바일(일반 지도·경로 보기)에서는 쓰지 않는다:
-  // 화면 크기가 바뀌어 PC → 모바일로 넘어가도 남은 포커스가 모바일 지도에 걸리지 않게 읽는 쪽에서도 막는다
   const webFocus = usePlanMapFocusStore((s) =>
     !routeDay && !isMobileDevice && s.focus && s.focus.roomId === rid ? s.focus : null,
   );
   const webFocusScheduleId = webFocus?.scheduleId ?? null;
   const webFocusNorm = webFocus?.googlePlaceId ? normalizeGooglePlaceResourceId(webFocus.googlePlaceId) : null;
-  // 선택 장소는 일반 선택 핀으로 보이므로 같은 번호 핀을 숨긴다. 단 경로 보기와 고른 일정 장소는 번호 핀을 키워 보인다
   const selectedGid =
     !routeDay &&
     selectedPlace?.googlePlaceId &&
@@ -94,11 +78,9 @@ export function PlanItineraryMapRoutes({
   const visibilityOrder = usePlanScheduleRouteVisibilityStore(
     (s) => s.visibilityOrder,
   );
-  // 경로 보기 값은 렌더마다 새 객체라, 메모·쿼리 옵션에서는 아래 원시값만 읽는다
   const routeDayScheduleId = routeDay?.scheduleId ?? null;
   const inRouteView = routeDay != null;
   const routesReady = routeDay?.routesReady ?? true;
-  // 경로 보기·웹에서 고른 장소가 있으면 그 일차 하나만(일차 표시 토글보다 우선)
   const singleDayScheduleId = inRouteView ? routeDayScheduleId : webFocusScheduleId;
   const singleDay = inRouteView || webFocusScheduleId !== null;
   const visibleScheduleIds = useMemo(
@@ -137,22 +119,16 @@ export function PlanItineraryMapRoutes({
     })),
   });
 
-  // 장소 이동을 저장하는 동안 그 일차는 캐시만 새 순서고 서버는 옛 순서다 — 새 구간 경로를 받지 않는다(핀은 새 순서로 그린다)
   const savingMoveScheduleIds = useScheduleItemMoveSavingDays(rid);
 
   const buckets = orderedScheduleIdsForQueries.map(
     (_, idx) => placesQueries[idx]?.data ?? [],
   );
-  // 경로 보기는 일차 구간 경로 batch가 끝난 뒤에 구간을 조회한다(그 전엔 핀만 그린다)
   const segments = flattenPlanItinerarySegmentsFromPlaces(
     routesReady ? orderedScheduleIdsForQueries : [],
     buckets,
   );
 
-  /**
-   * sessionStorage 시드가 일정 변경 뒤 엇나가지 않도록 리스트와 같은 지문을 넘깁니다.
-   * `buckets`는 매 렌더 새로 만들어지므로 memo 없이 그때그때 계산합니다.
-   */
   const fingerprintByScheduleId = new Map<number, string>(
     orderedScheduleIdsForQueries.map((scheduleId, bucketIdx) => [
       scheduleId,
@@ -171,7 +147,6 @@ export function PlanItineraryMapRoutes({
         seg.destPlaceId,
         seg.travelModeCanon,
       ),
-      /** 구간 경로는 일정 리스트와 같은 쿼리로 가져와, 같은 구간을 받는 중이면 그 요청에 합류한다 */
       queryFn: async () => {
         const route = await loadScheduleItemRouteForMap(
           queryClient,
@@ -208,7 +183,6 @@ export function PlanItineraryMapRoutes({
     const query = pathsPerSegmentQueries[segIdx];
     if (!query || query.isPending || query.isFetching) return;
     const pts = query.data?.path ?? [];
-    // 도착 항목이 바뀌면 다른 선이라 새로 그린다
     const polylineKey = `${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.destinationItemId}-${seg.travelModeCanon}`;
 
     const routeColor =
@@ -341,7 +315,6 @@ export function PlanItineraryMapRoutes({
             },
             { analyticsSource: "plan", preserveMapZoom: true },
           );
-          // 웹: 상세와 함께 그 일정 카드를 강조·스크롤하고 그 일차 경로만 보인다
           if (!isMobileDevice && typeof itemId === "number") {
             focusPlace({
               roomId: rid,

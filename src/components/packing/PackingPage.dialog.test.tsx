@@ -6,7 +6,6 @@ import {PackingPage} from './PackingPage';
 const mocks=vi.hoisted(()=>({context:null as unknown}));
 vi.mock('@/hooks/usePackingList',()=>({usePackingList:()=>mocks.context}));
 afterEach(()=>{document.body.replaceChildren();vi.unstubAllGlobals();});
-// Base UI는 첫 포커스·포커스 복귀를 다음 프레임에, 닫힘 정리(언마운트)를 애니메이션 확인 뒤에 한다
 const settle=()=>act(async()=>{await new Promise(resolve=>requestAnimationFrame(()=>resolve(null)));await new Promise(resolve=>setTimeout(resolve,0));});
 const escape=(target:EventTarget=document)=>act(async()=>{target.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));});
 function accessibleName(node:Element){
@@ -30,10 +29,8 @@ it('opens the category dialog as a modal, closes with Escape, and restores its o
     const dialog=openDialog()!;
     expect(dialog).not.toBeNull();
     expect(accessibleName(dialog)).toBe('카테고리 추가');
-    // 바깥 페이지는 Base UI가 aria-hidden으로 가리고, 첫 포커스는 첫 입력 칸이다
     expect(main.getAttribute('aria-hidden')).toBe('true');
     expect(document.activeElement).toBe(dialog.querySelector('input[aria-label="카테고리 이름"]'));
-    // 닫기 X는 없다(취소·추가만)
     expect(Array.from(dialog.querySelectorAll('button')).map(accessibleName)).toEqual(['취소','추가']);
     await escape();
     await settle();
@@ -85,7 +82,6 @@ it('does not cancel a delete confirmation after its request has started',async()
     expect(dialog.textContent).toContain('준비물을 삭제할까요?');
     await act(async()=>buttonIn(dialog,'삭제').click());
     expect(confirmDelete).toHaveBeenCalledOnce();
-    // 삭제 중: 확인 버튼은 progress, 취소는 비활성, Esc·딤으로 닫히지 않는다
     expect(buttonIn(dialog,'처리 중').getAttribute('aria-busy')).toBe('true');
     expect(buttonIn(dialog,'취소').disabled).toBe(true);
     await escape();
@@ -108,7 +104,6 @@ it.each(['writing','sync-error'])('disables the delete confirmation while the li
     expect(action.disabled).toBe(true);
     await act(async()=>action.click());
     expect(confirmDelete).not.toHaveBeenCalled();
-    // 취소는 그대로 된다
     await act(async()=>buttonIn(dialog,'취소').click());
     expect(cancelConfirmation).toHaveBeenCalledOnce();
   }finally{await act(async()=>root.unmount());}

@@ -7,7 +7,6 @@ import {
   mapPinBodyBorderProps,
 } from "./map-pin-stroke";
 
-/** 검색 페이지(`MapSearchResultPins`) 디스커버 핀이 공통으로 쓰는 핀·이름 레이블 UI */
 export function MapPinWithPlaceName({ name }: { name: string }) {
   return (
     <div className="flex cursor-pointer flex-col items-center">

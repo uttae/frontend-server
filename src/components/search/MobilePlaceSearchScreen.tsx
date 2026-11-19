@@ -62,28 +62,13 @@ function predictionToEntry(
 type MobilePlaceSearchScreenProps = Readonly<{
   open: boolean;
   onClose: () => void;
-  /** 입력창 ref — 탭 제스처 안에서 focus해야 iOS 키보드가 뜬다 */
   inputRef: RefObject<HTMLInputElement | null>;
-  /** 뒤로가기 버튼 aria-label */
   backLabel: string;
-  /**
-   * 자동완성·기록에서 장소를 골랐을 때. 성공하면 검색 기록에 남길 항목을, 실패하면 null을 돌려준다
-   * (실패 안내는 호출한 쪽에서 한다).
-   */
   onSelectPlace: (entry: MapSearchPlaceEntry) => Promise<MapSearchPlaceEntry | null>;
-  /**
-   * 엔터로 검색어를 확정했을 때. 없으면 엔터는 키보드만 내리고,
-   * 검색어 기록을 누르면 그 검색어로 자동완성을 다시 띄운다.
-   */
   onSubmitQuery?: (query: string) => void;
-  /** 바뀌면 입력·자동완성을 비운다 */
   resetKey?: number;
 }>;
 
-/**
- * 모바일 전체 화면 장소 검색 — 입력하는 동안 자동완성 결과를 보여주고, 입력이 비면 검색 기록을 보여준다.
- * 닫혀도 언마운트하지 않아 다시 열면 입력·결과가 그대로 남는다.
- */
 export function MobilePlaceSearchScreen(props: MobilePlaceSearchScreenProps & Partial<Pick<MapMobileSearchProps, "onConfirm" | "onInvalidate" | "onClear" | "scopeKey" | "initialQuery">>) {
   if (props.onConfirm && props.onInvalidate && props.onClear && props.scopeKey) {
     return <MapMobileSearchScreen {...props} onConfirm={props.onConfirm} onInvalidate={props.onInvalidate} onClear={props.onClear} scopeKey={props.scopeKey} />;
@@ -234,7 +219,6 @@ function LegacyMobilePlaceSearchScreen({
 
   if (typeof document === "undefined") return null;
 
-  // 헤더·하단 탭 위를 덮는 전체 화면 — 부모의 overflow/stacking에 묶이지 않도록 body로 portal
   return createPortal(
     <dialog
       open={open}

@@ -30,7 +30,6 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
 async function rerender() { await act(async () => root.render(<HeaderBar />)); }
-// 메뉴는 Base UI Menu라 document.body로 포털된다. 항목은 role="menuitem"(방 정보 수정은 div, 이동 항목은 a)
 const menu = () => document.querySelector<HTMLElement>('[role="menu"][aria-label="여행방 메뉴"]');
 const menuButton = () => host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!;
 

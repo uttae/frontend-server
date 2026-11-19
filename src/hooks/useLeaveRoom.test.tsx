@@ -41,7 +41,6 @@ it("방을 나가면 그 방 캐시는 다시 받지 않고 지우고, 방 목�
     await act(async () => root.render(<QueryClientProvider client={client}><Probe onRender={capture} /></QueryClientProvider>));
     await act(async () => { await leave!("left"); });
 
-    // 나간 방의 GET은 403이라 무효화하지 않고 지운다
     expect(client.getQueryState(roomMembersQueryKey("left"))).toBeUndefined();
     expect(client.getQueryState(roomMembersQueryKey("other"))?.isInvalidated).toBe(false);
     expect(client.getQueryData<RoomListResponse>(ROOMS_QUERY_KEY)?.rooms.map((r) => r.id)).toEqual(["other"]);

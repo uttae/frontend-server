@@ -27,7 +27,6 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-// Without backdrop forwarding, portal background events reach the owning card.
 it.each(["dialog", "alert-dialog"])("contains %s backdrop events without blocking dismissal", async kind => {
   await act(async () => root.render(
     <div {...hostEvents}>

@@ -55,7 +55,6 @@ function mountHook() {
   );
 }
 
-/** 화면에 붙은 조회처럼 observer를 붙이고, 다시 받을 때의 응답은 테스트가 풀 때까지 붙잡는다 */
 function watchRefetch(queryKey: readonly unknown[]) {
   let finish: (() => void) | undefined;
   client.setQueryData(queryKey, []);

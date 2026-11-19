@@ -27,7 +27,6 @@ export function LandingActionLink({
       ? event.button === 1
       : event.button === 0;
     if (!analytics || !isActivation) return;
-    // Native click includes Enter activation. No keydown handler or navigation override.
     trackAnalyticsEvent(AnalyticsEvents.ctaClick, {
       page_type: "landing",
       ...analytics,

@@ -14,7 +14,6 @@ function readUserAgent(): string {
   return navigator.userAgent ?? "";
 }
 
-/** iPadOS 13+ — 데스크톱 Safari UA + 터치 */
 function isIpadOsDesktopUa(): boolean {
   if (typeof navigator === "undefined") return false;
   const touchPoints = navigator.maxTouchPoints ?? 0;
@@ -31,12 +30,6 @@ function matchesMobileUserAgent(ua: string): boolean {
   return false;
 }
 
-/**
- * 실제 모바일·태블릿 여부 (뷰포트 브레이크포인트 미사용).
- * - `navigator.userAgentData.mobile` (Chromium)
- * - User-Agent 패턴
- * - iPadOS (Macintosh UA + 다중 터치)
- */
 export function readIsMobileDevice(): boolean {
   if (typeof navigator === "undefined") return false;
 

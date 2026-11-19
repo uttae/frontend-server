@@ -42,7 +42,6 @@ function itemEvent(
 
 describe("dispatchRoomScheduleEvent", () => {
   let queryClient: QueryClient;
-  // 경로는 도착 항목까지 key에 있어 일정이 바뀌어도 무효화하지 않는다 — 순서가 바뀐 구간은 새 key로 받는다
   const routeKey = scheduleItemRouteQueryKey("room-1", 10, 20, 21, "DRIVING");
 
   beforeEach(() => {
@@ -131,7 +130,6 @@ describe("echo of this tab vs. other tabs of the same account", () => {
   ] as const;
   let queryClient: QueryClient;
 
-  /** itemEvent의 actorUserId(99)가 이 계정이다 */
   function ownAccountEvent(
     type: RoomScheduleChangedEvent["type"],
     originTabId: string | null,
@@ -139,7 +137,6 @@ describe("echo of this tab vs. other tabs of the same account", () => {
     return { ...itemEvent(type, [20]), scheduleIds: [10, 11], originTabId };
   }
 
-  /** 일차 목록·일정 전체·방 상세 중 어느 것이든 다시 받은 횟수 */
   const refetchCount = () =>
     mocks.invalidateSchedulePlanPlaces.mock.calls.length +
     mocks.syncAfterCrossScheduleItemMove.mock.calls.length +

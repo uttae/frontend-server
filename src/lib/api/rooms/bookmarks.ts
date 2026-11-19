@@ -31,7 +31,6 @@ function normalizeBookmarksResponse(body: unknown): RoomBookmark[] {
   return [];
 }
 
-/** categoryId 없이 방 전체 북마크를 정렬된 목록으로 일괄 조회 */
 export async function getAllRoomBookmarks(
   roomId: string,
 ): Promise<RoomBookmark[]> {

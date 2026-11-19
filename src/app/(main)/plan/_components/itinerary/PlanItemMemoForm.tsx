@@ -50,7 +50,6 @@ export function PlanItemMemoReadOnly({
   if (!text.length) return null;
 
   return (
-    // Figma Memo — 3줄까지는 그대로, 넘으면 3줄 높이에서 자르고 스크롤한다. 바깥 0.5px stroke는 크기에 들어가지 않는 ring
     <div className="flex w-full items-start gap-2 rounded-[12px] bg-fill-strong py-3 pl-5 pr-3 ring-[0.5px] ring-border">
       <div className="flex min-w-0 flex-1 items-start gap-1.5">
         <span className="flex h-5 shrink-0 items-center text-icon">
@@ -73,7 +72,6 @@ export function PlanItemMemoReadOnly({
             e.stopPropagation();
             onDelete();
           }}
-          // 누르는 영역만 28px로 넓히고 줄 안에서는 Figma Delete 칸 20px만 차지한다
           className="-m-1 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-icon-subtle transition hover:bg-fill hover:text-icon disabled:cursor-not-allowed disabled:opacity-40"
         >
           <TrashIcon size={16} />
@@ -110,7 +108,6 @@ export function PlanItemMemoEditor({
     }
   }
 
-  // 연 순간 값으로 시작한다. 서버 메모를 다시 채우는 것은 아래 effect가 form.reset으로 한다
   const [defaultValues] = useState(() => ({ memo: incomingMemo }));
   const form = useForm({
     defaultValues,
@@ -119,16 +116,14 @@ export function PlanItemMemoEditor({
         setOverwriteDialogOpen(true);
         return;
       }
-      // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
       await commitSave(scheduleItemMemoSchema.parse(value.memo));
     },
   });
   const draft = useStore(form.store, (state) => state.values.memo);
 
-  /* eslint-disable react-hooks/set-state-in-effect -- 서버 메모 변경을 편집 draft와 충돌 상태에 동기화합니다. */
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!isLocallyDirty(draft, editStartMemo)) {
-      // 고치지 않았으면 서버 새 값으로 다시 채운다. keepDefaultValues가 없으면 다음 렌더에 useForm이 연 순간 값으로 되돌린다
       if (draft !== incomingMemo) form.reset({ memo: incomingMemo }, { keepDefaultValues: true });
       setEditStartMemo(incomingMemo);
       setHasRemoteConflict(false);
@@ -155,7 +150,6 @@ export function PlanItemMemoEditor({
         </div>
 
         <div className={PLAN_PLACE_CARD_TW.editorBody}>
-          {/* 길이 제한은 입력 칸이 아니라 스키마가 쓰는 동안 본다(모바일 메모 시트와 같음) */}
           <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
             {(field) => {
               const error = field.state.meta.errors[0]?.message;
@@ -172,7 +166,6 @@ export function PlanItemMemoEditor({
                     onBlur={field.handleBlur}
                     aria-invalid={error ? true : undefined}
                     aria-describedby={error ? errorId : undefined}
-                    // 카드(article)의 select-none과 잡기·기본 커서를 물려받지 않게 글자 선택·글자 커서로 되돌린다
                     className="select-text cursor-text"
                   />
                   <FieldError id={errorId}>{error}</FieldError>

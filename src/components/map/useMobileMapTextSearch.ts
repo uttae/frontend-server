@@ -25,10 +25,6 @@ import {
   type SearchMapSnapshot,
 } from "@/stores/search-recenter-store";
 
-/**
- * 모바일 지도 텍스트 검색(엔터) — 확정한 검색어를 현재 지도 영역에서 검색해 결과 핀을 띄운다.
- * `/search` 페이지와 같은 스토어(검색 스냅샷·결과 핀·「이 지역 재검색」)를 쓴다.
- */
 export function useMobileMapTextSearch() {
   const analyticsRoomId = useAnalyticsRoomId();
   const textQuery = useMobileMapSearchStore((s) => s.textQuery);
@@ -78,7 +74,6 @@ export function useMobileMapTextSearch() {
   const searchPinsEpochRef = useRef(0);
   const lastSettledGenerationRef = useRef(0);
 
-  // 확정한 스냅샷을 지도(재검색 버튼 판단)에 알린다
   useLayoutEffect(() => {
     const { clearSearchSnapshot, setSearchSnapshot } = useSearchRecenterStore.getState();
     clearActiveSearchMapPins();
@@ -138,7 +133,6 @@ export function useMobileMapTextSearch() {
     setActiveSearchMapPins(placeSearchResultsToMapPins(items));
   }, [hasActiveSearch, isFetching, isError, items]);
 
-  // 지도 화면을 떠나면 검색 핀·스냅샷·검색어를 정리한다
   useEffect(
     () => () => {
       clearActiveSearchMapPins();

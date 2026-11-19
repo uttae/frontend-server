@@ -36,7 +36,6 @@ type PlanItemTimeEditorProps = {
   onClose: () => void;
 };
 
-// 칸 값이 undefined면 사용자가 아직 고치지 않은 칸이라 재조회된 서버 값을 따른다
 const UNTOUCHED_DRAFT: ScheduleTimeDraft = { start: undefined, end: undefined };
 
 const fieldLabelClass = PLAN_PLACE_CARD_TW.timeFieldLabel;
@@ -56,15 +55,10 @@ export function PlanItemTimeEditor({
   const formRef = useRef<HTMLFormElement>(null);
   const savingRef = useRef(false);
 
-  // 서버 값과 합친 시각을 검증한다. 렌더 중(오류 문장)과 제출이 같은 스키마를 쓴다
   const timeSchema = createScheduleTimeSchema({ serverStartHm, serverEndHm });
 
   const form = useForm({
-    // 편집한 칸의 초안만 값으로 들고 나머지는 서버 값을 따른다. defaultValues에 서버 값을 넣으면
-    // 한 칸만 고쳐도 폼 전체가 touched가 되어 다른 칸이 재조회 값을 따라가지 못한다(FormApi.update)
     defaultValues: UNTOUCHED_DRAFT,
-    // 검증은 렌더 중 timeIssue 하나가 맡고 submit()이 막는다. 폼 validators를 따로 두면 제출 실패 오류가 칸에 남아,
-    // 재조회로 값이 맞아져도 다음 제출이 막힌다
     onSubmit: async ({ value }) => {
       const { startHm, endHm } = timeSchema.parse(value);
       savingRef.current = true;
@@ -98,11 +92,9 @@ export function PlanItemTimeEditor({
   const durationPreview =
     startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
   const dirty = serverStartHm !== startHm || serverEndHm !== endHm;
-  // 칸 오류는 입력 즉시, 재조회로 서버 값이 바뀌어도 맞게 렌더 중에 계산한다. 칸 validators는 그 칸을 바꿀 때만 돌아 서버 값 변화를 놓친다
   const timeIssue = timeSchema.safeParse(draft).error?.issues[0];
 
   function submit() {
-    // 라이브러리는 연타를 막지 않는다. isPending은 다음 렌더에 바뀌어 ref 락을 함께 본다
     if (isPending || savingRef.current || form.state.isSubmitting || !dirty || timeIssue) return;
     void form.handleSubmit();
   }
@@ -115,7 +107,6 @@ export function PlanItemTimeEditor({
       }}
       closeDisabled={isPending}
     >
-      {/* 처음 포커스는 시작 시 입력(지금 동작). 닫히면 Base UI가 연 버튼으로 포커스를 돌려준다 */}
       <DialogContent
         size="sm"
         initialFocus={() => formRef.current?.querySelector("input") ?? true}
@@ -174,7 +165,6 @@ export function PlanItemTimeEditor({
                         onChange={field.handleChange}
                         disabled={disabled}
                         describedBy={issue ? `${formId}-help ${errorId}` : `${formId}-help`}
-                        // 적용 버튼이 비활성이어도 Enter로 제출을 시도한다. 틀린 값이면 폼 스키마가 막고 오류는 칸 아래 그대로다
                         onKeyDown={(event) => {
                           if (event.key === "Enter") {
                             event.preventDefault();

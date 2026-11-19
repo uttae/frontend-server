@@ -7,7 +7,6 @@ const GRADIENTS = [
   "from-pink-400 to-fuchsia-600",
 ];
 
-/** Deterministically pick a gradient based on the room ID string. */
 export function getRoomGradient(roomId: string): string {
   let hash = 0;
   for (let i = 0; i < roomId.length; i++) {

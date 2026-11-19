@@ -8,15 +8,12 @@
   color:var(--color-text-default);
   letter-spacing:-0.02em;
 }
-/* ui Button(data-slot="button")은 커서·포커스를 스스로 그린다 */
 .page button:not([data-slot="button"]):enabled {cursor:pointer}
 .page button:not([data-slot="button"]):focus-visible {outline:2px solid var(--color-primary-default);outline-offset:2px}
 .icon {position:relative;display:inline-block;flex:none;vertical-align:middle;pointer-events:none}
 .icon img {display:block;max-width:none;transform-origin:top left}
 .boardPane {flex:1;min-width:0;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--color-border-default) transparent}
-/* PC 여백·제목 줄은 다른 탭의 MainPageHeader와 같다(Figma Header: 높이 76 = 위아래 12 + 제목 30 + 간격 2 + 진행 현황 20) */
 .content {min-width:0;padding:0 12px 36px 20px}
-/* 상세를 열어 목록 칸이 260까지 줄어도 진행 현황을 한 줄로 두고, 넘치면 목록 칸이 가로 스크롤한다 */
 .pageHeader {display:grid;grid-template-columns:minmax(max-content,1fr) auto;grid-template-rows:30px minmax(20px,auto);align-content:center;gap:2px 20px;min-height:76px;padding:12px 0}
 .pageHeader h1 {grid-column:1;grid-row:1;margin:0;font-size:22px;line-height:30px;font-weight:700;letter-spacing:-0.02em}
 .summary {grid-column:1;grid-row:2;font-size:14px;line-height:20px;letter-spacing:-0.02em;color:var(--color-text-subtle)}
@@ -25,7 +22,6 @@
 .addCategory {grid-column:2;grid-row:1 / 3;align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:36px;border-radius:8px;background:var(--color-primary-default);padding:8px 10px;color:var(--color-text-inverse);font-size:14px;line-height:20px;font-weight:700;white-space:nowrap}
 .addCategory span:last-child {padding:0 6px}
 .addCategory:enabled:hover {background:var(--color-primary-strong)}
-/* 로딩 자리표시자는 글자가 없어 실제 버튼과 비슷한 폭을 직접 준다 */
 .loadingAction {width:122px;background:var(--color-fill-strong)}
 .columns {display:flex;align-items:flex-start;gap:20px;overflow-x:auto;padding-bottom:16px;scrollbar-width:thin;scrollbar-color:var(--color-border-default) transparent}
 .part {position:relative;display:flex;flex:0 0 324px;flex-direction:column;gap:12px;min-width:0;border-radius:12px;background:var(--color-fill-default);padding:12px}
@@ -35,7 +31,6 @@
 .partProgress {flex:none;font-size:12px;line-height:16px;color:var(--color-text-subtle)}
 .menuTrigger {display:flex;flex:none;align-items:center;justify-content:center;width:20px;height:36px;margin-left:auto;border-radius:4px}
 .menuTrigger:hover,.iconButton:hover {background:var(--color-fill-strong)}
-/* 카테고리 메뉴 폭(지금 값). 표면·항목 모양은 ui DropdownMenu */
 .menuContent {width:220px}
 .items {display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
 .item {position:relative;min-width:0;border:1px solid var(--color-border-subtle);border-radius:8px;background:var(--color-fill-elevate, #fff)}
@@ -58,7 +53,6 @@
 .detailHeader {display:flex;align-items:center;gap:12px;min-height:40px}
 .detailTitle {min-width:0;flex:1;overflow-wrap:anywhere;font-size:24px;line-height:34px;font-weight:700}
 .detailActions {display:flex;flex:none;gap:4px}
-/* 모바일 시트는 .page 밖(포털)이라 커서·포커스를 여기서도 준다 */
 .iconButton {display:flex;align-items:center;justify-content:center;flex:none;width:32px;height:32px;border-radius:8px;cursor:pointer}
 .iconButton:focus-visible {outline:2px solid var(--color-primary-default);outline-offset:2px}
 .collapseDetail {position:absolute;top:337px;left:-1px;display:flex;align-items:center;justify-content:center;width:20px;height:104px;background:var(--color-icon-subtle)}
@@ -72,8 +66,6 @@
 .tipCard ul {display:flex;flex-direction:column;gap:16px;margin:0;padding:0;list-style:none}
 .tipCard li {color:var(--color-text-subtle);overflow-wrap:anywhere}
 
-/* 모바일 기기의 페이지 배치(PC는 창이 좁아도 그대로 두고 레이아웃 최소 폭 안에서 가로 스크롤).
-   제목 줄은 Figma Mobile/준비물/393 Header(6663:5860): 진행 현황·버튼 한 줄, 높이 64, 제목은 화면에서 숨기고 읽히게만 둔다 */
 :global(.is-mobile-device) .content {padding:0 20px 20px}
 :global(.is-mobile-device) .pageHeader {grid-template-rows:auto;align-items:center;gap:0 8px;min-height:64px;margin-bottom:0;padding:14px 0}
 :global(.is-mobile-device) .pageHeader h1 {position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -99,7 +91,6 @@
 :global(.is-mobile-device) .tipCard h4 {margin-bottom:12px}
 :global(.is-mobile-device) .tipCard ul {gap:12px}
 
-/* Keep the initial loading layout aligned with the populated board. */
 .loadingProgress {display:block;width:140px;height:20px;border-radius:4px;background:var(--color-fill-strong)}
 .loadingTitle {display:block;width:144px;height:20px;border-radius:4px;background:var(--color-fill-strong)}
 .loadingItem {display:flex;align-items:center;gap:12px;min-height:62px;padding:16px}

@@ -274,7 +274,6 @@ describe("hydrateScheduleRoutesBatch", () => {
       snapshot,
     );
     getScheduleItemRoutesBatchMock.mockImplementation(async () => {
-      // batch 응답이 도착하기 전에 1번 다음 장소가 2 → 3으로 바뀐 상황 — 서버는 요청을 받은 순간의 1→2를 계산했다
       queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID), [
         place(1, "places/a"),
         place(3, "places/c"),
@@ -371,7 +370,6 @@ describe("진입 batch·일정 목록·지도가 같은 구간 경로 캐시를 
 
     await fetchAndSeedScheduleRoutesBatch(queryClient, ROOM_ID, SCHEDULE_ID, places);
 
-    // 목록 칸 — PlanItinerary가 넘기는 것처럼 다음 장소의 itemId로 조회한다
     const listDistances = await Promise.all(
       places.slice(0, -1).map((origin, index) =>
         queryClient
@@ -389,7 +387,6 @@ describe("진입 batch·일정 목록·지도가 같은 구간 경로 캐시를 
           .then((route) => route?.distanceMeters),
       ),
     );
-    // 지도 — 지도가 쓰는 구간 계산 그대로 조회한다
     const mapDistances = await Promise.all(
       flattenPlanItinerarySegmentsFromPlaces([SCHEDULE_ID], [places]).map((segment) =>
         loadScheduleItemRouteForMap(

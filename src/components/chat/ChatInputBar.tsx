@@ -33,10 +33,6 @@ function mentionSuffixMatchesAi(valueFromAt: string): boolean {
   return t.length === 0 || "ai".startsWith(t);
 }
 
-/**
- * 고정 인풋바 높이 = 위 테두리 1 + 버튼 행 43 + 입력 영역 여백 20(바깥 위 4·아래 8, 입력칸 위아래 4) + 글자 줄.
- * PC는 3줄(14px 글자, 행간 20 × 3 = 60)이라 124, 모바일 기기는 지금 높이 100, 작은 패널(12px 글자)은 110(약 3줄)
- */
 const CHAT_INPUT_BAR_HEIGHT_CLASS = {
   default: "h-[124px] mobile:h-[100px]",
   minimized: "h-[110px]",
@@ -241,7 +237,6 @@ export function ChatInputBar({
       if (!el) return;
       const start = el.selectionStart ?? 0;
       const end = el.selectionEnd ?? 0;
-      /** 맨 앞에서 한 칸 지우기 → @ai 오버레이 해제, 일반 필드에 `@a`만 남김(멘션 이어쓰기) */
       if (start === 0 && start === end) {
         e.preventDefault();
         setAiEnabled(false);

@@ -26,7 +26,6 @@ function button(label: string) {
   expect(found, label).toBeTruthy();
   return found!;
 }
-// 쿠키 설정은 ui Dialog(Base UI)라 document.body로 포털된 role="dialog"다
 function dialog() {
   return document.querySelector<HTMLElement>('[role="dialog"]');
 }
@@ -41,15 +40,12 @@ function isPageScrollLocked() {
     (element) => element.style.overflowY === "hidden",
   );
 }
-// Base UI는 처음 포커스를 requestAnimationFrame 뒤에, 스크롤 잠금·해제를 setTimeout 0 뒤에 반영한다
 async function settle() {
   await act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
 }
-// 브라우저의 Tab 이동처럼 문서 순서상 다음(이전) tabbable로 포커스를 옮긴다.
-// 대화상자 앞뒤의 보이지 않는 칸에 닿으면 Base UI가 포커스를 대화상자 안 반대쪽 끝으로 되돌린다
 async function pressTab(shift = false) {
   const tabbables = [...document.querySelectorAll<HTMLElement>("*")].filter(
     (node) => node.tabIndex >= 0 && !(node as HTMLButtonElement).disabled,
@@ -110,7 +106,6 @@ describe("cookie settings modal", () => {
         ?.textContent,
     ).toBe("쿠키 설정");
     expect(opened.contains(document.activeElement)).toBe(true);
-    // 모달 바깥(앱)은 보조기기에서 가려진다
     expect(host.getAttribute("aria-hidden")).toBe("true");
     expect(button("저장").disabled).toBe(false);
     await toggleDraft();
@@ -151,7 +146,6 @@ describe("cookie settings modal", () => {
     await click("쿠키 설정");
     expect(toggle().getAttribute("aria-checked")).toBe("false");
     await toggleDraft();
-    // 딤(배경)을 누르면 닫힌다
     await act(async () =>
       document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!.click(),
     );
@@ -168,7 +162,6 @@ describe("cookie settings modal", () => {
     await click("취소");
     expect(dialog()).toBeNull();
     expect(document.activeElement).toBe(button("쿠키 설정"));
-    // 저장(grantAnalyticsConsent)이 실행됐다면 쿠키·스토어가 granted로 바뀐다
     expect(document.cookie).toContain("uttae_analytics_consent=v1:denied");
     expect(document.cookie).not.toContain("v1:granted");
     expect(analyticsConsentStore.getSnapshot()).toBe("denied");
@@ -181,7 +174,6 @@ describe("cookie settings modal", () => {
     await click("쿠키 설정");
     await click("취소");
     expect(dialog()).toBeNull();
-    // 저장(denyAnalyticsConsent)이 실행됐다면 GA 철회가 불리고 denied 쿠키가 남는다
     expect(revokeGoogleAnalyticsConsent).not.toHaveBeenCalled();
     expect(document.cookie).not.toContain("uttae_analytics_consent");
     expect(analyticsConsentStore.getSnapshot()).toBe("pending");
@@ -200,7 +192,6 @@ describe("cookie settings modal", () => {
     await click("저장");
     expect(dialog()).not.toBeNull();
     expect(resultMessage().textContent).toBe("분석 쿠키를 거부했습니다.");
-    // 선택을 바꾸면 지난 결과 문장은 지운다
     await toggleDraft();
     expect(resultMessage().textContent).toBe("");
     await click("저장");
@@ -213,7 +204,6 @@ describe("cookie settings modal", () => {
     await toggleDraft();
     await click("저장");
     expect(document.cookie).toContain("uttae_analytics_consent=v1:granted");
-    // A fresh store has no in-memory session override, as after a page reload.
     expect(
       createAnalyticsConsentStore({
         read: readAnalyticsConsentCookie,
@@ -338,7 +328,6 @@ it("restores focus to the app main when saving removes the only trigger", async 
   const main = document.createElement("main");
   host.append(main);
   await click("쿠키 설정");
-  // Saving a pending consent removes the banner that owned this trigger.
   const trigger = button("쿠키 설정");
   trigger.remove();
   try {

@@ -51,12 +51,10 @@ async function setup(memo: string) {
 it("refills with the server memo while untouched and asks before overwriting a changed memo", async () => {
   const { container, render, unmount } = await setup("A");
   try {
-    // 고치지 않았으면 서버 새 값으로 다시 채운다
     await render("B");
     expect(textarea(container).value).toBe("B");
     expect(saveButton(container).disabled).toBe(true);
 
-    // 고치는 중에 서버 값이 바뀌면 입력은 지키고, 저장할 때 덮어쓰기를 묻는다
     await type(container, "내 메모 ");
     await render("C");
     expect(textarea(container).value).toBe("내 메모 ");
@@ -87,9 +85,7 @@ it("refills with the latest server memo once the draft is reverted to the start 
 it("shows the length error under the memo instead of a toast", async () => {
   const { container, unmount } = await setup("");
   try {
-    // 한글 조합 중 maxLength를 넘어 들어온 값
     await type(container, "가".repeat(2001));
-    // 입력 칸이 자르지 않고, 쓰는 동안 바로 칸 아래에 오류가 보인다
     expect(textarea(container).value).toHaveLength(2001);
     expect(container.querySelector("[role=alert]")?.textContent).toBe("메모는 2000자 이하여야 해요.");
     await act(async () => saveButton(container).click());

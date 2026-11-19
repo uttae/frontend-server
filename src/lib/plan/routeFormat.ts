@@ -1,4 +1,3 @@
-/** 거리 표기 (예: 26km, 850m) */
 export function formatRouteDistance(meters: number): string {
   if (!Number.isFinite(meters) || meters < 0) return "—";
   if (meters >= 1000) {
@@ -10,7 +9,6 @@ export function formatRouteDistance(meters: number): string {
   return `${Math.max(1, Math.round(meters))}m`;
 }
 
-/** 소요 시간 표기 (예: 5 시간 16 분, 36 분) */
 export function formatRouteDuration(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return "—";
   const total = Math.round(seconds);

@@ -56,7 +56,6 @@ function WaitingContent() {
         }
       },
       onError: (err) => {
-        // 404 → 거절된 상태로 처리 (서버가 요청 삭제 후 not found 반환)
         if (err instanceof HttpError && err.status === 404) {
           setStatusResult("REJECTED");
         } else {

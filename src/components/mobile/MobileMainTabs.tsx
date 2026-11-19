@@ -21,13 +21,11 @@ const tabIcons = {
   chat: "/icons/mobile/chat.svg",
 } as const;
 
-/** 모바일 전용 하단 탭 바 — 지도 전환은 상단 헤더에서 제공합니다. */
 export function MobileMainTabs() {
   const pathname = usePathname();
   const { isMobileDevice } = useMobileView();
   if (!isMobileDevice) return null;
 
-  // 지도는 일정 탭에서 헤더 버튼으로 여는 화면이라 일정 탭을 활성으로 둔다
   const tabs = [
     { label: "일정", href: mobileScheduleHref(pathname), icon: tabIcons.schedule, active: isPlanPathname(pathname) || isMobileMapPathname(pathname) },
     { label: "북마크", href: "/bookmark", icon: tabIcons.bookmark, active: pathname === "/bookmark" || pathname.startsWith("/bookmark/") },

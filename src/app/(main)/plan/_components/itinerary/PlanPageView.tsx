@@ -42,11 +42,9 @@ import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
   const { isMobileDevice } = useMobileView();
-  // 일정 화면을 떠나면 고른 장소(카드 강조·지도의 "이 일차만 보기")를 푼다 — 검색·북마크 탭에서도 지도는 그대로라서
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
   useEffect(() => () => clearPlanFocus(), [clearPlanFocus]);
   
-  //room id 가져와서 room detail, schedules 가져오기
   const storedId = useSessionStore((s) => s.currentRoomId);
   const roomId =
     typeof storedId === "string" && storedId.trim().length > 0
@@ -56,7 +54,6 @@ export function PlanPageView() {
 
   const { data: roomDetail } = useRoomDetail(roomIdForQueries);
   
-  //방에 들어올 때 analytics 이벤트 보내기 (같은방 아니면) => refactoring 필요(ref 제거 가능성)
   const lastTrackedPlanIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!roomDetail || lastTrackedPlanIdRef.current === roomDetail.id) return;
@@ -68,7 +65,6 @@ export function PlanPageView() {
     });
   }, [roomDetail]);
 
-  //hooks
   const {
     data: schedules,
     isPending,
@@ -84,7 +80,6 @@ export function PlanPageView() {
   const { mutateAsync: createScheduleAsync, isPending: isCreatingSchedule } =
     useCreateRoomSchedule();
 
-  //schedules 정렬, day block 생성 => refactoring 필요
   const scheduleList = useMemo(() => schedules ?? [], [schedules]);
   const sortedSchedules = useMemo(
     () => sortRoomSchedules(scheduleList),
@@ -97,7 +92,6 @@ export function PlanPageView() {
       schedules: sortedSchedules,
     });
 
-  // 장소 드래그는 여러 일차에 걸치므로 페이지에서 한 벌만 둔다(모바일은 MobilePlanView의 컨트롤러)
   const planItemDrag = usePlanItemDragController(roomId);
 
   const scheduleExpansionSyncKey = useMemo(
@@ -203,7 +197,6 @@ export function PlanPageView() {
           roomId={roomId}
           schedules={sortedSchedules}
           isLoading={showInitialLoading}
-          // 재조회 실패는 보이던 일정을 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류로 바꾼다
           isError={isLoadingError}
           menuDisabled={isCreatingSchedule || isDeletingSchedule || isMovePending}
           onRequestDeleteDay={handleDeleteScheduleDay}

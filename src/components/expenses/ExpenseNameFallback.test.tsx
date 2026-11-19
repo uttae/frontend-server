@@ -31,7 +31,6 @@ it.each([26, null])("uses category only in ledger titles regardless of linked pl
   expect(JSON.stringify(renderer.toJSON())).toContain("별도 메모");
 });
 it("keeps scoped expense titles and edit labels category-only, with memo and place separate", async () => {
-  // 비용 목록 대화상자는 Base UI Dialog라 body로 포털된다(react-test-renderer는 포털을 못 그린다)
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);

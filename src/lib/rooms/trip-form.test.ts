@@ -26,7 +26,6 @@ describe("createTripFormSchema", () => {
     ).toEqual({ ...valid, destinations: ["서울", "부산"] });
   });
 
-  // issue path가 화면의 form.Field name과 같아야 그 칸에 붙는다
   it("puts each issue on the field name shown on screen", () => {
     expect(issuesOf(createTripFormSchema().safeParse({ ...valid, title: "  " }))).toEqual([
       { path: ["title"], message: TRIP_TITLE_REQUIRED_MESSAGE },
@@ -34,7 +33,6 @@ describe("createTripFormSchema", () => {
     expect(issuesOf(createTripFormSchema().safeParse({ ...valid, destinations: [] }))).toEqual([
       { path: ["destinations"], message: TRIP_DESTINATIONS_REQUIRED_MESSAGE },
     ]);
-    // 원소별 path(destinations[1])로 내지 않고 목적지 칸에 문장 하나만 낸다
     expect(issuesOf(createTripFormSchema().safeParse({ ...valid, destinations: ["서울", "서울"] }))).toEqual([
       { path: ["destinations"], message: TRIP_DESTINATIONS_INVALID_MESSAGE },
     ]);

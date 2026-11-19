@@ -21,7 +21,6 @@ type Props = {
 
 const TITLE = "방장 위임이 필요해요";
 
-/** 탈퇴 전 방장 위임 안내(Figma Alert Dialog, Notice). 마운트되면 열린 상태라 호출부가 조건부로 렌더한다 */
 export function WithdrawalDelegationRequiredModal({ rooms, onClose }: Props) {
   const router = useRouter();
 
@@ -34,12 +33,10 @@ export function WithdrawalDelegationRequiredModal({ rooms, onClose }: Props) {
   return (
     <AlertDialog
       open
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      {/* 지금처럼 딤을 눌러도 닫힌다 */}
       <AlertDialogContent backdropCloseLabel={`${TITLE} 배경 닫기`}>
         <AlertDialogHeader>
           <AlertDialogTitle>{TITLE}</AlertDialogTitle>

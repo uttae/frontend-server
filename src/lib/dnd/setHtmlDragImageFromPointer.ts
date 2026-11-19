@@ -1,7 +1,3 @@
-/**
- * HTML5 D&D 고스트 이미지를 포인터 위치와 맞춥니다.
- * 스크롤 컨테이너·레이아웃 변형(scale 등)으로 기본 고스트가 어긋날 때 사용합니다.
- */
 export function setHtmlDragImageFromPointer(
   event: DragEvent,
   source: HTMLElement,

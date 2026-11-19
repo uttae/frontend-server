@@ -18,20 +18,14 @@ type Props = {
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
-  /** 확인 동작 처리 중. Esc·딤·취소를 모두 막고 확인 버튼은 progress로 바뀐다 */
   isPending?: boolean;
-  /** 지금은 확인할 수 없는 상태(예: 동기화 오류). 확인 버튼만 비활성으로 보이고 취소·닫기는 그대로 된다 */
   confirmDisabled?: boolean;
-  /** 삭제·탈퇴·나가기 같은 위험 동작이면 true(확인 버튼 Critical Solid) */
   destructive?: boolean;
-  /** 확인 동작이 실패했을 때 버튼 아래에 보여줄 한 줄 안내 */
   errorMessage?: string | null;
   onConfirm: () => void;
   onCancel: () => void;
 };
 
-// 포털 표면과 배경에서만 카드 클릭·드래그 호스트로 가는 포인터 이벤트를 끊는다.
-// 키 입력은 Base UI가 document에서도 받으므로 막지 않는다.
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 const pointerBoundary = {
   onClick: stopPropagation,
@@ -40,16 +34,6 @@ const pointerBoundary = {
   onTouchStart: stopPropagation,
 };
 
-/**
- * 확인창(Figma Alert Dialog 5621:3002). 마운트되면 열린 상태라 호출부는 조건부로 렌더한다.
- * 닫기 요청(Esc·딤·취소)은 모두 onCancel이고, 처리 중에는 모두 막힌다. 성공 뒤 닫기는 호출부가 언마운트로 한다.
- *
- * @example
- * {target ? (
- *   <ConfirmDialog destructive title="이 장소를 삭제할까요?" confirmLabel="삭제"
- *     isPending={isDeleting} onConfirm={handleDelete} onCancel={() => setTarget(null)} />
- * ) : null}
- */
 export function ConfirmDialog({
   title,
   description,
@@ -66,7 +50,6 @@ export function ConfirmDialog({
     <AlertDialog
       open
       closeDisabled={isPending}
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
       onOpenChange={(open) => {
         if (!open) onCancel();
       }}

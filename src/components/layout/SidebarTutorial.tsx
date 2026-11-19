@@ -228,8 +228,6 @@ export function SidebarTutorial() {
             ? { ...current, tutorialCompleted: true }
             : current,
       );
-      // The acknowledged save belongs in the same user cache even after unmount.
-      // Only the analytics exit requires the original visible tutorial lifetime.
       if (activeUserIdRef.current !== startedUserId) return;
       const roomContext = startedRoomId ? { room_id: startedRoomId } : {};
       if (analyticsEvent.eventName === AnalyticsEvents.tutorialSkip) {

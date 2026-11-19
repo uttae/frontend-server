@@ -22,7 +22,6 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 type CreateBody = { googlePlaceId: string; categoryIds: number[] };
 
-// 백엔드 BookmarkService.create 규칙: 이미 이 장소가 있는 폴더는 건너뛰고, 새로 만든 북마크만 돌려준다
 function serverWithPlaceIn(folders: Set<number>) {
   api.bookmarks.mockImplementation(async (roomId: string, { googlePlaceId, categoryIds }: CreateBody) =>
     categoryIds.filter((id) => !folders.has(id)).map((categoryId) => {

@@ -4,8 +4,6 @@ import { chunkArray, PLACE_BATCH_MAX_SIZE } from "./batch-chunk";
 import { HttpError, readUserFacingMessageFromApiBody } from "./errors";
 import { apiUrl, jsonBody, requestJson, tryParseJson } from "./http";
 
-// ─── Response types ────────────────────────────────────────────────────────
-
 export type PlaceSearchItem = {
   googlePlaceId: string;
   name: string;
@@ -50,7 +48,6 @@ export type PlaceDetail = {
     weekdayDescriptions: string[];
     nextOpenTime: string | null; nextCloseTime: string | null;
   } | null;
-  /** Legacy optional field, absent from the backend GET/resolve DTO. */
   reviewSummary?: string | null;
   reviews: PlaceReview[];
 };
@@ -59,7 +56,6 @@ export type PlacePhotoResponse = {
   photoUrl: string | null;
 };
 
-/** Raw JSON from `GET /places/{googlePlaceId}/preview` */
 export type PlacePreviewResponse = {
   googlePlaceId: string;
   name: string;
@@ -69,7 +65,6 @@ export type PlacePreviewResponse = {
   primaryTypeDisplayName: string;
 };
 
-/** Client-normalized preview (coordinates match detail/search shape) */
 export type PlacePreview = {
   googlePlaceId: string;
   name: string;
@@ -78,8 +73,6 @@ export type PlacePreview = {
   primaryType?: string;
   primaryTypeDisplayName?: string;
 };
-
-// ─── Batch response types ──────────────────────────────────────────────────
 
 export type PlacePreviewBatchItem =
   | ({
@@ -98,9 +91,7 @@ export type PlacePreviewBatchItem =
     };
 
 export type PlacePreviewBatchResponse = {
-  /** 서버 명세 — `POST /places/previews/batch` */
   previews?: PlacePreviewBatchItem[];
-  /** 레거시·내부 호환 */
   items?: PlacePreviewBatchItem[];
 };
 
@@ -114,9 +105,7 @@ export type PlacePhotoUrlBatchItem =
   | { status: "ERROR" | "FAILED"; googlePlaceId: string; errorCode?: string };
 
 export type PlacePhotoUrlBatchResponse = {
-  /** 서버 명세 — `POST /places/photos/batch` */
   photos?: PlacePhotoUrlBatchItem[];
-  /** 레거시·내부 호환 */
   items?: PlacePhotoUrlBatchItem[];
 };
 
@@ -130,8 +119,6 @@ function readBatchResponseList<T>(
   if (Array.isArray(legacy)) return legacy as T[];
   return [];
 }
-
-// ─── API functions ─────────────────────────────────────────────────────────
 
 export async function searchPlaces(params: {
   query: string;
@@ -160,7 +147,6 @@ export async function searchPlaces(params: {
   return res.json();
 }
 
-/** 사각형(지금 보이는 지도 화면) 안의 장소만 찾는다. 다음 페이지는 같은 사각형으로 요청해야 한다 */
 export async function searchPlacesInArea(params: {
   query: string;
   south: number;

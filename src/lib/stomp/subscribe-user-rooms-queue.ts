@@ -18,10 +18,6 @@ export type SubscribeUserRoomsQueueOptions = {
   ) => void;
 };
 
-/**
- * `/user/queue/rooms` — 로그인·STOMP 연결 동안 유지 (방 입장 여부와 무관).
- * 호스트 입장 요청은 방 밖에 있어도 동일 큐로 수신됩니다.
- */
 export function subscribeUserRoomsQueue(
   client: Client,
   options: SubscribeUserRoomsQueueOptions,

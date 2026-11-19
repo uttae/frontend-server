@@ -4,11 +4,6 @@ import {
   AGREEMENTS_REACCEPTANCE_REQUIRED_ERROR_CODE,
 } from "@/lib/api/errors";
 
-/**
- * Google OAuth authorize URL 및 콜백 redirect_uri 공통 처리.
- * redirect_uri는 로그인을 연 호스트(www / apex)와 맞춰야 oauth pending session이 유효하다.
- */
-
 export const GOOGLE_AUTH_CALLBACK_PATH = "/auth/callback";
 
 export const OAUTH_PENDING_SESSION_KEY = "oauth_pending";

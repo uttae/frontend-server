@@ -59,7 +59,6 @@ function newClient() {
   return client;
 }
 
-/** 화면에 있는 조회처럼 observer를 붙인다. 응답은 `respond`가 정한다 */
 function watch<T>(client: QueryClient, queryKey: readonly unknown[], respond: () => Promise<T>) {
   let fetches = 0;
   const observer = new QueryObserver(client, {
@@ -101,7 +100,6 @@ describe("dispatchRoomMemberEvent", () => {
     const responses: ((value: RoomMemberListResponse) => void)[] = [];
     watch(client, KEY, () => new Promise<RoomMemberListResponse>((resolve) => responses.push(resolve)));
 
-    // 이벤트 전 조회(2번 입장 전 상태를 받아 올 조회)
     void client.refetchQueries({ queryKey: KEY });
     await expect.poll(() => responses.length).toBe(1);
 
@@ -120,7 +118,6 @@ describe("dispatchRoomMemberEvent", () => {
     const client = newClient();
     const responses: ((value: RoomMemberListResponse) => void)[] = [];
     watch(client, KEY, () => new Promise<RoomMemberListResponse>((resolve) => responses.push(resolve)));
-    // 마운트하자마자 나간 첫 조회(2번 입장 전 상태를 받아 올 조회)
     await expect.poll(() => responses.length).toBe(1);
 
     dispatchRoomMemberEvent(client, ROOM_ID, joined(2));
@@ -172,7 +169,6 @@ describe("dispatchRoomMemberEvent", () => {
 
   it("방장 위임을 받으면 다른 탭의 이전 방장도 방장이 아니게 된다(세 출처 모두 다시 받음)", async () => {
     const client = newClient();
-    // 이 탭은 이전 방장(나)이고, 위임은 다른 탭에서 했다 — 세 출처 모두 HOST가 남아 있다
     client.setQueryData<RoomMemberListResponse>(KEY, { members: [member(ME, "HOST"), member(2)] });
     client.setQueryData<RoomDetail>(roomDetailQueryKey(ROOM_ID), {
       id: ROOM_ID, title: "여행", destinations: [], startDate: null, endDate: null,

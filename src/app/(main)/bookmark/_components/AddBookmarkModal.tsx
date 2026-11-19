@@ -53,11 +53,8 @@ export function AddBookmarkModal({
   busy = false,
   onClose,
   onSave,
-  /** 비어 있을 때 실제로 쓰이는 이름(다음 번호 반영). 없으면 기본 라벨만 표시 */
   untitledNameHint,
-  /** 서버/저장 오류 시 인라인 표시 (토스트 대신) */
   formError = null,
-  /** 닫힌 뒤 포커스를 돌려줄 곳. 메뉴 항목에서 열면 사라진 항목 대신 메뉴 버튼을 준다 */
   finalFocus,
 }: {
   mode: Mode;
@@ -70,13 +67,11 @@ export function AddBookmarkModal({
   finalFocus?: ComponentProps<typeof DialogContent>["finalFocus"];
 }) {
   const formId = useId();
-  // 저장 요청(mutation)은 부모가 갖는다. 진행·실패는 부모의 busy·formError로 받는다
   const form = useForm({
     defaultValues: {
       title: initialTitle(mode, initialFolder),
       color: initialColor(mode, initialFolder),
     },
-    // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
     onSubmit: ({ value }) => {
       onSave(bookmarkFolderFormSchema.parse(value));
     },
@@ -86,7 +81,6 @@ export function AddBookmarkModal({
     <Dialog
       open
       closeDisabled={busy}
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 저장 중에는 Esc·딤·취소를 막는다
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -107,7 +101,6 @@ export function AddBookmarkModal({
           className="flex flex-col gap-5"
           onSubmit={(event) => {
             event.preventDefault();
-            // 라이브러리는 연타를 막지 않는다. busy는 부모 mutation의 isPending
             if (busy || form.state.isSubmitting) return;
             void form.handleSubmit();
           }}

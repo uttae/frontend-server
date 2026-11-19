@@ -35,7 +35,6 @@ export function AnalyticsRouteTracker() {
       queryStatus,
       currentRoomId: useSessionStore.getState().currentRoomId,
       lastTrackedRoomId: lastTrackedRoomId.current,
-      // SessionReconciler의 layout effect가 같은 commit에서 갱신한 값을 읽는다.
       sessionReady: useSessionStore.getState().sessionReady,
       skipSessionReconciliation:
         shouldSkipReconcileClientSession(pathname),
@@ -56,8 +55,6 @@ export function AnalyticsRouteTracker() {
       userId: plan.userId,
     });
     if (!plan.pageView) {
-      // Enrich dedupe context without resending the anonymous view. A later
-      // real A → B room switch on this pathname can then count as navigation.
       if (lastTrackedPathname.current === pathname && observedRoomId) {
         lastTrackedRoomId.current = observedRoomId;
       }

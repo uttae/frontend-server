@@ -21,7 +21,6 @@ const p = {
 beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.useFakeTimers();
-  // Keep fake time monotonic so the real shared Retry-After bucket cannot leak into the next test.
   vi.setSystemTime(testTime += 3600000);
   issued = 0;
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
@@ -208,7 +207,6 @@ it("retains failed input for retry and never clears a newer draft after a late s
 it("opens from an icon with focus, clears Filled to an expanded Default field, and Escape restores the icon", async () => {
   const clear = vi.fn();
   await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="a"/>));
-  // A fresh scope resets even an already-mounted search to its icon state.
   await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="b"/>));
   expect(host.querySelector("input")).toBeNull();
   await act(async () => (host.querySelector('button[aria-label="장소 검색 열기"]') as HTMLButtonElement).click());

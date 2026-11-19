@@ -35,7 +35,6 @@ function setup(isActive = true) {
 }
 
 beforeEach(() => {
-  // probeClientSession은 브라우저에서만 세션을 확인한다
   vi.stubGlobal("window", {});
   vi.stubGlobal("fetch", fetchMock);
 });

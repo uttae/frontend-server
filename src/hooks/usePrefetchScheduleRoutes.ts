@@ -5,10 +5,6 @@ import { fetchAndSeedScheduleRoutesBatch } from "@/lib/plan/schedule-bulk-hydrat
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import type { PlanPlace } from "@/lib/plan/types";
 
-/**
- * 페이지 진입·새로고침 시 일차별 구간 경로를 저장된 공유 이동수단 기준 `routes/batch`로 1회 시딩합니다.
- * 리오더·추가·삭제 등으로 장소 목록이 바뀌면 batch는 재호출하지 않고, 새로 생긴 구간(받은 적 없는 출발·도착 항목)만 개별 GET합니다.
- */
 export function usePrefetchScheduleRoutes(
   roomId: string,
   scheduleId: number,
@@ -52,6 +48,5 @@ export function usePrefetchScheduleRoutes(
     };
   }, [completedKeys, enabled, fingerprint, places, queryClient, roomId, scheduleId, scheduleKey]);
 
-  /** enabled 전환 직후 이전 true 잔존으로 GET이 먼저 나가지 않도록 — batch 완료 전엔 false */
   return !enabled || (places.length >= 2 && fingerprint.length > 0 && completedKeys.has(scheduleKey));
 }

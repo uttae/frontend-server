@@ -40,16 +40,12 @@ const EMPTY_PLACES: PlanPlace[] = [];
 type MobilePlanItineraryProps = Readonly<{
   roomId: string;
   scheduleId: number;
-  /** `9월 21일` — 방문 시간 시트에 표시 */
   monthDayLabel?: string;
-  /** 전체 화면 검색으로 이 일차에 장소 추가 — anchor 자리에, null이면 맨 뒤. 탭 제스처 안에서 호출해야 한다 */
   onRequestAddPlace: (anchor: InsertAnchor | null) => void;
-  /** 방금 추가한 장소 — 이 일차에 있으면 카드로 스크롤하고 강조한다(해제는 상위에서) */
   recentlyAddedItemId: number | null;
   onPlaceAdded: (itemId: number) => void;
 }>;
 
-/** 모바일 일차별 장소 목록 — 카드·이동 요약·추가 버튼, 편집 모드에서는 핸들로 순서를 바꾼다(다른 일차로도) */
 export function MobilePlanItinerary({
   roomId,
   scheduleId,
@@ -62,7 +58,6 @@ export function MobilePlanItinerary({
   const router = useRouter();
   const { data: schedules } = useRoomSchedules(roomId);
   const { data, isLoading, isFetching, isError } = useSchedulePlanPlaces(roomId, scheduleId);
-  // 옮긴 결과는 저장 응답 전에 캐시가 먼저 바뀐다(mutation onMutate) — 캐시를 그대로 그린다
   const places = data ?? EMPTY_PLACES;
   const drag = useMobilePlanDrag();
   const { editing, registerPlaces } = drag;
@@ -84,7 +79,6 @@ export function MobilePlanItinerary({
     places,
     !isLoading && !isFetching && !isError && places.length >= 2 && scheduleFingerprint.length > 0,
   );
-  // 장소 이동을 저장하는 동안 캐시는 새 순서지만 서버는 아직 옛 순서다 — 저장이 끝날 때까지 새 구간 경로를 받지 않는다
   const isSavingPlaceMove = useScheduleItemMoveSavingDays(roomId).includes(scheduleId);
   const existingItemIds = useMemo(
     () => new Set(places.map((p) => p.itemId).filter((id): id is number => typeof id === "number")),
@@ -101,17 +95,13 @@ export function MobilePlanItinerary({
     [expenses.list.data, scheduleId],
   );
 
-  /** 카드 → 이 일차의 경로 보기(`/map?view=route`)에서 이 장소를 고른 채로 연다 */
   function openPlace(place: PlanPlace) {
     const dayNumber = sortRoomSchedules(schedules ?? []).findIndex((s) => s.scheduleId === scheduleId) + 1;
     router.push(buildMapRouteHref(Math.max(dayNumber, 1), place.itemId));
   }
 
-  // ─── 방금 추가한 카드로 스크롤 + 강조 ─────────────────────────────────
-  // 검색·북마크 화면은 오버레이라 목록 스크롤은 그대로 남아 있다. 새 카드가 화면 밖일 때만 최소한으로 움직인다
   const listRef = useRef<HTMLDivElement | null>(null);
   const prefersReducedMotion = useReducedMotion();
-  // 같은 장소로 두 번 스크롤하지 않게 — 강조 중 목록이 갱신돼도 다시 끌어오지 않는다
   const scrolledItemIdRef = useRef<number | null>(null);
   useEffect(() => {
     if (recentlyAddedItemId === null || scrolledItemIdRef.current === recentlyAddedItemId) return;
@@ -120,8 +110,6 @@ export function MobilePlanItinerary({
     scrolledItemIdRef.current = recentlyAddedItemId;
     row.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion ? "auto" : "smooth" });
   }, [places, prefersReducedMotion, recentlyAddedItemId]);
-
-  // ─── 렌더 ────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col">
@@ -201,7 +189,6 @@ export function MobilePlanItinerary({
         monthDayLabel={monthDayLabel}
         sheet={sheet}
         onChangeSheet={setSheet}
-        // 순서 편집 중에는 아직 저장 전인 이동과 섞일 수 있어 삽입을 막는다
         canInsert={!editing}
         onInsertFromSearch={(anchor) => onRequestAddPlace(anchor)}
         onPlaceAdded={onPlaceAdded}
@@ -272,7 +259,6 @@ function PlanPlaceStatus({ isLoading, isError }: Readonly<{ isLoading: boolean; 
   );
 }
 
-/** 빈 일차 표시 — 평소에도 점선 박스이고, 순서 편집 중 카드가 올라오면 놓을 자리로 강조한다 */
 function EmptyDayDropZone({ active }: Readonly<{ active: boolean }>) {
   return (
     <DashedPlaceholderBox

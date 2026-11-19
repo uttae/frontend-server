@@ -22,7 +22,6 @@ it("keeps landing events GA-only across real SDK initialization and consent chan
   expect(events()).toHaveLength(2); expect(sdk.track).not.toHaveBeenCalled();
   expect(events()[0]).toEqual(["event", "cta_click", { page_type: "landing", cta_id: "login", cta_position: "header", page_path: "/", page_location: window.location.origin + "/" }]);
   denyAnalyticsConsent(); cta(); grantAnalyticsConsent(); initializeAmplitude(); cta();
-  // This consented CTA is queued for GA, then discarded by another revoke.
   expect(sdk.track).not.toHaveBeenCalled();
   denyAnalyticsConsent(); grantAnalyticsConsent(); initializeAmplitude(); initializeGoogleAnalytics("G-LOCALTEST", false);
   expect(events()).toHaveLength(2); expect(sdk.track).not.toHaveBeenCalled();

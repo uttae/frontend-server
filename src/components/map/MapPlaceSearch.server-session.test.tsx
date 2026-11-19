@@ -68,7 +68,7 @@ it.each(["MISS", "HIT"] as const)("%s selected card and panels reuse complete re
   await act(async () => vi.advanceTimersByTimeAsync(250));
   await act(async () => (host.querySelectorAll('[role="option"] button')[1] as HTMLButtonElement).click());
   expect(host.querySelector("[data-card]")?.textContent).toBe("서버 카페");
-  expect(apiFetch).toHaveBeenCalledTimes(3); // issuance + autocomplete + resolve, no TextSearch or GET detail
+  expect(apiFetch).toHaveBeenCalledTimes(3);
   const raw = client.getQueryData(placeDetailQueryKey("chosen")); expect(raw).toEqual(detail);
   expect(raw).not.toHaveProperty("reviewSummary");
   await act(async () => usePlaceSearchStore.getState().setExpanded(true));

@@ -36,7 +36,6 @@ export function useSectionWidth() {
   return useContext(SectionWidthContext);
 }
 
-/** Drop into any page to declaratively set the section max-width. */
 export function SetSectionMaxWidth({ value }: { value: WidthToken }) {
   const { setMaxWidth } = useSectionWidth();
   useEffect(() => {

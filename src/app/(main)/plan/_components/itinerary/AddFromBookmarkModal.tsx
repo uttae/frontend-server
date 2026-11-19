@@ -38,9 +38,7 @@ type AddFromBookmarkModalProps = {
   roomId: string;
   scheduleId: number;
   places: PlanPlace[];
-  /** 지정 시 해당 index에 삽입, 없으면 맨 뒤 */
   insertIndex?: number;
-  /** 추가 성공 직후 — 모바일에서 새 카드로 스크롤할 때 쓴다 */
   onAdded?: (item: RoomScheduleItem) => void;
   onClose: () => void;
 };
@@ -67,7 +65,6 @@ export function AddFromBookmarkModal({
     error: categoriesErr,
     refetch: refetchCategories,
   } = useBookmarkCategories(roomId);
-  // 첫 폴더가 정해지기 전에 북마크를 폴더 목록과 함께 받기 시작한다(폴더 → 북마크 순서로 기다리지 않게)
   useAllRoomBookmarks(roomId);
 
   useEffect(() => {
@@ -224,7 +221,6 @@ export function AddFromBookmarkModal({
   );
 
   return (
-    // PC는 가운데 대화상자, 모바일 기기는 아래 시트(DECISIONS 'Dialog' 반응형). 추가 중(busy)에는 Esc·딤·닫기·스와이프로 닫히지 않는다
     <ResponsiveDialog
       open
       onOpenChange={(open) => {
@@ -232,7 +228,6 @@ export function AddFromBookmarkModal({
       }}
       closeDisabled={busy}
     >
-      {/* 높이 상한은 지금 값. 폴더 칩·제목은 고정하고 장소 목록만 스크롤한다. 지금 PC 모달에는 닫기 X가 없다(아래 닫기 버튼) */}
       <ResponsiveDialogContent
         size="md"
         showCloseButton={false}
@@ -270,7 +265,6 @@ export function AddFromBookmarkModal({
           </div>
         ) : (
           <>
-            {/* 칩 줄과 목록은 지금처럼 표면 끝까지 닿는다. 표면(Dialog p-5·시트 Body px-5)의 좌우 20px만큼 넓힌다 */}
             <div className="-mx-5 shrink-0 overflow-x-auto overscroll-x-contain px-5 [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15">
               <div className="flex w-max gap-2">
                 {categories.map((c) => {

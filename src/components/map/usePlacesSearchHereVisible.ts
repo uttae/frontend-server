@@ -9,11 +9,9 @@ import type { MapCenterCoords } from "@/stores/map-center-store";
 
 type UsePlacesSearchHereVisibleParams = {
   discoverCategoryId: string | null;
-  /** 카테고리 검색(MapDiscoverPlaces)이 실패함 */
   discoverFailed: boolean;
 };
 
-/** 「현 위치에서 검색」 결과를 버튼 자리에서 알린다: 실패는 「다시 시도」, 결과 0개는 「검색 결과가 없어요」 */
 export type SearchRecenterNotice = "failed" | "empty";
 
 export type PlacesSearchHereVisibility = {
@@ -21,7 +19,6 @@ export type PlacesSearchHereVisibility = {
   suggestSearchRecenter: boolean;
   searchRecenterNotice: SearchRecenterNotice | null;
   suggestDiscoverRecenter: boolean;
-  /** 실패한 카테고리 검색을 같은 화면에서 다시 시도 */
   retryDiscoverRecenter: boolean;
 };
 
@@ -44,7 +41,6 @@ function chipsDiscoverRecenterEligible(
     typeof discoverCategoryId === "string"
     && discoverCategoryId.trim().length > 0;
 
-  /** 칩 미선택이면 디스커버 재센터 없음 — 텍스트 검색은 별도 */
   if (!chipChosen || discoverSnapshot == null) return false;
 
   return shouldSuggestPlacesSearchRecenter({
@@ -56,11 +52,6 @@ function chipsDiscoverRecenterEligible(
   });
 }
 
-/**
- * 맵 하단 「이 위치 검색」 표시 여부:
- * - 텍스트 검색: `searchSnapshot`만 필요(칩과 무관)
- * - 카테고리 디스커버: 칩 선택 + 디스커버 스냅샷 + 카메라 이탈 시에만
- */
 export function usePlacesSearchHereVisible({
   discoverCategoryId,
   discoverFailed,
@@ -92,7 +83,6 @@ export function usePlacesSearchHereVisible({
       zoom,
       snapshotZoom: searchSnapshot.zoom,
     });
-  // 실패·결과 없음은 검색한 그 화면에서만 알린다. 지도를 옮기면 새 화면 검색이라 「현 위치에서 검색」으로 돌아간다
   const searchRecenterNotice =
     movedFromSearch || searchMode !== "map_recenter"
       ? null
@@ -106,7 +96,6 @@ export function usePlacesSearchHereVisible({
     mapCenter,
     zoom,
   );
-  // 카테고리 검색이 실패하면 그 화면에서 「다시 시도」, 지도를 옮기면 새 화면 검색이라 「현 위치에서 검색」
   const retryDiscoverRecenter =
     discoverFailed && discoverSnapshot != null && !movedFromDiscover;
   const suggestDiscoverRecenter = movedFromDiscover || retryDiscoverRecenter;

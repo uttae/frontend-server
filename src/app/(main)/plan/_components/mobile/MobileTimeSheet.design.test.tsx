@@ -18,7 +18,6 @@ it("has no unset choices in the wheel", async () => {
   expect(group).not.toBeNull(); expect(group.textContent).not.toContain("--");
  }
 });
-// 시작 시간이 없으면 열자마자 시작 휠이 열리고 오전 10:00이 들어간다(초기화도 바로 쓸 수 있다)
 it("opens an unset time with the start wheel at 10:00 AM and an enabled reset control", async () => {
  await open();
  const reset=[...document.querySelectorAll("button")].find(b => b.textContent?.trim()==="초기화");

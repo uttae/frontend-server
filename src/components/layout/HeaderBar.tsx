@@ -86,7 +86,6 @@ const HeaderBar = ({
     "";
 
   const mapHref = isMapPanel ? "/plan" : MOBILE_MAP_PATH;
-  // 모바일 상단 아래 선은 상단 영역의 마지막 줄이 갖는다. 일정은 일차 칩 줄, 가계부·준비물은 탭 줄이 그린다
   const hasRowBelowMobileHeader = isPlanPathname(pathname ?? "") || pathname === "/cost" || isPackingPath(pathname ?? "");
   const mobileTitle = displayTitle ? (
     <>
@@ -127,7 +126,6 @@ const HeaderBar = ({
             {showMapShortcut ? <Link href={mapHref} aria-label={isMapPanel ? "일정 보기" : "지도 보기"} className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
               <span aria-hidden className="block size-6 bg-icon" style={{ mask: `url('${isMapPanel ? mobileIcon.calendar : mobileIcon.map}') center / contain no-repeat` }} />
             </Link> : null}
-            {/* 경로가 바뀌면 닫는다(menuState.path). 바깥 누름·Esc·포커스 복귀·항목 선택 뒤 닫기는 Base UI Menu가 맡는다 */}
             <DropdownMenu open={menuOpen} onOpenChange={(open) => setMenuState({ path: pathname, open })}>
               <DropdownMenuTrigger
                 aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}
@@ -135,7 +133,6 @@ const HeaderBar = ({
               >
                 <span aria-hidden className="block size-6 bg-icon" style={{ mask: `url('${mobileIcon.menu}') center / contain no-repeat` }} />
               </DropdownMenuTrigger>
-              {/* 지금 위치: 44px 버튼 아래 끝에서 6px 위(top 38px), 오른쪽 끝 맞춤 */}
               <DropdownMenuContent align="end" sideOffset={-6} aria-label="여행방 메뉴">
                 <DropdownMenuItem onClick={() => setEditOpen(true)}>
                   <MobileMenuIcon src={mobileIcon.edit} />방 정보 수정
@@ -160,14 +157,12 @@ const HeaderBar = ({
               <BrandLogo variant="symbol" size="S" alt="" />
             </Link>
           </div>
-          {/* 헤더가 놓이는 폭이 화면마다 달라 화면 폭이 아니라 헤더 폭 480px로 나눈다(Figma 설명 6663:5258·6663:5284) */}
           <div className="flex min-w-0 flex-1 items-center justify-between gap-5 ps-5 pe-3 @min-[480px]/header:pe-5">
             <div className="min-w-0">
               {currentRoom || displayTitle ? (
                 <>
                   <div className="flex min-w-0 items-center gap-0.5">
                     <span className="block truncate text-title-s text-text">{displayTitle || currentRoom?.title}</span>
-                    {/* 아이콘은 18px로 두고 누르는 영역만 40px. 영역이 날짜 줄을 덮어 hover 배경을 두지 않는다 */}
                     <button type="button" aria-label="여행 정보 수정" aria-haspopup="dialog" data-tutorial-target="room-settings" onClick={() => setEditOpen(true)} className="-m-2.75 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-icon-subtle hover:text-icon focus-visible:outline-2 focus-visible:outline-primary">
                       <WriteIcon size={18} />
                     </button>

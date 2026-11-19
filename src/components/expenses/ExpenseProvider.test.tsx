@@ -51,7 +51,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/hooks/useSessionUser", () => ({
   useSessionUser: () => ({ data: analytics.userId === undefined ? undefined : { id: analytics.userId } }),
 }));
-// 편집기가 연 대상(일차·장소)을 칸에 보이는 이름으로 확인하려고, 필요한 테스트만 일차·장소를 채운다
 const rooms = vi.hoisted(() => ({
   schedules: [] as { scheduleId: number; roomId: string; dayNumber: number; date: string; createdAt: string }[],
   places: {} as Record<number, { itemId: number; title: string }[]>,
@@ -87,7 +86,6 @@ vi.mock("@/lib/api/rooms/expenses", async (importOriginal) => ({
 const analytics = vi.hoisted(() => ({ send: vi.fn(), userId: 1 as number | undefined }));
 vi.mock("@/lib/analytics/client", () => ({ sendAnalyticsDataCommand: analytics.send }));
 beforeEach(() => { analytics.send.mockClear(); analytics.userId = 1; });
-// jsdom에는 window.location이 있어 이벤트에 공통 페이지 정보(정규화 URL)가 함께 붙는다. 그 밖의 속성은 보내지 않는다
 const sentEvent = (name: string) =>
   ["event", name, { room_id: "r", page_path: "/", page_location: "http://localhost:3000/" }];
 import { ExpensePanel } from "./ExpensePanel";
@@ -100,10 +98,8 @@ function Probe() {
     </p>
   );
 }
-// 대화상자·확인창은 Base UI가 document.body로 포털한다. react-test-renderer는 포털을 그리지 못해 react-dom으로 그리고 document에서 찾는다
 let root: Root | null = null;
 let host: HTMLDivElement | null = null;
-/** 처음이면 새 root에, 이미 있으면 같은 root에 다시 그린다. act 안에서 부른다 */
 function draw(ui: ReactNode) {
   if (!root) {
     host = document.createElement("div");
@@ -118,7 +114,6 @@ function unmount() {
   host?.remove();
   host = null;
 }
-/** 포털된 대화상자까지 포함해 아무것도 그리지 않았다 */
 function rendersNothing() {
   return host?.childNodes.length === 0 && document.querySelector('[role="dialog"], [role="alertdialog"]') === null;
 }
@@ -126,10 +121,8 @@ const buttons = () => [...document.querySelectorAll<HTMLButtonElement>("button")
 const buttonLabelled = (label: string) => document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`);
 const dialogs = () => [...document.querySelectorAll<HTMLElement>('[role="dialog"]')];
 const dialogTitled = (title: string) => dialogs().find(dialog => dialog.querySelector("h2")?.textContent === title);
-/** 비용 추가·수정 편집기(ExpenseEditor) 대화상자 */
 const editors = () => dialogs().filter(dialog => ["비용 추가", "비용 수정"].includes(dialog.querySelector("h2")?.textContent ?? ""));
 const confirmation = () => document.querySelector<HTMLElement>('[role="alertdialog"]');
-/** 편집기가 연 대상. 일차 구분·연결 장소 칸에 보이는 이름 */
 function editorTarget(editor: HTMLElement) {
   return {
     day: editor.querySelector('[role="combobox"][aria-label="일차 구분"]')?.textContent,
@@ -137,14 +130,12 @@ function editorTarget(editor: HTMLElement) {
   };
 }
 async function settle() {
-  // Base UI 열림·닫힘(microtask·requestAnimationFrame)과 쿼리 반영을 기다린다
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
 }
 async function click(element: HTMLElement) {
   await act(async () => element.click());
   await settle();
 }
-/** 편집기 취소 버튼으로 닫는다 */
 async function closeEditor() {
   const [editor] = editors();
   await click([...editor.querySelectorAll("button")].find(button => button.textContent === "취소")!);
@@ -257,7 +248,6 @@ it("forwards the reviewed version and reflects PATCH before summary refresh comp
     expect.objectContaining({ expectedVersion: 2 }),
   );
   expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
-  // 저장 뒤 다시 받는 동안 보이던 예산·합계를 두고 갱신한다('—'로 바꾸지 않는다)
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
   expect(context.syncStatus).toBe("refreshing");
   expect(analytics.send.mock.calls).toEqual([sentEvent("expense_updated")]);
@@ -273,7 +263,6 @@ it("본인 저장 뒤 반향 알림이 와도 목록은 최대 2번 받고 앞 �
   mocks.patch.mockResolvedValueOnce(updated);
   const reads: { signal?: AbortSignal; finish: (value: Expense[]) => void }[] = [];
   mocks.list.mockImplementation((_roomId, signal) => new Promise((resolve) => reads.push({ signal, finish: resolve })));
-  // 저장 응답을 넣는 setQueryData(manual)를 빼고, 조회가 목록을 바꾼 횟수를 센다
   let fetchedLists = 0;
   const stopCounting = client.getQueryCache().subscribe((event) => {
     if (event.type === "updated" && event.action.type === "success" && !event.action.manual
@@ -284,7 +273,6 @@ it("본인 저장 뒤 반향 알림이 와도 목록은 최대 2번 받고 앞 �
     await act(async () => { saving = context.save({ ...record, memo: "saved" }, 10, 2); });
     expect(client.getQueryData(expenseKeys.list("r"))).toEqual([updated]);
     expect(reads).toHaveLength(1);
-    // 서버가 저장 뒤 보낸 알림 — 누가 바꿨는지 알 수 없어 그대로 다시 받는다
     await act(async () => {
       stomp.subscribe.mock.lastCall![1]({ body: JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }) });
     });
@@ -306,7 +294,6 @@ it("다른 화면의 무효화로 다시 받는 동안에도 장부를 비우지
   expect(context.syncStatus).toBe("ready");
   let finish!: (value: unknown) => void;
   mocks.summary.mockImplementationOnce(() => new Promise((resolve) => { finish = resolve; }));
-  // 일정 삭제 등 다른 mutation이 가계부 전체를 무효화한다
   await act(async () => {
     void invalidateExpenses(client, "r");
     await new Promise((resolve) => setTimeout(resolve, 20));
@@ -329,7 +316,6 @@ it("다시 들어오면 재마운트 조회 없이 입장 복구 조회 한 번�
     );
   });
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
-  // 남아 있던 캐시는 마운트만으로 다시 받지 않고, 놓친 알림을 메우는 입장 복구가 한 번씩 받는다
   for (const read of reads) expect(read).toHaveBeenCalledTimes(1);
   expect(context.syncStatus).toBe("ready");
 });
@@ -576,7 +562,6 @@ it("installs a newer own PUT immediately even if an unrelated summary read compl
   await act(async () => {
     await getExpenseRecovery(client, "r").refresh("expenses");
   });
-  // A conservative generation-only fence would wait for this GET and hide the committed own response.
   let finishRead!: (value: {
     budgetKrw: string;
     currency: string;
@@ -881,16 +866,13 @@ async function mountPlaceExpenseButton(records: Expense[]) {
     );
   });
 }
-/** 일정 카드의 비용 버튼(ExpenseEntryButton). 화면에 이 버튼 하나만 그린다 */
 const entryButton = () => host!.querySelector("button")!;
-/** 비용 목록 대화상자의 행 삭제 버튼 */
 const deleteButton = () => buttons().find(b => b.getAttribute("aria-label")?.endsWith("비용 삭제"));
 
 it("opens a place cost list instead of editing only the latest linked expense", async () => {
   const latest = { ...record, id: 12, scheduleId: 2, scheduleItemId: 3, totalAmount: "12345", name: null, createdAt: "2026-09-16T02:00:00Z" };
   await mountPlaceExpenseButton([
     latest,
-    // 어느 비용을 열었는지 편집기 메모 칸으로 구분한다
     { ...latest, id: 99, name: null, memo: "older", createdAt: "2026-09-15T02:00:00Z", updatedAt: "2026-09-17T02:00:00Z" },
     { ...latest, id: 100, scheduleItemId: 4, name: null, createdAt: "2026-09-18T02:00:00Z" },
   ]);
@@ -902,7 +884,6 @@ it("opens a place cost list instead of editing only the latest linked expense", 
   expect(editors()).toHaveLength(0);
   const panel = dialogTitled("장소 비용")!;
   expect(panel).toBeDefined();
-  // 장소 이름 표시(ExpensePlaceLabel)는 비용 행마다 하나
   expect(panel.querySelectorAll('[title="경복궁"]')).toHaveLength(2);
   expect(panel.textContent).toContain("경복궁");
   const add = [...panel.querySelectorAll("button")].find(b => b.textContent?.includes("비용 추가"))!;
@@ -1007,7 +988,6 @@ it("returns to all expenses without refetching or blanking the whole-room summar
  const whole = context.krwSummary.data!;
  const previous = mocks.krw.getMockImplementation()!;
  let finish: ((value: ExpenseKrwSummary) => void) | undefined;
- // 필터 없는 방 전체 합계 조회만 붙잡는다(필터 인자가 없거나 빈 객체)
  const wholeRoom = (args: unknown[]) => Object.keys((args[1] as object | undefined) ?? {}).length === 0;
  mocks.krw.mockImplementation((...args) => wholeRoom(args) ? new Promise(resolve => { finish = resolve; }) : previous(...args));
  try {
@@ -1087,7 +1067,6 @@ it("keeps a scoped expense after a failed delete and prevents duplicate submissi
   const confirm = buttonLabelled("비용 삭제 확인")!;
   await act(async () => { confirm.click(); confirm.click(); });
   expect(mocks.remove).toHaveBeenCalledTimes(1);
-  // 삭제 중에는 progress로 바뀌고 누를 수 없다(focusableWhenDisabled라 native disabled 대신 aria-disabled)
   expect(confirm.getAttribute("aria-busy")).toBe("true");
   expect(confirm.getAttribute("aria-disabled")).toBe("true");
   expect(document.getElementById(confirm.getAttribute("aria-labelledby")!)!.textContent).toBe("삭제 중");
@@ -1245,8 +1224,6 @@ it("does not count a settlement that finishes loading after the dialog closes", 
 
 it.each(["account", "logout", "room", "room-loss", "account-roundtrip", "room-roundtrip"])("synchronously fences pending expense and budget analytics on %s before React rerenders", async (change) => {
   const finishWrites = await startPendingExpenseAndBudgetWrites();
-  // These are the actual synchronous session mutations. No rerender or
-  // hook identity change occurs before the in-flight REST writes resolve.
   await act(async () => {
     if (change === "logout") tearDownClientSession({ queryClient: client });
     else if (change.startsWith("account")) {
@@ -1294,7 +1271,6 @@ it.each([
   const panel = dialogTitled("장소 비용")!;
   const rowsShown = [...panel.querySelectorAll("li")];
   expect(rowsShown).toHaveLength(rows.length);
-  // 행마다 원래 통화 금액 그대로 보인다(환산 없음)
   for (const [index, { currency, totalAmount }] of records.entries()) {
     expect(rowsShown[index].textContent).toContain(`${formatExpenseAmount(totalAmount)} ${currency}`);
   }

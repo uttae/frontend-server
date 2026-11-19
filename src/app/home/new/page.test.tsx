@@ -32,7 +32,6 @@ vi.mock("@/stores/session-store", () => ({
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { createPlan: "create_plan" }, trackAnalyticsEvent: vi.fn(),
 }));
-// 목적지 검색(구글 장소)과 날짜 달력은 칸이 받은 값·onChange만 본다. 제목은 실제 입력 칸을 쓴다
 vi.mock("@/components/rooms/DestinationChipsField", () => ({
   DestinationChipsField: (props: ComponentProps<typeof DestinationChipsField>) => {
     state.destinations = props;
@@ -74,14 +73,12 @@ it("lets mobile users stay on the form, validates dates, and enters the created 
     await typeTitle(container, "  여름 여행  ");
     await act(async () => state.destinations!.onChange(["서울"]));
     await changeDates("2099-07-10", "2099-07-09");
-    // 규칙 위반으로는 잠그지 않는다. 눌러도 만들지 않고 기간 아래에 오류가 남는다
     expect(submitButton(container).disabled).toBe(false);
     await act(async () => submitButton(container).click());
     expect(state.create).not.toHaveBeenCalled();
     expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
     await changeDates("2099-07-10", "2099-07-12");
     await act(async () => submitButton(container).click());
-    // 제목은 trim한 값으로 보낸다
     expect(state.create).toHaveBeenCalledWith({
       title: "여름 여행", destinations: ["서울"],
       startDate: "2099-07-10", endDate: "2099-07-12",
@@ -101,11 +98,8 @@ it("lets mobile users stay on the form, validates dates, and enters the created 
 it("shows errors only under the fields the user touched", async () => {
   const { container, unmount } = await renderPage();
   try {
-    // 처음에는 버튼만 잠기고 오류 문장은 없다
     expect(container.querySelector("[role=alert]")).toBeNull();
 
-    // 제목: 비운 채 지나가면(blur) 제목 칸 아래에 문장이 붙고, 입력하면 사라진다
-    // React onBlur는 focusout을 듣는다(컨테이너가 문서에 붙어 있지 않아 blur()로는 포커스가 오가지 않는다)
     await act(async () => {
       titleInput(container).dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
     });
@@ -118,14 +112,12 @@ it("shows errors only under the fields the user touched", async () => {
     expect(titleInput(container).hasAttribute("aria-invalid")).toBe(false);
     expect(container.textContent).not.toContain("여행 제목을 입력해 주세요.");
 
-    // 목적지: 골랐다가 모두 지우면 목적지 아래에 문장이 붙는다
     await act(async () => state.destinations!.onChange(["서울"]));
     await act(async () => state.destinations!.onChange([]));
     expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
     await act(async () => state.destinations!.onChange(["서울"]));
     expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
 
-    // 기간: 시작일만 고르면 필수, 오늘 이전이면 하한, 역순·30일 초과도 기간 아래에 붙는다
     await changeDates("2099-07-10", "");
     expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
     await changeDates("2000-01-01", "2000-01-02");
@@ -155,7 +147,6 @@ it("shows every field error at once when submitting an empty form", async () => 
   }
 });
 
-// 버튼을 누르면 자동 포커스된 제목 칸이 먼저 blur돼 제목 오류가 생긴다. 그 뒤 첫 제출에서도 나머지 칸 오류가 함께 보여야 한다
 it("shows every field error on the first submit even when the title already has an error from blur", async () => {
   const { container, unmount } = await renderPage();
   try {

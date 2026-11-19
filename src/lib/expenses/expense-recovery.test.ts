@@ -22,10 +22,6 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 const READ_KEYS = ["list", "summary", "summary-krw", "budget", "currencies", "members"];
-/**
- * ExpenseProvider가 화면에 붙이는 6개 조회와 같은 key·옵션의 observer를 붙인다.
- * 복구는 무효화만 하고, 다시 받는 일은 화면에 있는 조회(이 observer)의 queryFn이 한다.
- */
 function mountExpenseQueries(client: QueryClient, roomId = "r") {
   for (const key of READ_KEYS) {
     const observer = new QueryObserver(client, {
@@ -37,7 +33,6 @@ function mountExpenseQueries(client: QueryClient, roomId = "r") {
     stops.push(observer.subscribe(() => {}));
   }
 }
-/** observer를 붙이고 첫 조회가 끝날 때까지 기다린 뒤 읽기 기록을 비운다 */
 async function loadedRecovery(client: QueryClient, roomId = "r") {
   const recovery = getExpenseRecovery(client, roomId);
   mountExpenseQueries(client, roomId);
@@ -49,7 +44,6 @@ it("refreshes the six mounted queries once on entry and routes minimal own-sessi
   const client = new QueryClient();
   const recovery = getExpenseRecovery(client, "r");
   mountExpenseQueries(client);
-  // 입장 복구는 observer가 막 시작한 첫 조회에 합류한다(6개 × 2가 아니다)
   await recovery.refresh("all");
   expect(api.read.mock.calls.map((c) => c[0]).sort()).toEqual([
     "budget",
@@ -101,7 +95,6 @@ it("coalesces a burst but reruns events received during reads", async () => {
   );
   const first = recovery.refresh("budget");
   await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
-  // 읽는 중에 온 알림은 그 조회를 취소하고 다시 받는다. 같은 틱의 알림 여러 개는 한 번만 다시 받는다
   const second = recovery.refresh("budget");
   const third = recovery.refresh("budget");
   finish([]);
@@ -120,10 +113,8 @@ it("restarts a first load in flight when a change arrives instead of joining it"
   try {
     mountExpenseQueries(client);
     await vi.waitFor(() => expect(reads).toHaveLength(1));
-    // 처음 받는 중(데이터 없음)인 조회는 이 변경 전에 출발했을 수 있다
     const change = recovery.refresh("budget");
     await vi.waitFor(() => expect(reads).toHaveLength(2));
-    // 변경 뒤에 출발한 조회가 먼저 끝나고, 변경 전에 출발한 첫 조회가 늦게 온다
     reads[1]!({ budgetKrw: "200", version: 2 });
     reads[0]!({ budgetKrw: "100", version: 1 });
     await change;
@@ -207,7 +198,6 @@ it.each(["forced", "query-error"])(
   async (source) => {
     const client = new QueryClient();
     const recovery = getExpenseRecovery(client, "r");
-    // Observe delivery through the real cache, without replacing subscription.
     const handleError = vi.spyOn(recovery, "handleError");
     if (source === "forced") {
       const { evictRoomFromClientCaches } =
@@ -248,7 +238,6 @@ it("fresh server admission replaces a revoked lifetime, leaving old work termina
   confirm("r", true);
   const fresh = getExpenseRecovery(client, "r");
   expect(fresh).not.toBe(old);
-  // 새 입장의 화면이 조회를 다시 붙인다
   mountExpenseQueries(client);
   await fresh.refresh("all");
   expect(fresh.getSnapshot()).toBe("ready");

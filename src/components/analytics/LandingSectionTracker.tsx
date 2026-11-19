@@ -12,8 +12,6 @@ import {
 const sectionIds: readonly LandingSectionId[] = [
   "hero", "problem", "solution", "features", "devices", "travel_steps", "final_cta",
 ];
-// Browser document lifetime, independent of component/consent lifetime. The root
-// tracker observes all pathname transitions; query/hash changes do not reset it.
 let visitPathname: string | null = null;
 const counted = new Set<LandingSectionId>();
 
@@ -67,8 +65,6 @@ export function LandingSectionTracker() {
         return;
       }
       evaluate();
-      // Sampling rendered geometry also catches layout shifts with no scroll or
-      // resize event, including upstream content and responsive image changes.
       frame = requestAnimationFrame(tick);
     };
     const restart = () => {

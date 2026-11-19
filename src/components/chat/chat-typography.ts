@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 const AI_OVERLAY_INSET = "0.5rem" as const;
 const AI_LABEL_WIDTH_CH = 1.5;
 
-/** 말풍선·카드·입력 등 본문 (패널 일반 크기) */
 const chatTypographyMessage = {
   bubble: "text-body-s-regular leading-relaxed",
   systemBody: "text-body-s-regular leading-relaxed",
@@ -14,11 +13,9 @@ const chatTypographyMessage = {
   placeRating: "text-body-xs-emphasis font-medium leading-relaxed text-[#364153]",
   placeAddress: "text-body-xs-regular leading-relaxed text-[#99A1AF]",
   input: "text-body-s-regular leading-relaxed",
-  /** 입력창 글자와 같은 크기 — 모바일 입력창은 iOS 확대 방지로 16px */
   inputAiLabel: "text-body-s-emphasis mobile:text-body-m-emphasis leading-relaxed text-secondary font-semibold",
 } as const;
 
-/** 패널 최소화(좁은 폭) */
 const chatTypographyMinimized = {
   bubble: "text-body-xs-regular leading-relaxed",
   systemBody: "text-body-xs-regular leading-relaxed",
@@ -36,10 +33,6 @@ export type ChatMessageTextTypography =
   | typeof chatTypographyMessage
   | typeof chatTypographyMinimized;
 
-/**
- * 채팅 패널 타이포 — 메시지/카드/입력 + textarea 오버레이 여백.
- * 최소화 시 본문만 축소; 오버레이 들여쓰기 토큰은 동일.
- */
 export const chatTypography = {
   ...chatTypographyMessage,
   aiOverlayInset: AI_OVERLAY_INSET,
@@ -52,12 +45,8 @@ export function resolveChatMessageTypography(
   return isMinimized ? chatTypographyMinimized : chatTypographyMessage;
 }
 
-/**
- * AI 응답 말풍선(밝은 배경) 위 `**강조**` — 진한 본문과 대비되게 브랜드 그린으로 강조.
- */
 export const chatAiBubbleEmphasisClass = "font-semibold text-primary-strong";
 
-/** AI 응답 말풍선(밝은 배경) 내 대화 요약 등 블록 제목 */
 export function chatAiBubbleBlockTitleClass(isMinimized: boolean): string {
   return cn(
     "font-semibold text-gray-900",
@@ -89,11 +78,9 @@ export function chatAiBubbleListTextClass(isMinimized: boolean): string {
   );
 }
 
-/** AI 장소 추천 블록·reason 공통 `**강조**` — 본문 슬레이트 톤과 어울리는 브랜드 그린 */
 export const chatAiBubblePlaceRecommendationEmphasisClass =
   "font-semibold text-primary-strong";
 
-/** 장소 추천 블록 헤더 `heading.title` — 본문·reason과 맞춘 어두운 계열 */
 export function chatAiBubblePlaceRecommendationHeadingTitleClass(
   isMinimized: boolean,
 ): string {
@@ -103,7 +90,6 @@ export function chatAiBubblePlaceRecommendationHeadingTitleClass(
   );
 }
 
-/** 장소 추천 블록 헤더 `heading.subtitle` (예: 요청 맥락 안내 문장) */
 export function chatAiBubblePlaceRecommendationHeadingSubtitleClass(
   isMinimized: boolean,
 ): string {
@@ -113,7 +99,6 @@ export function chatAiBubblePlaceRecommendationHeadingSubtitleClass(
   );
 }
 
-/** AI 장소 추천 행 카드 아래 `reason`(장소 설명) 본문 — 말풍선 위에서 일반 본문처럼 읽히도록 어두운 색 */
 export function chatAiBubblePlaceRecommendationReasonClass(
   isMinimized: boolean,
 ): string {

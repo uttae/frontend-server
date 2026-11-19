@@ -1,6 +1,5 @@
 import type { ChatMessage } from "@/types/chat";
 
-/** 과거 메시지 prepend 직후 리스트 스냅샷(스크롤·모션 분기용) */
 export function isChatHistoryPrependSnapshot(
   prevCount: number,
   prevFirstId: string | undefined,
@@ -15,7 +14,6 @@ export function isChatHistoryPrependSnapshot(
   );
 }
 
-/** 하단에 메시지가 append된 직후 리스트 스냅샷(스크롤 위치 유지용) */
 export function isChatHistoryAppendSnapshot(
   prevCount: number,
   prevFirstId: string | undefined,

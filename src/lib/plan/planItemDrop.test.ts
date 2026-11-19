@@ -27,7 +27,6 @@ describe("resolvePlanItemDrop", () => {
   });
 
   it("드래그 중 목록이 바뀌어도 놓은 자리(몇 번째) 그대로 보낸다", () => {
-    // 시작 때 2곳이었는데 놓을 때 앞에 하나가 더 들어왔다 — 시작 자리와 놓은 자리를 그대로 쓴다
     expect(resolvePlanItemDrop("room", sameDay(0, 1, 3))?.vars).toMatchObject({ body: { newOrderIndex: 1 } });
   });
 

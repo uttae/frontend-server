@@ -27,12 +27,10 @@ import HeaderBar from "@/components/layout/HeaderBar";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let host: HTMLDivElement;
 let root: Root;
-// Base UI 대화상자는 document.body로 포털된다. 여행 정보 수정 대화상자는 제목(aria-labelledby)으로 찾는다
 const dialogs = () => [...document.querySelectorAll<HTMLElement>('[role="dialog"]')];
 const editDialogs = () =>
   dialogs().filter((node) => document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent === "여행 정보 수정");
 const dialog = () => editDialogs()[0] ?? null;
-// 열림·닫힘 처리와 처음 포커스는 Base UI가 다음 animation frame에 마친다
 async function nextFrame() {
   await act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
@@ -65,10 +63,8 @@ async function open() {
   return trigger;
 }
 const dateField = (edge: "start" | "end") => dialog()!.querySelector<HTMLButtonElement>(`#trip-room-${edge}`)!;
-// 날짜 선택 팝업도 body로 포털돼 여행 정보 수정 대화상자 밖에 그려진다
 const picker = () => document.querySelector<HTMLElement>('[role="dialog"][aria-label="날짜 선택"]');
 const day = (ymd: string) => picker()!.querySelector<HTMLButtonElement>(`button[data-ymd="${ymd}"]`)!;
-/** 날짜 칸을 눌러 달력을 열고, 날짜를 차례로 누른 뒤 확인한다 */
 async function pickDates(edge: "start" | "end", ...days: string[]) {
   await act(async () => dateField(edge).click());
   expect(picker()).not.toBeNull();
@@ -120,7 +116,6 @@ it("shows the title error under the title field and blocks apply until a title i
   const error = document.getElementById(title().getAttribute("aria-describedby")!);
   expect(error?.getAttribute("role")).toBe("alert");
   expect(error?.textContent).toBe("여행 제목을 입력해 주세요.");
-  // 규칙 위반으로는 버튼을 잠그지 않는다. 눌러도 저장하지 않고 오류는 칸 아래에 남는다
   expect(button("적용하기", dialog()!).disabled).toBe(false);
   await click("적용하기", dialog()!);
   expect(state.update).not.toHaveBeenCalled();
@@ -134,11 +129,9 @@ it("shows the title error under the title field and blocks apply until a title i
 
 it("allows an earlier start date and keeps date ordering and required destination validation", async () => {
   await open();
-  // 저장된 시작일보다 이른 날짜로도 시작일을 앞당길 수 있다
   await pickDates("start", "2026-10-09");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 9일");
   expect(button("적용하기", dialog()!).disabled).toBe(false);
-  // 종료 칸에서 시작일보다 이른 날짜를 고르면 기간을 거꾸로 만들지 않고 새 시작일이 되며, 종료일은 그대로다
   await pickDates("start", "2026-10-11", "2026-10-12");
   await pickDates("end", "2026-10-10");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
@@ -158,7 +151,6 @@ it("changes only the picked date and leaves the other one", async () => {
   await pickDates("end", "2026-10-13");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
   expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 13일");
-  // 아무것도 고르지 않고 닫으면 바꾸지 않는다
   await pickDates("start");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
 });
@@ -166,7 +158,6 @@ it("changes only the picked date and leaves the other one", async () => {
 it("keeps the opened values while the server changes, shows the change outside, and reflects it on reopen", async () => {
   await open();
   await act(async () => dateField("end").click());
-  // 모달과 달력을 열어 둔 사이 다른 멤버가 제목과 종료일을 바꿨다
   Object.assign(state.room, { title: "겨울 여행", endDate: "2026-10-14" });
   await act(async () => root.render(<HeaderBar />));
   await click("확인", picker()!);
@@ -205,7 +196,6 @@ it.each(["loading", "missing"])("does not offer editing for %s room data", async
   if (mode === "missing") expect(dialog()!.textContent).toContain("여행 정보를 불러오지 못했어요.");
 });
 
-// Tab 순환(포커스 가두기)은 Base UI 확인창이 맡는다. 여기서는 처음 포커스·Esc 범위·포커스 복귀를 본다
 it("focuses the shrink confirmation and Escape dismisses only confirmation, preserving the draft", async () => {
   await open();
   await pickDates("end", "2026-10-10");
@@ -215,7 +205,6 @@ it("focuses the shrink confirmation and Escape dismisses only confirmation, pres
   const confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
   expect(confirm).not.toBeNull();
   expect(document.getElementById(confirm.getAttribute("aria-labelledby")!)?.textContent).toBe("여행 기간을 줄일까요?");
-  // 확인창의 처음 포커스는 취소다(Enter 한 번에 삭제되는 계속하기가 실행되지 않게)
   expect(document.activeElement).toBe(button("취소", confirm));
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
@@ -237,7 +226,6 @@ it("saves the shortened period from the confirmation and keeps it open while sav
   expect(state.update).toHaveBeenCalledWith(expect.objectContaining({
     roomId: "room", data: expect.objectContaining({ startDate: "2026-10-10", endDate: "2026-10-10" }),
   }), expect.any(Object));
-  // 저장 중에는 확인창이 Esc로 닫히지 않고 계속하기가 진행 표시(저장 중)로 바뀐다
   state.pending = true;
   await act(async () => root.render(<HeaderBar />));
   confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;

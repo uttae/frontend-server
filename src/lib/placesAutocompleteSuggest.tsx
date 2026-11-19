@@ -1,16 +1,9 @@
-/// <reference types="google.maps" />
-
 "use client";
 
 import type { ReactNode } from "react";
 
-/** Places Autocomplete Data — `fetchAutocompleteSuggestions` 호출 간 디바운스(ms) */
 export const AUTOCOMPLETE_SUGGEST_DEBOUNCE_MS = 250;
 
-/**
- * 레거시 `types: ['(regions)']` 대체 — AutocompleteRequest.includedPrimaryTypes 최대 5개.
- * @see https://developers.google.com/maps/documentation/javascript/places-migration-autocomplete
- */
 export const DESTINATION_INCLUDED_PRIMARY_TYPES: readonly string[] = [
   "locality",
   "administrative_area_level_1",
@@ -26,7 +19,6 @@ export function circleLocationBias(
   return { center, radius: radiusMeters };
 }
 
-/** FormattableText.matches 범위로 main 텍스트 하이라이트 조각 */
 export function formattableToHighlightedNodes(
   ft: google.maps.places.FormattableText | null | undefined,
   matchClassName: string,
@@ -70,7 +62,6 @@ export async function fetchPlacePredictionsForRequest(
     .filter((p): p is google.maps.places.PlacePrediction => p != null);
 }
 
-/** 자동완성 선택/텍스트 검색 확정 후 다음 입력을 새 세션으로 */
 export function newAutocompleteSessionToken(): google.maps.places.AutocompleteSessionToken {
   return new google.maps.places.AutocompleteSessionToken();
 }

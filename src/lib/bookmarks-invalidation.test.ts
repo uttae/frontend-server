@@ -34,7 +34,6 @@ function newClient() {
   return client;
 }
 
-/** 화면에 있는 조회처럼 observer를 붙이고, 응답은 테스트가 풀 때까지 붙잡아 둔다 */
 function watch(client: QueryClient, queryKey: readonly unknown[]) {
   const pending: (() => void)[] = [];
   let fetches = 0;
@@ -73,7 +72,6 @@ describe("invalidateRoomBookmarkQueries", () => {
 
     const done = invalidateRoomBookmarkQueries(client, event(type));
 
-    // 앞의 재조회가 끝나기 전에 둘 다 출발한다
     await expect.poll(() => [categories.fetches(), bookmarks.fetches()]).toEqual([1, 1]);
     categories.resolveAll();
     bookmarks.resolveAll();

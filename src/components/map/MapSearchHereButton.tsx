@@ -13,7 +13,6 @@ import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 
 export type MapSearchHereButtonProps = {
   discoverCategoryId: string | null;
-  /** 카테고리 검색이 실패함 — 버튼이 「다시 시도」로 남는다 */
   discoverFailed: boolean;
 };
 
@@ -28,7 +27,6 @@ export function MapSearchHereButton({
     (s) => s.requestDiscoverRecenter,
   );
   const generation = usePlaceSearchStore((s) => s.generation);
-  // 닫은 「검색 결과가 없어요」는 그 검색 동안만 닫혀 있다(새 검색은 generation이 바뀐다)
   const [closedGeneration, setClosedGeneration] = useState<number | null>(null);
   const {
     visible,
@@ -47,7 +45,6 @@ export function MapSearchHereButton({
       {showEmptyNotice ? (
         <div role="status" className={cn(searchHerePillClass, "pe-1")}>
           검색 결과가 없어요
-          {/* 아이콘은 16px, 누르는 영역은 32×44px(세로는 음수 margin으로 알약 높이 유지) */}
           <button
             type="button"
             aria-label="안내 닫기"

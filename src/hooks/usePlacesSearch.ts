@@ -115,7 +115,6 @@ export function usePlacesSearch(
   longitude: number | null,
   radius: number | undefined,
   pageSize: number,
-  /** 검색·재검색 커밋마다 증가 — pageToken·pageIndex를 0으로 동기 리셋 */
   searchGeneration: number,
 ) {
   const trimmedQuery = query.trim();

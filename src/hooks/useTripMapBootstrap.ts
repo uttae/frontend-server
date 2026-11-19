@@ -12,7 +12,6 @@ import { useClientReady } from "./useClientReady";
 const DEFAULT_MAP_CENTER = { lat: 37.5665, lng: 126.978 };
 export const DESTINATION_MAP_ZOOM = 12;
 
-/** 방별 저장 뷰포트·목적지 캐시를 먼저 사용하고 필요한 경우에만 지오코딩합니다. */
 export function useTripMapBootstrap(
   roomId: string | null | undefined,
   destination: string | null | undefined,

@@ -7,14 +7,11 @@ type MobileSheetMenuItemProps = Readonly<{
   icon: (props: IconProps) => ReactNode;
   label: string;
   onClick: () => void;
-  /** 삭제 등 위험한 동작 */
   danger?: boolean;
   disabled?: boolean;
-  /** 오른쪽에 붙는 보조 내용 — 예: 비용 합계 */
   trailing?: ReactNode;
 }>;
 
-/** 일정 관리 시트(Drawer)의 메뉴 한 줄 — 아이콘 20px + 라벨. 일차·장소 메뉴 시트가 함께 쓴다 */
 export function MobileSheetMenuItem({
   icon: Icon,
   label,

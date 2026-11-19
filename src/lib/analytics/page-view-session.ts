@@ -58,8 +58,6 @@ export function buildSessionPageViewPlan({
     sessionReady,
     userId: confirmedUserId,
   });
-  // Missing/mismatched room context still belongs to MainRoomGate hydration.
-  // A settled anonymous/error user can keep its baseline ungrouped page view.
   const awaitingRoom = isAnalyticsRoomPath(pageViewInput.pathname) &&
     !resolveSelectedAnalyticsRoomId({ pathname: pageViewInput.pathname, currentRoomId });
   const alreadyTracked =

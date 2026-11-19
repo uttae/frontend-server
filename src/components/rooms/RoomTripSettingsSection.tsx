@@ -10,7 +10,6 @@ import { useCurrentRoomMembership } from "@/hooks/useCurrentRoomMembership";
 import { isRoomMemberRole } from "@/lib/rooms";
 import { useSessionStore } from "@/stores/session-store";
 
-/** 방장 전용 여행 삭제 — 적용하기 아래 작은 텍스트 버튼과 삭제 확인 */
 export function RoomTripDeleteButton() {
   const router = useRouter();
   const { roomSource, isHost, isLoading } = useCurrentRoomMembership();

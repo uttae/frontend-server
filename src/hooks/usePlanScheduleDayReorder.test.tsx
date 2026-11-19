@@ -82,13 +82,10 @@ it("keeps the dropped day order on screen until the cache shows it, then draws t
     let dropping!: Promise<void>;
     await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
     expect(move.mutateAsync).toHaveBeenCalledWith({ roomId: "room-a", scheduleId: 30, targetDayNumber: 1 });
-    // drop 바로 뒤의 dragend는 저장 중인 모양을 풀지 않는다
     await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragEnd());
 
-    // 캐시가 아직 놓기 전 목록이면 놓은 모양(앞 일차를 민 미리보기)을 그대로 그린다
     expect(hook.current.getSectionProps(0).sectionStyle?.transform).toBe(`translateY(${HEIGHT}px)`);
 
-    // onMutate가 캐시를 새 순서로 바꾸면 캐시를 그대로 그린다
     await hook.render([day(30, 1), day(10, 2), day(20, 3)]);
     expect(hook.current.getSectionProps(0).sectionStyle).toBeUndefined();
 
@@ -111,13 +108,11 @@ it("starts the next day drag while the previous one is still saving, and the ear
     let dropping!: Promise<void>;
     await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
 
-    // 저장 중에도 손잡이를 막지 않는다
     const moved = [day(30, 1), day(10, 2), day(20, 3)];
     await hook.render(moved);
     expect(hook.current.getSectionProps(1).dragHandleProps.dragDisabled).toBe(false);
     await act(async () => hook.current.getSectionProps(1).dragHandleProps.onDragStart(dragEvent(transfer, sections[1]!, 300)));
 
-    // 앞선 저장이 끝나도 지금 끄는 일차는 그대로다
     await act(async () => {
       finish();
       await dropping;

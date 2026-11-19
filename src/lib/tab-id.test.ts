@@ -2,7 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-/** 탭 ID는 모듈 변수에 한 번 만들어 두므로 경우마다 모듈을 새로 읽는다 */
 async function loadGetTabId() {
   vi.resetModules();
   return (await import("@/lib/tab-id")).getTabId;

@@ -62,9 +62,7 @@ import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import { useMobileRouteView } from "./useMobileRouteView";
 
 it.each([
-  // 경로 보기 버튼 — 그 일차 첫 장소를 바로 확대한다(일차 전체를 먼저 맞췄다가 확대하지 않는다)
   { url: "/map?view=route&day=1", item: "101" },
-  // 일정 카드 — 누른 장소를 확대한다
   { url: "/map?view=route&day=1&item=102", item: "102" },
 ])("$url 진입 시 처음부터 고른 장소를 확대하고, URL에 선택 장소가 반영돼도 그대로다", async ({ url, item }) => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -86,7 +84,6 @@ it.each([
     await act(async () => render());
     expect(current?.mapRouteView?.camera.kind).toBe("place");
     expect(new URLSearchParams(window.location.search).get("item")).toBe(item);
-    // Next.js reflects native replaceState into useSearchParams; emulate that rerender.
     await act(async () => render());
     expect(current?.mapRouteView?.camera.kind).toBe("place");
   } finally {
@@ -118,7 +115,6 @@ it.each([
     currency, totalAmount, category: "OTHER", memo: null, name: null,
     payerUserIds: [1], participantUserIds: [1], createdAt: "", updatedAt: "",
   }));
-  // Another place must not affect either summary or empty/add decisions.
   fixtures.expenses.push({ id: 100, version: 1, expenseGroup: "TRIP_DAY", scheduleId: 10, scheduleItemId: 102, currency: "KRW", totalAmount: "999999", category: "OTHER", memo: null, name: null, payerUserIds: [1], participantUserIds: [1], createdAt: "", updatedAt: "" });
   fixtures.open.mockClear();
   fixtures.openScope.mockClear();
@@ -152,7 +148,6 @@ it.each([
       expect(fixtures.open).toHaveBeenCalledWith({ scheduleId: 10, scheduleItemId: 101 });
       expect(fixtures.openScope).not.toHaveBeenCalled();
     } else {
-      // Itinerary keeps empty expense rows hidden; its action sheet owns adding.
       expect(button).toBeNull();
     }
   } finally {

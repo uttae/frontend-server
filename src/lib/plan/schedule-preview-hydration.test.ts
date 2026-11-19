@@ -157,7 +157,6 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
 
   it("기다리던 일정 불러오기가 취소되고 다시 시작되면 새 불러오기를 기다려 그 결과를 쓴다", async () => {
     const queryClient = createQueryClient();
-    // 이미 받은 일정을 다시 받는 중에 또 다시 받으면 TanStack이 진행 중인 불러오기를 취소한다
     queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a"])]);
     const finishHydrations: Array<(schedules: RoomScheduleWithItems[]) => void> = [];
     const queryFn = () =>
@@ -184,7 +183,6 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
 
   it("다시 들어오면 지금 일차 목록은 그대로 두고 자리표시자 장소만 다시 받는다 — 지운 장소가 되살아나지 않는다", async () => {
     const queryClient = createQueryClient();
-    // 일정을 불러온 뒤 c를 지웠다 — room-schedules의 items에는 c가 아직 남아 있다
     queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a", "b", "c"])]);
     queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [
       placeholder("a", 100),

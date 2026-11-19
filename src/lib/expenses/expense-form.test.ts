@@ -44,7 +44,6 @@ describe("createExpenseFormSchema", () => {
     expect(schema.safeParse(values).success).toBe(true);
   });
 
-  // issue path가 화면의 form.Field name과 같아야 그 칸에 붙는다
   it("puts cross-field issues on the amount, linked place and payer fields", () => {
     expect(issuesOf(schema.safeParse({ ...values, totalAmount: "10.001" }))).toEqual([
       {
@@ -76,7 +75,6 @@ describe("createExpenseFormSchema", () => {
     expect(schema.safeParse({ ...values, name: undefined, memo: null }).success).toBe(true);
   });
 
-  // 칸 오류가 있어도 교차 규칙이 함께 돌아야 첫 저장에 모든 칸 오류가 한 번에 보인다
   it("reports field and cross-field issues together", () => {
     expect(issuesOf(schema.safeParse({ ...values, category: "", totalAmount: "10.001" }))).toEqual([
       { path: ["category"], message: "카테고리를 선택해 주세요." },

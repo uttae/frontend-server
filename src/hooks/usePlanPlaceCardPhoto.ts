@@ -1,7 +1,6 @@
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
 import type { PlanPlace } from "@/lib/plan/types";
 
-/** Plan 카드 썸네일 — 캐시 우선, 미시딩 시 placeId 기준 `GET /places/photos`로 조회 */
 export function usePlanPlaceCardPhoto(
   place: PlanPlace,
   options?: { enabled?: boolean },

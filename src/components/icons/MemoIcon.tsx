@@ -1,6 +1,5 @@
 import type { SVGProps } from "react";
 
-/** 우측 하단 접힘 스티키 노트 — 플랜 카드 메모 트리거/모듈 아이콘 */
 export function MemoIcon({
   className,
   strokeWidth = 2,

@@ -6,7 +6,6 @@ import {
   decodePlanSegmentPathLatLng,
 } from "./maps";
 
-/** Maps JS geometry 라이브러리 stub — decodePath는 LatLng 객체를 돌려준다 */
 function stubGeometry(
   decodePath: (encoded: string) => Array<{ lat(): number; lng(): number }>,
 ) {

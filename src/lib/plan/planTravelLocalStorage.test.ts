@@ -36,7 +36,6 @@ describe("구간 경로 sessionStorage", () => {
 
   it("출발 항목과 일정 지문이 같아도 도착 항목이 다르면 저장한 경로를 쓰지 않는다", () => {
     const toC = { distanceMeters: 999, durationSeconds: 60, travelMode: "DRIVING" };
-    // 순서 저장 중 새 순서([1,3,2])로 그린 칸이 옛 순서([1,2,3])의 지문으로 1→3 경로를 저장한 경우
     writeScheduleRouteToSessionStorage("room-1", 10, 1, 3, "DRIVING", "fp-1-2-3", toC);
 
     expect(

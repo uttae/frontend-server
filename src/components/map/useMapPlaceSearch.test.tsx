@@ -145,7 +145,6 @@ it("mobile specific reuses chosen resolved detail without Text Search", async ()
     expect.objectContaining({ analyticsSource: "search", itinerarySource: "search" }),
   );
 });
-// 센소지를 찾은 뒤 지도를 옮겨 재검색할 때 위치 우선(bias)으로 찾으면 Google이 센소지를 다시 돌려줬다
 it.each([
   ["shows what Google finds inside the visible map", ["inside"]],
   ["shows no results when Google finds nothing inside the visible map", []],
@@ -166,7 +165,6 @@ it("search box failure shows one message instead of the raw error", async () => 
   await act(async () => { await api.confirm(confirmation()); });
   expect(usePlaceSearchStore.getState()).toMatchObject({ status: "error", error: "검색에 실패했어요.", searchMode: "text" });
 });
-// 「현 위치에서 검색」 실패는 검색창 문구 없이 그 버튼이 「다시 시도」로 알리고, 보이던 결과는 그대로 둔다
 it("search here failure keeps the shown results and leaves the message to the button", async () => {
   await act(async () => { await api.confirm(confirmation()); });
   useMapCenterStore.setState({

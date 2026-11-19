@@ -19,9 +19,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { CookieConsentBanner } from "./CookieConsentBanner";
 import { ConsentGatedAnalytics } from "./ConsentGatedAnalytics";
 
-// 쿠키 설정은 ui Dialog(Base UI)라 document.body로 포털된 role="dialog"다
 const dialogs = () => document.querySelectorAll<HTMLElement>('[role="dialog"]');
-// Base UI는 처음 포커스를 requestAnimationFrame 뒤에 옮긴다
 const settle = () =>
   act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));

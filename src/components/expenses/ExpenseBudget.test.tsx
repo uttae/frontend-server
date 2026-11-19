@@ -168,7 +168,6 @@ it.each([
   await submit();
   expect(mocks.save).not.toHaveBeenCalled();
   expect(input().value).toBe(value === "1000000000000000" ? "1,000,000,000,000,000" : value);
-  // 입력 오류는 칸의 오류 상태와 칸 아래 FieldError로 보인다
   expect(input().getAttribute("aria-invalid")).toBe("true");
   const error = document.getElementById(input().getAttribute("aria-describedby")!);
   expect(error?.getAttribute("role")).toBe("alert");
@@ -186,7 +185,6 @@ it("locks duplicate submit and close while pending, and preserves draft on failu
   await type("456");
   await submit();
   await submit();
-  // 저장 중에는 저장 버튼이 progress로 바뀌고 접근성 이름은 '저장 중'이다
   const saving = document.querySelector<HTMLButtonElement>('button[type="submit"]')!;
   expect(saving.getAttribute("aria-busy")).toBe("true");
   expect(document.getElementById(saving.getAttribute("aria-labelledby")!)?.textContent).toBe("저장 중");
@@ -219,7 +217,6 @@ it("409 preserves draft; failed latest read blocks retry until explicit successf
   expect(input().value).toBe("456");
   await click("최신 예산 확인 후 수정 계속");
   expect(mocks.save).toHaveBeenCalledTimes(1);
-  // Background refresh cannot silently advance the explicitly reviewed version.
   mocks.state = state({ ...budget, budgetKrw: "3000", version: 8 });
   await modal({ ...budget, budgetKrw: "3000", version: 8 });
   expect(input().value).toBe("456");

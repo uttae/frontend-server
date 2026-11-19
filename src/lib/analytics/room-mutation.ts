@@ -15,7 +15,6 @@ function roomRole(client: QueryClient, roomId: string) {
   return toAnalyticsRoomRole(detail?.role ?? summary?.role);
 }
 
-/** Only these room writes use this scope; never inject the selected room into events. */
 export async function trackRoomMutation<Result>(
   client: QueryClient,
   roomId: string,

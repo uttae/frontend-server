@@ -51,7 +51,6 @@ describe("server session confirmation", () => {
     expect((await confirmPlaceSearch(args))?.anchor?.detail.rating).toBe(4.5);
     expect(search).not.toHaveBeenCalled();
   });
-  // 도쿄 지도에서 '음식점' 첫 후보가 용인의 '음식점' 가게여도 지도 중심에서 찾는다
   it.each(["with", "without"])("whole searches around the map center %s a first suggestion and never resolves it", async mode => {
     const { args, search } = setup({ radius: 1234, ...(mode === "without" ? { prediction: undefined } : {}) });
     const result = await confirmPlaceSearch(args);

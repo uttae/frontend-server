@@ -26,7 +26,6 @@ const toastError = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast: { error: toastError } }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-/** 기본: 10일차(2곳)의 0번째를 1번째로 */
 const drop = (overrides: Partial<PlanItemDrop> = {}): PlanItemDrop => ({
   itemId: 1,
   from: { scheduleId: 10, index: 0 },
@@ -75,7 +74,6 @@ it("sends one reorder_itinerary for a saved same-day drop, attributed to the roo
     });
     expect(started).toBe(true);
     expect(api.reorder).toHaveBeenCalledWith("room-a", 10, 1, { newOrderIndex: 1 });
-    // 낙관적 표시는 쓰기 이벤트가 아니다 — 저장이 끝나기 전에는 보내지 않는다
     expect(trackAnalyticsEvent).not.toHaveBeenCalled();
     await hook.render("room-b");
     await act(async () => {
@@ -182,7 +180,6 @@ it("saves the next drop while the previous one is still saving, and still report
       hook.current.commitPlanItemDrop(drop(), firstSettled);
     });
     await hook.flush();
-    // 잠금이 없어 앞 저장 중에 또 놓을 수 있다
     await act(async () => {
       second = hook.current.commitPlanItemDrop(
         drop({ itemId: 2, from: { scheduleId: 10, index: 1 }, to: { scheduleId: 10, index: 0, length: 2 } }),
@@ -191,7 +188,6 @@ it("saves the next drop while the previous one is still saving, and still report
     });
     expect(second).toBe(true);
     expect(api.reorder).toHaveBeenNthCalledWith(2, "room-a", 10, 2, { newOrderIndex: 0 });
-    // 앞 저장이 늦게 실패해도 그 실패 토스트와 onSettled는 받는다(호출마다 promise가 따로)
     await act(async () => {
       first.reject(new Error("서버 오류"));
       await first.promise.catch(() => {});

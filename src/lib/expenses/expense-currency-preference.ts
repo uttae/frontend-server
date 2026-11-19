@@ -40,9 +40,7 @@ export function rememberExpenseCurrency(
   if (!key || !currency || typeof window === "undefined") return;
   try {
     window.localStorage.setItem(key, currency);
-  } catch {
-    // Private browsing and storage quota errors cannot block a saved expense.
-  }
+  } catch {}
 }
 
 export function clearExpenseCurrencyPreferencesForUser(userId: number | undefined): void {
@@ -56,9 +54,7 @@ export function clearExpenseCurrencyPreferencesForUser(userId: number | undefine
       if (key?.startsWith(prefix)) keys.push(key);
     }
     for (const key of keys) {
-      try { storage.removeItem(key); } catch { /* unavailable */ }
+      try { storage.removeItem(key); } catch {}
     }
-  } catch {
-    // Account deletion still completes when browser storage is unavailable.
-  }
+  } catch {}
 }

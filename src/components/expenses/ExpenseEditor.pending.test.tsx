@@ -64,7 +64,6 @@ beforeEach(() => {
     busy: false,
     save: mocks.save,
   };
-  // 칸 오류를 보이는 곳까지 스크롤한다. jsdom에는 scrollIntoView가 없다
   Element.prototype.scrollIntoView = vi.fn();
   host = document.createElement("div");
   document.body.append(host);
@@ -79,7 +78,6 @@ afterEach(async () => {
 async function mount(expense: Expense | undefined = base) {
   await act(async () => root.render(<ExpenseEditor initial={{ expense }} onClose={mocks.close} />));
 }
-// Base UI는 열고 닫을 때 microtask·timeout으로 포커스를 옮긴다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]')!;
 const form = () => dialog().querySelector("form")!;
@@ -90,13 +88,11 @@ function picker(title: Role) {
   )!;
 }
 const text = (title: Role) => picker(title).textContent ?? "";
-// 체크박스 행(고를 수 있는 멤버·알 수 없는 멤버)의 선택된 사람
 function checkedIds(title: Role) {
   return [...picker(title).querySelectorAll("label")]
     .filter((row) => row.querySelector('[role="checkbox"]')?.getAttribute("aria-checked") === "true")
     .map((row) => Number(row.querySelector("[data-user-id]")!.getAttribute("data-user-id")));
 }
-// 제목 줄의 '선택 N명'. 승인 대기 멤버는 체크박스 없이 선택에 남는다
 const selectedCount = (title: Role) => Number(/선택 (\d+)명/.exec(text(title))![1]);
 const checkboxes = (title: Role) => picker(title).querySelectorAll('[role="checkbox"]');
 function checkboxOf(title: Role, label: string) {
@@ -109,7 +105,6 @@ function removeButton(title: Role) {
   expect(buttons).toHaveLength(1);
   return buttons[0];
 }
-// 결제자·부담자를 함께 검증한 오류는 두 칸 아래 하나로 보인다
 function roleError() {
   return picker("결제자").parentElement!.parentElement!.querySelector(':scope > [data-slot="field-error"]')?.textContent ?? null;
 }
@@ -140,7 +135,6 @@ it.each(["결제자", "부담자"] as const)(
     expect(selectedCount(title)).toBe(2);
     expect(text(title)).toContain("B");
     expect(text(title)).toContain("승인 대기");
-    // A and LEFT C are checkboxes; pending B is removal-only and new pending D is absent.
     expect(checkboxes(title)).toHaveLength(2);
     expect(text(title)).not.toContain("D");
     expect(text(title === "결제자" ? "부담자" : "결제자")).not.toContain("승인 대기");
@@ -239,7 +233,6 @@ it.each(["pending", "error"] as MemberQueryStatus[])("does not infer membership 
   expect(dialog().querySelectorAll("fieldset[aria-labelledby]")).toHaveLength(0);
   for (const label of ["승인 대기", "(알 수 없음)", "나간 멤버", "제외"]) expect(dialog().textContent).not.toContain(label);
   expect(saveButton().disabled).toBe(true);
-  // 저장 버튼이 비활성이어도 제출 경로(Enter 등)가 저장하지 않는다
   await act(async () => form().requestSubmit());
   await flush();
   expect(mocks.save).not.toHaveBeenCalled();

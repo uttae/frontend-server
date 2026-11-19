@@ -96,7 +96,6 @@ export const ProgressIcon = createIcon(ProgressSvg, "ProgressIcon");
 export const RadioButtonIcon = createIcon(RadioButtonSvg, "RadioButtonIcon");
 export const ReactionStarIcon = createIcon(ReactionStarSvg, "ReactionStarIcon");
 export const RefreshIcon = createIcon(RefreshSvg, "RefreshIcon");
-// Figma DS에 없어 Tabler `route`(outline)를 받아 씀 — Design.md "Figma에 추가 요청할 아이콘" 참고
 export const RouteIcon = createIcon(RouteSvg, "RouteIcon");
 export const SavedAddIcon = createIcon(SavedAddSvg, "SavedAddIcon");
 export const SavedIcon = createIcon(SavedSvg, "SavedIcon");

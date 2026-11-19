@@ -14,8 +14,6 @@ const emptySnapshot = () => empty;
 const emptySubscribe = () => () => {};
 const guarded = new WeakSet<PackingCoordinator>();
 
-// The private list belongs to the room/session, not the lifetime of its tab.
-// Keep guards subscribed while the tab is absent, so logout still purges immediately.
 function guardScope(client: QueryClient, coordinator: PackingCoordinator, roomId: string, userId: number) {
   if (guarded.has(coordinator)) return;
   guarded.add(coordinator);
@@ -62,8 +60,6 @@ export function usePackingList() {
       if(status!=='ready' && status!=='writing') void coordinator.refresh();
     };
     recoverIfNeeded();
-    // A personal list has no room broadcast stream. Reuse successful local state;
-    // reconnect only retries failed reads. Writes and explicit retries own refreshes.
     window.addEventListener('online',recoverIfNeeded);
     return ()=>window.removeEventListener('online',recoverIfNeeded);
   },[coordinator]);

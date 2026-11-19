@@ -17,7 +17,6 @@ import { applyRoomBookmarkStompMessage } from "@/lib/stomp/bookmarks-dispatch";
 
 const ME = 7;
 
-/** 이 계정(ME)이 폴더를 추가한 이벤트 */
 function categoryCreated(originTabId: string | null | undefined): string {
   const event: RoomBookmarkChangedEvent = {
     roomId: "room-1",

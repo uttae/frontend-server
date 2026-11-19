@@ -14,11 +14,6 @@ import {
   useSessionStore,
 } from "@/stores/session-store";
 
-/**
- * 방 ID 해석 — hydration 안전.
- * 첫 페인트(SSR·클라이언트 hydration)는 URL·Zustand만 사용하고,
- * hydration 이후 sessionStorage까지 반영합니다.
- */
 export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
   const pathname = usePathname();
   const route = parseRoomContextPath(pathname);
@@ -45,7 +40,6 @@ export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
   return { effectiveRoomId, roomContextReady };
 }
 
-/** pathname·sessionStorage·Zustand를 통합한 현재 방 ID */
 export function useCurrentRoomId() {
   const pathname = usePathname();
   const { roomId: roomIdFromUrl } = parseRoomContextPath(pathname);

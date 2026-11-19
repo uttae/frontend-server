@@ -86,8 +86,6 @@ export function useMapPlaceSearch(mobile: boolean) {
 
   function invalidate() {
     const selectedId = usePlaceSearchStore.getState().selectedId;
-    // Keep complete visible data, but unmount an unfinished detail selection so its late
-    // request can populate the public cache without changing the edited search UI.
     if (selectedId && !getQueryClient()?.getQueryData(placeDetailQueryKey(selectedId)))
       setSelectedPlace(null);
     else if (analyticsRankPending && selectedPlace)
@@ -174,8 +172,6 @@ export function useMapPlaceSearch(mobile: boolean) {
       useSessionStore.getState().currentRoomId === roomId &&
       searchPinWriteStillValid(epoch);
     const { mapCenter, radiusMeters, bounds } = useMapCenterStore.getState();
-    // 「현 위치에서 검색」은 Google에 지금 화면 사각형 안만 찾게 한다(locationRestriction).
-    // 위치 우선(locationBias)으로 찾으면 화면 밖 결과가 섞여 이동 전 장소로 지도가 되돌아간다.
     const searchArea = mode === "map_recenter" ? bounds : null;
     usePlaceSearchStore.setState({
       query,
@@ -196,7 +192,6 @@ export function useMapPlaceSearch(mobile: boolean) {
       const result = await confirmPlaceSearch({
         ...confirmation,
         mapCenter,
-        // 화면 검색의 반경은 버튼이 다시 뜨는 이동 거리 기준(searchSnapshot)으로만 쓴다
         radius: searchArea
           ? clampPlacesSearchRadiusMeters(radiusMeters ?? SEARCH_BIAS_RADIUS_METERS)
           : SEARCH_BIAS_RADIUS_METERS,
@@ -292,8 +287,6 @@ function toAnchor(
   };
 }
 
-// 「현 위치에서 검색」 실패는 그 버튼이 「다시 시도」로 알리므로 검색창 문구가 없다.
-// 모두검색 실패의 원문(네트워크 오류면 "Failed to fetch")은 사용자에게 뜻이 없어 한 문구로 보여 준다
 function searchFailureMessage(
   confirmation: SearchConfirmation,
   mode: PlaceSearchMode,

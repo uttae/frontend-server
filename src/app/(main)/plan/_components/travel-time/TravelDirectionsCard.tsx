@@ -24,7 +24,6 @@ import { TravelRouteSummaryLine } from "./TravelRouteSummaryLine";
 export type TravelDirectionsCardProps = {
   menuOpen: boolean;
   onToggleMenu: () => void;
-  /** 헤더 글리프·요약 줄에 쓰이는 수단 — 서버 저장 공유 이동수단(낙관적 선택 포함) */
   summaryMode: string;
   route: ScheduleItemRouteResponse | null | undefined;
   routeQuery: {
@@ -33,19 +32,13 @@ export type TravelDirectionsCardProps = {
     isFetching: boolean;
   };
   routeUnavailable: boolean;
-  /** 수단별 `GET …/route` 결과 합본(저장 수단=초기·나머지=메뉴 오픈 시 패치·캐시 재사용) */
   modeRouteSummaries?: Partial<
     Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>
   >;
   modeRouteRowLoading?: Partial<Record<ScheduleTravelModeValue, boolean>>;
   effectiveMode: ScheduleTravelModeValue | null;
   googleMapsDirectionsUrl?: string;
-  /**
-   * 둘 다 Figma Route Info 모양(이동 시간 강조·거리 회색, 길찾기는 지도 아이콘과 회색 12px)이다.
-   * web은 좁은 일정 칸에서 길찾기를 다음 줄로 내리고, mobile은 Figma 모바일 간격(아이콘–정보 10)을 쓴다
-   */
   variant?: "web" | "mobile";
-  /** true면 목록은 참고용(클릭 선택 불가), `onSelectTravelMode` 미사용 */
   readOnly?: boolean;
   onSelectTravelMode?: (next: ScheduleTravelModeValue) => void;
   onHideDirections: () => void;
@@ -67,7 +60,6 @@ export function TravelDirectionsCard({
   onSelectTravelMode,
   onHideDirections,
 }: TravelDirectionsCardProps) {
-  /** 부모 기준 현재 헤더·요약 줄에 해당하는 표준 코드(처음에는 서버, 선택 후 사용자) */
   const headerTravelMode =
     canonicalScheduleTravelMode(summaryMode) ?? summaryMode;
 
@@ -86,7 +78,6 @@ export function TravelDirectionsCard({
       <div
         className={cn(
           "flex min-w-0 items-center",
-          // 좁은 일정 칸에서는 요약 글자를 쪼개는 대신 길찾기를 다음 줄 오른쪽으로 내린다
           variant === "web" && "flex-wrap justify-end",
         )}
       >
@@ -132,7 +123,6 @@ export function TravelDirectionsCard({
           <p className="mb-1.5 text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
             이동 수단
           </p>
-          {/* 아이콘 | 수단 | 시간·거리 세 칸을 모든 줄이 함께 써서(subgrid), 시간·거리가 가장 긴 수단 이름 뒤 오른쪽 끝에 맞춰진다 */}
           <ul
             className="grid grid-cols-[auto_auto_auto] gap-x-2 gap-y-1"
             role={readOnly ? undefined : "listbox"}
@@ -151,7 +141,7 @@ export function TravelDirectionsCard({
                   </>
                 ) : modeRouteRowLoading[value] ? (
                   <Spinner aria-label="이동 시간 불러오는 중" size={16} className="align-top" />
-                ) : null; // 고르지 않은 수단은 골라야 계산한다(미리 조회하지 않음)
+                ) : null;
               const rowClass = cn(
                 "col-span-3 grid grid-cols-subgrid items-center rounded-md px-1.5 py-1.5 text-left text-body-s-regular mobile:text-body-xs-regular",
                 !readOnly && "hover:bg-gray-border/30",
@@ -161,7 +151,6 @@ export function TravelDirectionsCard({
                   : "bg-primary/10 ring-1 ring-primary/25"),
               );
 
-              // 고른 수단도 다른 줄처럼 시간·거리를 보이고, 배경 강조로만 구분한다
               const rowValue = <span className="justify-self-end whitespace-nowrap pl-3 text-dark-gray">{row}</span>;
 
               if (readOnly) {

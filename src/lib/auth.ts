@@ -29,7 +29,6 @@ export {
 };
 export type { FetchSessionUserResult } from "@/lib/session-user";
 
-/** HttpOnly 세션·`users/me`로 Query user 캐시를 맞춥니다. */
 export async function reconcileClientSession(
   queryClient: QueryClient,
 ): Promise<void> {

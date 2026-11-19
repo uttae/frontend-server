@@ -5,7 +5,6 @@ const roomRootPaths = new Set([
 ]);
 const roomDetailPaths = new Set(["plan", "packing", "bookmark"]);
 
-/** Only routes actually rendered under MainRoomGate may use the selected room. */
 export function isAnalyticsRoomPath(pathname: string): boolean {
   const path = pathname.split(/[?#]/, 1)[0];
   let end = path.length;
@@ -31,7 +30,6 @@ export function resolveAnalyticsRoomId({
   return resolveSelectedAnalyticsRoomId({ pathname, currentRoomId });
 }
 
-/** Route/store agreement only; this does not authorize grouping an anonymous event. */
 export function resolveSelectedAnalyticsRoomId({
   pathname,
   currentRoomId,
@@ -48,7 +46,6 @@ export function resolveSelectedAnalyticsRoomId({
     if (route.roomId && route.roomId !== selectedRoomId) return;
     return selectedRoomId;
   } catch {
-    // Malformed URL encoding cannot establish a room context.
     return;
   }
 }

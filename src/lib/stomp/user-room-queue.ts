@@ -1,5 +1,3 @@
-/** `/user/queue/rooms` — 추방·방 삭제·(호스트) 입장 요청 등 개인 큐 */
-
 export type ForcedRoomExitReason = "kicked" | "room_deleted";
 
 export type UserRoomQueueMessage =
@@ -17,12 +15,6 @@ export type UserRoomQueueMessage =
       profileImageUrl: string | null;
     };
 
-/**
- * 서버 페이로드 계약(클라 검증):
- * - `roomId`: 비어 있지 않은 문자열
- * - 입장 요청: 유한한 `requesterId`(숫자 또는 숫자 문자열) 필수. 없으면 `null` 반환
- * - `KICKED` / `ROOM_DELETED`: `actionType` + `roomId` (+ optional `message`)
- */
 function parseOptionalServerMessage(raw: Record<string, unknown>): string | undefined {
   const message = typeof raw.message === "string" ? raw.message.trim() : "";
   return message || undefined;
@@ -64,7 +56,6 @@ export function parseUserRoomQueueMessage(
       };
     }
 
-    /** 입장 요청: 명세 actionType 과 무관하게 requesterId 가 있으면 처리 (서버 enum 변형 대비) */
     const requesterIdRaw = raw.requesterId;
     const requesterId =
       typeof requesterIdRaw === "number"

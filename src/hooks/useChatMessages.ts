@@ -50,20 +50,9 @@ import {
 } from "@/lib/chat/readBoundary";
 
 export type UseChatMessagesOptions = {
-  /**
-   * `false`: 패널 닫힘 — GET 없음. STOMP만 유지.
-   * `true`: 이 `roomId`에 대해 **이번 페이지 수명 내 아직 GET을 한 적 없을 때만** 히스토리 GET.
-   * (닫았다 다시 열 때는 같은 방이면 놓친 메시지만 따라잡고 read-status로 마커·스크롤을 복원.)
-   */
   fetchHistory: boolean;
 };
 
-/**
- * 빈 번호를 따라잡는 이유 — 따라잡은 뒤 화면 처리가 다르다.
- * - gap: 실시간 수신 중 번호가 비었다. 받은 메시지는 실시간 메시지처럼 읽음 처리한다
- * - reconnect: 끊긴 동안 놓쳤다. 새로 붙은 메시지 앞에 구분선을 두고 그 자리로 스크롤한다
- * - reopen: 다른 방에 다녀왔거나 패널을 다시 열었다. 읽음 경계를 서버 기준으로 복원한다
- */
 type CatchUpReason = "gap" | "reconnect" | "reopen";
 
 const CATCH_UP_REASON_PRIORITY: Record<CatchUpReason, number> = {
@@ -79,7 +68,6 @@ function chatHistoryGateKey(
   return `${uid ?? "anon"}:${roomId.trim()}`;
 }
 
-/** 패널 최초 기록 — 읽음 위치 앞 페이지에, 읽음 위치부터 이어지는 페이지를 붙인다 */
 async function loadRoomHistorySnapshot(roomId: string) {
   const { lastReadMessageId } = await getRoomMessageReadStatus(roomId);
   const out = await loadInitialRoomHistory(
@@ -87,7 +75,6 @@ async function loadRoomHistorySnapshot(roomId: string) {
     lastReadMessageId,
     CHAT_MESSAGE_PAGE_SIZE,
   );
-  // 서버는 페이지를 sequence·문서 id 순으로 준다 — 화면은 작성 시각 순으로 맞춘다
   const serverSlice = mergeServerMessageLists(out.serverSlice);
   if (!out.lastReadMessageId) {
     return { ...out, slice: serverSlice, placementBeforeSlice: serverSlice };
@@ -125,7 +112,6 @@ export function useChatMessages(
     isFetching: membersFetching,
   } = useRoomMembers(roomId);
   const [rawMessages, setRawMessages] = useState<ServerChatMessage[]>([]);
-  /** STOMP로 받았을 때 보낸 사람·입장한 사람이 멤버 목록에 없던 메시지 — 목록을 다시 받는 동안 그리지 않는다 */
   const [awaitingNameIds, setAwaitingNameIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
@@ -181,21 +167,15 @@ export function useChatMessages(
   const readBoundaryRestoreVersionRef = useRef(0);
   const activeRoomIdRef = useRef("");
   const fetchHistoryRef = useRef(fetchHistory);
-  /** 마운트 때 이미 연결돼 있었으면 구독이 최초 기록 조회보다 먼저다 — 그 뒤의 재연결만 따라잡는다 */
   const wasConnectedRef = useRef(connected);
   const historyFetchedRoomIdsRef = useRef<Set<string>>(new Set());
   const hasMoreByRoomRef = useRef<Map<string, boolean>>(new Map());
   const hasMoreNewerByRoomRef = useRef<Map<string, boolean>>(new Map());
-  /** 목록 끝까지 빠짐없이 반영한 마지막 sequence. 목록이 최신 끝일 때만 둔다 */
   const cursorByRoomRef = useRef<Map<string, number>>(new Map());
   const lastReadMarkerByRoomRef = useRef<Map<string, string>>(new Map());
   const readDividerPlacementByRoomRef = useRef<Map<string, ReadDividerPlacement>>(
     new Map(),
   );
-  /**
-   * 목록 끝을 바꾸는 조회(최초 기록·최신으로 이동·아래 페이지·따라잡기)는 마지막에 시작한 하나만 반영한다.
-   * 조회 중 받은 실시간 메시지는 모았다가, 조회 결과를 반영한 뒤 같은 커서 규칙으로 처리한다.
-   */
   const tailSyncTokenRef = useRef(0);
   const liveBufferRef = useRef<ServerChatMessage[] | null>(null);
   const pendingCatchUpRef = useRef<CatchUpReason | null>(null);
@@ -260,9 +240,6 @@ export function useChatMessages(
   const messages = useMemo(
     () =>
       rawMessages
-        // 이름을 아직 모르는 메시지는 '(알 수 없음)' 대신 그리지 않는다. 멤버 목록을 받으면 제자리에 이름과 함께
-        // 보인다(AGENTS.md 로딩 UI 원칙). 목록을 처음 받는 중이거나, STOMP로 막 받은 메시지인데 목록을 다시 받는
-        // 중일 때만이다 — 이미 있던 메시지의 사람이 목록에 없으면(탈퇴) 재조회 중에도 '(알 수 없음)'으로 둔다
         .filter((m) => {
           const nameMissing = chatMessageUserIds(m).some(
             (id) => id !== userId && !memberMap.has(id),
@@ -381,7 +358,6 @@ export function useChatMessages(
         if (bridgedSlice && bridgedHasMoreNewer != null) {
           hasMoreNewerByRoomRef.current.set(rid, bridgedHasMoreNewer);
           setHasMoreNewer(bridgedHasMoreNewer);
-          // 그사이 붙은 실시간 메시지를 지우지 않게 현재 목록에 합친다
           setRawMessages((prev) => mergeServerMessageLists(prev, bridgedSlice));
           const last = maxSequenceInMessages(bridgedSlice);
           const cursor = cursorByRoomRef.current.get(rid);
@@ -428,7 +404,6 @@ export function useChatMessages(
     ],
   );
 
-  /** 목록 끝을 바꾸는 조회를 시작한다. 돌려받은 함수가 거짓이면 그 결과는 버린다 */
   const beginTailSync = useCallback(() => {
     tailSyncTokenRef.current += 1;
     liveBufferRef.current ??= [];
@@ -441,7 +416,6 @@ export function useChatMessages(
 
   const applyLiveMessages = useCallback(
     (rid: string, msgs: readonly ServerChatMessage[], catchUpOnGap: boolean) => {
-      // 첫 기록을 받기 전에는 그 조회가 이 메시지까지 가져온다
       if (
         msgs.length === 0 ||
         !historyFetchedRoomIdsRef.current.has(chatHistoryGateKey(userId, rid))
@@ -471,12 +445,10 @@ export function useChatMessages(
     [userId, onIncomingMessage],
   );
 
-  /** 조회 결과를 반영한 뒤 모아 둔 실시간 메시지를 처리하고, 미뤄 둔 따라잡기를 잇는다 */
   const finishTailSync = useCallback(
     (rid: string, succeeded: boolean) => {
       const buffered = liveBufferRef.current ?? [];
       liveBufferRef.current = null;
-      // 조회가 실패했으면 빈 번호를 바로 다시 요청하지 않는다 — 다음 수신·재연결이 다시 맞춘다
       applyLiveMessages(rid, buffered, succeeded);
       const pending = pendingCatchUpRef.current;
       pendingCatchUpRef.current = null;
@@ -502,7 +474,6 @@ export function useChatMessages(
         onIncomingMessage(newest, true);
         return;
       }
-      // 끊긴 동안 온 메시지는 읽지 않은 메시지로 보여 준다
       if (!newestBefore || !fetchHistoryRef.current) return;
       applySessionReadBoundary(rid, newestBefore.id, {
         afterMessageId: newestBefore.id,
@@ -521,7 +492,6 @@ export function useChatMessages(
   const requestCatchUp = useCallback(
     (rid: string, reason: CatchUpReason) => {
       if (liveBufferRef.current) {
-        // 목록 끝을 바꾸는 다른 조회가 진행 중이다 — 끝난 뒤(finishTailSync) 이어서 따라잡는다
         const pending = pendingCatchUpRef.current;
         if (
           !pending ||
@@ -535,7 +505,6 @@ export function useChatMessages(
         return;
       }
       if (hasMoreNewerByRoomRef.current.get(rid) === true) {
-        // 중간 창은 아래 페이지 조회가 최신 끝까지 맞춘다
         if (reason === "reopen") void restoreSessionReadBoundary(rid);
         return;
       }
@@ -554,18 +523,15 @@ export function useChatMessages(
             cursorByRoomRef.current.set(rid, Math.max(cursor ?? last, last));
           }
           if (cursor === 0) {
-            // 빈 방에서 최신 페이지를 받았다 — 그 앞 기록은 위로 스크롤해 받는다
             const more = hasOlderHistoryPage(rows.length, CHAT_MESSAGE_PAGE_SIZE);
             hasMoreByRoomRef.current.set(rid, more);
             setHasMore(more);
           }
           void warmPlacePhotoQueriesFromChatHistory(queryClient, rows);
-          // 모아 둔 실시간 메시지가 더 새것이다 — 읽음 위치가 뒤로 가지 않게 따라잡은 메시지를 먼저 처리한다
           showCaughtUpMessages(rid, reason, appended, newestBefore);
           finishTailSync(rid, true);
         })
         .catch(() => {
-          // 재시도 뒤에도 실패하면 커서를 그대로 둔다 — 다음 빈 번호 수신·재연결 때 같은 커서로 다시 받는다
           if (!isCurrent()) return;
           finishTailSync(rid, false);
           if (reason === "reopen") void restoreSessionReadBoundary(rid);
@@ -611,7 +577,6 @@ export function useChatMessages(
           applySessionReadBoundary(rid, out.lastReadMessageId, placement);
 
           setRawMessages(out.slice);
-          // 최신 끝까지 받았으면 그 마지막 번호 다음부터 실시간 메시지를 붙인다
           const cursor = out.hasMoreNewer ? undefined : tailCursorOf(out.slice);
           if (cursor == null) cursorByRoomRef.current.delete(rid);
           else cursorByRoomRef.current.set(rid, cursor);
@@ -633,7 +598,6 @@ export function useChatMessages(
           finishTailSync(rid, true);
         })
         .catch(() => {
-          // gate를 세우지 않는다 — 재연결되거나 패널을 다시 열 때 다시 받는다
           if (isCurrent()) finishTailSync(rid, false);
         });
     },
@@ -679,13 +643,11 @@ export function useChatMessages(
     const rid = roomId.trim();
     if (historyFetchedRoomIdsRef.current.has(chatHistoryGateKey(userId, rid))) {
       if (!reopened) return;
-      // 다른 방에 있던 동안은 이 방 메시지를 구독하지 않았다 — 다시 구독(부모 effect)을 보낸 뒤 따라잡는다
       queueMicrotask(() => {
         if (activeRoomIdRef.current === rid) requestCatchUp(rid, "reopen");
       });
       return;
     }
-    // 진행 중인 최초 조회가 있으면 그 결과를 쓴다
     if (!liveBufferRef.current) startHistoryLoad(roomId);
   }, [roomId, fetchHistory, userId, requestCatchUp, startHistoryLoad]);
 
@@ -695,7 +657,6 @@ export function useChatMessages(
     if (!connected || wasConnected || !roomId || userId == null) return;
 
     const rid = roomId.trim();
-    // 다시 구독한 토픽은 끊긴 동안의 메시지를 주지 않는다 — 구독(부모 effect)을 보낸 뒤 따라잡는다
     queueMicrotask(() => {
       if (activeRoomIdRef.current !== rid) return;
       if (
@@ -704,7 +665,6 @@ export function useChatMessages(
       ) {
         requestCatchUp(rid, "reconnect");
       } else if (fetchHistoryRef.current) {
-        // 끊긴 동안 최초 기록 조회가 끝내 실패했다 — 연결이 돌아온 지금 다시 받는다
         startHistoryLoad(roomId);
       }
     });
@@ -744,9 +704,7 @@ export function useChatMessages(
           normalizedHistory,
         );
       })
-      .catch(() => {
-        /* 유지: hasMore 그대로, 다음 스크롤에서 재시도 가능 */
-      })
+      .catch(() => {})
       .finally(() => {
         if (roomLifetimeRef.current !== lifetime) return;
         isFetchingOlderRef.current = false;
@@ -785,7 +743,6 @@ export function useChatMessages(
           mergeServerMessageLists(prev, normalizedHistory),
         );
         if (!more) {
-          // 최신 끝에 닿았다 — 이 페이지의 마지막 번호 다음부터 실시간 메시지를 붙인다
           const last = maxSequenceInMessages([
             ...rawMessagesRef.current,
             ...normalizedHistory,
@@ -800,7 +757,6 @@ export function useChatMessages(
         finishTailSync(rid, true);
       })
       .catch(() => {
-        // 유지: hasMoreNewer 그대로, 다음 스크롤에서 다시 받는다
         if (isCurrent()) finishTailSync(rid, false);
       })
       .finally(() => {
@@ -837,7 +793,6 @@ export function useChatMessages(
         finishTailSync(rid, true);
       })
       .catch(() => {
-        // 중간 창을 그대로 둔다 — 버튼을 다시 누르면 다시 받는다
         if (isCurrent()) finishTailSync(rid, false);
       });
   }, [
@@ -863,8 +818,6 @@ export function useChatMessages(
         (id) => id !== userId && !members.some((m) => m.userId === id),
       );
       if (nameMissing) {
-        // 방금 입장한 사람 등 — 멤버 목록을 지금 다시 받는다. 받는 중인 조회는 이 사람이 들어오기 전에 출발했을 수
-        // 있어 첫 조회라도 취소하고 새로 받는다. 받는 동안 이 메시지는 그리지 않는다(위 messages)
         void invalidateAfterChange(queryClient, { queryKey: roomMembersQueryKey(rid), exact: true });
         setAwaitingNameIds((prev) => new Set(prev).add(msg.id));
       }
@@ -891,7 +844,6 @@ export function useChatMessages(
 
   return {
     messages,
-    /** 보낸 사람 이름을 찾을 멤버 목록을 아직 한 번도 받지 못했다 — 목록 대신 로딩 표시를 둔다 */
     waitingForMembers: Boolean(roomId) && membersPending,
     sendChatMessage,
     sendAiMessage,

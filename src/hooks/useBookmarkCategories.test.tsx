@@ -65,7 +65,6 @@ it('폴더를 지우면 폴더 목록과 그 안의 북마크가 빠진 뒤에 �
 
   await act(async () => { await view.result.current.remove.mutateAsync({ roomId: 'room', categoryId: 1 }); });
 
-  // 본인 CATEGORY_DELETED는 STOMP에서 버리므로 mutation이 두 목록을 다시 받고, 받은 뒤에 끝난다
   expect(client.getQueryData(bookmarkCategoriesQueryKey('room'))).toEqual([{ categoryId: 2, name: '카페', placeCount: 0 }]);
   expect(client.getQueryData(roomAllBookmarksQueryKey('room'))).toEqual([]);
  } finally { await view.unmount(); client.clear(); vi.unstubAllGlobals(); }
@@ -84,7 +83,6 @@ it('여러 폴더에 북마크 추가가 실패해도 두 목록을 다시 받�
    await expect(view.result.current.mutateAsync({ roomId: 'room', googlePlaceId: 'place', categoryIds: [1] })).rejects.toThrow('network');
   });
 
-  // 실패해도 onSettled가 두 목록을 다시 받도록 표시한다
   expect(client.getQueryData(roomAllBookmarksQueryKey('room'))).toEqual([]);
   expect(client.getQueryState(bookmarkCategoriesQueryKey('room'))?.isInvalidated).toBe(true);
   expect(client.getQueryState(roomAllBookmarksQueryKey('room'))?.isInvalidated).toBe(true);
@@ -93,7 +91,6 @@ it('여러 폴더에 북마크 추가가 실패해도 두 목록을 다시 받�
 
 it('폴더 이름을 고치면 장소 개수는 두고 이름·색만 바로 바꾼 뒤 폴더 목록을 다시 받도록 표시한다', async () => {
  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
- // 수정 응답의 placeCount는 세지 않은 값(0)이다
  api.updateCategory.mockResolvedValue({ categoryId: 1, name: '새 이름', colorCode: '#000000', placeCount: 0 });
  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
  client.setQueryData(bookmarkCategoriesQueryKey('room'), [{ categoryId: 1, name: '맛집', colorCode: '#ffffff', placeCount: 3 }]);
@@ -148,7 +145,6 @@ it('폴더별 북마크는 전체 목록 한 번을 걸러 쓰고, 폴더를 바
   expect(view.result.current.data?.map((b) => b.bookmarkId)).toEqual([11]);
   expect(api.getAll).toHaveBeenCalledTimes(1);
 
-  // 폴더를 고르기 전에는 빈 목록이 아니라 '조회 전'으로 둔다(빈 상태 문구가 잠깐 보이지 않게)
   categoryId = null;
   await view.mount();
   expect(view.result.current.isPending).toBe(true);

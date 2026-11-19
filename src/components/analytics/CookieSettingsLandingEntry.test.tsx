@@ -25,7 +25,6 @@ it("opens from the compatibility query once and preserves unrelated URL state", 
         </CookieSettingsProvider>,
       ),
     );
-    // 쿠키 설정은 ui Dialog(Base UI)라 document.body로 포털된 role="dialog"다. 처음 포커스는 requestAnimationFrame 뒤에 옮긴다
     const settle = () =>
       act(async () => {
         await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));

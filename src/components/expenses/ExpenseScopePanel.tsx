@@ -95,7 +95,6 @@ export function ExpenseScopePanel({
     }
   }
   const { isMobileDevice } = useMobileView();
-  // 확인창이 닫히면 연 삭제 버튼으로, 그 행이 지워졌거나 버튼이 막혀 있으면 '내역' 제목으로 포커스를 돌린다(옛 동작)
   const deleteOpener = useRef<HTMLButtonElement | null>(null);
   const listHeading = useRef<HTMLHeadingElement>(null);
   const scoped = expensesInScope(expenses, scope);
@@ -107,14 +106,11 @@ export function ExpenseScopePanel({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      // 확인창이 열려 있는 동안 Esc·딤은 Base UI가 위 확인창에만 준다
       closeDisabled={disabled}
-      // PC는 딤을 눌러도 닫지 않고, 시트는 딤을 눌러 닫는다(지금 동작)
       disablePointerDismissal={!isMobileDevice}
     >
       <ResponsiveDialogContent
         size="md"
-        // 시트는 지금처럼 내용 높이, 최대 60dvh. PC는 Dialog 기본 최대 높이
         className={isMobileDevice ? "max-h-[60dvh]" : undefined}
         closeLabel="비용 목록 닫기"
       >
@@ -201,7 +197,6 @@ export function ExpenseScopePanel({
             </Button>
           </ResponsiveDialogFooter>
         ) : null}
-        {/* 확인창은 목록 대화상자의 React 자식으로 둔다. Base UI가 위 레이어(확인창)에만 Esc·포커스를 준다 */}
         {selected && canManage ? (
           <ExpenseDeleteDialog
             expense={selected}
@@ -209,8 +204,6 @@ export function ExpenseScopePanel({
             onCancel={() => setSelected(null)}
             onConfirm={() => void confirmDelete()}
             finalFocus={() => {
-              // Base UI는 닫히는 커밋 도중 이 함수를 불러, 그때는 삭제 버튼의 disabled(deleting)가 아직 풀리지 않았다.
-              // 커밋이 끝난 뒤(microtask) DOM을 보고 고르고, false를 돌려 Base UI는 포커스를 옮기지 않게 한다(옛 동작)
               const opener = deleteOpener.current;
               const heading = listHeading.current;
               queueMicrotask(() => {
@@ -242,7 +235,6 @@ function ExpenseDeleteDialog({ expense, pending, onCancel, onConfirm, finalFocus
       }}
       closeDisabled={pending}
     >
-      {/* 딤을 눌러 닫지 않는다(지금 확인창과 같음). 처음 포커스는 취소 버튼(AlertDialogContent 기본) */}
       <AlertDialogContent
         aria-busy={pending}
         finalFocus={finalFocus}

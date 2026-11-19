@@ -20,7 +20,6 @@ type Prediction = google.maps.places.PlacePrediction;
 type Props = {
   value: string;
   onChange: (value: string) => void;
-  /** Autocomplete에서 항목을 고르면 `placeId` 포함. 타이핑·지우기 시 `null`. */
   onResolvedPlace?: (
     place: { description: string; placeId: string } | null,
   ) => void;
@@ -28,9 +27,7 @@ type Props = {
   autoFocus?: boolean;
   showLeadingIcon?: boolean;
   leadingIconType?: "search" | "map-pin";
-  /** true면 목록에서만 선택 — 입력·드롭다운 동작 동일하게 한 줄 필드 유지 */
   selectionOnly?: boolean;
-  /** `field`: 48px 테두리 입력칸 모양, 하단 안내 문구 없음 (여행 정보 수정 모달) */
   appearance?: "default" | "field";
 };
 
@@ -77,10 +74,6 @@ function DestinationSelectionHint({ id, appearance }: Readonly<{
   );
 }
 
-/**
- * Google Places Autocomplete Data API 기반 목적지 검색.
- * `includedPrimaryTypes`로 지역·행정구역·국가 등(레거시 `(regions)`에 대응).
- */
 export function DestinationSearchInput({
   value,
   onChange,
@@ -131,7 +124,6 @@ export function DestinationSearchInput({
 
   const selectionOnlyFooterId = useId();
 
-  // sync external reset (e.g. clear button from parent)
   useEffect(() => {
     if (!value) {
       queueMicrotask(() => {
@@ -166,7 +158,6 @@ export function DestinationSearchInput({
         }
         onResolvedPlace?.(null);
       } else if (v !== value) {
-        /** 목록 선택 전에는 제출 무효화 — 부모 `value` 문자열 유지(UI는 `inputValue` 기준). */
         onResolvedPlace?.(null);
       }
     } else {
@@ -201,8 +192,6 @@ export function DestinationSearchInput({
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Escape") {
-      // 추천 목록이 열려 있을 때만 Esc를 여기서 쓴다. 감싼 대화상자(ui/dialog)는 preventDefault된 Esc면 닫지 않고,
-      // 목록이 없으면 Esc가 대화상자 닫기로 이어진다
       if (isOpen && predictions.length > 0) e.preventDefault();
       clearSuggestionUi();
       return;
@@ -233,8 +222,6 @@ export function DestinationSearchInput({
         <div
           className={cn(
             "flex w-full items-center gap-2",
-            // field는 Figma 02 Text Field의 Search Bar(5002:4377): 48px, padding L14 R10, gap 8, radius 8.
-            // 테두리는 Default border/default → Focused primary/default → 값이 있고 포커스가 없으면(Filled) primary/strong
             isField
               ? "h-12 rounded-md border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary [&:has(input:not(:placeholder-shown)):not(:focus-within)]:border-primary-strong"
               : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
@@ -264,7 +251,6 @@ export function DestinationSearchInput({
             className={cn(
               "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
               selectionOnly && "bg-transparent",
-              // Figma Text 프레임 오른쪽 4px, 입력 글자 text/default, 플레이스홀더 text/subtle
               isField && "pr-1 text-text placeholder:text-text-subtle",
             )}
           />

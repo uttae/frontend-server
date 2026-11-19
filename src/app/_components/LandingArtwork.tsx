@@ -3,7 +3,6 @@ import type { CSSProperties } from "react";
 
 import styles from "./landing.module.css";
 
-/** Exact exports from approved Figma nodes 636:943 and 614:1123. */
 export function LandingArtwork({
   name, mobileName, width, height, className, style, sizes, alt = "", priority = false,
 }: {

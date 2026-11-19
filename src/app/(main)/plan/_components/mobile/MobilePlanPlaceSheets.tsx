@@ -27,15 +27,12 @@ import { MobileMemoSheet } from "./MobileMemoSheet";
 import { MobileSheetMenuItem } from "./MobileSheetMenuItem";
 import { MobileTimeSheet } from "./MobileTimeSheet";
 
-/** 장소 카드에서 여는 시트 — 일정 관리 메뉴와 그 안의 메모·시간·삭제, 북마크에서 추가 */
 export type MobilePlanPlaceSheet =
   | { kind: "actions" | "memo" | "time" | "delete"; place: PlanPlace }
-  /** anchor: 장소 사이에 넣을 기준, null이면 맨 뒤 */
   | { kind: "bookmark"; anchor: InsertAnchor | null };
 
 type ExpenseContextValue = ReturnType<typeof useExpenseContext>;
 
-/** 카드의 비용 줄 — 비용이 없으면 바로 추가, 있으면 그 장소의 비용 목록을 연다 */
 export function openPlaceExpenses(expenses: ExpenseContextValue, scheduleId: number, place: PlanPlace) {
   if (typeof place.itemId !== "number") return;
   const scoped = expensesInScope(expenses.list.data ?? [], { scheduleId, scheduleItemId: place.itemId, label: "" });
@@ -43,10 +40,6 @@ export function openPlaceExpenses(expenses: ExpenseContextValue, scheduleId: num
   else expenses.openScope({ scheduleId, scheduleItemId: place.itemId, label: place.title });
 }
 
-/**
- * 모바일 장소 카드의 시트들 — 일정 목록과 지도 경로 보기가 함께 쓴다.
- * "일정 추가"(검색)는 검색 화면이 상위에 있어 `onInsertFromSearch`로 넘긴다.
- */
 export function MobilePlanPlaceSheets({
   roomId,
   scheduleId,
@@ -60,13 +53,10 @@ export function MobilePlanPlaceSheets({
 }: Readonly<{
   roomId: string;
   scheduleId: number;
-  /** 이 일차의 장소(최신) — 삽입 위치를 정하고 삭제 분석 이벤트에 쓴다 */
   places: PlanPlace[];
-  /** `9월 21일` — 방문 시간 시트에 표시 */
   monthDayLabel?: string;
   sheet: MobilePlanPlaceSheet | null;
   onChangeSheet: (sheet: MobilePlanPlaceSheet | null) => void;
-  /** 이 장소 바로 뒤에 장소를 넣는 메뉴를 보일지 */
   canInsert: boolean;
   onInsertFromSearch: (anchor: InsertAnchor) => void;
   onPlaceAdded: (itemId: number) => void;
@@ -83,7 +73,6 @@ export function MobilePlanPlaceSheets({
         roomId={roomId}
         scheduleId={scheduleId}
         places={places}
-        // places가 최신 목록이라 렌더마다 다시 계산하면 그사이 바뀐 순서도 반영된다
         insertIndex={resolveInsertIndex(places, sheet.anchor)}
         onAdded={(item) => onPlaceAdded(item.itemId)}
         onClose={close}
@@ -91,7 +80,6 @@ export function MobilePlanPlaceSheets({
     );
   }
 
-  // 시트 상태에는 연 시점의 장소가 들어 있다. 그사이 다른 멤버가 바꾼 메모·시간이 시트에 보이고 메모 덮어쓰기 확인이 동작하도록 최신 목록에서 같은 항목을 다시 찾는다
   const place = places.find((p) => typeof p.itemId === "number" && p.itemId === sheet.place.itemId) ?? sheet.place;
   const itemId = typeof place.itemId === "number" ? place.itemId : null;
 
@@ -171,10 +159,7 @@ function PlaceActionsMenu({ place, itemId, canInsert, places, scheduleId, expens
   onInsertFromSearch: (anchor: InsertAnchor) => void;
   onChangeSheet: (sheet: MobilePlanPlaceSheet | null) => void;
 }>) {
-  // '일정 추가'는 Base UI 밖 검색 화면이 검색창에 포커스를 준다. 시트가 언마운트되며 예약하는 포커스 복귀(카드 '더보기')가
-  // 그 포커스를 빼앗지 않게, 이 경우에만 복귀를 끈다. 같은 커밋에 언마운트되므로 prop 값이 아니라 정리 시점에 부르는 함수로 읽는다
   const skipReturnFocus = useRef(false);
-  // 조건부 마운트라 open을 고정하고 닫기 요청만 받는다. 다른 시트로 갈아끼우면(onChangeSheet) 이 시트는 닫힘 애니메이션 없이 언마운트된다(지금과 같음)
   return (
     <Drawer open onOpenChange={(open) => { if (!open) close(); }}>
       <DrawerContent closeLabel="장소 메뉴 닫기" finalFocus={() => !skipReturnFocus.current}>

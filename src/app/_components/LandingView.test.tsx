@@ -13,7 +13,7 @@ vi.mock("next/image", () => ({
     void priority;
     void unoptimized;
 
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- alt is forwarded via imageProps spread
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
     return <img {...imageProps} />;
   },
 }));
@@ -89,7 +89,6 @@ describe("LandingView", () => {
       expect(images![0], name).toContain(`sizes="${sizes}"`);
       expect(images![0], name).toContain('width="1536" height="1536"');
     }
-    // Every other consumer must retain the existing mobile/full intrinsic-width hint.
     const otherImages = [...html.matchAll(/<img[^>]+>/g)]
       .map(([tag]) => tag)
       .filter((tag) => !/\/(passport|map|calendar|globe)\.png"/.test(tag));

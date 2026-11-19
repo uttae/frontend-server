@@ -115,7 +115,6 @@ describe("resolveScheduleSegmentRoute", () => {
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
   });
 
-  /** 캐시 쓰기는 이 리졸버를 queryFn으로 쓰는 쿼리가 맡는다 */
   it("캐시에 직접 쓰지 않는다", async () => {
     getScheduleItemRouteMock.mockResolvedValue(ROUTE);
 

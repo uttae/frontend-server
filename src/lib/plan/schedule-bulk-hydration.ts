@@ -37,7 +37,6 @@ export function planPlacesNeedPreviewEnrich(
   return places.some((place) => place.title === PLAN_PLACE_PREVIEW_ERROR_TITLE);
 }
 
-/** `includeItems` hydrate 후 room-schedules 캐시에서 일차별 raw items를 읽습니다. */
 export function readScheduleItemsFromRoomCache(
   queryClient: QueryClient,
   roomId: string,
@@ -57,7 +56,6 @@ export function readScheduleItemsFromRoomCache(
   return Array.isArray(schedule.items) ? schedule.items : [];
 }
 
-/** room-schedules 캐시 miss 시 `includeItems` hydrate 후 items를 반환합니다. */
 export async function resolveScheduleItemsFromCacheOrHydrate(
   queryClient: QueryClient,
   roomId: string,
@@ -144,7 +142,6 @@ function buildPlanPlacesFromItemsWithCache(
   );
 }
 
-/** preview 캐시 miss 항목만 batch로 받아 채웁니다 — 그래도 없는 장소는 단건으로 다시 받지 않고 자리표시자로 둡니다. */
 export async function buildPlanPlacesFromItemsWithPreviewEnrichment(
   queryClient: QueryClient,
   items: RoomScheduleItem[],
@@ -173,10 +170,6 @@ function collectGooglePlaceIdsFromSchedules(
   return [...ids];
 }
 
-/**
- * 일차별 장소 목록을 만들기만 합니다. 미리보기를 기다리는 동안 다른 변경이 들어올 수 있어
- * 캐시 쓰기(`writeSchedulePlacesFromHydrate`)와 나눕니다.
- */
 export async function buildSchedulePlacesFromSchedulesWithItems(
   queryClient: QueryClient,
   schedules: readonly RoomScheduleWithItems[],
@@ -200,11 +193,6 @@ export async function buildSchedulePlacesFromSchedulesWithItems(
   return placesBySchedule;
 }
 
-/**
- * 만든 일차 목록을 한 번에 씁니다. 경로는 도착 항목까지 key에 있어 순서가 바뀌어도 무효화하지 않습니다.
- * `startedAt`(일정 전체 조회를 보낸 시각) 뒤에 바뀐 일차는 그쪽이 더 새 상태라 덮지 않고,
- * 그 일차를 받는 중이면 이 조회보다 먼저 보낸 요청일 수 있어 다시 받게 합니다.
- */
 export function writeSchedulePlacesFromHydrate(
   queryClient: QueryClient,
   roomId: string,
@@ -256,14 +244,6 @@ function batchRouteItemToResponse(
 
 const inFlightScheduleRoutesBatch = new Map<string, Promise<void>>();
 
-/**
- * 실패가 아니라 "경로 없음"이라는 답인 batch 항목 — 단건으로 다시 물어도 같은 답(204·404)이 오므로
- * 경로 없음(`null`)으로 시딩하고 다시 묻지 않는다.
- */
-/**
- * in-flight dedup 키 — 일정 지문(`itemId` 순서·장소 정체성)을 포함해
- * 목적지만 바뀐 일정(`[A,B]`→`[A,C]`)이 이전 batch Promise를 공유하지 않게 합니다.
- */
 function scheduleRoutesBatchKey(
   roomId: string,
   scheduleId: number,
@@ -272,7 +252,6 @@ function scheduleRoutesBatchKey(
   return `${roomId.trim()}:${scheduleId}:${placesFingerprint}`;
 }
 
-/** 구간 출발 항목 → 다음 장소의 `itemId` (마지막 장소와 항목 ID가 없는 구간은 뺀다) */
 function segmentDestinationsByItemId(places: readonly PlanPlace[]): Map<number, number> {
   const out = new Map<number, number>();
   for (let i = 0; i < places.length - 1; i += 1) {
@@ -289,10 +268,6 @@ function isFiniteItemId(id: number | undefined): id is number {
   return typeof id === "number" && Number.isFinite(id);
 }
 
-/**
- * 일차의 모든 구간 경로가 이미 캐시에 있는지 — 일정 화면에서 받아 뒀거나, 화면을 다시 열었거나,
- * 지도 경로 보기로 넘어온 경우다. 받은 적 없거나(새 순서·gc) 무효화된 구간이 하나라도 있으면 false.
- */
 export function scheduleSegmentRoutesCached(
   queryClient: QueryClient,
   roomId: string,
@@ -315,10 +290,6 @@ export function scheduleSegmentRoutesCached(
   });
 }
 
-/**
- * 일차 구간 경로를 저장된 공유 이동수단 기준 batch로 시딩합니다 (in-flight dedup).
- * 모든 구간이 이미 캐시에 있으면 보내지 않는다 — 재마운트·화면 이동만으로 다시 조회하지 않는다.
- */
 export async function fetchAndSeedScheduleRoutesBatch(
   queryClient: QueryClient,
   roomId: string,
@@ -349,7 +320,6 @@ export async function fetchAndSeedScheduleRoutesBatch(
   return promise;
 }
 
-/** prefetch 중인 구간 경로 batch가 끝날 때까지 대기합니다. */
 export async function awaitScheduleRoutesBatch(
   roomId: string,
   scheduleId: number,
@@ -367,7 +337,6 @@ export async function awaitScheduleRoutesBatch(
   }
 }
 
-/** `travelMode` 생략 batch — 서버가 항목별 저장 이동수단으로 경로를 계산해 실제 사용 수단을 응답 */
 export async function hydrateScheduleRoutesBatch(
   queryClient: QueryClient,
   roomId: string,
@@ -391,9 +360,6 @@ export async function hydrateScheduleRoutesBatch(
 
   const results = await getScheduleItemRoutesBatch(rid, scheduleId, requestItems);
 
-  // 서버는 요청을 받은 순간의 순서로 다음 항목을 정하므로, 응답이 알려 준 도착 항목(toItemId)의 구간으로 저장한다 —
-  // 기다리는 사이 순서가 바뀌었어도 그 구간의 값이라 버리지 않는다. 마지막 항목·항목 없음은 도착 항목이 없어
-  // 저장하지 않고, 그 칸이 도착 항목을 지정한 단건 조회로 받는다
   for (const result of results) {
     const { itemId, toItemId } = result;
     const mode = canonicalScheduleTravelMode(result.travelMode);

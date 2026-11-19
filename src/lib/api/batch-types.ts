@@ -1,4 +1,3 @@
-/** 벌크 API 항목별 부분 실패 공통 형태 */
 export type BatchItemStatus = "OK" | "ERROR" | "FAILED";
 
 export type BatchItemError = {

@@ -40,7 +40,6 @@ const BOOKMARK_PAGE_DESCRIPTION = "마음에 드는 장소를 저장하세요.";
 export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const { folders } = useBookmarkFolders();
-  // 폴더를 열기 전에 북마크를 미리 받아 둔다 — 지도(같은 목록을 받음)가 없는 모바일에서도 폴더가 바로 열리게. 같은 key라 요청은 1번
   useAllRoomBookmarks(roomId);
   const { isPending, isLoadingError, error, refetch } =
     useBookmarkCategories(roomId);
@@ -68,7 +67,6 @@ export function BookmarkFoldersView() {
     null,
   );
   const [folderFormError, setFolderFormError] = useState<string | null>(null);
-  // 편집 대화상자는 메뉴 항목에서 열려 닫힌 뒤 돌아갈 항목이 없다. 마지막으로 연 행 메뉴 버튼으로 포커스를 돌려준다
   const menuTriggerRef = useRef<HTMLElement | null>(null);
 
   const openCreate = () => {
@@ -205,7 +203,6 @@ export function BookmarkFoldersView() {
     );
   }
 
-  // 재조회 실패는 보이던 폴더를 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
   if (isLoadingError) {
     return (
       <div className="flex flex-col">
@@ -283,7 +280,6 @@ export function BookmarkFoldersView() {
                       <MoreHorizontal className="size-5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {/* 진행 중에는 항목을 비활성으로만 둔다(메뉴 항목은 Button이 아니라 progress가 없다) */}
                       <DropdownMenuItem
                         disabled={rowMenuBusy(folder.id)}
                         onClick={() => openEdit(folder)}

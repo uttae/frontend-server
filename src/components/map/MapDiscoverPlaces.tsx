@@ -30,10 +30,8 @@ import { clearActiveSearchMapPins } from "@/lib/active-search-map-pins";
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
 import type { OpenValue, RatingValue } from "./map-filters";
 
-/** 카테고리·필터 검색 1회당 Places API 결과 상한 */
 const MAP_DISCOVER_MAX_RESULT_COUNT = 10;
 
-/** Places API(New) field mask — camelCase 프로퍼티명과 동일 */
 const NEARBY_FIELDS: string[] = [
   "id",
   "displayName",
@@ -63,7 +61,6 @@ export type MapDiscoverPlacesProps = {
   selectedCategoryId: string | null;
   rating: RatingValue;
   openNow: OpenValue;
-  /** 검색이 실패하면 true, 새 검색을 시작하면 false. 바뀌지 않는 함수(useState의 set)를 넘긴다 */
   onSearchFailedChange: (failed: boolean) => void;
 };
 
@@ -131,7 +128,6 @@ export function MapDiscoverPlaces({
 
   const searchSeqRef = useRef(0);
   const prevCategoryIdRef = useRef<string | null>(null);
-  // 요청 ID는 0으로 돌아가지 않는다. 마운트 때 값은 이미 처리한 요청으로 보고 새로 누른 요청만 검색한다
   const seenRecenterIdRef = useRef(discoverRecenterRequestId);
 
   const runDiscoverSearch = useCallback(
@@ -175,7 +171,6 @@ export function MapDiscoverPlaces({
         let places: google.maps.places.Place[];
 
         if (openVal === "open") {
-          // Nearby Search에는 isOpenNow 없음 → Text Search로 서버 측 "현재 영업" 제한
           const textRequest: google.maps.places.SearchByTextRequest = {
             fields: NEARBY_FIELDS,
             textQuery: cat.searchQuery,
@@ -247,7 +242,6 @@ export function MapDiscoverPlaces({
     [placesLib, onSearchFailedChange],
   );
 
-  /** Search가 맵 핀 소유 시 디스커버 마커 비우기·비행 응답 무효화 */
   useEffect(() => {
     if (pinsFocus === "discover") return;
     searchSeqRef.current += 1;
@@ -256,7 +250,6 @@ export function MapDiscoverPlaces({
     });
   }, [pinsFocus]);
 
-  /** 카테고리 종료 시 정리 또는 카테고리·필터 변경 시 스냅샷 규칙에 따라 검색 */
   useEffect(() => {
     if (!selectedCategoryId) {
       prevCategoryIdRef.current = null;
@@ -265,7 +258,6 @@ export function MapDiscoverPlaces({
         setMarkers([]);
       });
       useSearchRecenterStore.getState().clearDiscoverSnapshot();
-      // Clearing a category must not release a newer text search or invalidate its response.
       const focusState = useMapPinsFocusStore.getState();
       if (focusState.focus === "discover") focusState.releaseFocus();
       return;
@@ -318,7 +310,6 @@ export function MapDiscoverPlaces({
     runDiscoverSearch,
   ]);
 
-  /** `현 위치 검색` 버튼 → discover 스냅샷 갱신·재조회 */
   const recenterDiscover = useEffectEvent(() => {
     if (!selectedCategoryId || !map || !placesLib) return;
     const snapshot = buildDiscoverSnapshotFromGoogleMap(map);

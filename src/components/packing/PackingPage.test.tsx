@@ -7,7 +7,6 @@ import { PackingPage } from './PackingPage';
 
 const mocks = vi.hoisted(() => ({context: null as unknown, mobile: false}));
 vi.mock('@/hooks/usePackingList', () => ({usePackingList: () => mocks.context}));
-// PC는 오른쪽 상세 패널(aside), 모바일 기기는 아래 시트(Drawer)를 그린다
 vi.mock('@/contexts/MobileViewContext', async importOriginal => ({
   ...await importOriginal<typeof import('@/contexts/MobileViewContext')>(),
   useMobileView: () => ({isMobileDevice: mocks.mobile}),
@@ -29,7 +28,6 @@ beforeEach(()=>{
 });
 afterEach(async()=>{await act(async()=>root.unmount());document.body.replaceChildren();vi.unstubAllGlobals();});
 
-// Base UI는 첫 포커스·닫힘 정리를 다음 프레임 이후에 한다
 const settle=()=>act(async()=>{await new Promise(resolve=>requestAnimationFrame(()=>resolve(null)));await new Promise(resolve=>setTimeout(resolve,0));});
 async function mount(){await act(async()=>root.render(<PackingPage/>));await settle();}
 async function rerender(){await act(async()=>root.render(<PackingPage/>));await settle();}
@@ -39,7 +37,6 @@ function accessibleName(node:Element){
   return node.getAttribute('aria-label') ?? node.textContent ?? '';
 }
 const openDialogs=()=>Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][data-open],[role="alertdialog"][data-open]'));
-// 열린 대화상자·시트가 있으면 맨 위 것 안에서, 없으면 화면 전체에서 찾는다(모달 뒤 요소는 누를 수 없다)
 function button(label:string){
   const scope:ParentNode=openDialogs().at(-1) ?? document;
   const found=Array.from(scope.querySelectorAll<HTMLButtonElement>('button')).find(node=>accessibleName(node)===label);
@@ -200,7 +197,6 @@ it('shows save progress and keeps the name dialog open until the save finishes',
   const finish=deferred();await mount();await selectFirstItem();
   await click(button('준비물 이름 수정: 여권'));
   await click(button('저장'));
-  // 저장 중: 저장 버튼은 progress, 취소·Esc로 닫히지 않는다(closeDisabled)
   expect(button('저장 중').getAttribute('aria-busy')).toBe('true');
   await click(button('취소'));
   await escape();
@@ -278,7 +274,6 @@ it('preserves new memo typing when a pending blank memo save clears the memo',as
 it('preserves the loading state without fabricated progress or a list',async()=>{
   state.data=null;state.status='loading';
   await mount();
-  // 로딩 안내는 화면에 보이지 않는 status(output)로만 전한다
   expect(document.querySelector('output')!.textContent).toContain('불러오는 중');
   expect(document.querySelectorAll('h2')).toHaveLength(0);
   expect(document.querySelector('[aria-label="전체 준비 현황"]')).toBeNull();
@@ -352,7 +347,6 @@ it('does not close another item when the previous item memo save finishes',async
   expect(selectedName()).toBe('항공권 예약 내역');
 });
 
-// 모바일 시트의 X는 저장 중(status writing)에 막히므로, 저장 중 닫기는 PC 접기·메모 취소로 본다
 it.each([[false,'취소'],[false,'준비물 상세 접기'],[true,'취소']] as const)('does not close a reopened detail when a save finishes (mobile: %s, close: %s)',async(mobile,close)=>{
   mocks.mobile=mobile;
   const finish=deferred();
@@ -373,7 +367,6 @@ it('keeps the mobile memo draft after closing the sheet and does not close it wh
   expect(sheet()).toBeNull();
   await selectFirstItem();
   expect(memo()!.value).toBe('닫은 뒤에도 유지할 메모');
-  // 저장 중에는 X·Esc로 닫히지 않는다(closeDisabled)
   state.status='writing';await rerender();
   expect(button('준비물 상세 닫기').disabled).toBe(true);
   await click(button('준비물 상세 닫기'));

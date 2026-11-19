@@ -6,7 +6,6 @@ import {
   placePhotoUrlQueryKey,
 } from "@/lib/place-photo-query";
 
-/** 장소 사진 주소 조회 옵션 — useQuery 밖에서도 같은 키·queryFn·캐시 설정을 쓰게 한다 */
 export function placePhotoUrlQueryOptions(
   googlePlaceId: string | null | undefined,
   options?: { enabled?: boolean },

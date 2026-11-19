@@ -31,7 +31,6 @@ import {
 } from "@/lib/expenses/expense-policy";
 import { UserAvatar } from "@/components/user/UserAvatar";
 
-// Group the integer string directly so large amounts and trailing decimals stay exact.
 import { formatExpenseAmount } from "@/lib/expenses/format-expense-amount";
 
 export { formatExpenseAmount };
@@ -49,8 +48,7 @@ export function CategoryIcon({ category, summary = false }: Readonly<{ category:
   return (
     <span className={`flex shrink-0 items-center justify-center rounded-full bg-fill text-icon ${summary ? "size-9" : "size-8 @min-[800px]/expense-list:size-10"}`}>
       <span className="flex size-5 items-center justify-center">
-        {/* Figma exports are 24px except lodging (20px); preserve their root dimensions. */}
-        {/* eslint-disable-next-line @next/next/no-img-element -- local Figma vector asset */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={`/expenses/${asset}.svg`} alt="" className={`max-w-none shrink-0 ${asset === "lodging" ? "" : "scale-[0.833333]"}`} />
       </span>
     </span>
@@ -70,7 +68,6 @@ export function ExpensePerson({
       title={person.label}
       className="inline-flex min-w-0 max-w-full items-center gap-1.5 align-middle"
     >
-      {/* tone이 대체를 정한다: 사진을 못 받으면 사람 아이콘, 사진이 없으면 라벨 첫 글자 */}
       <UserAvatar
         user={{ nickname: person.label, profileImageUrl: person.imageUrl }}
         size={24}
@@ -112,7 +109,6 @@ export function ExpenseRolePicker({
   currentUserId?: number;
   selected: number[];
   original: number[];
-  // 감싼 <fieldset disabled>는 Base UI Checkbox(span)에 전달되지 않아 따로 받는다
   disabled?: boolean;
   onChange: (ids: number[]) => void;
 }>) {
@@ -677,7 +673,6 @@ export function ExpenseSummaryView({
     <div className="flex flex-col gap-6 mobile:gap-4">
       {showDetails && <details className="order-last text-body-xs-regular text-text-subtle">
         <summary className="cursor-pointer">정산 범위</summary>
-      {/* 정산 내용 범위를 바꾸는 하위 전환이라 Tabs Chip(Outline md)을 쓴다. 내용은 아래 SettlementContent가 scope로 그려 패널을 두지 않는다 */}
       <Tabs value={scope} onValueChange={(next: "mine" | "all") => onScopeChange?.(next)}>
         <TabsList variant="outline" size="md" aria-label="정산 범위">
           <TabsTrigger value="mine">내 정산</TabsTrigger>
@@ -714,7 +709,6 @@ function ExpenseBarChart({
   currency: string;
   rows: { id: string; label: string; amount: string }[];
 }>) {
-  // Visual proportions use numbers; displayed monetary amounts keep the exact server strings.
   const values = rows.map((row) => Math.max(0, Number(row.amount) || 0));
   const maximum = Math.max(0, ...values);
   const total = values.reduce((sum, value) => sum + value, 0);
@@ -779,7 +773,6 @@ export function ExpenseAnalysisView({
   const [groupBy, setGroupBy] = useState<"category" | "day">("category");
   return (
     <div className="space-y-6">
-      {/* 분석 묶음 기준을 바꾸는 하위 전환이라 Tabs Chip(Outline md). 통화마다 그래프 하나를 groupBy로 고르므로 패널을 두지 않는다 */}
       <Tabs value={groupBy} onValueChange={(next: "category" | "day") => setGroupBy(next)}>
         <TabsList variant="outline" size="md" aria-label="비용 분석 기준">
           <TabsTrigger value="category">카테고리별</TabsTrigger>

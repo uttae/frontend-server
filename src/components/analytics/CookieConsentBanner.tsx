@@ -18,7 +18,6 @@ export function CookieConsentBanner({
 }: CookieConsentBannerProps) {
   const reduceMotion = useReducedMotion();
 
-  // z-40: 앱(isolate 묶음) 위, Base UI 대화상자·시트(z-50 포털) 아래다. 배너의 '쿠키 설정'으로 연 대화상자가 배너를 덮고 딤이 배너를 막는다
   return (
     <motion.div
       role="region"

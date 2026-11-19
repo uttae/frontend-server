@@ -31,32 +31,19 @@ export type PlanDaySectionDragHandleProps = {
 export type PlanDaySectionProps = {
   title: string;
   subtitle?: string;
-  /** 접힌 상태로 마운트할지 (기본: 펼침) — 일정 스케줄 ID 동기화 시에는 `PlanPageView` 기본값과 같이 동작함 */
   defaultExpanded?: boolean;
-  /**
-   * 플랜 우측 맵 오버레이와 동일한 펼침 상태(`usePlanItineraryExpandedStore`)를 공유함.
-   * 생략 시 로컬 `useState`만 사용합니다.
-   */
   itineraryScheduleId?: number | null;
   children?: ReactNode;
   summaryAction?: ReactNode;
-  /**
-   * 일차(schedule) 단위 삭제 — schedule-item(장소) 삭제와 구분됩니다.
-   * 지정 시 헤더 우측에 더보기 메뉴가 표시됩니다.
-   */
   onRequestAddExpense?: () => void;
   isAddExpenseDisabled?: boolean;
   onRequestDeleteSchedule?: () => void;
-  /** 해당 일차 바로 뒤에 빈 일차 삽입 */
   onRequestInsertScheduleAfter?: () => void;
-  /** 일차가 1개뿐일 때 등 삭제 불가 — 메뉴 항목은 보이되 비활성화 */
   isDeleteScheduleDisabled?: boolean;
-  /** mutation·drag 중 메뉴 비활성화 */
   isScheduleMenuDisabled?: boolean;
   sectionRef?: Ref<HTMLElement>;
   sectionStyle?: CSSProperties;
   dragHandleProps?: PlanDaySectionDragHandleProps;
-  /** 다른 일차 장소 놓기 — 헤더·접힌 일차 놓을 영역(목록은 PlanItinerary가 받는다)과 놓을 대상 강조 */
   crossDayDrop?: {
     props?: {
       onDragOver: (e: DragEvent<Element>) => void;
@@ -67,8 +54,6 @@ export type PlanDaySectionProps = {
   };
 };
 
-// 메뉴는 body로 포털되지만 React 이벤트는 트리를 따라 일차 섹션(일차 간 놓기)·장소 카드(선택·끌기)로 올라간다.
-// 트리거와 포털 표면에서만 포인터 전파를 끊고, 키보드는 Base UI에 전달한다
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 export const menuPointerBoundary = {
   onClick: stopPropagation,
@@ -105,7 +90,6 @@ export function PlanDaySection({
 
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
 
-  /** 객체를 반환하면 매번 새 참조 → useSyncExternalStore 무한 렌더 — 불리언만 선택 */
   const hasKeyInStore = usePlanItineraryExpandedStore(
     (s) =>
       trackedSid !== undefined &&
@@ -182,7 +166,6 @@ export function PlanDaySection({
                 if (e.key === " " || e.key === "Enter") e.preventDefault();
               }}
               className={cn(
-                // 누르는 영역만 28px로 넓히고 줄 안에서는 Figma 아이콘 폭 20px만 차지한다
                 "-m-1 flex shrink-0 touch-none select-none rounded-md p-1 text-icon",
                 dragDisabled
                   ? "cursor-not-allowed opacity-40"
@@ -198,7 +181,6 @@ export function PlanDaySection({
             aria-expanded={expanded}
             aria-controls={`${panelId}-panel`}
             onClick={toggle}
-            // 머리 줄 빈 곳을 눌러도 접히던 동작을 지키려고 남은 폭을 채운다. 내용은 Figma처럼 왼쪽에 붙는다
             className="-m-1 flex min-w-0 flex-1 cursor-pointer items-center gap-1 rounded-md p-1 text-left transition-colors hover:bg-fill-strong"
           >
             <span className="flex min-w-0 items-center gap-2">

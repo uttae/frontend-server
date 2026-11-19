@@ -23,7 +23,6 @@ function AiRequestMetaRow({
   msg,
   typo,
   onCancelRequest,
-  /** 내 AI 요청이면 상태·취소됨 우측 정렬, 상대방이면 좌측 정렬 */
   isOwnMessage = false,
 }: {
   msg: ChatMessage;
@@ -193,7 +192,6 @@ export function MyMessageGroup({
 }: {
   messages: ChatMessage[];
   isMinimized?: boolean;
-  /** 내 AI_REQUEST 만 — `cancelable`·상태 조건 충족 시 취소 STOMP 발행 */
   onCancelAiRequest?: (requestMessageId: string) => void;
 }) {
   const { typo, chrome } = getChatPanelLook(isMinimized);
@@ -263,9 +261,8 @@ export function AiMessageGroup({
   return (
     <div className="flex gap-2">
       <div className="flex shrink-0 flex-col items-center gap-0.5">
-        {/* 아래에 보이는 'WOORI' 라벨이 이름을 알리므로 그림은 장식으로 숨긴다 */}
         <Avatar size={40} shape="rounded" tone="elevate" ring="subtle" aria-hidden>
-          {/* eslint-disable-next-line @next/next/no-img-element -- public 정적 SVG(내장 래스터) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={chrome.wooriIconSrc}
             alt=""

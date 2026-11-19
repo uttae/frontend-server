@@ -273,7 +273,6 @@ it("passes the query cancel signal to read requests so a superseded read is abor
     await read();
     expect(fetcher.mock.lastCall?.[1]).toEqual({ signal: controller.signal });
   }
-  // signal 없이 부르면 지금처럼 init 없이 보낸다
   fetcher.mockResolvedValueOnce(new Response(JSON.stringify([])));
   await api.getExpenses("r");
   expect(fetcher.mock.lastCall?.[1]).toBeUndefined();

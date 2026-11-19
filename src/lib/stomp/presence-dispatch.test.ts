@@ -95,7 +95,6 @@ describe("dispatchRoomPresence", () => {
     });
     stops.push(observer.subscribe(() => {}));
 
-    // 2번이 접속하기 전에 출발한 조회
     void observer.refetch();
     await expect.poll(() => responses.length).toBe(1);
 

@@ -24,7 +24,6 @@ export type ExchangeGoogleCodeResult =
     }
   | { ok: false; status: number; errorCode?: string; message?: string };
 
-/** 백엔드가 reacceptance 응답에 expiresInSeconds를 생략할 경우 사용할 기본 TTL(10분). */
 const REACCEPTANCE_DEFAULT_TTL_SECONDS = 10 * 60;
 
 export async function exchangeGoogleCode(
@@ -132,10 +131,6 @@ export type CompleteGoogleReacceptResult =
   | { ok: true }
   | { ok: false; status: number; errorCode?: string; message: string };
 
-/**
- * 재동의 확정.
- * BFF `POST /api/auth/google/reaccept` — 성공 시 access/refresh 쿠키가 발급된다.
- */
 export async function completeGoogleReaccept(
   reacceptanceToken: string,
 ): Promise<CompleteGoogleReacceptResult> {
@@ -174,7 +169,6 @@ async function refreshToken(): Promise<
 
 let pendingRefresh: Promise<boolean> | null = null;
 
-/** 브라우저: `POST /api/auth/refresh` — 동시 401에 대해 1회만 호출 */
 export async function tryClientRefresh(): Promise<boolean> {
   if (!pendingRefresh) {
     pendingRefresh = refreshToken()

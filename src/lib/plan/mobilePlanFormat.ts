@@ -5,7 +5,6 @@ import { parseLocalYmd } from "@/lib/plan/tripRange";
 
 const WEEKDAYS_KO = ["일", "월", "화", "수", "목", "금", "토"];
 
-/** 모바일 일차 헤더 날짜 — `YYYY-MM-DD` → `09. 21 수` */
 export function formatMobileDayDate(ymd: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
   const d = parseLocalYmd(ymd);
@@ -14,18 +13,12 @@ export function formatMobileDayDate(ymd: string): string {
   return `${mm}. ${dd} ${WEEKDAYS_KO[d.getDay()]}`;
 }
 
-/** `2026-09-28` → `9월 28일` */
 export function formatMonthDayKo(ymd: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ymd)) return "";
   const d = parseLocalYmd(ymd);
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-/**
- * 일차·장소 비용 요약 — 가장 많은 지출 건수의 통화를 원금액으로 합산한다.
- * 동률이면 처음 등장한 통화, `외 N건`은 나머지 통화의 지출 건수다.
- * 예: `30 USD 외 1건`. 0원도 지출이며, 빈 목록만 null이다.
- */
 export function summarizePlaceExpenses(expenses: readonly Expense[]): string | null {
   if (expenses.length === 0) return null;
   const countByCurrency = new Map<string, number>();
@@ -35,7 +28,6 @@ export function summarizePlaceExpenses(expenses: readonly Expense[]): string | n
   const totals = totalsByCurrency(expenses);
   const [first, ...rest] = totals;
   if (!first) return null;
-  // 건수가 같으면 먼저 나온 통화를 쓴다(totalsByCurrency는 등장 순서를 유지)
   const primary = rest.reduce((best, current) =>
     (countByCurrency.get(current.currency) ?? 0) > (countByCurrency.get(best.currency) ?? 0)
       ? current

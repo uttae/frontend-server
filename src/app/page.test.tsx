@@ -11,7 +11,7 @@ vi.mock("next/image", () => ({
     void priority;
     void unoptimized;
 
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- alt is forwarded via imageProps spread
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
     return <img {...imageProps} />;
   },
 }));

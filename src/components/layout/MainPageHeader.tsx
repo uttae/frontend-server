@@ -9,10 +9,6 @@ type MainPageHeaderProps = {
   className?: string;
 };
 
-/**
- * (main) 탭 화면 제목 줄 — Figma Header(가계부 6576:26503 등).
- * 높이 76 = 위아래 여백 12 + 제목 30 + 간격 2 + 설명 20. 모바일도 같다(Figma Mobile/북마크/393 6663:5803).
- */
 export function MainPageHeader({
   title,
   description,

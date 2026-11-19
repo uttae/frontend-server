@@ -13,7 +13,6 @@ import { BookmarkFolderDetailHeader } from "./BookmarkFolderDetailHeader";
 import { BookmarkListSkeleton } from "./BookmarkListSkeleton";
 import { BookmarkPlaceRow } from "./BookmarkPlaceRow";
 
-// 장소 추가·삭제 시 데스크톱 목록 행의 너비가 흔들리지 않게 한다.
 const SCROLLBAR =
   "min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable] mobile:[scrollbar-gutter:auto] [scrollbar-color:rgba(0,0,0,0.2)_transparent]";
 
@@ -34,7 +33,6 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
   const {
     data: bookmarkRowsRaw,
     isPending: bookmarksLoading,
-    // 재조회 실패는 보이던 목록을 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
     isLoadingError: bookmarksError,
     error: bookmarksErr,
     refetch,
@@ -162,7 +160,6 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
           <BookmarkListSkeleton />
         ) : cardsError ? (
           <div className="space-y-3 py-10">
-            {/* 에러 문구는 내부 메시지(요청 id·API 오류 코드)라 화면에 그대로 보여 주지 않는다 */}
             <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
               장소 정보를 불러오지 못했습니다.
             </p>

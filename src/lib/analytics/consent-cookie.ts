@@ -75,7 +75,6 @@ export function clearGoogleAnalyticsCookies(): void {
   clearAnalyticsCookies(googleAnalyticsCookieNames(document.cookie));
 }
 
-/** Delete only the named cookies at the domains our browser SDKs may use. */
 export function clearAnalyticsCookies(names: readonly string[]): void {
   if (typeof document === "undefined") return;
 

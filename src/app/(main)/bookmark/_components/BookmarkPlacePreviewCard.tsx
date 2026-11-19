@@ -40,7 +40,7 @@ export function BookmarkPlacePreviewCard({
   const rawGid = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
 
   const thumbnailMedia = visibleUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element -- remote place photo URL
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={visibleUrl}
       alt={name}

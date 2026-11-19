@@ -4,7 +4,6 @@ export type RoomPresenceEventType =
   | "USER_CONNECTED"
   | "USER_DISCONNECTED";
 
-/** `/topic/rooms/{roomId}/presence` 브로드캐스트 본문 */
 export type RoomPresenceChangedEvent = {
   nickname: string | null;
   profileImageUrl: string | null;

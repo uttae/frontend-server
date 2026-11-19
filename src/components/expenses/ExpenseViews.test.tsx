@@ -9,7 +9,6 @@ import {
   ExpenseAnalysisView,
   ExpenseRolePicker,
 } from "./ExpenseViews";
-// 메뉴·탭은 Base UI라 react-dom으로 그리고 document에서 찾는다(메뉴 목록은 body로 포털된다)
 async function renderInDom(node: ReactNode) {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const host = document.createElement("div");
@@ -26,7 +25,6 @@ async function renderInDom(node: ReactNode) {
     },
   };
 }
-// Base UI는 메뉴를 닫은 뒤 다음 틱에 목록을 지운다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const menuItem = (label: string) =>
   document.querySelector<HTMLElement>(`[role="menuitem"][aria-label="${label}"]`);
@@ -330,7 +328,6 @@ it("shows only the selected analysis graph and preserves exact daily amounts", a
   }] }} />);
   try {
     const graphs = () => [...view.host.querySelectorAll("figure")].map(figure => figure.getAttribute("aria-label"));
-    // 분석 기준은 Tabs(role="tab", aria-selected)다
     const tab = (label: string) => [...view.host.querySelectorAll<HTMLElement>('[role="tab"]')].find(t => t.textContent === label)!;
     expect(view.host.querySelector('[role="tablist"]')?.getAttribute("aria-label")).toBe("비용 분석 기준");
     expect(tab("카테고리별").getAttribute("aria-selected")).toBe("true");

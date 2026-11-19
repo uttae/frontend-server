@@ -7,7 +7,6 @@ function hasCampaign(search: URLSearchParams): boolean {
   return [...search.keys()].some(name => name.startsWith("utm_"));
 }
 
-/** Navigation context only: never retain OAuth parameters, arbitrary queries or fragments. */
 export function inviteCampaignSearch(search: string): string {
   const source = new URLSearchParams(search.split("#", 1)[0]);
   const campaign = new URLSearchParams();
@@ -17,7 +16,6 @@ export function inviteCampaignSearch(search: string): string {
   return campaign.toString();
 }
 
-/** Preserve an existing campaign as a whole, including partial/empty sets. */
 export function withInviteCampaign(path: string, campaign: string): string {
   const hashIndex = path.indexOf("#");
   const beforeHash = hashIndex === -1 ? path : path.slice(0, hashIndex);
@@ -31,7 +29,6 @@ export function withInviteCampaign(path: string, campaign: string): string {
   return `${beforeHash}${separator}${allowedCampaign}${fragment}`;
 }
 
-/** Only outgoing copy/share links create the default invitation campaign. */
 export function buildSharedInviteUrl(url: string): string {
   return withInviteCampaign(url, defaultInviteCampaign);
 }

@@ -10,7 +10,6 @@ const HOUR_OPTIONS: Option[] = Array.from({ length: 12 }, (_, i) => ({ value: St
 const MINUTE_OPTIONS: Option[] = Array.from({ length: 60 }, (_, i) => ({ value: String(i), label: String(i).padStart(2, "0") }));
 const ROW_HEIGHT = 40;
 
-/** Figma 5065:3515: five flat 40px rows; the selected band is independently 44px. */
 function TimeWheelColumn({ label, options, value, preview, active, cyclic, onSelect, onScrollingChange }: Readonly<{
   label: string;
   options: Option[];
@@ -31,7 +30,6 @@ function TimeWheelColumn({ label, options, value, preview, active, cyclic, onSel
   const rows = cyclic ? [...options, ...options, ...options] : options;
 
   useLayoutEffect(() => {
-    // Alignment on opening, field switching, or reset must never count as input.
     userScroll.current = false;
     onScrollingChange(label, false);
     if (scroller.current) scroller.current.scrollTop = targetIndex * ROW_HEIGHT;
@@ -111,7 +109,6 @@ function TimeWheelColumn({ label, options, value, preview, active, cyclic, onSel
   );
 }
 
-/** Preview alignment is visual only. Each missing column requires a user selection. */
 export function TimeWheelPicker({ value, onChange, active, onSettlingChange }: Readonly<{
   value: TimeParts;
   onChange: (parts: TimeParts) => void;

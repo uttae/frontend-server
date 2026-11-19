@@ -13,7 +13,6 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 afterEach(() => vi.clearAllMocks());
 
-// 시트는 Base UI Drawer라 document.body로 포털된다
 async function renderSheet() {
   const host = document.createElement("div");
   document.body.append(host);

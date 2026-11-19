@@ -37,7 +37,6 @@ export type MapMobileSearchProps = {
   initialQuery?: string;
   resetKey?: number;
 };
-/** Map-only confirmation path; itinerary input consumers keep the original screen contract. */
 export function MapMobileSearchScreen({
   open,
   onClose,

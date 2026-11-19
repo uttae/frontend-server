@@ -10,11 +10,6 @@ import { getTabId } from "@/lib/tab-id";
 
 const CLIENT_TAB_ID_HEADER = "X-Client-Tab-Id";
 
-/**
- * 일정·북마크 STOMP 이벤트의 `originTabId`로 돌아와, 이 탭이 보낸 변경의 반향을 가려낸다.
- * 이미 CORS preflight를 하는 요청(PATCH·PUT·DELETE, JSON POST)에만 싣는다 — GET·body 없는 POST에
- * 커스텀 헤더를 붙이면 preflight가 새로 생기고, 백엔드 CORS에 maxAge가 없어 Chrome은 그 결과를 약 5초만 기억한다.
- */
 function withClientTabIdHeader(init: RequestInit | undefined): RequestInit | undefined {
   const tabId = getTabId();
   if (!tabId || !init) return init;
@@ -33,10 +28,6 @@ function withClientTabIdHeader(init: RequestInit | undefined): RequestInit | und
   return { ...init, headers };
 }
 
-/**
- * Drop-in replacement for fetch that automatically retries once after
- * refreshing the access token on a 401 response.
- */
 export async function apiFetch(
   input: RequestInfo | URL,
   init?: RequestInit,

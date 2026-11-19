@@ -2,7 +2,6 @@
 
 import type { KeyboardEventHandler } from "react";
 
-/** Keep incomplete input in the draft; only canonical HH:mm reaches the API. */
 export function TimeInput({
   label,
   value,
@@ -22,7 +21,6 @@ export function TimeInput({
   const update = (index: number, next: string) => {
     const updated = [...parts];
     updated[index] = next;
-    // Entering one part of an unset time starts at minute/hour zero.
     if (!value) updated[1 - index] = "00";
     onChange(updated.every((part) => part === "") ? "" : updated.join(":"));
   };

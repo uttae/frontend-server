@@ -20,13 +20,11 @@ function Harness({ canManage = true }: { canManage?: boolean }) {
     isPending={false} isError={false} canManage={canManage} busy={false} onAdd={() => {}} onEdit={() => {}}
     onDelete={async () => { await remove(); setExpenses([]); }} onRetry={() => {}} onClose={close} />;
 }
-// 목록 대화상자·확인창은 Base UI가 document.body로 포털한다
 const button = (label: string) => document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
 const listDialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
 const confirmation = () => document.querySelector<HTMLElement>('[role="alertdialog"]');
 const listHeading = () => [...document.querySelectorAll("h3")].find((heading) => heading.textContent === "내역");
 async function settle() {
-  // 닫힘 전환·finalFocus(microtask)·Base UI의 requestAnimationFrame을 기다린다
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
 }
 async function pressEscape() {

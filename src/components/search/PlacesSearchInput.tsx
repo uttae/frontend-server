@@ -31,16 +31,11 @@ type MenuGeometry = {
 type Props = {
   coords: { lat: number; lng: number } | null;
   onSearch: (query: string) => void;
-  /** URL `q` — 칩·공유 링크 등에서 오는 검색어와 입력창 동기화 */
   urlQuery?: string;
-  /** 드롭다운에서 항목 선택 시 (플랜 장소 추가 등) */
   onPickPrediction?: (prediction: Prediction) => void;
-  /** true면 검색 버튼 숨김 — 자동완성 선택만 사용 */
   pickOnly?: boolean;
   placeholder?: string;
-  /** 입력창 왼쪽 아이콘 (기본: 돋보기). plus는 일정 장소 추가(Figma Add Place) */
   leadingIcon?: "search" | "plus";
-  /** 입력 지우기(X) 클릭 시 — 예: 검색 지도 핀 제거 */
   onClear?: () => void;
   disabled?: boolean;
 };

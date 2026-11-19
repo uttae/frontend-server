@@ -8,10 +8,6 @@ import { useSessionStore } from "@/stores/session-store";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import type { PlaceShareData } from "@/types/chat";
 
-/**
- * STOMP publish helpers — `useChatMessages` 외부(예: 검색 페이지)에서도 사용 가능.
- * 모든 publish 는 현재 세션의 `currentRoomId` 를 자동 사용하므로 외부에선 인자만 넘기면 된다.
- */
 export function useChatActions() {
   const { client, connected } = useStompContext();
   const roomId = useSessionStore((s) => s.currentRoomId);

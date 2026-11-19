@@ -1,7 +1,3 @@
-/**
- * 프로필 사진 필드 이름이 백엔드/엔드포인트마다 다른 경우 처리
- * (예: Jackson `photoURL`, REST `profileImageUrl`).
- */
 export function pickProfileImageUrl(
   raw: Record<string, unknown>,
 ): string | null {

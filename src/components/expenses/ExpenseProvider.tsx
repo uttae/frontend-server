@@ -49,7 +49,6 @@ function useExpenses(roomId: string) {
   const { data: user } = useSessionUser();
   const sessionReady = useSessionStore((session) => session.sessionReady);
   const currentRoomId = useSessionStore((session) => session.currentRoomId);
-  // A late response must never be attributed to the next account or room.
   const analyticsScope = useRef<{ active: boolean } | null>(null);
   const analyticsMounted = useRef(false);
   useLayoutEffect(() => {
@@ -60,8 +59,6 @@ function useExpenses(roomId: string) {
         user?.id !== undefined && readSessionUserId(client) === user.id,
     };
     analyticsScope.current = scope;
-    // Session teardown and account/room changes happen before React rerenders.
-    // Invalidate captured tokens permanently, including tokens from new writes.
     const invalidate = () => {
       if (analyticsScope.current) analyticsScope.current.active = false;
     };
@@ -85,8 +82,6 @@ function useExpenses(roomId: string) {
     if (!analyticsMounted.current || !session.sessionReady ||
       session.currentRoomId !== roomId || user?.id === undefined ||
       readSessionUserId(client) !== user.id) return null;
-    // A batched roundtrip can leave React dependencies unchanged. New writes
-    // get a fresh token; pending writes retain their permanently invalid token.
     if (!analyticsScope.current?.active) analyticsScope.current = { active: true };
     return analyticsScope.current;
   }
@@ -95,25 +90,18 @@ function useExpenses(roomId: string) {
     Boolean(roomId && user),
   );
   const enabled = Boolean(roomId && user) && !revoked;
-  // A complete successful GET is required before declaring an ID unknown.
-  // The shared presence cache may contain only a partial STOMP member snapshot.
   const memberQuery = useQuery({
     queryKey: expenseKeys.members(roomId),
     queryFn: ({ signal }) => getRoomMembers(roomId, signal),
     enabled,
     retry: false,
-    // 다른 가계부 조회와 같이 복구·무효화로만 다시 받는다(멤버 이벤트도 이 key를 무효화한다)
     staleTime: Infinity,
-    // Visibility recovery already refreshes members with the other room data.
     refetchOnWindowFocus: false,
   });
   const members = memberQuery.data?.members ?? [];
   const canManage =
     !revoked && canManageExpenses(user?.id, members, memberQuery.status);
   const schedules = useRoomSchedules(revoked ? null : roomId || null);
-  // Recovery owns focus/reconnect reads; manual refresh remains available.
-  // 입장·연결 성립 복구(refresh "all")와 변경 알림·본인 저장의 무효화로만 다시 받는다. 재마운트만으로는 받지 않아
-  // 입장 때 복구 조회와 겹치지 않는다. 화면 밖에서 무효화된 조회는 다시 붙을 때 받는다
   const options = {
     enabled,
     retry: false,
@@ -144,8 +132,6 @@ function useExpenses(roomId: string) {
   const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
   const filteredKrwSummary = useQuery({
     ...options,
-    // The unfiltered view already has krwSummary; do not mount another observer
-    // onto that stale query when returning to All and trigger a whole-room refetch.
     enabled: enabled && Object.keys(krwFilters).length > 0,
     queryKey: [...expenseKeys.krwSummary(roomId), krwFilters],
     queryFn: ({ signal }) => getExpenseKrwSummary(roomId, krwFilters, signal),
@@ -231,7 +217,6 @@ function useExpenses(roomId: string) {
         });
         event = AnalyticsEvents.expenseUpdated;
       }
-      // Count the committed write before cache reconciliation or recovery reads.
       if (scope?.active && recovery.getSnapshot() !== "revoked")
         trackAnalyticsEvent(event, { room_id: roomId });
       return record;
@@ -251,7 +236,6 @@ function useExpenses(roomId: string) {
         await recovery.refresh("expenses").catch(() => {});
         return;
       }
-      // Cancel earlier reads before installing the committed REST result.
       await client.cancelQueries({
         queryKey: expenseKeys.list(roomId),
         exact: true,
@@ -270,7 +254,6 @@ function useExpenses(roomId: string) {
           );
         },
       );
-      // The write committed; failed follow-up reads are shown by syncStatus.
       await recovery.refresh("expenses").catch(() => {});
     },
   });
@@ -284,13 +267,11 @@ function useExpenses(roomId: string) {
       lock.current = false;
     }
   }
-  // A filter request updates only the selected list, not whole-trip synchronization.
   const reads = [list, summary, budget, krwSummary, currencies, memberQuery];
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
     if (reads.some(query => query.isError)) resolvedSyncStatus = "error";
     else if (reads.some(query => !query.isSuccess)) resolvedSyncStatus = "pending";
-    // 다른 화면의 무효화(일정 변경·멤버 이벤트 등)로 있던 값을 두고 다시 받는 중 — 금액을 비우지 않는다
     else if (reads.some(query => query.isFetching)) resolvedSyncStatus = "refreshing";
   }
   return {

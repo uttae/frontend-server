@@ -100,7 +100,6 @@ export function AnalyticsConsentSettingsView({
       >
         개인정보 처리방침
       </Link>
-      {/* 대화상자 Footer(취소 Neutral Weak → 저장 Neutral Solid). 간격 20은 Modal 영역 간격이고, 저장 결과 문장은 버튼 아래에 붙는다 */}
       <DialogFooter className="mt-5">
         <Button variant="weak" onClick={onCancel}>
           취소
@@ -117,7 +116,6 @@ export function AnalyticsConsentSettingsView({
   );
 }
 
-// 취소는 대화상자를 닫는다(저장하지 않은 선택은 다음에 열 때 저장된 값으로 다시 읽음)
 export function AnalyticsConsentSettings({ onCancel }: Readonly<{ onCancel: () => void }>) {
   const consent = useSyncExternalStore(
     analyticsConsentStore.subscribe,

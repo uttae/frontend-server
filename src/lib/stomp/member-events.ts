@@ -1,6 +1,5 @@
 import { pickProfileImageUrl } from "@/lib/api/profileImage";
 
-/** 백엔드 `RoomMemberEventType` — 입장 요청은 `/user/queue/rooms` (JoinRequestPayload) */
 export type RoomMemberBroadcastType =
   | "MEMBER_JOINED"
   | "MEMBER_LEFT"
@@ -14,7 +13,6 @@ type RoomMemberPayloadBase = {
   roomId: string;
 };
 
-/** MEMBER_JOINED / MEMBER_LEFT / MEMBER_KICKED metadata — userId 필수, 표시 필드 optional */
 export type MemberUserSnapshotDetail = {
   userId: number;
   nickname?: string;
@@ -28,7 +26,6 @@ export type HostDelegatedDetail = {
   newHostNickname?: string;
 };
 
-/** `/topic/rooms/{roomId}/members` 브로드캐스트 본문 — metadata 파싱 결과를 `detail`로 둡니다 */
 export type RoomMemberPayload =
   | (RoomMemberPayloadBase & {
       type: "MEMBER_JOINED";

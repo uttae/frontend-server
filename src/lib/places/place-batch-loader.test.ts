@@ -5,7 +5,6 @@ import { createPlaceBatchLoader, type PlaceBatchResult } from "@/lib/places/plac
 
 type Outcome = "ok" | "failed" | "missing";
 
-/** id마다 응답 결과를 정한 batch 응답을 만든다 */
 function batchResponse(ids: string[], outcomeOf: (id: string) => Outcome) {
   const results = new Map<string, PlaceBatchResult<string>>();
   for (const id of ids) {

@@ -21,7 +21,6 @@ it("emits exact CTA roles for real activations only, preserves reclicks, modifie
   const links = [...container.querySelectorAll<HTMLAnchorElement>('a[href="/login"]')];
   expect(links).toHaveLength(3);
   for (const [index, link] of links.entries()) {
-    // Observe defaultPrevented before cancelling jsdom's unavailable navigation.
     const prevented: boolean[] = [];
     const preventNavigation = (event: Event) => { prevented.push(event.defaultPrevented); event.preventDefault(); };
     document.addEventListener("click", preventNavigation);

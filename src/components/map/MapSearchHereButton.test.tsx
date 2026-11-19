@@ -64,7 +64,6 @@ it("goes back to 현 위치에서 검색 when the map moves after a failure", as
   expect(button()?.textContent).toBe("현 위치에서 검색");
 });
 
-// 카테고리 칩으로 찾은 뒤 「현 위치에서 검색」이 실패해도(결과 없음이 아니라 오류) 같은 자리에서 다시 시도한다
 it("turns into 다시 시도 when the category search fails and asks the category search again", async () => {
   useSearchRecenterStore.getState().setDiscoverSnapshot({
     ...searched,

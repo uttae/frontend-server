@@ -37,7 +37,6 @@ function ProblemAndSolution() {
     <section data-landing-section="solution" className={styles.solution}>
       <div className={styles.solutionInner}>
         <div className={styles.solutionTitle}>
-          {/* The approved desktop spells this SOULTION; mobile spells SOLUTION. */}
           <p className={`${styles.eyebrow} ${styles.desktopOnly}`}>SOULTION</p>
           <p className={`${styles.eyebrow} ${styles.mobileOnly}`}>SOLUTION</p>
           <h2>복잡한 여행 계획은 <span>우때 하나로 끝!</span></h2>
@@ -137,7 +136,6 @@ function Devices() {
 }
 
 const steps = [
-  // Image widths include the leaf/image percentages, mobile .85 scale and 1440px container cap.
   { title: "여행 시작하기", description: "새로운 여행을 만들어요", image: "passport",
     sizes: "(min-width: 1440px) 241.36px, (min-width: 720px) 16.76132vw, (max-width: 392px) 104.55px, 122.99px" },
   { title: "장소 둘러보기", description: "가고 싶은 장소를 모아요", image: "map",

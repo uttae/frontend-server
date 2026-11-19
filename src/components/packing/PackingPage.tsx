@@ -25,7 +25,6 @@ type Context = ReturnType<typeof usePackingList>;
 type Editor = {kind:"createPart"} | {kind:"renamePart"|"createItem"|"renameItem";id:number;name:string};
 const linked = (value:string) => renderTextWithLinks(value,{linkClassName:"text-primary underline [overflow-wrap:anywhere]",onLinkClick:event=>event.stopPropagation()});
 
-// 이름·메모 대화상자나 삭제 확인창이 열려 있으면 Esc는 그쪽 몫이다. Base UI 표면은 <div role="dialog|alertdialog" data-open>이다
 const OPEN_DIALOG_SELECTOR = '[role="dialog"][data-open], [role="alertdialog"][data-open]';
 
 function PackingIcon({name, size = 24}: {name:keyof typeof packingIcons; size?:number}) {
@@ -44,11 +43,6 @@ function PackingCheckbox({item,context,detail = false}: {item:PackingItem;contex
   </label>;
 }
 
-/**
- * 카테고리·준비물 이름 추가/수정. 열린 채 마운트되고 닫기 요청(Esc·딤·취소)은 onClose다.
- * 다른 항목을 저장하는 동안(status writing)은 제출만 막고 버튼 모양은 그대로 둔다(체크할 때마다 깜빡이지 않게).
- * 동기화 오류처럼 저장할 수 없는 상태(ready·writing 밖)에서는 버튼을 비활성으로 보인다(옛 동작)
- */
 function NameDialog({editor,context,finalFocus,onClose}: Readonly<{editor:Editor;context:Context;finalFocus:()=>HTMLElement|null;onClose:()=>void}>) {
   const formId=useId();
   const mounted=useRef(true);
@@ -71,7 +65,6 @@ function NameDialog({editor,context,finalFocus,onClose}: Readonly<{editor:Editor
         }
       })();
       const result=await coordinator.execute(command);
-      // 저장하는 동안 다시 고친 이름은 남기고, 대화상자를 닫았다 다시 연 뒤 도착한 응답은 새 대화상자를 닫지 않는다
       if(mounted.current && (result.kind==="missing" || (result.kind==="success" && formApi.getFieldValue("name")===value.name))) onClose();
     },
   });
@@ -122,16 +115,11 @@ function DeleteDialog({context,onClose}: {context:Context;onClose:()=>void}) {
     confirmLabel="삭제" isPending={deleting} confirmDisabled={context.state.status!=="ready"} onConfirm={()=>void confirm()} onCancel={close}/>;
 }
 
-/**
- * 선택한 준비물의 메모 폼. 상세를 닫아도 초안이 남아야 해서(다시 열면 이어 쓰기) 모바일 시트처럼 닫히면 내용이 언마운트되는 껍데기 바깥,
- * 준비물마다 key로 다시 마운트되는 컴포넌트에서 부른다
- */
 function useMemoForm(item:PackingItem, context:Context, open:boolean, onComplete:()=>void) {
   const mounted=useRef(true);
   const completionVersion=useRef(0);
   const source=useRef(item.memo?.content ?? "");
   const submitted=useRef<string|null>(null);
-  // 열린 동안 서버 메모가 바뀌어도 기본값은 연 순간 값으로 둔다. 칸 값은 아래 effect가 규칙대로 맞춘다
   const [defaultValues]=useState(()=>({memo:item.memo?.content ?? ""}));
   const form=useForm({
     defaultValues,
@@ -149,7 +137,6 @@ function useMemoForm(item:PackingItem, context:Context, open:boolean, onComplete
   const isSaving=useStore(form.store,state=>state.isSubmitting);
   useEffect(()=>{mounted.current=true;return()=>{mounted.current=false;};},[]);
   useEffect(()=>{if(!open)completionVersion.current+=1;},[open]);
-  // 서버 메모가 바뀌면 손대지 않은 칸(이전 서버 값)이나 방금 보낸 값만 새 값으로 바꾼다. 그 뒤 새로 쓴 초안은 지키지 않는다
   useEffect(()=>{
     const next=item.memo?.content ?? "";
     if(source.current===next) return;
@@ -160,7 +147,6 @@ function useMemoForm(item:PackingItem, context:Context, open:boolean, onComplete
   },[item.memo?.content,form]);
   function cancel() {
     completionVersion.current+=1;
-    // 값을 바꾸면 칸을 다시 검사하면서 제출 오류도 지워진다
     form.setFieldValue("memo",item.memo?.content ?? "");
     onComplete();
   }
@@ -168,7 +154,6 @@ function useMemoForm(item:PackingItem, context:Context, open:boolean, onComplete
     if(form.state.isSubmitting || context.state.status!=="ready") return;
     void form.handleSubmit();
   }
-  // 저장할 수 없는 상태(동기화 오류 등)면 저장 버튼을 비활성으로 보인다. writing은 제출만 막는다(NameDialog와 같음)
   const blocked=context.state.status!=="ready" && context.state.status!=="writing";
   return {form,isSaving,blocked,cancel,save};
 }
@@ -190,7 +175,6 @@ function MemoPanel({item,memo}: Readonly<{item:PackingItem;memo:ReturnType<typeo
         </Field>;
       }}
     </form.Field>
-    {/* 상세 안 인라인 버튼: PC 패널은 sm, 모바일 기기 시트는 md로 폭을 나눈다 */}
     <div className={styles.memoActions}>
       <Button variant="outline" size={isMobileDevice ? "md" : "sm"} className={isMobileDevice ? "flex-1" : "min-w-18"} onClick={memo.cancel}>취소</Button>
       <Button tone="brand" size={isMobileDevice ? "md" : "sm"} className={isMobileDevice ? "flex-1" : "min-w-18"} loading={memo.isSaving} loadingLabel="저장 중" disabled={memo.blocked} onClick={memo.save}>저장</Button>
@@ -211,7 +195,6 @@ function DetailSections({item,memo}: Readonly<{item:PackingItem;memo:ReturnType<
   </>;
 }
 
-/** 체크·이름·수정/삭제 줄. 이름 요소(children)는 PC 패널은 h2, 모바일 시트는 시트 제목(DrawerTitle)이다 */
 function DetailHeader({item,context,onRename,onDelete,children}: Readonly<{item:PackingItem;context:Context;onRename:()=>void;onDelete:()=>void;children:ReactNode}>) {
   return <div className={styles.detailHeader}>
     <PackingCheckbox item={item} context={context} detail/>
@@ -226,7 +209,6 @@ function DetailHeader({item,context,onRename,onDelete,children}: Readonly<{item:
 type DetailProps = {item:PackingItem|null;context:Context;open:boolean;onClose:()=>void;onRename:()=>void;onDelete:()=>void};
 type ItemDetailProps = Omit<DetailProps,"item"> & {item:PackingItem};
 
-/** PC: 목록 오른쪽 비모달 패널. 닫혀도 언마운트하지 않아 메모 초안이 남는다 */
 function DetailPanel({item,context,open,onClose,onRename,onDelete}: Readonly<DetailProps>) {
   useEffect(()=>{
     if(!open) return;
@@ -256,10 +238,6 @@ function DetailPanelBody({item,context,open,onClose,onRename,onDelete}: ItemDeta
   </>;
 }
 
-/**
- * 모바일 기기: 아래 시트(Drawer). 저장 중(status writing)에는 Esc·딤·X·스와이프로 닫히지 않는다.
- * 시트 내용은 닫히면 언마운트되므로 메모 폼은 시트 바깥(DetailSheetBody)이 들고 있다
- */
 function DetailSheet({item,context,open,onClose,onRename,onDelete}: Readonly<DetailProps>) {
   return <Drawer open={open} onOpenChange={next=>{if(!next)onClose();}} closeDisabled={context.state.status==="writing"}>
     {item && <DetailSheetBody key={item.id} item={item} context={context} open={open} onClose={onClose} onRename={onRename} onDelete={onDelete}/>}
@@ -268,9 +246,7 @@ function DetailSheet({item,context,open,onClose,onRename,onDelete}: Readonly<Det
 
 function DetailSheetBody({item,context,open,onClose,onRename,onDelete}: ItemDetailProps) {
   const memo=useMemoForm(item,context,open,onClose);
-  // 높이는 지금 시트 값(화면의 76.53%, 위 80px은 남김)
   return <DrawerContent closeLabel="준비물 상세 닫기" className="h-[76.53dvh] max-h-[calc(100dvh-80px)]">
-    {/* 오른쪽 닫기 X의 누르는 영역(음수 margin)이 삭제 버튼 영역과 겹치지 않게 띄운다 */}
     <DrawerHeader className="gap-x-3">
       <DetailHeader item={item} context={context} onRename={onRename} onDelete={onDelete}>
         <DrawerTitle className="min-w-0 flex-1">{item.name}</DrawerTitle>
@@ -280,7 +256,6 @@ function DetailSheetBody({item,context,open,onClose,onRename,onDelete}: ItemDeta
   </DrawerContent>;
 }
 
-/** 카테고리 메뉴. 항목에서 연 이름 대화상자는 닫힐 때 이 메뉴 버튼으로 포커스를 돌려준다(항목은 메뉴와 함께 사라진다) */
 function PartMenu({part,onEdit,onDelete}: Readonly<{part:PackingPart;onEdit:(editor:Editor,returnFocus:HTMLElement|null)=>void;onDelete:()=>void}>) {
   const trigger=useRef<HTMLButtonElement>(null);
   return <DropdownMenu>
@@ -326,7 +301,6 @@ function PackingContent({context}: {context:Context}) {
   const [selectedId,setSelectedId]=useState<number|null>(null);
   const [detailOpen,setDetailOpen]=useState(false);
   const [editor,setEditor]=useState<Editor|null>(null);
-  // 메뉴 항목에서 연 이름 대화상자의 포커스 복귀 대상. 그 밖에서 열면 null(Base UI 기본: 연 버튼으로 복귀)
   const editorReturnFocus=useRef<HTMLElement|null>(null);
   const parts=[...(state.data?.parts ?? [])].sort((a,b)=>a.column-b.column || a.position-b.position);
   const items=parts.flatMap(part=>part.items);

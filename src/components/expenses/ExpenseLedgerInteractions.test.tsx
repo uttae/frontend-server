@@ -6,7 +6,6 @@ import { ExpenseSelect } from "./ExpenseSelect";
 import { ExpenseItemMenu } from "./ExpenseItemMenu";
 import { ExpenseCategorySummary } from "./ExpenseCategorySummary";
 
-// 카테고리 바텀시트는 화면 폭이 아니라 모바일 기기일 때만 열린다
 vi.mock("@/contexts/MobileViewContext", () => ({
   useMobileView: () => ({ isMobileDevice: true }),
 }));
@@ -31,10 +30,8 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
 });
-// Base UI는 열고 닫은 뒤 포커스·언마운트를 다음 틱(프레임)에 한다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const sheet = () => document.querySelector<HTMLElement>('[role="dialog"]');
-// 딤·바깥 누르기: Base UI는 pointerdown·mousedown에서 시작해 click으로 끝난 누르기만 바깥 누르기로 본다
 async function pressOutside(target: HTMLElement) {
   await act(async () => {
     for (const type of ["pointerdown", "mousedown", "pointerup", "mouseup", "click"]) {
@@ -80,7 +77,6 @@ it("chooses a mobile category and restores its trigger, while cancel leaves sele
     expect(document.activeElement).toBe(trigger);
   };
   await open();
-  // 첫 포커스는 Base UI 기본대로 시트 안으로 간다
   expect(sheet()!.contains(document.activeElement)).toBe(true);
   expect(sheet()!.querySelector("h2")?.textContent).toBe("카테고리");
   const food = [...sheet()!.querySelectorAll<HTMLElement>('[role="radio"]')]
@@ -127,7 +123,6 @@ it("closes the item disclosure on Escape, outside pointer and focus departure wi
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   };
   await open();
-  // 메뉴는 body로 포털된다. 항목은 Base UI Menu.Item(role="menuitem")
   const editItem = document.querySelector<HTMLElement>('[role="menuitem"][aria-label="비용 수정"]')!;
   expect(editItem).not.toBeNull();
   editItem.focus();
@@ -144,7 +139,6 @@ it("closes the item disclosure on Escape, outside pointer and focus departure wi
   await flush();
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
   await open();
-  // Tab으로 마지막 항목을 지나면 포커스가 메뉴 포털 끝의 포커스 가드로 간다. jsdom은 Tab 이동이 없어 그 가드로 직접 옮긴다
   const guards = document.querySelectorAll<HTMLElement>("[data-base-ui-portal] [data-base-ui-focus-guard]");
   await act(async () => guards[guards.length - 1].focus());
   await flush();

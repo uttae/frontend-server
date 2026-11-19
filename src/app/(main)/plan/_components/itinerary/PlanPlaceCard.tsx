@@ -77,7 +77,6 @@ export function PlanPlaceCard({
   const clearFocus = usePlanMapFocusStore((s) => s.clearFocus);
   const focusRoomId = scheduleTimeEdit?.roomId.trim() ?? "";
   const focusScheduleId = scheduleTimeEdit?.scheduleId ?? null;
-  /** 고른 장소 — 다른 카드를 고르거나, 같은 카드를 다시 누르거나, 지도 빈 곳을 누를 때까지 강조해 둔다 */
   const focused = usePlanMapFocusStore(
     (s) =>
       s.focus !== null &&
@@ -85,7 +84,6 @@ export function PlanPlaceCard({
       s.focus.scheduleId === focusScheduleId &&
       s.focus.itemId === place.itemId,
   );
-  /** 카드가 아닌 곳(지도 핀·장소 이동 스테퍼)에서 고른 경우에만 값이 있다 — 그때 일정 목록을 이 카드로 스크롤한다 */
   const focusSeqToReveal = usePlanMapFocusStore((s) =>
     s.focus !== null &&
     s.focus.source !== "card" &&
@@ -204,7 +202,6 @@ export function PlanPlaceCard({
         if (moved > 12) return;
       }
       if (!focusRoomId || focusScheduleId === null || typeof place.itemId !== "number") return;
-      // 고른 카드를 다시 누르면 강조와 "이 일차 경로만 보기"를 푼다
       if (focused) {
         clearFocus();
         setSelectedPlace(null);
@@ -212,7 +209,6 @@ export function PlanPlaceCard({
       }
       const target = planPlaceFocusTarget(place, focusRoomId, focusScheduleId, "card");
       if (!target) return;
-      // 일정에 넣은 장소는 상세를 보려는 게 아니라 위치를 보려는 것 — 상세(조회 포함) 대신 카드·지도 핀만 강조한다
       setSelectedPlace(null);
       focusPlace(target);
       if (!target.location) toast.info(PLAN_MAP_FOCUS_NO_LOCATION_MESSAGE);
@@ -362,7 +358,6 @@ export function PlanPlaceCard({
                   {media}
                   {orderBadge}
                   <span className={PLAN_PLACE_CARD_TW.thumbnailMapMark} aria-hidden>
-                    {/* Figma Location 인스턴스만 선 굵기가 1.2(아이콘 기본 1.8) */}
                     <LocationIcon size={14} className="[&_path]:[stroke-width:1.2]" />
                   </span>
                 </div>

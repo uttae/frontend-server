@@ -15,7 +15,6 @@ export type FetchSessionUserResult =
   | { kind: "unauthenticated" }
   | { kind: "network_error" };
 
-/** GET /users/me — 401 시 BFF refresh 후 1회 재시도; 네트워크 오류는 별도 구분 */
 export async function fetchSessionUserResult(): Promise<FetchSessionUserResult> {
   try {
     const { response: res } = await authenticatedFetch(`${API_BASE}/users/me`);

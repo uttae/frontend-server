@@ -24,11 +24,9 @@ export type RoomTopicsUnsubscriber = () => void;
 
 export type SubscribeRoomStompTopicsOptions = {
   onRoomChatMessage?: (msg: ServerChatMessage) => void;
-  /** 같은 계정이 다른 탭에서 방을 나갔을 때 — 강퇴·방 삭제와 달리 개인 큐 알림이 없다 */
   onSelfLeftRoom?: (roomId: string) => void;
 };
 
-/** 방 단위 members·presence·bookmarks·schedules + messages + 개인 에러 큐(`/user/queue/errors`) 구독; 반환값으로 한 번에 해제 */
 export function subscribeRoomStompTopics(
   client: Client,
   roomId: string,
@@ -70,9 +68,7 @@ export function subscribeRoomStompTopics(
             queryClientRef.current,
             message.body,
           );
-        } catch {
-          // malformed payload / 네트워크 — 무시
-        }
+        } catch {}
       })();
     },
   );
@@ -103,9 +99,7 @@ export function subscribeRoomStompTopics(
         if (!msg) return;
         invalidateRoomUnreadCount(queryClientRef.current, subscribedRoomId);
         options.onRoomChatMessage?.(msg);
-      } catch {
-        // malformed payload — ignore
-      }
+      } catch {}
     },
   );
 

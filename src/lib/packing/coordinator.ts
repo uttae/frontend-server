@@ -29,7 +29,6 @@ const uncertain = (e: unknown) => !(e instanceof PackingValidationError) && (!(e
 const accessLost = (e: unknown) => e instanceof PackingApiError && (e.status === 401 || e.status === 403 || e.code === 'ROOM_NOT_FOUND');
 const initialState = (): PackingState => ({ data: null, status: 'loading', message: null, confirmation: null });
 
-/** One memory-only coordinator per exact room/principal query. No mutation retries. */
 export class PackingCoordinator {
   private state = initialState();
   private listeners = new Set<() => void>();
@@ -62,7 +61,6 @@ export class PackingCoordinator {
     try { return await packingApi.get(this.roomId, signal); }
     catch (error) { if (!uncertain(error) || signal?.aborted) throw error; return packingApi.get(this.roomId, signal); }
   }
-  /** Signals arriving during a write are satisfied by its single mandatory final read. */
   refresh = (manual = false): Promise<void> => {
     if (!this.active || this.busy) return Promise.resolve();
     if (this.reading) return this.reading;
@@ -116,7 +114,6 @@ export class PackingCoordinator {
         return { ...item, memo: content ? { id: item.id, itemId: item.id, content } : null };
       }) })) };
     }
-    // Creates wait for stable server IDs; deletes remain visible until acknowledged.
     return list;
   }
   private request(command: Command, version: number) {
@@ -193,9 +190,7 @@ export class PackingCoordinator {
             trackAnalyticsEvent(result.item.checked ? AnalyticsEvents.packingItemChecked : AnalyticsEvents.packingItemUnchecked, { room_id: this.roomId });
           }
         }
-      } catch {
-        // Analytics must never roll back an acknowledged write or prevent reconciliation.
-      }
+      } catch {}
       await this.read(generation, false);
       return outcome;
     } catch (error) {
@@ -218,7 +213,6 @@ export class PackingCoordinator {
     if (this.busy || this.state.status !== 'ready' || !this.state.data) return { kind: 'blocked' };
     let target = kind === 'part' ? this.state.data.parts.find(p => p.id === id) : findItem(this.state.data, id);
     if (!target) return { kind: 'missing' };
-    // Hold the same coordinator lock while reading the exact confirmation snapshot.
     this.busy = true;
     this.publish({ status: 'writing', confirmation: null });
     await this.read(this.generation, false);

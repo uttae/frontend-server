@@ -48,7 +48,6 @@ describe("invite share metadata", () => {
     const ratio = SHARE_IMAGE.width / SHARE_IMAGE.height;
 
     expect(metadata.hasAlpha).toBe(false);
-    // og:image 권장 비율 1.91:1 — 벗어나면 summary_large_image 카드에서 잘린다.
     expect(ratio).toBeGreaterThan(1.9);
     expect(ratio).toBeLessThan(1.92);
   });

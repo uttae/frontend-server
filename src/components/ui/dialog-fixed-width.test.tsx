@@ -36,7 +36,6 @@ it("puts a fixed-width dialog in a scrollable viewport and focuses its first con
   await nextFrame();
   const content = document.querySelector('[data-slot="dialog-content"]')!;
   expect(content.parentElement?.getAttribute("data-slot")).toBe("dialog-viewport");
-  // 창보다 넓으면 첫 포커스(닫기 X)로 Viewport가 오른쪽 끝까지 밀려 제목이 가려지므로 스크롤 없이 포커스한다
   expect(document.activeElement).toBe(document.querySelector('button[aria-label="닫기"]'));
   expect(focus).toHaveBeenCalledWith({ preventScroll: true });
 });

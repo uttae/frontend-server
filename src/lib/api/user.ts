@@ -9,7 +9,6 @@ import { apiUrl, requestVoid, tryParseJson } from "@/lib/api/http";
 
 export type { RoomRequiringDelegation };
 
-/** POST /users/me/tutorial/complete — 현재 사용자의 튜토리얼 완료 상태를 저장합니다. */
 export async function completeTutorial(): Promise<void> {
   await requestVoid(
     apiUrl("/users/me/tutorial/complete"),

@@ -18,12 +18,10 @@ function freezeViewportAtReadBoundary(
   followTailRef: MutableRefObject<boolean>,
   setIsAtBottom: Dispatch<SetStateAction<boolean>>,
 ) {
-  // 절취선 아래 콘텐츠가 80px 이내여도 최신 메시지 추적 상태로 전환하지 않는다.
   followTailRef.current = false;
   setIsAtBottomIfChanged(setIsAtBottom, false);
 }
 
-/** 읽음 구분선을 뷰포트 하단에 맞춤 (미렌더 시 메시지·최하단 fallback) */
 export function scrollReadBoundaryToBottom(
   root: HTMLDivElement,
   fallbackMessageId: string | undefined,
@@ -60,7 +58,6 @@ export function scrollReadBoundaryToBottom(
   setIsAtBottomIfChanged(setIsAtBottom, true);
 }
 
-/** 하단 고정이면 맨 아래, 아니면 마지막 스크롤 시점의 하단 거리(px) 유지 */
 export function applyScrollAnchor(
   root: HTMLDivElement,
   followTail: boolean,

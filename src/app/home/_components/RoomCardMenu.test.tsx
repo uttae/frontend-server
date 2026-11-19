@@ -32,7 +32,6 @@ let host: HTMLDivElement;
 let root: Root;
 const onDelete = vi.fn();
 const onLeave = vi.fn();
-// 메뉴 항목은 Base UI Menu.Item(role="menuitem")이라 버튼과 함께 찾는다
 const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>('button, [role="menuitem"]')].find(b => b.textContent?.trim() === label || b.getAttribute("aria-label") === label)!;
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });

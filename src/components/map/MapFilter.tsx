@@ -45,11 +45,6 @@ export default function MapFilter({
   );
 }
 
-/**
- * 평점 하나를 고르는 Select. 트리거는 옆 칩들과 같은 Chip Outline md이고, 평점을 고르면 선택 칩 모양으로 그 라벨을 보인다("전체"면 "평점").
- * Select 트리거에는 aria-pressed가 없어 Chip이 선택 모양을 그리지 못하므로 selected로 준다.
- * 목록은 ui Select 모양(트리거 아래 4px, 늘 아래로)이고, 폭은 칩보다 넓게 지금 값(최소 136px)으로 라벨 폭에 맞춘다
- */
 function RatingSelect({
   value,
   onChange,
@@ -69,8 +64,6 @@ function RatingSelect({
     onOpenChange?.(open);
   }
 
-  // 지금 동작 유지: 열린 동안 페이지·툴바 가로 스크롤이 움직이거나 창 크기가 바뀌면 닫는다(목록 안 스크롤은 제외).
-  // Base UI 목록은 닫지 않고 위치만 따라간다
   useEffect(() => {
     if (!isOpen) return;
     const closeOnMove = (event: Event) => {

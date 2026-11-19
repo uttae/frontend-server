@@ -59,18 +59,15 @@ it("does not query segment routes of a day while its place move is saving — th
       );
     });
   try {
-    // 순서 변경을 저장하는 중 — 캐시는 이미 새 순서(2 → 1)다
     fixtures.savingDays = [10];
     fixtures.travel = [];
     await render();
     expect(fixtures.travel.at(-1)).toMatchObject({ segmentSourceItemId: 2, routeQueryEnabled: false });
 
-    // 다른 일차를 저장하는 중이면 이 일차는 조회한다
     fixtures.savingDays = [20];
     await render();
     expect(fixtures.travel.at(-1)).toMatchObject({ segmentSourceItemId: 2, routeQueryEnabled: true });
 
-    // 저장이 끝나면 조회한다
     fixtures.savingDays = [];
     await render();
     expect(fixtures.travel.at(-1)).toMatchObject({ segmentSourceItemId: 2, routeQueryEnabled: true });

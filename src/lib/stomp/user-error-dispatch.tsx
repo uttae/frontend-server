@@ -20,7 +20,6 @@ function dispatchUserErrorToast(payload: UserErrorPayload): void {
   });
 }
 
-/** `/user/queue/errors` 한 건 — rate limit은 패널 UI, 그 외 토스트 */
 export function dispatchUserError(payload: UserErrorPayload): void {
   if (isMessageRateLimit(payload)) {
     const retryAfterMs = getRateLimitRetryAfterMs(payload);

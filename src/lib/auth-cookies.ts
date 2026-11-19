@@ -1,6 +1,5 @@
 import type { NextResponse } from "next/server";
 
-/** Fetch `Response`의 Set-Cookie 목록 (Node 18+ `getSetCookie`) */
 export function getSetCookieHeaders(res: Response): string[] {
   if (typeof res.headers.getSetCookie === "function") {
     return res.headers.getSetCookie();
@@ -18,7 +17,6 @@ export function appendSetCookies(
   }
 }
 
-/** BFF → 브라우저: 백엔드 Set-Cookie 전부 전달 */
 export function forwardBackendSetCookies(
   res: NextResponse,
   backendRes: Response,

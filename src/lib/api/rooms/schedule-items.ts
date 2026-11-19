@@ -9,45 +9,34 @@ export type RoomScheduleItem = {
   itemId: number;
   scheduleId: number;
   googlePlaceId: string;
-  /** 날짜·시간대 없는 `HH:mm`, 미설정은 `null` */
   startTime: string | null;
-  /** 날짜·시간대 없는 `HH:mm`, 미설정은 `null` */
   endTime: string | null;
   memo?: string;
   orderIndex: number;
-  /** 현재 항목 → 다음 항목 공유 이동수단 — 서버 DB 저장, 기본 `DRIVING` */
   travelMode: string;
   createdAt: string;
 };
 
 export type UpdateTravelModeRequest = {
-  /** 서버 원본 수단. 프론트 지원 여부는 소비 경계에서 검증합니다. */
   travelMode: string;
 };
 
 export type RoomScheduleItemCreateRequest = {
   googlePlaceId: string;
-  /** 로컬 시:분, 예: `"09:45"`. 미지정 시 서버는 저장하지 않음(미설정 상태) */
   startTime?: string | null;
-  /** 종료를 지정하려면 시작 필요. 시작보다 이르면 다음 날, 같으면 0분 */
   endTime?: string | null;
-  /** 0-based 삽입 위치. 생략하면 맨 뒤에 추가 */
   orderIndex?: number;
 };
 
 export type CreateScheduleItemResponse = {
   createdItem: RoomScheduleItem;
-  /** 삽입으로 순서가 밀리거나 추천 이동수단이 변경된 기존 항목 */
   updatedItems: RoomScheduleItem[];
   affectedRouteItemIds: number[];
 };
 
 export type RoomScheduleItemUpdateRequest = {
-  /** `null` 이면 미설정으로 초기화, `undefined` 는 변경 없음 */
   startTime?: string | null;
-  /** `null` 이면 미설정으로 초기화, `undefined` 는 변경 없음 */
   endTime?: string | null;
-  /** 키를 내면 서버가 갱신. 빈 문자열이면 삭제 */
   memo?: string | null;
 };
 
@@ -60,18 +49,13 @@ export type MoveScheduleItemToScheduleRequest = {
   targetOrderIndex: number;
 };
 
-/** GET …/route — 현재 항목 → 다음 항목 구간 단일 레그 */
 export type ScheduleItemRouteLeg = {
   distanceMeters: number;
   durationSeconds: number;
   travelMode: string;
-  /** 지도 폴리라인용 Google encoded polyline — 경로에 폴리라인이 없으면 서버가 생략 */
   encodedPolyline?: string;
 };
 
-/**
- * travelMode 미지정 조회 시 본문에 수단별 배열을 함께 줄 수 있습니다.
- */
 export type ScheduleItemRouteResponse = ScheduleItemRouteLeg & {
   routes?: ScheduleItemRouteLeg[];
   modeRoutes?: ScheduleItemRouteLeg[];
@@ -79,7 +63,6 @@ export type ScheduleItemRouteResponse = ScheduleItemRouteLeg & {
 
 export type ScheduleItemRouteBatchRequestItem = {
   itemId: number;
-  /** 생략하면 서버가 해당 항목의 저장된 공유 이동수단을 사용 */
   travelMode?: string;
 };
 
@@ -87,27 +70,22 @@ export type ScheduleItemRouteBatchItem =
   | ({
       status: "OK";
       itemId: number;
-      /** 서버가 계산한 구간의 도착 항목(요청을 받은 순간의 다음 항목) */
       toItemId?: number;
       travelMode: string;
       distanceMeters: number;
       durationSeconds: number;
-      /** 지도 폴리라인용 Google encoded polyline — 폴리라인이 없으면 서버가 생략 */
       encodedPolyline?: string;
     })
   | {
       status: "ERROR";
       itemId: number;
-      /** 경로 없음(`NO_ROUTE`)이면 있고, 마지막 항목·항목 없음이면 서버가 생략 */
       toItemId?: number;
       travelMode: string;
       errorCode?: string;
     };
 
 export type ScheduleItemRouteBatchResponse = {
-  /** 서버 명세 — `POST …/routes/batch` */
   routes?: ScheduleItemRouteBatchItem[];
-  /** 레거시·내부 호환 */
   items?: ScheduleItemRouteBatchItem[];
 };
 
@@ -122,9 +100,7 @@ function readScheduleItemRouteBatchItems(
 export async function getScheduleItemRoute(
   roomId: string,
   scheduleId: number,
-  /** 구간 출발 일정 항목 ID */
   itemId: number,
-  /** 구간 도착 일정 항목 ID — 보내면 서버가 그 순간의 순서와 관계없이 이 항목까지 계산한다 */
   destinationItemId: number,
   travelMode?: string | null,
 ): Promise<ScheduleItemRouteResponse | null> {
@@ -137,7 +113,6 @@ export async function getScheduleItemRoute(
   const qs = params.toString();
   const path = `/rooms/${roomId}/schedules/${scheduleId}/items/${itemId}/route${qs ? `?${qs}` : ""}`;
   const res = await apiFetch(apiUrl(path), undefined);
-  // 경로 안내 없음: 서버는 204 No Content (본문 없음)
   if (res.status === 204) {
     return null;
   }

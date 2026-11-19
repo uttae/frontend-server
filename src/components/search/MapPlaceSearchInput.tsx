@@ -52,7 +52,6 @@ const INPUT_STYLES = {
   },
 } as const;
 
-/** Shared web/mobile map search. Original input and prediction/token identity survive confirmation. */
 export function MapPlaceSearchInput({
   onConfirm,
   onInvalidate,
@@ -87,7 +86,6 @@ export function MapPlaceSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const currentScope = useRef(scopeKey);
 
-  // Default can be unfocused after clearing Filled, so blur alone cannot dismiss it.
   useEffect(() => {
     if (!collapsible || mobile || !expanded || value.trim()) return;
     const dismissOutside = (event: PointerEvent) => {
@@ -145,7 +143,6 @@ export function MapPlaceSearchInput({
           if (requestGeneration === generation.current) {
             flow.abandon();
             token.current = null;
-            // 서버가 준 안내(429 등)는 그대로, 네트워크 오류 원문("Failed to fetch")은 뜻이 없어 기본 안내로 보여 준다
             setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof PlaceSessionError ? error.message : undefined });
           }
         },
@@ -183,7 +180,6 @@ export function MapPlaceSearchInput({
       suggestions?.query === value && suggestions.status === "done"
         ? suggestions
         : null;
-    // 모두검색(index ≤ 0)은 후보를 확정하지 않고 지도 중심에서 찾는다(confirmPlaceSearch)
     const prediction = index > 0 ? ready?.items[index - 1] : undefined;
     if (index > 0 && !prediction) return;
     const requestSession = prediction ? ready?.session ?? null : null;
@@ -208,7 +204,6 @@ export function MapPlaceSearchInput({
         generation: requestGeneration,
       });
       if (success && !mobile && generation.current === requestGeneration) {
-        // 결과는 유지하고 선택한 추천 이름을 Filled 상태로 보여준다.
         const confirmedValue = index > 0
           ? prediction?.structuredFormat?.mainText?.text ?? prediction?.text?.text ?? value
           : value;
@@ -341,7 +336,6 @@ export function MapPlaceSearchInput({
             }}
             placeholder="장소 검색"
             autoComplete="off"
-            // PC는 입력 중(포커스)에 지우기를 숨긴다(peer-focus:hidden)
             className="peer"
           />
           {value ? (
@@ -373,10 +367,8 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
   onActiveChange: (index: number) => void;
 }>) {
   const iconSize = 20;
-  // Editable combobox popup: native select/datalist cannot preserve the rich rows and whole-search action.
-  // https://www.w3.org/WAI/ARIA/apg/patterns/combobox/
   return (
-    <ul // NOSONAR: S6819 — aria-controls/aria-activedescendant로 연결된 커스텀 combobox의 listbox.
+    <ul
       id={listId}
       role="listbox"
       aria-label="검색 추천"
@@ -441,7 +433,7 @@ function SuggestionRow({
   iconSize: number;
 }>) {
   return (
-    <li // NOSONAR: S6819 — 위 listbox의 option이며 네이티브 select 내부의 option이 아니다.
+    <li
       role="option"
       id={id}
       aria-selected={active}
@@ -471,7 +463,6 @@ function SuggestionRow({
   );
 }
 
-/** Backend offsets count Unicode code points, not UTF-16 code units. */
 function HighlightedText({ value }: Readonly<{ value: PredictionText | null }>) {
   if (!value?.text) return null;
   const segments: { id: string; text: string; highlighted: boolean }[] = [];

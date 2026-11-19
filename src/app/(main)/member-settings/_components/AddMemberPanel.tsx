@@ -67,7 +67,6 @@ export function AddMemberPanel({
   const [issuedCode, setIssuedCode] = useState<
     string | null | undefined
   >(undefined);
-  // 개발 Strict Mode에서 effect가 재실행되어도 자동 발급은 방마다 한 번만 시도한다.
   const autoIssueAttemptedRoomRef = useRef<string | null>(null);
 
   const { mutate: regenerate, isPending: isRegenerating } =

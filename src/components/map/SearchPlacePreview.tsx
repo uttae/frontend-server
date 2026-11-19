@@ -3,7 +3,6 @@
 import type { PlaceSearchResult } from "@/hooks/usePlacesSearch";
 import { MapSearchIcon } from "./MapSearchIcon";
 
-/** Preview uses available result data; only the arrow opens the existing detail panel. */
 export function SearchPlacePreview({ place, onOpenDetail, onClose }: Readonly<{
   place: PlaceSearchResult;
   onOpenDetail: () => void;

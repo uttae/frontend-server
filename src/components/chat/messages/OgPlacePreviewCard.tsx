@@ -13,7 +13,6 @@ export type OgPlacePreviewCardProps = {
   name: string;
   formattedAddress: string;
   googlePlaceId: string;
-  /** Google 평점. null/omit 시 "-" */
   rating?: number | null;
   userRatingCount?: number | null;
   isMinimized?: boolean;
@@ -57,7 +56,7 @@ export function OgPlacePreviewCard({
         )}
       >
         {visibleUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- 동적 장소 사진 URL (원격 패턴 비고정)
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={visibleUrl}
             alt={name}

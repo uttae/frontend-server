@@ -58,7 +58,6 @@ const ROOM_ID = "room-1";
 const SCHEDULE_ID = 10;
 const DAY_KEY = scheduleItemsQueryKey(ROOM_ID, SCHEDULE_ID);
 
-/** 서버가 돌려주는 일차 항목 — 넘긴 순서가 곧 `orderIndex` */
 const items = (...itemIds: number[]): RoomScheduleItem[] =>
   itemIds.map((itemId, orderIndex) => ({
     itemId,
@@ -79,7 +78,6 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-/** 늦게 도착한 응답이 캐시에 쓸 기회를 준다 */
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 function remoteEvent(
@@ -101,7 +99,6 @@ describe("schedule day list refetch order", () => {
   let client: QueryClient;
   let unwatch: () => void;
 
-  // 일정 화면처럼 일차 목록을 보고 있는 구독자 — 무효화되면 바로 다시 받는다
   const watchDayList = () => {
     unwatch = new QueryObserver(
       client,
@@ -148,7 +145,6 @@ describe("schedule day list refetch order", () => {
     await settle();
 
     expect(dayItemIds()).toEqual([101, 102, 100]);
-    // 앞선 조회는 취소되면서 요청도 끊긴다
     const firstSignal = fixtures.getScheduleItems.mock.calls[0]?.[2] as AbortSignal;
     expect(firstSignal.aborted).toBe(true);
   });
@@ -210,7 +206,6 @@ describe("schedule day list refetch order", () => {
       .mockReturnValueOnce(beforeDelete.promise)
       .mockResolvedValueOnce(items(100));
 
-    // 다른 사람의 변경으로 다시 받는 중에 본인 삭제 응답이 들어온다(useDeleteScheduleItem의 onSuccess → onSettled)
     void client.invalidateQueries({ queryKey: DAY_KEY, exact: true });
     removeScheduleItemFromPlanPlacesCache(client, ROOM_ID, SCHEDULE_ID, 101);
     await client.invalidateQueries({ queryKey: DAY_KEY, exact: true });
@@ -222,7 +217,6 @@ describe("schedule day list refetch order", () => {
   });
 
   it("refetches a garbage-collected day list instead of rebuilding it from the whole-room copy", async () => {
-    // 101을 지우기 전에 받아 둔 일정 전체 — 일차 목록이 gc된 뒤에도 남아 있다
     client.setQueryData(roomSchedulesQueryKey(ROOM_ID), [
       {
         scheduleId: SCHEDULE_ID,
@@ -242,7 +236,6 @@ describe("schedule day list refetch order", () => {
   });
 
   it("shows a reorder made in another tab of the same account", async () => {
-    // remoteEvent의 actorUserId(2)가 이 계정 — 예전에는 계정이 같아 버렸다
     client.setQueryData(sessionUserQueryKey, { id: 2 });
     client.setQueryData(DAY_KEY, [100, 101, 102].map(fixtures.place));
     watchDayList();

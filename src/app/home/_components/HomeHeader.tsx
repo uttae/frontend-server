@@ -38,7 +38,6 @@ export function HomeHeader() {
       return;
     }
     tearDownClientSession({ queryClient });
-    // 로그인 중 prefetch된 `/`(→ `/home` 리다이렉트)를 재사용하지 않도록 문서 이동으로 라우터 캐시를 비운다.
     window.location.replace("/");
   };
 
@@ -60,7 +59,6 @@ export function HomeHeader() {
               <Avatar size={36} aria-hidden />
             )}
           </DropdownMenuTrigger>
-          {/* 지금 자리 그대로: 48px 버튼 기준 right 8px, top 48.5px(Figma 프로필 오버레이 L 3314:3242) */}
           <DropdownMenuContent align="end" alignOffset={8} sideOffset={0.5} size="lg" className="w-60">
             {user && (
               <DropdownMenuHeader>
@@ -72,7 +70,6 @@ export function HomeHeader() {
               <UserIcon />
               내 정보
             </DropdownMenuLinkItem>
-            {/* 지금처럼 로그아웃 요청 중에도 메뉴를 열어 두고, 실패하면 토스트만 띄운다(성공하면 문서 이동) */}
             <DropdownMenuItem closeOnClick={false} onClick={handleLogout}>
               <SignLogoutIcon />
               로그아웃

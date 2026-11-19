@@ -19,7 +19,6 @@ import { pendingInviteReturnPath } from "@/lib/session-user-flow";
 import { setSessionUserCache } from "@/lib/session-user-cache";
 import { useSessionStore } from "@/stores/session-store";
 
-/** 쿠키 발급 후 클라이언트 세션을 동기화하고 최종 이동 경로를 반환합니다. */
 export async function finishGoogleLogin(
   queryClient: QueryClient,
 ): Promise<string | null> {

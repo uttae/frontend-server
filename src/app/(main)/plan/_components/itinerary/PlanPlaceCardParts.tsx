@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 
 import { menuPointerBoundary } from "./PlanDaySection";
 
-/** 카드 D&D·지도 선택과 겹치지 않게 할 인터랙티브 영역 */
 export const PLAN_PLACE_CARD_INTERACTIVE_SELECTOR =
   "textarea, input, select, button, a, [data-plan-card-no-drag]";
 
@@ -29,7 +28,6 @@ export function PlanOrderIndexBadge({
   className,
 }: {
   orderIndex: number;
-  /** 지도 일차 경로색과 동일한 hex — 유효하지 않으면 primary 클래스 */
   backgroundColorHex?: string;
   className?: string;
 }) {
@@ -70,7 +68,6 @@ export function PlanPlaceCardMenu({
       <DropdownMenuTrigger
         {...menuPointerBoundary}
         aria-label={`${placeTitle} 메뉴`}
-        // 누르는 영역만 28px로 넓히고 줄 안에서는 Figma 아이콘 폭 20px만 차지한다
         className="-m-1 shrink-0 cursor-pointer rounded-md p-1 text-icon transition-colors hover:bg-fill aria-expanded:bg-fill"
       >
         <MenuDotHorizontalIcon size={20} />

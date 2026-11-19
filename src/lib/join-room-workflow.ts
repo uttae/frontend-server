@@ -14,7 +14,6 @@ export function isJoinApprovedStatus(normalizedUpper: string): boolean {
   return APPROVED_ALIASES.has(normalizedUpper.toUpperCase());
 }
 
-/** 대기 페이지에서 결과 배지용 (PENDING / APPROVED / REJECTED) */
 export type JoinWaitingUiStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export function joinStatusForWaitingUi(
@@ -73,9 +72,7 @@ export async function completeWaitingJoinApproval(
     const detail = await dependencies.getRoomDetail(response.id);
     memberCount = detail.memberCount;
     dependencies.cacheRoomDetail(response.id, detail);
-  } catch {
-    // 메타 조회 실패해도 입장은 진행
-  }
+  } catch {}
 
   dependencies.trackAnalyticsEvent(
     AnalyticsEvents.joinPlan,

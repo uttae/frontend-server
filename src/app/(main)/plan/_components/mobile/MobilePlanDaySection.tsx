@@ -21,27 +21,20 @@ import { MobileSheetMenuItem } from "./MobileSheetMenuItem";
 type MobilePlanDaySectionProps = Readonly<{
   roomId: string;
   scheduleId: number;
-  /** `1일차` */
   dayLabel: string;
-  /** `09. 21 수` */
   dateLabel: string;
-  /** `9월 21일` — 방문 시간 시트에 표시 */
   monthDayLabel: string;
   menuDisabled: boolean;
-  /** 순서 편집 모드 — 모든 일차가 함께 들어가고 나온다 */
   editing: boolean;
   onStartEditing: () => void;
   onFinishEditing: () => void;
   onRequestInsertDayAfter: () => void;
   onRequestDeleteDay: () => void;
-  /** 전체 화면 검색으로 장소 추가 — anchor 자리에, null이면 맨 뒤 */
   onRequestAddPlace: (scheduleId: number, anchor: InsertAnchor | null) => void;
-  /** 방금 추가한 장소 — 카드로 스크롤하고 잠깐 강조한다 */
   recentlyAddedItemId: number | null;
   onPlaceAdded: (itemId: number) => void;
 }>;
 
-/** 모바일 일차 한 개 — 헤더(순서 편집 ↑↓ / ⚙ 일정 관리)와 장소 목록 */
 export function MobilePlanDaySection({
   roomId,
   scheduleId,

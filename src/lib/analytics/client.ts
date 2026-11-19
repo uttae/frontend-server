@@ -60,7 +60,6 @@ function ensureGoogleTag(): GoogleTag | null {
 
   window.dataLayer ??= [];
   window.gtag ??= function gtag() {
-    // gtag.js는 Array가 아닌 함수의 native Arguments 객체를 명령으로 읽는다.
     // eslint-disable-next-line prefer-rest-params
     window.dataLayer?.push(arguments);
   };
@@ -78,14 +77,11 @@ export function sendAnalyticsDataCommand(...args: unknown[]): void {
   if (destination !== "ga4") {
     try {
       sendAmplitudeDataCommand(...args);
-    } catch {
-      // Analytics must never fail a completed user action or the other sink.
-    }
+    } catch {}
   }
 
   if (destination === "amplitude" || !analyticsRuntime.enabled) return;
 
-  // Room identity is approved for Amplitude group analysis only, not GA4.
   const gaArgs = [...args];
   if (gaArgs[0] === "event" && typeof gaArgs[2] === "object" && gaArgs[2] !== null) {
     gaArgs[2] = Object.fromEntries(
@@ -103,9 +99,7 @@ export function sendAnalyticsDataCommand(...args: unknown[]): void {
 function sendGoogleAnalyticsDataCommand(...args: unknown[]): void {
   try {
     ensureGoogleTag()?.(...args);
-  } catch {
-    // A blocked/broken tag must not interrupt the application or queue drain.
-  }
+  } catch {}
 }
 
 function sendInitializationCommand(...args: unknown[]): void {
@@ -115,7 +109,6 @@ function sendInitializationCommand(...args: unknown[]): void {
 function openAnalyticsTransport(): void {
   analyticsTransportReady = true;
   for (const command of pendingAnalyticsCommands.splice(0)) {
-    // Routing happened before enqueueing; this queue is GA-only.
     if (analyticsConsentStore.isGranted() && analyticsRuntime.enabled) {
       sendGoogleAnalyticsDataCommand(...command);
     }

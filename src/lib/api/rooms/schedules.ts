@@ -5,13 +5,11 @@ export type RoomSchedule = {
   scheduleId: number;
   roomId: string;
   dayNumber: number;
-  /** `YYYY-MM-DD` */
   date: string;
   createdAt: string;
 };
 
 export type RoomScheduleCreateRequest = {
-  /** 생략 시 끝에 추가, 지정 시 해당 위치에 중간 삽입 */
   dayNumber?: number;
 };
 

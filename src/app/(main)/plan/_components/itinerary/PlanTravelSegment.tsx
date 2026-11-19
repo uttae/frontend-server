@@ -13,7 +13,6 @@ export type PlanTravelSegmentProps = {
   children: ReactNode;
 };
 
-/** Figma Route Info — 왼쪽 세로 선(레일) 8px 옆에 이동 정보, 오른쪽 여백 12 */
 export function PlanTravelSegment({
   isActive,
   onActivate,

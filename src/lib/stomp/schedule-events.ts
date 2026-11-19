@@ -7,7 +7,6 @@ export type RoomScheduleEventType =
   | "SCHEDULE_ITEMS_REORDERED"
   | "SCHEDULE_ITEM_TRAVEL_MODE_UPDATED";
 
-/** `/topic/rooms/{roomId}/schedules` 브로드캐스트 본문 */
 export type RoomScheduleChangedEvent = {
   roomId: string;
   actorUserId: number;
@@ -16,7 +15,6 @@ export type RoomScheduleChangedEvent = {
   itemId: number | null;
   affectedRouteItemIds: number[] | null;
   scheduleIds: number[] | null;
-  /** 변경 요청을 보낸 탭 ID — 같으면 이 탭의 반향(`isOwnEcho`) */
   originTabId?: string | null;
 };
 

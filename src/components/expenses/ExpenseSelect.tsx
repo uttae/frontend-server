@@ -18,10 +18,6 @@ import { cn } from "@/lib/utils";
 
 type ExpenseSelectOption = { value: string; label: string };
 
-/**
- * 가계부 선택 칸. 빈 문자열 값은 '선택 없음'이다(카테고리 미선택, 장소 연결 없음).
- * 목록은 ui Select이고, mobileSheet이면 모바일 기기에서만 아래 시트 라디오 목록(Drawer)으로 고른다.
- */
 export function ExpenseSelect({
   label,
   name,
@@ -42,13 +38,9 @@ export function ExpenseSelect({
   onChange: (value: string) => void;
   placeholder?: string;
   disabled?: boolean;
-  /** 모바일 기기에서 아래 시트 라디오 목록으로 고른다(가계부 카테고리 필터) */
   mobileSheet?: boolean;
-  /** 시트 트리거만 작게 그린다. ui Select 트리거는 디자인 시스템 크기 하나다 */
   compact?: boolean;
-  /** 보이는 라벨(FieldLabel htmlFor)과 잇는 트리거 id */
   id?: string;
-  /** 칸 오류. 트리거에 Text Field 오류 모양을 그린다 */
   "aria-invalid"?: boolean;
 }) {
   const { isMobileDevice } = useMobileView();
@@ -66,7 +58,6 @@ export function ExpenseSelect({
       />
     );
   }
-  // Base UI Select는 null만 '선택 없음'으로 본다. 빈 문자열을 그대로 넘기면 '장소 연결 없음' 같은 빈 값 항목의 라벨 대신 placeholder가 보인다
   const items = options.map((option) => ({ value: option.value === "" ? null : option.value, label: option.label }));
   return (
     <Select
@@ -90,7 +81,6 @@ export function ExpenseSelect({
   );
 }
 
-// 모바일 기기 카테고리 시트. 트리거는 지금 시트 트리거 모양 그대로, 목록은 Drawer + 라디오다
 function ExpenseSelectSheet({
   label,
   name,

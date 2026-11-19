@@ -28,7 +28,6 @@ async function mount({ value = "KRW", list = currencies, disabled = false } = {}
     root.render(<ExpenseCurrencyPicker value={value} currencies={list} onChange={onChange} disabled={disabled} />),
   );
 }
-// Base UI는 열고 닫을 때 microtask·timeout으로 포커스·목록을 옮긴다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 const trigger = () => document.querySelector<HTMLElement>('[role="combobox"][aria-haspopup="dialog"]')!;
 const search = () => document.querySelector<HTMLInputElement>('input[aria-label="통화 검색"]');
@@ -37,7 +36,6 @@ async function open() {
   await act(async () => trigger().click());
   await flush();
 }
-// 사용자가 친 글자로 보이도록 inputType을 준다. Base UI는 inputType이 없는 입력(자동 완성)에는 첫 결과를 강조하지 않는다
 async function type(value: string) {
   const input = search()!;
   await act(async () => {

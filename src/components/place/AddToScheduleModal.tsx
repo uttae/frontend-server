@@ -33,8 +33,6 @@ import {
 } from "@/lib/plan/tripRange";
 import { useSessionStore } from "@/stores/session-store";
 
-// 포털 안 클릭·터치가 React 트리를 따라 부모(지도 상세 패널·시트 드래그, 검색 결과 카드)로 올라가지 않게 포털 표면과 배경에서 끊는다.
-// 딤은 표면 밖이므로 표면과 배경 각각에서 차단한다. 키보드는 Base UI에 그대로 전달한다
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 const pointerBoundary = {
   onClick: stopPropagation,
@@ -107,7 +105,6 @@ export function AddToScheduleModal({
     <Dialog
       open
       closeDisabled={isAdding}
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 추가 중에는 Esc·딤·닫기를 막는다
       onOpenChange={(open) => {
         if (!open) onClose();
       }}

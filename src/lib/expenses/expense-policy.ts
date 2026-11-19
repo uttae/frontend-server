@@ -18,7 +18,6 @@ export function amountError(
   );
   if (!pattern.test(value))
     return `금액은 정수부 1~15자리, 소수 ${scale}자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.`;
-  // Exact decimal strings → integer minor units. Never round, truncate or use Number.
   const units = BigInt(value.replace(".", ""));
   if (
     units <= BigInt(0) ||
@@ -85,14 +84,12 @@ export function roleOptions(
 }
 export type ExpenseDay = { scheduleId: number; items?: { itemId: number }[] };
 
-// 칸별 검증. 비용 편집 폼이 칸마다 부르고(TanStack Form validators), validateExpense가 같은 순서로 묶어 첫 오류를 돌려준다
 export function expenseCategoryError(category: unknown): string | null {
   return isExpenseCategory(category) ? null : "카테고리를 선택해 주세요.";
 }
 export function expenseMemoError(memo: string | null | undefined): string | null {
   return (memo?.length ?? 0) > 1000 ? "메모는 1000자까지 입력할 수 있어요." : null;
 }
-/** 일차 구분·연결 장소. 준비 비용은 연결 없음, 일차 비용은 있는 일차와 그 일차의 장소(또는 장소 없음)여야 한다 */
 export function expenseLinkError(
   link: Pick<ExpenseInput, "expenseGroup" | "scheduleId" | "scheduleItemId">,
   days: ExpenseDay[],
@@ -114,7 +111,6 @@ export function expenseLinkError(
   }
   return "일차 구분을 선택해 주세요.";
 }
-/** 결제자·부담자. 각각 한 명 이상·중복 없음, 고를 수 있는 멤버이거나 원래 비용에 있던 알 수 없는 멤버여야 한다 */
 export function expenseRolesError(
   roles: Pick<ExpenseInput, "payerUserIds" | "participantUserIds">,
   members: RoomMember[],

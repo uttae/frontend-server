@@ -4,7 +4,6 @@ import { SUPPORT_EMAIL } from "@/lib/contact";
 import { brandAssets } from "@/lib/public-assets";
 import { PUBLIC_FOUNDERS, PUBLIC_SITE } from "@/lib/public-site";
 
-/** 링크 프리뷰 공용 이미지 — 1.91:1 불투명 PNG. 투명 배경은 카카오톡·슬랙에서 합성 결과가 달라진다. */
 export const SHARE_IMAGE = {
   url: brandAssets.shareImage,
   width: 1200,

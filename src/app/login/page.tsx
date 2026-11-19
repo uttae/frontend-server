@@ -95,7 +95,6 @@ function LoginPageContent() {
     <LoginShell>
       {errorMessage && (
         <Alert tone="brand" size="lg" className="self-stretch">
-          {/* Alert에 아이콘 칸이 없어 '!' 원을 grid로 제목 줄 가운데에 맞춘다 */}
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-1">
             <span
               className="inline-flex size-5 items-center justify-center rounded-full bg-primary-subtle text-label-m-emphasis mobile:text-label-xs-emphasis text-primary"

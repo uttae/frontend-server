@@ -1,14 +1,7 @@
 import { create } from "zustand";
 
-/**
- * 일차(`scheduleId`)별 "지도에 경로 표시" 스위치.
- * `PlanDaySection` 헤더의 경로 토글 버튼이 이 스토어를 사용합니다.
- * `PlanDaySection`의 펼침/접음(`usePlanItineraryExpandedStore`)과는 독립적으로 동작합니다.
- * `visibilityOrder`는 켠(true) 순서 (뒤쪽일수록 최근) — 겹치는 지도 핀 우선순위에 사용.
- */
 type State = {
   visibleByScheduleId: Record<number, boolean>;
-  /** `setRouteVisible(..., true)` 호출 순서 (끈 일차는 제거) */
   visibilityOrder: number[];
   setRouteVisible: (scheduleId: number, visible: boolean) => void;
   syncRouteVisibility: (activeScheduleIds: readonly number[]) => void;

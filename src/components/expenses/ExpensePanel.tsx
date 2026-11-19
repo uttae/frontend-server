@@ -152,16 +152,12 @@ function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, catego
   const { setKrwFilters } = context;
   useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
   const backgroundRefresh = context.syncStatus === "refreshing";
-  // Connection/read status is separate from the validity of an existing snapshot.
-  // Access revocation still removes the panel and must never retain private totals.
   const displayReady = !context.revoked && context.syncStatus !== "revoked";
   const filtersMatch = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters);
   const detailed = filtersMatch
     && displayReady
     ? context.filteredKrwSummary?.data : undefined;
   const wholeKrw = displayReady ? context.krwSummary.data : undefined;
-  // Reuse authoritative totals for a single dimension; never sum rounded row amounts
-  // or show the previous day/category total while a new intersection is loading.
   const fallbackTotal = selectFallbackTotal(wholeKrw, category, activeFilter);
   const selectedTotal = detailed?.filtered ?? fallbackTotal;
   const visibleExpenses = useMemo(() => detailed?.expenses?.map((row) => row.expense) ?? filtered, [detailed, filtered]);
@@ -174,8 +170,6 @@ function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, catego
     && !detailed && !(filtersMatch && context.filteredKrwSummary.isError) && filtered.length);
   const [settledList, setSettledList] = useState(nextList);
   if (!categoryPending && settledList !== nextList) setSettledList(nextList);
-  // Keep rows and their authoritative day totals together until the new category
-  // snapshot arrives. Never attach an old category's total to newly filtered rows.
   const displayList = categoryPending ? settledList : nextList;
   return { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses: displayList.expenses, displayList, categoryPending };
 }
@@ -254,7 +248,6 @@ export function ExpensePanel() {
       return;
     setExpenseToDelete(expense);
   }
-  // 실패 시 충돌 확인·에러 문구를 패널에 보여주므로 성공·실패와 무관하게 닫는다
   async function confirmRemove() {
     const expense = expenseToDelete;
     if (!expense || lock.current || deleting) return;
@@ -312,7 +305,6 @@ export function ExpensePanel() {
         : {},
     );
   }
-  // 패널(대화상자 밖)의 조회 재시도 진행은 지금처럼 문구와 native disabled로 보인다
   const retryLabel = refreshing ? "조회 다시 시도 중" : "조회 다시 시도";
   if (context.revoked) return null;
   return (
@@ -348,7 +340,6 @@ export function ExpensePanel() {
         </output>
       )}
       <div className="grid min-w-0 gap-4 @min-[800px]/expenses:gap-6 @min-[800px]/expenses:grid-cols-[minmax(300px,26%)_minmax(0,1fr)]">
-        {/* 넓은 화면에서 요약 칸을 화면 아래까지 채운다. 177 = 상단 헤더 69 + 탭 헤더 76 + 아래 여백 32 */}
         <aside className="min-w-0 self-stretch rounded-xl border border-border-subtle bg-white p-4 @min-[800px]/expenses:min-h-[calc(100dvh-177px)] @min-[800px]/expenses:p-6">
           <ExpenseBudgetSummary />
           <ExpenseCategorySummary />
@@ -409,11 +400,7 @@ export function ExpensePanel() {
               조회 다시 시도 버튼을 눌러 주세요.
             </p>
           )}
-          {/* 카테고리 필터 칸 184: 목록 폭이 트리거 폭과 같아서, 체크가 붙은 '전체 카테고리' 행(글자 85 + 여백 32 + 체크 자리 48)이
-              목록 테두리 2와 스크롤 막대 15(목록이 8행이라 스크롤됨, 막대가 늘 보이는 설정)를 빼고도 한 줄에 들어가는 폭 */}
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_184px] items-center gap-x-3 gap-y-4">
-            {/* 일차가 많으면 가로로 넘친다. 마우스는 세로 휠로 가로 이동이 안 되므로 PC는 얇은 스크롤 막대를 보여 끌 수 있게 하고(북마크에서 추가 칩 줄과 같은 모양),
-                모바일 기기는 손가락으로 밀면 되니 막대를 숨긴다 */}
             <div
               aria-label="준비·일차 필터"
               className="col-span-2 flex min-h-12 min-w-0 max-w-full items-center gap-2 overflow-x-auto overscroll-x-contain [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15 mobile:[scrollbar-width:none] mobile:[&::-webkit-scrollbar]:hidden @min-[800px]/expenses:col-span-1"
@@ -514,7 +501,6 @@ export function ExpensePanel() {
           {context.summary.isError && (
             <div className="space-y-3">
               <p role="alert">정산 조회에 실패했어요.</p>
-              {/* 대화상자 안 버튼이라 진행은 progress로 보인다(대화상자 버튼 규칙). 패널의 재시도 버튼은 대화상자 밖이라 문구 그대로 */}
               <Button
                 variant="outline"
                 size="sm"

@@ -88,7 +88,6 @@ export function StompProvider({ children }: { children: ReactNode }) {
   const clientRef = useRef<Client | null>(null);
   const roomTopicsUnsubRef = useRef<(() => void) | null>(null);
   const userRoomsQueueUnsubRef = useRef<(() => void) | null>(null);
-  /** pathname-only 재구독과 실제 방 전환을 구분 */
   const lastSubscribedRoomIdRef = useRef<string | null>(null);
   const forcedExitConsumedRef = useRef(false);
   const suppressCloseRecoveryRef = useRef(false);
@@ -151,7 +150,6 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
-  /** 같은 계정이 다른 탭에서 방을 나감 — 이 탭도 방 캐시를 비우고, 그 방을 보고 있으면 홈으로 보낸다 */
   const notifySelfLeftRoom = useCallback(
     (roomId: string) => {
       const rid = roomId.trim();
@@ -175,7 +173,6 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
-  /** 끊긴 동안 접근을 잃은 방에 다시 구독하다 거부됐을 때 — 놓친 개인 큐 알림 대신 HTTP 확인 결과로 내보낸다 */
   const notifyRoomAccessLost = useCallback(
     (roomId: string) => {
       const rid = roomId.trim();

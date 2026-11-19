@@ -1,7 +1,3 @@
-/**
- * 채팅 메시지 말풍선 등 레이아웃·배경 토큰.
- * 글자 크기·행간은 `chatTypography` 를 사용합니다.
- */
 import { chatAssets } from "@/lib/public-assets";
 
 export const chatMessageChrome = {
@@ -15,7 +11,6 @@ export const chatMessageChrome = {
   wooriIconSrc: chatAssets.woori,
 } as const;
 
-/** 최소화 패널용 — 말풍선·시스템 띠 패딩 살짝 축소 */
 const chatMessageChromeMinimized = {
   bubbleBase: "w-fit rounded-lg px-3 py-1.5",
   systemPill:

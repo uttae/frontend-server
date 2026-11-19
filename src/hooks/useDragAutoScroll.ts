@@ -5,13 +5,9 @@ import { useEffect, useRef, type RefObject } from "react";
 import { resolveMainContentScrollRoot } from "@/lib/dnd/mainContentScroll";
 
 export type UseDragAutoScrollOptions = {
-  /** 드래그 중일 때만 자동 스크롤을 활성화합니다. */
   active: boolean;
-  /** 스크롤 대상 — 생략 시 `data-main-content-scroll` 요소를 사용합니다. */
   scrollRootRef?: RefObject<HTMLElement | null>;
-  /** 상·하단 감지 영역(px). */
   edgeZone?: number;
-  /** 경계에 가장 가까울 때 프레임당 최대 스크롤(px). */
   maxSpeed?: number;
 };
 
@@ -48,9 +44,6 @@ function applyEdgeAutoScroll(
   }
 }
 
-/**
- * HTML5 D&D 중 스크롤 컨테이너 상·하단 근처에서 가변 속도로 자동 스크롤합니다.
- */
 export function useDragAutoScroll({
   active,
   scrollRootRef,

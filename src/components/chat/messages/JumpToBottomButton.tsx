@@ -10,7 +10,6 @@ export function JumpToBottomButton({
 }: {
   onClick: () => void;
   isMinimized?: boolean;
-  /** 메시지 목록 스크롤바 폭 — 버튼을 스크롤바 바깥(왼쪽)에 둔다 */
   scrollbarWidth?: number;
 }) {
   return (

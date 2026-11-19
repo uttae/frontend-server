@@ -1,7 +1,3 @@
-/* Figma A+C: desktop 636:943 and mobile 614:1123.
- * 720px is the repository's landing-lg breakpoint. Desktop artwork coordinates
- * use a capped 1440px container; mobile text stays at its designed readable size.
- * The 50px iPhone status bar and 34px home indicator are device context. */
 .landing {
   --landing-sky: #1eacff;
   --landing-mobile-blue: #0099ff;
@@ -34,7 +30,6 @@
 .heroBackground, .airplane, .suitcases { display: none; }
 .mobileHeroBackground { position: absolute; width: 554px; height: 554px; top: 172px; left: calc(50% - 277px); max-width: none; }
 .heroWeb { position: absolute; left: 50%; top: 316px; transform: translateX(-50%); width: min(317px, 80.66vw); height: min(240px, 61.069vw); background: #005bd9; border-radius: 4% / 5.291%; }
-/* Preserve the 750×567 frame's 10px inset and 20px inner radius without reducing the screenshot's resolution. */
 .heroWebImage { position: absolute; left: 1.333333%; top: 1.763668%; width: 97.333333%; height: 96.472663%; border-radius: 2.739726% / 3.656307%; object-fit: cover; object-position: left top; }
 .heroCopy { position: relative; padding: 60px 16px 0; text-align: center; }
 .heroCopy h1 { color: var(--color-text-inverse); font-size: 32px; font-weight: 700; line-height: 42px; }
@@ -104,7 +99,6 @@
 .cardArt { position: absolute; overflow: clip; }
 .cardArtLeaf { position: absolute; overflow: hidden; }
 .cardArtLeaf img { position: absolute; max-width: none; }
-/* The outer illustrations and their cropped leaves are independently sized. */
 .passport { width: 132px; height: 132.492px; top: 57.263px; left: 48.772px; transform: rotate(2deg); }
 .passport .cardArtLeaf { width: 87.887%; height: 88.346%; left: 5.935%; top: 9.537%; transform: rotate(-3deg); }
 .passport img { width: 106.02%; height: 105.09%; left: -3.01%; top: -2.37%; }
@@ -126,7 +120,6 @@
 .finalCopy h2 span { color: var(--color-primary-strong); }
 .finalCopy p { margin-top: 8px; color: var(--color-text-subtle); font-size: 12px; line-height: 16px; }
 .landing .finalAction { margin-top: 32px; }
-/* Restyle the shared footer only within LandingView, retaining policy/mail links. */
 .landing .footer { background: var(--color-fill-default); color: var(--color-text-default); border-top: 1px solid var(--color-border-default); }
 .footer > div { max-width: 1440px; padding: 40px 16px 32px; }
 .footer > div > div { align-items: flex-start; gap: 24px; }

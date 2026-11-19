@@ -21,7 +21,6 @@ import { MapCategoryChips } from "./MapCategoryChips";
 import type { OpenValue, RatingValue } from "./map-filters";
 
 type MapDiscoverToolbarProps = {
-  /** 웹 동선보기에서 숨김 — 상세 패널은 최솟값(필터 한 줄 아래) 자리로 간다 */
   hidden?: boolean;
   search?: ReactNode;
   selectedCategoryId: string | null;
@@ -57,7 +56,6 @@ export function MapDiscoverToolbar({
       {isMobileDevice ? <MobileMapSearchBar /> : null}
       <div className="flex min-h-12 min-w-0 flex-nowrap items-center gap-6">
         <div className="pointer-events-auto min-w-0 flex-1">
-          {/* Figma Chip에는 그림자가 없어 지도 위에 뜨는 그림자를 칩마다 주지 않고 이 줄에 준다. 색은 검색 말풍선과 같은 #0000001a, drop-shadow 5px는 box-shadow 10px와 같은 퍼짐이다 */}
           <div className="-my-2 overflow-x-auto py-2 drop-shadow-[0_2px_5px_#0000001a] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {category ? (
               <div className="flex w-max flex-nowrap items-center gap-1.5">
@@ -79,14 +77,12 @@ export function MapDiscoverToolbar({
   );
 }
 
-/** 모바일 지도 상단 검색바 — 누르면 전체 화면 검색(`MobileMapSearch`)을 연다. 엔터 검색 중이면 검색어와 지우기 버튼을 보여준다 */
 function MobileMapSearchBar() {
   const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const clearTextSearch = useMobileMapSearchStore((s) => s.clearTextSearch);
 
   function handleOpen() {
     const { openSearch } = useMobileMapSearchStore.getState();
-    // 검색 화면을 먼저 그린 뒤 같은 탭 안에서 focus해야 iOS에서도 키보드가 뜬다
     flushSync(openSearch);
     useMobileMapSearchStore.getState().focusInput?.();
   }

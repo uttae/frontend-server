@@ -35,7 +35,6 @@ const GOOGLE_REACCEPTANCE_TOKEN_NOT_FOUND_DEFAULT_MESSAGE =
 const AGREEMENT_CONFIGURATION_INVALID_DEFAULT_MESSAGE =
   "약관 설정에 문제가 있어 가입을 진행할 수 없습니다. 잠시 후 다시 시도해 주세요.";
 
-/** 북마크 장소 중복 시 백엔드 JSON에 실을 수 있는 `code` / `errorCode` 값 (HTTP status와 별개) */
 const ROOM_BOOKMARK_DUPLICATE_ERROR_CODES = new Set<string>([
   "BOOKMARK_ALREADY_EXISTS",
   "BOOKMARK_DUPLICATE",
@@ -136,7 +135,6 @@ export function readRoomsRequiringDelegationFromBody(
   return rooms;
 }
 
-/** Google 로그인·약관 재동의 API 오류 JSON → 사용자 메시지 */
 export function messageForGoogleLoginError(
   body: unknown,
   fallback = "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.",
@@ -175,7 +173,6 @@ export function messageForGoogleLoginError(
   return readUserFacingMessageFromApiBody(body) ?? fallback;
 }
 
-/** 약관 재동의 API 오류 JSON → 사용자 메시지 */
 export function messageForAgreementsAcceptError(
   body: unknown,
   fallback = "약관 동의 처리에 실패했습니다.",
@@ -183,7 +180,6 @@ export function messageForAgreementsAcceptError(
   return messageForGoogleLoginError(body, fallback);
 }
 
-/** `SCHEDULE_LIMIT_EXCEEDED` 등 — 서버 메시지에 30개 상한을 덧붙입니다. */
 export function withScheduleLimitCountHint(
   message: string | undefined,
   body?: unknown,
@@ -197,7 +193,6 @@ export function withScheduleLimitCountHint(
   return `${base} (방당 최대 ${MAX_SCHEDULES_PER_ROOM}개까지예요.)`;
 }
 
-/** HTTP error JSON에서 사용자에게 그대로 보여줄 메시지 추출 (Spring `message` / `errors` 등) */
 export function readUserFacingMessageFromApiBody(
   body: unknown,
 ): string | undefined {
@@ -234,24 +229,15 @@ export class HttpError extends Error {
   }
 }
 
-/**
- * 서버 응답을 받지 못한 일시적 네트워크 오류인지 — fetch는 이 실패를 TypeError로 던진다.
- * 429·4xx·5xx 응답은 다시 보내도 같은 결과라 여기에 넣지 않는다.
- */
 export function isNetworkError(error: unknown): boolean {
   return error instanceof TypeError;
 }
 
-/**
- * 저장 실패 토스트 문구 — 서버가 준 문구가 있으면 그 문구, 응답을 받지 못한 네트워크 오류는 `fallback`.
- * 네트워크 오류의 메시지는 브라우저 문구(`Failed to fetch`)라 사용자에게 보이지 않는다
- */
 export function messageForSaveError(error: unknown, fallback: string): string {
   if (isNetworkError(error) || !(error instanceof Error)) return fallback;
   return error.message.trim() || fallback;
 }
 
-/** 방 생성·수정 API의 여행지 관련 서버 에러(HTTP 4xx) → 한국어 사용자 메시지 */
 export function messageForRoomDestinationError(
   body: unknown,
   fallback: string,
@@ -272,7 +258,6 @@ export function messageForRoomDestinationError(
   return readUserFacingMessageFromApiBody(body) ?? fallback;
 }
 
-/** 북마크 카테고리명 중복(HTTP 409) 시 토스트용 문구 */
 export function messageForBookmarkCategorySaveError(
   e: unknown,
   fallback: string,

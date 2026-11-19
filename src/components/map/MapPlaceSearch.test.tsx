@@ -105,7 +105,6 @@ it("specific Details failure retry returns to that input with a fresh session an
   expect(boundary.page).not.toHaveBeenCalled();
   expect(usePlaceSearchStore.getState().selectedId).toBe("chosen");
 });
-// 버튼으로 한 「현 위치에서 검색」의 결과 없음은 검색창 아래가 아니라 버튼 자리에서 알린다
 it("search here no results stay out of the search box", async () => {
   useSessionStore.setState({ currentRoomId: "room" });
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });

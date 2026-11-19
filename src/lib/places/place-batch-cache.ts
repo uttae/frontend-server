@@ -22,7 +22,6 @@ function readCachedPreviewForReconcile(
   return queryClient.getQueryData<PlacePreview>(placePreviewQueryKey(id)) ?? null;
 }
 
-/** preview 캐시 갱신 후 bake된 에러 title을 가진 schedule-items 캐시를 복구합니다. */
 export function reconcileSchedulePlanPlacesAfterPreviewSeed(
   queryClient: QueryClient,
   roomId?: string,
@@ -96,10 +95,6 @@ function uncachedPreviewIds(
   return [...new Set(out)];
 }
 
-/**
- * 캐시에 없는 장소 미리보기를 batch로 받아 캐시에 채운다(실패한 곳만 batch로 한 번 더).
- * 그래도 실패한 곳은 던지지 않고 비워 둔다 — 일정에는 자리표시자로 보이고, 다음 진입 때 다시 받는다.
- */
 export async function fetchAndSeedPlacePreviews(
   googlePlaceIds: readonly string[],
   queryClient?: QueryClient | null,

@@ -7,7 +7,6 @@ import { joinRequestsQueryKey } from "@/lib/query-keys";
 
 const HOST_JOIN_REQUEST_TOAST_MS = 4000;
 
-/** 호스트 개인 큐 — 새 입장 요청 시 join-requests Query 무효화 + 알림 */
 export function dispatchHostJoinRequestFromStomp(
   queryClient: QueryClient,
   roomId: string,

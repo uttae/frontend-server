@@ -186,7 +186,6 @@ it("keeps the extracted mobile delete sheet's room after its pending request com
   });
 });
 
-// Popup/backdrop containment must hold even when the modal belongs to a clickable place card.
 it.each(["bookmark", "schedule"])("contains %s modal pointer events and keeps backdrop dismissal", async kind => {
   const outer = vi.fn();
   const close = vi.fn();

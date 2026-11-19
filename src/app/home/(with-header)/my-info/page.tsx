@@ -104,7 +104,6 @@ export default function MyInfoPage() {
             </div>
           )}
 
-          {/* users/me 조회 실패는 예외 대신 null로 반환된다 */}
           {!isLoading && !user && (
             <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-16 text-center">
               <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-dark-gray">

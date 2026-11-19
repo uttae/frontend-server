@@ -21,7 +21,6 @@ export function toCssPx(px: number): string {
   return `${Math.max(0, Math.round(px))}px`;
 }
 
-/** `400px` / `3.25rem` 등 레이아웃 토큰을 px로 변환 */
 export function parseLayoutLengthToPx(
   value: string,
   rootFontPx = DEFAULT_ROOT_FONT_PX,
@@ -38,7 +37,6 @@ export function parseLayoutLengthToPx(
   return Number.isFinite(n) ? n : 0;
 }
 
-/** 본문 토큰 + 사이드바 레일 → LeftSection maxWidth(px) */
 export function contentTokenToLeftSectionMaxPx(
   contentWidth: string,
   rootFontPx = DEFAULT_ROOT_FONT_PX,
@@ -49,7 +47,6 @@ export function contentTokenToLeftSectionMaxPx(
   );
 }
 
-/** `SetSectionMaxWidth` effect 전에도 라우트별 s1 폭을 동기 적용 */
 export function resolveRouteDefaultContentWidth(pathname: string): string {
   if (isPlanPath(pathname)) return "";
   if (
@@ -81,10 +78,6 @@ export type ResolveLeftSectionTargetMaxWidthParams = {
   rootFontPx?: number;
 };
 
-/**
- * 가계부·준비물은 지도 없이 전체 폭, 나머지 협업 공간(`/chat` 포함)은 일정 기준 폭(사이드바 포함)을 사용.
- * 모바일은 호출측에서 `"100%"` 처리.
- */
 export function resolveLeftSectionTargetMaxWidthPx({
   pathname,
   isMobile,
@@ -107,12 +100,6 @@ export function resolveLeftSectionAnimateMaxWidth({
   return "none";
 }
 
-/**
- * 데스크톱 좌측 영역 최소 폭(레일·테두리 포함).
- * - 일정·채팅 등: 384. 옆 지도 최소 384와 합쳐 레이아웃 최소 768.
- * - 지도 없이 전체 폭을 쓰는 지출·준비물: 좌측 영역이 레이아웃 최소 768을 다 맡는다. 준비물 상세(440)를 열어도 768이고 목록 칸이 줄어 그 안에서 가로 스크롤한다.
- * 화면이 이보다 좁으면 레이아웃 안에서 가로 스크롤한다.
- */
 export function resolveDesktopLeftSectionMinWidthPx(pathname = ""): number {
   if (pathname === "/cost" || isPackingPath(pathname)) {
     return MAIN_WORKSPACE_MIN_WIDTH_PX + MAIN_MAP_MIN_WIDTH_PX;

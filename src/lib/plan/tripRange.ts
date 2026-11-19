@@ -4,7 +4,6 @@ export function startOfLocalDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-/** `YYYY-MM-DD`를 로컬 자정 기준 `Date`로 파싱합니다. */
 export function parseLocalYmd(s: string): Date {
   const parts = s.split("-").map(Number);
   const y = parts[0];
@@ -40,7 +39,6 @@ function formatYmdKoShort(ymd: string): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-/** 홈 카드 등: `YYYY-MM-DD` 범위를 짧은 한글 문구로 (값 없음이면 빈 문자열). */
 export function formatTripYmdRangeShortKo(
   startYmd: string | null | undefined,
   endYmd: string | null | undefined,
@@ -52,7 +50,6 @@ export function formatTripYmdRangeShortKo(
   return `${formatYmdKoShort(s)} ~ ${formatYmdKoShort(e)}`;
 }
 
-/** PC 상단 헤더 부제 `MM/DD ~ MM/DD`(Figma Top Header 6663:3963) 또는 `일정 없음`. */
 export function formatRoomTripSubtitle(startYmd: string, endYmd: string): string {
   const s = startYmd.trim();
   const e = endYmd.trim();
@@ -68,7 +65,6 @@ export type RoomTripYmdSource = {
   endDate: string | null;
 };
 
-/** 참여 중인 방 목록 또는 세션 메타에서 여행 `YYYY-MM-DD` 경계를 고릅니다. */
 export function tripYmdBoundsFromRoomSources(
   roomId: string,
   listRooms: RoomTripYmdSource[] | undefined,

@@ -35,7 +35,6 @@ const panelButtons = () =>
 
 beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  // jsdom은 Tailwind 컨테이너 쿼리를 계산하지 않는다 — 헤더 초대하기 버튼의 display만 헤더 폭에 맞춰 바꿔 준다
   const original = window.getComputedStyle.bind(window);
   vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) => {
     const style = original(element, pseudo);

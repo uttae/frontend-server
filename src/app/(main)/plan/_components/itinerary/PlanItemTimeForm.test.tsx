@@ -50,7 +50,6 @@ async function type(column: number, value: string) {
 async function key(el: Element, key: string, shiftKey = false) {
   await act(async () => el.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true })));
 }
-// Base UI는 처음 포커스를 다음 animation frame에 옮긴다
 async function nextFrame() {
   await act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
@@ -163,7 +162,6 @@ describe("schedule time editor", () => {
     await type(2, "02");
     props = { ...props, startTime: "", endTime: null };
     await render();
-    // 재조회로 바뀐 서버 값도 렌더 중에 다시 검증해 시작 칸 아래에 보인다
     const alert = document.querySelector('[role="alert"]');
     expect(alert?.textContent).toContain("시작 시각 없이 종료 시각만 설정할 수 없어요.");
     expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
@@ -172,12 +170,10 @@ describe("schedule time editor", () => {
   });
   it("saves once a refetch makes a draft that failed on Enter valid again", async () => {
     await render();
-    // 시작을 비우면 종료(서버 01:00)만 남아 시작 칸에 오류, Enter도 막힌다
     await type(0, "");
     await type(1, "");
     await key(input(0), "Enter");
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
-    // 재조회로 서버 종료가 비워지면 오류가 사라지고 적용으로 저장된다
     props = { ...props, endTime: null };
     await render();
     expect(document.querySelector('[role="alert"]')).toBeNull();
@@ -215,7 +211,6 @@ describe("web time editing", () => {
     expect(alert?.textContent).toBe("시간을 올바르게 선택해 주세요. 시는 00–23, 분은 00–59로 입력해 주세요.");
     expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
     expect(input(2).getAttribute("aria-describedby")).not.toContain(alert!.id);
-    // Enter로 제출해도 막히고, 오류는 칸 아래 문장 하나뿐이다(토스트를 겹쳐 띄우지 않는다)
     await key(input(0), "Enter");
     expect(mocks.error).not.toHaveBeenCalled();
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
@@ -243,7 +238,6 @@ describe("web time editing", () => {
     await click("적용");
     expect(body()).toEqual({ startTime: "23:59" });
   });
-  // Tab 순환(포커스 가두기)은 Base UI 대화상자가 맡는다. 바깥 요소는 aria-hidden으로 접근성 트리에서 빠진다
   it("hides outside content while open and restores opener focus after Escape", async () => {
     const opener = document.createElement("button");
     document.body.append(opener);

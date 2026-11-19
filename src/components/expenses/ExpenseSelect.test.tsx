@@ -34,7 +34,6 @@ async function mount(props: { disabled?: boolean; mobileSheet?: boolean } = {}) 
 }
 const trigger = () => document.querySelector<HTMLElement>('[role="combobox"]')!;
 const optionNodes = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')];
-// Base UI는 열고 닫을 때 microtask·timeout으로 포커스·목록을 옮긴다
 const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
 async function key(target: Element, key: string) {
   const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });

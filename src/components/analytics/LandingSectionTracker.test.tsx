@@ -19,7 +19,6 @@ function visibility(visible: boolean) { foreground = visible; act(() => document
 function grant() { act(() => { consent.set("granted"); }); }
 beforeEach(() => {
   vi.useFakeTimers(); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  // Deterministic rendering clock; geometry changes become observable on next frame.
   vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now()), 10));
   vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id));
   top = 0; height = 600; foreground = true;

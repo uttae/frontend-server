@@ -69,39 +69,20 @@ import { PlanRouteStepper } from "./PlanRouteStepper";
 import { useWebPlanRouteMode } from "./useWebPlanRouteMode";
 import type { OpenValue, RatingValue } from "./map-filters";
 
-/** 모바일 경로 보기 — 고른 일차만 그리고, 카드 선택에 맞춰 지도를 옮긴다 */
 export type MapRouteView = PlanItineraryRouteDay & {
-  /**
-   * `seq`가 바뀔 때마다 실행 — fit: 일차 전체가 보이게, pan: 줌은 두고 고른 장소로 이동,
-   * place: 고른 장소를 가까이(줌 15) 보여 준다(경로 보기에 처음 들어올 때 — 일정 카드·경로 보기 버튼 모두)
-   */
   camera: { kind: "fit" | "pan" | "place"; seq: number };
-  /** 일차 장소 위치(순서대로) — 호출측에서 memo해 넘긴다 */
   locations: ReadonlyArray<{ itemId: number; lat: number; lng: number }>;
-  /** 카드를 펼쳐 지도 아래쪽 대부분을 가리는 중 */
   expanded: boolean;
-  /**
-   * 지도에서 누른 Google 장소 — 카드 줄 사이에 끼운 후보(이 일차를 볼 때만). 일반 지도의 선택 핀으로 그린다.
-   * `focused`: 후보 카드를 보고 있음 — 이때만 지도를 후보로 옮긴다.
-   */
   candidate: {
     googlePlaceId: string;
     location: google.maps.LatLngLiteral | null;
     focused: boolean;
   } | null;
   onPlaceClick: (googlePlaceId: string, location: google.maps.LatLngLiteral | null) => void;
-  /** 후보 핀을 누름 — 일정 핀처럼 그 후보 카드로 넘긴다 */
   onCandidateClick: () => void;
-  /** 장소가 아닌 곳을 누름 — 후보를 닫는다 */
   onBackgroundClick: () => void;
 };
 
-// ─── 웹 일정에서 고른 장소로 지도 이동 ─────────────────────────────────────────
-
-/**
- * 일정 카드·핀·장소 이동 스테퍼로 고르면 줌은 그대로 두고 그 장소로 부드럽게 옮긴다(모바일 경로 보기의 카드 넘김과 같은 이동).
- * 지도 핀으로 고르면 함께 연 상세(`SelectedPlaceController`)도 같은 곳으로 옮기는데, 같은 곳으로 가는 이동은 하나로 이어진다
- */
 function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null }>) {
   const map = useMap();
   const rid = typeof roomId === "string" ? roomId.trim() : "";
@@ -117,8 +98,6 @@ function PlanFocusCameraController({ roomId }: Readonly<{ roomId: string | null 
   return null;
 }
 
-// ─── 장소 선택 시 지도 이동 ───────────────────────────────────────────────────
-
 function SelectedPlaceController() {
   const map = useMap();
   const { isMobileDevice } = useMobileView();
@@ -131,7 +110,6 @@ function SelectedPlaceController() {
 
     if (mode === "none") return;
     const zoom = mode === "full" ? 16 : undefined;
-    // 모바일은 아직 구글 이동(`panTo`)을 그대로 쓴다
     if (isMobileDevice) {
       panToWithinWorld(map, selectedPlace.location);
       if (zoom !== undefined) map.setZoom(zoom);
@@ -145,10 +123,8 @@ function SelectedPlaceController() {
 
 const VIEWPORT_PERSIST_DEBOUNCE_MS = 400;
 
-/** 오른쪽 아래 확대·축소(+/−) 자리 — 지도 끝 24 + 버튼 40 + 간격 12. 장소 이동 스테퍼가 이보다 오른쪽으로 가지 않는다 */
 const ZOOM_CONTROL_CLEARANCE_PX = 24 + 40 + 12;
 
-/** bootstrap 복원 직후 Zustand `mapCenter`·줌을 검색/일정 UI와 맞춤 */
 function MapBootstrapSync({
   ready,
   center,
@@ -201,8 +177,6 @@ function MapBootstrapSync({
 
   return null;
 }
-
-// ─── 방 destination 변경 시 지도 동기화(설정 수정 등)·캐시 갱신 ───────────────
 
 function DestinationPanController({
   roomId,
@@ -264,7 +238,6 @@ function DestinationPanController({
   return null;
 }
 
-/** A new ordinary map selection supersedes search without deleting its reusable results. */
 function releaseSearchForMapSelection() {
   usePlaceSearchStore.getState().invalidate();
   useMapPinsFocusStore.getState().releaseSearchFocusIfActive();
@@ -272,7 +245,6 @@ function releaseSearchForMapSelection() {
   useSearchRecenterStore.getState().clearSearchSnapshot();
 }
 
-// Keep a small visual gap between the preview tail and the selected pin.
 const SEARCH_PREVIEW_GAP_OFFSET: [number, number] = [0, -4];
 
 function MapSearchResultPins() {
@@ -298,7 +270,6 @@ function MapSearchResultPins() {
     return settleSearchSnapshotAfterMove(map);
   }, [map, preview]);
 
-  // 전체 검색 결과가 준비되면 첫 추천 대신 실제 결과들이 보이도록 맞춘다.
   useEffect(() => {
     if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
     fittedItemsRef.current = items;
@@ -373,21 +344,16 @@ function MapSearchResultPins() {
   );
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
-
 export default function TripMap({
   routeView,
   onOpenRouteView,
   search,
 }: {
-  /** 있으면 경로 보기 — 검색·필터, 북마크·탐색 핀, 다른 일차 경로를 숨긴다 */
   routeView?: MapRouteView;
   search?: ReactNode;
-  /** 있으면 지도 왼쪽 아래에 경로 보기 버튼을 둔다(모바일 지도) */
   onOpenRouteView?: () => void;
 } = {}) {
   const pathname = usePathname();
-  // 모바일 지도(`/map`)도 일정 화면의 지도라 일정에 있는 장소의 북마크 핀을 숨긴다
   const isPlanPage = isPlanPath(pathname ?? "") || isMobileMapPathname(pathname ?? "");
   const planStopPlaceIds = usePlanItineraryStopNormalizedPlaceIds(isPlanPage);
 
@@ -401,11 +367,9 @@ export default function TripMap({
   );
   const [rating, setRating] = useState<RatingValue>("all");
   const [openNow, setOpenNow] = useState<OpenValue>("all");
-  // 카테고리 검색이 실패하면 「현 위치에서 검색」 버튼이 「다시 시도」로 남는다
   const [discoverFailed, setDiscoverFailed] = useState(false);
   const [showBookmarkPins, setShowBookmarkPins] = useState(true);
 
-  // Text search takes over the map at request start, including autocomplete selection.
   useEffect(() => useMapPinsFocusStore.subscribe((state, previous) => {
     if (state.focus !== "search" || state.writeEpoch === previous.writeEpoch) return;
     setSelectedCategoryId(null);
@@ -503,7 +467,6 @@ export default function TripMap({
   const handleMapClick = (ev: MapMouseEvent) => {
     const placeId = ev.detail.placeId?.trim() ?? "";
     if (routeView) {
-      // 경로 보기: 장소 상세 시트 대신 고른 카드 뒤에 넣을 후보로 보여 준다
       if (placeId.length > 0) {
         ev.stop();
         routeView.onPlaceClick(placeId, ev.detail.latLng ?? null);
@@ -524,12 +487,10 @@ export default function TripMap({
           googlePlaceId: placeId,
           ...(latLng ? { location: latLng } : {}),
         },
-        // 웹은 누른 장소로 줌을 두고 부드럽게 옮긴다. 모바일은 아래 시트가 지도를 가려 그대로 둔다
         { analyticsSource: "map", ...(isMobileDevice ? { skipMapRecenter: true } : { preserveMapZoom: true }) },
       );
       return;
     }
-    // 빈 곳은 완료된 검색 핀·카드를 유지한다. 진행 중인 응답만 무효화하고 상세·일정 강조를 닫는다.
     if (usePlaceSearchStore.getState().status === "pending") usePlaceSearchStore.getState().invalidate();
     if (!isMobileDevice) usePlaceSearchStore.getState().select(null);
     setSelectedPlace(null);
@@ -593,7 +554,6 @@ export default function TripMap({
           />
           <SelectedPlaceController />
           {!routeView && isMobileDevice ? <MobileSearchSelection /> : null}
-          {/* 웹 일정에서 고른 장소로 이동 — 모바일(일반 지도·경로 보기)은 쓰지 않는다 */}
           {routeView || isMobileDevice ? null : <PlanFocusCameraController roomId={currentRoomId} />}
           <DestinationPanController
             roomId={currentRoomId}
@@ -612,8 +572,6 @@ export default function TripMap({
 
           {!routeView && <SelectedPlaceMarker />}
 
-          {/* PC는 확대·축소(+/−) 바로 위 — 같은 오른쪽 아래 컨트롤 자리에 넣으면 지도가 +/− 위로 쌓아 준다.
-              오른쪽은 +/−와 같이 지도 끝에서 24px(globals.css `[data-map-controls-inset]`) */}
           {routeView || isMobileDevice ? null : (
             <MapControl position={ControlPosition.RIGHT_BOTTOM}>
               <div className="mr-6">{bookmarkToggle}</div>
@@ -623,7 +581,6 @@ export default function TripMap({
         )}
       </div>
 
-      {/* 웹 동선보기는 숨기기만 한다 — 상세 패널 위치를 계속 재서 필터 한 줄 아래(최솟값)에 두고, 풀면 고른 카테고리·필터 그대로 보인다 */}
       {routeView ? null : (
         <MapDiscoverToolbar
           hidden={planRouteMode}
@@ -637,10 +594,6 @@ export default function TripMap({
         />
       )}
 
-      {/* 웹 동선보기 장소 이동 — 지도 아래 가운데, 다른 지도 버튼처럼 아래 24px.
-          상세 패널이 열리면 패널 오른쪽 끝~지도 오른쪽 끝의 가운데로 옮긴다.
-          오른쪽 칸은 +/− 자리만큼 줄어들지 않아, 지도가 좁아지면 +/−에 밀려 왼쪽으로 넘치고(justify-end)
-          z-[16]이 상세 패널(`MapWithDetailPanel` z-20)보다 낮아 패널 뒤로 가려진다 */}
       {bootstrap.ready && !routeView && !isMobileDevice && isPlanPage ? (
         <div
           style={{
@@ -711,7 +664,6 @@ function RouteViewMarkers({ routeView }: Readonly<{ routeView: MapRouteView }>) 
 function SelectedPlaceMarker() {
   const { selectedPlace } = useSelectedPlace();
   const { isMobileDevice } = useMobileView();
-  // 고른 일정 장소를 핀으로 열었으면 번호 핀을 키워 보이므로 일반 선택 핀을 겹쳐 그리지 않는다(웹 전용)
   const planFocusGid = usePlanMapFocusStore((s) => (isMobileDevice ? null : (s.focus?.googlePlaceId ?? null)));
   const selectedIsPlanFocus =
     planFocusGid !== null &&
@@ -767,7 +719,6 @@ function resolveMapDestination(
   return { destination, mapMetaReady };
 }
 
-/** A search card selection only pans the map; collapsed cards do not fetch Details. */
 function MobileSearchSelection() {
   const map = useMap();
   const items = usePlaceSearchStore((s) => s.items);

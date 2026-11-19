@@ -27,9 +27,7 @@ function saveAll(payload: Payload): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch {
-    /* quota / private mode */
-  }
+  } catch {}
 }
 
 function roomKey(roomId: string): string {
@@ -57,7 +55,6 @@ function isValidViewport(v: unknown): v is RoomMapViewport {
   return true;
 }
 
-/** 방별 마지막 지도 중심·줌 (브라우저 재시작 후 복원) */
 export function readRoomMapViewport(roomId: string): RoomMapViewport | null {
   const rid = roomKey(roomId);
   if (!rid.length) return null;

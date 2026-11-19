@@ -38,8 +38,6 @@ export function useExpenseRecovery(roomId: string, enabled: boolean) {
             void recovery.message(frame.body).catch(() => {});
           })
         : null;
-    // Read on admission and after establishing a subscription to recover missed
-    // broadcasts. Losing a connection is not a reason to start HTTP reads.
     if (entering || connectionEstablished) {
       void recovery.refresh("all").catch(() => {});
     }
