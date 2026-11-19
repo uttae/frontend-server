@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronDown, ExternalLink, EyeOff } from "lucide-react";
+import { EyeOff } from "lucide-react";
 
+import { ChevronDownIcon, MapIcon } from "@/assets/icons";
 import { Spinner } from "@/components/ui/spinner";
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
 import {
@@ -39,8 +40,11 @@ export type TravelDirectionsCardProps = {
   modeRouteRowLoading?: Partial<Record<ScheduleTravelModeValue, boolean>>;
   effectiveMode: ScheduleTravelModeValue | null;
   googleMapsDirectionsUrl?: string;
-  /** PC 일정 — 구간마다 반복되는 길찾기 링크가 튀지 않게 회색 12px로 낮춘다 */
-  subtleDirectionsLink?: boolean;
+  /**
+   * 둘 다 Figma Route Info 모양(이동 시간 강조·거리 회색, 길찾기는 지도 아이콘과 회색 12px)이다.
+   * web은 좁은 일정 칸에서 길찾기를 다음 줄로 내리고, mobile은 Figma 모바일 간격(아이콘–정보 10)을 쓴다
+   */
+  variant?: "web" | "mobile";
   /** true면 목록은 참고용(클릭 선택 불가), `onSelectTravelMode` 미사용 */
   readOnly?: boolean;
   onSelectTravelMode?: (next: ScheduleTravelModeValue) => void;
@@ -58,7 +62,7 @@ export function TravelDirectionsCard({
   modeRouteRowLoading = {},
   effectiveMode,
   googleMapsDirectionsUrl,
-  subtleDirectionsLink = false,
+  variant = "mobile",
   readOnly = false,
   onSelectTravelMode,
   onHideDirections,
@@ -79,22 +83,31 @@ export function TravelDirectionsCard({
 
   return (
     <div className="relative">
-      <div className="flex min-w-0 items-center">
+      <div
+        className={cn(
+          "flex min-w-0 items-center",
+          // 좁은 일정 칸에서는 요약 글자를 쪼개는 대신 길찾기를 다음 줄 오른쪽으로 내린다
+          variant === "web" && "flex-wrap justify-end",
+        )}
+      >
         <button
           type="button"
-          className="inline-flex min-h-10 min-w-0 flex-1 cursor-pointer items-center gap-1.5 py-1 pl-1 pr-1.5 text-left"
+          className={cn(
+            "inline-flex min-h-10 min-w-0 grow cursor-pointer items-center gap-1.5 text-left",
+            variant === "mobile" && "gap-2.5",
+          )}
           aria-expanded={menuOpen}
           onClick={onToggleMenu}
         >
           <TravelModeGlyph mode={headerTravelMode} />
-          <span className="inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep text-body-s-emphasis mobile:text-body-xs-emphasis font-medium leading-tight text-gray-900">
+          <span className="inline-flex min-w-0 flex-1 items-center gap-0.5 whitespace-normal break-keep text-body-s-emphasis text-text [&_[data-route-distance]]:text-body-s-regular [&_[data-route-distance]]:text-text-subtle [&_[data-route-separator]]:mx-0.5">
             <span className="min-w-0">{summaryLine}</span>
-            <ChevronDown
+            <ChevronDownIcon
+              size={16}
               className={cn(
-                "h-4 w-4 shrink-0 text-dark-gray transition-transform",
+                "shrink-0 text-icon-subtle transition-transform",
                 menuOpen && "rotate-180",
               )}
-              aria-hidden
             />
           </span>
         </button>
@@ -105,15 +118,10 @@ export function TravelDirectionsCard({
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Google Maps에서 길찾기"
-            className={cn(
-              "inline-flex h-10 shrink-0 items-center gap-1 underline-offset-2 hover:underline",
-              subtleDirectionsLink
-                ? "px-1 text-body-xs-regular text-text-subtle"
-                : "px-2 text-label-xs-regular font-medium text-primary-strong",
-            )}
+            className="inline-flex h-10 shrink-0 items-center gap-1.5 text-body-xs-regular text-text-subtle underline-offset-2 hover:underline"
           >
+            <MapIcon size={16} className="shrink-0 text-icon-subtle" />
             Google 길찾기
-            <ExternalLink className={subtleDirectionsLink ? "size-[11px]" : "h-3 w-3"} aria-hidden />
           </a>
         ) : null}
 

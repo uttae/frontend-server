@@ -78,8 +78,8 @@ it("switches between expenses and packing inside the mobile travel tools tab", a
   await render();
   const tools = host.querySelector<HTMLElement>('nav[aria-label="여행 도구 선택"]');
   expect([...tools!.querySelectorAll("a")].map((link) => [link.textContent, link.getAttribute("href")]))
-    .toEqual([["가계부", "/cost"], ["준비물", `/packing/${state.roomId}`]]);
-  expect(tools!.querySelector('[aria-current="page"]')?.textContent).toBe("가계부");
+    .toEqual([["지출", "/cost"], ["준비물", `/packing/${state.roomId}`]]);
+  expect(tools!.querySelector('[aria-current="page"]')?.textContent).toBe("지출");
   state.pathname = `/packing/${state.roomId}`;
   await render();
   expect(host.querySelector('nav[aria-label="여행 도구 선택"] [aria-current="page"]')?.textContent).toBe("준비물");
@@ -88,7 +88,7 @@ it("switches between expenses and packing inside the mobile travel tools tab", a
 
 it("desktop chat menu opens the /chat route next to the map, and route links leave it", async () => {
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "북마크", "가계부", "준비물", "채팅"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(["일정", "북마크", "지출", "준비물", "채팅"]);
   expect(active()).toHaveLength(1);
   await openChatFromSidebar();
   expect(state.pathname).toBe("/chat");
@@ -275,7 +275,7 @@ it.each([false, true])("packing selects its desktop item or mobile travel tools 
   state.mobile = mobile;
   state.pathname = "/packing/12345678-1234-1234-1234-123456789abc";
   await render();
-  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "북마크", "여행 도구", "채팅"] : ["일정", "북마크", "가계부", "준비물", "채팅"]);
+  expect(items().map(x => x.getAttribute("aria-label") ?? x.textContent)).toEqual(mobile ? ["일정", "북마크", "여행 도구", "채팅"] : ["일정", "북마크", "지출", "준비물", "채팅"]);
   expect(active().map(item => item.getAttribute("aria-label"))).toEqual([mobile ? "여행 도구" : "준비물"]);
   expect(host.querySelector(`a[href="/packing/${state.roomId}"]`)).not.toBeNull();
   expect(host.querySelector("[data-map]:not([hidden])")).toBeNull();
@@ -344,7 +344,7 @@ it('creates the desktop map lazily and preserves the same map through full-width
 it.each([
   ['/plan/room', '일정'],
   ['/bookmark', '북마크'],
-  ['/cost', '가계부'],
+  ['/cost', '지출'],
   ['/packing/12345678-1234-1234-1234-123456789abc', '준비물'],
 ])('selects the visible route after minimizing chat on %s', async (pathname, label) => {
   state.pathname = pathname;

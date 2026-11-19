@@ -11,7 +11,7 @@ import { createPortal } from "react-dom";
 import { MapPin } from "lucide-react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
-import { LocationIcon, SearchIcon } from "@/assets/icons";
+import { PlusIcon, SearchIcon } from "@/assets/icons";
 import { SearchBar, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { useDebouncedPlacePredictions } from "@/hooks/useDebouncedPlacePredictions";
 import {
@@ -38,8 +38,8 @@ type Props = {
   /** true면 검색 버튼 숨김 — 자동완성 선택만 사용 */
   pickOnly?: boolean;
   placeholder?: string;
-  /** 입력창 왼쪽 아이콘 (기본: 돋보기) */
-  leadingIcon?: "search" | "pin";
+  /** 입력창 왼쪽 아이콘 (기본: 돋보기). plus는 일정 장소 추가(Figma Add Place) */
+  leadingIcon?: "search" | "plus";
   /** 입력 지우기(X) 클릭 시 — 예: 검색 지도 핀 제거 */
   onClear?: () => void;
   disabled?: boolean;
@@ -298,7 +298,11 @@ export function PlacesSearchInput({
       <form onSubmit={handleSubmit} className="flex items-center gap-1">
         <SearchBar>
           <SearchBarIcon>
-            {leadingIcon === "pin" ? <LocationIcon size={20} /> : <SearchIcon size={20} />}
+            {leadingIcon === "plus" ? (
+              <PlusIcon size={20} className="text-primary" />
+            ) : (
+              <SearchIcon size={20} />
+            )}
           </SearchBarIcon>
           <SearchBarInput
             ref={inputRef}

@@ -15,10 +15,9 @@ it("lets the ledger and packing use the full desktop workspace", () => {
   expect(resolveLeftSectionTargetMaxWidthPx({ pathname: "/packing/room", contentWidthToken: "400px", isMobile: false })).toBeNull();
 });
 
-it("keeps the 400px panel beside the rail and holds map-less tools at the full desktop minimum", () => {
-  expect(resolveDesktopLeftSectionMinWidthPx("/plan/room")).toBe(469);
-  expect(resolveDesktopLeftSectionMinWidthPx("/chat")).toBe(469);
-  expect(resolveDesktopLeftSectionMinWidthPx("/cost")).toBe(849);
-  expect(resolveDesktopLeftSectionMinWidthPx("/packing/room")).toBe(849);
-  expect(resolveDesktopLeftSectionMinWidthPx("/packing/room", 440)).toBe(909);
+it("keeps the 384px workspace beside the map and holds map-less tools at the 768px desktop minimum", () => {
+  expect(resolveDesktopLeftSectionMinWidthPx("/plan/room")).toBe(384);
+  expect(resolveDesktopLeftSectionMinWidthPx("/chat")).toBe(384);
+  expect(resolveDesktopLeftSectionMinWidthPx("/cost")).toBe(768);
+  expect(resolveDesktopLeftSectionMinWidthPx("/packing/room")).toBe(768);
 });

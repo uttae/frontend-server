@@ -24,7 +24,6 @@ import { cn } from "@/lib/utils";
 import { PlanTravelTimeCollapsed } from "./PlanTravelTimeCollapsed";
 import { TravelDirectionsCard } from "./TravelDirectionsCard";
 import { TravelRouteRail } from "./TravelRouteRail";
-import { PLAN_SEGMENT_RAIL_LINE_CLASS } from "./travelSegmentRailLayout";
 
 function routePayloadOk(
   r: ScheduleItemRouteResponse | null | undefined,
@@ -294,7 +293,7 @@ export function PlanTravelTime({
           modeRouteRowLoading={modeRouteRowLoading}
           effectiveMode={selectedMode}
           googleMapsDirectionsUrl={googleMapsDirectionsUrl ?? undefined}
-          subtleDirectionsLink={!isMobileDevice}
+          variant={isMobileDevice ? "mobile" : "web"}
           onSelectTravelMode={handleSelectTravelMode}
           onHideDirections={() => {
             setDirectionsHidden(true);
@@ -322,9 +321,8 @@ export function PlanTravelTime({
       role="separator"
       aria-label="이동 시간 및 길찾기"
     >
-      <div className={PLAN_SEGMENT_RAIL_LINE_CLASS} aria-hidden />
       <div className="relative flex min-h-10 items-center gap-3">
-        <TravelRouteRail arrowClassName="text-primary" layout="row" />
+        <TravelRouteRail />
         {directionsCard}
       </div>
     </div>

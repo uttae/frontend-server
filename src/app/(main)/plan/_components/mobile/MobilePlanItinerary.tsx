@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 
 import { PlanTravelTime } from "../travel-time/PlanTravelTime";
+import { TravelRouteRail } from "../travel-time/TravelRouteRail";
 import { MobilePlanPlaceCard } from "./MobilePlanPlaceCard";
 import { MobilePlanPlaceSheets, openPlaceExpenses, type MobilePlanPlaceSheet } from "./MobilePlanPlaceSheets";
 import { useMobilePlanDrag } from "./mobilePlanDrag";
@@ -72,11 +73,8 @@ export function MobilePlanItinerary({
   const visibleByScheduleId = usePlanScheduleRouteVisibilityStore((s) => s.visibleByScheduleId);
   const badgeColor = useMemo(
     () =>
-      scheduleIdsToRouteColors(
-        sortedScheduleIdsForRouteColors(visibleByScheduleId),
-        roomId.trim() || undefined,
-      ).get(scheduleId) ?? "#f12d33",
-    [roomId, scheduleId, visibleByScheduleId],
+      scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)).get(scheduleId) ?? "#f12d33",
+    [scheduleId, visibleByScheduleId],
   );
 
   const scheduleFingerprint = useMemo(() => schedulePlacesFingerprint(places), [places]);
@@ -236,23 +234,26 @@ function PlaceTravelSegment({
     return <div className="h-2" />;
   }
   return (
-    <PlanTravelTime
-      contentOnly
-      className="py-1"
-      roomId={roomId}
-      scheduleId={scheduleId}
-      segmentSourceItemId={place.itemId}
-      destinationItemId={next.itemId}
-      scheduleFingerprint={scheduleFingerprint}
-      travelMode={place.travelMode}
-      originGooglePlaceId={place.googlePlaceId}
-      originPlaceName={place.title}
-      destinationGooglePlaceId={next.googlePlaceId}
-      destinationPlaceName={next.title}
-      routeQueryEnabled={
-        routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)
-      }
-    />
+    <div className="flex gap-2 py-1 pr-3">
+      <TravelRouteRail />
+      <PlanTravelTime
+        contentOnly
+        className="flex min-h-10 min-w-0 flex-1 items-center"
+        roomId={roomId}
+        scheduleId={scheduleId}
+        segmentSourceItemId={place.itemId}
+        destinationItemId={next.itemId}
+        scheduleFingerprint={scheduleFingerprint}
+        travelMode={place.travelMode}
+        originGooglePlaceId={place.googlePlaceId}
+        originPlaceName={place.title}
+        destinationGooglePlaceId={next.googlePlaceId}
+        destinationPlaceName={next.title}
+        routeQueryEnabled={
+          routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)
+        }
+      />
+    </div>
   );
 }
 

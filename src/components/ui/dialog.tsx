@@ -2,7 +2,7 @@
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cva, type VariantProps } from "class-variance-authority";
-import { createContext, use, type ComponentProps } from "react";
+import { createContext, use, useRef, type ComponentProps } from "react";
 
 import { CloseIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
@@ -56,27 +56,37 @@ function DialogClose({ disabled, ...props }: Readonly<DialogPrimitive.Close.Prop
 }
 
 // 폭은 Figma 353을 기본으로 하고, 지금 화면마다 다른 폭은 size로 남긴다(Figma Modal은 최소·최대 폭 미정, 6058:1050).
-// 화면 좌우 20px은 Figma 393 화면의 353 Modal 여백이다. 좁은 화면에서는 모든 size가 화면 폭 − 40px로 줄어든다(원칙 3-2)
+// 화면 좌우 20px은 Figma 393 화면의 353 Modal 여백이다. 좁은 화면에서는 모든 size가 화면 폭 − 40px로 줄어든다(원칙 3-2).
+// fixedWidth는 PC 레이아웃 최소 폭(768)처럼 창이 좁아도 줄이지 않고, 표면을 Viewport 안에 두어 창 안에서 가로 스크롤한다
 const dialogContentVariants = cva(
-  "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto overscroll-contain rounded-[12px] bg-fill-elevate p-5 text-text shadow-[0_2px_10px_rgb(31_34_41/0.1)] outline-none transition-[opacity,scale] duration-150 ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none",
+  "z-50 flex flex-col gap-5 overflow-y-auto overscroll-contain rounded-[12px] bg-fill-elevate p-5 text-text shadow-[0_2px_10px_rgb(31_34_41/0.1)] outline-none transition-[opacity,scale] duration-150 ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 motion-reduce:transition-none",
   {
     variants: {
       size: {
         // Figma Modal 원본 폭(5956:24724). 날짜 선택 팝업(DatePickerLayer 최대 353)도 이 폭이다
-        default: "w-[min(353px,calc(100vw-2.5rem))]",
+        default: "[--dialog-width:353px]",
         // 옛 앱 max-w-sm: 북마크 추가·편집, 북마크에 담기, 일정에 추가, 시간 설정
-        sm: "w-[min(384px,calc(100vw-2.5rem))]",
+        sm: "[--dialog-width:384px]",
         // 옛 앱 max-w-md: SettingsDialog compact(준비물 이름), 가계부 범위 목록, 북마크에서 장소 추가. 초대하기·쿠키 설정도 이 폭이다
-        md: "w-[min(448px,calc(100vw-2.5rem))]",
+        md: "[--dialog-width:448px]",
         // 옛 앱 max-w-[640px]: SettingsDialog 기본, 비용 추가·수정. 여행 정보 수정(600)도 여기에 둔다
-        lg: "w-[min(640px,calc(100vw-2.5rem))]",
+        lg: "[--dialog-width:640px]",
         // 옛 앱 max-w-[720px]: 정산 요약
-        xl: "w-[min(720px,calc(100vw-2.5rem))]",
+        xl: "[--dialog-width:720px]",
+      },
+      fixedWidth: {
+        false:
+          "fixed top-1/2 left-1/2 max-h-[calc(100dvh-2rem)] w-[min(var(--dialog-width),calc(100vw-2.5rem))] -translate-x-1/2 -translate-y-1/2",
+        // Viewport(위아래 16·좌우 20 여백) 안에서 가운데 — 창보다 넓으면 auto 여백이 0이 되어 왼쪽부터 스크롤된다
+        true: "relative m-auto max-h-full w-(--dialog-width) shrink-0",
       },
     },
-    defaultVariants: { size: "default" },
+    defaultVariants: { size: "default", fixedWidth: false },
   },
 );
+
+const FIRST_FOCUSABLE_SELECTOR =
+  'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])';
 
 type DialogContentProps = Omit<DialogPrimitive.Popup.Props, "className"> &
   VariantProps<typeof dialogContentVariants> & {
@@ -100,11 +110,31 @@ function DialogContent({
   className,
   children,
   size,
+  fixedWidth = false,
   showCloseButton = true,
   closeLabel = "닫기",
   backdropProps,
+  initialFocus,
   ...props
 }: Readonly<DialogContentProps>) {
+  const popupRef = useRef<HTMLDivElement>(null);
+  // 창보다 넓은 표면은 첫 포커스(제목 줄 오른쪽 닫기 X)로 Viewport가 오른쪽 끝까지 밀려 제목이 가려진다.
+  // 같은 요소에 스크롤 없이 포커스해 왼쪽(제목)부터 보이게 한다
+  const fixedWidthInitialFocus = () => {
+    popupRef.current?.querySelector<HTMLElement>(FIRST_FOCUSABLE_SELECTOR)?.focus({ preventScroll: true });
+    return false;
+  };
+  const popup = (
+    <DialogPrimitive.Popup
+      ref={popupRef}
+      data-slot="dialog-content"
+      className={cn(dialogContentVariants({ size, fixedWidth }), className)}
+      initialFocus={fixedWidth && initialFocus === undefined ? fixedWidthInitialFocus : initialFocus}
+      {...props}
+    >
+      <DialogCloseLabelContext value={showCloseButton ? closeLabel : null}>{children}</DialogCloseLabelContext>
+    </DialogPrimitive.Popup>
+  );
   return (
     <DialogPrimitive.Portal data-slot="dialog-portal">
       {/* 딤은 Figma에 정의가 없어(Modal 6038:6504) 옛 앱 대화상자에서 가장 많던 bg-black/40(SettingsDialog 등 14곳)을 쓴다.
@@ -116,13 +146,13 @@ function DialogContent({
         data-slot="dialog-overlay"
         className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-150 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"
       />
-      <DialogPrimitive.Popup
-        data-slot="dialog-content"
-        className={cn(dialogContentVariants({ size }), className)}
-        {...props}
-      >
-        <DialogCloseLabelContext value={showCloseButton ? closeLabel : null}>{children}</DialogCloseLabelContext>
-      </DialogPrimitive.Popup>
+      {fixedWidth ? (
+        <DialogPrimitive.Viewport data-slot="dialog-viewport" className="fixed inset-0 z-50 flex overflow-auto px-5 py-4">
+          {popup}
+        </DialogPrimitive.Viewport>
+      ) : (
+        popup
+      )}
     </DialogPrimitive.Portal>
   );
 }

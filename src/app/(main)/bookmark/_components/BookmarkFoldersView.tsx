@@ -1,21 +1,16 @@
 "use client";
 
-import { BookmarkPlus, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
-import {
-  pageToolbarButtonCompactGapClass,
-  pageToolbarButtonCompactIconClass,
-  pageToolbarButtonCompactIconStroke,
-  pageToolbarButtonCompactPaddingClass,
-  pageToolbarButtonCompactTextClass,
-} from "@/components/layout/page-toolbar-button";
+import { SavedAddIcon } from "@/assets/icons";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +34,8 @@ import { bookmarkFolderPath } from "../routes";
 import { AddBookmarkModal } from "./AddBookmarkModal";
 import { BookmarkListSkeleton } from "./BookmarkListSkeleton";
 import { FolderRibbonIcon } from "./FolderRibbonIcon";
+
+const BOOKMARK_PAGE_DESCRIPTION = "마음에 드는 장소를 저장하세요.";
 
 export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
@@ -180,33 +177,29 @@ export function BookmarkFoldersView() {
     isRowDeleting(folderId) || isRowUpdating(folderId);
 
   const createAction = (
-    <button
-      type="button"
-      onClick={openCreate}
+    <Button
+      tone="brand"
+      size="sm"
       disabled={isPending || isCreating || isUpdating}
-      className={cn(
-        "flex w-fit shrink-0 cursor-pointer items-center rounded-full bg-primary text-white shadow-sm transition-opacity hover:opacity-95 active:opacity-90 disabled:cursor-not-allowed disabled:opacity-60",
-        pageToolbarButtonCompactGapClass,
-        pageToolbarButtonCompactTextClass,
-        pageToolbarButtonCompactPaddingClass,
-      )}
+      onClick={openCreate}
     >
-      <BookmarkPlus
-        className={pageToolbarButtonCompactIconClass}
-        strokeWidth={pageToolbarButtonCompactIconStroke}
-      />
-      새 북마크 생성
-    </button>
+      <SavedAddIcon data-icon="inline-start" />
+      새 북마크
+    </Button>
   );
 
   if (!roomId) {
-    return <MainPageHeader title="북마크" />;
+    return <MainPageHeader title="북마크" description={BOOKMARK_PAGE_DESCRIPTION} />;
   }
 
   if (isPending) {
     return (
-      <div className="space-y-2.5">
-        <MainPageHeader title="북마크" action={createAction} />
+      <div className="flex flex-col">
+        <MainPageHeader
+          title="북마크"
+          description={BOOKMARK_PAGE_DESCRIPTION}
+          action={createAction}
+        />
         <BookmarkListSkeleton />
       </div>
     );
@@ -215,8 +208,8 @@ export function BookmarkFoldersView() {
   // 재조회 실패는 보이던 폴더를 지우지 않는다 — 처음 불러오기에 실패했을 때만 오류 화면
   if (isLoadingError) {
     return (
-      <div className="space-y-2.5">
-        <MainPageHeader title="북마크" />
+      <div className="flex flex-col">
+        <MainPageHeader title="북마크" description={BOOKMARK_PAGE_DESCRIPTION} />
         <div className="space-y-3 py-10 text-center">
           <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
             {error instanceof Error
@@ -236,8 +229,12 @@ export function BookmarkFoldersView() {
   }
 
   return (
-    <div className="space-y-2.5 pb-8">
-      <MainPageHeader title="북마크" action={createAction} />
+    <div className="flex flex-col pb-8">
+      <MainPageHeader
+        title="북마크"
+        description={BOOKMARK_PAGE_DESCRIPTION}
+        action={createAction}
+      />
 
       <div className="rounded-2xl border border-gray-border bg-white">
         {folders.length === 0 ? (

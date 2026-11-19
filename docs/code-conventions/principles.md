@@ -26,7 +26,7 @@
 
 - 변형은 `variant`·`size` 같은 유니온 prop으로 받고, 값은 Figma 컴포넌트 속성 값에 맞춘다. 변형별 클래스는 cva로 정의한다(3-6).
 - 화면은 부품의 색·글자를 덮지 않는다. 바깥에서 주는 `className`은 배치(폭·정렬·위치)에만 쓴다.
-- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
+- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical, 배경 없는 `variant="text"`(Neutral Text) × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
 - shadcn 코드를 받으면 디자인 시스템에 맞춘다.
   - 색·그림자·포커스 클래스(`secondary`·`*-foreground`·`muted`·`accent`·`input`·`ring`·`shadow-*`)는 시맨틱 토큰으로 바꾼다. 이름이 같아도 뜻이 다르고(`secondary`는 라임), 없는 이름은 CSS가 생기지 않는다.
   - `shadcn init`은 하지 않고 `add`로만 받는다. init이 `globals.css`에 넣는 색 변수(`:root`·`@theme inline`)는 기존 `primary`·`border`·`background` 토큰을 앱 전체에서 덮는다.
@@ -538,8 +538,8 @@ function SectionTitle({ title }: { title: string }) {
 | 무엇이 다른가 | 쓸 것 |
 | :-- | :-- |
 | 기기(터치·바텀시트·하단 탭바) | `mobile:` variant. 구조가 다르면 `useMobileView()`로 컴포넌트를 고른다 |
-| 뷰포트 폭(랜딩·홈 목록 열 수) | 테마 브레이크포인트(`sm:`·`lg:`·`landing-sm:`) |
-| 놓인 영역의 폭(크기가 바뀌는 패널) | 이름 있는 컨테이너 쿼리(`@container/plan`) |
+| 뷰포트 폭(랜딩·홈 목록 열 수) | 테마 브레이크포인트(`sm:`·`lg:`·`landing-sm:`). PC 작업 공간(일정·지출·준비물 등)은 쓰지 않는다. 최소 768까지 줄고 그보다 좁으면 가로 스크롤 |
+| 놓인 영역의 폭(크기가 바뀌는 패널) | 이름 있는 컨테이너 쿼리(`@container/header`) |
 
 - `mobile:`은 UA로 판별해 `html`에 붙인 클래스를 본다. 창을 줄여도 나오지 않으므로 기기 에뮬레이션이나 실기기로 확인한다.
 - 같은 속성을 두 축으로 중복하지 않는다. 새 브레이크포인트를 더하지 않는다.

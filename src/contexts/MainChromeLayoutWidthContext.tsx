@@ -27,7 +27,7 @@ export function MainChromeLayoutWidthProvider({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const { maxWidth: contentWidthToken, sideDetailWidthPx } = useSectionWidth();
+  const { maxWidth: contentWidthToken } = useSectionWidth();
   const { isMobileDevice } = useMobileView();
 
   const targetMaxWidthPx = useMemo(
@@ -48,10 +48,10 @@ export function MainChromeLayoutWidthProvider({
       }),
       leftSectionAnimateMinWidth: isMobileDevice
         ? 0
-        : resolveDesktopLeftSectionMinWidthPx(pathname, sideDetailWidthPx),
+        : resolveDesktopLeftSectionMinWidthPx(pathname),
       layoutTransition: MAIN_LAYOUT_WIDTH_TRANSITION,
     }),
-    [targetMaxWidthPx, isMobileDevice, pathname, sideDetailWidthPx],
+    [targetMaxWidthPx, isMobileDevice, pathname],
   );
 
   return (

@@ -28,7 +28,7 @@ export type PlanDayData = {
   dayLabel: string;
   /** `10월 12일 (월)` — 가계부 패널 부제목 등 */
   dateLabel: string;
-  /** `10.12(월)` — 일차 헤더 */
+  /** `10. 12 월` — 일차 헤더(모바일 일차 헤더와 같은 형식) */
   shortDateLabel: string;
   places: PlanPlace[];
 };

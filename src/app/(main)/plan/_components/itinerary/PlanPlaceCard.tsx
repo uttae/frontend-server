@@ -5,11 +5,9 @@ import { ExpenseEntryButton } from "@/components/expenses/ExpenseProvider";
 import type { DragEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
 
-import { CoinIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
+import { CoinIcon, LocationIcon, MemoAddIcon, TimeClockIcon } from "@/assets/icons";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
-import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
@@ -41,7 +39,7 @@ import { PlanItemTimeEditor } from "./PlanItemTimeForm";
 import {
   isPlanPlaceCardInteractiveTarget,
   PlanOrderIndexBadge,
-  PlanScheduleItemDeleteButton,
+  PlanPlaceCardMenu,
 } from "./PlanPlaceCardParts";
 
 export type PlanPlaceCardProps = {
@@ -248,13 +246,6 @@ export function PlanPlaceCard({
   );
   const hasTime = Boolean(timeRange);
 
-  const deleteButton = canManageServerItem ? (
-    <PlanScheduleItemDeleteButton
-      disabled={isDeletingItem}
-      onDelete={() => setConfirmTarget("item")}
-    />
-  ) : null;
-
   const memoTrigger = canEditScheduleItem ? (
     <button
       type="button"
@@ -266,12 +257,14 @@ export function PlanPlaceCard({
       }}
       aria-expanded={memoOpen}
       aria-label={hasMemo ? "메모 수정" : "메모 추가"}
+      data-filled={hasMemo ? "" : undefined}
       className={cn(
+        "group",
         PLAN_PLACE_CARD_TW.actionButton,
         PLAN_PLACE_CARD_TW.actionButtonTrailing,
       )}
     >
-      <MemoAddIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
+      <MemoAddIcon size={16} className={PLAN_PLACE_CARD_TW.memoActionIcon} />
       <span>메모</span>
     </button>
   ) : null;
@@ -287,9 +280,10 @@ export function PlanPlaceCard({
       }}
       aria-expanded={timeOpen}
       aria-label={hasTime ? `시간 ${timeRange} 수정` : "시간 설정"}
-      className={cn(PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
+      data-filled={hasTime ? "" : undefined}
+      className={cn("group", PLAN_PLACE_CARD_TW.actionButton, "tabular-nums")}
     >
-      <TimeClockIcon size={16} className={hasTime ? PLAN_PLACE_CARD_TW.actionIcon : PLAN_PLACE_CARD_TW.actionIconEmpty} />
+      <TimeClockIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />
       <span>{timeRange || "시간"}</span>
     </button>
   ) : null;
@@ -307,132 +301,133 @@ export function PlanPlaceCard({
         className={cn(
           "w-full select-none transition-colors",
           PLAN_PLACE_CARD_TW.article,
-          focused && "border-primary",
+          focused && "ring-1 ring-primary",
           dragDisabled
             ? "cursor-default"
             : "cursor-grab active:cursor-grabbing",
         )}
         aria-grabbed={isDragging}
       >
-        <PlanOrderIndexBadge
-          orderIndex={displayOrderIndex}
-          backgroundColorHex={orderBadgeColor}
-        />
+        <div className={PLAN_PLACE_CARD_TW.contents}>
+          <div className={PLAN_PLACE_CARD_TW.placeInfo}>
+            {(() => {
+              const media = photoLoading ? (
+                <Spinner
+                  className="absolute inset-0 m-auto h-5 w-5"
+                  aria-hidden
+                />
+              ) : visiblePhotoUrl ? (
+                <Image
+                  src={visiblePhotoUrl}
+                  alt={place.title}
+                  fill
+                  className="object-cover"
+                  sizes="100px"
+                  draggable={false}
+                  onError={(event) =>
+                    handlePlacePhotoImageError({
+                      source: "plan-place-card",
+                      googlePlaceId: place.googlePlaceId,
+                      placeName: place.title,
+                      image: event.currentTarget,
+                      onPhotoUnavailable: markPhotoUnavailable,
+                    })
+                  }
+                />
+              ) : null;
+              const orderBadge = (
+                <PlanOrderIndexBadge
+                  orderIndex={displayOrderIndex}
+                  backgroundColorHex={orderBadgeColor}
+                />
+              );
 
-        {(() => {
-          const media = photoLoading ? (
-            <Spinner
-              className="absolute inset-0 m-auto h-5 w-5"
-              aria-hidden
-            />
-          ) : visiblePhotoUrl ? (
-            <Image
-              src={visiblePhotoUrl}
-              alt={place.title}
-              fill
-              className="object-cover"
-              sizes="96px"
-              draggable={false}
-              onError={(event) =>
-                handlePlacePhotoImageError({
-                  source: "plan-place-card",
-                  googlePlaceId: place.googlePlaceId,
-                  placeName: place.title,
-                  image: event.currentTarget,
-                  onPhotoUnavailable: markPhotoUnavailable,
-                })
+              if (!hasGooglePlace) {
+                return (
+                  <div ref={thumbnailRef} className={PLAN_PLACE_CARD_TW.thumbnail}>
+                    {media}
+                    {orderBadge}
+                  </div>
+                );
               }
-            />
-          ) : null;
 
-          if (!hasGooglePlace) {
-            return (
-              <div ref={thumbnailRef} className={PLAN_PLACE_CARD_TW.thumbnail}>
-                {media}
+              return (
+                <div
+                  ref={thumbnailRef}
+                  className={cn(
+                    PLAN_PLACE_CARD_TW.thumbnail,
+                    "block cursor-pointer transition hover:brightness-105",
+                  )}
+                >
+                  {media}
+                  {orderBadge}
+                  <span className={PLAN_PLACE_CARD_TW.thumbnailMapMark} aria-hidden>
+                    {/* Figma Location 인스턴스만 선 굵기가 1.2(아이콘 기본 1.8) */}
+                    <LocationIcon size={14} className="[&_path]:[stroke-width:1.2]" />
+                  </span>
+                </div>
+              );
+            })()}
+
+            <div className={PLAN_PLACE_CARD_TW.contentColumn}>
+              <div className="flex min-w-0 flex-col gap-1">
+                <h3 className={PLAN_PLACE_CARD_TW.title} title={place.title}>
+                  {place.title}
+                </h3>
+                {place.primaryTypeDisplayName ? (
+                  <span className={PLAN_PLACE_CARD_TW.tag}>
+                    <span className="truncate">{place.primaryTypeDisplayName}</span>
+                  </span>
+                ) : null}
               </div>
-            );
-          }
 
-          return (
-            <div
-              ref={thumbnailRef}
-              className={cn(
-                PLAN_PLACE_CARD_TW.thumbnail,
-                "block cursor-pointer transition hover:brightness-105",
-              )}
-            >
-              {media}
-              <span
-                className="pointer-events-none absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-md bg-black/60 text-white shadow-sm ring-1 ring-white/25"
-                aria-hidden
-              >
-                <MapPin className="h-3 w-3" strokeWidth={2.4} />
-              </span>
-            </div>
-          );
-        })()}
+              {place.subtitle ? (
+                <p className={PLAN_PLACE_CARD_TW.address} title={place.subtitle}>
+                  <span className="flex h-5 shrink-0 items-center text-icon-subtle">
+                    <LocationIcon size={16} />
+                  </span>
+                  <span className="line-clamp-2 min-w-0 break-words">{place.subtitle}</span>
+                </p>
+              ) : null}
 
-        <div className={PLAN_PLACE_CARD_TW.contentColumn}>
-          <div className={PLAN_PLACE_CARD_TW.titleRow}>
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
-              <h3 className={PLAN_PLACE_CARD_TW.title} title={place.title}>
-                {place.title}
-              </h3>
-              {place.primaryTypeDisplayName ? (
-                <Badge size="md">
-                  <span className="truncate">{place.primaryTypeDisplayName}</span>
-                </Badge>
+              {timeRange && !canEditScheduleItem ? (
+                <span
+                  className={cn(
+                    "inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
+                    PLAN_PLACE_CARD_TW.titleCompact,
+                    "text-body-s-regular mobile:text-body-xs-regular tabular-nums text-primary-strong",
+                  )}
+                >
+                  {timeRange}
+                </span>
               ) : null}
             </div>
-            {deleteButton ? (
-              // 휴지통은 썸네일 윗선에 맞추고 오른쪽 테두리에서 17px에 둔다
-              <span className="-mr-1 -mt-1.5 flex shrink-0 self-start">{deleteButton}</span>
-            ) : null}
           </div>
-
-          {place.subtitle ? (
-            <p
-              className={cn(PLAN_PLACE_CARD_TW.subtitle, "mobile:hidden")}
-              title={place.subtitle}
-            >
-              {place.subtitle}
-            </p>
-          ) : null}
-
-          {timeRange && !canEditScheduleItem ? (
-            <span
-              className={cn(
-                "mt-auto inline-flex w-fit items-center rounded-md bg-primary/10 px-2 py-0.5",
-                PLAN_PLACE_CARD_TW.titleCompact,
-                "text-body-s-regular mobile:text-body-xs-regular tabular-nums text-primary-strong",
-              )}
-            >
-              {timeRange}
-            </span>
+          {canManageServerItem ? (
+            <PlanPlaceCardMenu
+              placeTitle={place.title}
+              deleteDisabled={isDeletingItem}
+              onDelete={() => setConfirmTarget("item")}
+            />
           ) : null}
         </div>
 
         {canEditScheduleItem ? (
-          // 디자인: 구분선 위아래 8px, 버튼 아래 카드 테두리까지 5px
-          <div className="col-span-2 -mb-[9px] mt-2 border-t border-gray-100 pt-2">
-            <div className={PLAN_PLACE_CARD_TW.actionBar}>
-              <div className="flex min-w-0 items-center">
-                {timeTrigger}
-                {scheduleTimeEdit && scheduleItemId !== null && (
-                  <ExpenseEntryButton
-                    scheduleId={scheduleTimeEdit.scheduleId}
-                    scheduleItemId={scheduleItemId}
-                    scopeLabel={place.title}
-                    label="비용"
-                    // 금액이 길면 메모 버튼 앞에서 말줄임되도록 공통 버튼의 shrink-0를 푼다
-                    className={cn(PLAN_PLACE_CARD_TW.actionButton, "min-w-0 shrink")}
-                    // 금액이 있을 때만 파랑 — 버튼의 `data-filled`로 바꾼다
-                    icon={<CoinIcon size={16} className={cn(PLAN_PLACE_CARD_TW.actionIconEmpty, "group-data-filled:text-primary")} />}
-                  />
-                )}
-              </div>
-              {memoTrigger}
+          <div className={PLAN_PLACE_CARD_TW.actionBar}>
+            <div className="flex min-w-0 flex-wrap items-center">
+              {timeTrigger}
+              {scheduleTimeEdit && scheduleItemId !== null && (
+                <ExpenseEntryButton
+                  scheduleId={scheduleTimeEdit.scheduleId}
+                  scheduleItemId={scheduleItemId}
+                  scopeLabel={place.title}
+                  label="비용"
+                  className={PLAN_PLACE_CARD_TW.actionButton}
+                  icon={<CoinIcon size={16} className={PLAN_PLACE_CARD_TW.actionIcon} />}
+                />
+              )}
             </div>
+            {memoTrigger}
           </div>
         ) : null}
       </article>

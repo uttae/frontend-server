@@ -47,11 +47,8 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
   );
   const routeColorByScheduleId = useMemo(
     () =>
-      scheduleIdsToRouteColors(
-        sortedScheduleIdsForRouteColors(visibleByScheduleId),
-        roomId.trim() || undefined,
-      ),
-    [visibleByScheduleId, roomId],
+      scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)),
+    [visibleByScheduleId],
   );
   const orderBadgeColor =
     routeColorByScheduleId.get(scheduleId) ?? "#f12d33";
@@ -269,7 +266,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
         })}
       </div>
 
-      <div className="mt-4 flex flex-col gap-2 border-t border-dashed border-gray-border pt-4">
+      <div className="mt-4 flex flex-col gap-2">
         <PlanAddPlaceControls
           coords={mapCenter}
           disabled={addControlsDisabled}

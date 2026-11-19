@@ -82,6 +82,8 @@ function ResponsiveDialog(props: Readonly<ResponsiveDialogProps>) {
 type ResponsiveDialogContentProps = {
   /** PC Dialog 폭(default 353 · sm 384 · md 448 · lg 640 · xl 720). 시트는 화면 폭이라 쓰지 않는다 */
   size?: ComponentProps<typeof DialogContent>["size"];
+  /** PC Dialog를 창이 좁아도 size 폭 그대로 두고 창 안에서 가로 스크롤한다(레이아웃 최소 폭 768을 따르는 화면). 시트는 쓰지 않는다 */
+  fixedWidth?: boolean;
   /** 시트 높이(auto 내용 높이 · belowNav · belowSafeArea). PC는 쓰지 않는다 */
   drawerSize?: ComponentProps<typeof DrawerContent>["size"];
   /** 닫기 X의 접근성 이름(예: "예산 설정 닫기") */
@@ -95,12 +97,12 @@ type ResponsiveDialogContentProps = {
   children?: ReactNode;
 };
 
-function ResponsiveDialogContent({ size, drawerSize, showCloseButton, ...props }: Readonly<ResponsiveDialogContentProps>) {
+function ResponsiveDialogContent({ size, fixedWidth, drawerSize, showCloseButton, ...props }: Readonly<ResponsiveDialogContentProps>) {
   const isDrawer = useResponsiveDialogIsDrawer();
   return isDrawer ? (
     <DrawerContent size={drawerSize} {...props} />
   ) : (
-    <DialogContent size={size} showCloseButton={showCloseButton} {...props} />
+    <DialogContent size={size} fixedWidth={fixedWidth} showCloseButton={showCloseButton} {...props} />
   );
 }
 

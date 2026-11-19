@@ -3,7 +3,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
-// Figma에 Switch가 없어 지금 화면의 두 스위치 모양을 옮긴다. md는 쿠키 설정(AnalyticsConsentSettings), sm은 일정의 '지도에 경로 표시'(PlanDaySection)다.
+// sm은 일정의 '경로 보기'(PlanDaySection)로 Figma Toggle Switch(워크스페이스 GUI 6663:5220)를 따른다.
+// md는 쿠키 설정(AnalyticsConsentSettings)뿐이고 Figma에 없어 지금 화면 모양을 옮긴다.
 // md는 루트가 지금 버튼과 같은 56×44 누르는 영역이고 그 안에 트랙이 있다. sm은 루트가 트랙 크기이고 누르는 영역은 감싸는 label 행이 맡는다
 const switchVariants = cva(
   "group/switch inline-flex shrink-0 cursor-pointer items-center focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed",
@@ -19,30 +20,30 @@ const switchVariants = cva(
   },
 );
 
-// 꺼짐 색은 지금 쓰는 Tailwind 기본 팔레트·레거시 별칭(사용 금지)을 가까운 우때 값으로 바꾼 것이다.
-// md: neutral-400(#a1a1a1) → RGB 거리가 가장 가깝고 흰 배경 대비 3:1을 넘는 gray/600. 같은 값의 icon-subtle은 아이콘 색이라 원시 변수를 쓴다.
-// sm: 레거시 gray-300(#e2e8f0) → fill-strong
+// md 꺼짐 색: 지금 쓰던 Tailwind neutral-400(#a1a1a1)에 RGB 거리가 가장 가깝고 흰 배경 대비 3:1을 넘는 gray/600. 같은 값의 icon-subtle은 아이콘 색이라 원시 변수를 쓴다.
+// sm 색: Figma 토글은 디자인 시스템이 아닌 라이브러리의 Sementic 변수(icon/secondary #0099ff·icon/disabled·icon/inverse)를 쓴다.
+// 디자인 시스템 Semantic에는 icon/secondary가 없고 secondary는 라임이라, 같은 역할의 primary·icon-disabled·icon-inverse로 옮긴다
 const switchTrackVariants = cva(
   "flex items-center rounded-full transition-colors group-aria-checked/switch:bg-primary motion-reduce:transition-none",
   {
     variants: {
       size: {
         md: "h-7 w-12 bg-[var(--gray-600)] p-1",
-        sm: "h-5 w-9 bg-fill-strong p-0.5",
+        sm: "h-5 w-10 bg-icon-disabled p-0.5",
       },
     },
     defaultVariants: { size: "md" },
   },
 );
 
-// 그림자는 Figma 명세가 없어 지금 쓰는 Tailwind shadow-sm 값을 그대로 옮긴다
 const switchThumbVariants = cva(
-  "rounded-full bg-fill-elevate shadow-[0_1px_3px_0_rgb(0_0_0/0.1),0_1px_2px_-1px_rgb(0_0_0/0.1)] transition-transform motion-reduce:transition-none",
+  "rounded-full transition-transform motion-reduce:transition-none",
   {
     variants: {
       size: {
-        md: "size-5 data-checked:translate-x-5",
-        sm: "size-4 data-checked:translate-x-4",
+        // 그림자는 Figma 명세가 없어 지금 쓰는 Tailwind shadow-sm 값을 그대로 옮긴다
+        md: "size-5 bg-fill-elevate shadow-[0_1px_3px_0_rgb(0_0_0/0.1),0_1px_2px_-1px_rgb(0_0_0/0.1)] data-checked:translate-x-5",
+        sm: "size-4 bg-icon-inverse data-checked:translate-x-5",
       },
     },
     defaultVariants: { size: "md" },

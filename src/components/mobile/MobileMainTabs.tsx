@@ -35,12 +35,12 @@ export function MobileMainTabs() {
     { label: "채팅", href: CHAT_PATH, icon: tabIcons.chat, active: isChatPathname(pathname) },
   ];
   return (
-    <nav aria-label="모바일 주요 메뉴" data-mobile-main-tabs className="shrink-0 bg-fill-subtle pb-[env(safe-area-inset-bottom)] shadow-[0_1px_4px_rgba(0,0,0,0.08)]">
+    <nav aria-label="모바일 주요 메뉴" data-mobile-main-tabs className="shrink-0 border-t border-border-subtle bg-fill-subtle pb-[env(safe-area-inset-bottom)]">
       <div className="grid grid-cols-4 px-3">
         {tabs.map(({ label, href, icon, active }) => (
           <Link key={label} href={href} aria-label={label} aria-current={active ? "page" : undefined}
-            className={cn("relative flex h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 pt-1 text-[11px] font-semibold leading-4 tracking-[-0.02em] focus-visible:outline-2 focus-visible:outline-primary", active ? "text-primary-strong" : "text-text-subtle")}>
-            <span aria-hidden className={cn("block size-6 shrink-0", active ? "bg-primary-strong" : "bg-icon-subtle")} style={{ mask: `url('${icon}') center / contain no-repeat` }} />
+            className={cn("relative flex h-[52px] min-w-0 flex-col items-center justify-center gap-0.5 pt-1 text-caption-s-emphasis focus-visible:outline-2 focus-visible:outline-primary", active ? "text-primary-strong" : "text-text-subtle")}>
+            <span aria-hidden className={cn("block size-6 shrink-0", active ? "bg-primary" : "bg-icon-subtle")} style={{ mask: `url('${icon}') center / contain no-repeat` }} />
             <span>{label}</span>
             {label === "채팅" ? <SidebarChatUnreadBadge /> : null}
           </Link>

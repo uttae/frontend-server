@@ -1,6 +1,14 @@
-import { TrashIcon } from "@/assets/icons";
+import { MenuDotHorizontalIcon, TrashIcon } from "@/assets/icons";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
+
+import { menuPointerBoundary } from "./PlanDaySection";
 
 /** 카드 D&D·지도 선택과 겹치지 않게 할 인터랙티브 영역 */
 export const PLAN_PLACE_CARD_INTERACTIVE_SELECTOR =
@@ -35,7 +43,7 @@ export function PlanOrderIndexBadge({
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-md font-bold text-white",
+        "flex shrink-0 items-center justify-center",
         PLAN_PLACE_CARD_TW.orderBadgeCompact,
         !customBg && "bg-primary",
         className,
@@ -48,29 +56,31 @@ export function PlanOrderIndexBadge({
   );
 }
 
-export function PlanScheduleItemDeleteButton({
-  disabled,
+export function PlanPlaceCardMenu({
+  placeTitle,
+  deleteDisabled,
   onDelete,
 }: {
-  disabled: boolean;
+  placeTitle: string;
+  deleteDisabled: boolean;
   onDelete: () => void;
 }) {
   return (
-    <button
-      type="button"
-      className={cn(
-        "shrink-0 cursor-pointer rounded-lg text-dark-gray transition hover:bg-primary/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-40",
-        PLAN_PLACE_CARD_TW.deleteButtonCompact,
-      )}
-      aria-label="일정에서 삭제"
-      disabled={disabled}
-      onMouseDown={(e) => e.stopPropagation()}
-      onClick={(e) => {
-        e.stopPropagation();
-        onDelete();
-      }}
-    >
-      <TrashIcon size={PLAN_PLACE_CARD_TW.deleteIconSize} />
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        {...menuPointerBoundary}
+        aria-label={`${placeTitle} 메뉴`}
+        // 누르는 영역만 28px로 넓히고 줄 안에서는 Figma 아이콘 폭 20px만 차지한다
+        className="-m-1 shrink-0 cursor-pointer rounded-md p-1 text-icon transition-colors hover:bg-fill aria-expanded:bg-fill"
+      >
+        <MenuDotHorizontalIcon size={20} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" {...menuPointerBoundary}>
+        <DropdownMenuItem variant="destructive" disabled={deleteDisabled} onClick={onDelete}>
+          <TrashIcon />
+          삭제
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

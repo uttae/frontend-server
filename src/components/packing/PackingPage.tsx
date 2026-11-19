@@ -15,8 +15,6 @@ import { Field, FieldCount, FieldError, FieldFooter, FieldLabel } from "@/compon
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { SetSectionSideDetailWidth } from "@/contexts/SectionWidthContext";
-import { PACKING_DETAIL_WIDTH_PX } from "@/lib/layout-tokens";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 import { packingMemoSchema, packingNameSchema } from "@/lib/packing/form";
 import type { PackingItem, PackingPart } from "@/lib/packing/types";
@@ -341,8 +339,6 @@ function PackingContent({context}: {context:Context}) {
     onRename:()=>{if(selected)openEditor({kind:"renameItem",id:selected.id,name:selected.name});},
     onDelete:()=>{if(selected)prepareDelete("item",selected.id);}};
   return <div className={styles.page} aria-busy={loading}>
-    {/* 상세가 열리면 목록 400을 지킨 채 상세 폭만큼 데스크톱 최소 폭을 넓힌다 */}
-    <SetSectionSideDetailWidth px={detailOpen && selected!==null ? PACKING_DETAIL_WIDTH_PX : 0}/>
     <div className={styles.boardPane}>
       <div className={styles.content}>
         <header className={styles.pageHeader}>
@@ -352,9 +348,8 @@ function PackingContent({context}: {context:Context}) {
           </button>}
           {loading && <span aria-hidden="true" className={`${styles.addCategory} ${styles.loadingAction}`}/>}
           <div className={styles.summary}>
-            <p>해외여행 공통 준비물</p>
             {state.data && <p className={styles.progress} aria-label="전체 준비 현황">
-              <strong>{items.filter(item=>item.checked).length} / {items.length}</strong><span>개 준비 완료</span>
+              <strong>{items.filter(item=>item.checked).length}/{items.length}</strong><span>개 준비 완료</span>
             </p>}
             {loading && <span aria-hidden="true" className={styles.loadingProgress}/>}
           </div>

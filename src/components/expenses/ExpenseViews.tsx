@@ -130,21 +130,21 @@ export function ExpenseRolePicker({
   return (
     <fieldset
       aria-labelledby={titleId}
-      className="min-w-0 space-y-3 rounded-2xl bg-fill p-4 mobile:space-y-2 mobile:p-3 max-sm:space-y-2 max-sm:p-3"
+      className="min-w-0 space-y-3 rounded-2xl bg-fill p-4 mobile:space-y-2 mobile:p-3"
     >
       <div
         id={titleId}
         className="flex min-w-0 flex-wrap items-baseline justify-between gap-x-2 gap-y-1"
       >
-        <span className="text-[16px] leading-5 font-bold mobile:text-[14px] max-sm:text-[14px]">{title}</span>
-        <span className="text-[12px] leading-5 font-normal text-text-subtle mobile:text-[10px] max-sm:text-[10px]">
+        <span className="text-[16px] leading-5 font-bold mobile:text-[14px]">{title}</span>
+        <span className="text-[12px] leading-5 font-normal text-text-subtle mobile:text-[10px]">
           선택 {selected.length}명
         </span>
       </div>
       {options.map((option) => (
         <label
           key={option.userId}
-          className="flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-3 text-[16px] leading-5 font-medium mobile:min-h-11 mobile:px-2 mobile:text-[12px] max-sm:min-h-11 max-sm:px-2 max-sm:text-[12px] transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30 mobile:has-[:checked]:ring-0 max-sm:has-[:checked]:ring-0"
+          className="flex min-h-12 min-w-0 cursor-pointer items-center gap-2 rounded-lg bg-white px-3 text-[16px] leading-5 font-medium mobile:min-h-11 mobile:px-2 mobile:text-[12px] transition-colors has-[:enabled]:hover:bg-primary/10 has-[:disabled]:cursor-not-allowed has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40 has-[:checked]:bg-white has-[:checked]:ring-1 has-[:checked]:ring-primary/30 mobile:has-[:checked]:ring-0"
         >
           <Checkbox
             size="sm"
@@ -466,30 +466,30 @@ function AllSettlement({ summary, members, memberStatus, krwSummary, showDetails
       if (field !== "paidAmount" && net.label !== (field === "receive" ? "받을 금액" : "보낼 금액")) return [];
       return [{ currency: currency.currency, amount: field === "paidAmount" ? person.paidAmount : net.amount }];
     });
-    return rows.length ? rows.map((row) => <span key={row.currency} className="block break-words tabular-nums sm:[&+span]:mt-1 mobile:[&+span]:mt-0">{row.currency} {formatExpenseAmount(row.amount)}</span>) : <span className="text-text-subtle">—</span>;
+    return rows.length ? rows.map((row) => <span key={row.currency} className="block break-words tabular-nums [&+span]:mt-1 mobile:[&+span]:mt-0">{row.currency} {formatExpenseAmount(row.amount)}</span>) : <span className="text-text-subtle">—</span>;
   }
   return (
-    <div className="space-y-6 mobile:space-y-4 max-sm:space-y-4">
-      <div className={`space-y-1 ${showDetails ? "" : "mobile:hidden max-sm:hidden"}`}>
-        <p className="text-[16px] leading-6 font-medium mobile:text-[12px] mobile:text-text-subtle max-sm:text-[12px] max-sm:text-text-subtle">전체 여행 · {ids.length}명</p>
-        <p className="text-[14px] leading-5 text-text-subtle mobile:hidden max-sm:hidden">결제 통화와 원화 환산 금액을 함께 확인해요.</p>
+    <div className="space-y-6 mobile:space-y-4">
+      <div className={`space-y-1 ${showDetails ? "" : "mobile:hidden"}`}>
+        <p className="text-[16px] leading-6 font-medium mobile:text-[12px] mobile:text-text-subtle">전체 여행 · {ids.length}명</p>
+        <p className="text-[14px] leading-5 text-text-subtle mobile:hidden">결제 통화와 원화 환산 금액을 함께 확인해요.</p>
       </div>
-      <div className="space-y-4 sm:space-y-0 sm:rounded-xl sm:border sm:border-border-subtle sm:bg-fill-subtle sm:px-4 sm:pt-3 mobile:space-y-4 mobile:pt-0 mobile:border-0 mobile:bg-white mobile:px-0">
-        <div className="hidden min-h-9 grid-cols-[72fr_142fr_126fr_122fr_120fr] items-center gap-[10px] text-[12px] leading-[18px] text-text-subtle sm:grid mobile:hidden">
+      <div className="rounded-xl border border-border-subtle bg-fill-subtle px-4 pt-3 mobile:space-y-4 mobile:pt-0 mobile:border-0 mobile:bg-white mobile:px-0">
+        <div className="grid min-h-9 grid-cols-[72fr_142fr_126fr_122fr_120fr] items-center gap-[10px] text-[12px] leading-[18px] text-text-subtle mobile:hidden">
           <span>멤버</span><span className="text-right">결제한 금액</span><span className="text-right">원화 환산 합계</span><span className="text-right">받을 금액</span><span className="text-right">보낼 금액</span>
         </div>
         {ids.map((id) => (
-          <div key={id} data-settlement-user-id={id} className="grid min-w-0 grid-cols-2 items-center gap-x-3 gap-y-2 rounded-xl border border-border-subtle bg-fill-subtle px-4 py-3 text-[14px] leading-5 sm:min-h-[88px] sm:grid-cols-[72fr_142fr_126fr_122fr_120fr] sm:gap-x-[10px] sm:gap-y-2 sm:rounded-none sm:border-0 sm:border-t sm:px-0 sm:text-[14px] sm:leading-[22px] mobile:min-h-0 mobile:grid-cols-2 mobile:gap-x-3 mobile:gap-y-2 mobile:rounded-xl mobile:border mobile:px-4 mobile:py-3 mobile:text-[14px] mobile:leading-5">
+          <div key={id} data-settlement-user-id={id} className="grid min-h-[88px] min-w-0 grid-cols-[72fr_142fr_126fr_122fr_120fr] items-center gap-x-[10px] gap-y-2 border-t border-border-subtle bg-fill-subtle py-3 text-[14px] leading-[22px] mobile:min-h-0 mobile:grid-cols-2 mobile:gap-x-3 mobile:gap-y-2 mobile:rounded-xl mobile:border mobile:px-4 mobile:py-3 mobile:text-[14px] mobile:leading-5">
             <div className="col-start-1 row-start-1"><ExpensePerson userId={id} members={members} memberStatus={memberStatus} /></div>
-            <div className="col-span-2 col-start-1 row-start-2 text-[12px] text-text-subtle sm:col-span-1 sm:col-start-2 sm:row-start-1 sm:text-right sm:text-[14px] sm:text-text mobile:col-span-2 mobile:col-start-1 mobile:row-start-2 mobile:text-left mobile:text-[12px] mobile:text-text-subtle">
-              <span className="mr-1 sm:hidden mobile:inline">결제</span><span className="inline [&>span]:inline [&>span+span]:before:content-['·_'] sm:block sm:[&>span]:block sm:[&>span+span]:before:content-none mobile:inline mobile:[&>span]:inline mobile:[&>span+span]:before:content-['·_']">{amounts(id, "paidAmount")}</span>
+            <div className="col-span-1 col-start-2 row-start-1 text-right text-[14px] text-text mobile:col-span-2 mobile:col-start-1 mobile:row-start-2 mobile:text-left mobile:text-[12px] mobile:text-text-subtle">
+              <span className="mr-1 hidden mobile:inline">결제</span><span className="block [&>span]:block [&>span+span]:before:content-none mobile:inline mobile:[&>span]:inline mobile:[&>span+span]:before:content-['·_']">{amounts(id, "paidAmount")}</span>
             </div>
-            <div aria-label="원화 환산 합계" className="col-start-2 row-start-1 text-right text-[16px] leading-6 font-bold sm:col-start-3 sm:text-[14px] sm:font-medium mobile:text-[16px] mobile:font-bold mobile:col-start-2">
-              <span className="block text-[12px] leading-5 font-normal text-text-subtle sm:hidden mobile:block">원화 환산 합계</span>
+            <div aria-label="원화 환산 합계" className="col-start-3 row-start-1 text-right text-[14px] leading-6 font-medium mobile:text-[16px] mobile:font-bold mobile:col-start-2">
+              <span className="hidden text-[12px] leading-5 font-normal text-text-subtle mobile:block">원화 환산 합계</span>
               <ExpenseKrwAmount total={krwSummary?.payers?.find((payer) => payer.userId === id)?.total} />
             </div>
-            <div className="font-medium text-primary sm:text-right mobile:text-left"><span className="mb-1 block text-[12px] leading-5 font-normal text-text-subtle sm:hidden mobile:block">받을 금액</span>{amounts(id, "receive")}</div>
-            <div className="text-right font-medium"><span className="mb-1 block text-[12px] leading-5 font-normal text-text-subtle sm:hidden mobile:block">보낼 금액</span>{amounts(id, "send")}</div>
+            <div className="font-medium text-primary text-right mobile:text-left"><span className="mb-1 hidden text-[12px] leading-5 font-normal text-text-subtle mobile:block">받을 금액</span>{amounts(id, "receive")}</div>
+            <div className="text-right font-medium"><span className="mb-1 hidden text-[12px] leading-5 font-normal text-text-subtle mobile:block">보낼 금액</span>{amounts(id, "send")}</div>
           </div>
         ))}
       </div>
@@ -506,7 +506,7 @@ function AllSettlement({ summary, members, memberStatus, krwSummary, showDetails
                 <ExpensePerson userId={t.fromUserId} members={members} memberStatus={memberStatus} />
                 <ArrowRight size={16} aria-label="받는 사람" className="text-text-subtle" />
                 <ExpensePerson userId={t.toUserId} members={members} memberStatus={memberStatus} />
-                <span className="ml-auto break-all text-[16px] leading-6 font-medium text-primary mobile:text-[14px] max-sm:text-[14px]">{c.currency} {formatExpenseAmount(t.amount)}</span>
+                <span className="ml-auto break-all text-[16px] leading-6 font-medium text-primary mobile:text-[14px]">{c.currency} {formatExpenseAmount(t.amount)}</span>
                 {[t.fromUserId, t.toUserId].some((id) => expensePerson(id, members, memberStatus).unknown) && <p className="w-full text-text-subtle">사용자 정보를 확인할 수 없어요. 금액과 사용자 ID는 보존되어 있어요.</p>}
               </div>
             ))}
@@ -674,7 +674,7 @@ export function ExpenseSummaryView({
   krwSummary,
 }: SettlementProps) {
   return (
-    <div className="flex flex-col gap-6 mobile:gap-4 max-sm:gap-4">
+    <div className="flex flex-col gap-6 mobile:gap-4">
       {showDetails && <details className="order-last text-body-xs-regular text-text-subtle">
         <summary className="cursor-pointer">정산 범위</summary>
       {/* 정산 내용 범위를 바꾸는 하위 전환이라 Tabs Chip(Outline md)을 쓴다. 내용은 아래 SettlementContent가 scope로 그려 패널을 두지 않는다 */}

@@ -37,12 +37,10 @@ import {
 } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { useMobileView } from "@/contexts/MobileViewContext";
-import { PlanContainerRefProvider } from "../plan-container";
 import { MobilePlanView } from "../mobile/MobilePlanView";
 import { PlanScheduleDayBlock } from "./PlanScheduleDayBlock";
 
 export function PlanPageView() {
-  const planContainerRef = useRef<HTMLDivElement>(null);
   const { isMobileDevice } = useMobileView();
   // 일정 화면을 떠나면 고른 장소(카드 강조·지도의 "이 일차만 보기")를 푼다 — 검색·북마크 탭에서도 지도는 그대로라서
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
@@ -173,15 +171,12 @@ export function PlanPageView() {
     roomId.length > 0 && isPending && schedules === undefined,
   );
 
-  const pageContentClassName =
-    "@container/plan space-y-2.5 overflow-x-auto pb-8";
+  const pageContentClassName = "overflow-x-auto pb-8";
 
-  // 제목과 첫 일차 사이는 20px(목록 간격 10px + 아래 여백 10px)
   const pageHeader = (
     <MainPageHeader
-      className="pb-2.5"
       title="일정"
-      description="현재 진행 중인 일정을 확인하세요."
+      description="여행 일정을 한 눈에 확인하세요."
     />
   );
 
@@ -220,84 +215,78 @@ export function PlanPageView() {
 
   if (showInitialLoading) {
     return (
-      <PlanContainerRefProvider containerRef={planContainerRef}>
-        <div
-          ref={planContainerRef}
-          className={pageContentClassName}
-        >
-          {pageHeader}
-          <PlanLoadingSkeleton />
-        </div>
-      </PlanContainerRefProvider>
+      <div className={pageContentClassName}>
+        {pageHeader}
+        <PlanLoadingSkeleton />
+      </div>
     );
   }
 
   return (
-    <PlanContainerRefProvider containerRef={planContainerRef}>
-      <div
-        ref={planContainerRef}
-        className={pageContentClassName}
-      >
+    <>
+      <div className={pageContentClassName}>
         {pageHeader}
 
-        {isError ? (
-          <p
-            className={cn(
-              "rounded-xl border border-gray-border bg-white py-3 text-body-m-regular mobile:text-body-s-regular text-primary",
-              MAIN_CARD_INNER_PADDING_X_CLASS,
-            )}
-          >
-            일정 목록을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.
-          </p>
-        ) : null}
+        <div className="flex flex-col gap-2.5">
+          {isError ? (
+            <p
+              className={cn(
+                "rounded-xl border border-gray-border bg-white py-3 text-body-m-regular mobile:text-body-s-regular text-primary",
+                MAIN_CARD_INNER_PADDING_X_CLASS,
+              )}
+            >
+              일정 목록을 불러오지 못했어요. 새로고침 후 다시 시도해 주세요.
+            </p>
+          ) : null}
 
-        {!isError && planDays.length === 0 ? (
-          <p
-            className={cn(
-              "rounded-xl border border-gray-border bg-white py-3 text-body-m-regular mobile:text-body-s-regular text-dark-gray",
-              MAIN_CARD_INNER_PADDING_X_CLASS,
-            )}
-          >
-            {planCopy.scheduleEmpty}
-          </p>
-        ) : null}
+          {!isError && planDays.length === 0 ? (
+            <p
+              className={cn(
+                "rounded-xl border border-gray-border bg-white py-3 text-body-m-regular mobile:text-body-s-regular text-dark-gray",
+                MAIN_CARD_INNER_PADDING_X_CLASS,
+              )}
+            >
+              {planCopy.scheduleEmpty}
+            </p>
+          ) : null}
 
-        {planDays.length > 0 ? (
-          <PlanItemDragProvider value={planItemDrag}>
-            <div className="space-y-2.5" {...listContainerProps}>
-              {planDays.map((day, dayIndex) => {
-                const sectionProps = getSectionProps(dayIndex);
+          {planDays.length > 0 ? (
+            <PlanItemDragProvider value={planItemDrag}>
+              <div className="space-y-2.5" {...listContainerProps}>
+                {planDays.map((day, dayIndex) => {
+                  const sectionProps = getSectionProps(dayIndex);
 
-                return (
-                  <PlanScheduleDayBlock
-                    key={day.id}
-                    roomId={roomId}
-                    scheduleId={sortedSchedules[dayIndex]!.scheduleId}
-                    title={day.dayLabel}
-                    subtitle={day.dateLabel}
-                    dateHeading={day.shortDateLabel}
-                    onRequestDeleteSchedule={
-                      sortedSchedules[dayIndex]
-                        ? () => handleDeleteScheduleDay(dayIndex)
-                        : undefined
-                    }
-                    onRequestInsertScheduleAfter={
-                      sortedSchedules[dayIndex]
-                        ? () => handleInsertScheduleAfter(dayIndex)
-                        : undefined
-                    }
-                    isScheduleMenuDisabled={
-                      isCreatingSchedule || isDeletingSchedule || isMovePending
-                    }
-                    {...sectionProps}
-                  />
-                );
-              })}
-            </div>
-          </PlanItemDragProvider>
-        ) : null}
+                  return (
+                    <PlanScheduleDayBlock
+                      key={day.id}
+                      roomId={roomId}
+                      scheduleId={sortedSchedules[dayIndex]!.scheduleId}
+                      title={day.dayLabel}
+                      subtitle={day.dateLabel}
+                      dateHeading={day.shortDateLabel}
+                      onRequestDeleteSchedule={
+                        sortedSchedules[dayIndex]
+                          ? () => handleDeleteScheduleDay(dayIndex)
+                          : undefined
+                      }
+                      onRequestInsertScheduleAfter={
+                        sortedSchedules[dayIndex]
+                          ? () => handleInsertScheduleAfter(dayIndex)
+                          : undefined
+                      }
+                      isScheduleMenuDisabled={
+                        isCreatingSchedule || isDeletingSchedule || isMovePending
+                      }
+                      {...sectionProps}
+                    />
+                  );
+                })}
+              </div>
+            </PlanItemDragProvider>
+          ) : null}
+        </div>
       </div>
       {deleteDayDialog}
-    </PlanContainerRefProvider>
+    </>
   );
 }

@@ -136,7 +136,8 @@ it("keeps a deletion tied to the card's original room when props change during t
     scheduleTimeEdit={{ roomId, scheduleId: 1 }} onDragStart={() => {}} onDragEnd={() => {}}
   />;
   await render(card("room-a"));
-  await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="일정에서 삭제"]')!.click());
+  await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Place 메뉴"]')!.click());
+  await act(async () => document.querySelector<HTMLElement>('[role="menuitem"]')!.click());
   await click("삭제");
   expect(api.remove).toHaveBeenCalledWith("room-a", 1, 2);
   expect(trackAnalyticsEvent).not.toHaveBeenCalled();

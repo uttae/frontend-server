@@ -35,13 +35,6 @@ export function formatKoreanDateLabel(d: Date): string {
   return `${d.getMonth() + 1}월 ${d.getDate()}일 (${w})`;
 }
 
-/** 일정 일차 헤더용 짧은 날짜 — `10.12(월)` */
-export function formatShortDateLabel(d: Date): string {
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${m}.${day}(${WEEKDAYS_KO[d.getDay()]})`;
-}
-
 function formatYmdKoShort(ymd: string): string {
   const d = parseLocalYmd(ymd);
   return `${d.getMonth() + 1}월 ${d.getDate()}일`;
@@ -59,13 +52,14 @@ export function formatTripYmdRangeShortKo(
   return `${formatYmdKoShort(s)} ~ ${formatYmdKoShort(e)}`;
 }
 
-/** 메인 헤더 부제: 서버 동기화된 여행 구간 또는 `일정 없음`. */
-export function formatRoomTripSubtitleKo(startYmd: string, endYmd: string): string {
+/** PC 상단 헤더 부제 `MM/DD ~ MM/DD`(Figma Top Header 6663:3963) 또는 `일정 없음`. */
+export function formatRoomTripSubtitle(startYmd: string, endYmd: string): string {
   const s = startYmd.trim();
   const e = endYmd.trim();
   if (!s || !e) return "일정 없음";
-  if (s === e) return formatYmdKoShort(s);
-  return `${formatYmdKoShort(s)} ~ ${formatYmdKoShort(e)}`;
+  const monthDay = (ymd: string) => ymd.slice(5).replace("-", "/");
+  if (s === e) return monthDay(s);
+  return `${monthDay(s)} ~ ${monthDay(e)}`;
 }
 
 export type RoomTripYmdSource = {

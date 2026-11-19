@@ -2,7 +2,6 @@ import { PLAN_ROUTE_CARD_WIDTH_PX } from "@/lib/layout-tokens";
 import { cn } from "@/lib/utils";
 
 import { TravelRouteRail } from "./TravelRouteRail";
-import { PLAN_SEGMENT_RAIL_LINE_CLASS } from "./travelSegmentRailLayout";
 
 type PlanTravelTimeCollapsedProps = {
   className?: string;
@@ -43,9 +42,8 @@ export function PlanTravelTimeCollapsed({
 
   return (
     <div className={cn("relative py-0.5 pl-1", className)} role="separator">
-      <div className={PLAN_SEGMENT_RAIL_LINE_CLASS} aria-hidden />
       <div className="relative flex min-h-10 items-center gap-3">
-        <TravelRouteRail arrowClassName="text-light-gray" layout="row" />
+        <TravelRouteRail />
         {body}
       </div>
     </div>

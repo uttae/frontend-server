@@ -52,7 +52,6 @@ export function InviteRoomDialog({
               role={role}
               isRoomDetailLoading={isRoomDetailLoading}
               isRoomDetailError={isRoomDetailError}
-              showDescription={false}
             />
             {isRoomDetailError && onRetryRoomDetail ? (
               <button

@@ -4,9 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { Pencil } from "lucide-react";
 
-import { ChevronLeftIcon } from "@/assets/icons";
+import { ChevronLeftIcon, WriteIcon } from "@/assets/icons";
 import { BrandLogo } from "@/components/BrandLogo";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLinkItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useMobileView } from "@/contexts/MobileViewContext";
@@ -15,13 +14,14 @@ import { FEEDBACK_FORM_URL } from "@/lib/contact";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 import { isChatPathname, isMobileMapPathname, isPlanPathname, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import { isPackingPath } from "@/lib/room-context-path";
+import { cn } from "@/lib/utils";
 import { RoomTripEditDialog } from "@/components/rooms/RoomTripEditDialog";
 
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import { useRoomsList } from "@/hooks/useRooms";
 import {
-  formatRoomTripSubtitleKo,
+  formatRoomTripSubtitle,
   tripYmdBoundsFromRoomSources,
 } from "@/lib/plan/tripRange";
 import { HeaderMemberPreview } from "./HeaderMemberPreview";
@@ -77,12 +77,8 @@ const HeaderBar = ({
     ? (listRooms ?? []).find((r) => r.id === rid)
     : undefined;
 
-  const dateStr = currentRoom
-    ? formatRoomTripSubtitleKo(tripMeta.startYmd, tripMeta.endYmd)
-    : "";
-  const mobileDateStr = tripMeta.startYmd && tripMeta.endYmd
-    ? `${tripMeta.startYmd.slice(2).replaceAll("-", "/")} - ${tripMeta.endYmd.slice(2).replaceAll("-", "/")}`
-    : "일정 없음";
+  const tripDateLabel = formatRoomTripSubtitle(tripMeta.startYmd, tripMeta.endYmd);
+  const dateStr = currentRoom ? tripDateLabel : "";
 
   const displayTitle =
     currentRoom?.title?.trim() ||
@@ -90,35 +86,42 @@ const HeaderBar = ({
     "";
 
   const mapHref = isMapPanel ? "/plan" : MOBILE_MAP_PATH;
+  // 모바일 상단 아래 선은 상단 영역의 마지막 줄이 갖는다. 일정은 일차 칩 줄, 가계부·준비물은 탭 줄이 그린다
+  const hasRowBelowMobileHeader = isPlanPathname(pathname ?? "") || pathname === "/cost" || isPackingPath(pathname ?? "");
   const mobileTitle = displayTitle ? (
     <>
-      <div className="truncate text-[18px] font-bold leading-[26px] tracking-[-0.02em] text-text">{displayTitle}</div>
-      <div className="truncate text-[11px] leading-4 tracking-[-0.02em] text-text-subtle">{mobileDateStr}</div>
+      <div className="truncate text-label-l-emphasis text-text">{displayTitle}</div>
+      <div className="truncate text-caption-s-regular text-text-subtle">{tripDateLabel}</div>
     </>
   ) : (
-    <span className="block truncate text-[18px] font-bold leading-[26px] text-text" aria-busy={isPending}>
+    <span className="block truncate text-label-l-emphasis text-text" aria-busy={isPending}>
       {isPending ? "…" : "방 정보 없음"}
     </span>
   );
 
   return (
-    <header className={isMobileDevice ? "relative z-30 h-14 shrink-0 bg-fill-subtle" : "h-14 shrink-0 border-b-2 border-primary"}>
+    <header
+      className={
+        isMobileDevice
+          ? cn("relative z-30 h-14 shrink-0 bg-fill-subtle", !hasRowBelowMobileHeader && "border-b border-border")
+          : "@container/header shrink-0 border-b border-border-subtle bg-fill-subtle"
+      }
+    >
       {isMobileDevice ? (
-        <div className={mobileBackHref ? "flex h-full min-w-0 items-center gap-2 pl-1 pr-5" : "flex h-full min-w-0 items-center gap-[14px] px-2"}>
-          {mobileBackHref ? (
-            <Link href={mobileBackHref} aria-label={mobileBackLabel} className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
-              <ChevronLeftIcon className="text-icon" />
-            </Link>
-          ) : (
-            <div className="flex shrink-0 items-center gap-0.5">
-              <Link href="/home" aria-label="홈으로 이동" className="flex size-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
+        <div className={mobileBackHref ? "flex h-full min-w-0 items-center pl-1" : "flex h-full min-w-0 items-center gap-4 px-2"}>
+          <div className="flex min-w-0 flex-1 items-center gap-2 pe-5">
+            {mobileBackHref ? (
+              <Link href={mobileBackHref} aria-label={mobileBackLabel} className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
+                <ChevronLeftIcon className="text-icon" />
+              </Link>
+            ) : (
+              <Link href="/home" aria-label="홈으로 이동" className="flex size-11 shrink-0 items-center justify-center focus-visible:outline-2 focus-visible:outline-primary">
                 <Image src={mobileIcon.roomLogo} alt="" width={22} height={22} />
               </Link>
-              <span aria-hidden className="h-9 w-px bg-border-subtle" />
+            )}
+            <div className="min-w-0 flex-1">
+              {mobileTitle}
             </div>
-          )}
-          <div className="min-w-0 flex-1">
-            {mobileTitle}
           </div>
           {!mobileBackHref ? <div className="flex shrink-0 items-center">
             {showMapShortcut ? <Link href={mapHref} aria-label={isMapPanel ? "일정 보기" : "지도 보기"} className="flex size-11 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
@@ -151,29 +154,30 @@ const HeaderBar = ({
           </div> : null}
         </div>
       ) : (
-        <div className="flex h-full items-center">
-          <div className="relative flex h-full shrink-0 flex-col items-center justify-center" style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}>
-            <Link href="/home" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-dark-gray" aria-label="홈으로 이동">
+        <div className="flex min-h-17 items-center">
+          <div className="flex shrink-0 items-center justify-center" style={{ width: MAIN_SIDEBAR_RAIL_WIDTH }}>
+            <Link href="/home" className="flex size-11 items-center justify-center rounded-full" aria-label="홈으로 이동">
               <BrandLogo variant="symbol" size="S" alt="" />
             </Link>
-            <div className="pointer-events-none absolute right-0 top-1/2 h-8 w-px -translate-y-1/2 bg-gray-border" aria-hidden />
           </div>
-          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 px-5">
-            <div className="min-w-0 bg-white">
+          {/* 헤더가 놓이는 폭이 화면마다 달라 화면 폭이 아니라 헤더 폭 480px로 나눈다(Figma 설명 6663:5258·6663:5284) */}
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-5 ps-5 pe-3 @min-[480px]/header:pe-5">
+            <div className="min-w-0">
               {currentRoom || displayTitle ? (
                 <>
-                  <div className="flex min-w-0 items-center gap-1">
-                    <span className="block truncate text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-tight">{displayTitle || currentRoom?.title}</span>
-                    <button type="button" aria-label="여행 정보 수정" aria-haspopup="dialog" data-tutorial-target="room-settings" onClick={() => setEditOpen(true)} className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-dark-gray hover:bg-light-gray focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-                      <Pencil size={14} aria-hidden />
+                  <div className="flex min-w-0 items-center gap-0.5">
+                    <span className="block truncate text-title-s text-text">{displayTitle || currentRoom?.title}</span>
+                    {/* 아이콘은 18px로 두고 누르는 영역만 40px. 영역이 날짜 줄을 덮어 hover 배경을 두지 않는다 */}
+                    <button type="button" aria-label="여행 정보 수정" aria-haspopup="dialog" data-tutorial-target="room-settings" onClick={() => setEditOpen(true)} className="-m-2.75 flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-icon-subtle hover:text-icon focus-visible:outline-2 focus-visible:outline-primary">
+                      <WriteIcon size={18} />
                     </button>
                   </div>
-                  <span className="block truncate text-body-s-regular mobile:text-body-xs-regular leading-tight text-dark-gray">{dateStr}</span>
+                  <span className="block truncate text-body-s-regular text-text-subtle">{dateStr}</span>
                 </>
               ) : isPending ? (
-                <span className="block text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-tight text-dark-gray" aria-busy="true">…</span>
+                <span className="block text-title-s text-text-subtle" aria-busy="true">…</span>
               ) : (
-                <span className="block truncate text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-tight text-dark-gray">방 정보 없음</span>
+                <span className="block truncate text-title-s text-text-subtle">방 정보 없음</span>
               )}
             </div>
             <HeaderMemberPreview />

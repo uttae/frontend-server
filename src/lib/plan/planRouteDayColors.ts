@@ -1,9 +1,12 @@
 /**
  * 플랜 일차(scheduleId)마다 고정 경로·핀·순서 뱃지 색 (#RRGGBB).
- * 펼침 토글과 무관하게 방 내 일차 정렬 순서로 hue를 고정합니다.
+ * 펼침 토글과 무관하게 방 내 일차 정렬 순서로 정한다. 1일차는 모든 방에서 Figma primary(하늘색, `--blue-700`)이고
+ * 2일차부터 그 hue에서 황금각만큼 돌린다.
  */
 
 const GOLDEN_ANGLE_HUE_STEP = 137.5083565656715;
+const FIRST_DAY_ROUTE_COLOR = "#0183ff";
+const FIRST_DAY_ROUTE_HUE = 211;
 
 /** H,S,L 모두 표준 표기: H° 0–360, S와 L은 0–100 */
 function hslToRgb(hDeg: number, sPct: number, lPct: number): [number, number, number] {
@@ -44,14 +47,6 @@ function rgbToHex(r: number, g: number, b: number): string {
     .join("")}`;
 }
 
-function hueSeedFromString(str: string): number {
-  let h = 0;
-  for (let i = 0; i < str.length; i += 1) {
-    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h) % 360;
-}
-
 /** 방에 속한 모든 일차 id(펼침 여부 무관), 오름차순 */
 export function sortedScheduleIdsForRouteColors(
   scheduleIdsByPresence: Record<number, boolean>,
@@ -62,19 +57,15 @@ export function sortedScheduleIdsForRouteColors(
     .sort((a, b) => a - b);
 }
 
-/**
- * @param sortedScheduleIds `sortedScheduleIdsForRouteColors` 결과(전체 일차, 정렬됨)
- * @param roomId 방마다 hue 오프셋(옵션)
- */
-export function scheduleIdsToRouteColors(
-  sortedScheduleIds: number[],
-  roomId?: string,
-): Map<number, string> {
+/** @param sortedScheduleIds `sortedScheduleIdsForRouteColors` 결과(전체 일차, 정렬됨) */
+export function scheduleIdsToRouteColors(sortedScheduleIds: number[]): Map<number, string> {
   const map = new Map<number, string>();
-  const rid = typeof roomId === "string" ? roomId.trim() : "";
-  const hue0 = rid.length > 0 ? hueSeedFromString(rid) : 0;
   sortedScheduleIds.forEach((id, i) => {
-    const hue = (hue0 + i * GOLDEN_ANGLE_HUE_STEP) % 360;
+    if (i === 0) {
+      map.set(id, FIRST_DAY_ROUTE_COLOR);
+      return;
+    }
+    const hue = (FIRST_DAY_ROUTE_HUE + i * GOLDEN_ANGLE_HUE_STEP) % 360;
     const [r, g, b] = hslToRgb(hue, 72, 48); // 채도·명도 고정으로 지도 위 가독성 유지
     map.set(id, rgbToHex(r, g, b));
   });

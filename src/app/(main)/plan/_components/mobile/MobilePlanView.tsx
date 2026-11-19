@@ -9,7 +9,7 @@ import { formatMobileDayDate, formatMonthDayKo } from "@/lib/plan/mobilePlanForm
 import { planCopy } from "@/lib/plan/planCopy";
 import { dayNumberForInsertAfterDayIndex } from "@/lib/plan/scheduleMerge";
 import { useCreateRoomSchedule } from "@/hooks/useRooms";
-import { cn } from "@/lib/utils";
+import { Chip } from "@/components/ui/chip";
 import {
   useMobilePlanDayFilterStore,
   type MobilePlanDayFilter,
@@ -80,7 +80,7 @@ export function MobilePlanView({
   const addPlace = useMobileAddPlaceSearch({ roomId, backLabel: "일정으로 돌아가기" });
 
   const tabs: { key: MobilePlanDayFilter; label: string }[] = [
-    { key: "all", label: "전체" },
+    { key: "all", label: "전체 보기" },
     ...schedules.map((s, i) => ({ key: s.scheduleId, label: `Day ${i + 1}` })),
   ];
 
@@ -129,25 +129,18 @@ export function MobilePlanView({
       <div className="flex min-h-0 flex-1 flex-col bg-fill">
         <nav
           aria-label="일차 선택"
-          className="flex shrink-0 gap-2.5 overflow-x-auto bg-fill-subtle p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex shrink-0 gap-2.5 overflow-x-auto border-b border-border bg-fill-subtle p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {tabs.map(({ key, label }) => {
-            const active = activeFilter === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilter(key)}
-                aria-pressed={active}
-                className={cn(
-                  "shrink-0 rounded-[30px] border border-border bg-fill-subtle px-3.5 py-1.5 text-label-m-emphasis",
-                  active ? "text-primary" : "text-text-disabled",
-                )}
-              >
-                {label}
-              </button>
-            );
-          })}
+          {tabs.map(({ key, label }) => (
+            <Chip
+              key={key}
+              variant="outline"
+              size="md"
+              render={<button type="button" onClick={() => setFilter(key)} aria-pressed={activeFilter === key} />}
+            >
+              {label}
+            </Chip>
+          ))}
         </nav>
 
         <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">

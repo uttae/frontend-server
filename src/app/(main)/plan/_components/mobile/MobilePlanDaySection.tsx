@@ -71,16 +71,16 @@ export function MobilePlanDaySection({
   }
 
   return (
-    <section aria-label={`${dayLabel} ${dateLabel}`} className="flex flex-col gap-3.5 px-4 pb-6 pt-5">
-      <div className="flex items-center gap-2 px-1">
+    <section aria-label={`${dayLabel} ${dateLabel}`} className="flex flex-col px-5 pb-5">
+      <div className="flex items-center gap-2 py-3">
         <h2 className="text-title-l text-text">{dayLabel}</h2>
-        {dateLabel ? <span className="text-body-m-emphasis text-text-subtle">{dateLabel}</span> : null}
-        <div className="ml-auto flex items-center gap-1.5">
+        {dateLabel ? <span className="text-label-l-emphasis text-text-subtle">{dateLabel}</span> : null}
+        <div className="ml-auto flex items-center">
           {editing ? (
             <button
               type="button"
               onClick={onFinishEditing}
-              className="flex h-9 items-center px-1.5 text-label-m-emphasis text-primary"
+              className="flex h-10 items-center px-1.5 text-label-m-emphasis text-primary"
             >
               저장
             </button>
@@ -90,18 +90,18 @@ export function MobilePlanDaySection({
                 type="button"
                 onClick={onStartEditing}
                 aria-label={`${dayLabel} 장소 순서 편집`}
-                className="flex size-9 items-center justify-center"
+                className="flex size-10 items-center justify-center"
               >
-                <ArrowSortIcon className="text-icon" />
+                <ArrowSortIcon className="text-icon-subtle" />
               </button>
               <button
                 type="button"
                 onClick={() => setManageOpen(true)}
                 disabled={menuDisabled}
                 aria-label={`${dayLabel} 일정 관리`}
-                className="flex size-9 items-center justify-center disabled:opacity-40"
+                className="flex size-10 items-center justify-center disabled:opacity-40"
               >
-                <SettingsIcon className="text-icon" />
+                <SettingsIcon className="text-icon-subtle" />
               </button>
             </>
           )}
