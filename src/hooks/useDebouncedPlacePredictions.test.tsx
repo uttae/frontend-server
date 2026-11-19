@@ -23,7 +23,9 @@ function Harness() {
 }
 function deferred() {
   let resolve!: (list: unknown[]) => void;
-  const promise = new Promise<unknown[]>((r) => { resolve = r; });
+  const promise = new Promise<unknown[]>((r) => {
+    resolve = r;
+  });
   return { promise, resolve };
 }
 const prediction = (text: string) => ({ placeId: text }) as unknown as google.maps.places.PlacePrediction;

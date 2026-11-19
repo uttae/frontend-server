@@ -14,8 +14,7 @@ import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 import { renderTextWithLinks } from "@/lib/text/renderTextWithLinks";
 
-const MEMO_LINK_CLASS_NAME =
-  "break-all text-primary-strong underline underline-offset-2 hover:opacity-80";
+const MEMO_LINK_CLASS_NAME = "break-all text-primary-strong underline underline-offset-2 hover:opacity-80";
 
 type PlanItemMemoEditorProps = {
   roomId: string;
@@ -81,13 +80,7 @@ export function PlanItemMemoReadOnly({
   );
 }
 
-export function PlanItemMemoEditor({
-  roomId,
-  scheduleId,
-  itemId,
-  memo,
-  onClose,
-}: PlanItemMemoEditorProps) {
+export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }: PlanItemMemoEditorProps) {
   const incomingMemo = memo ?? "";
   const [editStartMemo, setEditStartMemo] = useState(incomingMemo);
   const [hasRemoteConflict, setHasRemoteConflict] = useState(false);
@@ -140,11 +133,7 @@ export function PlanItemMemoEditor({
 
   return (
     <>
-      <div
-        className={PLAN_PLACE_CARD_TW.editorModule}
-        onMouseDown={stopCardActivation}
-        onClick={stopCardActivation}
-      >
+      <div className={PLAN_PLACE_CARD_TW.editorModule} onMouseDown={stopCardActivation} onClick={stopCardActivation}>
         <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
           <MemoIcon size={16} />
         </div>

@@ -29,18 +29,15 @@ const switchTrackVariants = cva(
   },
 );
 
-const switchThumbVariants = cva(
-  "rounded-full transition-transform motion-reduce:transition-none",
-  {
-    variants: {
-      size: {
-        md: "size-5 bg-fill-elevate shadow-[0_1px_3px_0_rgb(0_0_0/0.1),0_1px_2px_-1px_rgb(0_0_0/0.1)] data-checked:translate-x-5",
-        sm: "size-4 bg-icon-inverse data-checked:translate-x-5",
-      },
+const switchThumbVariants = cva("rounded-full transition-transform motion-reduce:transition-none", {
+  variants: {
+    size: {
+      md: "size-5 bg-fill-elevate shadow-[0_1px_3px_0_rgb(0_0_0/0.1),0_1px_2px_-1px_rgb(0_0_0/0.1)] data-checked:translate-x-5",
+      sm: "size-4 bg-icon-inverse data-checked:translate-x-5",
     },
-    defaultVariants: { size: "md" },
   },
-);
+  defaultVariants: { size: "md" },
+});
 
 type SwitchProps = Omit<SwitchPrimitive.Root.Props, "className" | "nativeButton" | "render"> &
   VariantProps<typeof switchVariants> & {

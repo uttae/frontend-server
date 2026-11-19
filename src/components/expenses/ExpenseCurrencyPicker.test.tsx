@@ -28,7 +28,10 @@ async function mount({ value = "KRW", list = currencies, disabled = false } = {}
     root.render(<ExpenseCurrencyPicker value={value} currencies={list} onChange={onChange} disabled={disabled} />),
   );
 }
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 const trigger = () => document.querySelector<HTMLElement>('[role="combobox"][aria-haspopup="dialog"]')!;
 const search = () => document.querySelector<HTMLInputElement>('input[aria-label="통화 검색"]');
 const options = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')];
@@ -107,4 +110,3 @@ it("shows the form value on the trigger while the currency list is missing", asy
   await mount({ value: "", list: [] });
   expect(trigger().textContent).toBe("통화 선택");
 });
-

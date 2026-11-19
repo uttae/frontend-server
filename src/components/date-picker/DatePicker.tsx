@@ -94,9 +94,7 @@ function DateCell({
         )}
       >
         {Number(ymd.slice(8))}
-        {disabled ? (
-          <span aria-hidden className="absolute left-3 top-5 h-px w-4 bg-text-disabled" />
-        ) : null}
+        {disabled ? <span aria-hidden className="absolute left-3 top-5 h-px w-4 bg-text-disabled" /> : null}
         {isToday ? (
           <span
             aria-hidden

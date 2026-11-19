@@ -24,9 +24,7 @@ const flush = () =>
   });
 const menu = () => document.querySelector<HTMLElement>('[role="menu"]');
 const items = () =>
-  [...(menu()?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])].map(
-    (item) => item.textContent?.trim(),
-  );
+  [...(menu()?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])].map((item) => item.textContent?.trim());
 const item = (name: string) =>
   [...(menu()?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])].find(
     (candidate) => candidate.textContent?.trim() === name,
@@ -46,9 +44,7 @@ it("switches to the category phase inside the open menu, closes outside, and reo
       />,
     ),
   );
-  const trigger = container.querySelector<HTMLElement>(
-    'button[aria-label="장소 메뉴"]',
-  )!;
+  const trigger = container.querySelector<HTMLElement>('button[aria-label="장소 메뉴"]')!;
   await act(async () => trigger.click());
   expect(trigger.getAttribute("aria-expanded")).toBe("true");
   expect(items()).toEqual(["카테고리 변경", "삭제"]);
@@ -57,11 +53,7 @@ it("switches to the category phase inside the open menu, closes outside, and reo
   expect(menu()).not.toBeNull();
   expect(items()).toEqual(["뒤로", "two"]);
 
-  await act(async () =>
-    document.body.dispatchEvent(
-      new MouseEvent("pointerdown", { bubbles: true }),
-    ),
-  );
+  await act(async () => document.body.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true })));
   await flush();
   expect(menu()).toBeNull();
   expect(trigger.getAttribute("aria-expanded")).toBe("false");

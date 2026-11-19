@@ -43,8 +43,7 @@ export const usePlaceSearchStore = create<PlaceSearchState>((set, get) => ({
   scope: "",
   generation: 0,
   setScope: (scope) => {
-    if (get().scope !== scope)
-      set({ ...empty, scope, generation: get().generation + 1 });
+    if (get().scope !== scope) set({ ...empty, scope, generation: get().generation + 1 });
   },
   invalidate: () => {
     const generation = get().generation + 1;

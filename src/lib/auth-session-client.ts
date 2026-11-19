@@ -10,9 +10,7 @@ function shouldRedirectToLoginFromPath(pathname: string): boolean {
   return true;
 }
 
-export function expireClientSessionAndRedirect(options?: {
-  queryClient?: QueryClient;
-}): void {
+export function expireClientSessionAndRedirect(options?: { queryClient?: QueryClient }): void {
   const queryClient = options?.queryClient ?? getQueryClient() ?? undefined;
   tearDownClientSession({ queryClient });
 

@@ -4,11 +4,7 @@ type BrandLogoProps = {
   alt?: string;
 };
 
-export function BrandLogo({
-  variant = "combination",
-  size = "M",
-  alt = "우때 로고",
-}: Readonly<BrandLogoProps>) {
+export function BrandLogo({ variant = "combination", size = "M", alt = "우때 로고" }: Readonly<BrandLogoProps>) {
   const LOGO_ASSETS = {
     symbol: {
       S: { src: "/brand/Glyph_S.svg", width: 23, height: 23 },

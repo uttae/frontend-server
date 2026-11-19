@@ -2,10 +2,7 @@
 
 import { type RefObject, useEffect, useLayoutEffect, useRef } from "react";
 
-export function useOnClickOutside<T extends HTMLElement>(
-  ref: RefObject<T | null>,
-  onOutside: () => void,
-): void {
+export function useOnClickOutside<T extends HTMLElement>(ref: RefObject<T | null>, onOutside: () => void): void {
   const saved = useRef(onOutside);
   useLayoutEffect(() => {
     saved.current = onOutside;

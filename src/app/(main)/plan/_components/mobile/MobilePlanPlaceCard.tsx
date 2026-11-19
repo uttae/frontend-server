@@ -92,8 +92,13 @@ export function MobilePlanPlaceCard({
                 <h3 className="line-clamp-2 break-words text-title-s text-text">{place.title}</h3>
                 {meta ? <PlaceMeta place={place} meta={meta} /> : null}
               </div>
-              <PlaceTimeAndExpense place={place} expenseSummary={expenseSummary}
-                addWhenEmpty={addWhenEmpty} onEditTime={onEditTime} onOpenExpenses={onOpenExpenses} />
+              <PlaceTimeAndExpense
+                place={place}
+                expenseSummary={expenseSummary}
+                addWhenEmpty={addWhenEmpty}
+                onEditTime={onEditTime}
+                onOpenExpenses={onOpenExpenses}
+              />
             </div>
           </div>
           <button
@@ -137,7 +142,9 @@ function PlaceMeta({ place, meta }: Readonly<{ place: PlanPlace; meta: string }>
   const expandable = truncated && Boolean(place.subtitle);
   return (
     <div ref={wrapRef} className="relative">
-      <p ref={textRef} className="truncate text-body-s-regular text-text-subtle">{meta}</p>
+      <p ref={textRef} className="truncate text-body-s-regular text-text-subtle">
+        {meta}
+      </p>
       {expandable ? (
         <button
           type="button"
@@ -163,158 +170,167 @@ function PlaceMeta({ place, meta }: Readonly<{ place: PlanPlace; meta: string }>
   );
 }
 
-function PlaceTimeAndExpense({ place, expenseSummary, addWhenEmpty, onEditTime, onOpenExpenses }:
-  Pick<MobilePlanPlaceCardProps, "place" | "expenseSummary" | "addWhenEmpty" | "onEditTime" | "onOpenExpenses">) {
+function PlaceTimeAndExpense({
+  place,
+  expenseSummary,
+  addWhenEmpty,
+  onEditTime,
+  onOpenExpenses,
+}: Pick<MobilePlanPlaceCardProps, "place" | "expenseSummary" | "addWhenEmpty" | "onEditTime" | "onOpenExpenses">) {
   const summaryId = useId();
   const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
   const addTime = !timeRange && Boolean(addWhenEmpty?.time);
   const addExpense = !expenseSummary && Boolean(addWhenEmpty?.expense);
-  return <>
-            {timeRange || expenseSummary || addTime || addExpense ? (
-              <div
-                className={cn(
-                  "flex min-w-0 gap-y-1",
-                  addWhenEmpty ? "flex-col items-start" : "flex-wrap items-center gap-x-4",
-                )}
-              >
-                {timeRange ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      stop(e);
-                      onEditTime();
-                    }}
-                    aria-label={`${place.title} 방문 시간 수정`}
-                    className="pointer-events-auto flex items-center gap-1.5 text-body-s-emphasis tabular-nums text-text"
-                  >
-                    <TimeClockIcon size={18} className="text-primary" />
-                    {timeRange}
-                  </button>
-                ) : null}
-                {!timeRange && addTime ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      stop(e);
-                      onEditTime();
-                    }}
-                    aria-label={`${place.title} 방문 시간 추가`}
-                    className="pointer-events-auto flex items-center gap-1.5 text-body-s-regular text-text-disabled"
-                  >
-                    <TimeClockIcon size={18} className="text-icon-disabled" />
-                    시간 추가
-                  </button>
-                ) : null}
-                {expenseSummary ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      stop(e);
-                      onOpenExpenses();
-                    }}
-                    aria-label={`${place.title} 비용 보기`}
-                    aria-describedby={summaryId}
-                    className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1.5 text-body-s-emphasis tabular-nums text-text"
-                  >
-                    <CoinIcon size={18} className="text-primary" />
-                    <span id={summaryId} className="min-w-0 truncate" title={expenseSummary}>{expenseSummary}</span>
-                  </button>
-                ) : null}
-                {!expenseSummary && addExpense ? (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      stop(e);
-                      onOpenExpenses();
-                    }}
-                    aria-label={`${place.title} 비용 추가`}
-                    className="pointer-events-auto flex items-center gap-1.5 text-body-s-regular text-text-disabled"
-                  >
-                    <CoinIcon size={18} className="text-icon-disabled" />
-                    비용 추가
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-  </>;
+  return (
+    <>
+      {timeRange || expenseSummary || addTime || addExpense ? (
+        <div
+          className={cn(
+            "flex min-w-0 gap-y-1",
+            addWhenEmpty ? "flex-col items-start" : "flex-wrap items-center gap-x-4",
+          )}
+        >
+          {timeRange ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                stop(e);
+                onEditTime();
+              }}
+              aria-label={`${place.title} 방문 시간 수정`}
+              className="pointer-events-auto flex items-center gap-1.5 text-body-s-emphasis tabular-nums text-text"
+            >
+              <TimeClockIcon size={18} className="text-primary" />
+              {timeRange}
+            </button>
+          ) : null}
+          {!timeRange && addTime ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                stop(e);
+                onEditTime();
+              }}
+              aria-label={`${place.title} 방문 시간 추가`}
+              className="pointer-events-auto flex items-center gap-1.5 text-body-s-regular text-text-disabled"
+            >
+              <TimeClockIcon size={18} className="text-icon-disabled" />
+              시간 추가
+            </button>
+          ) : null}
+          {expenseSummary ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                stop(e);
+                onOpenExpenses();
+              }}
+              aria-label={`${place.title} 비용 보기`}
+              aria-describedby={summaryId}
+              className="pointer-events-auto flex min-w-0 max-w-full items-center gap-1.5 text-body-s-emphasis tabular-nums text-text"
+            >
+              <CoinIcon size={18} className="text-primary" />
+              <span id={summaryId} className="min-w-0 truncate" title={expenseSummary}>
+                {expenseSummary}
+              </span>
+            </button>
+          ) : null}
+          {!expenseSummary && addExpense ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                stop(e);
+                onOpenExpenses();
+              }}
+              aria-label={`${place.title} 비용 추가`}
+              className="pointer-events-auto flex items-center gap-1.5 text-body-s-regular text-text-disabled"
+            >
+              <CoinIcon size={18} className="text-icon-disabled" />
+              비용 추가
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
 }
 
-function PlaceMemo({ place, addWhenEmpty, onEditMemo }:
-  Pick<MobilePlanPlaceCardProps, "place" | "addWhenEmpty" | "onEditMemo">) {
+function PlaceMemo({
+  place,
+  addWhenEmpty,
+  onEditMemo,
+}: Pick<MobilePlanPlaceCardProps, "place" | "addWhenEmpty" | "onEditMemo">) {
   const [memoExpanded, setMemoExpanded] = useState(false);
   const memo = place.memo?.trim() ?? "";
   const [textRef, truncated] = useTruncated<HTMLSpanElement>(memo);
   const showChevron = memoExpanded || truncated || memo.includes("\n");
   const addMemo = !memo && Boolean(addWhenEmpty?.memo);
-  return <>
-        {memo ? (
-          <div className="pointer-events-none relative flex items-start gap-2.5 border-t border-border pb-3.5 pl-1 pt-3.25">
-            <button
-              type="button"
-              onClick={(e) => {
-                stop(e);
-                onEditMemo();
-              }}
-              aria-label={`${place.title} 메모 수정`}
-              className="pointer-events-auto -m-2.5 grid size-10 shrink-0 place-items-center"
+  return (
+    <>
+      {memo ? (
+        <div className="pointer-events-none relative flex items-start gap-2.5 border-t border-border pb-3.5 pl-1 pt-3.25">
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onEditMemo();
+            }}
+            aria-label={`${place.title} 메모 수정`}
+            className="pointer-events-auto -m-2.5 grid size-10 shrink-0 place-items-center"
+          >
+            <MemoIcon size={18} className="text-icon-subtle" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              setMemoExpanded((v) => !v);
+            }}
+            aria-expanded={memoExpanded}
+            aria-label={memoExpanded ? "메모 접기" : "메모 펼치기"}
+            className="pointer-events-auto -my-2.5 -mr-2.5 flex min-w-0 flex-1 items-start gap-0.5 py-2.5 pr-2.5 text-left"
+          >
+            <span
+              ref={textRef}
+              className={cn(
+                "min-w-0 flex-1 text-body-s-regular text-text-subtle",
+                memoExpanded ? "whitespace-pre-wrap break-words" : "truncate",
+              )}
             >
-              <MemoIcon size={18} className="text-icon-subtle" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                stop(e);
-                setMemoExpanded((v) => !v);
-              }}
-              aria-expanded={memoExpanded}
-              aria-label={memoExpanded ? "메모 접기" : "메모 펼치기"}
-              className="pointer-events-auto -my-2.5 -mr-2.5 flex min-w-0 flex-1 items-start gap-0.5 py-2.5 pr-2.5 text-left"
-            >
-              <span
-                ref={textRef}
-                className={cn(
-                  "min-w-0 flex-1 text-body-s-regular text-text-subtle",
-                  memoExpanded ? "whitespace-pre-wrap break-words" : "truncate",
-                )}
-              >
-                {memoExpanded
-                  ? renderTextWithLinks(memo, {
-                      linkClassName: "break-all text-primary-strong underline underline-offset-2",
-                      onLinkClick: stop,
-                    })
-                  : memo}
-              </span>
-              {showChevron ? (
-                <ChevronDownIcon
-                  size={20}
-                  className={cn(
-                    "shrink-0 text-icon-subtle transition-transform",
-                    memoExpanded && "rotate-180",
-                  )}
-                />
-              ) : null}
-            </button>
-          </div>
-        ) : null}
-        {!memo && addMemo ? (
-          <div className="pointer-events-none relative border-t border-border pb-3.5 pl-1 pt-3.25">
-            <button
-              type="button"
-              onClick={(e) => {
-                stop(e);
-                onEditMemo();
-              }}
-              aria-label={`${place.title} 메모 추가`}
-              className="pointer-events-auto flex w-full min-w-0 items-center gap-2.5 text-left"
-            >
-              <MemoIcon size={18} className="shrink-0 text-icon-disabled" />
-              <span className="min-w-0 flex-1 truncate text-body-s-regular text-text-disabled">
-                메모를 추가해보세요.
-              </span>
-            </button>
-          </div>
-        ) : null}
-  </>;
+              {memoExpanded
+                ? renderTextWithLinks(memo, {
+                    linkClassName: "break-all text-primary-strong underline underline-offset-2",
+                    onLinkClick: stop,
+                  })
+                : memo}
+            </span>
+            {showChevron ? (
+              <ChevronDownIcon
+                size={20}
+                className={cn("shrink-0 text-icon-subtle transition-transform", memoExpanded && "rotate-180")}
+              />
+            ) : null}
+          </button>
+        </div>
+      ) : null}
+      {!memo && addMemo ? (
+        <div className="pointer-events-none relative border-t border-border pb-3.5 pl-1 pt-3.25">
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onEditMemo();
+            }}
+            aria-label={`${place.title} 메모 추가`}
+            className="pointer-events-auto flex w-full min-w-0 items-center gap-2.5 text-left"
+          >
+            <MemoIcon size={18} className="shrink-0 text-icon-disabled" />
+            <span className="min-w-0 flex-1 truncate text-body-s-regular text-text-disabled">메모를 추가해보세요.</span>
+          </button>
+        </div>
+      ) : null}
+    </>
+  );
 }
 
 function useTruncated<T extends HTMLElement>(text: string) {

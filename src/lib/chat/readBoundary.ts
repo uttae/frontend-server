@@ -1,10 +1,6 @@
 import type { ServerChatMessage } from "@/types/chat";
 import { getRoomMessages } from "@/lib/api/rooms";
-import {
-  mergeServerMessageLists,
-  newestServerMessageByCreatedAt,
-  normalizeFetchedRoomMessages,
-} from "@/lib/chat";
+import { mergeServerMessageLists, newestServerMessageByCreatedAt, normalizeFetchedRoomMessages } from "@/lib/chat";
 import { hasOlderHistoryPage } from "@/lib/chat/initialRoomHistory";
 
 export const CHAT_MESSAGE_PAGE_SIZE = 15;
@@ -56,8 +52,7 @@ export async function fetchReadBridgeSlice(
   beforeSlice: readonly ServerChatMessage[],
   pageSize: number = CHAT_MESSAGE_PAGE_SIZE,
 ): Promise<{ slice: ServerChatMessage[]; hasMoreNewer: boolean }> {
-  const cursor =
-    newestServerMessageByCreatedAt([...beforeSlice])?.id ?? lastReadMessageId;
+  const cursor = newestServerMessageByCreatedAt([...beforeSlice])?.id ?? lastReadMessageId;
   const rows = await getRoomMessages(roomId, {
     afterId: cursor,
     size: pageSize,
@@ -90,12 +85,7 @@ export async function mergeSliceWithReadBridge(
     };
   }
 
-  const bridge = await fetchReadBridgeSlice(
-    roomId,
-    lastReadMessageId,
-    beforeSlice,
-    pageSize,
-  );
+  const bridge = await fetchReadBridgeSlice(roomId, lastReadMessageId, beforeSlice, pageSize);
   return {
     slice: mergeServerMessageLists(slice, bridge.slice),
     bridgedHasMoreNewer: bridge.hasMoreNewer,

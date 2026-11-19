@@ -1,30 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useEffectEvent, useRef, useState } from "react";
-import {
-  AdvancedMarker,
-  useMap,
-  useMapsLibrary,
-} from "@vis.gl/react-google-maps";
+import { AdvancedMarker, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
-import {
-  googlePlacesJsLocalizedText,
-  normalizeGooglePlaceResourceId,
-} from "@/lib/maps";
-import {
-  boundsInstanceFromDiscoverSnapshot,
-  buildDiscoverSnapshotFromGoogleMap,
-} from "@/lib/map-viewport-commit";
+import { googlePlacesJsLocalizedText, normalizeGooglePlaceResourceId } from "@/lib/maps";
+import { boundsInstanceFromDiscoverSnapshot, buildDiscoverSnapshotFromGoogleMap } from "@/lib/map-viewport-commit";
 
 import { MapPinWithPlaceName } from "@/components/map/MapPinWithPlaceName";
 
 import type { DiscoverMapSnapshot } from "@/stores/search-recenter-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
-import {
-  discoverPinWriteStillValid,
-  useMapPinsFocusStore,
-} from "@/stores/map-pins-focus-store";
+import { discoverPinWriteStillValid, useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { clearActiveSearchMapPins } from "@/lib/active-search-map-pins";
 
 import { MAP_PLACE_CATEGORIES } from "./map-place-categories";
@@ -41,10 +28,7 @@ const NEARBY_FIELDS: string[] = [
   "primaryTypeDisplayName",
 ];
 
-function matchesRatingFilter(
-  filter: RatingValue,
-  rating: number | null | undefined,
-): boolean {
+function matchesRatingFilter(filter: RatingValue, rating: number | null | undefined): boolean {
   if (filter === "all") return true;
   if (rating == null) return false;
   return rating >= Number(filter);
@@ -73,9 +57,7 @@ function DiscoverMarkerPin({
   marker: DiscoverMarker;
   selectedNormalized: string | null;
   categoryLabel: string;
-  setSelectedPlace: ReturnType<
-    typeof useSelectedPlace
-  >["setSelectedPlace"];
+  setSelectedPlace: ReturnType<typeof useSelectedPlace>["setSelectedPlace"];
 }) {
   const legacyId = normalizeGooglePlaceResourceId(m.id);
   if (selectedNormalized && legacyId === selectedNormalized) return null;
@@ -91,12 +73,8 @@ function DiscoverMarkerPin({
         if (!loc) return;
         setSelectedPlace(
           {
-            name:
-              googlePlacesJsLocalizedText(p.displayName).trim()
-              || "장소",
-            category:
-              googlePlacesJsLocalizedText(p.primaryTypeDisplayName).trim()
-              || categoryLabel,
+            name: googlePlacesJsLocalizedText(p.displayName).trim() || "장소",
+            category: googlePlacesJsLocalizedText(p.primaryTypeDisplayName).trim() || categoryLabel,
             rating: p.rating ?? null,
             googlePlaceId: legacyId,
             location: loc.toJSON(),
@@ -119,9 +97,7 @@ export function MapDiscoverPlaces({
   const map = useMap();
   const placesLib = useMapsLibrary("places");
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
-  const discoverRecenterRequestId = useSearchRecenterStore(
-    (s) => s.discoverRecenterRequestId,
-  );
+  const discoverRecenterRequestId = useSearchRecenterStore((s) => s.discoverRecenterRequestId);
   const pinsFocus = useMapPinsFocusStore((s) => s.focus);
 
   const [markers, setMarkers] = useState<DiscoverMarker[]>([]);
@@ -142,10 +118,7 @@ export function MapDiscoverPlaces({
       onSearchFailedChange(false);
 
       if (!placesLib) {
-        if (
-          discoverPinWriteStillValid(writeEpoch)
-          && seq === searchSeqRef.current
-        ) {
+        if (discoverPinWriteStillValid(writeEpoch) && seq === searchSeqRef.current) {
           setMarkers([]);
         }
         return;
@@ -153,17 +126,13 @@ export function MapDiscoverPlaces({
 
       const cat = MAP_PLACE_CATEGORIES.find((c) => c.id === categoryId);
       if (!cat) {
-        if (
-          discoverPinWriteStillValid(writeEpoch)
-          && seq === searchSeqRef.current
-        ) {
+        if (discoverPinWriteStillValid(writeEpoch) && seq === searchSeqRef.current) {
           setMarkers([]);
         }
         return;
       }
 
-      const filterBounds =
-        boundsInstanceFromDiscoverSnapshot(snapshot.bounds);
+      const filterBounds = boundsInstanceFromDiscoverSnapshot(snapshot.bounds);
 
       const Place = placesLib.Place;
 
@@ -187,10 +156,7 @@ export function MapDiscoverPlaces({
           const res = await Place.searchByText(textRequest);
           places = res.places;
         } else {
-          const radius =
-            snapshot.radius > 0
-              ? snapshot.radius
-              : 1;
+          const radius = snapshot.radius > 0 ? snapshot.radius : 1;
 
           const request: google.maps.places.SearchNearbyRequest = {
             fields: NEARBY_FIELDS,
@@ -229,10 +195,7 @@ export function MapDiscoverPlaces({
           })),
         );
       } catch {
-        if (
-          !discoverPinWriteStillValid(writeEpoch)
-          || seq !== searchSeqRef.current
-        ) {
+        if (!discoverPinWriteStillValid(writeEpoch) || seq !== searchSeqRef.current) {
           return;
         }
         setMarkers([]);
@@ -265,8 +228,7 @@ export function MapDiscoverPlaces({
 
     if (!map || !placesLib) return;
 
-    const catChanged =
-      prevCategoryIdRef.current !== selectedCategoryId;
+    const catChanged = prevCategoryIdRef.current !== selectedCategoryId;
 
     if (catChanged) {
       const snap = buildDiscoverSnapshotFromGoogleMap(map);
@@ -276,39 +238,19 @@ export function MapDiscoverPlaces({
       const epoch = useMapPinsFocusStore.getState().claimFocus("discover");
       clearActiveSearchMapPins();
       queueMicrotask(() => {
-        void runDiscoverSearch(
-          snap,
-          selectedCategoryId,
-          rating,
-          openNow,
-          epoch,
-        );
+        void runDiscoverSearch(snap, selectedCategoryId, rating, openNow, epoch);
       });
       return;
     }
 
-    const existing =
-      useSearchRecenterStore.getState().discoverSnapshot;
+    const existing = useSearchRecenterStore.getState().discoverSnapshot;
     if (!existing) return;
     const epochFilter = useMapPinsFocusStore.getState().claimFocus("discover");
     clearActiveSearchMapPins();
     queueMicrotask(() => {
-      void runDiscoverSearch(
-        existing,
-        selectedCategoryId,
-        rating,
-        openNow,
-        epochFilter,
-      );
+      void runDiscoverSearch(existing, selectedCategoryId, rating, openNow, epochFilter);
     });
-  }, [
-    selectedCategoryId,
-    rating,
-    openNow,
-    map,
-    placesLib,
-    runDiscoverSearch,
-  ]);
+  }, [selectedCategoryId, rating, openNow, map, placesLib, runDiscoverSearch]);
 
   const recenterDiscover = useEffectEvent(() => {
     if (!selectedCategoryId || !map || !placesLib) return;
@@ -318,13 +260,7 @@ export function MapDiscoverPlaces({
     const epochRecenter = useMapPinsFocusStore.getState().claimFocus("discover");
     clearActiveSearchMapPins();
     queueMicrotask(() => {
-      void runDiscoverSearch(
-        snapshot,
-        selectedCategoryId,
-        rating,
-        openNow,
-        epochRecenter,
-      );
+      void runDiscoverSearch(snapshot, selectedCategoryId, rating, openNow, epochRecenter);
     });
   });
   useEffect(() => {
@@ -338,13 +274,12 @@ export function MapDiscoverPlaces({
     ? normalizeGooglePlaceResourceId(selectedPlace.googlePlaceId)
     : null;
 
-  const categoryLabel =
-    MAP_PLACE_CATEGORIES.find((c) => c.id === selectedCategoryId)?.label ?? "";
+  const categoryLabel = MAP_PLACE_CATEGORIES.find((c) => c.id === selectedCategoryId)?.label ?? "";
 
   return (
     <>
-      {pinsFocus === "discover"
-        && markers.map((m) => (
+      {pinsFocus === "discover" &&
+        markers.map((m) => (
           <DiscoverMarkerPin
             key={m.id}
             marker={m}

@@ -34,9 +34,7 @@ function AiRequestMetaRow({
   if (!ar?.aiStatus) return null;
 
   const showCancel =
-    onCancelRequest != null &&
-    ar.cancelable &&
-    (ar.aiStatus === "QUEUED" || ar.aiStatus === "PROCESSING");
+    onCancelRequest != null && ar.cancelable && (ar.aiStatus === "QUEUED" || ar.aiStatus === "PROCESSING");
 
   if (ar.aiStatus === "CANCELED") {
     return (
@@ -64,11 +62,7 @@ function AiRequestMetaRow({
         {ar.aiStatus === "PROCESSING" ? (
           <span className="inline-flex items-center gap-1.5">
             <span>{labelForAiStatus(ar.aiStatus)}</span>
-            <Spinner
-              size={16}
-              className="shrink-0"
-              aria-hidden
-            />
+            <Spinner size={16} className="shrink-0" aria-hidden />
           </span>
         ) : (
           <span>{labelForAiStatus(ar.aiStatus)}</span>
@@ -77,10 +71,7 @@ function AiRequestMetaRow({
       {showCancel ? (
         <button
           type="button"
-          className={cn(
-            "shrink-0 cursor-pointer underline underline-offset-2 hover:opacity-90",
-            "text-neutral-700",
-          )}
+          className={cn("shrink-0 cursor-pointer underline underline-offset-2 hover:opacity-90", "text-neutral-700")}
           onClick={() => onCancelRequest(ar.requestMessageId)}
         >
           취소
@@ -100,27 +91,15 @@ function BubbleMessageText({
   variant: ChatMarkdownVariant;
 }) {
   if (!msg.isAiRequest) {
-    return (
-      <ChatMarkdownContent
-        text={msg.text}
-        variant={variant}
-        preserveWhitespace
-      />
-    );
+    return <ChatMarkdownContent text={msg.text} variant={variant} preserveWhitespace />;
   }
   return (
     <>
-      <span className={typo.aiRequestBubblePrefix}>
-        {CHAT_AI_MENTION_LABEL}
-      </span>
+      <span className={typo.aiRequestBubblePrefix}>{CHAT_AI_MENTION_LABEL}</span>
       {msg.text ? (
         <>
           {" "}
-          <ChatMarkdownContent
-            text={msg.text}
-            variant={variant}
-            preserveWhitespace
-          />
+          <ChatMarkdownContent text={msg.text} variant={variant} preserveWhitespace />
         </>
       ) : null}
     </>
@@ -159,23 +138,11 @@ export function OtherMessageGroup({
       <div className="min-w-0">
         <div className="flex flex-col gap-1">
           {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className="max-w-full"
-              {...(msg.isAiRequest ? { "data-chat-anchor": msg.id } : {})}
-            >
-              <div
-                className={cn(
-                  chrome.bubbleBase,
-                  chrome.otherBubble,
-                  typo.bubble,
-                )}
-              >
+            <div key={msg.id} className="max-w-full" {...(msg.isAiRequest ? { "data-chat-anchor": msg.id } : {})}>
+              <div className={cn(chrome.bubbleBase, chrome.otherBubble, typo.bubble)}>
                 <BubbleMessageText msg={msg} typo={typo} variant="other" />
               </div>
-              {msg.isAiRequest ? (
-                <AiRequestMetaRow msg={msg} typo={typo} isOwnMessage={false} />
-              ) : null}
+              {msg.isAiRequest ? <AiRequestMetaRow msg={msg} typo={typo} isOwnMessage={false} /> : null}
             </div>
           ))}
         </div>
@@ -200,23 +167,12 @@ export function MyMessageGroup({
   return (
     <div className="flex flex-col items-end gap-1 -mr-1">
       {messages.map((msg) => (
-        <div
-          key={msg.id}
-          className="max-w-full"
-          {...(msg.isAiRequest ? { "data-chat-anchor": msg.id } : {})}
-        >
-          <div
-            className={cn(chrome.bubbleBase, chrome.mineBubble, typo.bubble)}
-          >
+        <div key={msg.id} className="max-w-full" {...(msg.isAiRequest ? { "data-chat-anchor": msg.id } : {})}>
+          <div className={cn(chrome.bubbleBase, chrome.mineBubble, typo.bubble)}>
             <BubbleMessageText msg={msg} typo={typo} variant="mine" />
           </div>
           {msg.isAiRequest ? (
-            <AiRequestMetaRow
-              msg={msg}
-              typo={typo}
-              onCancelRequest={onCancelAiRequest}
-              isOwnMessage
-            />
+            <AiRequestMetaRow msg={msg} typo={typo} onCancelRequest={onCancelAiRequest} isOwnMessage />
           ) : null}
         </div>
       ))}
@@ -225,21 +181,12 @@ export function MyMessageGroup({
   );
 }
 
-export function SystemMessage({
-  message,
-  isMinimized = false,
-}: {
-  message: ChatMessage;
-  isMinimized?: boolean;
-}) {
+export function SystemMessage({ message, isMinimized = false }: { message: ChatMessage; isMinimized?: boolean }) {
   const { typo, chrome } = getChatPanelLook(isMinimized);
 
   return (
     <div className="flex justify-center px-2">
-      <div
-        className={cn(chrome.systemPill, typo.systemBody)}
-        style={{ whiteSpace: "pre-line" }}
-      >
+      <div className={cn(chrome.systemPill, typo.systemBody)} style={{ whiteSpace: "pre-line" }}>
         {message.text}
       </div>
     </div>
@@ -263,11 +210,7 @@ export function AiMessageGroup({
       <div className="flex shrink-0 flex-col items-center gap-0.5">
         <Avatar size={40} shape="rounded" tone="elevate" ring="subtle" aria-hidden>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={chrome.wooriIconSrc}
-            alt=""
-            className="h-full w-full object-contain p-1"
-          />
+          <img src={chrome.wooriIconSrc} alt="" className="h-full w-full object-contain p-1" />
         </Avatar>
         <span className={typo.wooriSenderLabel}>WOORI</span>
       </div>
@@ -287,13 +230,7 @@ export function AiMessageGroup({
           ))}
         </div>
 
-        {groupTime && (
-          <GroupTimeStamp
-            time={groupTime}
-            typo={typo}
-            className="mt-0.5 block"
-          />
-        )}
+        {groupTime && <GroupTimeStamp time={groupTime} typo={typo} className="mt-0.5 block" />}
       </div>
     </div>
   );

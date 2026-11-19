@@ -134,7 +134,11 @@ export function MobileRouteExpandedShell({
 
 export function MobileRoutePlaceCardSkeleton() {
   return (
-    <output aria-label="장소 불러오는 중" aria-busy className={cn(CARD_CLASS, "flex min-h-[155px] gap-3 pl-3.5 pr-2 pt-3")}>
+    <output
+      aria-label="장소 불러오는 중"
+      aria-busy
+      className={cn(CARD_CLASS, "flex min-h-[155px] gap-3 pl-3.5 pr-2 pt-3")}
+    >
       <Skeleton render={<span />} className="size-6 shrink-0 rounded-[5.5px]" />
       <span className="flex min-w-0 flex-1 flex-col gap-2 pt-0.5">
         <Skeleton render={<span />} className="h-5 w-2/3" />
@@ -157,7 +161,11 @@ export function MobileRouteEmptyDayCard({ dayNumber }: Readonly<{ dayNumber: num
   );
 }
 
-export function MobileRouteMessageCard({ title, description, tone = "default" }: Readonly<{
+export function MobileRouteMessageCard({
+  title,
+  description,
+  tone = "default",
+}: Readonly<{
   title: string;
   description: string;
   tone?: "default" | "error";

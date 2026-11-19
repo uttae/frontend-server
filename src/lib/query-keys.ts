@@ -18,11 +18,7 @@ export function placeCardBookmarkRootQueryKey(roomId: string) {
   return [PLACE_CARD_BOOKMARK, roomId] as const;
 }
 
-export function placeCardBookmarkQueryKey(
-  roomId: string,
-  googlePlaceId: string,
-  bookmarkId: number,
-) {
+export function placeCardBookmarkQueryKey(roomId: string, googlePlaceId: string, bookmarkId: number) {
   return [PLACE_CARD_BOOKMARK, roomId, googlePlaceId, bookmarkId] as const;
 }
 
@@ -50,8 +46,7 @@ export function planItinerarySegmentMapPathQueryKey(
   ] as const;
 }
 
-export const roomSchedulesQueryKey = (roomId: string | null) =>
-  ["room-schedules", roomId] as const;
+export const roomSchedulesQueryKey = (roomId: string | null) => ["room-schedules", roomId] as const;
 
 export const sessionUserQueryKey = ["session", "user"] as const;
 
@@ -84,10 +79,8 @@ export function joinRequestsRootQueryKey() {
   return ["join-requests"] as const;
 }
 
-export const scheduleItemsQueryKey = (
-  roomId: string | null,
-  scheduleId: number | null,
-) => ["schedule-items", roomId, scheduleId, "v2-loc"] as const;
+export const scheduleItemsQueryKey = (roomId: string | null, scheduleId: number | null) =>
+  ["schedule-items", roomId, scheduleId, "v2-loc"] as const;
 
 export const scheduleItemRouteQueryKey = (
   roomId: string | null,
@@ -95,15 +88,6 @@ export const scheduleItemRouteQueryKey = (
   segmentSourceItemId: number | null,
   destinationItemId: number | null,
   travelMode: ScheduleTravelModeValue | null,
-) =>
-  [
-    "schedule-item-route",
-    roomId,
-    scheduleId,
-    segmentSourceItemId,
-    destinationItemId,
-    travelMode,
-  ] as const;
+) => ["schedule-item-route", roomId, scheduleId, segmentSourceItemId, destinationItemId, travelMode] as const;
 
-export const packingQueryKey = (roomId: string, userId: number) =>
-  ['packing', roomId, userId] as const;
+export const packingQueryKey = (roomId: string, userId: number) => ["packing", roomId, userId] as const;

@@ -1,8 +1,6 @@
 import { parseRoomContextPath } from "@/lib/room-context-path";
 
-const roomRootPaths = new Set([
-  "plan", "map", "chat", "bookmark", "search", "cost", "settings", "member-settings",
-]);
+const roomRootPaths = new Set(["plan", "map", "chat", "bookmark", "search", "cost", "settings", "member-settings"]);
 const roomDetailPaths = new Set(["plan", "packing", "bookmark"]);
 
 export function isAnalyticsRoomPath(pathname: string): boolean {

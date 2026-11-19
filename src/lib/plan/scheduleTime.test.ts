@@ -10,19 +10,14 @@ import {
 } from "@/lib/plan/scheduleTime";
 
 describe("wall-clock schedule times", () => {
-  it.each([
-    "24:00",
-    "23:60",
-    "9:00",
-    "09:00:00",
-    "09:00Z",
-    "2026-09-09T09:00:00Z",
-    " 09:00 ",
-  ])("rejects noncanonical time %s without conversion", (value) => {
-    expect(normalizeStartTimeToHm(value)).toBe("");
-    expect(validateScheduleTimeDraft(value, "").valid).toBe(false);
-    expect(validateScheduleTimeDraft("09:00", value).valid).toBe(false);
-  });
+  it.each(["24:00", "23:60", "9:00", "09:00:00", "09:00Z", "2026-09-09T09:00:00Z", " 09:00 "])(
+    "rejects noncanonical time %s without conversion",
+    (value) => {
+      expect(normalizeStartTimeToHm(value)).toBe("");
+      expect(validateScheduleTimeDraft(value, "").valid).toBe(false);
+      expect(validateScheduleTimeDraft("09:00", value).valid).toBe(false);
+    },
+  );
   it.each([
     ["", ""],
     ["00:00", ""],
@@ -49,18 +44,10 @@ describe("wall-clock schedule times", () => {
   it("displays card times in 24-hour format and marks next-day ends", () => {
     expect(formatScheduleStaySummary("", null)).toBe("");
     expect(formatScheduleStaySummary("09:00", null)).toBe("09:00");
-    expect(formatScheduleStaySummary("23:00", "01:00")).toBe(
-      "23:00 – 01:00 (+1일)",
-    );
-    expect(formatScheduleTimeRange("00:00", "00:00")).toBe(
-      "00:00 – 00:00",
-    );
-    expect(formatScheduleTimeRange("23:00", "00:00")).toBe(
-      "23:00 – 00:00 (+1일)",
-    );
-    expect(formatScheduleTimeRange("00:00", "23:59")).toBe(
-      "00:00 – 23:59",
-    );
+    expect(formatScheduleStaySummary("23:00", "01:00")).toBe("23:00 – 01:00 (+1일)");
+    expect(formatScheduleTimeRange("00:00", "00:00")).toBe("00:00 – 00:00");
+    expect(formatScheduleTimeRange("23:00", "00:00")).toBe("23:00 – 00:00 (+1일)");
+    expect(formatScheduleTimeRange("00:00", "23:59")).toBe("00:00 – 23:59");
     expect(formatScheduleTimeRange("13:05", null)).toBe("13:05");
   });
 });

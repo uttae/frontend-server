@@ -12,12 +12,7 @@ const PRESENCE_MEMBERS_RESYNC_DELAY_MS = 400;
 
 const roomMembersResyncTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-function patchMemberOnline(
-  queryClient: QueryClient,
-  roomId: string,
-  userId: number,
-  isOnline: boolean,
-): void {
+function patchMemberOnline(queryClient: QueryClient, roomId: string, userId: number, isOnline: boolean): void {
   const rid = roomId.trim();
   if (!rid.length) return;
 
@@ -40,11 +35,7 @@ function patchMemberOnline(
   });
 }
 
-export function dispatchRoomPresence(
-  queryClient: QueryClient,
-  roomId: string,
-  event: RoomPresenceChangedEvent,
-): void {
+export function dispatchRoomPresence(queryClient: QueryClient, roomId: string, event: RoomPresenceChangedEvent): void {
   const rid = roomId.trim();
   if (!rid.length || !event.userId) return;
 
@@ -52,20 +43,14 @@ export function dispatchRoomPresence(
   patchMemberOnline(queryClient, rid, event.userId, isOnline);
 }
 
-export function optimisticPatchSelfOnline(
-  queryClient: QueryClient,
-  roomId: string,
-): void {
+export function optimisticPatchSelfOnline(queryClient: QueryClient, roomId: string): void {
   const rid = roomId.trim();
   const me = readSessionUserId(queryClient);
   if (!rid.length || me == null) return;
   patchMemberOnline(queryClient, rid, me, true);
 }
 
-async function invalidateRoomMembersActive(
-  queryClient: QueryClient,
-  roomId: string,
-): Promise<void> {
+async function invalidateRoomMembersActive(queryClient: QueryClient, roomId: string): Promise<void> {
   const rid = roomId.trim();
   if (!rid.length) return;
   await queryClient.invalidateQueries({
@@ -74,16 +59,11 @@ async function invalidateRoomMembersActive(
   });
 }
 
-export function scheduleRoomMembersResyncAfterSubscribe(
-  queryClient: QueryClient,
-  roomId: string,
-): void {
+export function scheduleRoomMembersResyncAfterSubscribe(queryClient: QueryClient, roomId: string): void {
   const rid = roomId.trim();
   if (!rid.length) return;
 
-  const cached = queryClient.getQueryData<RoomMemberListResponse>(
-    roomMembersQueryKey(rid),
-  );
+  const cached = queryClient.getQueryData<RoomMemberListResponse>(roomMembersQueryKey(rid));
   if (!cached?.members?.length) {
     void invalidateRoomMembersActive(queryClient, rid);
     return;

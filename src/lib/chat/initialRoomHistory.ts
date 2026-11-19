@@ -2,10 +2,7 @@ import type { ServerChatMessage } from "@/types/chat";
 import { getRoomMessages } from "@/lib/api/rooms";
 import { normalizeFetchedRoomMessages } from "@/lib/chat";
 
-export function hasOlderHistoryPage(
-  fetchedLength: number,
-  pageSize: number,
-): boolean {
+export function hasOlderHistoryPage(fetchedLength: number, pageSize: number): boolean {
   return fetchedLength >= pageSize;
 }
 
@@ -17,10 +14,7 @@ export type InitialRoomHistoryLoadResult = {
   warmHistory: ServerChatMessage[];
 };
 
-async function loadLatestRoomHistoryPage(
-  roomId: string,
-  pageSize: number,
-): Promise<InitialRoomHistoryLoadResult> {
+async function loadLatestRoomHistoryPage(roomId: string, pageSize: number): Promise<InitialRoomHistoryLoadResult> {
   const history = await getRoomMessages(roomId, { size: pageSize });
   const normalized = normalizeFetchedRoomMessages(history);
   return {

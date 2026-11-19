@@ -2,8 +2,7 @@ export function formatRouteDistance(meters: number): string {
   if (!Number.isFinite(meters) || meters < 0) return "—";
   if (meters >= 1000) {
     const km = meters / 1000;
-    const rounded =
-      km >= 100 ? Math.round(km) : Number(km.toFixed(km >= 10 ? 0 : 1));
+    const rounded = km >= 100 ? Math.round(km) : Number(km.toFixed(km >= 10 ? 0 : 1));
     return `${rounded}km`;
   }
   return `${Math.max(1, Math.round(meters))}m`;

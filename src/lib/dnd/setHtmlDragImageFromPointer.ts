@@ -1,7 +1,4 @@
-export function setHtmlDragImageFromPointer(
-  event: DragEvent,
-  source: HTMLElement,
-): void {
+export function setHtmlDragImageFromPointer(event: DragEvent, source: HTMLElement): void {
   const rect = source.getBoundingClientRect();
   const offsetX = event.clientX - rect.left;
   const offsetY = event.clientY - rect.top;

@@ -8,19 +8,10 @@ const eslintConfig = defineConfig([
   {
     files: ["tailwind.config.js"],
     rules: {
-      "@typescript-eslint/no-require-imports": [
-        "error",
-        { allow: ["^\\./src/lib/layout-tokens$"] },
-      ],
+      "@typescript-eslint/no-require-imports": ["error", { allow: ["^\\./src/lib/layout-tokens$"] }],
     },
   },
-  globalIgnores([
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-    ".worktrees/**",
-  ]),
+  globalIgnores([".next/**", "out/**", "build/**", "next-env.d.ts", ".worktrees/**"]),
 ]);
 
 export default eslintConfig;

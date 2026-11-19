@@ -37,9 +37,7 @@ function chipsDiscoverRecenterEligible(
   mapCenter: MapCenterCoords,
   zoom: number | null,
 ): boolean {
-  const chipChosen =
-    typeof discoverCategoryId === "string"
-    && discoverCategoryId.trim().length > 0;
+  const chipChosen = typeof discoverCategoryId === "string" && discoverCategoryId.trim().length > 0;
 
   if (!chipChosen || discoverSnapshot == null) return false;
 
@@ -75,8 +73,8 @@ export function usePlacesSearchHereVisible({
   }
 
   const movedFromSearch =
-    searchSnapshot != null
-    && shouldSuggestPlacesSearchRecenter({
+    searchSnapshot != null &&
+    shouldSuggestPlacesSearchRecenter({
       mapCenter,
       snapshotCenter: searchSnapshot.center,
       snapshotRadiusMeters: searchSnapshot.radius,
@@ -84,20 +82,11 @@ export function usePlacesSearchHereVisible({
       snapshotZoom: searchSnapshot.zoom,
     });
   const searchRecenterNotice =
-    movedFromSearch || searchMode !== "map_recenter"
-      ? null
-      : searchRecenterNoticeOf(searchStatus, hasResults);
-  const suggestSearchRecenter =
-    movedFromSearch || searchRecenterNotice === "failed";
+    movedFromSearch || searchMode !== "map_recenter" ? null : searchRecenterNoticeOf(searchStatus, hasResults);
+  const suggestSearchRecenter = movedFromSearch || searchRecenterNotice === "failed";
 
-  const movedFromDiscover = chipsDiscoverRecenterEligible(
-    discoverCategoryId,
-    discoverSnapshot,
-    mapCenter,
-    zoom,
-  );
-  const retryDiscoverRecenter =
-    discoverFailed && discoverSnapshot != null && !movedFromDiscover;
+  const movedFromDiscover = chipsDiscoverRecenterEligible(discoverCategoryId, discoverSnapshot, mapCenter, zoom);
+  const retryDiscoverRecenter = discoverFailed && discoverSnapshot != null && !movedFromDiscover;
   const suggestDiscoverRecenter = movedFromDiscover || retryDiscoverRecenter;
 
   return {

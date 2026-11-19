@@ -21,10 +21,7 @@ export function toCssPx(px: number): string {
   return `${Math.max(0, Math.round(px))}px`;
 }
 
-export function parseLayoutLengthToPx(
-  value: string,
-  rootFontPx = DEFAULT_ROOT_FONT_PX,
-): number {
+export function parseLayoutLengthToPx(value: string, rootFontPx = DEFAULT_ROOT_FONT_PX): number {
   const trimmed = value.trim();
   if (!trimmed.length) return 0;
   if (trimmed.endsWith("px")) {
@@ -37,13 +34,9 @@ export function parseLayoutLengthToPx(
   return Number.isFinite(n) ? n : 0;
 }
 
-export function contentTokenToLeftSectionMaxPx(
-  contentWidth: string,
-  rootFontPx = DEFAULT_ROOT_FONT_PX,
-): number {
+export function contentTokenToLeftSectionMaxPx(contentWidth: string, rootFontPx = DEFAULT_ROOT_FONT_PX): number {
   return Math.round(
-    parseLayoutLengthToPx(contentWidth, rootFontPx) +
-      parseLayoutLengthToPx(MAIN_SIDEBAR_RAIL_WIDTH, rootFontPx),
+    parseLayoutLengthToPx(contentWidth, rootFontPx) + parseLayoutLengthToPx(MAIN_SIDEBAR_RAIL_WIDTH, rootFontPx),
   );
 }
 
@@ -62,10 +55,7 @@ export function resolveRouteDefaultContentWidth(pathname: string): string {
   return "";
 }
 
-export function resolveEffectiveContentWidthToken(
-  pathname: string,
-  contextToken: string,
-): string {
+export function resolveEffectiveContentWidthToken(pathname: string, contextToken: string): string {
   const trimmed = contextToken.trim();
   if (trimmed.length > 0) return trimmed;
   return resolveRouteDefaultContentWidth(pathname);

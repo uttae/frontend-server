@@ -193,9 +193,7 @@ describe("placePhotoUrlQueryOptions", () => {
       expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(1);
 
       vi.setSystemTime(now + 5 * 60 * 1000 + 1);
-      await expect(queryClient.fetchQuery(options)).resolves.toBe(
-        "https://cdn.example/available-later.jpg",
-      );
+      await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/available-later.jpg");
       expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();

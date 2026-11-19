@@ -1,14 +1,9 @@
 import { usePlacePhotoUrlQuery } from "@/hooks/usePlacePhotoUrl";
 import type { PlanPlace } from "@/lib/plan/types";
 
-export function usePlanPlaceCardPhoto(
-  place: PlanPlace,
-  options?: { enabled?: boolean },
-) {
+export function usePlanPlaceCardPhoto(place: PlanPlace, options?: { enabled?: boolean }) {
   const fallbackPhotoUrl =
-    typeof place.imageUrl === "string" && place.imageUrl.trim().length > 0
-      ? place.imageUrl.trim()
-      : null;
+    typeof place.imageUrl === "string" && place.imageUrl.trim().length > 0 ? place.imageUrl.trim() : null;
   const googlePlaceId =
     typeof place.googlePlaceId === "string" && place.googlePlaceId.trim().length > 0
       ? place.googlePlaceId.trim()
@@ -18,13 +13,10 @@ export function usePlanPlaceCardPhoto(
     enabled: options?.enabled ?? true,
   });
 
-  const resolvedPhotoUrl = googlePlaceId
-    ? photoQuery.data?.trim() || fallbackPhotoUrl
-    : fallbackPhotoUrl;
+  const resolvedPhotoUrl = googlePlaceId ? photoQuery.data?.trim() || fallbackPhotoUrl : fallbackPhotoUrl;
 
   return {
     resolvedPhotoUrl,
-    photoLoading:
-      Boolean(googlePlaceId) && photoQuery.isLoading && !resolvedPhotoUrl,
+    photoLoading: Boolean(googlePlaceId) && photoQuery.isLoading && !resolvedPhotoUrl,
   };
 }

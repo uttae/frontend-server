@@ -6,20 +6,14 @@ export type InsertAnchor = Readonly<{
   index: number;
 }>;
 
-export function insertAnchorAfterItem(
-  places: readonly PlanPlace[],
-  afterItemId: number,
-): InsertAnchor {
+export function insertAnchorAfterItem(places: readonly PlanPlace[], afterItemId: number): InsertAnchor {
   const anchor = places.findIndex((p) => p.itemId === afterItemId);
   const index = anchor < 0 ? places.length : anchor + 1;
   const nextItemId = places[index]?.itemId;
   return { afterItemId, nextItemId: typeof nextItemId === "number" ? nextItemId : null, index };
 }
 
-export function resolveInsertIndex(
-  places: readonly PlanPlace[],
-  anchor: InsertAnchor | null,
-): number {
+export function resolveInsertIndex(places: readonly PlanPlace[], anchor: InsertAnchor | null): number {
   if (anchor === null) return places.length;
   const after = places.findIndex((p) => p.itemId === anchor.afterItemId);
   if (after >= 0) return after + 1;

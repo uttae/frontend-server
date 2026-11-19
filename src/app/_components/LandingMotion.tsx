@@ -11,8 +11,7 @@ type LandingMotionProps = {
   className?: string;
 };
 
-const TRANSITION_CLASSES =
-  "transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none";
+const TRANSITION_CLASSES = "transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none";
 
 export function LandingMotion({ children, className }: LandingMotionProps) {
   const ref = useRef<HTMLDivElement>(null);
@@ -61,8 +60,7 @@ export function LandingMotion({ children, className }: LandingMotionProps) {
     <div
       ref={ref}
       className={cn(
-        state === "hidden" &&
-          cn(TRANSITION_CLASSES, "pointer-events-none translate-y-3 opacity-0"),
+        state === "hidden" && cn(TRANSITION_CLASSES, "pointer-events-none translate-y-3 opacity-0"),
         state === "shown" && cn(TRANSITION_CLASSES, "translate-y-0 opacity-100"),
         className,
       )}

@@ -1,19 +1,8 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 
-import {
-  MOBILE_VIEW_DEFAULT,
-  readMobileViewState,
-  type MobileViewState,
-} from "@/lib/mobile-view";
+import { MOBILE_VIEW_DEFAULT, readMobileViewState, type MobileViewState } from "@/lib/mobile-view";
 
 export type MobileViewContextValue = MobileViewState;
 
@@ -37,10 +26,7 @@ export function MobileViewProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.toggle(
-      MOBILE_DEVICE_HTML_CLASS,
-      state.isMobileDevice,
-    );
+    document.documentElement.classList.toggle(MOBILE_DEVICE_HTML_CLASS, state.isMobileDevice);
   }, [state.isMobileDevice]);
 
   const value = useMemo(
@@ -50,11 +36,7 @@ export function MobileViewProvider({ children }: { children: ReactNode }) {
     [state.isMobileDevice],
   );
 
-  return (
-    <MobileViewContext.Provider value={value}>
-      {children}
-    </MobileViewContext.Provider>
-  );
+  return <MobileViewContext.Provider value={value}>{children}</MobileViewContext.Provider>;
 }
 
 export function useMobileView(): MobileViewContextValue {

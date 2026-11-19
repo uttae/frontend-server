@@ -1,5 +1,5 @@
-import { clsx, type ClassValue } from "clsx"
-import { extendTailwindMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { extendTailwindMerge } from "tailwind-merge";
 
 const twMerge = extendTailwindMerge({
   extend: {
@@ -7,8 +7,8 @@ const twMerge = extendTailwindMerge({
       text: [(value: string) => /^(display|heading|title|body|label|caption)-/.test(value)],
     },
   },
-})
+});
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }

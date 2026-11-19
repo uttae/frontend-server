@@ -12,19 +12,9 @@ import type {
   ServerChatMessageType,
 } from "@/types/chat";
 
+const ALLOWED: ReadonlySet<string> = new Set(["CHAT", "AI_REQUEST", "AI_RESPONSE", "PLACE_SHARE", "SYSTEM", "AI"]);
 
-const ALLOWED: ReadonlySet<string> = new Set([
-  "CHAT",
-  "AI_REQUEST",
-  "AI_RESPONSE",
-  "PLACE_SHARE",
-  "SYSTEM",
-  "AI",
-]);
-
-export function normalizeMessageKind(
-  raw: ServerChatMessageType | unknown,
-): string {
+export function normalizeMessageKind(raw: ServerChatMessageType | unknown): string {
   if (raw == null) return "CHAT";
   if (typeof raw !== "string") return "CHAT";
   const t = raw.trim();
@@ -32,9 +22,7 @@ export function normalizeMessageKind(
   return t.toUpperCase();
 }
 
-export function coerceServerChatMessageType(
-  raw: unknown,
-): ServerChatMessageType {
+export function coerceServerChatMessageType(raw: unknown): ServerChatMessageType {
   const k = normalizeMessageKind(raw as ServerChatMessageType);
   return ALLOWED.has(k) ? (k as ServerChatMessageType) : "CHAT";
 }
@@ -54,25 +42,19 @@ export function parseFiniteNumber(v: unknown): number | undefined {
   return undefined;
 }
 
-function normalizeMetadataRecord(
-  raw: unknown,
-): Record<string, string> | undefined {
+function normalizeMetadataRecord(raw: unknown): Record<string, string> | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   const out: Record<string, string> = {};
   for (const [k, val] of Object.entries(raw as Record<string, unknown>)) {
     if (typeof val === "string") out[k] = val;
-    else if (typeof val === "number" && Number.isFinite(val))
-      out[k] = String(val);
+    else if (typeof val === "number" && Number.isFinite(val)) out[k] = String(val);
     else if (typeof val === "boolean") out[k] = val ? "true" : "false";
-    else if (val !== null && typeof val === "object")
-      out[k] = JSON.stringify(val);
+    else if (val !== null && typeof val === "object") out[k] = JSON.stringify(val);
   }
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-export function normalizeServerChatMessage(
-  raw: unknown,
-): ServerChatMessage | null {
+export function normalizeServerChatMessage(raw: unknown): ServerChatMessage | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
 
@@ -80,19 +62,12 @@ export function normalizeServerChatMessage(
   const roomId = readNonEmptyString(r.roomId ?? r.room_id);
   if (!id || !roomId) return null;
 
-  const messageType = coerceServerChatMessageType(
-    r.messageType ?? r.message_type,
-  );
+  const messageType = coerceServerChatMessageType(r.messageType ?? r.message_type);
 
   const createdAt =
-    typeof r.createdAt === "string"
-      ? r.createdAt
-      : typeof r.created_at === "string"
-        ? r.created_at
-        : "";
+    typeof r.createdAt === "string" ? r.createdAt : typeof r.created_at === "string" ? r.created_at : "";
 
-  const senderId =
-    parseFiniteNumber(r.senderId ?? r.sender_id) ?? 0;
+  const senderId = parseFiniteNumber(r.senderId ?? r.sender_id) ?? 0;
 
   const clientMessageId =
     typeof r.clientMessageId === "string"
@@ -129,41 +104,22 @@ export type AiResponseStructuredShape = {
 export function aiResponseStructuredToPartialFields(
   structured: AiResponseStructuredShape,
 ): Partial<
-  Pick<
-    ChatMessage,
-    | "aiIntent"
-    | "aiRecommendedPlaces"
-    | "aiPlaceRecommendationHeading"
-    | "aiConversationSummary"
-  >
+  Pick<ChatMessage, "aiIntent" | "aiRecommendedPlaces" | "aiPlaceRecommendationHeading" | "aiConversationSummary">
 > {
   const fields: Partial<
-    Pick<
-      ChatMessage,
-      | "aiIntent"
-      | "aiRecommendedPlaces"
-      | "aiPlaceRecommendationHeading"
-      | "aiConversationSummary"
-    >
+    Pick<ChatMessage, "aiIntent" | "aiRecommendedPlaces" | "aiPlaceRecommendationHeading" | "aiConversationSummary">
   > = {};
 
   if (structured.intent) fields.aiIntent = structured.intent;
 
-  if (
-    structured.intent === "place_recommendation" &&
-    structured.recommendedPlaces?.length
-  ) {
+  if (structured.intent === "place_recommendation" && structured.recommendedPlaces?.length) {
     fields.aiRecommendedPlaces = structured.recommendedPlaces;
     if (structured.placeRecommendationHeading) {
-      fields.aiPlaceRecommendationHeading =
-        structured.placeRecommendationHeading;
+      fields.aiPlaceRecommendationHeading = structured.placeRecommendationHeading;
     }
   }
 
-  if (
-    structured.intent === "conversation_summary" &&
-    structured.conversationSummary
-  ) {
+  if (structured.intent === "conversation_summary" && structured.conversationSummary) {
     fields.aiConversationSummary = structured.conversationSummary;
   }
 
@@ -178,10 +134,7 @@ export function aiResponseDisplayText(
   return t != null && t !== "" ? t : content;
 }
 
-function readMetaString(
-  meta: Record<string, string> | undefined,
-  ...keys: string[]
-): string | undefined {
+function readMetaString(meta: Record<string, string> | undefined, ...keys: string[]): string | undefined {
   if (!meta) return undefined;
   for (const k of keys) {
     const v = meta[k];
@@ -215,23 +168,12 @@ function pickString(...vals: unknown[]): string | undefined {
 
 function parseOneRecommendedPlace(raw: unknown): AiRecommendedPlace | null {
   if (!isRecord(raw)) return null;
-  const placeId =
-    (
-      pickString(
-        raw.placeId,
-        raw.place_id,
-        raw.googlePlaceId,
-        raw.google_place_id,
-      ) ?? ""
-    ).trim();
+  const placeId = (pickString(raw.placeId, raw.place_id, raw.googlePlaceId, raw.google_place_id) ?? "").trim();
   const name = (pickString(raw.name) ?? "").trim();
   const lat = parseFiniteNumber(raw.lat ?? raw.latitude);
   const lng = parseFiniteNumber(raw.lng ?? raw.longitude);
-  if (!placeId || !name || lat === undefined || lng === undefined)
-    return null;
-  const address =
-    pickString(raw.address, raw.formattedAddress, raw.formatted_address) ??
-    "";
+  if (!placeId || !name || lat === undefined || lng === undefined) return null;
+  const address = pickString(raw.address, raw.formattedAddress, raw.formatted_address) ?? "";
   const reasonRaw = pickString(raw.reason);
   let reasonOut: string | undefined;
   if (reasonRaw !== undefined) {
@@ -239,13 +181,8 @@ function parseOneRecommendedPlace(raw: unknown): AiRecommendedPlace | null {
     if (t.length > 0) reasonOut = t;
   }
   const primaryType = pickString(raw.primaryType, raw.primary_type);
-  const googleMapsUri = pickString(
-    raw.googleMapsUri,
-    raw.google_maps_uri,
-  );
-  const rating = parseFiniteNumber(
-    raw.rating ?? raw.userRating ?? raw.user_rating,
-  );
+  const googleMapsUri = pickString(raw.googleMapsUri, raw.google_maps_uri);
+  const rating = parseFiniteNumber(raw.rating ?? raw.userRating ?? raw.user_rating);
   const userRatingCountRaw = parseFiniteNumber(
     raw.userRatingCount ??
       raw.user_rating_count ??
@@ -255,10 +192,9 @@ function parseOneRecommendedPlace(raw: unknown): AiRecommendedPlace | null {
       raw.user_ratings_total,
   );
   const userRatingCount =
-    userRatingCountRaw !== undefined &&
-    Number.isFinite(userRatingCountRaw) ?
-      Math.max(0, Math.round(userRatingCountRaw))
-    : undefined;
+    userRatingCountRaw !== undefined && Number.isFinite(userRatingCountRaw)
+      ? Math.max(0, Math.round(userRatingCountRaw))
+      : undefined;
 
   return {
     placeId,
@@ -274,19 +210,9 @@ function parseOneRecommendedPlace(raw: unknown): AiRecommendedPlace | null {
   };
 }
 
-function parseLegacyFlatRecommendedPlaces(
-  meta: Record<string, string> | undefined,
-): AiRecommendedPlace[] | undefined {
-  const rawStr = readMetaString(
-    meta,
-    "recommendedPlaces",
-    "recommended_places",
-    "recommendPlaces",
-  );
-  const parsed =
-    rawStr !== undefined ?
-      safeParseJson<unknown>(rawStr)
-    : undefined;
+function parseLegacyFlatRecommendedPlaces(meta: Record<string, string> | undefined): AiRecommendedPlace[] | undefined {
+  const rawStr = readMetaString(meta, "recommendedPlaces", "recommended_places", "recommendPlaces");
+  const parsed = rawStr !== undefined ? safeParseJson<unknown>(rawStr) : undefined;
   if (!Array.isArray(parsed)) return undefined;
   const out: AiRecommendedPlace[] = [];
   for (const row of parsed) {
@@ -296,17 +222,11 @@ function parseLegacyFlatRecommendedPlaces(
   return out.length > 0 ? out : undefined;
 }
 
-function parsePlaceRecommendationFromMeta(
-  meta: Record<string, string> | undefined,
-): {
+function parsePlaceRecommendationFromMeta(meta: Record<string, string> | undefined): {
   places?: AiRecommendedPlace[];
   heading?: AiPlaceRecommendationHeading;
 } {
-  const rawStr = readMetaString(
-    meta,
-    "place_recommendation",
-    "placeRecommendation",
-  );
+  const rawStr = readMetaString(meta, "place_recommendation", "placeRecommendation");
   let blockPlaces: AiRecommendedPlace[] | undefined;
   let heading: AiPlaceRecommendationHeading | undefined;
 
@@ -334,12 +254,7 @@ function parsePlaceRecommendationFromMeta(
   }
 
   const legacy = parseLegacyFlatRecommendedPlaces(meta);
-  const places =
-    blockPlaces?.length ?
-      blockPlaces
-    : legacy?.length ?
-      legacy
-    : undefined;
+  const places = blockPlaces?.length ? blockPlaces : legacy?.length ? legacy : undefined;
 
   return {
     ...(places ? { places } : {}),
@@ -347,31 +262,25 @@ function parsePlaceRecommendationFromMeta(
   };
 }
 
-function parseSections(
-  raw: unknown,
-): NonNullable<AiConversationSummaryPayload["sections"]> {
+function parseSections(raw: unknown): NonNullable<AiConversationSummaryPayload["sections"]> {
   if (!Array.isArray(raw)) return [];
   const sections: NonNullable<AiConversationSummaryPayload["sections"]> = [];
   for (const row of raw) {
     if (!isRecord(row)) continue;
     const title = pickString(row.title)?.trim();
     const typeRaw = row.type;
-    const type =
-      typeof typeRaw === "string" ? typeRaw.trim() : `${typeRaw ?? ""}`;
+    const type = typeof typeRaw === "string" ? typeRaw.trim() : `${typeRaw ?? ""}`;
     if (!title || type === "") continue;
     const itemsRaw = row.items;
-    const items: string[] =
-      Array.isArray(itemsRaw) ?
-        itemsRaw.filter((it): it is string => typeof it === "string")
+    const items: string[] = Array.isArray(itemsRaw)
+      ? itemsRaw.filter((it): it is string => typeof it === "string")
       : [];
     sections.push({ type, title, items });
   }
   return sections;
 }
 
-function parseConversationSummaryPayload(
-  raw: unknown,
-): AiConversationSummaryPayload | undefined {
+function parseConversationSummaryPayload(raw: unknown): AiConversationSummaryPayload | undefined {
   if (!isRecord(raw)) return undefined;
   const title = pickString(raw.title)?.trim();
   const overview = pickString(raw.overview)?.trim();
@@ -389,23 +298,13 @@ function parseConversationSummaryPayload(
 function parseConversationSummaryFromMeta(
   meta: Record<string, string> | undefined,
 ): AiConversationSummaryPayload | undefined {
-  const rawStr = readMetaString(
-    meta,
-    "conversationSummary",
-    "conversation_summary",
-  );
-  const parsed =
-    rawStr !== undefined ?
-      safeParseJson<unknown>(rawStr)
-    : undefined;
+  const rawStr = readMetaString(meta, "conversationSummary", "conversation_summary");
+  const parsed = rawStr !== undefined ? safeParseJson<unknown>(rawStr) : undefined;
   if (parsed == null) return undefined;
   return parseConversationSummaryPayload(parsed);
 }
 
-export function parseAiResponseStructuredMeta(metadata: Record<
-  string,
-  string
-> | undefined): {
+export function parseAiResponseStructuredMeta(metadata: Record<string, string> | undefined): {
   intent?: string;
   answerText?: string;
   recommendedPlaces?: AiRecommendedPlace[];
@@ -414,22 +313,15 @@ export function parseAiResponseStructuredMeta(metadata: Record<
 } {
   if (!metadata) return {};
   const intentRaw = readMetaString(metadata, "intent", "Intent");
-  const intent =
-    intentRaw != null && intentRaw.trim() !== "" ?
-      intentRaw.trim().toLowerCase()
-    : undefined;
+  const intent = intentRaw != null && intentRaw.trim() !== "" ? intentRaw.trim().toLowerCase() : undefined;
 
   const answerRaw = readMetaString(metadata, "answer_text", "answerText");
-  const answerText =
-    answerRaw != null && answerRaw.trim() !== "" ?
-      answerRaw.trim()
-    : undefined;
+  const answerText = answerRaw != null && answerRaw.trim() !== "" ? answerRaw.trim() : undefined;
 
   const pr = parsePlaceRecommendationFromMeta(metadata);
   const recommendedPlaces = pr.places;
 
-  const conversationSummary =
-    parseConversationSummaryFromMeta(metadata);
+  const conversationSummary = parseConversationSummaryFromMeta(metadata);
 
   return {
     ...(intent ? { intent } : {}),
@@ -454,9 +346,7 @@ function parseCancelable(meta: Record<string, string>): boolean {
   return v === "true" || v === "1";
 }
 
-export function parseAiRequestUiMeta(
-  msg: ServerChatMessage,
-): {
+export function parseAiRequestUiMeta(msg: ServerChatMessage): {
   requestMessageId: string;
   aiStatus?: AiRequestStatus;
   cancelable: boolean;
@@ -483,33 +373,22 @@ export function parseAiRequestUiMeta(
   };
 }
 
-export function parseAiResponseRequestMessageId(
-  msg: ServerChatMessage,
-): string | undefined {
+export function parseAiResponseRequestMessageId(msg: ServerChatMessage): string | undefined {
   const kind = normalizeMessageKind(msg.messageType);
   if (kind !== "AI_RESPONSE" && kind !== "AI") return undefined;
   const meta = msg.metadata;
   if (!meta) return undefined;
-  const raw =
-    meta.requestMessageId ??
-    meta.request_message_id ??
-    meta.requestmessageid;
+  const raw = meta.requestMessageId ?? meta.request_message_id ?? meta.requestmessageid;
   if (typeof raw !== "string") return undefined;
   const t = raw.trim();
   return t.length > 0 ? t : undefined;
 }
 
-export type ChatMemberMap = Map<
-  number,
-  Pick<RoomMember, "nickname" | "profileImageUrl">
->;
+export type ChatMemberMap = Map<number, Pick<RoomMember, "nickname" | "profileImageUrl">>;
 
 export const CHAT_UNKNOWN_SENDER_LABEL = "(알 수 없음)" as const;
 
-function lookupMemberNickname(
-  memberMap: ChatMemberMap,
-  userIdRaw: string | undefined,
-): string {
+function lookupMemberNickname(memberMap: ChatMemberMap, userIdRaw: string | undefined): string {
   const uid = parseFiniteNumber(userIdRaw);
   if (uid === undefined) return CHAT_UNKNOWN_SENDER_LABEL;
   const nick = memberMap.get(uid)?.nickname?.trim();
@@ -570,10 +449,7 @@ function resolveChatDisplayAvatarUrl(
   memberProfileUrl: string | null | undefined,
   metaAvatar: string | null,
 ): string | undefined {
-  if (
-    typeof memberProfileUrl === "string" &&
-    memberProfileUrl.trim().length > 0
-  ) {
+  if (typeof memberProfileUrl === "string" && memberProfileUrl.trim().length > 0) {
     return memberProfileUrl.trim();
   }
   if (metaAvatar != null && metaAvatar.trim().length > 0) {
@@ -595,26 +471,18 @@ function aiRequestStatusRank(msg: ServerChatMessage): number | undefined {
   return status === "QUEUED" ? 0 : 1;
 }
 
-function preferNewerServerMessage(
-  a: ServerChatMessage,
-  b: ServerChatMessage,
-): ServerChatMessage {
+function preferNewerServerMessage(a: ServerChatMessage, b: ServerChatMessage): ServerChatMessage {
   const before = aiRequestStatusRank(a);
   const after = aiRequestStatusRank(b);
   return before !== undefined && after !== undefined && after < before ? a : b;
 }
 
-function compareBySequence(
-  x: ServerChatMessage,
-  y: ServerChatMessage,
-): number {
+function compareBySequence(x: ServerChatMessage, y: ServerChatMessage): number {
   if (x.sequence != null && y.sequence != null) return x.sequence - y.sequence;
   return x.createdAt.localeCompare(y.createdAt);
 }
 
-export function mergeServerMessageLists(
-  ...lists: ServerChatMessage[][]
-): ServerChatMessage[] {
+export function mergeServerMessageLists(...lists: ServerChatMessage[][]): ServerChatMessage[] {
   const map = new Map<string, ServerChatMessage>();
   for (const list of lists) {
     for (const m of list) {
@@ -696,23 +564,15 @@ export function partitionLiveMessages(
   return { appended, updates, cursor: next, hasGap };
 }
 
-export function tailCursorOf(
-  snapshot: readonly ServerChatMessage[],
-): number | undefined {
+export function tailCursorOf(snapshot: readonly ServerChatMessage[]): number | undefined {
   return snapshot.length === 0 ? 0 : maxSequenceInMessages(snapshot);
 }
 
-export function normalizeFetchedRoomMessages(
-  rows: readonly unknown[],
-): ServerChatMessage[] {
-  return rows.map(
-    (row) => normalizeServerChatMessage(row) ?? (row as ServerChatMessage),
-  );
+export function normalizeFetchedRoomMessages(rows: readonly unknown[]): ServerChatMessage[] {
+  return rows.map((row) => normalizeServerChatMessage(row) ?? (row as ServerChatMessage));
 }
 
-export function oldestServerMessageByCreatedAt(
-  msgs: ServerChatMessage[],
-): ServerChatMessage | null {
+export function oldestServerMessageByCreatedAt(msgs: ServerChatMessage[]): ServerChatMessage | null {
   if (msgs.length === 0) return null;
   let oldest = msgs[0]!;
   for (let i = 1; i < msgs.length; i++) {
@@ -722,9 +582,7 @@ export function oldestServerMessageByCreatedAt(
   return oldest;
 }
 
-export function newestServerMessageByCreatedAt(
-  msgs: ServerChatMessage[],
-): ServerChatMessage | null {
+export function newestServerMessageByCreatedAt(msgs: ServerChatMessage[]): ServerChatMessage | null {
   if (msgs.length === 0) return null;
   let newest = msgs[0]!;
   for (let i = 1; i < msgs.length; i++) {
@@ -734,9 +592,7 @@ export function newestServerMessageByCreatedAt(
   return newest;
 }
 
-export function maxSequenceInMessages(
-  msgs: readonly ServerChatMessage[],
-): number | undefined {
+export function maxSequenceInMessages(msgs: readonly ServerChatMessage[]): number | undefined {
   let max: number | undefined;
   for (const m of msgs) {
     if (m.sequence == null) continue;
@@ -745,9 +601,7 @@ export function maxSequenceInMessages(
   return max;
 }
 
-function buildAiRequestReplyLookup(
-  rawMessages: ServerChatMessage[],
-): Map<string, AiRequestReplyLookupEntry> {
+function buildAiRequestReplyLookup(rawMessages: ServerChatMessage[]): Map<string, AiRequestReplyLookupEntry> {
   const map = new Map<string, AiRequestReplyLookupEntry>();
   for (const m of rawMessages) {
     if (normalizeMessageKind(m.messageType) !== "AI_REQUEST") continue;
@@ -757,18 +611,13 @@ function buildAiRequestReplyLookup(
       quotePreview: preview,
     };
     map.set(m.id, entry);
-    const cmid =
-      m.metadata?.clientMessageId?.trim() ||
-      m.metadata?.client_message_id?.trim() ||
-      "";
+    const cmid = m.metadata?.clientMessageId?.trim() || m.metadata?.client_message_id?.trim() || "";
     if (cmid !== "") map.set(cmid, entry);
   }
   return map;
 }
 
-function buildFulfilledAiRequestIds(
-  rawMessages: ServerChatMessage[],
-): Set<string> {
+function buildFulfilledAiRequestIds(rawMessages: ServerChatMessage[]): Set<string> {
   const s = new Set<string>();
   for (const m of rawMessages) {
     const reqRef = parseAiResponseRequestMessageId(m);
@@ -777,10 +626,7 @@ function buildFulfilledAiRequestIds(
     for (const r of rawMessages) {
       if (normalizeMessageKind(r.messageType) !== "AI_REQUEST") continue;
       const meta = r.metadata;
-      const cmid =
-        meta?.clientMessageId?.trim() ||
-        meta?.client_message_id?.trim() ||
-        "";
+      const cmid = meta?.clientMessageId?.trim() || meta?.client_message_id?.trim() || "";
       if (cmid !== "" && cmid === reqRef) {
         s.add(r.id);
       }
@@ -811,9 +657,7 @@ function formatTime(isoString: string): string {
   }
 }
 
-function parsePlaceShareMetadata(
-  metadata: Record<string, string> | undefined,
-): PlaceShareData | null {
+function parsePlaceShareMetadata(metadata: Record<string, string> | undefined): PlaceShareData | null {
   if (!metadata) return null;
   const lat = Number(metadata.latitude);
   const lng = Number(metadata.longitude);
@@ -833,16 +677,13 @@ function parsePlaceShareMetadata(
   };
 }
 
-export function collectGooglePlaceIdsFromServerMessages(
-  messages: ServerChatMessage[],
-): string[] {
+export function collectGooglePlaceIdsFromServerMessages(messages: ServerChatMessage[]): string[] {
   const ids = new Set<string>();
   for (const msg of messages) {
     const kind = normalizeMessageKind(msg.messageType);
     if (kind === "PLACE_SHARE") {
       const place = parsePlaceShareMetadata(msg.metadata);
-      const id =
-        typeof place?.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
+      const id = typeof place?.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
       if (id.length > 0) ids.add(id);
       continue;
     }
@@ -879,29 +720,13 @@ export function serverMessageToChatMessage(
         : typeof meta?.senderNickname === "string"
           ? meta.senderNickname.trim()
           : "";
-    const metaAvatar =
-      meta != null
-        ? pickProfileImageUrl(meta as unknown as Record<string, unknown>)
-        : null;
+    const metaAvatar = meta != null ? pickProfileImageUrl(meta as unknown as Record<string, unknown>) : null;
     const uid = parseFiniteNumber(currentUserId);
     const isMine = uid !== undefined && senderUserId === uid;
-    const notInRoom = senderNotInRoomFromMemberMap(
-      roomMembersResolved,
-      memberMap,
-      senderUserId,
-      isMine,
-    );
-    const rawNick =
-      member?.nickname?.trim() ||
-      (metaNick.length > 0 ? metaNick : "");
-    const displayNick =
-      notInRoom || rawNick.length === 0 ?
-        CHAT_UNKNOWN_SENDER_LABEL
-      : rawNick;
-    const avatar = resolveChatDisplayAvatarUrl(
-      member?.profileImageUrl,
-      metaAvatar,
-    );
+    const notInRoom = senderNotInRoomFromMemberMap(roomMembersResolved, memberMap, senderUserId, isMine);
+    const rawNick = member?.nickname?.trim() || (metaNick.length > 0 ? metaNick : "");
+    const displayNick = notInRoom || rawNick.length === 0 ? CHAT_UNKNOWN_SENDER_LABEL : rawNick;
+    const avatar = resolveChatDisplayAvatarUrl(member?.profileImageUrl, metaAvatar);
 
     if (place) {
       return {
@@ -970,36 +795,18 @@ export function serverMessageToChatMessage(
         : typeof meta?.senderNickname === "string"
           ? meta.senderNickname.trim()
           : "";
-    const metaAvatar =
-      meta != null
-        ? pickProfileImageUrl(meta as unknown as Record<string, unknown>)
-        : null;
+    const metaAvatar = meta != null ? pickProfileImageUrl(meta as unknown as Record<string, unknown>) : null;
 
     const uid = parseFiniteNumber(currentUserId);
     const isMine = uid !== undefined && senderUserId === uid;
 
-    const notInRoom = senderNotInRoomFromMemberMap(
-      roomMembersResolved,
-      memberMap,
-      senderUserId,
-      isMine,
-    );
-    const rawNick =
-      member?.nickname?.trim() ||
-      (metaNick.length > 0 ? metaNick : "");
-    const displayNick =
-      notInRoom || rawNick.length === 0 ?
-        CHAT_UNKNOWN_SENDER_LABEL
-      : rawNick;
-    const avatar = resolveChatDisplayAvatarUrl(
-      member?.profileImageUrl,
-      metaAvatar,
-    );
+    const notInRoom = senderNotInRoomFromMemberMap(roomMembersResolved, memberMap, senderUserId, isMine);
+    const rawNick = member?.nickname?.trim() || (metaNick.length > 0 ? metaNick : "");
+    const displayNick = notInRoom || rawNick.length === 0 ? CHAT_UNKNOWN_SENDER_LABEL : rawNick;
+    const avatar = resolveChatDisplayAvatarUrl(member?.profileImageUrl, metaAvatar);
 
-    const aiReqMeta =
-      kind === "AI_REQUEST" ? parseAiRequestUiMeta(msg) : null;
-    const fulfilledByResponse =
-      kind === "AI_REQUEST" && fulfilledAiRequestIds.has(msg.id);
+    const aiReqMeta = kind === "AI_REQUEST" ? parseAiRequestUiMeta(msg) : null;
+    const fulfilledByResponse = kind === "AI_REQUEST" && fulfilledAiRequestIds.has(msg.id);
 
     return {
       id: msg.id,

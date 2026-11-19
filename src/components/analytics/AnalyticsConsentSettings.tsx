@@ -6,10 +6,7 @@ import { useId, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import {
-  denyAnalyticsConsent,
-  grantAnalyticsConsent,
-} from "@/lib/analytics/consent-actions";
+import { denyAnalyticsConsent, grantAnalyticsConsent } from "@/lib/analytics/consent-actions";
 import {
   analyticsConsentStore,
   type AnalyticsConsentState,
@@ -27,16 +24,12 @@ type AnalyticsConsentSettingsViewProps = {
   onGrant: () => void;
 };
 
-export function getAnalyticsConsentResultMessage(
-  result: AnalyticsConsentUpdateResult,
-): string {
+export function getAnalyticsConsentResultMessage(result: AnalyticsConsentUpdateResult): string {
   if (!result.persisted) {
     return "선택은 현재 탭에 적용했지만 브라우저에 저장하지 못했습니다. 새로고침 후 다시 선택해 주세요.";
   }
 
-  return result.state === "granted"
-    ? "분석 쿠키를 허용했습니다."
-    : "분석 쿠키를 거부했습니다.";
+  return result.state === "granted" ? "분석 쿠키를 허용했습니다." : "분석 쿠키를 거부했습니다.";
 }
 
 export function AnalyticsConsentSettingsView({
@@ -74,9 +67,7 @@ export function AnalyticsConsentSettingsView({
           checked={allowed}
           onCheckedChange={(checked) => (checked ? onGrant() : onDeny())}
           aria-labelledby={categoryId}
-          aria-describedby={
-            consent === "pending" ? `${descriptionId} ${hintId}` : descriptionId
-          }
+          aria-describedby={consent === "pending" ? `${descriptionId} ${hintId}` : descriptionId}
         />
       </div>
       {consent === "pending" && (
@@ -89,9 +80,8 @@ export function AnalyticsConsentSettingsView({
           자세히 보기
         </summary>
         <p className="mt-2">
-          허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다. 거부하거나
-          철회하면 Google Analytics 추적을 중단하고 브라우저의 분석 쿠키를
-          삭제합니다.
+          허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다. 거부하거나 철회하면 Google Analytics 추적을 중단하고
+          브라우저의 분석 쿠키를 삭제합니다.
         </p>
       </details>
       <Link
@@ -126,8 +116,7 @@ export function AnalyticsConsentSettings({ onCancel }: Readonly<{ onCancel: () =
   const [message, setMessage] = useState("");
 
   function save() {
-    const result =
-      draft === "granted" ? grantAnalyticsConsent() : denyAnalyticsConsent();
+    const result = draft === "granted" ? grantAnalyticsConsent() : denyAnalyticsConsent();
     setMessage(getAnalyticsConsentResultMessage(result));
   }
   function select(value: AnalyticsConsentState) {

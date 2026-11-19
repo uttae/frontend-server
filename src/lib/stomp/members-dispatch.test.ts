@@ -1,19 +1,9 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type {
-  RoomDetail,
-  RoomListResponse,
-  RoomMember,
-  RoomMemberListResponse,
-} from "@/lib/api/rooms";
+import type { RoomDetail, RoomListResponse, RoomMember, RoomMemberListResponse } from "@/lib/api/rooms";
 import { expenseKeys } from "@/lib/expenses/expense-queries";
-import {
-  ROOMS_QUERY_KEY,
-  roomDetailQueryKey,
-  roomMembersQueryKey,
-  sessionUserQueryKey,
-} from "@/lib/query-keys";
+import { ROOMS_QUERY_KEY, roomDetailQueryKey, roomMembersQueryKey, sessionUserQueryKey } from "@/lib/query-keys";
 import { resolveViewerIsHost } from "@/lib/rooms";
 import type { RoomMemberPayload } from "@/lib/stomp/member-events";
 import { dispatchRoomMemberEvent } from "@/lib/stomp/members-dispatch";
@@ -139,17 +129,14 @@ describe("dispatchRoomMemberEvent", () => {
     expect(client.getQueryData(KEY)).toBeUndefined();
   });
 
-  it.each(["MEMBER_LEFT", "MEMBER_KICKED"] as const)(
-    "다른 사람의 %s는 다시 받는다",
-    (type) => {
-      const client = newClient();
-      client.setQueryData<RoomMemberListResponse>(KEY, { members: [member(ME), member(2)] });
+  it.each(["MEMBER_LEFT", "MEMBER_KICKED"] as const)("다른 사람의 %s는 다시 받는다", (type) => {
+    const client = newClient();
+    client.setQueryData<RoomMemberListResponse>(KEY, { members: [member(ME), member(2)] });
 
-      dispatchRoomMemberEvent(client, ROOM_ID, removed(type, 2));
+    dispatchRoomMemberEvent(client, ROOM_ID, removed(type, 2));
 
-      expect(client.getQueryState(KEY)?.isInvalidated).toBe(true);
-    },
-  );
+    expect(client.getQueryState(KEY)?.isInvalidated).toBe(true);
+  });
 
   it.each(["MEMBER_LEFT", "MEMBER_KICKED"] as const)(
     "내 %s는 다시 받지 않는다 — 나간 방의 조회는 403이고, 방 캐시는 나가기·강퇴 처리가 지운다",
@@ -171,11 +158,20 @@ describe("dispatchRoomMemberEvent", () => {
     const client = newClient();
     client.setQueryData<RoomMemberListResponse>(KEY, { members: [member(ME, "HOST"), member(2)] });
     client.setQueryData<RoomDetail>(roomDetailQueryKey(ROOM_ID), {
-      id: ROOM_ID, title: "여행", destinations: [], startDate: null, endDate: null,
-      inviteCode: "CODE", memberCount: 2, role: "HOST", createdAt: "",
+      id: ROOM_ID,
+      title: "여행",
+      destinations: [],
+      startDate: null,
+      endDate: null,
+      inviteCode: "CODE",
+      memberCount: 2,
+      role: "HOST",
+      createdAt: "",
     });
     client.setQueryData<RoomListResponse>(ROOMS_QUERY_KEY, {
-      rooms: [{ id: ROOM_ID, title: "여행", destinations: [], startDate: null, endDate: null, role: "HOST", joinedAt: "" }],
+      rooms: [
+        { id: ROOM_ID, title: "여행", destinations: [], startDate: null, endDate: null, role: "HOST", joinedAt: "" },
+      ],
       nextCursor: null,
       hasNext: false,
     });
@@ -195,9 +191,7 @@ describe("dispatchRoomMemberEvent", () => {
       resolveViewerIsHost({
         listRole: client.getQueryData<RoomListResponse>(ROOMS_QUERY_KEY)?.rooms[0]?.role,
         detailRole: client.getQueryData<RoomDetail>(roomDetailQueryKey(ROOM_ID))?.role,
-        memberRole: client
-          .getQueryData<RoomMemberListResponse>(KEY)
-          ?.members.find((m) => m.userId === ME)?.role,
+        memberRole: client.getQueryData<RoomMemberListResponse>(KEY)?.members.find((m) => m.userId === ME)?.role,
       });
     await expect.poll(viewerIsHost).toBe(false);
   });

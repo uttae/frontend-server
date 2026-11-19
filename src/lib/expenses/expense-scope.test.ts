@@ -2,13 +2,20 @@ import { expect, it } from "vitest";
 import type { Expense } from "@/lib/api/rooms/expenses";
 import { expensesInScope, totalsByCurrency } from "./expense-scope";
 
-const expense = (id: number, scheduleId: number | null, scheduleItemId: number | null, currency: string, totalAmount: string) => ({
-  id,
-  scheduleId,
-  scheduleItemId,
-  currency,
-  totalAmount,
-}) as Expense;
+const expense = (
+  id: number,
+  scheduleId: number | null,
+  scheduleItemId: number | null,
+  currency: string,
+  totalAmount: string,
+) =>
+  ({
+    id,
+    scheduleId,
+    scheduleItemId,
+    currency,
+    totalAmount,
+  }) as Expense;
 
 it("separates a day's costs from a place's costs and keeps currency totals exact", () => {
   const records = [

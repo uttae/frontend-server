@@ -4,14 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useId, type ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHeader, FieldLabel, FieldSuffix } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { BookmarkFolder } from "@/types/bookmark";
@@ -22,16 +15,7 @@ import {
   bookmarkFolderTitleSchema,
 } from "@/lib/bookmarks/bookmark-folder-form";
 
-const COLOR_PRESETS = [
-  "#EAB308",
-  "#14B8A6",
-  "#F12D33",
-  "#3B82F6",
-  "#A855F7",
-  "#EC4899",
-  "#22C55E",
-  "#F97316",
-] as const;
+const COLOR_PRESETS = ["#EAB308", "#14B8A6", "#F12D33", "#3B82F6", "#A855F7", "#EC4899", "#22C55E", "#F97316"] as const;
 
 type Mode = "create" | "edit";
 
@@ -152,8 +136,7 @@ export function AddBookmarkModal({
                       style={{
                         backgroundColor: hex,
                         borderColor: field.state.value === hex ? "#171717" : "transparent",
-                        boxShadow:
-                          field.state.value === hex ? "0 0 0 2px white, 0 0 0 4px #171717" : "",
+                        boxShadow: field.state.value === hex ? "0 0 0 2px white, 0 0 0 4px #171717" : "",
                       }}
                       aria-pressed={field.state.value === hex}
                     />
@@ -184,12 +167,7 @@ export function AddBookmarkModal({
 
         <DialogFooter>
           <DialogClose render={<Button variant="weak" />}>취소</DialogClose>
-          <Button
-            type="submit"
-            form={formId}
-            loading={busy}
-            loadingLabel={mode === "edit" ? "저장 중" : "추가 중"}
-          >
+          <Button type="submit" form={formId} loading={busy} loadingLabel={mode === "edit" ? "저장 중" : "추가 중"}>
             {mode === "edit" ? "저장" : "추가"}
           </Button>
         </DialogFooter>

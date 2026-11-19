@@ -12,10 +12,18 @@ vi.mock("@/contexts/MobileViewContext", () => ({
 }));
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => ({
-    roomId: "r", currentUserId: 1, members: [], memberStatus: "success",
-    canManage: true, schedules: [], schedulesReady: true, busy: state.busy,
+    roomId: "r",
+    currentUserId: 1,
+    members: [],
+    memberStatus: "success",
+    canManage: true,
+    schedules: [],
+    schedulesReady: true,
+    busy: state.busy,
     currencies: { data: [{ currency: "KRW", fractionDigits: 0, maximumAmount: "999999999999999" }], isSuccess: true },
-    list: { data: [], isSuccess: true }, save: vi.fn(), readLatest: vi.fn(),
+    list: { data: [], isSuccess: true },
+    save: vi.fn(),
+    readLatest: vi.fn(),
   }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
@@ -27,23 +35,32 @@ let host: HTMLDivElement;
 const close = vi.fn();
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  state.mobile = true; state.busy = false; close.mockReset();
-  host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+  state.mobile = true;
+  state.busy = false;
+  close.mockReset();
+  host = document.createElement("div");
+  document.body.append(host);
+  root = createRoot(host);
 });
 afterEach(async () => {
-  await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals();
+  await act(async () => root.unmount());
+  host.remove();
+  vi.unstubAllGlobals();
 });
 
 async function settle() {
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
 }
 const surface = () => document.querySelector<HTMLElement>('[role="dialog"]')!;
-const dim = () => document.querySelector<HTMLElement>(
-  state.mobile ? '[data-slot="drawer-viewport"]' : '[data-slot="dialog-overlay"]',
-)!;
+const dim = () =>
+  document.querySelector<HTMLElement>(state.mobile ? '[data-slot="drawer-viewport"]' : '[data-slot="dialog-overlay"]')!;
 const buttonNamed = (label: string) => document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
 function pointer(target: Element, type: string) {
-  target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, detail: type === "click" ? 1 : 0 }));
+  target.dispatchEvent(
+    new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, detail: type === "click" ? 1 : 0 }),
+  );
 }
 async function press(start: Element, end: Element = start) {
   await act(async () => {
@@ -72,9 +89,20 @@ const kinds = {
   list: {
     closeLabel: "비용 목록 닫기",
     render: () => (
-      <ExpenseScopePanel scope={{ scheduleId: 2, label: "1일차" }} roomId="r" expenses={[]}
-        isPending={false} isError={false} canManage busy={state.busy} onAdd={() => {}}
-        onEdit={() => {}} onDelete={async () => {}} onRetry={() => {}} onClose={close} />
+      <ExpenseScopePanel
+        scope={{ scheduleId: 2, label: "1일차" }}
+        roomId="r"
+        expenses={[]}
+        isPending={false}
+        isError={false}
+        canManage
+        busy={state.busy}
+        onAdd={() => {}}
+        onEdit={() => {}}
+        onDelete={async () => {}}
+        onRetry={() => {}}
+        onClose={close}
+      />
     ),
   },
 } as const;
@@ -147,9 +175,13 @@ for (const [kind, { closeLabel, render }] of Object.entries(kinds)) {
 
 describe("settlement dialog dismissal", () => {
   async function mount() {
-    await act(async () => root.render(
-      <ExpenseDialog title="정산 요약" onClose={close}><p>정산 내용</p></ExpenseDialog>,
-    ));
+    await act(async () =>
+      root.render(
+        <ExpenseDialog title="정산 요약" onClose={close}>
+          <p>정산 내용</p>
+        </ExpenseDialog>,
+      ),
+    );
     await settle();
   }
   it.each([true, false])("closes by dim, Escape and the close button (mobile %s)", async (mobile) => {

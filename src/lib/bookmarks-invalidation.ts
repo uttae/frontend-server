@@ -1,16 +1,10 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import { invalidateAfterChange } from "@/lib/query-client";
-import {
-  bookmarkCategoriesQueryKey,
-  roomAllBookmarksQueryKey,
-} from "@/lib/query-keys";
+import { bookmarkCategoriesQueryKey, roomAllBookmarksQueryKey } from "@/lib/query-keys";
 import type { RoomBookmarkChangedEvent } from "@/types/roomBookmarkStomp";
 
-export async function invalidateRoomBookmarkLists(
-  queryClient: QueryClient,
-  roomId: string,
-): Promise<void> {
+export async function invalidateRoomBookmarkLists(queryClient: QueryClient, roomId: string): Promise<void> {
   const rid = roomId.trim();
   await Promise.all([
     invalidateAfterChange(queryClient, { queryKey: bookmarkCategoriesQueryKey(rid) }),

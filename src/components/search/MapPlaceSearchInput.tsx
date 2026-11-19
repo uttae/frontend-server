@@ -1,19 +1,17 @@
 "use client";
 
-import {
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useEffect, useEffectEvent, useId, useRef, useState, type RefObject } from "react";
 import { flushSync } from "react-dom";
 import { MapSearchIcon } from "@/components/map/MapSearchIcon";
 import { SearchIcon } from "@/assets/icons";
 import { SearchBar, SearchBarBack, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { AutocompleteSearchSession, MAP_AUTOCOMPLETE_DEBOUNCE_MS } from "@/lib/places/autocomplete-session";
-import { PlaceSessionError, type PlacePrediction, type PlaceSession, type PredictionText } from "@/lib/api/place-sessions";
+import {
+  PlaceSessionError,
+  type PlacePrediction,
+  type PlaceSession,
+  type PredictionText,
+} from "@/lib/api/place-sessions";
 import type { SearchConfirmation } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { cn } from "@/lib/utils";
@@ -89,8 +87,7 @@ export function MapPlaceSearchInput({
   useEffect(() => {
     if (!collapsible || mobile || !expanded || value.trim()) return;
     const dismissOutside = (event: PointerEvent) => {
-      if (event.target instanceof Node && !containerRef.current?.contains(event.target))
-        setExpanded(false);
+      if (event.target instanceof Node && !containerRef.current?.contains(event.target)) setExpanded(false);
     };
     document.addEventListener("pointerdown", dismissOutside);
     return () => document.removeEventListener("pointerdown", dismissOutside);
@@ -134,19 +131,27 @@ export function MapPlaceSearchInput({
     timer.current = setTimeout(() => {
       token.current ??= new AutocompleteSearchSession();
       const flow = token.current;
-      void flow.suggest(query.trim(), mapCenter, () => requestGeneration === generation.current).then(
-        (result) => {
-          if (result && requestGeneration === generation.current)
-            setSuggestions({ query, ...result, status: "done" });
-        },
-        (error: unknown) => {
-          if (requestGeneration === generation.current) {
-            flow.abandon();
-            token.current = null;
-            setSuggestions({ query, items: [], session: null, status: "error", error: error instanceof PlaceSessionError ? error.message : undefined });
-          }
-        },
-      );
+      void flow
+        .suggest(query.trim(), mapCenter, () => requestGeneration === generation.current)
+        .then(
+          (result) => {
+            if (result && requestGeneration === generation.current)
+              setSuggestions({ query, ...result, status: "done" });
+          },
+          (error: unknown) => {
+            if (requestGeneration === generation.current) {
+              flow.abandon();
+              token.current = null;
+              setSuggestions({
+                query,
+                items: [],
+                session: null,
+                status: "error",
+                error: error instanceof PlaceSessionError ? error.message : undefined,
+              });
+            }
+          },
+        );
     }, MAP_AUTOCOMPLETE_DEBOUNCE_MS);
   }
   const retryReady = useEffectEvent(() => {
@@ -157,7 +162,9 @@ export function MapPlaceSearchInput({
   }, [mapCenter, enabled]);
   useEffect(() => {
     if (!enabled) {
-      cancel(); token.current?.abandon(); token.current = null;
+      cancel();
+      token.current?.abandon();
+      token.current = null;
       setSuggestions(null);
     }
   }, [enabled]);
@@ -171,21 +178,23 @@ export function MapPlaceSearchInput({
     setOpen(Boolean(query.trim()));
     confirmGeneration.current = null;
     setPending(false);
-    if (!query.trim()) { token.current?.abandon(); token.current = null; }
+    if (!query.trim()) {
+      token.current?.abandon();
+      token.current = null;
+    }
     schedule(query);
   }
   async function confirm(index: number) {
     if (!value.trim() || confirmGeneration.current !== null) return;
-    const ready =
-      suggestions?.query === value && suggestions.status === "done"
-        ? suggestions
-        : null;
+    const ready = suggestions?.query === value && suggestions.status === "done" ? suggestions : null;
     const prediction = index > 0 ? ready?.items[index - 1] : undefined;
     if (index > 0 && !prediction) return;
-    const requestSession = prediction ? ready?.session ?? null : null;
+    const requestSession = prediction ? (ready?.session ?? null) : null;
     if (requestSession && requestSession.expiresAt <= Date.now()) {
-      token.current?.abandon(); token.current = null;
-      schedule(value); return;
+      token.current?.abandon();
+      token.current = null;
+      schedule(value);
+      return;
     }
     cancel();
     const requestGeneration = generation.current;
@@ -204,9 +213,8 @@ export function MapPlaceSearchInput({
         generation: requestGeneration,
       });
       if (success && !mobile && generation.current === requestGeneration) {
-        const confirmedValue = index > 0
-          ? prediction?.structuredFormat?.mainText?.text ?? prediction?.text?.text ?? value
-          : value;
+        const confirmedValue =
+          index > 0 ? (prediction?.structuredFormat?.mainText?.text ?? prediction?.text?.text ?? value) : value;
         setValue(confirmedValue);
         setSuggestions(null);
         setActive(-1);
@@ -221,11 +229,7 @@ export function MapPlaceSearchInput({
     }
   }
   const confirmInitial = useEffectEvent(() => {
-    if (
-      autoQuery.current &&
-      autoQuery.current === value &&
-      suggestions?.query === value
-    ) {
+    if (autoQuery.current && autoQuery.current === value && suggestions?.query === value) {
       autoQuery.current = null;
       void confirm(-1);
     }
@@ -236,24 +240,23 @@ export function MapPlaceSearchInput({
   const rows = suggestions?.query === value ? suggestions.items : [];
   const showDropdown = open && Boolean(value.trim());
   const appearance = INPUT_STYLES[mobile ? "mobile" : "desktop"];
-  if (collapsible && !expanded) return (
-    <button ref={triggerRef} type="button" aria-label="장소 검색 열기"
-      onClick={() => {
-        flushSync(() => setExpanded(true));
-        fieldRef.current?.focus();
-      }}
-      className="flex size-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary shadow-[0_2px_10px_#0000001a] hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
-      <MapSearchIcon name="search-white" size={20}/>
-    </button>
-  );
+  if (collapsible && !expanded)
+    return (
+      <button
+        ref={triggerRef}
+        type="button"
+        aria-label="장소 검색 열기"
+        onClick={() => {
+          flushSync(() => setExpanded(true));
+          fieldRef.current?.focus();
+        }}
+        className="flex size-[46px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-primary shadow-[0_2px_10px_#0000001a] hover:bg-primary-strong focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <MapSearchIcon name="search-white" size={20} />
+      </button>
+    );
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "relative",
-        appearance.container,
-      )}
-    >
+    <div ref={containerRef} className={cn("relative", appearance.container)}>
       <form
         className={appearance.form}
         onSubmit={(event) => {
@@ -276,32 +279,24 @@ export function MapPlaceSearchInput({
             aria-label="장소 검색어"
             aria-expanded={showDropdown}
             aria-controls={listId}
-            aria-activedescendant={
-              active >= 0 ? `${listId}-${active}` : undefined
-            }
+            aria-activedescendant={active >= 0 ? `${listId}-${active}` : undefined}
             aria-autocomplete="list"
             aria-busy={pending}
             value={value}
             onChange={(event) => update(event.target.value)}
             onFocus={() => {
               setOpen(Boolean(value.trim()));
-              if (
-                !token.current &&
-                confirmGeneration.current === null &&
-                value.trim()
-              )
-                schedule(value);
+              if (!token.current && confirmGeneration.current === null && value.trim()) schedule(value);
             }}
             onBlur={(event) => {
               if (
                 confirmGeneration.current !== null ||
-                containerRef.current?.contains(
-                  event.relatedTarget as Node | null,
-                )
+                containerRef.current?.contains(event.relatedTarget as Node | null)
               )
                 return;
               cancel();
-              token.current?.abandon(); token.current = null;
+              token.current?.abandon();
+              token.current = null;
               setSuggestions(null);
               onInvalidate();
               setOpen(false);
@@ -324,7 +319,8 @@ export function MapPlaceSearchInput({
               }
               if (event.key === "Escape") {
                 cancel();
-                token.current?.abandon(); token.current = null;
+                token.current?.abandon();
+                token.current = null;
                 setSuggestions(null);
                 onInvalidate();
                 setOpen(false);
@@ -351,12 +347,31 @@ export function MapPlaceSearchInput({
           ) : null}
         </SearchBar>
       </form>
-      {showDropdown ? <SearchSuggestions listId={listId} active={active} value={value} rows={rows}
-        suggestions={suggestions} mobile={mobile} onConfirm={confirm} onActiveChange={setActive} /> : null}
+      {showDropdown ? (
+        <SearchSuggestions
+          listId={listId}
+          active={active}
+          value={value}
+          rows={rows}
+          suggestions={suggestions}
+          mobile={mobile}
+          onConfirm={confirm}
+          onActiveChange={setActive}
+        />
+      ) : null}
     </div>
   );
 }
-function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, onConfirm, onActiveChange }: Readonly<{
+function SearchSuggestions({
+  listId,
+  active,
+  value,
+  rows,
+  suggestions,
+  mobile,
+  onConfirm,
+  onActiveChange,
+}: Readonly<{
   listId: string;
   active: number;
   value: string;
@@ -393,9 +408,9 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
           id={`${listId}-${index + 1}`}
           active={active === index + 1}
           iconSize={iconSize}
-          title={prediction.structuredFormat?.mainText?.text != null
-            ? prediction.structuredFormat.mainText
-            : prediction.text}
+          title={
+            prediction.structuredFormat?.mainText?.text != null ? prediction.structuredFormat.mainText : prediction.text
+          }
           subtitle={prediction.structuredFormat?.secondaryText?.text ?? undefined}
           onClick={() => void onConfirm(index + 1)}
           onMouseMove={() => onActiveChange(index + 1)}
@@ -403,9 +418,7 @@ function SearchSuggestions({ listId, active, value, rows, suggestions, mobile, o
         />
       ))}
       {suggestions?.status === "error" ? (
-        <li
-          className="px-3.5 py-3 text-caption-m-regular text-text-subtle"
-        >
+        <li className="px-3.5 py-3 text-caption-m-regular text-text-subtle">
           <output>{suggestions.error ?? "검색 추천을 불러오지 못했어요. 다시 입력해주세요."}</output>
         </li>
       ) : null}
@@ -452,11 +465,7 @@ function SuggestionRow({
           <span className="truncate text-body-s-emphasis text-text">
             {typeof title === "string" ? title : <HighlightedText value={title} />}
           </span>
-          {subtitle ? (
-            <span className="truncate text-caption-m-regular text-text-subtle">
-              {subtitle}
-            </span>
-          ) : null}
+          {subtitle ? <span className="truncate text-caption-m-regular text-text-subtle">{subtitle}</span> : null}
         </span>
       </button>
     </li>
@@ -467,7 +476,8 @@ function HighlightedText({ value }: Readonly<{ value: PredictionText | null }>) 
   if (!value?.text) return null;
   const segments: { id: string; text: string; highlighted: boolean }[] = [];
   for (const [offset, point] of Array.from(value.text).entries()) {
-    const highlighted = value.matches?.some(match => offset >= match.startOffset && offset < match.endOffset) ?? false;
+    const highlighted =
+      value.matches?.some((match) => offset >= match.startOffset && offset < match.endOffset) ?? false;
     const previous = segments.at(-1);
     if (previous?.highlighted === highlighted) {
       previous.text += point;
@@ -475,7 +485,13 @@ function HighlightedText({ value }: Readonly<{ value: PredictionText | null }>) 
       segments.push({ id: `${value.text}:${offset}`, text: point, highlighted });
     }
   }
-  return segments.map(segment => segment.highlighted
-    ? <mark key={segment.id} className="bg-transparent font-semibold text-inherit">{segment.text}</mark>
-    : segment.text);
+  return segments.map((segment) =>
+    segment.highlighted ? (
+      <mark key={segment.id} className="bg-transparent font-semibold text-inherit">
+        {segment.text}
+      </mark>
+    ) : (
+      segment.text
+    ),
+  );
 }

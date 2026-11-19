@@ -1,8 +1,6 @@
 import { pickProfileImageUrl } from "@/lib/api/profileImage";
 
-export type RoomPresenceEventType =
-  | "USER_CONNECTED"
-  | "USER_DISCONNECTED";
+export type RoomPresenceEventType = "USER_CONNECTED" | "USER_DISCONNECTED";
 
 export type RoomPresenceChangedEvent = {
   nickname: string | null;
@@ -12,9 +10,7 @@ export type RoomPresenceChangedEvent = {
   userId: number;
 };
 
-export function parseRoomPresenceMessage(
-  body: string,
-): RoomPresenceChangedEvent | null {
+export function parseRoomPresenceMessage(body: string): RoomPresenceChangedEvent | null {
   try {
     const raw = JSON.parse(body) as Record<string, unknown>;
     const type = raw?.type;
@@ -23,22 +19,13 @@ export function parseRoomPresenceMessage(
     }
 
     const roomIdRaw = raw.roomId;
-    const roomId =
-      typeof roomIdRaw === "string"
-        ? roomIdRaw
-        : roomIdRaw != null
-          ? String(roomIdRaw)
-          : "";
+    const roomId = typeof roomIdRaw === "string" ? roomIdRaw : roomIdRaw != null ? String(roomIdRaw) : "";
 
     const userIdRaw = raw.userId;
-    const uid =
-      typeof userIdRaw === "number" && Number.isFinite(userIdRaw)
-        ? userIdRaw
-        : Number(userIdRaw);
+    const uid = typeof userIdRaw === "number" && Number.isFinite(userIdRaw) ? userIdRaw : Number(userIdRaw);
     const userId = Number.isFinite(uid) ? uid : 0;
 
-    const nickname =
-      typeof raw.nickname === "string" ? raw.nickname : null;
+    const nickname = typeof raw.nickname === "string" ? raw.nickname : null;
 
     const profileUrl = pickProfileImageUrl(raw);
 

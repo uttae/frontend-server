@@ -45,7 +45,11 @@ export function HomeBannerCarousel({ banners }: { banners: readonly HomeBanner[]
       </a>
 
       {banners.length > 1 ? (
-        <div className="mt-3 flex items-center justify-center gap-3 text-sm text-text-subtle" role="group" aria-label="배너 탐색">
+        <div
+          className="mt-3 flex items-center justify-center gap-3 text-sm text-text-subtle"
+          role="group"
+          aria-label="배너 탐색"
+        >
           <button
             type="button"
             aria-label="이전 배너"
@@ -54,7 +58,9 @@ export function HomeBannerCarousel({ banners }: { banners: readonly HomeBanner[]
           >
             <ChevronLeft aria-hidden="true" className="size-5" />
           </button>
-          <span aria-live="polite">{currentIndex + 1} / {banners.length}</span>
+          <span aria-live="polite">
+            {currentIndex + 1} / {banners.length}
+          </span>
           <button
             type="button"
             aria-label="다음 배너"

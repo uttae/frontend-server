@@ -41,31 +41,19 @@ export function BookmarkFoldersView() {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const { folders } = useBookmarkFolders();
   useAllRoomBookmarks(roomId);
-  const { isPending, isLoadingError, error, refetch } =
-    useBookmarkCategories(roomId);
-  const { mutate: createCategory, isPending: isCreating } =
-    useCreateBookmarkCategory();
-  const {
-    mutate: deleteCategory,
-    isPending: isDeleting,
-    variables: deleteVariables,
-  } = useDeleteBookmarkCategory();
+  const { isPending, isLoadingError, error, refetch } = useBookmarkCategories(roomId);
+  const { mutate: createCategory, isPending: isCreating } = useCreateBookmarkCategory();
+  const { mutate: deleteCategory, isPending: isDeleting, variables: deleteVariables } = useDeleteBookmarkCategory();
   const [folderToDelete, setFolderToDelete] = useState<{
     categoryId: number;
     title: string;
   } | null>(null);
-  const {
-    mutate: updateCategory,
-    isPending: isUpdating,
-    variables: updateVariables,
-  } = useUpdateBookmarkCategory();
+  const { mutate: updateCategory, isPending: isUpdating, variables: updateVariables } = useUpdateBookmarkCategory();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalKey, setModalKey] = useState(0);
   const [modalMode, setModalMode] = useState<"create" | "edit">("create");
-  const [editingFolder, setEditingFolder] = useState<BookmarkFolder | null>(
-    null,
-  );
+  const [editingFolder, setEditingFolder] = useState<BookmarkFolder | null>(null);
   const [folderFormError, setFolderFormError] = useState<string | null>(null);
   const menuTriggerRef = useRef<HTMLElement | null>(null);
 
@@ -91,12 +79,8 @@ export function BookmarkFoldersView() {
     if (modalMode === "edit" && editingFolder) {
       const categoryId = Number.parseInt(editingFolder.id, 10);
       if (!Number.isFinite(categoryId)) return;
-      const peerTitles = folders
-        .filter((f) => f.id !== editingFolder.id)
-        .map((f) => f.title);
-      const resolvedName = title.trim()
-        ? title.trim()
-        : pickUniqueUntitledBookmarkCategoryName(peerTitles);
+      const peerTitles = folders.filter((f) => f.id !== editingFolder.id).map((f) => f.title);
+      const resolvedName = title.trim() ? title.trim() : pickUniqueUntitledBookmarkCategoryName(peerTitles);
       updateCategory(
         { roomId, categoryId, name: resolvedName, colorCode: color },
         {
@@ -105,12 +89,7 @@ export function BookmarkFoldersView() {
             setEditingFolder(null);
           },
           onError: (e) => {
-            setFolderFormError(
-              messageForBookmarkCategorySaveError(
-                e,
-                "북마크를 수정하지 못했습니다.",
-              ),
-            );
+            setFolderFormError(messageForBookmarkCategorySaveError(e, "북마크를 수정하지 못했습니다."));
           },
         },
       );
@@ -129,12 +108,7 @@ export function BookmarkFoldersView() {
           setModalOpen(false);
         },
         onError: (e) => {
-          setFolderFormError(
-            messageForBookmarkCategorySaveError(
-              e,
-              "북마크를 추가하지 못했습니다.",
-            ),
-          );
+          setFolderFormError(messageForBookmarkCategorySaveError(e, "북마크를 추가하지 못했습니다."));
         },
       },
     );
@@ -162,27 +136,16 @@ export function BookmarkFoldersView() {
   };
 
   const isRowDeleting = (folderId: string) =>
-    isDeleting &&
-    deleteVariables != null &&
-    String(deleteVariables.categoryId) === folderId;
+    isDeleting && deleteVariables != null && String(deleteVariables.categoryId) === folderId;
 
   const isRowUpdating = (folderId: string) =>
-    isUpdating &&
-    updateVariables != null &&
-    String(updateVariables.categoryId) === folderId;
+    isUpdating && updateVariables != null && String(updateVariables.categoryId) === folderId;
 
-  const rowMenuBusy = (folderId: string) =>
-    isRowDeleting(folderId) || isRowUpdating(folderId);
+  const rowMenuBusy = (folderId: string) => isRowDeleting(folderId) || isRowUpdating(folderId);
 
   const createAction = (
-    <Button
-      tone="brand"
-      size="sm"
-      disabled={isPending || isCreating || isUpdating}
-      onClick={openCreate}
-    >
-      <SavedAddIcon data-icon="inline-start" />
-      새 북마크
+    <Button tone="brand" size="sm" disabled={isPending || isCreating || isUpdating} onClick={openCreate}>
+      <SavedAddIcon data-icon="inline-start" />새 북마크
     </Button>
   );
 
@@ -193,11 +156,7 @@ export function BookmarkFoldersView() {
   if (isPending) {
     return (
       <div className="flex flex-col">
-        <MainPageHeader
-          title="북마크"
-          description={BOOKMARK_PAGE_DESCRIPTION}
-          action={createAction}
-        />
+        <MainPageHeader title="북마크" description={BOOKMARK_PAGE_DESCRIPTION} action={createAction} />
         <BookmarkListSkeleton />
       </div>
     );
@@ -209,9 +168,7 @@ export function BookmarkFoldersView() {
         <MainPageHeader title="북마크" description={BOOKMARK_PAGE_DESCRIPTION} />
         <div className="space-y-3 py-10 text-center">
           <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-            {error instanceof Error
-              ? error.message
-              : "목록을 불러오지 못했습니다."}
+            {error instanceof Error ? error.message : "목록을 불러오지 못했습니다."}
           </p>
           <button
             type="button"
@@ -227,11 +184,7 @@ export function BookmarkFoldersView() {
 
   return (
     <div className="flex flex-col pb-8">
-      <MainPageHeader
-        title="북마크"
-        description={BOOKMARK_PAGE_DESCRIPTION}
-        action={createAction}
-      />
+      <MainPageHeader title="북마크" description={BOOKMARK_PAGE_DESCRIPTION} action={createAction} />
 
       <div className="rounded-2xl border border-gray-border bg-white">
         {folders.length === 0 ? (
@@ -247,12 +200,7 @@ export function BookmarkFoldersView() {
           <ul className="divide-y divide-gray-border">
             {folders.map((folder) => (
               <li key={folder.id}>
-                <div
-                  className={cn(
-                    "flex items-center gap-3 py-4",
-                    MAIN_CARD_INNER_PADDING_X_CLASS,
-                  )}
-                >
+                <div className={cn("flex items-center gap-3 py-4", MAIN_CARD_INNER_PADDING_X_CLASS)}>
                   <Link
                     href={bookmarkFolderPath(folder.id)}
                     className="flex min-w-0 flex-1 items-center gap-3 rounded-lg outline-none ring-primary focus-visible:ring-2"
@@ -280,10 +228,7 @@ export function BookmarkFoldersView() {
                       <MoreHorizontal className="size-5" />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        disabled={rowMenuBusy(folder.id)}
-                        onClick={() => openEdit(folder)}
-                      >
+                      <DropdownMenuItem disabled={rowMenuBusy(folder.id)} onClick={() => openEdit(folder)}>
                         편집
                       </DropdownMenuItem>
                       <DropdownMenuItem
@@ -310,9 +255,7 @@ export function BookmarkFoldersView() {
           busy={modalMode === "edit" ? isUpdating : isCreating}
           untitledNameHint={pickUniqueUntitledBookmarkCategoryName(
             modalMode === "edit" && editingFolder
-              ? folders
-                  .filter((f) => f.id !== editingFolder.id)
-                  .map((f) => f.title)
+              ? folders.filter((f) => f.id !== editingFolder.id).map((f) => f.title)
               : folders.map((f) => f.title),
           )}
           onClose={() => {

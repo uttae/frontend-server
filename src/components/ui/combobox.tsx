@@ -19,7 +19,11 @@ function ComboboxLabel({ className, ...props }: Readonly<StringClassName<Combobo
   );
 }
 
-function ComboboxTrigger({ className, children, ...props }: Readonly<StringClassName<ComboboxPrimitive.Trigger.Props>>) {
+function ComboboxTrigger({
+  className,
+  children,
+  ...props
+}: Readonly<StringClassName<ComboboxPrimitive.Trigger.Props>>) {
   return (
     <ComboboxPrimitive.Trigger
       data-slot="combobox-trigger"

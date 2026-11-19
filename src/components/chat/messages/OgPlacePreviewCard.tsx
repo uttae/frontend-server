@@ -74,12 +74,7 @@ export function OgPlacePreviewCard({
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
-            <MapPin
-              className={cn(
-                "text-gray-300",
-                isMinimized ? "h-5 w-5" : "h-6 w-6",
-              )}
-            />
+            <MapPin className={cn("text-gray-300", isMinimized ? "h-5 w-5" : "h-6 w-6")} />
           </div>
         )}
       </div>
@@ -91,34 +86,18 @@ export function OgPlacePreviewCard({
       >
         <div className={cn("truncate", typo.placeTitle)}>{name}</div>
         <div className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0">
-          <Star
-            className={cn(
-              "shrink-0 fill-[#FDC700] text-[#FDC700]",
-              isMinimized ? "h-2.5 w-2.5" : "h-3 w-3",
-            )}
-          />
+          <Star className={cn("shrink-0 fill-[#FDC700] text-[#FDC700]", isMinimized ? "h-2.5 w-2.5" : "h-3 w-3")} />
           <span className={typo.placeRating}>
-            {rating != null && Number.isFinite(rating)
-              ? rating.toFixed(1)
-              : "-"}
+            {rating != null && Number.isFinite(rating) ? rating.toFixed(1) : "-"}
           </span>
           {userRatingCount != null && Number.isFinite(userRatingCount) ? (
-            <span className={cn("shrink-0", typo.placeAddress)}>
-              ({Math.round(userRatingCount).toLocaleString()})
-            </span>
+            <span className={cn("shrink-0", typo.placeAddress)}>({Math.round(userRatingCount).toLocaleString()})</span>
           ) : null}
         </div>
         {formattedAddress ? (
           <div className="flex items-center gap-1">
-            <MapPin
-              className={cn(
-                "shrink-0 text-[#99A1AF]",
-                isMinimized ? "h-2.5 w-2.5" : "h-3 w-3",
-              )}
-            />
-            <span className={cn("truncate", typo.placeAddress)}>
-              {formattedAddress}
-            </span>
+            <MapPin className={cn("shrink-0 text-[#99A1AF]", isMinimized ? "h-2.5 w-2.5" : "h-3 w-3")} />
+            <span className={cn("truncate", typo.placeAddress)}>{formattedAddress}</span>
           </div>
         ) : null}
       </div>

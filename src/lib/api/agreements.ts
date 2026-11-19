@@ -1,7 +1,4 @@
-import type {
-  AcceptAgreementsRequest,
-  CurrentAgreementsResponse,
-} from "@/lib/agreements/types";
+import type { AcceptAgreementsRequest, CurrentAgreementsResponse } from "@/lib/agreements/types";
 import { apiFetch } from "@/lib/api/client";
 import { messageForAgreementsAcceptError } from "@/lib/api/errors";
 import { apiUrl, jsonBody, tryParseJson } from "@/lib/api/http";

@@ -68,13 +68,7 @@ export interface ChatMessage {
   aiConversationSummary?: AiConversationSummaryPayload;
 }
 
-export type ServerChatMessageType =
-  | "CHAT"
-  | "AI_REQUEST"
-  | "AI_RESPONSE"
-  | "PLACE_SHARE"
-  | "SYSTEM"
-  | "AI";
+export type ServerChatMessageType = "CHAT" | "AI_REQUEST" | "AI_RESPONSE" | "PLACE_SHARE" | "SYSTEM" | "AI";
 
 export interface ServerChatMessage {
   id: string;

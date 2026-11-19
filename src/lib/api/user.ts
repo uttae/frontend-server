@@ -35,10 +35,7 @@ export async function withdrawAccount(): Promise<WithdrawAccountResult> {
 
   const body = await tryParseJson(res);
 
-  if (
-    res.status === 422 &&
-    isWithdrawalRequiresHostDelegationFromBody(body)
-  ) {
+  if (res.status === 422 && isWithdrawalRequiresHostDelegationFromBody(body)) {
     return {
       ok: false,
       kind: "host_delegation_required",
@@ -50,8 +47,6 @@ export async function withdrawAccount(): Promise<WithdrawAccountResult> {
     ok: false,
     kind: "error",
     status: res.status,
-    message:
-      readUserFacingMessageFromApiBody(body) ??
-      "회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+    message: readUserFacingMessageFromApiBody(body) ?? "회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.",
   };
 }

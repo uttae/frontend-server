@@ -3,10 +3,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { ExpenseKrwAmount } from "./ExpenseKrw";
 import { useId, useState } from "react";
 import { ChevronDownIcon } from "@/assets/icons";
-import {
-  expenseCategories,
-  expenseCategoryLabel,
-} from "@/lib/api/rooms/expenses";
+import { expenseCategories, expenseCategoryLabel } from "@/lib/api/rooms/expenses";
 import { totalsByCurrency } from "@/lib/expenses/expense-scope";
 import { useExpenseContext } from "./ExpenseProvider";
 import { CategoryIcon, formatExpenseAmount } from "./ExpenseViews";
@@ -16,7 +13,8 @@ export function ExpenseCategorySummary() {
   const [expanded, setExpanded] = useState(false);
   const id = useId();
   const order = ["ACCOMMODATION", "FLIGHT", "FOOD", "SIGHTSEEING", "TRANSPORT", "SHOPPING", "OTHER"];
-  const rows = [...expenseCategories].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value))
+  const rows = [...expenseCategories]
+    .sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value))
     .map(({ value }) => ({
       category: value,
       expenses: (list.data ?? []).filter((e) => e.category === value),
@@ -38,22 +36,12 @@ export function ExpenseCategorySummary() {
         </span>
       </button>
       <h3 className="hidden items-center justify-between text-[18px] leading-[26px] font-bold @min-[800px]/expenses:flex">
-        카테고리별 지출{" "}
-        <span className="text-body-xs-regular text-text-subtle">
-          전체 {list.data?.length ?? 0}건
-        </span>
+        카테고리별 지출 <span className="text-body-xs-regular text-text-subtle">전체 {list.data?.length ?? 0}건</span>
       </h3>
-      <div
-        id={id}
-        className={`${expanded ? "block" : "hidden"} @min-[800px]/expenses:block`}
-      >
-        {list.isPending && (
-          <Spinner aria-label="비용 요약 불러오는 중" className="flex w-full py-3" />
-        )}
+      <div id={id} className={`${expanded ? "block" : "hidden"} @min-[800px]/expenses:block`}>
+        {list.isPending && <Spinner aria-label="비용 요약 불러오는 중" className="flex w-full py-3" />}
         {list.isSuccess && !rows.length && (
-          <p className="py-3 text-body-xs-regular text-text-subtle">
-            등록된 비용이 없어요.
-          </p>
+          <p className="py-3 text-body-xs-regular text-text-subtle">등록된 비용이 없어요.</p>
         )}
         <dl className="mt-2 space-y-1">
           {rows.map(({ category, expenses }) => (
@@ -62,13 +50,17 @@ export function ExpenseCategorySummary() {
                 <CategoryIcon category={category} summary />
                 <span>
                   {expenseCategoryLabel(category)}
-                  <span className="block text-[12px] leading-4 font-normal text-text-subtle">
-                    {expenses.length}건
-                  </span>
+                  <span className="block text-[12px] leading-4 font-normal text-text-subtle">{expenses.length}건</span>
                 </span>
               </dt>
               <dd className="min-w-0 max-w-[60%] text-right text-[14px] leading-5 font-medium tabular-nums">
-                <ExpenseKrwAmount total={krwSummary?.isSuccess && (!krwSummary.isFetching || syncStatus === "refreshing") ? krwSummary.data?.categories?.find((row) => row.category === category)?.total : undefined} />
+                <ExpenseKrwAmount
+                  total={
+                    krwSummary?.isSuccess && (!krwSummary.isFetching || syncStatus === "refreshing")
+                      ? krwSummary.data?.categories?.find((row) => row.category === category)?.total
+                      : undefined
+                  }
+                />
                 {totalsByCurrency(expenses).map((total) => (
                   <p key={total.currency} className="break-all text-[12px] leading-4 font-normal text-text-subtle">
                     {total.currency} {formatExpenseAmount(total.amount)}

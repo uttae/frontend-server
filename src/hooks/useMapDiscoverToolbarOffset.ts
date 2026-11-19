@@ -1,16 +1,8 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useState,
-  type RefCallback,
-} from "react";
+import { useCallback, useEffect, useState, type RefCallback } from "react";
 
-import {
-  MAP_DETAIL_PANEL_BELOW_TOOLBAR_GAP_PX,
-  MAP_DETAIL_PANEL_MIN_TOP_PX,
-} from "@/lib/layout/mapDetailPanelLayout";
+import { MAP_DETAIL_PANEL_BELOW_TOOLBAR_GAP_PX, MAP_DETAIL_PANEL_MIN_TOP_PX } from "@/lib/layout/mapDetailPanelLayout";
 
 export function useMapDiscoverToolbarOffset(mapSectionEl: HTMLElement | null): {
   setToolbarRef: RefCallback<HTMLElement>;

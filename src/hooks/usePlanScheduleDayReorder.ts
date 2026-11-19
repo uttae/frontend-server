@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { toast } from "sonner";
 
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
@@ -29,12 +23,8 @@ type UsePlanScheduleDayReorderArgs = {
   schedules: RoomSchedule[];
 };
 
-export function usePlanScheduleDayReorder({
-  roomId,
-  schedules,
-}: UsePlanScheduleDayReorderArgs) {
-  const { mutateAsync: moveMutate, isPending: isMovePending } =
-    useMoveRoomSchedule();
+export function usePlanScheduleDayReorder({ roomId, schedules }: UsePlanScheduleDayReorderArgs) {
+  const { mutateAsync: moveMutate, isPending: isMovePending } = useMoveRoomSchedule();
   const [dragFromIndex, setDragFromIndex] = useState<number | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
   const [droppedSchedules, setDroppedSchedules] = useState<RoomSchedule[] | null>(null);
@@ -66,9 +56,7 @@ export function usePlanScheduleDayReorder({
   const updatePreviewFromPointer = useCallback(() => {
     if (dragFromIndex === null || layoutSnapshotRef.current.isEmpty) return;
 
-    const nextPreview = layoutSnapshotRef.current.previewIndexAt(
-      pointerYRef.current,
-    );
+    const nextPreview = layoutSnapshotRef.current.previewIndexAt(pointerYRef.current);
     setPreviewIndex((prev) => (prev === nextPreview ? prev : nextPreview));
   }, [dragFromIndex]);
 
@@ -141,9 +129,7 @@ export function usePlanScheduleDayReorder({
       e.preventDefault();
 
       const fromIndex = readPlanScheduleDayDragIndex(e.dataTransfer);
-      const toIndex =
-        previewIndex ??
-        (Number.isFinite(fromIndex) ? fromIndex : null);
+      const toIndex = previewIndex ?? (Number.isFinite(fromIndex) ? fromIndex : null);
 
       if (
         !Number.isFinite(fromIndex) ||
@@ -197,18 +183,8 @@ export function usePlanScheduleDayReorder({
       const snapshot = layoutSnapshotRef.current;
 
       let translateY = 0;
-      if (
-        fromIdx !== null &&
-        previewIdx !== null &&
-        fromIdx !== previewIdx &&
-        !snapshot.isEmpty
-      ) {
-        translateY = computeRowTranslateY(
-          index,
-          fromIdx,
-          previewIdx,
-          snapshot.heights(),
-        );
+      if (fromIdx !== null && previewIdx !== null && fromIdx !== previewIdx && !snapshot.isEmpty) {
+        translateY = computeRowTranslateY(index, fromIdx, previewIdx, snapshot.heights());
       }
 
       const isDragging = fromIdx === index;

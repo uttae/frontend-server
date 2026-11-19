@@ -4,7 +4,7 @@ const allowedCampaignNames = new Set<string>(analyticsCampaignParameterNames);
 const defaultInviteCampaign = "utm_source=member_invite&utm_medium=referral&utm_campaign=invite";
 
 function hasCampaign(search: URLSearchParams): boolean {
-  return [...search.keys()].some(name => name.startsWith("utm_"));
+  return [...search.keys()].some((name) => name.startsWith("utm_"));
 }
 
 export function inviteCampaignSearch(search: string): string {

@@ -8,32 +8,19 @@ import {
 } from "@/lib/api/rooms/schedule-items";
 import { getRoomSchedules } from "@/lib/api/rooms/schedules";
 import { isBatchItemOk } from "@/lib/api/batch-types";
-import {
-  fetchAndSeedPlacePreviews,
-} from "@/lib/places/place-batch-cache";
+import { fetchAndSeedPlacePreviews } from "@/lib/places/place-batch-cache";
 import type { PlacePreview } from "@/lib/api/places";
-import {
-  placePreviewQueryKey,
-  resolvePreviewGooglePlaceId,
-} from "@/lib/places/place-queries";
+import { placePreviewQueryKey, resolvePreviewGooglePlaceId } from "@/lib/places/place-queries";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
-import {
-  canonicalScheduleTravelMode,
-} from "@/lib/plan/scheduleTravelMode";
+import { canonicalScheduleTravelMode } from "@/lib/plan/scheduleTravelMode";
 import type { PlanPlace } from "@/lib/plan/types";
-import {
-  roomSchedulesQueryKey,
-  scheduleItemRouteQueryKey,
-  scheduleItemsQueryKey,
-} from "@/lib/query-keys";
+import { roomSchedulesQueryKey, scheduleItemRouteQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 import { awaitRoomSchedulesHydrated } from "@/lib/rooms";
 
 export const PLAN_PLACE_PREVIEW_ERROR_TITLE = "장소 정보를 불러올 수 없음";
 
-export function planPlacesNeedPreviewEnrich(
-  places: readonly PlanPlace[],
-): boolean {
+export function planPlacesNeedPreviewEnrich(places: readonly PlanPlace[]): boolean {
   return places.some((place) => place.title === PLAN_PLACE_PREVIEW_ERROR_TITLE);
 }
 
@@ -45,9 +32,7 @@ export function readScheduleItemsFromRoomCache(
   const rid = roomId.trim();
   if (!rid.length) return null;
 
-  const schedules = queryClient.getQueryData<RoomScheduleWithItems[]>(
-    roomSchedulesQueryKey(rid),
-  );
+  const schedules = queryClient.getQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid));
   if (!schedules) return null;
 
   const schedule = schedules.find((s) => s.scheduleId === scheduleId);
@@ -61,22 +46,14 @@ export async function resolveScheduleItemsFromCacheOrHydrate(
   roomId: string,
   scheduleId: number,
 ): Promise<RoomScheduleItem[]> {
-  const cached = readScheduleItemsFromRoomCache(
-    queryClient,
-    roomId,
-    scheduleId,
-  );
+  const cached = readScheduleItemsFromRoomCache(queryClient, roomId, scheduleId);
   if (cached !== null) return cached;
 
   await awaitRoomSchedulesHydrated(queryClient, roomId);
-  return (
-    readScheduleItemsFromRoomCache(queryClient, roomId, scheduleId) ?? []
-  );
+  return readScheduleItemsFromRoomCache(queryClient, roomId, scheduleId) ?? [];
 }
 
-function sortRoomScheduleItemsByOrder(
-  items: RoomScheduleItem[],
-): RoomScheduleItem[] {
+function sortRoomScheduleItemsByOrder(items: RoomScheduleItem[]): RoomScheduleItem[] {
   return [...items].sort((a, b) => a.orderIndex - b.orderIndex);
 }
 
@@ -87,10 +64,7 @@ function memoFromScheduleItem(item: RoomScheduleItem): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function planPlaceFromItemAndPreview(
-  item: RoomScheduleItem,
-  preview: PlacePreview | null,
-): PlanPlace {
+function planPlaceFromItemAndPreview(item: RoomScheduleItem, preview: PlacePreview | null): PlanPlace {
   if (preview) {
     return {
       id: `item-${item.itemId}`,
@@ -119,27 +93,16 @@ function planPlaceFromItemAndPreview(
   };
 }
 
-function readCachedPreview(
-  queryClient: QueryClient,
-  googlePlaceId: string,
-): PlacePreview | null {
+function readCachedPreview(queryClient: QueryClient, googlePlaceId: string): PlacePreview | null {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
   if (!id.length) return null;
   const cached = queryClient.getQueryData<PlacePreview>(placePreviewQueryKey(id));
   return cached ?? null;
 }
 
-function buildPlanPlacesFromItemsWithCache(
-  queryClient: QueryClient,
-  items: RoomScheduleItem[],
-): PlanPlace[] {
+function buildPlanPlacesFromItemsWithCache(queryClient: QueryClient, items: RoomScheduleItem[]): PlanPlace[] {
   const sorted = sortRoomScheduleItemsByOrder(items);
-  return sorted.map((item) =>
-    planPlaceFromItemAndPreview(
-      item,
-      readCachedPreview(queryClient, item.googlePlaceId),
-    ),
-  );
+  return sorted.map((item) => planPlaceFromItemAndPreview(item, readCachedPreview(queryClient, item.googlePlaceId)));
 }
 
 export async function buildPlanPlacesFromItemsWithPreviewEnrichment(
@@ -156,14 +119,11 @@ export async function buildPlanPlacesFromItemsWithPreviewEnrichment(
   return buildPlanPlacesFromItemsWithCache(queryClient, items);
 }
 
-function collectGooglePlaceIdsFromSchedules(
-  schedules: readonly RoomScheduleWithItems[],
-): string[] {
+function collectGooglePlaceIdsFromSchedules(schedules: readonly RoomScheduleWithItems[]): string[] {
   const ids = new Set<string>();
   for (const schedule of schedules) {
     for (const item of schedule.items ?? []) {
-      const gid =
-        typeof item.googlePlaceId === "string" ? item.googlePlaceId.trim() : "";
+      const gid = typeof item.googlePlaceId === "string" ? item.googlePlaceId.trim() : "";
       if (gid.length) ids.add(gid);
     }
   }
@@ -185,10 +145,7 @@ export async function buildSchedulePlacesFromSchedulesWithItems(
     if (typeof sid !== "number" || !Number.isFinite(sid)) continue;
 
     const items = Array.isArray(schedule.items) ? schedule.items : [];
-    placesBySchedule.set(
-      sid,
-      buildPlanPlacesFromItemsWithCache(queryClient, items),
-    );
+    placesBySchedule.set(sid, buildPlanPlacesFromItemsWithCache(queryClient, items));
   }
   return placesBySchedule;
 }
@@ -244,11 +201,7 @@ function batchRouteItemToResponse(
 
 const inFlightScheduleRoutesBatch = new Map<string, Promise<void>>();
 
-function scheduleRoutesBatchKey(
-  roomId: string,
-  scheduleId: number,
-  placesFingerprint: string,
-): string {
+function scheduleRoutesBatchKey(roomId: string, scheduleId: number, placesFingerprint: string): string {
   return `${roomId.trim()}:${scheduleId}:${placesFingerprint}`;
 }
 
@@ -307,12 +260,7 @@ export async function fetchAndSeedScheduleRoutesBatch(
   if (inFlight) return inFlight;
   if (scheduleSegmentRoutesCached(queryClient, rid, scheduleId, places)) return;
 
-  const promise = hydrateScheduleRoutesBatch(
-    queryClient,
-    rid,
-    scheduleId,
-    places,
-  ).finally(() => {
+  const promise = hydrateScheduleRoutesBatch(queryClient, rid, scheduleId, places).finally(() => {
     inFlightScheduleRoutesBatch.delete(key);
   });
 
@@ -320,10 +268,7 @@ export async function fetchAndSeedScheduleRoutesBatch(
   return promise;
 }
 
-export async function awaitScheduleRoutesBatch(
-  roomId: string,
-  scheduleId: number,
-): Promise<void> {
+export async function awaitScheduleRoutesBatch(roomId: string, scheduleId: number): Promise<void> {
   const rid = roomId.trim();
   if (!rid.length) return;
 

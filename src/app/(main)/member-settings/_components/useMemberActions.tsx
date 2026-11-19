@@ -71,12 +71,8 @@ export function useMemberActions() {
   const { mutate: kick, isPending: isKicking } = useKickMember();
   const { mutateAsync: leaveAsync, isPending: isLeaving } = useLeaveRoom();
   const { mutate: transfer, isPending: isTransferring } = useTransferHost();
-  const hostCannotLeaveAlone = Boolean(
-    isHost && user && !isMembersLoading && others.length === 0,
-  );
-  const hostNeedsManualDelegation = Boolean(
-    isHost && user && !isMembersLoading && others.length > 0,
-  );
+  const hostCannotLeaveAlone = Boolean(isHost && user && !isMembersLoading && others.length === 0);
+  const hostNeedsManualDelegation = Boolean(isHost && user && !isMembersLoading && others.length > 0);
 
   async function handleLeaveRoom() {
     if (!roomId || !user) return;

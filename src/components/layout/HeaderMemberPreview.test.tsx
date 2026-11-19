@@ -8,15 +8,33 @@ import type { RoomMember } from "@/lib/api/rooms";
 const state = vi.hoisted(() => ({ headerInviteHidden: false }));
 
 const member = (userId: number, nickname: string, role: RoomMember["role"]): RoomMember => ({
-  userId, nickname, profileImageUrl: null, role, status: "ACTIVE", joinedAt: "2026-11-01T00:00:00", isOnline: true,
+  userId,
+  nickname,
+  profileImageUrl: null,
+  role,
+  status: "ACTIVE",
+  joinedAt: "2026-11-01T00:00:00",
+  isOnline: true,
 });
 const members = [member(1, "나", "HOST"), member(2, "친구", "MEMBER")];
 
 vi.mock("@/app/(main)/member-settings/_components/useMemberActions", () => ({
   useMemberActions: () => ({
-    user: { id: 1 }, roomId: "room", members, me: members[0], others: [members[1]], isHost: false,
-    roomDetail: undefined, isDetailLoading: false, isDetailError: false, memberCount: 2, leaveDisabled: false,
-    openLeaveDialog: vi.fn(), requestKick: vi.fn(), requestTransfer: vi.fn(), dialogs: null,
+    user: { id: 1 },
+    roomId: "room",
+    members,
+    me: members[0],
+    others: [members[1]],
+    isHost: false,
+    roomDetail: undefined,
+    isDetailLoading: false,
+    isDetailError: false,
+    memberCount: 2,
+    leaveDisabled: false,
+    openLeaveDialog: vi.fn(),
+    requestKick: vi.fn(),
+    requestTransfer: vi.fn(),
+    dialogs: null,
   }),
 }));
 vi.mock("@/hooks/useHostJoinRequestsBadgeCount", () => ({ useHostJoinRequestsBadgeCount: () => 0 }));
@@ -63,7 +81,9 @@ it("moves 초대하기 above 방 나가기 in the member panel when the header i
   await act(async () => trigger().click());
   expect(panelButtons()).toEqual(["초대하기", "방 나가기"]);
 
-  const panelInvite = [...document.querySelectorAll<HTMLButtonElement>('[aria-label="구성원 관리"] button')].find((button) => button.textContent?.trim() === "초대하기")!;
+  const panelInvite = [...document.querySelectorAll<HTMLButtonElement>('[aria-label="구성원 관리"] button')].find(
+    (button) => button.textContent?.trim() === "초대하기",
+  )!;
   await act(async () => panelInvite.click());
   expect(document.body.textContent).toContain("초대 창");
   expect(trigger().getAttribute("aria-expanded")).toBe("false");

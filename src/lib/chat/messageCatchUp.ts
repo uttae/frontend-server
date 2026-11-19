@@ -9,17 +9,10 @@ export const CHAT_CATCH_UP_PAGE_SIZE = 200;
 const CHAT_HISTORY_RETRY_DELAYS_MS = [1_000, 2_000, 4_000];
 
 function isRetryableHistoryError(error: unknown): boolean {
-  return (
-    !(error instanceof HttpError) ||
-    error.status >= 500 ||
-    error.status === 429
-  );
+  return !(error instanceof HttpError) || error.status >= 500 || error.status === 429;
 }
 
-export async function retryChatHistoryRequest<T>(
-  request: () => Promise<T>,
-  isActive: () => boolean,
-): Promise<T> {
+export async function retryChatHistoryRequest<T>(request: () => Promise<T>, isActive: () => boolean): Promise<T> {
   for (let attempt = 0; ; attempt += 1) {
     try {
       return await request();
@@ -62,12 +55,7 @@ export async function fetchRoomMessagesAfter(
     );
     rows.push(...page);
     const last = maxSequenceInMessages(page);
-    if (
-      page.length < CHAT_CATCH_UP_PAGE_SIZE ||
-      last == null ||
-      last <= after ||
-      !isActive()
-    ) {
+    if (page.length < CHAT_CATCH_UP_PAGE_SIZE || last == null || last <= after || !isActive()) {
       return rows;
     }
     after = last;

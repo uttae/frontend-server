@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { MapPin } from "lucide-react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
@@ -14,10 +8,7 @@ import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { PlusIcon, SearchIcon } from "@/assets/icons";
 import { SearchBar, SearchBarClear, SearchBarIcon, SearchBarInput } from "@/components/ui/search-bar";
 import { useDebouncedPlacePredictions } from "@/hooks/useDebouncedPlacePredictions";
-import {
-  circleLocationBias,
-  PlacePredictionInlineDescription,
-} from "@/lib/placesAutocompleteSuggest";
+import { circleLocationBias, PlacePredictionInlineDescription } from "@/lib/placesAutocompleteSuggest";
 
 type Prediction = google.maps.places.PlacePrediction;
 
@@ -64,10 +55,7 @@ export function PlacesSearchInput({
       ...(coords &&
         Number.isFinite(coords.lat) &&
         Number.isFinite(coords.lng) && {
-          locationBias: circleLocationBias(
-            { lat: coords.lat, lng: coords.lng },
-            50_000,
-          ),
+          locationBias: circleLocationBias({ lat: coords.lat, lng: coords.lng }, 50_000),
         }),
     }),
     [coords],
@@ -114,10 +102,7 @@ export function PlacesSearchInput({
     const openDown = spaceBelow >= spaceAbove;
 
     const avail = Math.max(0, (openDown ? spaceBelow : spaceAbove) - gap);
-    let maxHeight = Math.min(
-      maxCap,
-      avail >= minH ? Math.max(minH, avail) : avail,
-    );
+    let maxHeight = Math.min(maxCap, avail >= minH ? Math.max(minH, avail) : avail);
 
     let top: number;
     if (openDown) {
@@ -197,8 +182,7 @@ export function PlacesSearchInput({
       setMenuGeometry(null);
       return;
     }
-    const text =
-      prediction.mainText?.text.trim() || prediction.text.text.trim();
+    const text = prediction.mainText?.text.trim() || prediction.text.text.trim();
     commitSearch(text);
   }
 
@@ -239,10 +223,7 @@ export function PlacesSearchInput({
   }
 
   const dropdown =
-    isOpen &&
-    predictions.length > 0 &&
-    menuGeometry &&
-    typeof document !== "undefined"
+    isOpen && predictions.length > 0 && menuGeometry && typeof document !== "undefined"
       ? createPortal(
           <ul
             ref={dropdownListRef}
@@ -293,11 +274,7 @@ export function PlacesSearchInput({
       <form onSubmit={handleSubmit} className="flex items-center gap-1">
         <SearchBar>
           <SearchBarIcon>
-            {leadingIcon === "plus" ? (
-              <PlusIcon size={20} className="text-primary" />
-            ) : (
-              <SearchIcon size={20} />
-            )}
+            {leadingIcon === "plus" ? <PlusIcon size={20} className="text-primary" /> : <SearchIcon size={20} />}
           </SearchBarIcon>
           <SearchBarInput
             ref={inputRef}

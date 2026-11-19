@@ -1,7 +1,4 @@
-import {
-  messageForGoogleLoginError,
-  readNormalizedApiErrorCode,
-} from "@/lib/api/errors";
+import { messageForGoogleLoginError, readNormalizedApiErrorCode } from "@/lib/api/errors";
 import { tryParseJson } from "@/lib/api/http";
 
 const FETCH_OPTS: RequestInit = {
@@ -26,13 +23,8 @@ export type ExchangeGoogleCodeResult =
 
 const REACCEPTANCE_DEFAULT_TTL_SECONDS = 10 * 60;
 
-export async function exchangeGoogleCode(
-  code: string,
-  agreementsAccepted?: true,
-): Promise<ExchangeGoogleCodeResult> {
-  const requestBody = agreementsAccepted
-    ? { code, agreementsAccepted: true }
-    : { code };
+export async function exchangeGoogleCode(code: string, agreementsAccepted?: true): Promise<ExchangeGoogleCodeResult> {
+  const requestBody = agreementsAccepted ? { code, agreementsAccepted: true } : { code };
   const res = await fetch("/api/auth/google", {
     ...FETCH_OPTS,
     method: "POST",
@@ -100,12 +92,9 @@ export async function exchangeGoogleCode(
 }
 
 export type CompleteGoogleSignupResult =
-  | { ok: true }
-  | { ok: false; status: number; errorCode?: string; message: string };
+  { ok: true } | { ok: false; status: number; errorCode?: string; message: string };
 
-export async function completeGoogleSignup(
-  signupToken: string,
-): Promise<CompleteGoogleSignupResult> {
+export async function completeGoogleSignup(signupToken: string): Promise<CompleteGoogleSignupResult> {
   const res = await fetch("/api/auth/google/signup", {
     ...FETCH_OPTS,
     method: "POST",
@@ -120,20 +109,14 @@ export async function completeGoogleSignup(
     ok: false,
     status: res.status,
     errorCode: readNormalizedApiErrorCode(body),
-    message: messageForGoogleLoginError(
-      body,
-      "가입 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
-    ),
+    message: messageForGoogleLoginError(body, "가입 처리에 실패했습니다. 잠시 후 다시 시도해 주세요."),
   };
 }
 
 export type CompleteGoogleReacceptResult =
-  | { ok: true }
-  | { ok: false; status: number; errorCode?: string; message: string };
+  { ok: true } | { ok: false; status: number; errorCode?: string; message: string };
 
-export async function completeGoogleReaccept(
-  reacceptanceToken: string,
-): Promise<CompleteGoogleReacceptResult> {
+export async function completeGoogleReaccept(reacceptanceToken: string): Promise<CompleteGoogleReacceptResult> {
   const res = await fetch("/api/auth/google/reaccept", {
     ...FETCH_OPTS,
     method: "POST",
@@ -148,16 +131,11 @@ export async function completeGoogleReaccept(
     ok: false,
     status: res.status,
     errorCode: readNormalizedApiErrorCode(body),
-    message: messageForGoogleLoginError(
-      body,
-      "약관 재동의 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
-    ),
+    message: messageForGoogleLoginError(body, "약관 재동의 처리에 실패했습니다. 잠시 후 다시 시도해 주세요."),
   };
 }
 
-async function refreshToken(): Promise<
-  { ok: true } | { ok: false; status: number }
-> {
+async function refreshToken(): Promise<{ ok: true } | { ok: false; status: number }> {
   const res = await fetch("/api/auth/refresh", {
     ...FETCH_OPTS,
     method: "POST",
@@ -180,9 +158,7 @@ export async function tryClientRefresh(): Promise<boolean> {
   return pendingRefresh;
 }
 
-export async function logout(): Promise<
-  { ok: true } | { ok: false; status: number }
-> {
+export async function logout(): Promise<{ ok: true } | { ok: false; status: number }> {
   const res = await fetch("/api/auth/logout", {
     ...FETCH_OPTS,
     method: "POST",

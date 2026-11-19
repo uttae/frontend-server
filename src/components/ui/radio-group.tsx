@@ -8,9 +8,7 @@ type RadioGroupProps = Omit<RadioGroupPrimitive.Props, "className"> & { classNam
 type RadioGroupItemProps = Omit<RadioPrimitive.Root.Props, "className"> & { className?: string };
 
 function RadioGroup({ className, ...props }: Readonly<RadioGroupProps>) {
-  return (
-    <RadioGroupPrimitive data-slot="radio-group" className={cn("flex flex-col", className)} {...props} />
-  );
+  return <RadioGroupPrimitive data-slot="radio-group" className={cn("flex flex-col", className)} {...props} />;
 }
 
 function RadioGroupItem({ className, ...props }: Readonly<RadioGroupItemProps>) {

@@ -9,21 +9,14 @@ import { PlusIcon } from "@/assets/icons";
 import { DashedPlaceholderBox } from "@/components/mobile/DashedPlaceholderBox";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
-import {
-  useRoomSchedules,
-  useScheduleItemMoveSavingDays,
-  useSchedulePlanPlaces,
-} from "@/hooks/useRooms";
+import { useRoomSchedules, useScheduleItemMoveSavingDays, useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
 import { buildMapRouteHref } from "@/lib/mobile-view";
 import type { InsertAnchor } from "@/lib/plan/insertPosition";
 import { summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
 import { planCopy } from "@/lib/plan/planCopy";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
-import {
-  scheduleIdsToRouteColors,
-  sortedScheduleIdsForRouteColors,
-} from "@/lib/plan/planRouteDayColors";
+import { scheduleIdsToRouteColors, sortedScheduleIdsForRouteColors } from "@/lib/plan/planRouteDayColors";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
@@ -67,8 +60,7 @@ export function MobilePlanItinerary({
 
   const visibleByScheduleId = usePlanScheduleRouteVisibilityStore((s) => s.visibleByScheduleId);
   const badgeColor = useMemo(
-    () =>
-      scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)).get(scheduleId) ?? "#f12d33",
+    () => scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)).get(scheduleId) ?? "#f12d33",
     [scheduleId, visibleByScheduleId],
   );
 
@@ -236,9 +228,7 @@ function PlaceTravelSegment({
         originPlaceName={place.title}
         destinationGooglePlaceId={next.googlePlaceId}
         destinationPlaceName={next.title}
-        routeQueryEnabled={
-          routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)
-        }
+        routeQueryEnabled={routesReady && existingItemIds.has(place.itemId) && existingItemIds.has(next.itemId)}
       />
     </div>
   );
@@ -247,13 +237,9 @@ function PlaceTravelSegment({
 function PlanPlaceStatus({ isLoading, isError }: Readonly<{ isLoading: boolean; isError: boolean }>) {
   return (
     <>
-      {isLoading ? (
-        <PlanLoadingSkeleton places />
-      ) : null}
+      {isLoading ? <PlanLoadingSkeleton places /> : null}
       {isError ? (
-        <p className="py-4 text-center text-body-s-regular text-status-negative">
-          장소 목록을 불러오지 못했어요.
-        </p>
+        <p className="py-4 text-center text-body-s-regular text-status-negative">장소 목록을 불러오지 못했어요.</p>
       ) : null}
     </>
   );

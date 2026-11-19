@@ -43,18 +43,53 @@ afterEach(async () => {
 });
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it("specific Details failure retry returns to that input with a fresh session and never Text Search", async () => {
-  const prediction = { placeId: "chosen", text: { text: "추천 장소 주소", matches: null }, structuredFormat: { mainText: { text: "추천 장소", matches: null }, secondaryText: { text: "주소", matches: null } } };
-  let tokens = 0, resolves = 0;
-  vi.mocked(apiFetch).mockReset().mockImplementation(async url => {
-    if (String(url).endsWith("/places/sessions")) return Response.json({ sessionToken: `token-${++tokens}`, expiresAt: Date.now()+60000 }, { status: 201 });
-    if (String(url).endsWith("/places/autocomplete")) return Response.json({ suggestions: [{ placePrediction: prediction }] });
-    if (String(url).endsWith("/places/resolve")) {
-      if (++resolves === 1) return Response.json({ code: "EXTERNAL_API_ERROR", message: "장소 정보 실패" }, { status: 502 });
-      return Response.json({ detail: { googlePlaceId: "chosen", name: "추천 장소", formattedAddress: "주소", location: { lat: 1, lng: 2 }, primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] }, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" });
-    }
-    throw new Error(`Unexpected HTTP ${String(url)}`);
-  });
-  const autocompleteCalls = () => vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/autocomplete"));
+  const prediction = {
+    placeId: "chosen",
+    text: { text: "추천 장소 주소", matches: null },
+    structuredFormat: {
+      mainText: { text: "추천 장소", matches: null },
+      secondaryText: { text: "주소", matches: null },
+    },
+  };
+  let tokens = 0,
+    resolves = 0;
+  vi.mocked(apiFetch)
+    .mockReset()
+    .mockImplementation(async (url) => {
+      if (String(url).endsWith("/places/sessions"))
+        return Response.json({ sessionToken: `token-${++tokens}`, expiresAt: Date.now() + 60000 }, { status: 201 });
+      if (String(url).endsWith("/places/autocomplete"))
+        return Response.json({ suggestions: [{ placePrediction: prediction }] });
+      if (String(url).endsWith("/places/resolve")) {
+        if (++resolves === 1)
+          return Response.json({ code: "EXTERNAL_API_ERROR", message: "장소 정보 실패" }, { status: 502 });
+        return Response.json({
+          detail: {
+            googlePlaceId: "chosen",
+            name: "추천 장소",
+            formattedAddress: "주소",
+            location: { lat: 1, lng: 2 },
+            primaryType: null,
+            primaryTypeDisplayName: null,
+            rating: null,
+            userRatingCount: null,
+            phoneNumber: null,
+            websiteUri: null,
+            googleMapsUri: null,
+            googleMapsLinks: null,
+            regularOpeningHours: null,
+            reviews: [],
+          },
+          source: "GOOGLE",
+          cacheStatus: "MISS",
+          googleDetailsRequested: true,
+          termination: "SUCCEEDED",
+        });
+      }
+      throw new Error(`Unexpected HTTP ${String(url)}`);
+    });
+  const autocompleteCalls = () =>
+    vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/autocomplete"));
   boundary.page.mockResolvedValue({ items: [], nextPageToken: null });
   useSessionStore.setState({ currentRoomId: "room" });
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
@@ -70,10 +105,7 @@ it("specific Details failure retry returns to that input with a fresh session an
   await act(async () => (host.querySelector('button[aria-label="장소 검색 열기"]') as HTMLButtonElement).click());
   const input = host.querySelector("input")!;
   await act(async () => {
-    Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!.call(input, "원래 검색어");
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "원래 검색어");
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   await act(async () => {
@@ -93,13 +125,9 @@ it("specific Details failure retry returns to that input with a fresh session an
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 280));
   });
-  expect(JSON.parse(autocompleteCalls().at(-1)![1]!.body as string).sessionToken).not.toBe(
-    token,
-  );
+  expect(JSON.parse(autocompleteCalls().at(-1)![1]!.body as string).sessionToken).not.toBe(token);
   await act(async () => {
-    (
-      host.querySelectorAll('[role="option"] button')[1] as HTMLButtonElement
-    ).click();
+    (host.querySelectorAll('[role="option"] button')[1] as HTMLButtonElement).click();
   });
   expect(resolves).toBe(2);
   expect(boundary.page).not.toHaveBeenCalled();

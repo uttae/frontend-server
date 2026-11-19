@@ -12,20 +12,13 @@ export function useChatActions() {
   const { client, connected } = useStompContext();
   const roomId = useSessionStore((s) => s.currentRoomId);
 
-  const ridTrimmed =
-    typeof roomId === "string" ? roomId.trim() : "";
+  const ridTrimmed = typeof roomId === "string" ? roomId.trim() : "";
   const canSend = Boolean(client && connected && ridTrimmed);
 
   const sendChatMessage = useCallback(
     (content: string) => {
       const trimmed = content.trim();
-      if (
-        !client ||
-        !connected ||
-        !ridTrimmed ||
-        !trimmed ||
-        isChatSendBlocked()
-      ) {
+      if (!client || !connected || !ridTrimmed || !trimmed || isChatSendBlocked()) {
         return;
       }
       client.publish({
@@ -46,13 +39,7 @@ export function useChatActions() {
   const sendAiMessage = useCallback(
     (content: string) => {
       const trimmed = content.trim();
-      if (
-        !client ||
-        !connected ||
-        !ridTrimmed ||
-        !trimmed ||
-        isChatSendBlocked()
-      ) {
+      if (!client || !connected || !ridTrimmed || !trimmed || isChatSendBlocked()) {
         return;
       }
       client.publish({

@@ -1,15 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import type {
-  RoomDetail,
-  RoomListResponse,
-  RoomMemberListResponse,
-} from "@/lib/api/rooms";
-import {
-  ROOMS_QUERY_KEY,
-  roomDetailQueryKey,
-  roomMembersQueryKey,
-} from "@/lib/query-keys";
+import type { RoomDetail, RoomListResponse, RoomMemberListResponse } from "@/lib/api/rooms";
+import { ROOMS_QUERY_KEY, roomDetailQueryKey, roomMembersQueryKey } from "@/lib/query-keys";
 
 export function applyHostTransferToCache(
   queryClient: QueryClient,
@@ -29,18 +21,13 @@ export function applyHostTransferToCache(
         }),
       },
   );
-  queryClient.setQueryData<RoomDetail>(
-    roomDetailQueryKey(roomId),
-    (prev) => prev && { ...prev, role: "MEMBER" },
-  );
+  queryClient.setQueryData<RoomDetail>(roomDetailQueryKey(roomId), (prev) => prev && { ...prev, role: "MEMBER" });
   queryClient.setQueryData<RoomListResponse>(
     ROOMS_QUERY_KEY,
     (prev) =>
       prev && {
         ...prev,
-        rooms: prev.rooms.map((room) =>
-          room.id === roomId ? { ...room, role: "MEMBER" } : room,
-        ),
+        rooms: prev.rooms.map((room) => (room.id === roomId ? { ...room, role: "MEMBER" } : room)),
       },
   );
 }

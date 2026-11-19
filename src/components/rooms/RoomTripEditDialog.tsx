@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  RoomTripDeleteButton,
-  RoomTripSettingsSection,
-} from "@/components/rooms/RoomTripSettingsSection";
+import { RoomTripDeleteButton, RoomTripSettingsSection } from "@/components/rooms/RoomTripSettingsSection";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUpdateRoom } from "@/hooks/useRooms";
 

@@ -28,9 +28,7 @@ function parseEntry(value: unknown): MapSearchHistoryEntry | null {
   if (!value || typeof value !== "object") return null;
   const o = value as Record<string, unknown>;
   if (o.type === "query") {
-    return typeof o.query === "string" && o.query.trim().length > 0
-      ? { type: "query", query: o.query }
-      : null;
+    return typeof o.query === "string" && o.query.trim().length > 0 ? { type: "query", query: o.query } : null;
   }
   if (
     typeof o.googlePlaceId === "string" &&
@@ -63,15 +61,12 @@ export function readMapSearchHistory(userId: number | undefined): MapSearchHisto
   }
 }
 
-export function addMapSearchHistory(
-  userId: number | undefined,
-  entry: MapSearchHistoryEntry,
-): MapSearchHistoryEntry[] {
+export function addMapSearchHistory(userId: number | undefined, entry: MapSearchHistoryEntry): MapSearchHistoryEntry[] {
   const key = mapSearchHistoryEntryKey(entry);
-  const next = [
-    entry,
-    ...readMapSearchHistory(userId).filter((e) => mapSearchHistoryEntryKey(e) !== key),
-  ].slice(0, MAX_ENTRIES);
+  const next = [entry, ...readMapSearchHistory(userId).filter((e) => mapSearchHistoryEntryKey(e) !== key)].slice(
+    0,
+    MAX_ENTRIES,
+  );
   save(userId, next);
   return next;
 }

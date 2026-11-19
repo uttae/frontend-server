@@ -3,32 +3,19 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import type { RoomListResponse } from "@/lib/api/rooms";
-import {
-  joinRequestsQueryKey,
-  ROOMS_QUERY_KEY,
-  roomDetailQueryKey,
-  roomMembersQueryKey,
-} from "@/lib/query-keys";
+import { joinRequestsQueryKey, ROOMS_QUERY_KEY, roomDetailQueryKey, roomMembersQueryKey } from "@/lib/query-keys";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
 
 export const FORCED_ROOM_EXIT_TOAST_MS = 4500;
 
-export function forcedExitToastMessage(
-  reason: ForcedRoomExitReason,
-  serverMessage?: string,
-): string {
+export function forcedExitToastMessage(reason: ForcedRoomExitReason, serverMessage?: string): string {
   const trimmed = serverMessage?.trim();
   if (trimmed) return trimmed;
 
-  return reason === "kicked"
-    ? "방장에 의해 강제 퇴장 당했습니다"
-    : "방이 삭제되었습니다";
+  return reason === "kicked" ? "방장에 의해 강제 퇴장 당했습니다" : "방이 삭제되었습니다";
 }
 
-export function showForcedExitToast(
-  reason: ForcedRoomExitReason,
-  serverMessage?: string,
-): void {
+export function showForcedExitToast(reason: ForcedRoomExitReason, serverMessage?: string): void {
   toast.error(forcedExitToastMessage(reason, serverMessage), {
     duration: FORCED_ROOM_EXIT_TOAST_MS,
   });
@@ -45,10 +32,7 @@ export function showRoomAccessLostToast(roomId: string): void {
   });
 }
 
-export function evictRoomFromClientCaches(
-  queryClient: QueryClient,
-  roomId: string,
-): void {
+export function evictRoomFromClientCaches(queryClient: QueryClient, roomId: string): void {
   const rid = roomId.trim();
   if (!rid.length) return;
   revokeExpenseRoomAccess(queryClient, rid);

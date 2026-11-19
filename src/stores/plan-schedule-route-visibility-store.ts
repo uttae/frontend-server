@@ -32,9 +32,7 @@ export const usePlanScheduleRouteVisibilityStore = create<State>((set) => ({
   },
   syncRouteVisibility: (activeScheduleIds) => {
     set((s) => {
-      const activeSet = new Set(
-        activeScheduleIds.filter((id) => Number.isFinite(id)),
-      );
+      const activeSet = new Set(activeScheduleIds.filter((id) => Number.isFinite(id)));
       const next: Record<number, boolean> = {};
       let order = s.visibilityOrder.filter((id) => activeSet.has(id));
 
@@ -49,5 +47,4 @@ export const usePlanScheduleRouteVisibilityStore = create<State>((set) => ({
       return { visibleByScheduleId: next, visibilityOrder: order };
     });
   },
-  
 }));

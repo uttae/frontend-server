@@ -23,13 +23,7 @@ export function MapPinIconWithoutCircle({
 }) {
   return (
     <svg width={size} height={size} {...mapPinSvgProps}>
-      <path
-        d={MAP_PIN_BODY_PATH}
-        fill={color}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-        strokeLinejoin="round"
-      />
+      <path d={MAP_PIN_BODY_PATH} fill={color} stroke={stroke} strokeWidth={strokeWidth} strokeLinejoin="round" />
     </svg>
   );
 }

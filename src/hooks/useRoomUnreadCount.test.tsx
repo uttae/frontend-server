@@ -4,15 +4,26 @@ import { expect, it, vi } from "vitest";
 import { hookHarness } from "@/test/hook-harness";
 import { useRoomUnreadCount } from "./useRoomUnreadCount";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
-const state = vi.hoisted(() => ({ mobile: true, path: "/chat", view: "", fetch: vi.fn(async () => ({ unreadCount: 2 })) }));
-vi.mock("next/navigation", () => ({ usePathname: () => state.path, useSearchParams: () => new URLSearchParams({ view: state.view }) }));
+const state = vi.hoisted(() => ({
+  mobile: true,
+  path: "/chat",
+  view: "",
+  fetch: vi.fn(async () => ({ unreadCount: 2 })),
+}));
+vi.mock("next/navigation", () => ({
+  usePathname: () => state.path,
+  useSearchParams: () => new URLSearchParams({ view: state.view }),
+}));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: state.mobile }) }));
 vi.mock("@/lib/api/rooms", () => ({ getRoomUnreadCount: state.fetch }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it("does not fetch while mobile chat is visible, and resumes when leaving chat", async () => {
   useChatPanelStore.setState({ minimized: false });
   const client = new QueryClient();
-  const hook = hookHarness(() => useRoomUnreadCount("room"), child => <QueryClientProvider client={client}>{child}</QueryClientProvider>);
+  const hook = hookHarness(
+    () => useRoomUnreadCount("room"),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+  );
   try {
     await hook.render(undefined);
     expect(state.fetch).not.toHaveBeenCalled();
@@ -37,7 +48,10 @@ it.each([
   state.fetch.mockClear();
   useChatPanelStore.setState({ minimized: open });
   const client = new QueryClient();
-  const hook = hookHarness(() => useRoomUnreadCount("room"), child => <QueryClientProvider client={client}>{child}</QueryClientProvider>);
+  const hook = hookHarness(
+    () => useRoomUnreadCount("room"),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+  );
   try {
     await hook.render(undefined);
     await hook.flush();

@@ -13,23 +13,14 @@ import { getQueryClient } from "@/lib/query-client";
 
 const PLAN_PLACE_PREVIEW_ERROR_TITLE = "장소 정보를 불러올 수 없음";
 
-function readCachedPreviewForReconcile(
-  queryClient: QueryClient,
-  googlePlaceId: string,
-): PlacePreview | null {
+function readCachedPreviewForReconcile(queryClient: QueryClient, googlePlaceId: string): PlacePreview | null {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
   if (!id.length) return null;
   return queryClient.getQueryData<PlacePreview>(placePreviewQueryKey(id)) ?? null;
 }
 
-export function reconcileSchedulePlanPlacesAfterPreviewSeed(
-  queryClient: QueryClient,
-  roomId?: string,
-): void {
-  const ridFilter =
-    typeof roomId === "string" && roomId.trim().length > 0
-      ? roomId.trim()
-      : null;
+export function reconcileSchedulePlanPlacesAfterPreviewSeed(queryClient: QueryClient, roomId?: string): void {
+  const ridFilter = typeof roomId === "string" && roomId.trim().length > 0 ? roomId.trim() : null;
 
   const queries = queryClient.getQueryCache().findAll({
     predicate: (query) => {
@@ -57,8 +48,7 @@ export function reconcileSchedulePlanPlacesAfterPreviewSeed(
     let changed = false;
     const next = places.map((place) => {
       if (place.title !== PLAN_PLACE_PREVIEW_ERROR_TITLE) return place;
-      const gid =
-        typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
+      const gid = typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
       if (!gid.length) return place;
 
       const preview = readCachedPreviewForReconcile(queryClient, gid);
@@ -80,10 +70,7 @@ export function reconcileSchedulePlanPlacesAfterPreviewSeed(
   }
 }
 
-function uncachedPreviewIds(
-  queryClient: QueryClient,
-  googlePlaceIds: readonly string[],
-): string[] {
+function uncachedPreviewIds(queryClient: QueryClient, googlePlaceIds: readonly string[]): string[] {
   const out: string[] = [];
   for (const raw of googlePlaceIds) {
     const id = resolvePreviewGooglePlaceId(raw);

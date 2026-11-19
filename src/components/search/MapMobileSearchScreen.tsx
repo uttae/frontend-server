@@ -2,11 +2,7 @@
 
 import { useEffect, useEffectEvent, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import {
-  CloseIcon,
-  LocationIcon,
-  SearchIcon,
-} from "@/assets/icons";
+import { CloseIcon, LocationIcon, SearchIcon } from "@/assets/icons";
 import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
@@ -30,9 +26,7 @@ export type MapMobileSearchProps = {
   onConfirm: (confirmation: SearchConfirmation) => Promise<boolean>;
   onInvalidate: () => void;
   onClear: () => void;
-  onSelectPlace: (
-    entry: MapSearchPlaceEntry,
-  ) => Promise<MapSearchPlaceEntry | null>;
+  onSelectPlace: (entry: MapSearchPlaceEntry) => Promise<MapSearchPlaceEntry | null>;
   scopeKey: string;
   initialQuery?: string;
   resetKey?: number;
@@ -70,8 +64,7 @@ export function MapMobileSearchScreen({
   async function confirm(confirmation: SearchConfirmation) {
     const success = await onConfirm(confirmation);
     if (success) {
-      const prediction =
-        confirmation.kind === "specific" ? confirmation.prediction : null;
+      const prediction = confirmation.kind === "specific" ? confirmation.prediction : null;
       setHistory(
         addMapSearchHistory(
           userId,
@@ -124,32 +117,28 @@ export function MapMobileSearchScreen({
       )}
     >
       <div className="flex min-h-0 flex-col">
-          <MapPlaceSearchInput
-            key={`${scopeKey}:${initialQuery}:${resetKey}`}
-            initialQuery={initialQuery}
-            autoConfirm
-            mobile
-            active={open}
-            inputRef={inputRef}
-            scopeKey={scopeKey}
-            onConfirm={confirm}
-            onInvalidate={onInvalidate}
-            onClear={onClear}
-            onQueryChange={setQuery}
-            onBack={close}
-            backLabel={backLabel}
-          />
+        <MapPlaceSearchInput
+          key={`${scopeKey}:${initialQuery}:${resetKey}`}
+          initialQuery={initialQuery}
+          autoConfirm
+          mobile
+          active={open}
+          inputRef={inputRef}
+          scopeKey={scopeKey}
+          onConfirm={confirm}
+          onInvalidate={onInvalidate}
+          onClear={onClear}
+          onQueryChange={setQuery}
+          onBack={close}
+          backLabel={backLabel}
+        />
       </div>
       {error ? (
         <div className="px-3">
           <Alert orientation="horizontal">
             <AlertTitle>{error}</AlertTitle>
             <AlertAction>
-              <button
-                type="button"
-                className="text-primary underline"
-                onClick={() => inputRef.current?.focus()}
-              >
+              <button type="button" className="text-primary underline" onClick={() => inputRef.current?.focus()}>
                 다시 시도
               </button>
             </AlertAction>
@@ -158,9 +147,7 @@ export function MapMobileSearchScreen({
       ) : null}
       {!query.trim() ? (
         <div className="min-h-0 flex-1 overflow-y-auto px-2 pt-4">
-          <p className="px-3 text-caption-m-regular text-text-subtle">
-            검색 기록
-          </p>
+          <p className="px-3 text-caption-m-regular text-text-subtle">검색 기록</p>
           <ul>
             {history.map((entry) => {
               const Icon = entry.type === "place" ? LocationIcon : SearchIcon;
@@ -178,22 +165,16 @@ export function MapMobileSearchScreen({
                   >
                     <Icon size={20} className="text-icon-subtle" />
                     <span className="flex min-w-0 flex-col">
-                      <span className="truncate text-body-s-emphasis text-text">
-                        {title}
-                      </span>
+                      <span className="truncate text-body-s-emphasis text-text">{title}</span>
                       {entry.type === "place" && entry.address ? (
-                        <span className="truncate text-caption-m-regular text-text-subtle">
-                          {entry.address}
-                        </span>
+                        <span className="truncate text-caption-m-regular text-text-subtle">{entry.address}</span>
                       ) : null}
                     </span>
                   </button>
                   <button
                     type="button"
                     aria-label={`${title} 검색 기록 삭제`}
-                    onClick={() =>
-                      setHistory(removeMapSearchHistory(userId, entry))
-                    }
+                    onClick={() => setHistory(removeMapSearchHistory(userId, entry))}
                     className="flex size-12 shrink-0 items-center justify-center"
                   >
                     <CloseIcon size={16} className="text-icon-subtle" />

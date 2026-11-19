@@ -7,7 +7,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/components/layout/HeaderMemberPreview", () => ({ HeaderMemberPreview: () => null }));
 vi.mock("next/navigation", () => ({ usePathname: () => "/plan/room" }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
-vi.mock("@/hooks/useCurrentRoomMembership", () => ({ useCurrentRoomMembership: () => ({ roomId: "room", roomSource: null, isHost: false, isLoading: false }) }));
+vi.mock("@/hooks/useCurrentRoomMembership", () => ({
+  useCurrentRoomMembership: () => ({ roomId: "room", roomSource: null, isHost: false, isLoading: false }),
+}));
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: undefined }) }));
 vi.mock("@/hooks/useRooms", () => ({
   useRoomsList: () => ({ data: { rooms: [] }, isPending: false }),
@@ -41,7 +43,9 @@ describe("planning chrome", () => {
     const container = document.createElement("div");
     container.innerHTML = renderToStaticMarkup(<SidebarContactButton />);
     const link = container.querySelector("a");
-    expect(link?.getAttribute("href")).toBe("https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header");
+    expect(link?.getAttribute("href")).toBe(
+      "https://docs.google.com/forms/d/e/1FAIpQLSfVohOtffMZkZwybOtNfZtMbDS-vl1u0QAfP9XM3w5hXDLEkA/viewform?usp=header",
+    );
     expect(link?.getAttribute("aria-label")).toBe("버그 제보");
     expect(link?.getAttribute("title")).toBe("버그 제보");
     expect(container.querySelector('[role="dialog"]')).toBeNull();
@@ -57,7 +61,9 @@ describe("planning chrome", () => {
     document.body.append(host);
     const root = createRoot(host);
     try {
-      await act(async () => root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={vi.fn()} />));
+      await act(async () =>
+        root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={vi.fn()} />),
+      );
       const dialog = document.querySelector('[role="dialog"]')!;
       expect(dialog).not.toBeNull();
       expect(document.getElementById(dialog.getAttribute("aria-labelledby")!)?.textContent).toBe("새 북마크 생성");

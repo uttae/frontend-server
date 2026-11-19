@@ -2,21 +2,14 @@ import { z } from "zod";
 
 const MINUTES_PER_DAY = 24 * 60;
 
-export type ScheduleTimeDraftValidation =
-  { valid: true } | { valid: false; message: string };
+export type ScheduleTimeDraftValidation = { valid: true } | { valid: false; message: string };
 
 export function normalizeStartTimeToHm(value: string): string {
   return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value) ? value : "";
 }
 
-export function validateScheduleTimeDraft(
-  startTime: string,
-  endTime: string,
-): ScheduleTimeDraftValidation {
-  if (
-    (startTime && !normalizeStartTimeToHm(startTime)) ||
-    (endTime && !normalizeStartTimeToHm(endTime))
-  ) {
+export function validateScheduleTimeDraft(startTime: string, endTime: string): ScheduleTimeDraftValidation {
+  if ((startTime && !normalizeStartTimeToHm(startTime)) || (endTime && !normalizeStartTimeToHm(endTime))) {
     return { valid: false, message: "시간을 올바르게 선택해 주세요." };
   }
   if (!startTime && endTime) {
@@ -33,10 +26,16 @@ type ScheduleServerTimes = { serverStartHm: string; serverEndHm: string };
 
 function canonicalHm(value: string): string {
   if (!/^\d{1,2}:\d{1,2}$/.test(value)) return value;
-  return value.split(":").map((part) => part.padStart(2, "0")).join(":");
+  return value
+    .split(":")
+    .map((part) => part.padStart(2, "0"))
+    .join(":");
 }
 
-export function resolveScheduleTimeDraft(draft: ScheduleTimeDraft, { serverStartHm, serverEndHm }: ScheduleServerTimes) {
+export function resolveScheduleTimeDraft(
+  draft: ScheduleTimeDraft,
+  { serverStartHm, serverEndHm }: ScheduleServerTimes,
+) {
   return {
     startHm: canonicalHm(draft.start ?? serverStartHm),
     endHm: canonicalHm(draft.end ?? serverEndHm),
@@ -61,10 +60,7 @@ export function createScheduleTimeSchema(server: ScheduleServerTimes) {
     });
 }
 
-export function formatScheduleStaySummary(
-  startTime: string,
-  endTime: string | null | undefined,
-): string {
+export function formatScheduleStaySummary(startTime: string, endTime: string | null | undefined): string {
   const start = normalizeStartTimeToHm(startTime);
   const end = normalizeStartTimeToHm(endTime ?? "");
   if (!start) return "";
@@ -72,17 +68,11 @@ export function formatScheduleStaySummary(
   return `${start} – ${end}${end < start ? " (+1일)" : ""}`;
 }
 
-export function formatScheduleTimeRange(
-  startTime: string,
-  endTime: string | null | undefined,
-): string {
+export function formatScheduleTimeRange(startTime: string, endTime: string | null | undefined): string {
   return formatScheduleStaySummary(startTime, endTime);
 }
 
-export function computeDurationMinutesFromRange(
-  startHm: string,
-  endHm: string,
-): number | null {
+export function computeDurationMinutesFromRange(startHm: string, endHm: string): number | null {
   const s = hmToMinutesSinceMidnight(startHm);
   const e = hmToMinutesSinceMidnight(endHm);
   if (s === null || e === null) return null;

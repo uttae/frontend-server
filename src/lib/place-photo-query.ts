@@ -2,16 +2,9 @@ import type { Query } from "@tanstack/react-query";
 
 import { isBatchItemOk } from "@/lib/api/batch-types";
 import { HttpError } from "@/lib/api/errors";
-import {
-  requestPlacePhotoUrl,
-  requestPlacePhotoUrlsBatch,
-  type PlacePhotoUrlBatchItem,
-} from "@/lib/api/places";
+import { requestPlacePhotoUrl, requestPlacePhotoUrlsBatch, type PlacePhotoUrlBatchItem } from "@/lib/api/places";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
-import {
-  createPlaceBatchLoader,
-  type PlaceBatchResult,
-} from "@/lib/places/place-batch-loader";
+import { createPlaceBatchLoader, type PlaceBatchResult } from "@/lib/places/place-batch-loader";
 
 const PLACE_PHOTO_QUERY_GC_MS = 7 * 24 * 60 * 60 * 1000;
 const PLACE_PHOTO_EMPTY_STALE_MS = 5 * 60 * 1000;
@@ -21,16 +14,8 @@ export function placePhotoUrlQueryKey(googlePlaceId: string) {
   return ["places", "photoUrl", id] as const;
 }
 
-function placePhotoUrlStaleTime(
-  query: Query<
-    string,
-    Error,
-    string,
-    ReturnType<typeof placePhotoUrlQueryKey>
-  >,
-): number {
-  return typeof query.state.data === "string" &&
-    query.state.data.trim().length === 0
+function placePhotoUrlStaleTime(query: Query<string, Error, string, ReturnType<typeof placePhotoUrlQueryKey>>): number {
+  return typeof query.state.data === "string" && query.state.data.trim().length === 0
     ? PLACE_PHOTO_EMPTY_STALE_MS
     : Infinity;
 }
@@ -57,9 +42,7 @@ function photoBatchItemResult(item: PlacePhotoUrlBatchItem): PlaceBatchResult<st
 }
 
 function placeKey(googlePlaceId: unknown): string {
-  return typeof googlePlaceId === "string"
-    ? normalizeGooglePlaceResourceId(googlePlaceId.trim())
-    : "";
+  return typeof googlePlaceId === "string" ? normalizeGooglePlaceResourceId(googlePlaceId.trim()) : "";
 }
 
 export const loadPlacePhotoUrl = createPlaceBatchLoader<string>({

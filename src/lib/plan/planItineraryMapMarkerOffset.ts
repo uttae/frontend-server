@@ -35,10 +35,7 @@ export function filterVisiblePlanMapStops(
       const s = group[i]!;
       const bestRank = scheduleRank.get(best.scheduleId) ?? -1;
       const sRank = scheduleRank.get(s.scheduleId) ?? -1;
-      if (
-        sRank > bestRank ||
-        (sRank === bestRank && s.orderIndex > best.orderIndex)
-      ) {
+      if (sRank > bestRank || (sRank === bestRank && s.orderIndex > best.orderIndex)) {
         best = s;
       }
     }

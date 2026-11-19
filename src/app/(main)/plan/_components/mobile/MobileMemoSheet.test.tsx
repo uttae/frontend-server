@@ -18,9 +18,7 @@ async function renderSheet() {
   document.body.append(host);
   const root = createRoot(host);
   await act(async () =>
-    root.render(
-      <MobileMemoSheet roomId="r" scheduleId={1} itemId={2} placeName="장소" memo="" onClose={vi.fn()} />,
-    ),
+    root.render(<MobileMemoSheet roomId="r" scheduleId={1} itemId={2} placeName="장소" memo="" onClose={vi.fn()} />),
   );
   const textarea = document.querySelector<HTMLTextAreaElement>('[role="dialog"] textarea')!;
   return {
@@ -31,8 +29,7 @@ async function renderSheet() {
         textarea.dispatchEvent(new Event("input", { bubbles: true }));
       });
     },
-    save: () =>
-      act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.requestSubmit()),
+    save: () => act(async () => document.querySelector<HTMLFormElement>('[role="dialog"] form')!.requestSubmit()),
     text: () => document.querySelector('[role="dialog"]')!.textContent ?? "",
     async unmount() {
       await act(async () => root.unmount());
@@ -55,7 +52,12 @@ it("shows the count and the length error while typing and does not cut or save a
     await sheet.type("  예약 번호 123  ");
     expect(sheet.textarea.hasAttribute("aria-invalid")).toBe(false);
     await sheet.save();
-    expect(state.update).toHaveBeenCalledWith({ roomId: "r", scheduleId: 1, itemId: 2, body: { memo: "예약 번호 123" } });
+    expect(state.update).toHaveBeenCalledWith({
+      roomId: "r",
+      scheduleId: 1,
+      itemId: 2,
+      body: { memo: "예약 번호 123" },
+    });
   } finally {
     await sheet.unmount();
   }

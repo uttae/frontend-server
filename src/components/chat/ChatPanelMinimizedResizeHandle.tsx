@@ -31,14 +31,8 @@ function resolveSize(
 ): ChatPanelMinimizedSize {
   const deltaX = session.startX - clientX;
   const deltaY = session.startY - clientY;
-  const nextWidth =
-    session.axis === "height"
-      ? session.startWidth
-      : session.startWidth + deltaX;
-  const nextHeight =
-    session.axis === "width"
-      ? session.startHeight
-      : session.startHeight + deltaY;
+  const nextWidth = session.axis === "height" ? session.startWidth : session.startWidth + deltaX;
+  const nextHeight = session.axis === "width" ? session.startHeight : session.startHeight + deltaY;
 
   return clampSize(nextWidth, nextHeight);
 }
@@ -116,14 +110,7 @@ function ResizeTarget({
     [axis, sessionRef, size.height, size.width],
   );
 
-  return (
-    <button
-      type="button"
-      aria-label={ariaLabel}
-      onPointerDown={handlePointerDown}
-      className={className}
-    />
-  );
+  return <button type="button" aria-label={ariaLabel} onPointerDown={handlePointerDown} className={className} />;
 }
 
 export function ChatPanelMinimizedResizeHandle({
@@ -164,9 +151,7 @@ export function ChatPanelMinimizedResizeHandle({
         onResizeEnd={onResizeEnd}
         clampSize={clampSize}
         sessionRef={sessionRef}
-        className={cn(
-          "absolute left-0 top-0 z-40 h-5 w-5 touch-none cursor-nwse-resize rounded-tl-2xl bg-transparent",
-        )}
+        className={cn("absolute left-0 top-0 z-40 h-5 w-5 touch-none cursor-nwse-resize rounded-tl-2xl bg-transparent")}
       />
     </>
   );

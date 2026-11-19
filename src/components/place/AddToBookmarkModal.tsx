@@ -20,16 +20,8 @@ import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
 import { FolderRibbonIcon } from "@/app/(main)/bookmark/_components/FolderRibbonIcon";
 import { pickUniqueUntitledBookmarkCategoryName } from "@/lib/bookmark-untitled-category-name";
-import {
-  useBookmarkCategories,
-  useCreateBookmarkCategory,
-  useCreateRoomBookmarksInCategories,
-} from "@/hooks/useRooms";
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-  type ItinerarySource,
-} from "@/lib/analytics/track";
+import { useBookmarkCategories, useCreateBookmarkCategory, useCreateRoomBookmarksInCategories } from "@/hooks/useRooms";
+import { AnalyticsEvents, trackAnalyticsEvent, type ItinerarySource } from "@/lib/analytics/track";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -49,13 +41,7 @@ type Props = {
   onAdded?: () => void;
 };
 
-export function AddToBookmarkModal({
-  googlePlaceId,
-  placeCategory,
-  source,
-  onClose,
-  onAdded,
-}: Props) {
+export function AddToBookmarkModal({ googlePlaceId, placeCategory, source, onClose, onAdded }: Props) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const {
     data: categories,
@@ -64,10 +50,8 @@ export function AddToBookmarkModal({
     error: categoriesErr,
     refetch,
   } = useBookmarkCategories(roomId);
-  const { mutate: addBookmarksBulk, isPending: isAddingBookmarks } =
-    useCreateRoomBookmarksInCategories();
-  const { mutate: createCategory, isPending: isCreatingCategory } =
-    useCreateBookmarkCategory();
+  const { mutate: addBookmarksBulk, isPending: isAddingBookmarks } = useCreateRoomBookmarksInCategories();
+  const { mutate: createCategory, isPending: isCreatingCategory } = useCreateBookmarkCategory();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
   const [createFolderModalKey, setCreateFolderModalKey] = useState(0);
@@ -125,19 +109,11 @@ export function AddToBookmarkModal({
     );
   };
 
-  const handleCreateFolderSave = ({
-    title,
-    color,
-  }: {
-    title: string;
-    color: string;
-  }) => {
+  const handleCreateFolderSave = ({ title, color }: { title: string; color: string }) => {
     if (!roomId || isCreatingCategory || isAddingBookmarks) return;
     const resolvedName = title.trim()
       ? title.trim()
-      : pickUniqueUntitledBookmarkCategoryName(
-          (categories ?? []).map((c) => c.name),
-        );
+      : pickUniqueUntitledBookmarkCategoryName((categories ?? []).map((c) => c.name));
     createCategory(
       { roomId, name: resolvedName, colorCode: color },
       {
@@ -151,12 +127,7 @@ export function AddToBookmarkModal({
         },
         onError: (e) => {
           setCreateFolderModalOpen(false);
-          setSubmitError(
-            messageForBookmarkCategorySaveError(
-              e,
-              "카테고리를 만들지 못했습니다.",
-            ),
-          );
+          setSubmitError(messageForBookmarkCategorySaveError(e, "카테고리를 만들지 못했습니다."));
         },
       },
     );
@@ -174,7 +145,13 @@ export function AddToBookmarkModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent {...pointerBoundary} backdropProps={pointerBoundary} size="sm" showCloseButton={false} className="max-h-[min(85dvh,560px)]">
+      <DialogContent
+        {...pointerBoundary}
+        backdropProps={pointerBoundary}
+        size="sm"
+        showCloseButton={false}
+        className="max-h-[min(85dvh,560px)]"
+      >
         <DialogHeader>
           <DialogTitle>북마크에 추가</DialogTitle>
           <DialogDescription>북마크를 선택한 뒤 추가해 주세요.</DialogDescription>
@@ -203,9 +180,7 @@ export function AddToBookmarkModal({
           {categoriesError && (
             <div className="space-y-2 px-5 py-6 text-center">
               <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-                {categoriesErr instanceof Error
-                  ? categoriesErr.message
-                  : "카테고리를 불러오지 못했습니다."}
+                {categoriesErr instanceof Error ? categoriesErr.message : "카테고리를 불러오지 못했습니다."}
               </p>
               <button
                 type="button"
@@ -282,10 +257,7 @@ export function AddToBookmarkModal({
           <Button
             loading={isAddingBookmarks}
             loadingLabel="추가 중"
-            disabled={
-              selectedIds.size === 0 ||
-              (categories?.length === 0 && !categoriesLoading)
-            }
+            disabled={selectedIds.size === 0 || (categories?.length === 0 && !categoriesLoading)}
             onClick={handleConfirmAdd}
           >
             추가
@@ -298,9 +270,7 @@ export function AddToBookmarkModal({
             mode="create"
             initialFolder={null}
             busy={isCreatingCategory || isAddingBookmarks}
-            untitledNameHint={pickUniqueUntitledBookmarkCategoryName(
-              (categories ?? []).map((c) => c.name),
-            )}
+            untitledNameHint={pickUniqueUntitledBookmarkCategoryName((categories ?? []).map((c) => c.name))}
             onClose={() => setCreateFolderModalOpen(false)}
             onSave={handleCreateFolderSave}
           />

@@ -1,8 +1,6 @@
 import { chunkArray, PLACE_BATCH_MAX_SIZE } from "@/lib/api/batch-chunk";
 
-export type PlaceBatchResult<T> =
-  | { ok: true; value: T }
-  | { ok: false; error: unknown };
+export type PlaceBatchResult<T> = { ok: true; value: T } | { ok: false; error: unknown };
 
 type Deferred<T> = {
   promise: Promise<T>;

@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import type { Client } from "@stomp/stompjs";
@@ -20,18 +12,12 @@ import {
   showRoomAccessLostToast,
   showRoomLeftToast,
 } from "@/lib/stomp/forced-room-exit-dispatch";
-import {
-  pathDefersRoomStompRoomTopics,
-  pathSuspendsStomp,
-} from "@/lib/stomp/stompPathPolicy";
+import { pathDefersRoomStompRoomTopics, pathSuspendsStomp } from "@/lib/stomp/stompPathPolicy";
 import { subscribeRoomStompTopics } from "@/lib/stomp/subscribe-room-topics";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
 import { resolveRoomIdFromPathname } from "@/lib/session-room-storage";
 import { useSessionUser } from "@/hooks/useSessionUser";
-import {
-  bootstrapCurrentRoomFromSessionStorage,
-  useSessionStore,
-} from "@/stores/session-store";
+import { bootstrapCurrentRoomFromSessionStorage, useSessionStore } from "@/stores/session-store";
 import type { ServerChatMessage } from "@/types/chat";
 
 import { StompConnectionBanner } from "@/components/stomp/StompConnectionBanner";
@@ -45,9 +31,7 @@ import {
 } from "./use-stomp-provider-effects";
 
 export type StompContextValue = StompConnectionState & {
-  setRoomChatMessageHandler: (
-    fn: ((msg: ServerChatMessage) => void) | null,
-  ) => void;
+  setRoomChatMessageHandler: (fn: ((msg: ServerChatMessage) => void) | null) => void;
 };
 
 const StompContext = createContext<StompContextValue>({
@@ -79,10 +63,7 @@ export function StompProvider({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   const getResolvedRoomId = useCallback((): string | null => {
-    return resolveRoomIdFromPathname(
-      useSessionStore.getState().currentRoomId,
-      pathnameRef.current,
-    );
+    return resolveRoomIdFromPathname(useSessionStore.getState().currentRoomId, pathnameRef.current);
   }, []);
 
   const clientRef = useRef<Client | null>(null);
@@ -196,39 +177,29 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
-  const roomChatMessageHandlerRef = useRef<
-    ((msg: ServerChatMessage) => void) | null
-  >(null);
+  const roomChatMessageHandlerRef = useRef<((msg: ServerChatMessage) => void) | null>(null);
 
   const onRoomChatMessage = useCallback((msg: ServerChatMessage) => {
     roomChatMessageHandlerRef.current?.(msg);
   }, []);
 
-  const setRoomChatMessageHandler = useCallback(
-    (fn: ((msg: ServerChatMessage) => void) | null) => {
-      roomChatMessageHandlerRef.current = fn;
-    },
-    [],
-  );
+  const setRoomChatMessageHandler = useCallback((fn: ((msg: ServerChatMessage) => void) | null) => {
+    roomChatMessageHandlerRef.current = fn;
+  }, []);
 
   const subscribeToRoomTopics = useCallback(
     (client: Client, roomId: string) => {
       const rid = roomId.trim();
-      if (
-        lastSubscribedRoomIdRef.current === rid &&
-        roomTopicsUnsubRef.current != null
-      ) {
+      if (lastSubscribedRoomIdRef.current === rid && roomTopicsUnsubRef.current != null) {
         return;
       }
       lastSubscribedRoomIdRef.current = rid;
       detachRoomTopicsOnly();
       forcedExitConsumedRef.current = false;
-      roomTopicsUnsubRef.current = subscribeRoomStompTopics(
-        client,
-        rid,
-        queryClientRef,
-        { onRoomChatMessage, onSelfLeftRoom: notifySelfLeftRoom },
-      );
+      roomTopicsUnsubRef.current = subscribeRoomStompTopics(client, rid, queryClientRef, {
+        onRoomChatMessage,
+        onSelfLeftRoom: notifySelfLeftRoom,
+      });
     },
     [detachRoomTopicsOnly, onRoomChatMessage, notifySelfLeftRoom],
   );

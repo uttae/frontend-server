@@ -7,12 +7,7 @@ import { useChat } from "@/hooks/useChat";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import {
-  isChatPathname,
-  isMobileMapPathname,
-  isPlanPathname,
-  legacyPlanViewPath,
-} from "@/lib/mobile-view";
+import { isChatPathname, isMobileMapPathname, isPlanPathname, legacyPlanViewPath } from "@/lib/mobile-view";
 import { ChatPanel } from "@/components/chat";
 import { MapWithDetailPanel } from "@/components/map";
 
@@ -25,10 +20,7 @@ import LeftSection from "./LeftSection";
 import { MainContentScrollArea } from "./MainContentScrollArea";
 import SideBar from "./SideBar";
 
-function getMobileBackLink(
-  pathname: string,
-  isMobileDevice: boolean,
-): { href: string; label: string } | undefined {
+function getMobileBackLink(pathname: string, isMobileDevice: boolean): { href: string; label: string } | undefined {
   if (!isMobileDevice) return undefined;
   if (pathname.startsWith("/bookmark/")) {
     return { href: "/bookmark", label: "북마크 목록으로 돌아가기" };
@@ -57,8 +49,7 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   }
   const keepDesktopMap = !isMobileDevice && roomId && (showDesktopMap || mapMountedRoom === roomId);
   const isPlanRoute = isPlanPathname(pathname);
-  const showMobileSurface =
-    isMobileDevice && (isMobileMapPathname(pathname) || isChatPathname(pathname));
+  const showMobileSurface = isMobileDevice && (isMobileMapPathname(pathname) || isChatPathname(pathname));
   const showMobileSchedule = isMobileDevice && isPlanRoute;
   const mobileBack = getMobileBackLink(pathname, isMobileDevice);
 
@@ -66,7 +57,6 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (legacyViewPath) router.replace(legacyViewPath);
   }, [legacyViewPath, router]);
-
 
   return (
     <main className="flex h-dvh flex-col">
@@ -77,14 +67,13 @@ export function MainLayoutChrome({ children }: { children: ReactNode }) {
             style={isMobileDevice ? undefined : { minWidth: MAIN_WORKSPACE_MIN_WIDTH_PX + MAIN_MAP_MIN_WIDTH_PX }}
           >
             <LeftSection>
-              <HeaderBar
-                mobileBackHref={mobileBack?.href}
-                mobileBackLabel={mobileBack?.label}
-              />
+              <HeaderBar mobileBackHref={mobileBack?.href} mobileBackLabel={mobileBack?.label} />
               {isMobileDevice && (pathname === "/cost" || isPackingRoute) ? <TravelToolsSwitcher /> : null}
               <section className="flex min-h-0 w-full min-w-0 flex-1 overflow-hidden">
                 {!isMobileDevice ? <SideBar /> : null}
-                <MainContentScrollArea fill={isPackingRoute || showMobileSurface || showMobileSchedule || showDesktopChat}>
+                <MainContentScrollArea
+                  fill={isPackingRoute || showMobileSurface || showMobileSchedule || showDesktopChat}
+                >
                   {legacyViewPath ? null : children}
                 </MainContentScrollArea>
               </section>

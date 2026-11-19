@@ -2,10 +2,7 @@
 
 import { useState } from "react";
 import { CloseIcon } from "@/assets/icons";
-import {
-  SearchHereFloatingButton,
-  searchHerePillClass,
-} from "@/components/map/SearchHereFloatingButton";
+import { SearchHereFloatingButton, searchHerePillClass } from "@/components/map/SearchHereFloatingButton";
 import { usePlacesSearchHereVisible } from "@/components/map/usePlacesSearchHereVisible";
 import { cn } from "@/lib/utils";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
@@ -16,27 +13,14 @@ export type MapSearchHereButtonProps = {
   discoverFailed: boolean;
 };
 
-export function MapSearchHereButton({
-  discoverCategoryId,
-  discoverFailed,
-}: MapSearchHereButtonProps) {
-  const requestSearchRecenter = useSearchRecenterStore(
-    (s) => s.requestSearchRecenter,
-  );
-  const requestDiscoverRecenter = useSearchRecenterStore(
-    (s) => s.requestDiscoverRecenter,
-  );
+export function MapSearchHereButton({ discoverCategoryId, discoverFailed }: MapSearchHereButtonProps) {
+  const requestSearchRecenter = useSearchRecenterStore((s) => s.requestSearchRecenter);
+  const requestDiscoverRecenter = useSearchRecenterStore((s) => s.requestDiscoverRecenter);
   const generation = usePlaceSearchStore((s) => s.generation);
   const [closedGeneration, setClosedGeneration] = useState<number | null>(null);
-  const {
-    visible,
-    suggestSearchRecenter,
-    searchRecenterNotice,
-    suggestDiscoverRecenter,
-    retryDiscoverRecenter,
-  } = usePlacesSearchHereVisible({ discoverCategoryId, discoverFailed });
-  const showEmptyNotice =
-    searchRecenterNotice === "empty" && closedGeneration !== generation;
+  const { visible, suggestSearchRecenter, searchRecenterNotice, suggestDiscoverRecenter, retryDiscoverRecenter } =
+    usePlacesSearchHereVisible({ discoverCategoryId, discoverFailed });
+  const showEmptyNotice = searchRecenterNotice === "empty" && closedGeneration !== generation;
 
   if (!visible && !showEmptyNotice) return null;
 
@@ -56,11 +40,7 @@ export function MapSearchHereButton({
         </div>
       ) : (
         <SearchHereFloatingButton
-          label={
-            searchRecenterNotice === "failed" || retryDiscoverRecenter
-              ? "다시 시도"
-              : "현 위치에서 검색"
-          }
+          label={searchRecenterNotice === "failed" || retryDiscoverRecenter ? "다시 시도" : "현 위치에서 검색"}
           onPress={() => {
             if (suggestSearchRecenter) {
               requestSearchRecenter();

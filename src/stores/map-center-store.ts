@@ -22,6 +22,5 @@ export const useMapCenterStore = create<MapCenterState>((set) => ({
   radiusMeters: null,
   bounds: null,
   setMapCenter: (mapCenter) => set({ mapCenter }),
-  setMapCamera: ({ mapCenter, zoom, radiusMeters, bounds }) =>
-    set({ mapCenter, zoom, radiusMeters, bounds }),
+  setMapCamera: ({ mapCenter, zoom, radiusMeters, bounds }) => set({ mapCenter, zoom, radiusMeters, bounds }),
 }));

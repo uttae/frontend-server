@@ -56,7 +56,10 @@ export function createExpenseFormSchema({ currencies, members, original, daysOf 
       participantUserIds: z.array(z.number()),
     })
     .superRefine((values, ctx) => {
-      const amount = amountError(values.totalAmount, currencies.find((c) => c.currency === values.currency));
+      const amount = amountError(
+        values.totalAmount,
+        currencies.find((c) => c.currency === values.currency),
+      );
       if (amount) ctx.addIssue({ code: "custom", path: ["totalAmount"], message: amount });
       const link = expenseLinkError(values, daysOf(values.scheduleId));
       if (link) ctx.addIssue({ code: "custom", path: ["scheduleItemId"], message: link });

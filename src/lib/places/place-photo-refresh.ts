@@ -22,10 +22,7 @@ function describeUnknownError(error: unknown) {
   };
 }
 
-export async function refreshPlacePhotoUrl(
-  googlePlaceId: string,
-  queryClient?: QueryClient | null,
-): Promise<string> {
+export async function refreshPlacePhotoUrl(googlePlaceId: string, queryClient?: QueryClient | null): Promise<string> {
   const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
   if (!id.length) return "";
 
@@ -61,8 +58,7 @@ export function handlePlacePhotoImageError(args: {
 }): void {
   logPlacePhotoImageError(args);
 
-  const id =
-    typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
+  const id = typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
   if (!id.length || args.image.dataset.photoRefreshAttempted === "true") {
     args.onPhotoUnavailable?.();
     return;

@@ -1,10 +1,6 @@
 import type { SVGProps } from "react";
 
-export function MemoIcon({
-  className,
-  strokeWidth = 2,
-  ...rest
-}: SVGProps<SVGSVGElement> & { strokeWidth?: number }) {
+export function MemoIcon({ className, strokeWidth = 2, ...rest }: SVGProps<SVGSVGElement> & { strokeWidth?: number }) {
   return (
     <svg
       className={className}

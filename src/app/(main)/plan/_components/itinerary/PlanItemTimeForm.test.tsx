@@ -39,7 +39,9 @@ function input(column: number) {
   expect(el, fields[column]).not.toBeNull();
   return el!;
 }
-function selected(column: number) { return input(column).value; }
+function selected(column: number) {
+  return input(column).value;
+}
 async function type(column: number, value: string) {
   const el = input(column);
   await act(async () => {
@@ -48,7 +50,9 @@ async function type(column: number, value: string) {
   });
 }
 async function key(el: Element, key: string, shiftKey = false) {
-  await act(async () => el.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true })));
+  await act(async () =>
+    el.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true })),
+  );
 }
 async function nextFrame() {
   await act(async () => {
@@ -203,22 +207,25 @@ describe("web time editing", () => {
     await key(input(column), "Enter");
     expect(body()).toEqual({ startTime: "08:05" });
   });
-  it.each(["24", "-1", "abc", "", "100"])("shows invalid hour %s under the start field without saving", async (value) => {
-    await render();
-    await type(0, value);
-    expect(input(0).getAttribute("aria-invalid")).toBe("true");
-    const alert = document.querySelector('[role="alert"]');
-    expect(alert?.textContent).toBe("시간을 올바르게 선택해 주세요. 시는 00–23, 분은 00–59로 입력해 주세요.");
-    expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
-    expect(input(2).getAttribute("aria-describedby")).not.toContain(alert!.id);
-    await key(input(0), "Enter");
-    expect(mocks.error).not.toHaveBeenCalled();
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
-    expect(document.querySelectorAll('[role="alert"]')).toHaveLength(1);
-    await type(0, "22");
-    expect(input(0).getAttribute("aria-invalid")).toBe("false");
-    expect(document.querySelector('[role="alert"]')).toBeNull();
-  });
+  it.each(["24", "-1", "abc", "", "100"])(
+    "shows invalid hour %s under the start field without saving",
+    async (value) => {
+      await render();
+      await type(0, value);
+      expect(input(0).getAttribute("aria-invalid")).toBe("true");
+      const alert = document.querySelector('[role="alert"]');
+      expect(alert?.textContent).toBe("시간을 올바르게 선택해 주세요. 시는 00–23, 분은 00–59로 입력해 주세요.");
+      expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
+      expect(input(2).getAttribute("aria-describedby")).not.toContain(alert!.id);
+      await key(input(0), "Enter");
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(mocks.mutateAsync).not.toHaveBeenCalled();
+      expect(document.querySelectorAll('[role="alert"]')).toHaveLength(1);
+      await type(0, "22");
+      expect(input(0).getAttribute("aria-invalid")).toBe("false");
+      expect(document.querySelector('[role="alert"]')).toBeNull();
+    },
+  );
   it("puts an invalid end time under the end field", async () => {
     await render();
     await type(3, "60");
@@ -280,13 +287,15 @@ describe("web time editing", () => {
   });
 });
 
-
 it("opening and focusing unset desktop fields never enables saving or sends a PATCH", async () => {
   props = { ...props, startTime: "", endTime: null };
   await render();
-  await act(async () => { input(0).focus(); input(1).focus(); });
+  await act(async () => {
+    input(0).focus();
+    input(1).focus();
+  });
   expect(fields.map((_, i) => selected(i))).toEqual(["", "", "", ""]);
-  const apply = [...document.querySelectorAll("button")].find(b => b.textContent === "적용")!;
+  const apply = [...document.querySelectorAll("button")].find((b) => b.textContent === "적용")!;
   expect(apply.disabled).toBe(true);
   await click("적용");
   expect(mocks.mutateAsync).not.toHaveBeenCalled();

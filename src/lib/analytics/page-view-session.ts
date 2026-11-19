@@ -41,28 +41,22 @@ export function buildSessionPageViewPlan({
   userId,
   ...pageViewInput
 }: SessionPageViewPlanInput): SessionPageViewPlan | null {
-  if (
-    !skipSessionReconciliation &&
-    (!sessionReady || queryStatus === "pending")
-  ) {
+  if (!skipSessionReconciliation && (!sessionReady || queryStatus === "pending")) {
     return null;
   }
 
-  const confirmedUserId =
-    !skipSessionReconciliation && queryStatus === "success"
-      ? (userId ?? null)
-      : null;
+  const confirmedUserId = !skipSessionReconciliation && queryStatus === "success" ? (userId ?? null) : null;
   const roomId = resolveAnalyticsRoomId({
     pathname: pageViewInput.pathname,
     currentRoomId,
     sessionReady,
     userId: confirmedUserId,
   });
-  const awaitingRoom = isAnalyticsRoomPath(pageViewInput.pathname) &&
+  const awaitingRoom =
+    isAnalyticsRoomPath(pageViewInput.pathname) &&
     !resolveSelectedAnalyticsRoomId({ pathname: pageViewInput.pathname, currentRoomId });
   const alreadyTracked =
-    lastTrackedPathname === pageViewInput.pathname &&
-    (!lastTrackedRoomId || !roomId || lastTrackedRoomId === roomId);
+    lastTrackedPathname === pageViewInput.pathname && (!lastTrackedRoomId || !roomId || lastTrackedRoomId === roomId);
   return {
     userId: confirmedUserId,
     pageView:
@@ -75,10 +69,7 @@ export function buildSessionPageViewPlan({
   };
 }
 
-export function executeSessionPageViewPlan(
-  plan: SessionPageViewPlan,
-  executor: SessionPageViewPlanExecutor,
-): void {
+export function executeSessionPageViewPlan(plan: SessionPageViewPlan, executor: SessionPageViewPlanExecutor): void {
   executor.setUserId(plan.userId);
   if (plan.pageView) {
     executor.trackPageView(plan.pageView);

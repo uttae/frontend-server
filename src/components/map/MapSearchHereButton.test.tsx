@@ -53,7 +53,9 @@ it("shows 검색 결과가 없어요 until closed, and again for the next search
   expect(notice()?.textContent).toBe("검색 결과가 없어요");
   await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="안내 닫기"]')!.click());
   expect(notice()).toBeNull();
-  await act(async () => { usePlaceSearchStore.getState().invalidate(); });
+  await act(async () => {
+    usePlaceSearchStore.getState().invalidate();
+  });
   await finishSearch({ searchMode: "map_recenter", status: "done", items: [] });
   expect(notice()).not.toBeNull();
 });

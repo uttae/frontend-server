@@ -21,10 +21,7 @@ import {
 import { startSessionPresencePing } from "@/lib/stomp/sessionPresencePing";
 import { subscribeUserRoomsQueue } from "@/lib/stomp/subscribe-user-rooms-queue";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
-import {
-  STOMP_CONNECTION_ISSUE_MESSAGE,
-  useStompConnectionStore,
-} from "@/stores/stomp-connection-store";
+import { STOMP_CONNECTION_ISSUE_MESSAGE, useStompConnectionStore } from "@/stores/stomp-connection-store";
 
 export type StompConnectionState = {
   client: Client | null;
@@ -34,11 +31,7 @@ export type StompConnectionState = {
 type LifecycleOpts = {
   stompEligible: boolean;
   suppressCloseRecoveryRef: MutableRefObject<boolean>;
-  notifyForcedRoomExit: (
-    reason: ForcedRoomExitReason,
-    eventRoomId: string,
-    message?: string,
-  ) => void;
+  notifyForcedRoomExit: (reason: ForcedRoomExitReason, eventRoomId: string, message?: string) => void;
   notifyRoomAccessLost: (roomId: string) => void;
   subscribeToRoomTopics: (client: Client, roomId: string) => void;
   invalidateRoomTopics: () => void;
@@ -185,9 +178,7 @@ export function useStompClientLifecycleEffect({
         closingAfterStompError = false;
         clearStompErrorReconnectTimer();
         void client.deactivate();
-        useStompConnectionStore
-          .getState()
-          .setConnectionIssue(STOMP_CONNECTION_ISSUE_MESSAGE);
+        useStompConnectionStore.getState().setConnectionIssue(STOMP_CONNECTION_ISSUE_MESSAGE);
         return;
       }
 
@@ -230,9 +221,7 @@ export function useStompClientLifecycleEffect({
   ]);
 }
 
-export function useStompOnlineRetryEffect(
-  retryConnectionRef: MutableRefObject<(() => void) | null>,
-): void {
+export function useStompOnlineRetryEffect(retryConnectionRef: MutableRefObject<(() => void) | null>): void {
   useEffect(() => {
     const retry = () => retryConnectionRef.current?.();
     window.addEventListener("online", retry);

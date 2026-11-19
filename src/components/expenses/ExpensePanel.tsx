@@ -24,11 +24,7 @@ import {
   expenseCategoryLabel,
 } from "@/lib/api/rooms/expenses";
 import { useExpenseContext } from "./ExpenseProvider";
-import {
-  ExpenseList,
-  ExpenseSummaryView,
-  formatExpenseAmount,
-} from "./ExpenseViews";
+import { ExpenseList, ExpenseSummaryView, formatExpenseAmount } from "./ExpenseViews";
 type DeleteConflict = { selected: Expense; latest?: Expense; failed?: boolean };
 
 function ExpenseDeleteConflict({
@@ -47,18 +43,11 @@ function ExpenseDeleteConflict({
   const context = useExpenseContext();
   let message = "이미 삭제된 비용이에요.";
   if (deleting) message = "최신 비용 확인 중…";
-  else if (conflict.failed)
-    message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
+  else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 삭제는 중단돼요.";
   const unavailable = deleting ? <Spinner aria-label={message} /> : <p>{message}</p>;
   return (
-    <div
-      role="alert"
-      className="space-y-3 rounded-xl border border-gray-border p-3"
-    >
-      <p>
-        삭제할 비용이 변경되었어요. 최신 비용을 확인한 뒤 삭제를 다시 확인해
-        주세요.
-      </p>
+    <div role="alert" className="space-y-3 rounded-xl border border-gray-border p-3">
+      <p>삭제할 비용이 변경되었어요. 최신 비용을 확인한 뒤 삭제를 다시 확인해 주세요.</p>
       {conflict.latest ? (
         <>
           <ExpenseList
@@ -85,21 +74,11 @@ function ExpenseDeleteConflict({
         unavailable
       )}
       {conflict.failed && (
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={deleting}
-          onClick={() => onRecover(conflict.selected)}
-        >
+        <Button variant="outline" size="sm" disabled={deleting} onClick={() => onRecover(conflict.selected)}>
           최신 비용 다시 조회
         </Button>
       )}
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={deleting || context.busy}
-        onClick={onCancel}
-      >
+      <Button variant="outline" size="sm" disabled={deleting || context.busy} onClick={onCancel}>
         삭제 취소
       </Button>
     </div>
@@ -135,66 +114,92 @@ function makeKrwFilters(category: string, filter: string): ExpenseKrwFilters {
 function selectFallbackTotal(summary: ExpenseKrwSummary | undefined, category: string, filter: string) {
   if (filter === "ALL") {
     if (category === "ALL") return summary;
-    return summary?.categories?.find(row => row.category === category)?.total;
+    return summary?.categories?.find((row) => row.category === category)?.total;
   }
   if (category !== "ALL") return undefined;
-  return summary?.days?.find(day => matchesDay(day, filter))?.total;
+  return summary?.days?.find((day) => matchesDay(day, filter))?.total;
 }
 function useExpenseDisplay(context: ReturnType<typeof useExpenseContext>, category: string, filter: string) {
   const activeFilter =
-    filter === "ALL" ||
-    filter === "PREPARATION" ||
-    context.schedules.some((s) => String(s.scheduleId) === filter)
+    filter === "ALL" || filter === "PREPARATION" || context.schedules.some((s) => String(s.scheduleId) === filter)
       ? filter
       : "ALL";
-  const filtered = useMemo(() => context.list.data?.filter(e => matchesExpenseFilter(e, category, activeFilter)) ?? [], [context.list.data, category, activeFilter]);
+  const filtered = useMemo(
+    () => context.list.data?.filter((e) => matchesExpenseFilter(e, category, activeFilter)) ?? [],
+    [context.list.data, category, activeFilter],
+  );
   const krwFilters = useMemo(() => makeKrwFilters(category, activeFilter), [category, activeFilter]);
   const { setKrwFilters } = context;
-  useEffect(() => { setKrwFilters?.(krwFilters); }, [setKrwFilters, krwFilters]);
+  useEffect(() => {
+    setKrwFilters?.(krwFilters);
+  }, [setKrwFilters, krwFilters]);
   const backgroundRefresh = context.syncStatus === "refreshing";
   const displayReady = !context.revoked && context.syncStatus !== "revoked";
   const filtersMatch = JSON.stringify(context.krwFilters) === JSON.stringify(krwFilters);
-  const detailed = filtersMatch
-    && displayReady
-    ? context.filteredKrwSummary?.data : undefined;
+  const detailed = filtersMatch && displayReady ? context.filteredKrwSummary?.data : undefined;
   const wholeKrw = displayReady ? context.krwSummary.data : undefined;
   const fallbackTotal = selectFallbackTotal(wholeKrw, category, activeFilter);
   const selectedTotal = detailed?.filtered ?? fallbackTotal;
-  const visibleExpenses = useMemo(() => detailed?.expenses?.map((row) => row.expense) ?? filtered, [detailed, filtered]);
-  const nextList = useMemo(() => ({
-    expenses: visibleExpenses,
-    krwSummary: detailed ?? (category === "ALL" ? wholeKrw : undefined),
-    rowKrwSummary: detailed ?? wholeKrw,
-  }), [visibleExpenses, detailed, wholeKrw, category]);
-  const categoryPending = Boolean(context.filteredKrwSummary && category !== "ALL" && displayReady
-    && !detailed && !(filtersMatch && context.filteredKrwSummary.isError) && filtered.length);
+  const visibleExpenses = useMemo(
+    () => detailed?.expenses?.map((row) => row.expense) ?? filtered,
+    [detailed, filtered],
+  );
+  const nextList = useMemo(
+    () => ({
+      expenses: visibleExpenses,
+      krwSummary: detailed ?? (category === "ALL" ? wholeKrw : undefined),
+      rowKrwSummary: detailed ?? wholeKrw,
+    }),
+    [visibleExpenses, detailed, wholeKrw, category],
+  );
+  const categoryPending = Boolean(
+    context.filteredKrwSummary &&
+    category !== "ALL" &&
+    displayReady &&
+    !detailed &&
+    !(filtersMatch && context.filteredKrwSummary.isError) &&
+    filtered.length,
+  );
   const [settledList, setSettledList] = useState(nextList);
   if (!categoryPending && settledList !== nextList) setSettledList(nextList);
   const displayList = categoryPending ? settledList : nextList;
-  return { activeFilter, filtered, backgroundRefresh, detailed, wholeKrw, selectedTotal, visibleExpenses: displayList.expenses, displayList, categoryPending };
+  return {
+    activeFilter,
+    filtered,
+    backgroundRefresh,
+    detailed,
+    wholeKrw,
+    selectedTotal,
+    visibleExpenses: displayList.expenses,
+    displayList,
+    categoryPending,
+  };
 }
 
 function ExpenseMemberNotice({ context }: Readonly<{ context: ReturnType<typeof useExpenseContext> }>) {
-  return <>
-          {context.memberStatus !== "success" && (
-            <output
-              className={context.memberStatus === "pending" ? "sr-only" : "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"}
-            >
-              {context.memberStatus === "pending"
-                ? "멤버 확인 중…"
-                : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
-              비용의 사용자 ID와 금액은 유지돼요.
-            </output>
-          )}
-          {context.memberStatus === "success" && !context.canManage && (
-            <p
-              role="alert"
-              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
-            >
-              현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
-            </p>
-          )}
-  </>;
+  return (
+    <>
+      {context.memberStatus !== "success" && (
+        <output
+          className={
+            context.memberStatus === "pending"
+              ? "sr-only"
+              : "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
+          }
+        >
+          {context.memberStatus === "pending"
+            ? "멤버 확인 중…"
+            : "멤버 정보 조회 실패. 조회 다시 시도 버튼을 눌러 주세요."}{" "}
+          비용의 사용자 ID와 금액은 유지돼요.
+        </output>
+      )}
+      {context.memberStatus === "success" && !context.canManage && (
+        <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
+          현재 참여 중인 방장과 멤버만 비용에 접근할 수 있어요.
+        </p>
+      )}
+    </>
+  );
 }
 
 export function ExpensePanel() {
@@ -236,16 +241,10 @@ export function ExpensePanel() {
   const lock = useRef(false);
   const [expenseToDelete, setExpenseToDelete] = useState<Expense | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const { activeFilter, filtered, backgroundRefresh, selectedTotal, visibleExpenses, displayList, categoryPending } = useExpenseDisplay(context, category, filter);
+  const { activeFilter, filtered, backgroundRefresh, selectedTotal, visibleExpenses, displayList, categoryPending } =
+    useExpenseDisplay(context, category, filter);
   function remove(expense: Expense, reviewed = false) {
-    if (
-      lock.current ||
-      deleting ||
-      context.busy ||
-      !context.canManage ||
-      (conflict && !reviewed)
-    )
-      return;
+    if (lock.current || deleting || context.busy || !context.canManage || (conflict && !reviewed)) return;
     setExpenseToDelete(expense);
   }
   async function confirmRemove() {
@@ -259,10 +258,7 @@ export function ExpensePanel() {
       setConflict(null);
       toast.success("비용을 삭제했어요.");
     } catch (e) {
-      if (
-        e instanceof ExpenseApiError &&
-        (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")
-      )
+      if (e instanceof ExpenseApiError && (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND"))
         await recover(expense);
       setError(e instanceof Error ? e.message : "비용 삭제에 실패했어요.");
     } finally {
@@ -286,9 +282,9 @@ export function ExpensePanel() {
   const readFailed =
     context.syncStatus === "error" ||
     context.memberStatus === "error" ||
-    [context.list, context.summary, context.budget, context.krwSummary, context.filteredKrwSummary].filter(Boolean).some(
-      (query) => query?.isError,
-    );
+    [context.list, context.summary, context.budget, context.krwSummary, context.filteredKrwSummary]
+      .filter(Boolean)
+      .some((query) => query?.isError);
   const query = context.list;
   const dayOptions = [
     { value: "ALL", label: "전체" },
@@ -299,19 +295,12 @@ export function ExpensePanel() {
     })),
   ];
   function openNewExpense() {
-    context.open(
-      activeFilter !== "ALL" && activeFilter !== "PREPARATION"
-        ? { scheduleId: Number(activeFilter) }
-        : {},
-    );
+    context.open(activeFilter !== "ALL" && activeFilter !== "PREPARATION" ? { scheduleId: Number(activeFilter) } : {});
   }
   const retryLabel = refreshing ? "조회 다시 시도 중" : "조회 다시 시도";
   if (context.revoked) return null;
   return (
-    <section
-      aria-label="비용 및 정산"
-      className="@container/expenses min-w-0 text-body-s-regular"
-    >
+    <section aria-label="비용 및 정산" className="@container/expenses min-w-0 text-body-s-regular">
       <MainPageHeader
         title="지출"
         description="여행 경비를 한 번에 관리하세요."
@@ -382,22 +371,14 @@ export function ExpensePanel() {
             />
           )}
           {error && (
-            <p
-              role="alert"
-              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
-            >
+            <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
               {error}
             </p>
           )}
           {query.isError && (
-            <p
-              role="alert"
-              className="text-body-s-regular mobile:text-body-xs-regular text-status-negative"
-            >
-              {query.error instanceof Error
-                ? query.error.message
-                : "조회에 실패했어요."}{" "}
-              조회 다시 시도 버튼을 눌러 주세요.
+            <p role="alert" className="text-body-s-regular mobile:text-body-xs-regular text-status-negative">
+              {query.error instanceof Error ? query.error.message : "조회에 실패했어요."} 조회 다시 시도 버튼을 눌러
+              주세요.
             </p>
           )}
           <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_184px] items-center gap-x-3 gap-y-4">
@@ -425,10 +406,7 @@ export function ExpensePanel() {
                 value={category}
                 onChange={setCategory}
                 mobileSheet
-                options={[
-                  { value: "ALL", label: "전체 카테고리" },
-                  ...expenseCategories,
-                ]}
+                options={[{ value: "ALL", label: "전체 카테고리" }, ...expenseCategories]}
               />
             </div>
             {context.list.isSuccess && (
@@ -437,50 +415,54 @@ export function ExpensePanel() {
                 aria-label="선택한 비용 합계"
               >
                 <ExpenseKrwAmount total={selectedTotal} />
-                {!selectedTotal && totalsByCurrency(filtered).map((total) => (
-                  <span key={total.currency} className="break-all">
-                    {formatExpenseAmount(total.amount)} {total.currency}
-                  </span>
-                ))}
-                <span className="text-body-xs-regular text-text-subtle">
-                  {visibleExpenses.length}건
-                </span>
+                {!selectedTotal &&
+                  totalsByCurrency(filtered).map((total) => (
+                    <span key={total.currency} className="break-all">
+                      {formatExpenseAmount(total.amount)} {total.currency}
+                    </span>
+                  ))}
+                <span className="text-body-xs-regular text-text-subtle">{visibleExpenses.length}건</span>
               </div>
             )}
           </div>
-          {context.filteredKrwSummary?.isError && <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>}
-          {context.list.isPending ? <Spinner aria-label="비용 목록 불러오는 중" className="flex min-h-40 w-full" /> : context.list.isSuccess && (
-            <>
-              <div aria-busy={categoryPending}>
-                <ExpenseList
-                  roomId={context.roomId}
-                  expenses={visibleExpenses}
-                  krwSummary={displayList.krwSummary}
-                  rowKrwSummary={displayList.rowKrwSummary}
-                  members={context.members}
-                  memberStatus={context.memberStatus}
-                  schedules={context.schedules}
-                  canManage={context.canManage}
-                  onEdit={(expense) => context.open({ expense })}
-                  onDelete={(expense) => void remove(expense)}
-                  busy={context.busy || deleting || Boolean(conflict)}
-                  grouped
-                />
-              </div>
-              {(activeFilter !== "ALL" || category !== "ALL") && (
-                <div className="text-body-xs-regular text-text-subtle">
-                  <p className="hidden @min-[800px]/expenses:block">
-                    선택한 일정의 지출만 표시해요. 여행 전체 예산과 정산은 전체 기준이에요.
-                  </p>
-                  <p className="@min-[800px]/expenses:hidden">
-                    {activeFilter !== "ALL" && dayOptions.find(option => option.value === activeFilter)?.label}
-                    {activeFilter !== "ALL" && category !== "ALL" && " · "}
-                    {category !== "ALL" && expenseCategoryLabel(category as Expense["category"])}{" "}
-                    지출만 표시해요.
-                  </p>
+          {context.filteredKrwSummary?.isError && (
+            <p role="alert">선택한 비용의 원화 조회에 실패했어요. 조회 다시 시도 버튼을 눌러 주세요.</p>
+          )}
+          {context.list.isPending ? (
+            <Spinner aria-label="비용 목록 불러오는 중" className="flex min-h-40 w-full" />
+          ) : (
+            context.list.isSuccess && (
+              <>
+                <div aria-busy={categoryPending}>
+                  <ExpenseList
+                    roomId={context.roomId}
+                    expenses={visibleExpenses}
+                    krwSummary={displayList.krwSummary}
+                    rowKrwSummary={displayList.rowKrwSummary}
+                    members={context.members}
+                    memberStatus={context.memberStatus}
+                    schedules={context.schedules}
+                    canManage={context.canManage}
+                    onEdit={(expense) => context.open({ expense })}
+                    onDelete={(expense) => void remove(expense)}
+                    busy={context.busy || deleting || Boolean(conflict)}
+                    grouped
+                  />
                 </div>
-              )}
-            </>
+                {(activeFilter !== "ALL" || category !== "ALL") && (
+                  <div className="text-body-xs-regular text-text-subtle">
+                    <p className="hidden @min-[800px]/expenses:block">
+                      선택한 일정의 지출만 표시해요. 여행 전체 예산과 정산은 전체 기준이에요.
+                    </p>
+                    <p className="@min-[800px]/expenses:hidden">
+                      {activeFilter !== "ALL" && dayOptions.find((option) => option.value === activeFilter)?.label}
+                      {activeFilter !== "ALL" && category !== "ALL" && " · "}
+                      {category !== "ALL" && expenseCategoryLabel(category as Expense["category"])} 지출만 표시해요.
+                    </p>
+                  </div>
+                )}
+              </>
+            )
           )}
         </div>
       </div>
@@ -491,13 +473,15 @@ export function ExpensePanel() {
       {tab !== "list" && (
         <ExpenseDialog
           title="정산 요약"
-          description={context.summary.data ? `전체 여행 · ${new Set(context.summary.data.currencies.flatMap(currency => currency.individuals.map(person => person.userId))).size}명` : undefined}
+          description={
+            context.summary.data
+              ? `전체 여행 · ${new Set(context.summary.data.currencies.flatMap((currency) => currency.individuals.map((person) => person.userId))).size}명`
+              : undefined
+          }
           onClose={() => setTab("list")}
           footer={<Button onClick={() => setTab("list")}>확인</Button>}
         >
-          {context.summary.isPending && (
-            <Spinner aria-label="정산 불러오는 중" className="flex min-h-32 w-full" />
-          )}
+          {context.summary.isPending && <Spinner aria-label="정산 불러오는 중" className="flex min-h-32 w-full" />}
           {context.summary.isError && (
             <div className="space-y-3">
               <p role="alert">정산 조회에 실패했어요.</p>
@@ -513,18 +497,21 @@ export function ExpensePanel() {
               </Button>
             </div>
           )}
-          {context.summary.isSuccess &&
-            (
-              <ExpenseSummaryView
-                currentUserId={context.currentUserId}
-                krwSummary={context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh) ? context.krwSummary.data : undefined}
-                scope="all"
-                showDetails={false}
-                summary={context.summary.data}
-                members={context.members}
-                memberStatus={context.memberStatus}
-              />
-            )}
+          {context.summary.isSuccess && (
+            <ExpenseSummaryView
+              currentUserId={context.currentUserId}
+              krwSummary={
+                context.krwSummary.isSuccess && (!context.krwSummary.isFetching || backgroundRefresh)
+                  ? context.krwSummary.data
+                  : undefined
+              }
+              scope="all"
+              showDetails={false}
+              summary={context.summary.data}
+              members={context.members}
+              memberStatus={context.memberStatus}
+            />
+          )}
         </ExpenseDialog>
       )}
       {expenseToDelete ? (

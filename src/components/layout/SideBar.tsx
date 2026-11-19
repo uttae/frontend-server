@@ -4,10 +4,7 @@ import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
-import {
-  sidebarWireframeIcons as sidebarIcons,
-  sidebarIcons as sharedSidebarIcons,
-} from "@/lib/public-assets";
+import { sidebarWireframeIcons as sidebarIcons, sidebarIcons as sharedSidebarIcons } from "@/lib/public-assets";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 
 import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";

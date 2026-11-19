@@ -19,25 +19,41 @@ afterEach(() => {
   useChatRateLimitStore.getState().clearRateLimit();
 });
 
-it.each(["text", "ai", "place"] as const)("attributes %s to the published room even if publish changes the selected room", async (type) => {
-  useSessionStore.setState({ currentRoomId: " room-a " });
-  const hook = hookHarness(() => useChatActions());
-  try {
-    await hook.render(undefined);
-    stomp.client.publish.mockImplementationOnce(() => useSessionStore.setState({ currentRoomId: "room-b" }));
-    await act(async () => {
-      if (type === "text") hook.current.sendChatMessage("hello");
-      else if (type === "ai") hook.current.sendAiMessage("hello");
-      else hook.current.sendPlaceMessage({ googlePlaceId: "place", name: "Place", formattedAddress: "Address", latitude: 1, longitude: 2, rating: 4 });
-    });
-    expect(stomp.client.publish).toHaveBeenCalledWith(expect.objectContaining({
-      destination: `/app/rooms/room-a/messages/${type === "text" ? "chat" : type}`,
-    }));
-    expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("chat_message_sent", { room_id: "room-a", message_type: type });
-  } finally {
-    await hook.unmount();
-  }
-});
+it.each(["text", "ai", "place"] as const)(
+  "attributes %s to the published room even if publish changes the selected room",
+  async (type) => {
+    useSessionStore.setState({ currentRoomId: " room-a " });
+    const hook = hookHarness(() => useChatActions());
+    try {
+      await hook.render(undefined);
+      stomp.client.publish.mockImplementationOnce(() => useSessionStore.setState({ currentRoomId: "room-b" }));
+      await act(async () => {
+        if (type === "text") hook.current.sendChatMessage("hello");
+        else if (type === "ai") hook.current.sendAiMessage("hello");
+        else
+          hook.current.sendPlaceMessage({
+            googlePlaceId: "place",
+            name: "Place",
+            formattedAddress: "Address",
+            latitude: 1,
+            longitude: 2,
+            rating: 4,
+          });
+      });
+      expect(stomp.client.publish).toHaveBeenCalledWith(
+        expect.objectContaining({
+          destination: `/app/rooms/room-a/messages/${type === "text" ? "chat" : type}`,
+        }),
+      );
+      expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("chat_message_sent", {
+        room_id: "room-a",
+        message_type: type,
+      });
+    } finally {
+      await hook.unmount();
+    }
+  },
+);
 
 it("does not count empty or rate-limited sends", async () => {
   useSessionStore.setState({ currentRoomId: "room-a" });

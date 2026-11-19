@@ -5,10 +5,7 @@ import { useCallback, useSyncExternalStore } from "react";
 
 import { CookieConsentBanner } from "@/components/analytics/CookieConsentBanner";
 import { GoogleAnalyticsScript } from "@/components/analytics/GoogleAnalyticsScript";
-import {
-  denyAnalyticsConsent,
-  grantAnalyticsConsent,
-} from "@/lib/analytics/consent-actions";
+import { denyAnalyticsConsent, grantAnalyticsConsent } from "@/lib/analytics/consent-actions";
 import { analyticsConsentStore } from "@/lib/analytics/consent-store";
 
 import { AmplitudeAnalytics } from "@/components/analytics/AmplitudeAnalytics";
@@ -18,11 +15,7 @@ type ConsentGatedAnalyticsProps = {
   gaId: string;
 };
 
-export function ConsentGatedAnalytics({
-  children,
-  debugMode,
-  gaId,
-}: ConsentGatedAnalyticsProps) {
+export function ConsentGatedAnalytics({ children, debugMode, gaId }: ConsentGatedAnalyticsProps) {
   const consent = useSyncExternalStore(
     analyticsConsentStore.subscribe,
     analyticsConsentStore.getSnapshot,
@@ -39,15 +32,11 @@ export function ConsentGatedAnalytics({
 
   return (
     <>
-      {consent === "pending" ? (
-        <CookieConsentBanner onAccept={handleAccept} onReject={handleReject} />
-      ) : null}
+      {consent === "pending" ? <CookieConsentBanner onAccept={handleAccept} onReject={handleReject} /> : null}
       {consent === "granted" ? (
         <>
           <AmplitudeAnalytics />
-          {gaId ? (
-            <GoogleAnalyticsScript debugMode={debugMode} gaId={gaId} />
-          ) : null}
+          {gaId ? <GoogleAnalyticsScript debugMode={debugMode} gaId={gaId} /> : null}
           {children}
         </>
       ) : null}

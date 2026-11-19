@@ -31,7 +31,11 @@ describe("resolvePlanItemDrop", () => {
   });
 
   it("다른 일차는 대상 일차 길이 안으로 넣을 자리를 맞춰 일차 간 이동 변수를 만든다", () => {
-    const drop: PlanItemDrop = { itemId: 7, from: { scheduleId: 1, index: 1 }, to: { scheduleId: 2, index: 5, length: 2 } };
+    const drop: PlanItemDrop = {
+      itemId: 7,
+      from: { scheduleId: 1, index: 1 },
+      to: { scheduleId: 2, index: 5, length: 2 },
+    };
     expect(resolvePlanItemDrop("room", drop)).toEqual({
       kind: "move",
       vars: { roomId: "room", sourceScheduleId: 1, itemId: 7, targetScheduleId: 2, targetOrderIndex: 2 },

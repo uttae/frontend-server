@@ -123,20 +123,13 @@ export function SearchResultCard({
         {address && (
           <div className="mt-1 flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0 text-[#99A1AF]" />
-            <span className="truncate text-body-xs-regular leading-relaxed text-[#99A1AF]">
-              {address}
-            </span>
+            <span className="truncate text-body-xs-regular leading-relaxed text-[#99A1AF]">{address}</span>
           </div>
         )}
       </div>
 
       {showThumbnail ? (
-        <SearchResultThumbnail
-          name={name}
-          image={image}
-          googlePlaceId={googlePlaceId}
-          variant={variant}
-        />
+        <SearchResultThumbnail name={name} image={image} googlePlaceId={googlePlaceId} variant={variant} />
       ) : null}
     </article>
   );

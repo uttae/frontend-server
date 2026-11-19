@@ -8,10 +8,7 @@ export type IconProps = SVGProps<SVGSVGElement> & {
 
 const ICON_BASE_CLASS = "shrink-0 [&_*]:[vector-effect:non-scaling-stroke]";
 
-export function createIcon(
-  Svg: ComponentType<SVGProps<SVGSVGElement>>,
-  displayName: string,
-) {
+export function createIcon(Svg: ComponentType<SVGProps<SVGSVGElement>>, displayName: string) {
   function Icon({ size = 24, className, ...props }: IconProps) {
     return (
       <Svg

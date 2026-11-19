@@ -11,9 +11,7 @@ export function buildSearchMapSnapshotFromMapCenterStore(): SearchMapSnapshot | 
   const { mapCenter, zoom, radiusMeters } = useMapCenterStore.getState();
   if (!mapCenter) return null;
   const radius =
-    radiusMeters != null && Number.isFinite(radiusMeters)
-      ? clampPlacesSearchRadiusMeters(radiusMeters)
-      : undefined;
+    radiusMeters != null && Number.isFinite(radiusMeters) ? clampPlacesSearchRadiusMeters(radiusMeters) : undefined;
 
   return {
     center: mapCenter,
@@ -22,9 +20,7 @@ export function buildSearchMapSnapshotFromMapCenterStore(): SearchMapSnapshot | 
   };
 }
 
-export function settleSearchSnapshotAfterMove(
-  map: Pick<google.maps.Map, "getDiv" | "addListener">,
-): () => void {
+export function settleSearchSnapshotAfterMove(map: Pick<google.maps.Map, "getDiv" | "addListener">): () => void {
   const div = map.getDiv();
   const cancel = () => {
     idle.remove();
@@ -42,9 +38,7 @@ export function settleSearchSnapshotAfterMove(
   return cancel;
 }
 
-export function buildDiscoverSnapshotFromGoogleMap(
-  map: google.maps.Map,
-): DiscoverMapSnapshot | null {
+export function buildDiscoverSnapshotFromGoogleMap(map: google.maps.Map): DiscoverMapSnapshot | null {
   const bounds = map.getBounds();
   if (!bounds) return null;
 
@@ -63,11 +57,6 @@ export function buildDiscoverSnapshotFromGoogleMap(
   };
 }
 
-export function boundsInstanceFromDiscoverSnapshot(
-  b: google.maps.LatLngBoundsLiteral,
-): google.maps.LatLngBounds {
-  return new google.maps.LatLngBounds(
-    { lat: b.south, lng: b.west },
-    { lat: b.north, lng: b.east },
-  );
+export function boundsInstanceFromDiscoverSnapshot(b: google.maps.LatLngBoundsLiteral): google.maps.LatLngBounds {
+  return new google.maps.LatLngBounds({ lat: b.south, lng: b.west }, { lat: b.north, lng: b.east });
 }

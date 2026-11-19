@@ -32,19 +32,35 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const drag: PlanItemDragValue = {
   getListProps: () => ({
-    dropZoneProps: { "data-plan-itinerary-drop-zone": "", onDragOver: () => {}, onDragLeave: () => {}, onDrop: () => {} },
+    dropZoneProps: {
+      "data-plan-itinerary-drop-zone": "",
+      onDragOver: () => {},
+      onDragLeave: () => {},
+      onDrop: () => {},
+    },
     isItemDragActive: false,
     reservePaddingBottom: 0,
     getRowProps: () => ({
       ref: () => {},
       style: undefined,
-      placeCardDragProps: { displayOrderIndex: 1, isDragging: false, dragDisabled: false, onDragStart: () => {}, onDragEnd: () => {} },
+      placeCardDragProps: {
+        displayOrderIndex: 1,
+        isDragging: false,
+        dragDisabled: false,
+        onDragStart: () => {},
+        onDragEnd: () => {},
+      },
     }),
   }),
   getSectionDrop: () => ({ props: { onDragOver: () => {}, onDragLeave: () => {}, onDrop: () => {} }, isTarget: false }),
 };
 
-const place = (itemId: number): PlanPlace => ({ id: `item-${itemId}`, itemId, googlePlaceId: `g${itemId}`, title: `장소 ${itemId}` });
+const place = (itemId: number): PlanPlace => ({
+  id: `item-${itemId}`,
+  itemId,
+  googlePlaceId: `g${itemId}`,
+  title: `장소 ${itemId}`,
+});
 
 it("does not query segment routes of a day while its place move is saving — the server still has the old order", async () => {
   fixtures.places = [place(2), place(1)];

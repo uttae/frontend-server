@@ -11,9 +11,7 @@ export interface SessionUser {
 }
 
 export type FetchSessionUserResult =
-  | { kind: "user"; user: SessionUser }
-  | { kind: "unauthenticated" }
-  | { kind: "network_error" };
+  { kind: "user"; user: SessionUser } | { kind: "unauthenticated" } | { kind: "network_error" };
 
 export async function fetchSessionUserResult(): Promise<FetchSessionUserResult> {
   try {
@@ -31,10 +29,7 @@ export async function fetchSessionUserRaw(): Promise<SessionUser | null> {
   return result.kind === "user" ? result.user : null;
 }
 
-export async function fetchSessionUserWithRetry(
-  attempts = 3,
-  baseDelayMs = 350,
-): Promise<SessionUser | null> {
+export async function fetchSessionUserWithRetry(attempts = 3, baseDelayMs = 350): Promise<SessionUser | null> {
   for (let i = 0; i < attempts; i++) {
     const result = await fetchSessionUserResult();
     if (result.kind === "user") return result.user;

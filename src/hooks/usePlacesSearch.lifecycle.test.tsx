@@ -13,9 +13,7 @@ const client = new QueryClient({
 const h = () =>
   hookHarness(
     (p: Parameters<typeof usePlacesSearch>) => usePlacesSearch(...p),
-    (child) => (
-      <QueryClientProvider client={client}>{child}</QueryClientProvider>
-    ),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
 const page = (name: string, nextPageToken: string | null = null) => ({
   items: [{ googlePlaceId: name, name, location: { lat: 1, lng: 2 } }],
@@ -27,21 +25,12 @@ beforeEach(() => {
 });
 afterEach(() => client.clear());
 it("paginates both ways and resets every search condition to token-free page one", async () => {
-  searchPlaces.mockImplementation(async ({ pageToken }) =>
-    page(pageToken ?? "first", pageToken ? null : "next"),
-  );
+  searchPlaces.mockImplementation(async ({ pageToken }) => page(pageToken ?? "first", pageToken ? null : "next"));
   const hook = h();
   let args: Parameters<typeof usePlacesSearch> = ["cafe", 1, 2, 1000, 10, 1];
   await hook.render(args);
   await hook.flush();
-  for (const change of [
-    { 0: "food" },
-    { 1: 3 },
-    { 2: 4 },
-    { 3: 2000 },
-    { 4: 5 },
-    { 5: 2 },
-  ]) {
+  for (const change of [{ 0: "food" }, { 1: 3 }, { 2: 4 }, { 3: 2000 }, { 4: 5 }, { 5: 2 }]) {
     await act(async () => hook.current.goToNextPage());
     await hook.flush();
     expect(hook.current.pageIndex).toBe(1);

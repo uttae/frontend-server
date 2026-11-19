@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export const PLAN_SEGMENT_RAIL_CLASS =
-  "relative w-3.5 shrink-0 self-stretch border-r border-border";
+export const PLAN_SEGMENT_RAIL_CLASS = "relative w-3.5 shrink-0 self-stretch border-r border-border";
 
 export function planSegmentAddButtonClassName(active: boolean) {
   return cn(

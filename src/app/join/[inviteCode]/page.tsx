@@ -63,13 +63,13 @@ export default function JoinPage() {
             } catch {}
             trackAnalyticsEvent(
               AnalyticsEvents.joinPlan,
-              buildJoinPlanAnalyticsParams(data.id, data.role, memberCount)
+              buildJoinPlanAnalyticsParams(data.id, data.role, memberCount),
             );
             router.replace(planPathForRoom(data.id));
             return;
           }
           router.replace(
-            `/waiting?roomId=${encodeURIComponent(data.id)}&roomTitle=${encodeURIComponent(data.roomTitle)}`
+            `/waiting?roomId=${encodeURIComponent(data.id)}&roomTitle=${encodeURIComponent(data.roomTitle)}`,
           );
         },
         onError: (err) => {

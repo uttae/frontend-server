@@ -46,7 +46,6 @@ export function AiConversationSummaryContent({
           </div>
         );
       })}
-
     </div>
   );
 }

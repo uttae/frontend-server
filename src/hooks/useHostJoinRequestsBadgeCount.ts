@@ -8,11 +8,7 @@ export function useHostJoinRequestsBadgeCount(): number {
   const { roomId } = useCurrentRoomId();
   const { data: roomsData } = useRoomsList();
 
-  const hostRoom = selectHostRoom(
-    roomsData?.rooms,
-    roomId,
-    "currentRoomHostOnly",
-  );
+  const hostRoom = selectHostRoom(roomsData?.rooms, roomId, "currentRoomHostOnly");
 
   const hostRoomId = hostRoom?.id ?? null;
   const { data } = useJoinRequests(hostRoomId, {

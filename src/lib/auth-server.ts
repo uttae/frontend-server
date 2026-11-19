@@ -17,10 +17,7 @@ function parseCookieHeader(cookieHeader: string): Map<string, string> {
   return map;
 }
 
-function mergeSetCookiesIntoCookieHeader(
-  cookieHeader: string,
-  setCookies: readonly string[],
-): string {
+function mergeSetCookiesIntoCookieHeader(cookieHeader: string, setCookies: readonly string[]): string {
   const map = parseCookieHeader(cookieHeader);
   for (const sc of setCookies) {
     const first = sc.split(";")[0]?.trim();
@@ -56,10 +53,7 @@ function isBackendUnavailable(res: Response): boolean {
   return res.status >= 500 || res.status === 429;
 }
 
-async function safeFetch(
-  input: string,
-  init: RequestInit,
-): Promise<Response | null> {
+async function safeFetch(input: string, init: RequestInit): Promise<Response | null> {
   try {
     return await fetch(input, init);
   } catch {
@@ -75,9 +69,7 @@ async function fetchUsersMe(cookieHeader: string): Promise<Response | null> {
   });
 }
 
-async function fetchBackendRefresh(
-  cookieHeader: string,
-): Promise<Response | null> {
+async function fetchBackendRefresh(cookieHeader: string): Promise<Response | null> {
   return safeFetch(`${API_BASE}/auth/refresh`, {
     method: "POST",
     headers: {
@@ -94,9 +86,7 @@ function warnSessionFetchFailed(label: string): void {
   }
 }
 
-export async function verifySessionWithOptionalRefresh(
-  cookieHeader: string | null,
-): Promise<SessionVerifyResult> {
+export async function verifySessionWithOptionalRefresh(cookieHeader: string | null): Promise<SessionVerifyResult> {
   const cookie = cookieHeader?.trim() ?? "";
   if (!cookie.length) {
     return unauthenticatedResult();
@@ -146,34 +136,22 @@ export async function verifySessionWithOptionalRefresh(
   return unauthenticatedResult();
 }
 
-export async function sessionCheckResponse(
-  request: NextRequest,
-): Promise<NextResponse> {
-  const { ok, unavailable, setCookies } =
-    await verifySessionWithOptionalRefresh(request.headers.get("cookie"));
+export async function sessionCheckResponse(request: NextRequest): Promise<NextResponse> {
+  const { ok, unavailable, setCookies } = await verifySessionWithOptionalRefresh(request.headers.get("cookie"));
 
   const baseHeaders = { "Cache-Control": "no-store" } as const;
 
   if (ok) {
-    const res = NextResponse.json(
-      { authenticated: true },
-      { status: 200, headers: baseHeaders },
-    );
+    const res = NextResponse.json({ authenticated: true }, { status: 200, headers: baseHeaders });
     appendSetCookies(res, setCookies);
     return res;
   }
 
   if (unavailable) {
-    const res = NextResponse.json(
-      { authenticated: false },
-      { status: 503, headers: baseHeaders },
-    );
+    const res = NextResponse.json({ authenticated: false }, { status: 503, headers: baseHeaders });
     appendSetCookies(res, setCookies);
     return res;
   }
 
-  return NextResponse.json(
-    { authenticated: false },
-    { status: 401, headers: baseHeaders },
-  );
+  return NextResponse.json({ authenticated: false }, { status: 401, headers: baseHeaders });
 }

@@ -6,7 +6,6 @@ type ExpandedState = {
   roomResetRevision: number;
   setScheduleExpanded: (scheduleId: number, expanded: boolean) => void;
   syncScheduleExpansionState: (activeScheduleIds: readonly number[]) => void;
-
 };
 
 function appendExpansionOrder(order: number[], scheduleId: number): number[] {
@@ -39,9 +38,7 @@ export const usePlanItineraryExpandedStore = create<ExpandedState>((set) => ({
   },
   syncScheduleExpansionState: (activeScheduleIds) => {
     set((s) => {
-      const activeSet = new Set(
-        activeScheduleIds.filter((id) => Number.isFinite(id)),
-      );
+      const activeSet = new Set(activeScheduleIds.filter((id) => Number.isFinite(id)));
       const next: Record<number, boolean> = {};
       let expansionOrder = s.expansionOrder.filter((id) => activeSet.has(id));
 
@@ -58,5 +55,4 @@ export const usePlanItineraryExpandedStore = create<ExpandedState>((set) => ({
       return { expandedByScheduleId: next, expansionOrder };
     });
   },
-  
 }));

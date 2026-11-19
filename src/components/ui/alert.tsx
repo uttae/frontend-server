@@ -55,13 +55,7 @@ function AlertTitle({ className, ...props }: Readonly<ComponentProps<"div">>) {
 }
 
 function AlertDescription({ className, ...props }: Readonly<ComponentProps<"div">>) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn("min-w-0 text-text-subtle", className)}
-      {...props}
-    />
-  );
+  return <div data-slot="alert-description" className={cn("min-w-0 text-text-subtle", className)} {...props} />;
 }
 
 function AlertAction({ className, ...props }: Readonly<ComponentProps<"div">>) {

@@ -22,13 +22,7 @@ function SearchBar({
   shape,
   ...props
 }: Readonly<ComponentProps<"div"> & VariantProps<typeof searchBarVariants>>) {
-  return (
-    <div
-      data-slot="search-bar"
-      className={cn(searchBarVariants({ shape }), className)}
-      {...props}
-    />
-  );
+  return <div data-slot="search-bar" className={cn(searchBarVariants({ shape }), className)} {...props} />;
 }
 
 function SearchBarIcon({ className, ...props }: Readonly<ComponentProps<"span">>) {

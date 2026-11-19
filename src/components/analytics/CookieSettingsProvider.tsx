@@ -64,10 +64,7 @@ export function CookieSettingsProvider({ children }: Readonly<{ children: ReactN
   );
 }
 
-export function CookieSettingsButton({
-  onClick,
-  ...props
-}: ComponentProps<"button">) {
+export function CookieSettingsButton({ onClick, ...props }: ComponentProps<"button">) {
   const openSettings = useContext(OpenCookieSettingsContext);
   return (
     <button
@@ -94,11 +91,7 @@ export function CookieSettingsLandingEntry() {
     openSettings();
     const url = new URL(window.location.href);
     url.searchParams.delete(COOKIE_SETTINGS_QUERY_KEY);
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${url.pathname}${url.search}${url.hash}`,
-    );
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }, [searchParams, openSettings]);
   return null;
 }

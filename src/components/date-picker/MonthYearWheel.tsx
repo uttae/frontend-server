@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  WheelPicker,
-  WheelPickerWrapper,
-  type WheelPickerOption,
-} from "@ncdai/react-wheel-picker";
+import { WheelPicker, WheelPickerWrapper, type WheelPickerOption } from "@ncdai/react-wheel-picker";
 
 import type { YearMonth } from "./calendar";
 
@@ -47,10 +43,7 @@ export function MonthYearWheel({
 
   return (
     <div className="relative flex h-[284px] w-full items-center overflow-hidden">
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-1/2 h-10 -translate-y-1/2 rounded-md bg-fill"
-      />
+      <div aria-hidden className="absolute inset-x-0 top-1/2 h-10 -translate-y-1/2 rounded-md bg-fill" />
       <WheelPickerWrapper className="justify-center gap-4">
         <div role="group" aria-label="연도" className="w-[100px]">
           <WheelPicker

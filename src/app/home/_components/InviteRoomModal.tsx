@@ -6,7 +6,11 @@ import { InviteRoomDialog } from "@/components/rooms/InviteRoomDialog";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import type { RoomListItem } from "@/lib/api/rooms";
 
-export function InviteRoomModal({ room, finalFocus, onClose }: Readonly<{
+export function InviteRoomModal({
+  room,
+  finalFocus,
+  onClose,
+}: Readonly<{
   room: RoomListItem;
   finalFocus: ComponentProps<typeof InviteRoomDialog>["finalFocus"];
   onClose: () => void;
@@ -21,7 +25,9 @@ export function InviteRoomModal({ room, finalFocus, onClose }: Readonly<{
       role={data?.role}
       isRoomDetailLoading={isLoading}
       isRoomDetailError={isError}
-      onRetryRoomDetail={() => { void refetch(); }}
+      onRetryRoomDetail={() => {
+        void refetch();
+      }}
       onClose={onClose}
       finalFocus={finalFocus}
     />

@@ -11,11 +11,7 @@ import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import type { PlacePreview } from "@/lib/api/places";
 
 import { buildMapBookmarkPreviewPlan } from "./map-bookmark-preview-query";
-import {
-  MAP_PIN_BORDER_STROKE,
-  MAP_PIN_BORDER_STROKE_WIDTH,
-  MAP_PIN_DISPLAY_SIZE_PX,
-} from "./map-pin-stroke";
+import { MAP_PIN_BORDER_STROKE, MAP_PIN_BORDER_STROKE_WIDTH, MAP_PIN_DISPLAY_SIZE_PX } from "./map-pin-stroke";
 
 export type MapBookmarkPinsProps = {
   roomId: string | null;
@@ -40,15 +36,10 @@ function previewToSelectedPlacePayload(preview: PlacePreview) {
   };
 }
 
-export function MapBookmarkPins({
-  roomId,
-  enabled,
-  hiddenNormalizedPlaceIds,
-}: MapBookmarkPinsProps) {
+export function MapBookmarkPins({ roomId, enabled, hiddenNormalizedPlaceIds }: MapBookmarkPinsProps) {
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
 
-  const { data: categories, isSuccess: categoriesReady } =
-    useBookmarkCategories(roomId, { enabled: !!roomId });
+  const { data: categories, isSuccess: categoriesReady } = useBookmarkCategories(roomId, { enabled: !!roomId });
 
   const {
     data: allBookmarks,
@@ -65,18 +56,15 @@ export function MapBookmarkPins({
     return map;
   }, [categoryList]);
 
-  const listsSettled =
-    categoriesReady && (bookmarksReady || bookmarksError || categoryList.length === 0);
+  const listsSettled = categoriesReady && (bookmarksReady || bookmarksError || categoryList.length === 0);
 
   const flattenedBookmarks = useMemo((): BookmarkRowAugmented[] => {
     if (!listsSettled || !Array.isArray(allBookmarks)) return [];
     const out: BookmarkRowAugmented[] = [];
     for (const b of allBookmarks) {
-      const gid =
-        typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
+      const gid = typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
       if (!gid.length) continue;
-      const colorCode =
-        categoryColorById.get(b.categoryId) ?? "#16a34a";
+      const colorCode = categoryColorById.get(b.categoryId) ?? "#16a34a";
       out.push({
         bookmarkId: b.bookmarkId,
         googlePlaceId: gid,

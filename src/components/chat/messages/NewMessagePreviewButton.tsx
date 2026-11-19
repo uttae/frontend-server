@@ -17,8 +17,7 @@ export function NewMessagePreviewButton({
   isMinimized?: boolean;
   scrollbarWidth?: number;
 }) {
-  const text =
-    message.type === "place" ? PLACE_SHARE_PREVIEW_TEXT : message.text;
+  const text = message.type === "place" ? PLACE_SHARE_PREVIEW_TEXT : message.text;
 
   return (
     <div
@@ -35,19 +34,11 @@ export function NewMessagePreviewButton({
         )}
       >
         <ChatSenderAvatar message={message} size={isMinimized ? 24 : 28} ring="default" />
-        <span
-          className={cn(
-            "shrink-0 text-primary",
-            isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis",
-          )}
-        >
+        <span className={cn("shrink-0 text-primary", isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis")}>
           {message.sender}
         </span>
         <span
-          className={cn(
-            "min-w-0 truncate text-text",
-            isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
-          )}
+          className={cn("min-w-0 truncate text-text", isMinimized ? "text-body-xs-regular" : "text-body-s-regular")}
         >
           {text}
         </span>

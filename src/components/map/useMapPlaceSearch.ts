@@ -3,41 +3,23 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useSessionUser } from "@/hooks/useSessionUser";
-import {
-  fetchPlacesAreaPage,
-  fetchPlacesPageWithPhotos,
-  type PlaceSearchResult,
-} from "@/hooks/usePlacesSearch";
+import { fetchPlacesAreaPage, fetchPlacesPageWithPhotos, type PlaceSearchResult } from "@/hooks/usePlacesSearch";
 import {
   clearActiveSearchMapPins,
   placeSearchResultsToMapPins,
   setActiveSearchMapPins,
 } from "@/lib/active-search-map-pins";
-import {
-  bucketResultCount,
-  bucketSearchRank,
-  type SearchRankBucket,
-} from "@/lib/analytics/context";
+import { bucketResultCount, bucketSearchRank, type SearchRankBucket } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { getQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
-import {
-  confirmPlaceSearch,
-  type ResolvedSearchAnchor,
-  type SearchConfirmation,
-} from "@/lib/places/search-session";
+import { confirmPlaceSearch, type ResolvedSearchAnchor, type SearchConfirmation } from "@/lib/places/search-session";
 import { useMapCenterStore } from "@/stores/map-center-store";
-import {
-  searchPinWriteStillValid,
-  useMapPinsFocusStore,
-} from "@/stores/map-pins-focus-store";
+import { searchPinWriteStillValid, useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
-import {
-  usePlaceSearchStore,
-  type PlaceSearchMode,
-} from "@/stores/place-search-store";
+import { usePlaceSearchStore, type PlaceSearchMode } from "@/stores/place-search-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -47,8 +29,7 @@ export function useMapPlaceSearch(mobile: boolean) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const userId = useSessionUser().data?.id;
   const scopeKey = `${userId ?? "anonymous"}:${roomId ?? "no-room"}`;
-  const { selectedPlace, setSelectedPlace, analyticsRankPending } =
-    useSelectedPlace();
+  const { selectedPlace, setSelectedPlace, analyticsRankPending } = useSelectedPlace();
   const pinsFocus = useMapPinsFocusStore((s) => s.focus);
   const recenterId = useSearchRecenterStore((s) => s.searchRecenterRequestId);
   const legacyQuery = useMobileMapSearchStore((s) => s.textQuery);
@@ -79,15 +60,17 @@ export function useMapPlaceSearch(mobile: boolean) {
     useMobileMapSearchStore.getState().clearTextSearch();
     setInputResetKey((key) => key + 1);
   });
-  useEffect(() => useMapPinsFocusStore.subscribe((state, previous) => {
-    if (state.focus === "discover" && state.writeEpoch !== previous.writeEpoch)
-      switchToDiscover();
-  }), []);
+  useEffect(
+    () =>
+      useMapPinsFocusStore.subscribe((state, previous) => {
+        if (state.focus === "discover" && state.writeEpoch !== previous.writeEpoch) switchToDiscover();
+      }),
+    [],
+  );
 
   function invalidate() {
     const selectedId = usePlaceSearchStore.getState().selectedId;
-    if (selectedId && !getQueryClient()?.getQueryData(placeDetailQueryKey(selectedId)))
-      setSelectedPlace(null);
+    if (selectedId && !getQueryClient()?.getQueryData(placeDetailQueryKey(selectedId))) setSelectedPlace(null);
     else if (analyticsRankPending && selectedPlace)
       setSelectedPlace(selectedPlace, {
         itinerarySource: "search",
@@ -111,21 +94,14 @@ export function useMapPlaceSearch(mobile: boolean) {
   ) {
     const searchRankBuckets: Record<string, SearchRankBucket> =
       confirmation.kind === "whole"
-        ? Object.fromEntries(
-            result.items.map((item, index) => [
-              item.googlePlaceId,
-              bucketSearchRank(index),
-            ]),
-          )
+        ? Object.fromEntries(result.items.map((item, index) => [item.googlePlaceId, bucketSearchRank(index)]))
         : {};
     let items = result.items;
     if (confirmation.kind === "specific" && result.anchor) {
       items = [toAnchor(result.anchor, confirmation)];
       useSearchRecenterStore.getState().clearSearchSnapshot();
     }
-    const selectedId = mobile || confirmation.kind === "specific"
-      ? (items[0]?.googlePlaceId ?? null)
-      : null;
+    const selectedId = mobile || confirmation.kind === "specific" ? (items[0]?.googlePlaceId ?? null) : null;
     usePlaceSearchStore.setState({
       items,
       searchRankBuckets,
@@ -136,16 +112,13 @@ export function useMapPlaceSearch(mobile: boolean) {
     setActiveSearchMapPins(placeSearchResultsToMapPins(items));
     if (confirmation.kind === "specific") {
       const selected = result.anchor
-        ? (items.find(
-            (item) => item.googlePlaceId === result.anchor!.googlePlaceId,
-          ) ?? toAnchor(result.anchor, confirmation))
+        ? (items.find((item) => item.googlePlaceId === result.anchor!.googlePlaceId) ??
+          toAnchor(result.anchor, confirmation))
         : (items[0] ?? null);
       setSelectedPlace(selected, {
         itinerarySource: "search",
         analyticsSource: "search",
-        analyticsRankBucket: selected
-          ? searchRankBuckets[selected.googlePlaceId]
-          : undefined,
+        analyticsRankBucket: selected ? searchRankBuckets[selected.googlePlaceId] : undefined,
       });
     }
     if (confirmation.kind === "whole") {
@@ -157,10 +130,7 @@ export function useMapPlaceSearch(mobile: boolean) {
     }
   }
 
-  async function confirm(
-    confirmation: SearchConfirmation,
-    mode: PlaceSearchMode = "text",
-  ): Promise<boolean> {
+  async function confirm(confirmation: SearchConfirmation, mode: PlaceSearchMode = "text"): Promise<boolean> {
     const query = confirmation.query.trim();
     if (!query) return false;
     const state = usePlaceSearchStore.getState();
@@ -242,11 +212,7 @@ export function useMapPlaceSearch(mobile: boolean) {
   }
   const recenter = useEffectEvent(() => {
     const query = usePlaceSearchStore.getState().query;
-    if (query)
-      void confirm(
-        { query, kind: "whole", session: null, generation: 0 },
-        "map_recenter",
-      );
+    if (query) void confirm({ query, kind: "whole", session: null, generation: 0 }, "map_recenter");
   });
   useEffect(() => {
     if (seenRecenter.current !== recenterId) {
@@ -255,8 +221,7 @@ export function useMapPlaceSearch(mobile: boolean) {
     }
   }, [recenterId]);
   const clearLegacy = useEffectEvent(() => {
-    if (!legacyQuery && mobile && usePlaceSearchStore.getState().query)
-      clearSearch();
+    if (!legacyQuery && mobile && usePlaceSearchStore.getState().query) clearSearch();
   });
   useEffect(() => {
     if (seenLegacyNonce.current !== legacyNonce) {
@@ -268,16 +233,14 @@ export function useMapPlaceSearch(mobile: boolean) {
   return { confirm, invalidate, clearSearch, scopeKey, inputResetKey };
 }
 
-function toAnchor(
-  anchor: ResolvedSearchAnchor,
-  confirmation: SearchConfirmation,
-): PlaceSearchResult {
+function toAnchor(anchor: ResolvedSearchAnchor, confirmation: SearchConfirmation): PlaceSearchResult {
   return {
     googlePlaceId: anchor.googlePlaceId,
     name:
       anchor.detail.name ??
       confirmation.prediction?.structuredFormat?.mainText?.text ??
-      confirmation.prediction?.text?.text ?? "",
+      confirmation.prediction?.text?.text ??
+      "",
     address: anchor.detail.formattedAddress ?? "",
     category: anchor.detail.primaryTypeDisplayName ?? anchor.detail.primaryType ?? "",
     rating: anchor.detail.rating,
@@ -287,11 +250,7 @@ function toAnchor(
   };
 }
 
-function searchFailureMessage(
-  confirmation: SearchConfirmation,
-  mode: PlaceSearchMode,
-  error: unknown,
-) {
+function searchFailureMessage(confirmation: SearchConfirmation, mode: PlaceSearchMode, error: unknown) {
   if (mode === "map_recenter") return null;
   if (confirmation.kind === "whole") return "검색에 실패했어요.";
   return error instanceof Error ? error.message : "검색에 실패했어요. 다시 시도해주세요.";

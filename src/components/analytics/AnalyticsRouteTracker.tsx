@@ -5,10 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { trackAnalyticsPageView } from "@/lib/analytics/client";
-import {
-  buildSessionPageViewPlan,
-  executeSessionPageViewPlan,
-} from "@/lib/analytics/page-view-session";
+import { buildSessionPageViewPlan, executeSessionPageViewPlan } from "@/lib/analytics/page-view-session";
 import { resolveAnalyticsRoomId } from "@/lib/analytics/room-context";
 import { setAnalyticsUserId } from "@/lib/analytics/track";
 import { shouldSkipReconcileClientSession } from "@/lib/auth-session";
@@ -36,8 +33,7 @@ export function AnalyticsRouteTracker() {
       currentRoomId: useSessionStore.getState().currentRoomId,
       lastTrackedRoomId: lastTrackedRoomId.current,
       sessionReady: useSessionStore.getState().sessionReady,
-      skipSessionReconciliation:
-        shouldSkipReconcileClientSession(pathname),
+      skipSessionReconciliation: shouldSkipReconcileClientSession(pathname),
       userId,
     });
 

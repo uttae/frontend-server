@@ -10,8 +10,11 @@ import { trackAnalyticsEvent } from "@/lib/analytics/track";
 const state = vi.hoisted(() => ({
   destinations: null as ComponentProps<typeof DestinationChipsField> | null,
   dates: null as ComponentProps<typeof DateRangeField> | null,
-  create: vi.fn(), push: vi.fn(), replace: vi.fn(),
-  setRoom: vi.fn(), setQueryData: vi.fn(),
+  create: vi.fn(),
+  push: vi.fn(),
+  replace: vi.fn(),
+  setRoom: vi.fn(),
+  setQueryData: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: state.push, replace: state.replace }),
@@ -27,10 +30,12 @@ vi.mock("@/hooks/useRooms", () => ({
   useCreateRoom: () => ({ mutate: state.create, isPending: false, error: null }),
 }));
 vi.mock("@/stores/session-store", () => ({
-  useSessionStore: (select: (s: unknown) => unknown) => select({ currentRoomId: "old-room", setCurrentRoomId: state.setRoom }),
+  useSessionStore: (select: (s: unknown) => unknown) =>
+    select({ currentRoomId: "old-room", setCurrentRoomId: state.setRoom }),
 }));
 vi.mock("@/lib/analytics/track", () => ({
-  AnalyticsEvents: { createPlan: "create_plan" }, trackAnalyticsEvent: vi.fn(),
+  AnalyticsEvents: { createPlan: "create_plan" },
+  trackAnalyticsEvent: vi.fn(),
 }));
 vi.mock("@/components/rooms/DestinationChipsField", () => ({
   DestinationChipsField: (props: ComponentProps<typeof DestinationChipsField>) => {
@@ -79,10 +84,15 @@ it("lets mobile users stay on the form, validates dates, and enters the created 
     expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
     await changeDates("2099-07-10", "2099-07-12");
     await act(async () => submitButton(container).click());
-    expect(state.create).toHaveBeenCalledWith({
-      title: "여름 여행", destinations: ["서울"],
-      startDate: "2099-07-10", endDate: "2099-07-12",
-    }, expect.objectContaining({ onSuccess: expect.any(Function) }));
+    expect(state.create).toHaveBeenCalledWith(
+      {
+        title: "여름 여행",
+        destinations: ["서울"],
+        startDate: "2099-07-10",
+        endDate: "2099-07-12",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
     const room = { id: "new-room", startDate: "2099-07-10", endDate: "2099-07-12" };
     await act(async () => state.create.mock.calls[0][1].onSuccess(room));
     expect(trackAnalyticsEvent).toHaveBeenCalledTimes(1);

@@ -54,7 +54,11 @@ export function ConfirmDialog({
         if (!open) onCancel();
       }}
     >
-      <AlertDialogContent {...pointerBoundary} backdropProps={pointerBoundary} backdropCloseLabel={`${title} 배경 닫기`}>
+      <AlertDialogContent
+        {...pointerBoundary}
+        backdropProps={pointerBoundary}
+        backdropCloseLabel={`${title} 배경 닫기`}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           {description ? <AlertDialogDescription>{description}</AlertDialogDescription> : null}

@@ -124,7 +124,13 @@ export function MobileTimeSheet({
   ];
 
   return (
-    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isPending}>
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      closeDisabled={isPending}
+    >
       <DrawerContent closeLabel="방문 시간 닫기">
         <DrawerHeader>
           <DrawerTitle>{placeName}</DrawerTitle>
@@ -185,7 +191,16 @@ export function MobileTimeSheet({
               }}
               className="relative flex h-8 items-center gap-1 text-label-xs-regular text-text-subtle disabled:text-text-disabled before:absolute before:-inset-y-1.5 before:inset-x-0 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <Image src={activeField === null && start === "" && end === "" ? "/icons/time-picker/reset-disabled.svg" : "/icons/time-picker/reset-active.svg"} width={16} height={16} alt="" />
+              <Image
+                src={
+                  activeField === null && start === "" && end === ""
+                    ? "/icons/time-picker/reset-disabled.svg"
+                    : "/icons/time-picker/reset-active.svg"
+                }
+                width={16}
+                height={16}
+                alt=""
+              />
               초기화
             </button>
           </div>

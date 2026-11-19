@@ -37,11 +37,29 @@ function section(index: number) {
   const el = document.createElement("section");
   const top = index * HEIGHT;
   el.getBoundingClientRect = () =>
-    ({ top, bottom: top + HEIGHT, height: HEIGHT, left: 0, right: 300, width: 300, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    ({
+      top,
+      bottom: top + HEIGHT,
+      height: HEIGHT,
+      left: 0,
+      right: 300,
+      width: 300,
+      x: 0,
+      y: top,
+      toJSON: () => ({}),
+    }) as DOMRect;
   return el;
 }
 function dragEvent(transfer: DataTransfer, target: Element, clientY: number) {
-  const event = { dataTransfer: transfer, currentTarget: target, target, relatedTarget: null, clientX: 10, clientY, preventDefault: () => {} };
+  const event = {
+    dataTransfer: transfer,
+    currentTarget: target,
+    target,
+    relatedTarget: null,
+    clientX: 10,
+    clientY,
+    preventDefault: () => {},
+  };
   return { ...event, nativeEvent: event } as unknown as DragEvent<Element>;
 }
 
@@ -59,11 +77,15 @@ async function previewLastDayFirst(
   sections: HTMLElement[],
   transfer: DataTransfer,
 ) {
-    await hook.render(schedules);
-    sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
-    await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)));
-    await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
-    await act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+  await hook.render(schedules);
+  sections.forEach((el, i) => hook.current.getSectionProps(i).sectionRef(el));
+  await act(async () =>
+    hook.current.getSectionProps(2).dragHandleProps.onDragStart(dragEvent(transfer, sections[2]!, 500)),
+  );
+  await act(async () => hook.current.listContainerProps.onDragOver!(dragEvent(transfer, sections[0]!, 50)));
+  await act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  });
 }
 
 beforeEach(() => {
@@ -74,13 +96,19 @@ beforeEach(() => {
 
 it("keeps the dropped day order on screen until the cache shows it, then draws the cache as is", async () => {
   let finish!: () => void;
-  move.mutateAsync.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
+  move.mutateAsync.mockReturnValueOnce(
+    new Promise<void>((resolve) => {
+      finish = resolve;
+    }),
+  );
   const { hook, sections, transfer, schedules } = dayDragFixture();
   try {
     await previewLastDayFirst(hook, schedules, sections, transfer);
 
     let dropping!: Promise<void>;
-    await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
+    await act(async () => {
+      dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50));
+    });
     expect(move.mutateAsync).toHaveBeenCalledWith({ roomId: "room-a", scheduleId: 30, targetDayNumber: 1 });
     await act(async () => hook.current.getSectionProps(2).dragHandleProps.onDragEnd());
 
@@ -101,17 +129,25 @@ it("keeps the dropped day order on screen until the cache shows it, then draws t
 
 it("starts the next day drag while the previous one is still saving, and the earlier save does not clear it", async () => {
   let finish!: () => void;
-  move.mutateAsync.mockReturnValueOnce(new Promise<void>((resolve) => { finish = resolve; }));
+  move.mutateAsync.mockReturnValueOnce(
+    new Promise<void>((resolve) => {
+      finish = resolve;
+    }),
+  );
   const { hook, sections, transfer, schedules } = dayDragFixture();
   try {
     await previewLastDayFirst(hook, schedules, sections, transfer);
     let dropping!: Promise<void>;
-    await act(async () => { dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
+    await act(async () => {
+      dropping = hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50));
+    });
 
     const moved = [day(30, 1), day(10, 2), day(20, 3)];
     await hook.render(moved);
     expect(hook.current.getSectionProps(1).dragHandleProps.dragDisabled).toBe(false);
-    await act(async () => hook.current.getSectionProps(1).dragHandleProps.onDragStart(dragEvent(transfer, sections[1]!, 300)));
+    await act(async () =>
+      hook.current.getSectionProps(1).dragHandleProps.onDragStart(dragEvent(transfer, sections[1]!, 300)),
+    );
 
     await act(async () => {
       finish();
@@ -129,7 +165,9 @@ it("puts the days back with a plain message when the day move cannot reach the s
   const { hook, sections, transfer, schedules } = dayDragFixture();
   try {
     await previewLastDayFirst(hook, schedules, sections, transfer);
-    await act(async () => { await hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50)); });
+    await act(async () => {
+      await hook.current.listContainerProps.onDrop!(dragEvent(transfer, sections[0]!, 50));
+    });
 
     expect(toastError).toHaveBeenCalledWith("일차 순서를 바꾸지 못했어요.");
     expect(hook.current.isDraggingActive).toBe(false);

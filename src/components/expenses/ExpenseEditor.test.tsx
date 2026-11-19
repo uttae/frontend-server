@@ -114,7 +114,10 @@ async function reopenNewEditor() {
   await render(<ExpenseEditor initial={{}} onClose={mocks.close} />);
 }
 
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"][data-slot="dialog-content"]');
 const form = () => dialog()!.querySelector("form")!;
 const button = (name: string) =>
@@ -133,8 +136,9 @@ const currencyValue = () => {
   return text === "통화 선택" ? "" : text.slice(0, 3);
 };
 const fieldOf = (element: Element) => element.closest('[data-slot="field"]')!;
-const fieldError = (element: Element) => fieldOf(element).querySelector('[data-slot="field-error"]')?.textContent ?? null;
-const formMessage = () => form().querySelector(":scope > p[role=\"alert\"]")?.textContent ?? null;
+const fieldError = (element: Element) =>
+  fieldOf(element).querySelector('[data-slot="field-error"]')?.textContent ?? null;
+const formMessage = () => form().querySelector(':scope > p[role="alert"]')?.textContent ?? null;
 
 async function key(target: Element, key: string) {
   await act(async () => {
@@ -166,7 +170,9 @@ async function choose(label: string, optionText: string) {
 async function chooseCurrency(code: string) {
   await click(currencyTrigger());
   const popup = document.querySelector('[role="dialog"][aria-label="통화 선택"]')!;
-  const option = [...popup.querySelectorAll<HTMLElement>('[role="option"]')].find((node) => node.textContent?.endsWith(code));
+  const option = [...popup.querySelectorAll<HTMLElement>('[role="option"]')].find((node) =>
+    node.textContent?.endsWith(code),
+  );
   await click(option!);
 }
 async function clickSave() {
@@ -185,16 +191,22 @@ async function completeNewExpense() {
 
 const rolePicker = (title: "결제자" | "부담자") =>
   [...dialog()!.querySelectorAll<HTMLFieldSetElement>("fieldset[aria-labelledby]")].find(
-    (fieldset) => document.getElementById(fieldset.getAttribute("aria-labelledby")!)?.firstElementChild?.textContent === title,
+    (fieldset) =>
+      document.getElementById(fieldset.getAttribute("aria-labelledby")!)?.firstElementChild?.textContent === title,
   )!;
-const roleCheckboxes = (title: "결제자" | "부담자") => [...rolePicker(title).querySelectorAll<HTMLElement>('[role="checkbox"]')];
+const roleCheckboxes = (title: "결제자" | "부담자") => [
+  ...rolePicker(title).querySelectorAll<HTMLElement>('[role="checkbox"]'),
+];
 const roleRows = (title: "결제자" | "부담자") =>
   [...rolePicker(title).querySelectorAll("label")].map((row) => ({
     userId: Number(row.querySelector("[data-user-id]")!.getAttribute("data-user-id")),
     checked: row.querySelector('[role="checkbox"]')!.getAttribute("aria-checked") === "true",
     checkbox: row.querySelector<HTMLElement>('[role="checkbox"]')!,
   }));
-const checkedIds = (title: "결제자" | "부담자") => roleRows(title).filter((row) => row.checked).map((row) => row.userId);
+const checkedIds = (title: "결제자" | "부담자") =>
+  roleRows(title)
+    .filter((row) => row.checked)
+    .map((row) => row.userId);
 
 it("remembers currency only after a successful new expense save", async () => {
   await mount(null);
@@ -318,7 +330,12 @@ it("preserves original unknown payer and exact amount when editing", async () =>
   await mount();
   await clickSave();
   expect(mocks.save).toHaveBeenCalledWith(
-    expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1], totalAmount: "10.01", scheduleItemId: 100 }),
+    expect.objectContaining({
+      payerUserIds: [1, 99],
+      participantUserIds: [1],
+      totalAmount: "10.01",
+      scheduleItemId: 100,
+    }),
     10,
     0,
   );
@@ -370,12 +387,19 @@ it("blocks wrong currency scale without truncating and guards rapid duplicate su
   expect(mocks.save).not.toHaveBeenCalled();
   expect(amountInput().value).toBe("10.001");
   expect(amountInput().getAttribute("aria-invalid")).toBe("true");
-  expect(fieldError(amountInput())).toBe("금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.");
+  expect(fieldError(amountInput())).toBe(
+    "금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.",
+  );
   await type(amountInput(), "10.01");
   expect(amountInput().hasAttribute("aria-invalid")).toBe(false);
   expect(fieldError(amountInput())).toBeNull();
   let finish!: () => void;
-  mocks.save.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
+  mocks.save.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   await act(async () => {
     saveButton().click();
     saveButton().click();
@@ -400,30 +424,33 @@ it.each([
   [{}, "PREPARATION", null, null],
   [{ scheduleId: 10 }, "TRIP_DAY", 10, null],
   [{ scheduleId: 10, scheduleItemId: 100 }, "TRIP_DAY", 10, 100],
-] as const)("creates an expense from each real entry context %j", async (entry, expenseGroup, scheduleId, scheduleItemId) => {
-  await mount(null, entry);
-  await type(amountInput(), "100");
-  for (const title of ["결제자", "부담자"] as const)
-    for (const row of roleRows(title).filter((row) => !row.checked)) await click(row.checkbox);
-  await choose("카테고리", "기타");
-  await clickSave();
-  expect(mocks.save).toHaveBeenCalledWith(
-    {
-      expenseGroup,
-      scheduleId,
-      scheduleItemId,
-      totalAmount: "100",
-      currency: "KRW",
-      category: "OTHER",
-      name: null,
-      memo: "",
-      payerUserIds: [1],
-      participantUserIds: [1],
-    },
-    undefined,
-    undefined,
-  );
-});
+] as const)(
+  "creates an expense from each real entry context %j",
+  async (entry, expenseGroup, scheduleId, scheduleItemId) => {
+    await mount(null, entry);
+    await type(amountInput(), "100");
+    for (const title of ["결제자", "부담자"] as const)
+      for (const row of roleRows(title).filter((row) => !row.checked)) await click(row.checkbox);
+    await choose("카테고리", "기타");
+    await clickSave();
+    expect(mocks.save).toHaveBeenCalledWith(
+      {
+        expenseGroup,
+        scheduleId,
+        scheduleItemId,
+        totalAmount: "100",
+        currency: "KRW",
+        category: "OTHER",
+        name: null,
+        memo: "",
+        payerUserIds: [1],
+        participantUserIds: [1],
+      },
+      undefined,
+      undefined,
+    );
+  },
+);
 
 it("cannot re-add an unknown payer after deselection and keeps input on server rejection", async () => {
   await mount();
@@ -463,7 +490,9 @@ it("shows field and cross-field errors together on the first save and updates th
   expect(mocks.save).not.toHaveBeenCalled();
   expect(fieldError(selectTrigger("카테고리"))).toBe("카테고리를 선택해 주세요.");
   expect(amountInput().getAttribute("aria-invalid")).toBe("true");
-  expect(fieldError(amountInput())).toBe("금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.");
+  expect(fieldError(amountInput())).toBe(
+    "금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.",
+  );
   await chooseCurrency("KRW");
   expect(amountInput().hasAttribute("aria-invalid")).toBe(false);
   expect(fieldError(amountInput())).toBeNull();
@@ -493,7 +522,11 @@ it.each(categories)("creates the selected category %s (%s)", async (category, la
   await fillNewExpense();
   await choose("카테고리", label);
   await clickSave();
-  expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ category, totalAmount: "100" }), undefined, undefined);
+  expect(mocks.save).toHaveBeenCalledWith(
+    expect.objectContaining({ category, totalAmount: "100" }),
+    undefined,
+    undefined,
+  );
 });
 
 it.each(categories)("retains %s (%s) on edit and permits explicit reclassification", async (category, label) => {
@@ -548,13 +581,17 @@ async function mountWithOpener() {
   opener.focus();
   await mount();
   mocks.close.mockImplementation(() => root.render(null));
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
   expect(dialog()!.contains(document.activeElement)).toBe(true);
   return opener;
 }
 async function settle() {
   await flush();
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
 }
 
 it.each(["Escape", "닫기", "취소", "save"])("returns focus to the opener after %s closes the editor", async (path) => {
@@ -582,7 +619,12 @@ it("does not focus an opener removed while the editor was open", async () => {
 it("locks every dismissal during save and shows progress, then returns focus on success", async () => {
   const opener = await mountWithOpener();
   let finish!: () => void;
-  mocks.save.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
+  mocks.save.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   await clickSave();
   expect(saveButton().getAttribute("aria-busy")).toBe("true");
   expect(saveButton().getAttribute("aria-disabled")).toBe("true");
@@ -648,17 +690,20 @@ it("retains the draft and requires explicit latest-record review before saving a
   );
 });
 
-it.each([undefined, { ...base, version: 2, scheduleId: 11 }])("blocks retry for a deleted or moved conflict target", async (latest) => {
-  await mount();
-  mocks.save.mockRejectedValueOnce(new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"));
-  mocks.readLatest.mockResolvedValueOnce(latest);
-  await clickSave();
-  await submitForm();
-  expect(mocks.save).toHaveBeenCalledTimes(1);
-  expect(recoveryButton("최신 비용 확인 후 수정 계속")).toBeUndefined();
-  expect(dialog()!.textContent).toContain(latest ? "연결 위치가 변경되었어요" : "비용이 삭제되었어요");
-  expect(mocks.close).not.toHaveBeenCalled();
-});
+it.each([undefined, { ...base, version: 2, scheduleId: 11 }])(
+  "blocks retry for a deleted or moved conflict target",
+  async (latest) => {
+    await mount();
+    mocks.save.mockRejectedValueOnce(new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"));
+    mocks.readLatest.mockResolvedValueOnce(latest);
+    await clickSave();
+    await submitForm();
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+    expect(recoveryButton("최신 비용 확인 후 수정 계속")).toBeUndefined();
+    expect(dialog()!.textContent).toContain(latest ? "연결 위치가 변경되었어요" : "비용이 삭제되었어요");
+    expect(mocks.close).not.toHaveBeenCalled();
+  },
+);
 
 it("blocks save after failed conflict read until a fresh read and explicit review", async () => {
   await mount();

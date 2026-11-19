@@ -19,18 +19,11 @@ import { Spinner } from "@/components/ui/spinner";
 
 import { useCreateScheduleItem, useRoomSchedules } from "@/hooks/useRooms";
 import { bucketItemCount } from "@/lib/analytics/context";
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-  type ItinerarySource,
-} from "@/lib/analytics/track";
+import { AnalyticsEvents, trackAnalyticsEvent, type ItinerarySource } from "@/lib/analytics/track";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import type { PlanPlace } from "@/lib/plan/types";
-import {
-  formatKoreanDateLabel,
-  parseLocalYmd,
-} from "@/lib/plan/tripRange";
+import { formatKoreanDateLabel, parseLocalYmd } from "@/lib/plan/tripRange";
 import { useSessionStore } from "@/stores/session-store";
 
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
@@ -49,13 +42,7 @@ type Props = {
   onAdded?: () => void;
 };
 
-export function AddToScheduleModal({
-  googlePlaceId,
-  placeCategory,
-  source = "search",
-  onClose,
-  onAdded,
-}: Props) {
+export function AddToScheduleModal({ googlePlaceId, placeCategory, source = "search", onClose, onAdded }: Props) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const rid = typeof roomId === "string" ? roomId.trim() : "";
 
@@ -68,18 +55,14 @@ export function AddToScheduleModal({
   } = useRoomSchedules(rid.length > 0 ? rid : null);
 
   const queryClient = useQueryClient();
-  const { mutateAsync: createItem, isPending: isAdding } =
-    useCreateScheduleItem();
+  const { mutateAsync: createItem, isPending: isAdding } = useCreateScheduleItem();
 
   const sorted = schedules ? sortRoomSchedules(schedules) : [];
 
   async function pickDay(scheduleId: number) {
     if (!rid || isAdding) return;
     try {
-      const cached =
-        queryClient.getQueryData<PlanPlace[]>(
-          scheduleItemsQueryKey(rid, scheduleId),
-        ) ?? [];
+      const cached = queryClient.getQueryData<PlanPlace[]>(scheduleItemsQueryKey(rid, scheduleId)) ?? [];
       await createItem({
         roomId: rid,
         scheduleId,
@@ -109,7 +92,13 @@ export function AddToScheduleModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent {...pointerBoundary} backdropProps={pointerBoundary} size="sm" showCloseButton={false} className="max-h-[min(80dvh,520px)]">
+      <DialogContent
+        {...pointerBoundary}
+        backdropProps={pointerBoundary}
+        size="sm"
+        showCloseButton={false}
+        className="max-h-[min(80dvh,520px)]"
+      >
         <DialogHeader>
           <DialogTitle>일정에 추가</DialogTitle>
           <DialogDescription>담을 여행 일차를 선택하세요.</DialogDescription>
@@ -131,9 +120,7 @@ export function AddToScheduleModal({
           {rid && schedulesError ? (
             <div className="space-y-2 text-center">
               <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-                {schedulesErr instanceof Error
-                  ? schedulesErr.message
-                  : "일정을 불러오지 못했습니다."}
+                {schedulesErr instanceof Error ? schedulesErr.message : "일정을 불러오지 못했습니다."}
               </p>
               <button
                 type="button"
@@ -147,8 +134,7 @@ export function AddToScheduleModal({
 
           {rid && !schedulesLoading && !schedulesError && sorted.length === 0 ? (
             <p className="text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-              아직 생성된 일정이 없어요. 계획 탭에서 여행 기간을 적용한 뒤
-              다시 시도해 주세요.
+              아직 생성된 일정이 없어요. 계획 탭에서 여행 기간을 적용한 뒤 다시 시도해 주세요.
             </p>
           ) : null}
 

@@ -32,9 +32,15 @@ function AlertDialogTrigger(props: Readonly<AlertDialogPrimitive.Trigger.Props>)
   return <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
-type BackdropEventProps = Pick<AlertDialogPrimitive.Backdrop.Props, "onClick" | "onMouseDown" | "onPointerDown" | "onTouchStart">;
+type BackdropEventProps = Pick<
+  AlertDialogPrimitive.Backdrop.Props,
+  "onClick" | "onMouseDown" | "onPointerDown" | "onTouchStart"
+>;
 
-function AlertDialogOverlay({ closeLabel, backdropProps }: Readonly<{ closeLabel?: string; backdropProps?: BackdropEventProps }>) {
+function AlertDialogOverlay({
+  closeLabel,
+  backdropProps,
+}: Readonly<{ closeLabel?: string; backdropProps?: BackdropEventProps }>) {
   return (
     <AlertDialogPrimitive.Backdrop
       {...backdropProps}
@@ -61,7 +67,13 @@ type AlertDialogContentProps = Omit<AlertDialogPrimitive.Popup.Props, "className
   "aria-label"?: string;
 };
 
-function AlertDialogContent({ className, backdropCloseLabel, backdropProps, initialFocus, ...props }: Readonly<AlertDialogContentProps>) {
+function AlertDialogContent({
+  className,
+  backdropCloseLabel,
+  backdropProps,
+  initialFocus,
+  ...props
+}: Readonly<AlertDialogContentProps>) {
   const popupRef = useRef<HTMLDivElement>(null);
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal">
@@ -74,9 +86,8 @@ function AlertDialogContent({ className, backdropCloseLabel, backdropProps, init
           ((interactionType) =>
             interactionType === "touch"
               ? popupRef.current
-              : (popupRef.current?.querySelector<HTMLElement>(
-                  "[data-slot=alert-dialog-cancel]:not([data-disabled])",
-                ) ?? true))
+              : (popupRef.current?.querySelector<HTMLElement>("[data-slot=alert-dialog-cancel]:not([data-disabled])") ??
+                true))
         }
         className={cn(
           "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[min(400px,calc(100vw-40px))] -translate-x-1/2 -translate-y-1/2 flex-col gap-5 overflow-y-auto overscroll-contain rounded-lg bg-fill-elevate p-6 transition-[opacity,scale] duration-100 ease-out has-[[data-slot=alert-dialog-footer][data-layout=vertical]]:pb-3 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 motion-reduce:transition-none",
@@ -90,11 +101,7 @@ function AlertDialogContent({ className, backdropCloseLabel, backdropProps, init
 
 function AlertDialogHeader({ className, ...props }: Readonly<ComponentProps<"div">>) {
   return (
-    <div
-      data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-1 text-center", className)}
-      {...props}
-    />
+    <div data-slot="alert-dialog-header" className={cn("flex flex-col gap-1 text-center", className)} {...props} />
   );
 }
 

@@ -5,9 +5,7 @@ import { useClientReady } from "./useClientReady";
 
 export function useSessionPromptVisible(storageKey: string) {
   const ready = useClientReady();
-  const [dismissedKeys, setDismissedKeys] = useState<ReadonlySet<string>>(
-    () => new Set(),
-  );
+  const [dismissedKeys, setDismissedKeys] = useState<ReadonlySet<string>>(() => new Set());
   let storedDismissed = false;
   if (ready) {
     try {

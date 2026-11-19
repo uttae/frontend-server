@@ -28,9 +28,7 @@ function routeBodyOk(b: unknown): b is ScheduleItemRouteResponse {
   if (!b || typeof b !== "object") return false;
   const o = b as Record<string, unknown>;
   return (
-    typeof o.distanceMeters === "number" &&
-    typeof o.durationSeconds === "number" &&
-    typeof o.travelMode === "string"
+    typeof o.distanceMeters === "number" && typeof o.durationSeconds === "number" && typeof o.travelMode === "string"
   );
 }
 
@@ -42,10 +40,7 @@ export function schedulePlacesFingerprint(places: PlanPlace[]): string {
     const lat = p.location?.lat;
     const lng = p.location?.lng;
     const loc =
-      typeof lat === "number" &&
-      typeof lng === "number" &&
-      Number.isFinite(lat) &&
-      Number.isFinite(lng)
+      typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng)
         ? `${roundCoord(lat)},${roundCoord(lng)}`
         : "";
     parts.push(`${p.itemId}:${gid}:${loc}`);
@@ -70,15 +65,10 @@ function removeSessionStorageKeysMatchingPrefixes(prefixes: string[]): void {
   }
 }
 
-export function clearPersistedScheduleRoutesForSchedule(
-  roomId: string,
-  scheduleId: number,
-): void {
+export function clearPersistedScheduleRoutesForSchedule(roomId: string, scheduleId: number): void {
   const rid = roomId.trim();
   if (!rid.length) return;
-  removeSessionStorageKeysMatchingPrefixes([
-    `${NS_ROUTE}:${rid}:${scheduleId}:`,
-  ]);
+  removeSessionStorageKeysMatchingPrefixes([`${NS_ROUTE}:${rid}:${scheduleId}:`]);
 }
 
 export function readScheduleRouteFromSessionStorage(
@@ -116,18 +106,9 @@ export function writeScheduleRouteToSessionStorage(
 ): void {
   if (typeof window === "undefined" || !fp) return;
   try {
-    const key = routeStorageKey(
-      roomId,
-      scheduleId,
-      segmentSourceItemId,
-      destinationItemId,
-      travelMode,
-    );
+    const key = routeStorageKey(roomId, scheduleId, segmentSourceItemId, destinationItemId, travelMode);
     if (data === null) {
-      sessionStorage.setItem(
-        key,
-        JSON.stringify({ fp, kind: "empty" } satisfies PersistedRouteV1),
-      );
+      sessionStorage.setItem(key, JSON.stringify({ fp, kind: "empty" } satisfies PersistedRouteV1));
     } else {
       sessionStorage.setItem(
         key,
@@ -140,5 +121,3 @@ export function writeScheduleRouteToSessionStorage(
     }
   } catch {}
 }
-
-

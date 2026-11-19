@@ -68,7 +68,13 @@ describe("apiFetch tab ID header", () => {
   it.each([
     ["object", { "Content-Type": "application/json", "X-Extra": "1" }],
     ["Headers", new Headers({ "Content-Type": "application/json", "X-Extra": "1" })],
-    ["array", [["Content-Type", "application/json"], ["X-Extra", "1"]]],
+    [
+      "array",
+      [
+        ["Content-Type", "application/json"],
+        ["X-Extra", "1"],
+      ],
+    ],
   ] satisfies [string, HeadersInit][])("keeps existing %s headers", async (_, headers) => {
     await apiFetch(REQUEST_URL, { method: "POST", headers, body: "{}" });
 

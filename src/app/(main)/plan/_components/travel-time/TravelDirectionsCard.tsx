@@ -5,10 +5,7 @@ import { EyeOff } from "lucide-react";
 import { ChevronDownIcon, MapIcon } from "@/assets/icons";
 import { Spinner } from "@/components/ui/spinner";
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
-import {
-  formatRouteDistance,
-  formatRouteDuration,
-} from "@/lib/plan/routeFormat";
+import { formatRouteDistance, formatRouteDuration } from "@/lib/plan/routeFormat";
 import type { ScheduleItemRouteSummary } from "@/lib/plan/scheduleItemRouteModes";
 import {
   SCHEDULE_TRAVEL_MODES,
@@ -32,9 +29,7 @@ export type TravelDirectionsCardProps = {
     isFetching: boolean;
   };
   routeUnavailable: boolean;
-  modeRouteSummaries?: Partial<
-    Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>
-  >;
+  modeRouteSummaries?: Partial<Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>>;
   modeRouteRowLoading?: Partial<Record<ScheduleTravelModeValue, boolean>>;
   effectiveMode: ScheduleTravelModeValue | null;
   googleMapsDirectionsUrl?: string;
@@ -60,10 +55,11 @@ export function TravelDirectionsCard({
   onSelectTravelMode,
   onHideDirections,
 }: TravelDirectionsCardProps) {
-  const headerTravelMode =
-    canonicalScheduleTravelMode(summaryMode) ?? summaryMode;
+  const headerTravelMode = canonicalScheduleTravelMode(summaryMode) ?? summaryMode;
 
-  const summaryLine = !canonicalScheduleTravelMode(summaryMode) ? "이동수단 선택" : (
+  const summaryLine = !canonicalScheduleTravelMode(summaryMode) ? (
+    "이동수단 선택"
+  ) : (
     <TravelRouteSummaryLine
       route={route}
       isPending={routeQuery.isPending}
@@ -75,12 +71,7 @@ export function TravelDirectionsCard({
 
   return (
     <div className="relative">
-      <div
-        className={cn(
-          "flex min-w-0 items-center",
-          variant === "web" && "flex-wrap justify-end",
-        )}
-      >
+      <div className={cn("flex min-w-0 items-center", variant === "web" && "flex-wrap justify-end")}>
         <button
           type="button"
           className={cn(
@@ -95,10 +86,7 @@ export function TravelDirectionsCard({
             <span className="min-w-0">{summaryLine}</span>
             <ChevronDownIcon
               size={16}
-              className={cn(
-                "shrink-0 text-icon-subtle transition-transform",
-                menuOpen && "rotate-180",
-              )}
+              className={cn("shrink-0 text-icon-subtle transition-transform", menuOpen && "rotate-180")}
             />
           </span>
         </button>
@@ -115,25 +103,17 @@ export function TravelDirectionsCard({
             Google 길찾기
           </a>
         ) : null}
-
       </div>
 
       {menuOpen ? (
         <div className="w-fit max-w-full border-t border-gray-border px-2.5 py-2">
-          <p className="mb-1.5 text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">
-            이동 수단
-          </p>
-          <ul
-            className="grid grid-cols-[auto_auto_auto] gap-x-2 gap-y-1"
-            role={readOnly ? undefined : "listbox"}
-          >
+          <p className="mb-1.5 text-body-xs-emphasis font-semibold uppercase tracking-wide text-dark-gray">이동 수단</p>
+          <ul className="grid grid-cols-[auto_auto_auto] gap-x-2 gap-y-1" role={readOnly ? undefined : "listbox"}>
             {SCHEDULE_TRAVEL_MODES.map(({ value }) => {
               const rowSummary = modeRouteSummaries[value];
               const selected = value === effectiveMode;
               const row =
-                rowSummary &&
-                rowSummary.durationSeconds >= 0 &&
-                rowSummary.distanceMeters >= 0 ? (
+                rowSummary && rowSummary.durationSeconds >= 0 && rowSummary.distanceMeters >= 0 ? (
                   <>
                     {formatRouteDuration(rowSummary.durationSeconds)}
                     <span className="mx-1 text-light-gray">·</span>
@@ -146,9 +126,7 @@ export function TravelDirectionsCard({
                 "col-span-3 grid grid-cols-subgrid items-center rounded-md px-1.5 py-1.5 text-left text-body-s-regular mobile:text-body-xs-regular",
                 !readOnly && "hover:bg-gray-border/30",
                 selected &&
-                  (readOnly ?
-                    "bg-gray-50 ring-1 ring-gray-border/40"
-                  : "bg-primary/10 ring-1 ring-primary/25"),
+                  (readOnly ? "bg-gray-50 ring-1 ring-gray-border/40" : "bg-primary/10 ring-1 ring-primary/25"),
               );
 
               const rowValue = <span className="justify-self-end whitespace-nowrap pl-3 text-dark-gray">{row}</span>;
@@ -158,9 +136,7 @@ export function TravelDirectionsCard({
                   <li key={value} className="col-span-3 grid grid-cols-subgrid">
                     <div className={rowClass}>
                       <TravelModeGlyph mode={value} />
-                      <span className="font-medium text-gray-900">
-                        {scheduleTravelModeLabel(value)}
-                      </span>
+                      <span className="font-medium text-gray-900">{scheduleTravelModeLabel(value)}</span>
                       {rowValue}
                     </div>
                   </li>
@@ -173,24 +149,18 @@ export function TravelDirectionsCard({
                     type="button"
                     role="option"
                     aria-selected={selected}
-                    className={cn(
-                      rowClass,
-                      "cursor-pointer disabled:cursor-not-allowed disabled:opacity-50",
-                    )}
+                    className={cn(rowClass, "cursor-pointer disabled:cursor-not-allowed disabled:opacity-50")}
                     onClick={() => {
                       void onSelectTravelMode?.(value);
                     }}
                   >
                     <TravelModeGlyph mode={value} />
-                    <span className="font-medium text-gray-900">
-                      {scheduleTravelModeLabel(value)}
-                    </span>
+                    <span className="font-medium text-gray-900">{scheduleTravelModeLabel(value)}</span>
                     {rowValue}
                   </button>
                 </li>
               );
             })}
-
           </ul>
 
           <div className="my-2 border-t border-gray-border" />

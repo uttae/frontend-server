@@ -43,9 +43,7 @@ it("opens the same dialog from footer and banner without navigation, even with a
         </AppChromeShell>,
       ),
     );
-    const triggers = [...host.querySelectorAll("button")].filter(
-      (node) => node.textContent === "쿠키 설정",
-    );
+    const triggers = [...host.querySelectorAll("button")].filter((node) => node.textContent === "쿠키 설정");
     expect(triggers).toHaveLength(2);
     for (const trigger of triggers) {
       await act(async () => trigger.click());
@@ -53,11 +51,7 @@ it("opens the same dialog from footer and banner without navigation, even with a
       expect(dialogs()).toHaveLength(1);
       expect(dialogs()[0].contains(document.activeElement)).toBe(true);
       expect(window.location.pathname).toBe("/home");
-      await act(async () =>
-        document
-          .querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!
-          .click(),
-      );
+      await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!.click());
       await settle();
       expect(dialogs()).toHaveLength(0);
       expect(document.activeElement).toBe(trigger);
@@ -78,13 +72,7 @@ it("retains landing and room footers and removes only the requested navigation e
   const sidebar = source("components/layout/SideBar.tsx");
   expect(sidebar).not.toContain("PrivacySettingsLink");
   expect(sidebar).not.toContain("member-settings");
-  for (const entry of [
-    "plan",
-    "bookmark",
-    "SidebarFeedbackFormButton",
-    "openChat",
-  ])
-    expect(sidebar).toContain(entry);
+  for (const entry of ["plan", "bookmark", "SidebarFeedbackFormButton", "openChat"]) expect(sidebar).toContain(entry);
   const profile = source("app/home/_components/HomeHeader.tsx");
   expect(profile).not.toContain("개인정보 설정");
   expect(profile).not.toContain("PrivacySettingsLink");
@@ -94,11 +82,8 @@ it("retains landing and room footers and removes only the requested navigation e
   expect(profile).toContain("/home/my-info");
   const mobile = source("components/mobile/MobileMainTabs.tsx");
   expect(mobile).not.toMatch(/privacy-settings|쿠키 설정/);
-  for (const entry of ["일정", "북마크", "여행 도구", "채팅"])
-    expect(mobile).toContain(entry);
-  expect(source("components/layout/MainLayoutChrome.tsx")).not.toContain(
-    "SiteFooter",
-  );
+  for (const entry of ["일정", "북마크", "여행 도구", "채팅"]) expect(mobile).toContain(entry);
+  expect(source("components/layout/MainLayoutChrome.tsx")).not.toContain("SiteFooter");
 });
 
 it("returns focus to the footer when saving consent removes the original banner trigger", async () => {
@@ -119,28 +104,14 @@ it("returns focus to the footer when saving consent removes the original banner 
       ),
     );
     const banner = host.querySelector('[aria-label="쿠키 동의"]')!;
-    const trigger = [...banner.querySelectorAll("button")].find(
-      (node) => node.textContent === "쿠키 설정",
-    )!;
+    const trigger = [...banner.querySelectorAll("button")].find((node) => node.textContent === "쿠키 설정")!;
     await act(async () => trigger.click());
     await settle();
-    const dialogButtons = () => [
-      ...document.querySelectorAll('[role="dialog"] button'),
-    ];
-    await act(async () =>
-      (
-        dialogButtons().find(
-          (node) => node.textContent === "저장",
-        ) as HTMLButtonElement
-      ).click(),
-    );
+    const dialogButtons = () => [...document.querySelectorAll('[role="dialog"] button')];
+    await act(async () => (dialogButtons().find((node) => node.textContent === "저장") as HTMLButtonElement).click());
     expect(host.querySelector('[aria-label="쿠키 동의"]')).toBeNull();
     expect(dialogs()).toHaveLength(1);
-    await act(async () =>
-      document
-        .querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!
-        .click(),
-    );
+    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="쿠키 설정 닫기"]')!.click());
     await settle();
     expect(dialogs()).toHaveLength(0);
     expect(document.activeElement).toBe(host.querySelector("footer button"));

@@ -6,10 +6,7 @@ function readNextPublic(nameForError: string, value: string | undefined): string
 }
 
 export const clientEnv = {
-  NEXT_PUBLIC_API_BASE_URL: readNextPublic(
-    "NEXT_PUBLIC_API_BASE_URL",
-    process.env.NEXT_PUBLIC_API_BASE_URL,
-  ),
+  NEXT_PUBLIC_API_BASE_URL: readNextPublic("NEXT_PUBLIC_API_BASE_URL", process.env.NEXT_PUBLIC_API_BASE_URL),
   NEXT_PUBLIC_GOOGLE_CLIENT_ID: readNextPublic(
     "NEXT_PUBLIC_GOOGLE_CLIENT_ID",
     process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,

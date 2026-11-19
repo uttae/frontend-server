@@ -22,31 +22,47 @@ export type PlaceSearchPageResponse = {
 };
 
 export type PlaceReview = {
-  rating: number | null; text: string | null; authorDisplayName: string | null;
-  publishTime: string | null; relativePublishTimeDescription: string | null;
+  rating: number | null;
+  text: string | null;
+  authorDisplayName: string | null;
+  publishTime: string | null;
+  relativePublishTimeDescription: string | null;
 };
 export type PlaceDateParts = { year: number | null; month: number | null; day: number | null };
 export type PlaceTimePoint = {
-  day: number | null; hour: number | null; minute: number | null;
-  date: PlaceDateParts | null; truncated: boolean | null;
+  day: number | null;
+  hour: number | null;
+  minute: number | null;
+  date: PlaceDateParts | null;
+  truncated: boolean | null;
 };
 export type PlaceDetail = {
   googlePlaceId: string;
-  name: string | null; formattedAddress: string | null;
+  name: string | null;
+  formattedAddress: string | null;
   location: { lat: number | null; lng: number | null } | null;
-  primaryType: string | null; primaryTypeDisplayName: string | null;
-  rating: number | null; userRatingCount: number | null;
-  phoneNumber: string | null; websiteUri: string | null; googleMapsUri: string | null;
+  primaryType: string | null;
+  primaryTypeDisplayName: string | null;
+  rating: number | null;
+  userRatingCount: number | null;
+  phoneNumber: string | null;
+  websiteUri: string | null;
+  googleMapsUri: string | null;
   googleMapsLinks: {
-    placeUri: string | null; directionsUri: string | null; writeAReviewUri: string | null;
-    reviewsUri: string | null; photosUri: string | null;
+    placeUri: string | null;
+    directionsUri: string | null;
+    writeAReviewUri: string | null;
+    reviewsUri: string | null;
+    photosUri: string | null;
   } | null;
   regularOpeningHours: {
-    openNow: boolean | null; secondaryHoursType: string | null;
+    openNow: boolean | null;
+    secondaryHoursType: string | null;
     specialDays: { date: PlaceDateParts | null }[];
     periods: { open: PlaceTimePoint | null; close: PlaceTimePoint | null }[];
     weekdayDescriptions: string[];
-    nextOpenTime: string | null; nextCloseTime: string | null;
+    nextOpenTime: string | null;
+    nextCloseTime: string | null;
   } | null;
   reviewSummary?: string | null;
   reviews: PlaceReview[];
@@ -75,7 +91,7 @@ export type PlacePreview = {
 };
 
 export type PlacePreviewBatchItem =
-  | ({
+  | {
       status: "OK";
       googlePlaceId: string;
       name: string;
@@ -83,7 +99,7 @@ export type PlacePreviewBatchItem =
       location: { latitude: number; longitude: number } | null;
       primaryType: string;
       primaryTypeDisplayName: string;
-    })
+    }
   | {
       status: "ERROR";
       googlePlaceId: string;
@@ -109,10 +125,7 @@ export type PlacePhotoUrlBatchResponse = {
   items?: PlacePhotoUrlBatchItem[];
 };
 
-function readBatchResponseList<T>(
-  data: Record<string, unknown>,
-  primaryKey: string,
-): T[] {
+function readBatchResponseList<T>(data: Record<string, unknown>, primaryKey: string): T[] {
   const primary = data[primaryKey];
   if (Array.isArray(primary)) return primary as T[];
   const legacy = data.items;
@@ -174,30 +187,19 @@ export async function searchPlacesInArea(params: {
   return res.json();
 }
 
-export async function requestPlaceDetail(
-  googlePlaceId: string,
-): Promise<PlaceDetail> {
-  const res = await apiFetch(
-    `${API_BASE}/places/${encodeURIComponent(googlePlaceId)}`,
-  );
+export async function requestPlaceDetail(googlePlaceId: string): Promise<PlaceDetail> {
+  const res = await apiFetch(`${API_BASE}/places/${encodeURIComponent(googlePlaceId)}`);
   if (!res.ok) throw new HttpError(res.status, `Place detail failed: ${res.status}`);
   return res.json();
 }
 
-export async function requestPlacePreview(
-  googlePlaceId: string,
-): Promise<PlacePreviewResponse> {
-  const res = await apiFetch(
-    `${API_BASE}/places/${encodeURIComponent(googlePlaceId)}/preview`,
-  );
+export async function requestPlacePreview(googlePlaceId: string): Promise<PlacePreviewResponse> {
+  const res = await apiFetch(`${API_BASE}/places/${encodeURIComponent(googlePlaceId)}/preview`);
   if (!res.ok) throw new HttpError(res.status, `Place preview failed: ${res.status}`);
   return res.json();
 }
 
-export async function requestPlacePhotoUrl(
-  googlePlaceId: string,
-  options?: { refresh?: boolean },
-): Promise<string> {
+export async function requestPlacePhotoUrl(googlePlaceId: string, options?: { refresh?: boolean }): Promise<string> {
   const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
   const url = new URL(`${API_BASE}/places/photos`);
   url.searchParams.set("googlePlaceId", id);
@@ -216,9 +218,7 @@ export async function requestPlacePhotoUrl(
   return typeof data.photoUrl === "string" ? data.photoUrl : "";
 }
 
-async function requestPlacePreviewsBatchChunk(
-  googlePlaceIds: string[],
-): Promise<PlacePreviewBatchItem[]> {
+async function requestPlacePreviewsBatchChunk(googlePlaceIds: string[]): Promise<PlacePreviewBatchItem[]> {
   const data = await requestJson<PlacePreviewBatchResponse>(
     apiUrl("/places/previews/batch"),
     { method: "POST", ...jsonBody({ googlePlaceIds }) },
@@ -227,15 +227,9 @@ async function requestPlacePreviewsBatchChunk(
   return readBatchResponseList<PlacePreviewBatchItem>(data, "previews");
 }
 
-export async function requestPlacePreviewsBatch(
-  googlePlaceIds: readonly string[],
-): Promise<PlacePreviewBatchItem[]> {
+export async function requestPlacePreviewsBatch(googlePlaceIds: readonly string[]): Promise<PlacePreviewBatchItem[]> {
   const ids = [
-    ...new Set(
-      googlePlaceIds
-        .map((id) => (typeof id === "string" ? id.trim() : ""))
-        .filter((id) => id.length > 0),
-    ),
+    ...new Set(googlePlaceIds.map((id) => (typeof id === "string" ? id.trim() : "")).filter((id) => id.length > 0)),
   ];
   if (!ids.length) return [];
 
@@ -279,11 +273,7 @@ export async function requestPlacePhotoUrlsBatch(
   options?: { refresh?: boolean },
 ): Promise<PlacePhotoUrlBatchItem[]> {
   const ids = [
-    ...new Set(
-      googlePlaceIds
-        .map((id) => (typeof id === "string" ? id.trim() : ""))
-        .filter((id) => id.length > 0),
-    ),
+    ...new Set(googlePlaceIds.map((id) => (typeof id === "string" ? id.trim() : "")).filter((id) => id.length > 0)),
   ];
   if (!ids.length) return [];
 

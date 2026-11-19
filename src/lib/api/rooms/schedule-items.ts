@@ -1,8 +1,5 @@
 import { apiFetch } from "@/lib/api/client";
-import {
-  chunkArray,
-  SCHEDULE_ROUTES_BATCH_MAX_SIZE,
-} from "@/lib/api/batch-chunk";
+import { chunkArray, SCHEDULE_ROUTES_BATCH_MAX_SIZE } from "@/lib/api/batch-chunk";
 import { apiUrl, jsonBody, requestJson, requestVoid } from "@/lib/api/http";
 
 export type RoomScheduleItem = {
@@ -67,7 +64,7 @@ export type ScheduleItemRouteBatchRequestItem = {
 };
 
 export type ScheduleItemRouteBatchItem =
-  | ({
+  | {
       status: "OK";
       itemId: number;
       toItemId?: number;
@@ -75,7 +72,7 @@ export type ScheduleItemRouteBatchItem =
       distanceMeters: number;
       durationSeconds: number;
       encodedPolyline?: string;
-    })
+    }
   | {
       status: "ERROR";
       itemId: number;
@@ -89,9 +86,7 @@ export type ScheduleItemRouteBatchResponse = {
   items?: ScheduleItemRouteBatchItem[];
 };
 
-function readScheduleItemRouteBatchItems(
-  data: ScheduleItemRouteBatchResponse,
-): ScheduleItemRouteBatchItem[] {
+function readScheduleItemRouteBatchItems(data: ScheduleItemRouteBatchResponse): ScheduleItemRouteBatchItem[] {
   if (Array.isArray(data.routes)) return data.routes;
   if (Array.isArray(data.items)) return data.items;
   return [];
@@ -105,10 +100,7 @@ export async function getScheduleItemRoute(
   travelMode?: string | null,
 ): Promise<ScheduleItemRouteResponse | null> {
   const params = new URLSearchParams({ destinationItemId: String(destinationItemId) });
-  const tm =
-    typeof travelMode === "string" && travelMode.trim().length > 0
-      ? travelMode.trim()
-      : null;
+  const tm = typeof travelMode === "string" && travelMode.trim().length > 0 ? travelMode.trim() : null;
   if (tm) params.set("travelMode", tm);
   const qs = params.toString();
   const path = `/rooms/${roomId}/schedules/${scheduleId}/items/${itemId}/route${qs ? `?${qs}` : ""}`;
@@ -141,14 +133,9 @@ export async function getScheduleItemRoutesBatch(
   items: readonly ScheduleItemRouteBatchRequestItem[],
 ): Promise<ScheduleItemRouteBatchItem[]> {
   const normalized = items
-    .filter(
-      (it) => typeof it.itemId === "number" && Number.isFinite(it.itemId),
-    )
+    .filter((it) => typeof it.itemId === "number" && Number.isFinite(it.itemId))
     .map((it) => {
-      const tm =
-        typeof it.travelMode === "string" && it.travelMode.trim().length > 0
-          ? it.travelMode.trim()
-          : null;
+      const tm = typeof it.travelMode === "string" && it.travelMode.trim().length > 0 ? it.travelMode.trim() : null;
       return tm ? { itemId: it.itemId, travelMode: tm } : { itemId: it.itemId };
     });
   if (!normalized.length) return [];
@@ -205,19 +192,13 @@ export async function updateScheduleItemTravelMode(
   body: UpdateTravelModeRequest,
 ): Promise<RoomScheduleItem> {
   return requestJson(
-    apiUrl(
-      `/rooms/${roomId}/schedules/${scheduleId}/items/${itemId}/travel-mode`,
-    ),
+    apiUrl(`/rooms/${roomId}/schedules/${scheduleId}/items/${itemId}/travel-mode`),
     { method: "PATCH", ...jsonBody(body) },
     { errorMessage: "이동 수단 변경 실패" },
   );
 }
 
-export async function deleteScheduleItem(
-  roomId: string,
-  scheduleId: number,
-  itemId: number,
-): Promise<void> {
+export async function deleteScheduleItem(roomId: string, scheduleId: number, itemId: number): Promise<void> {
   return requestVoid(
     apiUrl(`/rooms/${roomId}/schedules/${scheduleId}/items/${itemId}`),
     { method: "DELETE" },
@@ -245,9 +226,7 @@ export async function moveScheduleItemToSchedule(
   body: MoveScheduleItemToScheduleRequest,
 ): Promise<RoomScheduleItem> {
   return requestJson(
-    apiUrl(
-      `/rooms/${roomId}/schedules/${sourceScheduleId}/items/${itemId}/move`,
-    ),
+    apiUrl(`/rooms/${roomId}/schedules/${sourceScheduleId}/items/${itemId}/move`),
     { method: "PATCH", ...jsonBody(body) },
     { errorMessage: "일정 항목 이동 실패" },
   );

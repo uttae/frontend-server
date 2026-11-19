@@ -5,24 +5,18 @@ import { MapPin, Search, X } from "lucide-react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import { useDebouncedPlacePredictions } from "@/hooks/useDebouncedPlacePredictions";
-import {
-  DESTINATION_INCLUDED_PRIMARY_TYPES,
-  PlacePredictionInlineDescription,
-} from "@/lib/placesAutocompleteSuggest";
+import { DESTINATION_INCLUDED_PRIMARY_TYPES, PlacePredictionInlineDescription } from "@/lib/placesAutocompleteSuggest";
 import { CloseIcon, SearchIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
-const DESTINATION_SELECTION_HINT =
-  "직접 입력은 불가하며, 검색 후 목록에서 선택해 주세요.";
+const DESTINATION_SELECTION_HINT = "직접 입력은 불가하며, 검색 후 목록에서 선택해 주세요.";
 
 type Prediction = google.maps.places.PlacePrediction;
 
 type Props = {
   value: string;
   onChange: (value: string) => void;
-  onResolvedPlace?: (
-    place: { description: string; placeId: string } | null,
-  ) => void;
+  onResolvedPlace?: (place: { description: string; placeId: string } | null) => void;
   placeholder?: string;
   autoFocus?: boolean;
   showLeadingIcon?: boolean;
@@ -31,14 +25,22 @@ type Props = {
   appearance?: "default" | "field";
 };
 
-function DestinationLeadingIcon({ show, type, appearance }: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: "default" | "field" }>) {
+function DestinationLeadingIcon({
+  show,
+  type,
+  appearance,
+}: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: "default" | "field" }>) {
   if (!show) return null;
   if (appearance === "field") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
   const Icon = type === "search" ? Search : MapPin;
   return <Icon size={15} className="shrink-0 text-dark-gray" />;
 }
 
-function DestinationClearButton({ appearance, selectionOnly, onClick }: Readonly<{
+function DestinationClearButton({
+  appearance,
+  selectionOnly,
+  onClick,
+}: Readonly<{
   appearance: "default" | "field";
   selectionOnly: boolean;
   onClick: React.MouseEventHandler<HTMLButtonElement>;
@@ -49,25 +51,32 @@ function DestinationClearButton({ appearance, selectionOnly, onClick }: Readonly
       type="button"
       onClick={onClick}
       aria-label={selectionOnly ? "선택 지우기" : "지우기"}
-      className={isField
-        ? "grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
-        : "shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"}
+      className={
+        isField
+          ? "grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
+          : "shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"
+      }
     >
       {isField ? <CloseIcon size={20} /> : <X size={14} />}
     </button>
   );
 }
 
-function DestinationSelectionHint({ id, appearance }: Readonly<{
+function DestinationSelectionHint({
+  id,
+  appearance,
+}: Readonly<{
   id: string;
   appearance: "default" | "field";
 }>) {
   return (
     <p
       id={id}
-      className={appearance === "field"
-        ? "mt-1 text-caption-s-regular text-text-subtle"
-        : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"}
+      className={
+        appearance === "field"
+          ? "mt-1 text-caption-s-regular text-text-subtle"
+          : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
+      }
     >
       {DESTINATION_SELECTION_HINT}
     </p>
@@ -136,10 +145,7 @@ export function DestinationSearchInput({
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     }
@@ -272,9 +278,7 @@ export function DestinationSearchInput({
                 onMouseDown={() => handleSelect(p)}
                 onMouseEnter={() => setActiveIndex(i)}
                 className={`flex cursor-pointer items-center gap-2.5 px-4 py-3 transition-colors ${
-                  i === activeIndex
-                    ? "bg-bubble-gray"
-                    : "hover:bg-bubble-gray"
+                  i === activeIndex ? "bg-bubble-gray" : "hover:bg-bubble-gray"
                 }`}
               >
                 <MapPin size={13} className="shrink-0 text-light-gray" />

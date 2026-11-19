@@ -12,22 +12,38 @@ const confirm = vi.fn();
 const cancel = vi.fn();
 function accessibleName(node: Element) {
   const labelledBy = node.getAttribute("aria-labelledby");
-  if (labelledBy) return labelledBy.split(" ").map(id => document.getElementById(id)?.textContent ?? "").join(" ");
+  if (labelledBy)
+    return labelledBy
+      .split(" ")
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .join(" ");
   return node.getAttribute("aria-label") ?? node.textContent ?? "";
 }
 const buttons = () => [...document.querySelectorAll<HTMLButtonElement>("button")];
-const button = (name: string) => buttons().find(node => accessibleName(node) === name)!;
-const nextFrame = () => act(async () => { await new Promise(resolve => requestAnimationFrame(() => resolve(null))); });
-const escape = () => act(async () => {
-  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
-});
+const button = (name: string) => buttons().find((node) => accessibleName(node) === name)!;
+const nextFrame = () =>
+  act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+  });
+const escape = () =>
+  act(async () => {
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+  });
 async function render({ pending = false, confirmDisabled = false } = {}) {
-  await act(async () => root.render(
-    <div onClick={outer} onMouseDown={outer} onPointerDown={outer} onTouchStart={outer}>
-      <ConfirmDialog title="삭제" description="설명" isPending={pending} confirmDisabled={confirmDisabled}
-        onConfirm={confirm} onCancel={cancel} />
-    </div>,
-  ));
+  await act(async () =>
+    root.render(
+      <div onClick={outer} onMouseDown={outer} onPointerDown={outer} onTouchStart={outer}>
+        <ConfirmDialog
+          title="삭제"
+          description="설명"
+          isPending={pending}
+          confirmDisabled={confirmDisabled}
+          onConfirm={confirm}
+          onCancel={cancel}
+        />
+      </div>,
+    ),
+  );
 }
 beforeEach(() => {
   vi.clearAllMocks();
@@ -35,15 +51,21 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
 });
-afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
-
-it.each(["click", "mousedown", "pointerdown", "touchstart"])("contains %s from portal content and backdrop", async type => {
-  await render();
-  for (const target of [document.querySelector("p")!, button("삭제 배경 닫기")]) {
-    await act(async () => target.dispatchEvent(new Event(type, { bubbles: true })));
-  }
-  expect(outer).not.toHaveBeenCalled();
+afterEach(async () => {
+  await act(async () => root.unmount());
+  host.remove();
 });
+
+it.each(["click", "mousedown", "pointerdown", "touchstart"])(
+  "contains %s from portal content and backdrop",
+  async (type) => {
+    await render();
+    for (const target of [document.querySelector("p")!, button("삭제 배경 닫기")]) {
+      await act(async () => target.dispatchEvent(new Event(type, { bubbles: true })));
+    }
+    expect(outer).not.toHaveBeenCalled();
+  },
+);
 
 it("is a modal alert dialog without a close X", async () => {
   await render();
@@ -53,7 +75,7 @@ it("is a modal alert dialog without a close X", async () => {
   expect(buttons().map(accessibleName)).not.toContain("삭제 닫기");
 });
 
-it.each(["확인", "취소", "삭제 배경 닫기"])("preserves the %s action", async name => {
+it.each(["확인", "취소", "삭제 배경 닫기"])("preserves the %s action", async (name) => {
   await render();
   await act(async () => button(name).click());
   expect(confirm).toHaveBeenCalledTimes(name === "확인" ? 1 : 0);
@@ -63,7 +85,8 @@ it.each(["확인", "취소", "삭제 배경 닫기"])("preserves the %s action",
 
 it("focuses cancel first, hides the page behind it, closes with document Escape and restores the trigger", async () => {
   const trigger = document.createElement("button");
-  document.body.append(trigger); trigger.focus();
+  document.body.append(trigger);
+  trigger.focus();
   await render();
   await nextFrame();
   expect(document.activeElement).toBe(button("취소"));
@@ -79,7 +102,9 @@ it("focuses cancel first, hides the page behind it, closes with document Escape 
 });
 
 it("shows progress while pending and blocks confirm, cancel, backdrop and Escape", async () => {
-  await render(); await nextFrame(); button("확인").focus();
+  await render();
+  await nextFrame();
+  button("확인").focus();
   await render({ pending: true });
   await nextFrame();
   const action = button("처리 중");
@@ -92,7 +117,8 @@ it("shows progress while pending and blocks confirm, cancel, backdrop and Escape
     await act(async () => button(name).click());
   }
   await escape();
-  expect(confirm).not.toHaveBeenCalled(); expect(cancel).not.toHaveBeenCalled();
+  expect(confirm).not.toHaveBeenCalled();
+  expect(cancel).not.toHaveBeenCalled();
   expect(document.querySelector('[role="alertdialog"]')?.hasAttribute("data-open")).toBe(true);
 });
 

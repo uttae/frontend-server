@@ -16,10 +16,7 @@ export function PlanTravelTimeCollapsed({
 }: PlanTravelTimeCollapsedProps) {
   const body = (
     <div
-      className={cn(
-        "flex shrink-0 items-center py-1",
-        contentOnly ? "w-full" : undefined,
-      )}
+      className={cn("flex shrink-0 items-center py-1", contentOnly ? "w-full" : undefined)}
       style={contentOnly ? undefined : { width: PLAN_ROUTE_CARD_WIDTH_PX }}
     >
       <button

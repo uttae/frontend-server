@@ -38,7 +38,9 @@ export function resetAmplitudeIdentityOnLogout(): void {
     } catch {}
   }
   if (amplitudeInitialization !== null) {
-    try { amplitude.setOptOut(true); } catch {}
+    try {
+      amplitude.setOptOut(true);
+    } catch {}
   }
 }
 
@@ -51,9 +53,10 @@ function dispatchAmplitudeDataCommand(...args: unknown[]): void {
         ? (maybeProperties as Record<string, unknown>)
         : undefined;
     const roomId = getAnalyticsEventRoomId(nameOrProperties, eventProperties);
-    const propertiesWithoutRoom = eventProperties && "room_id" in eventProperties
-      ? Object.fromEntries(Object.entries(eventProperties).filter(([key]) => key !== "room_id"))
-      : eventProperties;
+    const propertiesWithoutRoom =
+      eventProperties && "room_id" in eventProperties
+        ? Object.fromEntries(Object.entries(eventProperties).filter(([key]) => key !== "room_id"))
+        : eventProperties;
     if (roomId) {
       amplitude.track({
         event_type: nameOrProperties,
@@ -84,11 +87,7 @@ function flushPendingAmplitudeCommands(): void {
 }
 
 export function initializeAmplitude(): void {
-  if (
-    typeof window === "undefined" ||
-    !amplitudeRuntime.enabled ||
-    !amplitudeRuntime.apiKey
-  ) {
+  if (typeof window === "undefined" || !amplitudeRuntime.enabled || !amplitudeRuntime.apiKey) {
     return;
   }
 

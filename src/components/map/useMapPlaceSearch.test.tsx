@@ -46,16 +46,23 @@ function Harness({ mobile = false }: { mobile?: boolean }) {
   return (
     <MapPlaceSearchInput
       onConfirm={controller.confirm}
-      onInvalidate={controller.invalidate} onClear={controller.clearSearch}
+      onInvalidate={controller.invalidate}
+      onClear={controller.clearSearch}
       scopeKey={`${controller.scopeKey}:${controller.inputResetKey}`}
     />
   );
 }
 function confirmation(kind: "whole" | "specific" = "whole") {
   return {
-    query: "원래 검색어", kind, generation: 1,
-    session: { sessionToken: "server-token", expiresAt: Date.now()+60000 },
-    prediction: { placeId: "first", text: null, structuredFormat: { mainText: { text: "추천", matches: null }, secondaryText: { text: "주소", matches: null } } },
+    query: "원래 검색어",
+    kind,
+    generation: 1,
+    session: { sessionToken: "server-token", expiresAt: Date.now() + 60000 },
+    prediction: {
+      placeId: "first",
+      text: null,
+      structuredFormat: { mainText: { text: "추천", matches: null }, secondaryText: { text: "주소", matches: null } },
+    },
   };
 }
 let client: QueryClient;
@@ -66,13 +73,39 @@ beforeEach(async () => {
   network.user = 7;
   client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   registerQueryClient(client);
-  rawDetail = { googlePlaceId: "first", name: "추천", formattedAddress: "주소", primaryType: "restaurant", primaryTypeDisplayName: "음식점", rating: 4.5, userRatingCount: 3, location: { lat: 37, lng: 127 }, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] };
-  vi.mocked(apiFetch).mockReset().mockImplementation(async url => {
-    if (String(url).endsWith("/places/sessions")) return Response.json({ sessionToken: "input-token", expiresAt: Date.now()+60000 }, { status: 201 });
-    if (String(url).endsWith("/places/autocomplete")) return Response.json({ suggestions: [{ placePrediction: confirmation().prediction }] });
-    if (String(url).endsWith("/places/resolve")) return Response.json({ detail: rawDetail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" });
-    throw new Error(`Unexpected HTTP ${String(url)}`);
-  });
+  rawDetail = {
+    googlePlaceId: "first",
+    name: "추천",
+    formattedAddress: "주소",
+    primaryType: "restaurant",
+    primaryTypeDisplayName: "음식점",
+    rating: 4.5,
+    userRatingCount: 3,
+    location: { lat: 37, lng: 127 },
+    phoneNumber: null,
+    websiteUri: null,
+    googleMapsUri: null,
+    googleMapsLinks: null,
+    regularOpeningHours: null,
+    reviews: [],
+  };
+  vi.mocked(apiFetch)
+    .mockReset()
+    .mockImplementation(async (url) => {
+      if (String(url).endsWith("/places/sessions"))
+        return Response.json({ sessionToken: "input-token", expiresAt: Date.now() + 60000 }, { status: 201 });
+      if (String(url).endsWith("/places/autocomplete"))
+        return Response.json({ suggestions: [{ placePrediction: confirmation().prediction }] });
+      if (String(url).endsWith("/places/resolve"))
+        return Response.json({
+          detail: rawDetail,
+          source: "GOOGLE",
+          cacheStatus: "MISS",
+          googleDetailsRequested: true,
+          termination: "SUCCEEDED",
+        });
+      throw new Error(`Unexpected HTTP ${String(url)}`);
+    });
   network.area.mockReset().mockResolvedValue({ items: [], nextPageToken: null });
   network.page.mockReset().mockResolvedValue({
     items: [
@@ -109,10 +142,12 @@ afterEach(async () => {
   host.remove();
 });
 it("web whole search publishes only Text Search pins without selecting a detail or recommendation", async () => {
-  await act(async () => { await api.confirm(confirmation()); });
+  await act(async () => {
+    await api.confirm(confirmation());
+  });
   expect(network.select).toHaveBeenLastCalledWith(null);
   expect(usePlaceSearchStore.getState().selectedId).toBeNull();
-  expect(usePlaceSearchStore.getState().items.map(x => x.googlePlaceId)).toEqual(["other"]);
+  expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(["other"]);
   expect(usePlaceSearchStore.getState().items[0].rating).toBe(4.2);
   expect(network.page).toHaveBeenCalledWith(expect.objectContaining({ latitude: 1, longitude: 2, radius: 5000 }));
   expect(vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).endsWith("/places/resolve"))).toHaveLength(0);
@@ -126,9 +161,7 @@ it("mobile whole search keeps cards collapsed without detail requests", async ()
   expect(network.detail).not.toHaveBeenCalled();
   expect(network.select).toHaveBeenLastCalledWith(null);
   expect(usePlaceSearchStore.getState().expanded).toBe(false);
-  expect(
-    usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId),
-  ).toEqual(["other"]);
+  expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(["other"]);
 });
 it("mobile specific reuses chosen resolved detail without Text Search", async () => {
   await act(async () => root.render(<Harness mobile />));
@@ -149,7 +182,9 @@ it.each([
   ["shows what Google finds inside the visible map", ["inside"]],
   ["shows no results when Google finds nothing inside the visible map", []],
 ] as const)("search here asks Google for the visible map only and %s", async (_, expected) => {
-  await act(async () => { await api.confirm(confirmation()); });
+  await act(async () => {
+    await api.confirm(confirmation());
+  });
   const bounds = { south: 0, west: 1, north: 2, east: 3 };
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234, bounds });
   const inside = { googlePlaceId: "inside", name: "화면 안", location: { lat: 1.5, lng: 2.5 } };
@@ -157,18 +192,32 @@ it.each([
   await act(async () => useSearchRecenterStore.getState().requestSearchRecenter());
   await vi.waitFor(() => expect(usePlaceSearchStore.getState().status).toBe("done"));
   expect(usePlaceSearchStore.getState().items.map((x) => x.googlePlaceId)).toEqual(expected);
-  expect(network.area).toHaveBeenCalledExactlyOnceWith({ query: "원래 검색어", area: bounds, pageSize: expect.any(Number) });
+  expect(network.area).toHaveBeenCalledExactlyOnceWith({
+    query: "원래 검색어",
+    area: bounds,
+    pageSize: expect.any(Number),
+  });
   expect(network.page).toHaveBeenCalledTimes(1);
 });
 it("search box failure shows one message instead of the raw error", async () => {
   network.page.mockRejectedValueOnce(new TypeError("Failed to fetch"));
-  await act(async () => { await api.confirm(confirmation()); });
-  expect(usePlaceSearchStore.getState()).toMatchObject({ status: "error", error: "검색에 실패했어요.", searchMode: "text" });
+  await act(async () => {
+    await api.confirm(confirmation());
+  });
+  expect(usePlaceSearchStore.getState()).toMatchObject({
+    status: "error",
+    error: "검색에 실패했어요.",
+    searchMode: "text",
+  });
 });
 it("search here failure keeps the shown results and leaves the message to the button", async () => {
-  await act(async () => { await api.confirm(confirmation()); });
+  await act(async () => {
+    await api.confirm(confirmation());
+  });
   useMapCenterStore.setState({
-    mapCenter: { lat: 1, lng: 2 }, zoom: 15, radiusMeters: 1234,
+    mapCenter: { lat: 1, lng: 2 },
+    zoom: 15,
+    radiusMeters: 1234,
     bounds: { south: 0, west: 1, north: 2, east: 3 },
   });
   network.area.mockRejectedValueOnce(new TypeError("Failed to fetch"));
@@ -198,10 +247,7 @@ it("editing input suppresses a late response and analytics", async () => {
 async function typeInput(value: string) {
   await act(async () => {
     const input = host.querySelector("input")!;
-    Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!.call(input, value);
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
@@ -217,101 +263,140 @@ it("actual input editing during confirmation blocks late Text Search publication
     await new Promise((r) => setTimeout(r, 280));
   });
   await act(async () =>
-    host
-      .querySelector("input")!
-      .dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
-      ),
+    host.querySelector("input")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })),
   );
   expect(network.page).toHaveBeenCalled();
   await typeInput("새 입력");
   await act(async () => {
     finish({ items: [{ googlePlaceId: "late" }], nextPageToken: null });
   });
-  expect(
-    usePlaceSearchStore
-      .getState()
-      .items.some((x) => x.googlePlaceId === "late"),
-  ).toBe(false);
+  expect(usePlaceSearchStore.getState().items.some((x) => x.googlePlaceId === "late")).toBe(false);
   expect(network.track).not.toHaveBeenCalled();
 });
-it.each(["room", "account"])(
-  "%s change discards late search and clears previous identity data",
-  async (change) => {
-    let finish!: (v: unknown) => void;
-    network.page.mockReturnValue(
-      new Promise((r) => {
-        finish = r;
-      }),
-    );
-    const pending = api.confirm(confirmation());
-    await vi.waitFor(() => expect(network.page).toHaveBeenCalled());
-    await act(async () => {
-      if (change === "room")
-        useSessionStore.setState({ currentRoomId: "different" });
-      else network.user = 8;
-      root.render(<Harness />);
-    });
-    await act(async () => {
-      finish({ items: [{ googlePlaceId: "late" }], nextPageToken: null });
-      await pending;
-    });
-    expect(usePlaceSearchStore.getState().items).toEqual([]);
-    expect(host.querySelector("input")?.value).toBe("");
-    expect(network.track).not.toHaveBeenCalled();
-  },
-);
+it.each(["room", "account"])("%s change discards late search and clears previous identity data", async (change) => {
+  let finish!: (v: unknown) => void;
+  network.page.mockReturnValue(
+    new Promise((r) => {
+      finish = r;
+    }),
+  );
+  const pending = api.confirm(confirmation());
+  await vi.waitFor(() => expect(network.page).toHaveBeenCalled());
+  await act(async () => {
+    if (change === "room") useSessionStore.setState({ currentRoomId: "different" });
+    else network.user = 8;
+    root.render(<Harness />);
+  });
+  await act(async () => {
+    finish({ items: [{ googlePlaceId: "late" }], nextPageToken: null });
+    await pending;
+  });
+  expect(usePlaceSearchStore.getState().items).toEqual([]);
+  expect(host.querySelector("input")?.value).toBe("");
+  expect(network.track).not.toHaveBeenCalled();
+});
 
 it("editing during Text Search never exposes the resolved anchor or late results", async () => {
   let finish!: (value: unknown) => void;
-  network.page.mockReturnValue(new Promise(resolve => { finish = resolve; }));
+  network.page.mockReturnValue(
+    new Promise((resolve) => {
+      finish = resolve;
+    }),
+  );
   const pending = api.confirm(confirmation());
   await vi.waitFor(() => expect(network.page).toHaveBeenCalled());
   expect(network.select).toHaveBeenLastCalledWith(null);
   await act(async () => api.invalidate());
-  await act(async () => { finish({ items: [], nextPageToken: null }); await pending; });
+  await act(async () => {
+    finish({ items: [], nextPageToken: null });
+    await pending;
+  });
   expect(network.select).toHaveBeenLastCalledWith(null);
   expect(usePlaceSearchStore.getState().items).toEqual([]);
 });
 
 it("scope loss during resolve cannot seed cache or display stale detail", async () => {
   let finish!: (r: Response) => void;
-  vi.mocked(apiFetch).mockReturnValue(new Promise(r => { finish = r; }));
+  vi.mocked(apiFetch).mockReturnValue(
+    new Promise((r) => {
+      finish = r;
+    }),
+  );
   const pending = api.confirm(confirmation("specific"));
-  await act(async () => { network.user = 8; root.render(<Harness />); });
-  await act(async () => { finish(Response.json({ detail: rawDetail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" })); await pending; });
+  await act(async () => {
+    network.user = 8;
+    root.render(<Harness />);
+  });
+  await act(async () => {
+    finish(
+      Response.json({
+        detail: rawDetail,
+        source: "GOOGLE",
+        cacheStatus: "MISS",
+        googleDetailsRequested: true,
+        termination: "SUCCEEDED",
+      }),
+    );
+    await pending;
+  });
   expect(client.getQueryData(placeDetailQueryKey("first"))).toBeUndefined();
   expect(usePlaceSearchStore.getState().items).toEqual([]);
   expect(network.track).not.toHaveBeenCalled();
 });
 it("cache HIT never falsely marks termination completed", async () => {
-  vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: rawDetail, source: "CACHE", cacheStatus: "HIT", googleDetailsRequested: false, termination: "NOT_TERMINATED" }));
-  await act(async () => { await api.confirm(confirmation("specific")); });
+  vi.mocked(apiFetch).mockResolvedValue(
+    Response.json({
+      detail: rawDetail,
+      source: "CACHE",
+      cacheStatus: "HIT",
+      googleDetailsRequested: false,
+      termination: "NOT_TERMINATED",
+    }),
+  );
+  await act(async () => {
+    await api.confirm(confirmation("specific"));
+  });
   expect(usePlaceSearchStore.getState().termination).toBe("NOT_TERMINATED");
 });
 
 it("desktop specific selection opens the chosen place detail directly", async () => {
-  await act(async () => { await api.confirm(confirmation("specific")); });
+  await act(async () => {
+    await api.confirm(confirmation("specific"));
+  });
   expect(usePlaceSearchStore.getState().selectedId).toBe("first");
   expect(usePlaceSearchStore.getState().items[0].name).toBe("추천");
-  expect(network.select).toHaveBeenLastCalledWith(expect.objectContaining({googlePlaceId:"first",name:"추천"}), expect.objectContaining({itinerarySource:"search",analyticsSource:"search"}));
+  expect(network.select).toHaveBeenLastCalledWith(
+    expect.objectContaining({ googlePlaceId: "first", name: "추천" }),
+    expect.objectContaining({ itinerarySource: "search", analyticsSource: "search" }),
+  );
   expect(network.page).not.toHaveBeenCalled();
 });
 
- it("switching to discover clears text and ignores an in-flight text response", async () => {
-  let resolve!: (value: {items: unknown[]; nextPageToken: null}) => void;
-  network.page.mockReturnValue(new Promise(done => { resolve = done; }));
+it("switching to discover clears text and ignores an in-flight text response", async () => {
+  let resolve!: (value: { items: unknown[]; nextPageToken: null }) => void;
+  network.page.mockReturnValue(
+    new Promise((done) => {
+      resolve = done;
+    }),
+  );
   await act(async () => {
     const input = host.querySelector("input")!;
-    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")!.set!.call(input,"원래 검색어");
-    input.dispatchEvent(new Event("input",{bubbles:true}));
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "원래 검색어");
+    input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   let pending!: Promise<boolean>;
-  await act(async () => { pending = api.confirm(confirmation()); });
-  await act(async () => { useMapPinsFocusStore.getState().claimFocus("discover"); });
-  expect(usePlaceSearchStore.getState()).toMatchObject({query:"",items:[],selectedId:null,status:"idle"});
+  await act(async () => {
+    pending = api.confirm(confirmation());
+  });
+  await act(async () => {
+    useMapPinsFocusStore.getState().claimFocus("discover");
+  });
+  expect(usePlaceSearchStore.getState()).toMatchObject({ query: "", items: [], selectedId: null, status: "idle" });
   expect(host.querySelector("input")!.value).toBe("");
-  await act(async () => { resolve({items:[],nextPageToken:null}); await pending; });
+  await act(async () => {
+    resolve({ items: [], nextPageToken: null });
+    await pending;
+  });
   expect(useMapPinsFocusStore.getState().focus).toBe("discover");
-  expect(usePlaceSearchStore.getState()).toMatchObject({query:"",items:[],status:"idle"});
+  expect(usePlaceSearchStore.getState()).toMatchObject({ query: "", items: [], status: "idle" });
 });

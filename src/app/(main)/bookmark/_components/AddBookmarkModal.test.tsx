@@ -11,7 +11,9 @@ async function renderModal(onSave = vi.fn()) {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
-  await act(async () => root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={onSave} />));
+  await act(async () =>
+    root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={onSave} />),
+  );
   const titleInput = document.querySelector<HTMLInputElement>('[role="dialog"] input[type="text"]')!;
   const form = document.querySelector<HTMLFormElement>('[role="dialog"] form')!;
   return {

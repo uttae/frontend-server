@@ -30,7 +30,10 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
 });
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 const sheet = () => document.querySelector<HTMLElement>('[role="dialog"]');
 async function pressOutside(target: HTMLElement) {
   await act(async () => {
@@ -79,15 +82,14 @@ it("chooses a mobile category and restores its trigger, while cancel leaves sele
   await open();
   expect(sheet()!.contains(document.activeElement)).toBe(true);
   expect(sheet()!.querySelector("h2")?.textContent).toBe("카테고리");
-  const food = [...sheet()!.querySelectorAll<HTMLElement>('[role="radio"]')]
-    .find((radio) => radio.closest("label")?.textContent?.includes("식비"))!;
+  const food = [...sheet()!.querySelectorAll<HTMLElement>('[role="radio"]')].find((radio) =>
+    radio.closest("label")?.textContent?.includes("식비"),
+  )!;
   await act(async () => food.click());
   expect(trigger.textContent).toContain("식비");
   await expectClosedOnTrigger();
   await open();
-  await act(async () =>
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })),
-  );
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await expectClosedOnTrigger();
   expect(trigger.textContent).toContain("식비");
   await open();
@@ -106,12 +108,7 @@ it("closes the item disclosure on Escape, outside pointer and focus departure wi
   await act(async () =>
     root.render(
       <>
-        <ExpenseItemMenu
-          label="항공"
-          busy={false}
-          onEdit={edit}
-          onDelete={remove}
-        />
+        <ExpenseItemMenu label="항공" busy={false} onEdit={edit} onDelete={remove} />
         <button id="outside">다른 버튼</button>
       </>,
     ),
@@ -126,11 +123,7 @@ it("closes the item disclosure on Escape, outside pointer and focus departure wi
   const editItem = document.querySelector<HTMLElement>('[role="menuitem"][aria-label="비용 수정"]')!;
   expect(editItem).not.toBeNull();
   editItem.focus();
-  await act(async () =>
-    editItem.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-    ),
-  );
+  await act(async () => editItem.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await flush();
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
   expect(document.activeElement).toBe(trigger);
@@ -154,9 +147,7 @@ it("expands the category breakdown without adding different currencies together"
   expect(trigger.getAttribute("aria-expanded")).toBe("false");
   await act(async () => trigger.click());
   expect(trigger.getAttribute("aria-expanded")).toBe("true");
-  const breakdown = document.getElementById(
-    trigger.getAttribute("aria-controls")!,
-  )!;
+  const breakdown = document.getElementById(trigger.getAttribute("aria-controls")!)!;
   expect(breakdown.textContent).toContain("USD 0.30");
   expect(breakdown.textContent).toContain("KRW 100");
   expect(breakdown.textContent).not.toContain("100.30");

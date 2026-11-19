@@ -30,37 +30,17 @@ export async function resolveScheduleSegmentRoute({
 
   await awaitScheduleRoutesBatch(rid, scheduleId);
 
-  const routeKey = scheduleItemRouteQueryKey(
-    rid,
-    scheduleId,
-    segmentSourceItemId,
-    destinationItemId,
-    travelMode,
-  );
+  const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, segmentSourceItemId, destinationItemId, travelMode);
   const cached = getQueryClient()?.getQueryState<ScheduleSegmentRoute>(routeKey);
   if (cached?.data !== undefined && !cached.isInvalidated) {
     return cached.data;
   }
 
-  const fresh = await getScheduleItemRoute(
-    rid,
-    scheduleId,
-    segmentSourceItemId,
-    destinationItemId,
-    travelMode,
-  );
+  const fresh = await getScheduleItemRoute(rid, scheduleId, segmentSourceItemId, destinationItemId, travelMode);
 
   const fp = scheduleFingerprint?.trim() ?? "";
   if (fp.length > 0) {
-    writeScheduleRouteToSessionStorage(
-      rid,
-      scheduleId,
-      segmentSourceItemId,
-      destinationItemId,
-      travelMode,
-      fp,
-      fresh,
-    );
+    writeScheduleRouteToSessionStorage(rid, scheduleId, segmentSourceItemId, destinationItemId, travelMode, fp, fresh);
   }
 
   return fresh;

@@ -7,14 +7,7 @@ import { toast } from "sonner";
 import { TimeClockIcon } from "@/assets/icons";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError } from "@/components/ui/field";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import {
@@ -69,15 +62,11 @@ export function PlanItemTimeEditor({
           itemId,
           body: {
             ...(startHm !== serverStartHm ? { startTime: startHm || null } : {}),
-            ...(endHm !== serverEndHm || (value.start === "" && serverStartHm)
-              ? { endTime: endHm || null }
-              : {}),
+            ...(endHm !== serverEndHm || (value.start === "" && serverStartHm) ? { endTime: endHm || null } : {}),
           },
         });
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "시간을 저장하지 못했어요.",
-        );
+        toast.error(error instanceof Error ? error.message : "시간을 저장하지 못했어요.");
         return;
       } finally {
         savingRef.current = false;
@@ -89,8 +78,7 @@ export function PlanItemTimeEditor({
 
   const draft = useStore(form.store, (state) => state.values);
   const { startHm, endHm } = resolveScheduleTimeDraft(draft, { serverStartHm, serverEndHm });
-  const durationPreview =
-    startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
+  const durationPreview = startHm && endHm ? computeDurationMinutesFromRange(startHm, endHm) : null;
   const dirty = serverStartHm !== startHm || serverEndHm !== endHm;
   const timeIssue = timeSchema.safeParse(draft).error?.issues[0];
 
@@ -107,10 +95,7 @@ export function PlanItemTimeEditor({
       }}
       closeDisabled={isPending}
     >
-      <DialogContent
-        size="sm"
-        initialFocus={() => formRef.current?.querySelector("input") ?? true}
-      >
+      <DialogContent size="sm" initialFocus={() => formRef.current?.querySelector("input") ?? true}>
         <DialogHeader>
           <div className="flex min-w-0 items-center gap-2">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
@@ -145,10 +130,17 @@ export function PlanItemTimeEditor({
           <p id={`${formId}-help`} className="text-center text-body-xs-regular text-dark-gray">
             24시간 기준 · 시와 분을 직접 입력하세요
           </p>
-          {([
-            { name: "start", label: "시작", serverValue: serverStartHm, disabled: isPending },
-            { name: "end", label: "종료", serverValue: serverEndHm, disabled: isPending || !normalizeStartTimeToHm(startHm) },
-          ] as const).map(({ name, label, serverValue, disabled }) => (
+          {(
+            [
+              { name: "start", label: "시작", serverValue: serverStartHm, disabled: isPending },
+              {
+                name: "end",
+                label: "종료",
+                serverValue: serverEndHm,
+                disabled: isPending || !normalizeStartTimeToHm(startHm),
+              },
+            ] as const
+          ).map(({ name, label, serverValue, disabled }) => (
             <form.Field key={name} name={name}>
               {(field) => {
                 const issue = timeIssue?.path[0] === name ? timeIssue : undefined;
@@ -156,9 +148,7 @@ export function PlanItemTimeEditor({
                 return (
                   <Field>
                     <div className="flex items-center gap-3">
-                      <span className={`${fieldLabelClass} w-10 shrink-0 text-center`}>
-                        {label}
-                      </span>
+                      <span className={`${fieldLabelClass} w-10 shrink-0 text-center`}>{label}</span>
                       <TimeInput
                         label={label}
                         value={field.state.value ?? serverValue}
@@ -184,13 +174,9 @@ export function PlanItemTimeEditor({
 
           <div className="min-h-[16px] text-center text-body-xs-regular">
             {startHm.length === 0 ? (
-              <span className="text-dark-gray/70">
-                미설정
-              </span>
+              <span className="text-dark-gray/70">미설정</span>
             ) : endHm.length === 0 ? (
-              <span className="text-dark-gray/70">
-                종료 없이도 저장할 수 있어요
-              </span>
+              <span className="text-dark-gray/70">종료 없이도 저장할 수 있어요</span>
             ) : durationPreview != null ? (
               <span className="tabular-nums text-dark-gray/85">
                 {endHm < startHm ? "다음 날 종료 (+1일) · " : ""}

@@ -34,8 +34,14 @@ const drop = (overrides: Partial<PlanItemDrop> = {}): PlanItemDrop => ({
 });
 const items = (count: number): RoomScheduleItem[] =>
   Array.from({ length: count }, (_, orderIndex) => ({
-    itemId: orderIndex + 1, scheduleId: 10, googlePlaceId: `g${orderIndex + 1}`, orderIndex,
-    startTime: null, endTime: null, travelMode: "DRIVING", createdAt: "2026-11-08",
+    itemId: orderIndex + 1,
+    scheduleId: 10,
+    googlePlaceId: `g${orderIndex + 1}`,
+    orderIndex,
+    startTime: null,
+    endTime: null,
+    travelMode: "DRIVING",
+    createdAt: "2026-11-08",
   }));
 
 function deferred<T>() {
@@ -118,10 +124,7 @@ it("saves a drop on another day as a cross-day move without a reorder_itinerary 
   try {
     await hook.render("room-a");
     await act(async () => {
-      hook.current.commitPlanItemDrop(
-        drop({ to: { scheduleId: 20, index: 9, length: 1 } }),
-        vi.fn(),
-      );
+      hook.current.commitPlanItemDrop(drop({ to: { scheduleId: 20, index: 9, length: 1 } }), vi.fn());
     });
     await hook.flush();
     expect(api.move).toHaveBeenCalledWith("room-a", 10, 1, { targetScheduleId: 20, targetOrderIndex: 1 });

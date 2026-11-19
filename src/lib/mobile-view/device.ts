@@ -2,8 +2,7 @@ type NavigatorUaData = Navigator & {
   userAgentData?: { mobile?: boolean };
 };
 
-const MOBILE_PHONE_UA_RE =
-  /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i;
+const MOBILE_PHONE_UA_RE = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i;
 
 const MOBILE_INLINE_RE = /Mobile/i;
 

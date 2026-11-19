@@ -4,11 +4,7 @@ import { expenseKeys } from "@/lib/expenses/expense-queries";
 
 import type { QueryClient } from "@tanstack/react-query";
 
-import {
-  ROOMS_QUERY_KEY,
-  roomDetailQueryKey,
-  roomMembersQueryKey,
-} from "@/lib/query-keys";
+import { ROOMS_QUERY_KEY, roomDetailQueryKey, roomMembersQueryKey } from "@/lib/query-keys";
 import { invalidateAfterChange } from "@/lib/query-client";
 import { readSessionUserId } from "@/lib/session-user-cache";
 

@@ -28,17 +28,8 @@ export function MobileSheetMenuItem({
       className="flex h-11 w-full shrink-0 items-center gap-3 text-left disabled:opacity-40"
     >
       <Icon size={20} className={danger ? "text-status-negative" : "text-icon"} />
-      <span
-        className={cn(
-          "shrink-0 text-body-m-regular",
-          danger ? "text-status-negative" : "text-text",
-        )}
-      >
-        {label}
-      </span>
-      {trailing ? (
-        <span className="ml-auto min-w-0 truncate pl-3 text-right">{trailing}</span>
-      ) : null}
+      <span className={cn("shrink-0 text-body-m-regular", danger ? "text-status-negative" : "text-text")}>{label}</span>
+      {trailing ? <span className="ml-auto min-w-0 truncate pl-3 text-right">{trailing}</span> : null}
     </button>
   );
 }

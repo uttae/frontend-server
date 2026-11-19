@@ -7,9 +7,7 @@ export function StarRow({ rating }: { rating: number }) {
         <Star
           key={i}
           className={`h-3 w-3 ${
-            i <= Math.round(rating)
-              ? "fill-[#FDC700] text-[#FDC700]"
-              : "fill-gray-200 text-gray-200"
+            i <= Math.round(rating) ? "fill-[#FDC700] text-[#FDC700]" : "fill-gray-200 text-gray-200"
           }`}
         />
       ))}

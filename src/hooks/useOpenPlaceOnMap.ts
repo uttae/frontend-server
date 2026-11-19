@@ -4,10 +4,7 @@ import { useCallback } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useMobileView } from "@/contexts/MobileViewContext";
-import {
-  useSelectedPlace,
-  type SetSelectedPlaceOptions,
-} from "@/contexts/SelectedPlaceContext";
+import { useSelectedPlace, type SetSelectedPlaceOptions } from "@/contexts/SelectedPlaceContext";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { writeRoomMapViewport } from "@/lib/map-room-viewport-storage";
 import { isMobileMapPathname, MOBILE_MAP_PATH } from "@/lib/mobile-view";

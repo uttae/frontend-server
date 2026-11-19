@@ -63,7 +63,9 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
         previousEndDate: latest.endDate,
       },
       {
-        onSettled: () => { submitInFlight.current = false; },
+        onSettled: () => {
+          submitInFlight.current = false;
+        },
         onSuccess: () => {
           setShrinkConfirmOpen(false);
           setOpened(value);
@@ -176,9 +178,7 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
 
       {error && !readOnly && (
         <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
-          {error instanceof Error
-            ? error.message
-            : "수정에 실패했어요. 다시 시도해주세요."}
+          {error instanceof Error ? error.message : "수정에 실패했어요. 다시 시도해주세요."}
         </p>
       )}
 

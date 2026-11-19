@@ -19,12 +19,7 @@ import { toast } from "sonner";
 
 import { FolderRibbonIcon } from "@/app/(main)/bookmark/_components/FolderRibbonIcon";
 import { BookmarkPlacePreviewCard } from "@/app/(main)/bookmark/_components/BookmarkPlacePreviewCard";
-import {
-  useAllRoomBookmarks,
-  useBookmarkCategories,
-  useCreateScheduleItem,
-  useRoomBookmarks,
-} from "@/hooks/useRooms";
+import { useAllRoomBookmarks, useBookmarkCategories, useCreateScheduleItem, useRoomBookmarks } from "@/hooks/useRooms";
 import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { bucketItemCount } from "@/lib/analytics/context";
@@ -51,12 +46,8 @@ export function AddFromBookmarkModal({
   onAdded,
   onClose,
 }: AddFromBookmarkModalProps) {
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(
-    null,
-  );
-  const [addingGooglePlaceId, setAddingGooglePlaceId] = useState<
-    string | null
-  >(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [addingGooglePlaceId, setAddingGooglePlaceId] = useState<string | null>(null);
 
   const {
     data: categories,
@@ -85,11 +76,10 @@ export function AddFromBookmarkModal({
     refetch: refetchBookmarks,
   } = useRoomBookmarks(roomId, selectedCategoryId);
 
-  const bookmarkListReady =
-    !bookmarksLoading && bookmarkRows !== undefined;
+  const bookmarkListReady = !bookmarksLoading && bookmarkRows !== undefined;
 
   const bookmarkItems: RoomBookmark[] = useMemo(
-    () => Array.isArray(bookmarkRows) ? bookmarkRows : [],
+    () => (Array.isArray(bookmarkRows) ? bookmarkRows : []),
     [bookmarkRows],
   );
 
@@ -97,8 +87,7 @@ export function AddFromBookmarkModal({
     if (!bookmarkListReady) return [];
     return bookmarkItems
       .map((b) => {
-        const googlePlaceId =
-          typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
+        const googlePlaceId = typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
         if (!googlePlaceId.length) return null;
         return {
           bookmarkId: b.bookmarkId,
@@ -128,22 +117,18 @@ export function AddFromBookmarkModal({
   }, [bookmarkItems, placeQueryDefs, placeQueries]);
 
   const cardsLoading =
-    bookmarkListReady &&
-    bookmarkItems.length > 0 &&
-    placeQueries.some((q) => q.isPending || q.isFetching);
+    bookmarkListReady && bookmarkItems.length > 0 && placeQueries.some((q) => q.isPending || q.isFetching);
 
   const existingPlaceIds = useMemo(() => {
     const ids = new Set<string>();
     for (const p of places) {
-      const gid =
-        typeof p.googlePlaceId === "string" ? p.googlePlaceId.trim() : "";
+      const gid = typeof p.googlePlaceId === "string" ? p.googlePlaceId.trim() : "";
       if (gid.length > 0) ids.add(gid);
     }
     return ids;
   }, [places]);
 
-  const { mutateAsync: createItem, isPending: isCreatingItem } =
-    useCreateScheduleItem();
+  const { mutateAsync: createItem, isPending: isCreatingItem } = useCreateScheduleItem();
 
   const busy = isCreatingItem || addingGooglePlaceId != null;
 
@@ -181,23 +166,11 @@ export function AddFromBookmarkModal({
         setAddingGooglePlaceId(null);
       }
     },
-    [
-      busy,
-      createItem,
-      existingPlaceIds,
-      insertIndex,
-      onAdded,
-      onClose,
-      places,
-      roomId,
-      scheduleId,
-    ],
+    [busy, createItem, existingPlaceIds, insertIndex, onAdded, onClose, places, roomId, scheduleId],
   );
 
   const openPlaceOnMap = useOpenPlaceOnMap();
-  const selectedCategoryColor = categories?.find(
-    (c) => c.categoryId === selectedCategoryId,
-  )?.colorCode;
+  const selectedCategoryColor = categories?.find((c) => c.categoryId === selectedCategoryId)?.colorCode;
 
   const handleOpenOnMap = useCallback(
     (googlePlaceId: string, preview: PlacePreview) => {
@@ -240,115 +213,107 @@ export function AddFromBookmarkModal({
         </ResponsiveDialogHeader>
 
         <ResponsiveDialogBody className="min-h-0 flex-1 gap-3">
-        {categoriesLoading ? (
-          <div className="px-5 py-6 text-center"><Spinner aria-label="북마크 불러오는 중" /></div>
-        ) : categoriesError ? (
-          <div className="space-y-2 px-5 py-6 text-center">
-            <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-              {categoriesErr instanceof Error
-                ? categoriesErr.message
-                : "북마크를 불러오지 못했습니다."}
-            </p>
-            <button
-              type="button"
-              onClick={() => void refetchCategories()}
-              className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
-            >
-              다시 시도
-            </button>
-          </div>
-        ) : !categories?.length ? (
-          <div className="px-5 py-8 text-center">
-            <p className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
-              아직 북마크가 없어요.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="-mx-5 shrink-0 overflow-x-auto overscroll-x-contain px-5 [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15">
-              <div className="flex w-max gap-2">
-                {categories.map((c) => {
-                  const selected = selectedCategoryId === c.categoryId;
-                  return (
-                    <button
-                      key={c.categoryId}
-                      type="button"
-                      disabled={busy}
-                      aria-pressed={selected}
-                      onClick={() => setSelectedCategoryId(c.categoryId)}
-                      className={cn(
-                        "flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-                        selected
-                          ? "border-primary bg-primary/10 text-gray-900"
-                          : "border-gray-border bg-white text-dark-gray hover:bg-gray-50",
-                      )}
-                    >
-                      <FolderRibbonIcon
-                        color={c.colorCode}
-                        className="size-5"
-                      />
-                      <span className="max-w-[8rem] truncate">{c.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
+          {categoriesLoading ? (
+            <div className="px-5 py-6 text-center">
+              <Spinner aria-label="북마크 불러오는 중" />
             </div>
-
-            <div className="-mx-5 min-h-0 flex-1 overflow-y-auto border-t border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent]">
-              {bookmarksLoading ? (
-                <PlanLoadingSkeleton places className="px-5" />
-              ) : bookmarksError ? (
-                <div className="space-y-2 px-5 py-6 text-center">
-                  <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-                    {bookmarksErr instanceof Error
-                      ? bookmarksErr.message
-                      : "장소 목록을 불러오지 못했습니다."}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => void refetchBookmarks()}
-                    className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
-                  >
-                    다시 시도
-                  </button>
+          ) : categoriesError ? (
+            <div className="space-y-2 px-5 py-6 text-center">
+              <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
+                {categoriesErr instanceof Error ? categoriesErr.message : "북마크를 불러오지 못했습니다."}
+              </p>
+              <button
+                type="button"
+                onClick={() => void refetchCategories()}
+                className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
+              >
+                다시 시도
+              </button>
+            </div>
+          ) : !categories?.length ? (
+            <div className="px-5 py-8 text-center">
+              <p className="text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray break-keep text-pretty">
+                아직 북마크가 없어요.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="-mx-5 shrink-0 overflow-x-auto overscroll-x-contain px-5 [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15">
+                <div className="flex w-max gap-2">
+                  {categories.map((c) => {
+                    const selected = selectedCategoryId === c.categoryId;
+                    return (
+                      <button
+                        key={c.categoryId}
+                        type="button"
+                        disabled={busy}
+                        aria-pressed={selected}
+                        onClick={() => setSelectedCategoryId(c.categoryId)}
+                        className={cn(
+                          "flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3 py-1.5 text-left text-label-m-regular mobile:text-label-s-regular font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                          selected
+                            ? "border-primary bg-primary/10 text-gray-900"
+                            : "border-gray-border bg-white text-dark-gray hover:bg-gray-50",
+                        )}
+                      >
+                        <FolderRibbonIcon color={c.colorCode} className="size-5" />
+                        <span className="max-w-[8rem] truncate">{c.name}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : cardsLoading && bookmarkPlaces.length === 0 ? (
-                <PlanLoadingSkeleton places className="px-5" />
-              ) : bookmarkPlaces.length === 0 ? (
-                <p className="px-5 py-8 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
-                  담긴 장소가 없습니다.
-                </p>
-              ) : (
-                bookmarkPlaces.map(({ bookmarkId, googlePlaceId, preview }) => {
-                  const gid = googlePlaceId.trim();
-                  const alreadyAdded = existingPlaceIds.has(gid);
-                  const rowAdding = addingGooglePlaceId === gid;
+              </div>
 
-                  return (
-                    <BookmarkPlacePreviewCard
-                      key={bookmarkId}
-                      name={preview.name}
-                      address={preview.formattedAddress}
-                      primaryTypeDisplayName={preview.primaryTypeDisplayName}
-                      googlePlaceId={googlePlaceId}
-                      className={cn(
-                        "w-full border-x-0 px-5",
-                        alreadyAdded && "opacity-50",
-                        rowAdding && "cursor-wait opacity-70",
-                        busy && !rowAdding && "pointer-events-none opacity-60",
-                      )}
-                      onClick={() => void handleAddPlace(googlePlaceId)}
-                      onThumbnailClick={() =>
-                        handleOpenOnMap(googlePlaceId, preview)
-                      }
-                    />
-                  );
-                })
-              )}
-            </div>
-          </>
-        )}
+              <div className="-mx-5 min-h-0 flex-1 overflow-y-auto border-t border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent]">
+                {bookmarksLoading ? (
+                  <PlanLoadingSkeleton places className="px-5" />
+                ) : bookmarksError ? (
+                  <div className="space-y-2 px-5 py-6 text-center">
+                    <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
+                      {bookmarksErr instanceof Error ? bookmarksErr.message : "장소 목록을 불러오지 못했습니다."}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void refetchBookmarks()}
+                      className="cursor-pointer text-label-l-regular mobile:text-label-m-regular font-medium text-neutral-900 underline"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                ) : cardsLoading && bookmarkPlaces.length === 0 ? (
+                  <PlanLoadingSkeleton places className="px-5" />
+                ) : bookmarkPlaces.length === 0 ? (
+                  <p className="px-5 py-8 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
+                    담긴 장소가 없습니다.
+                  </p>
+                ) : (
+                  bookmarkPlaces.map(({ bookmarkId, googlePlaceId, preview }) => {
+                    const gid = googlePlaceId.trim();
+                    const alreadyAdded = existingPlaceIds.has(gid);
+                    const rowAdding = addingGooglePlaceId === gid;
 
+                    return (
+                      <BookmarkPlacePreviewCard
+                        key={bookmarkId}
+                        name={preview.name}
+                        address={preview.formattedAddress}
+                        primaryTypeDisplayName={preview.primaryTypeDisplayName}
+                        googlePlaceId={googlePlaceId}
+                        className={cn(
+                          "w-full border-x-0 px-5",
+                          alreadyAdded && "opacity-50",
+                          rowAdding && "cursor-wait opacity-70",
+                          busy && !rowAdding && "pointer-events-none opacity-60",
+                        )}
+                        onClick={() => void handleAddPlace(googlePlaceId)}
+                        onThumbnailClick={() => handleOpenOnMap(googlePlaceId, preview)}
+                      />
+                    );
+                  })
+                )}
+              </div>
+            </>
+          )}
         </ResponsiveDialogBody>
 
         <ResponsiveDialogFooter>

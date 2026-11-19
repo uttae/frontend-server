@@ -26,9 +26,7 @@ it("uses exact unenveloped REST contract and string money", async () => {
   fetcher.mockResolvedValue(
     new Response(JSON.stringify({ ...body, id: 10, version: 0, createdAt: "", updatedAt: "" }), { status: 201 }),
   );
-  expect((await createExpense("room", body)).totalAmount).toBe(
-    body.totalAmount,
-  );
+  expect((await createExpense("room", body)).totalAmount).toBe(body.totalAmount);
   expect(fetcher.mock.calls[0][0]).toBe("http://fixture/rooms/room/expenses");
   expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual(body);
   fetcher.mockResolvedValue(
@@ -51,9 +49,7 @@ it("reads lists summary currencies and preserves server error code", async () =>
   ] as const) {
     fetcher.mockResolvedValue(new Response(JSON.stringify(payload)));
     expect(await fn("r")).toEqual(payload);
-    expect(fetcher.mock.lastCall?.[0]).toBe(
-      `http://fixture/rooms/r/expenses${path}`,
-    );
+    expect(fetcher.mock.lastCall?.[0]).toBe(`http://fixture/rooms/r/expenses${path}`);
   }
   fetcher.mockResolvedValue(
     new Response(
@@ -71,69 +67,52 @@ it("reads lists summary currencies and preserves server error code", async () =>
   });
 });
 
-const categories = [
-  "FLIGHT",
-  "ACCOMMODATION",
-  "FOOD",
-  "TRANSPORT",
-  "SHOPPING",
-  "SIGHTSEEING",
-  "OTHER",
-] as const;
-it.each(categories)(
-  "transports category %s through create/list/edit/delete without rewriting it",
-  async (category) => {
-    const body = {
-      expenseGroup: "PREPARATION" as const,
-      scheduleId: null,
-      scheduleItemId: null,
-      totalAmount: "1.01",
-      currency: "USD",
-      category,
-      memo: null,
-      payerUserIds: [1],
-      participantUserIds: [1],
-    };
-    const expense = {
-      ...body,
-      id: 10,
-      version: 0,
-      createdAt: "2026-09-09T12:00:00Z",
-      updatedAt: "2026-09-09T12:00:00Z",
-    };
-    fetcher.mockResolvedValueOnce(
-      new Response(JSON.stringify(expense), { status: 201 }),
-    );
-    expect(await createExpense("r", body)).toEqual(expense);
-    expect(fetcher.mock.lastCall?.[1].method).toBe("POST");
-    expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual(body);
-    fetcher.mockResolvedValueOnce(new Response(JSON.stringify([expense])));
-    expect(await getExpenses("r")).toEqual([expense]);
-    const replacement = category === "OTHER" ? "FLIGHT" : "OTHER";
-    fetcher.mockResolvedValueOnce(
-      new Response(JSON.stringify({ ...expense, category: replacement })),
-    );
-    expect(
-      (
-        await patchExpense("r", 10, {
-          category: replacement,
-          expectedVersion: 0,
-        })
-      ).category,
-    ).toBe(replacement);
-    expect(fetcher.mock.lastCall?.[1].method).toBe("PATCH");
-    expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual({
-      category: replacement,
-      expectedVersion: 0,
-    });
-    fetcher.mockResolvedValueOnce(new Response(null, { status: 204 }));
-    await expect(deleteExpense("r", 10, 0)).resolves.toBeUndefined();
-    expect(fetcher.mock.lastCall?.[0]).toBe(
-      "http://fixture/rooms/r/expenses/10?expectedVersion=0",
-    );
-    expect(fetcher.mock.lastCall?.[1].method).toBe("DELETE");
-  },
-);
+const categories = ["FLIGHT", "ACCOMMODATION", "FOOD", "TRANSPORT", "SHOPPING", "SIGHTSEEING", "OTHER"] as const;
+it.each(categories)("transports category %s through create/list/edit/delete without rewriting it", async (category) => {
+  const body = {
+    expenseGroup: "PREPARATION" as const,
+    scheduleId: null,
+    scheduleItemId: null,
+    totalAmount: "1.01",
+    currency: "USD",
+    category,
+    memo: null,
+    payerUserIds: [1],
+    participantUserIds: [1],
+  };
+  const expense = {
+    ...body,
+    id: 10,
+    version: 0,
+    createdAt: "2026-09-09T12:00:00Z",
+    updatedAt: "2026-09-09T12:00:00Z",
+  };
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify(expense), { status: 201 }));
+  expect(await createExpense("r", body)).toEqual(expense);
+  expect(fetcher.mock.lastCall?.[1].method).toBe("POST");
+  expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual(body);
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify([expense])));
+  expect(await getExpenses("r")).toEqual([expense]);
+  const replacement = category === "OTHER" ? "FLIGHT" : "OTHER";
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ ...expense, category: replacement })));
+  expect(
+    (
+      await patchExpense("r", 10, {
+        category: replacement,
+        expectedVersion: 0,
+      })
+    ).category,
+  ).toBe(replacement);
+  expect(fetcher.mock.lastCall?.[1].method).toBe("PATCH");
+  expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual({
+    category: replacement,
+    expectedVersion: 0,
+  });
+  fetcher.mockResolvedValueOnce(new Response(null, { status: 204 }));
+  await expect(deleteExpense("r", 10, 0)).resolves.toBeUndefined();
+  expect(fetcher.mock.lastCall?.[0]).toBe("http://fixture/rooms/r/expenses/10?expectedVersion=0");
+  expect(fetcher.mock.lastCall?.[1].method).toBe("DELETE");
+});
 it("preserves ordered server category totals and BAD_REQUEST category errors", async () => {
   const summary = {
     currencies: [
@@ -161,33 +140,27 @@ it("preserves ordered server category totals and BAD_REQUEST category errors", a
       { status: 400 },
     ),
   );
-  await expect(
-    patchExpense("r", 10, { category: "FLIGHT", expectedVersion: 0 }),
-  ).rejects.toMatchObject({ status: 400, code: "BAD_REQUEST" });
+  await expect(patchExpense("r", 10, { category: "FLIGHT", expectedVersion: 0 })).rejects.toMatchObject({
+    status: 400,
+    code: "BAD_REQUEST",
+  });
 });
 
 it("preserves version and EXPENSE_CONFLICT for guarded mutations", async () => {
-  fetcher.mockResolvedValueOnce(
-    new Response(JSON.stringify([{ id: 10, version: 7 }])),
-  );
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify([{ id: 10, version: 7 }])));
   expect(await getExpenses("r")).toEqual([{ id: 10, version: 7 }]);
   fetcher.mockImplementation(
-    async () =>
-      new Response(
-        JSON.stringify({ code: "EXPENSE_CONFLICT", message: "changed" }),
-        { status: 409 },
-      ),
+    async () => new Response(JSON.stringify({ code: "EXPENSE_CONFLICT", message: "changed" }), { status: 409 }),
   );
-  await expect(
-    patchExpense("r", 10, { expectedVersion: 7 }),
-  ).rejects.toMatchObject({ status: 409, code: "EXPENSE_CONFLICT" });
+  await expect(patchExpense("r", 10, { expectedVersion: 7 })).rejects.toMatchObject({
+    status: 409,
+    code: "EXPENSE_CONFLICT",
+  });
   await expect(deleteExpense("r", 10, 7)).rejects.toMatchObject({
     status: 409,
     code: "EXPENSE_CONFLICT",
   });
-  expect(fetcher.mock.lastCall?.[0]).toBe(
-    "http://fixture/rooms/r/expenses/10?expectedVersion=7",
-  );
+  expect(fetcher.mock.lastCall?.[0]).toBe("http://fixture/rooms/r/expenses/10?expectedVersion=7");
 });
 
 it("reads shared budget and exact KRW reference DTO without changing null or zero", async () => {
@@ -196,9 +169,7 @@ it("reads shared budget and exact KRW reference DTO without changing null or zer
     const payload = { budgetKrw: amount, currency: "KRW", version: 0 };
     fetcher.mockResolvedValueOnce(new Response(JSON.stringify(payload)));
     expect(await api.getExpenseBudget("r")).toEqual(payload);
-    expect(fetcher.mock.lastCall?.[0]).toBe(
-      "http://fixture/rooms/r/expenses/budget",
-    );
+    expect(fetcher.mock.lastCall?.[0]).toBe("http://fixture/rooms/r/expenses/budget");
   }
   const reference = {
     originalTotals: [{ currency: "KWD", totalAmount: "1.234" }],
@@ -211,30 +182,23 @@ it("reads shared budget and exact KRW reference DTO without changing null or zer
   };
   fetcher.mockResolvedValueOnce(new Response(JSON.stringify(reference)));
   expect(await api.getExpenseKrwSummary("r")).toEqual(reference);
-  expect(fetcher.mock.lastCall?.[0]).toBe(
-    "http://fixture/rooms/r/expenses/summary/krw",
-  );
+  expect(fetcher.mock.lastCall?.[0]).toBe("http://fixture/rooms/r/expenses/summary/krw");
 });
 it("PUTs only integer KRW string and reviewed version, preserving BUDGET_CONFLICT", async () => {
   const api = await import("./expenses");
-  fetcher.mockResolvedValueOnce(
-    new Response(
-      JSON.stringify({ budgetKrw: "0", currency: "KRW", version: 1 }),
-    ),
-  );
-  expect(
-    await api.putExpenseBudget("r", { budgetKrw: "0", expectedVersion: 0 }),
-  ).toEqual({ budgetKrw: "0", currency: "KRW", version: 1 });
+  fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ budgetKrw: "0", currency: "KRW", version: 1 })));
+  expect(await api.putExpenseBudget("r", { budgetKrw: "0", expectedVersion: 0 })).toEqual({
+    budgetKrw: "0",
+    currency: "KRW",
+    version: 1,
+  });
   expect(fetcher.mock.lastCall?.[1].method).toBe("PUT");
   expect(JSON.parse(fetcher.mock.lastCall?.[1].body)).toEqual({
     budgetKrw: "0",
     expectedVersion: 0,
   });
   fetcher.mockResolvedValueOnce(
-    new Response(
-      JSON.stringify({ code: "BUDGET_CONFLICT", message: "changed" }),
-      { status: 409 },
-    ),
+    new Response(JSON.stringify({ code: "BUDGET_CONFLICT", message: "changed" }), { status: 409 }),
   );
   await expect(
     api.putExpenseBudget("r", {
@@ -255,8 +219,12 @@ it("sends AND filters without changing the returned whole-room and filtered tota
   const { getExpenseKrwSummary } = await import("./expenses");
   const response = { convertedTotalKrw: "508", filtered: { convertedTotalKrw: "501" } };
   fetcher.mockResolvedValue(new Response(JSON.stringify(response)));
-  expect(await getExpenseKrwSummary("r", { expenseGroup: "TRIP_DAY", scheduleId: 10, category: "FOOD", payerUserId: 2 })).toEqual(response);
-  expect(fetcher.mock.lastCall![0]).toBe("http://fixture/rooms/r/expenses/summary/krw?expenseGroup=TRIP_DAY&scheduleId=10&category=FOOD&payerUserId=2");
+  expect(
+    await getExpenseKrwSummary("r", { expenseGroup: "TRIP_DAY", scheduleId: 10, category: "FOOD", payerUserId: 2 }),
+  ).toEqual(response);
+  expect(fetcher.mock.lastCall![0]).toBe(
+    "http://fixture/rooms/r/expenses/summary/krw?expenseGroup=TRIP_DAY&scheduleId=10&category=FOOD&payerUserId=2",
+  );
 });
 
 it("passes the query cancel signal to read requests so a superseded read is aborted", async () => {

@@ -24,10 +24,7 @@ export function useChat() {
   useEffect(() => {
     if (pendingChatOrigin === null) return;
     if (onChatRoute) {
-      window.history.replaceState(
-        { ...window.history.state, [CHAT_RETURN_HISTORY_KEY]: true },
-        "",
-      );
+      window.history.replaceState({ ...window.history.state, [CHAT_RETURN_HISTORY_KEY]: true }, "");
       pendingChatOrigin = null;
     } else if (pathname !== pendingChatOrigin) {
       pendingChatOrigin = null;

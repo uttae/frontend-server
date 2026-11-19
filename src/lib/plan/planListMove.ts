@@ -19,19 +19,12 @@ export function movePlanPlaceWithinDay(
   return next;
 }
 
-export function removePlanPlace(
-  places: readonly PlanPlace[],
-  itemId: number,
-): PlanPlace[] | undefined {
+export function removePlanPlace(places: readonly PlanPlace[], itemId: number): PlanPlace[] | undefined {
   if (!places.some((p) => p.itemId === itemId)) return undefined;
   return places.filter((p) => p.itemId !== itemId);
 }
 
-export function insertPlanPlace(
-  places: readonly PlanPlace[],
-  place: PlanPlace,
-  orderIndex: number,
-): PlanPlace[] {
+export function insertPlanPlace(places: readonly PlanPlace[], place: PlanPlace, orderIndex: number): PlanPlace[] {
   const next = places.filter((p) => p.itemId !== place.itemId);
   next.splice(clampIndex(orderIndex, next.length), 0, place);
   return next;

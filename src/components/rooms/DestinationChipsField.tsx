@@ -12,12 +12,7 @@ type Props = {
   maxLength: number;
 };
 
-export function DestinationChipsField({
-  values,
-  onChange,
-  maxCount,
-  maxLength,
-}: Props) {
+export function DestinationChipsField({ values, onChange, maxCount, maxLength }: Props) {
   const [draft, setDraft] = useState("");
   const [inlineWarning, setInlineWarning] = useState<string | null>(null);
   const atMax = values.length >= maxCount;
@@ -27,9 +22,7 @@ export function DestinationChipsField({
     setInlineWarning(null);
   }
 
-  function handleResolved(
-    place: { description: string; placeId: string } | null,
-  ) {
+  function handleResolved(place: { description: string; placeId: string } | null) {
     if (!place) return;
     const next = place.description.trim().slice(0, maxLength);
     if (!next) return;

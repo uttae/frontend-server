@@ -15,9 +15,7 @@ const SCOPE_READS: Record<Scope, readonly ReadKey[]> = {
 type Batch = { keys: Set<ReadKey>; restartFirstLoads: boolean; promise: Promise<void> };
 let generation = 0;
 let revocation = 0;
-const controllers = new WeakMap<
-  QueryClient, Map<string, ReturnType<typeof createStore>>
->();
+const controllers = new WeakMap<QueryClient, Map<string, ReturnType<typeof createStore>>>();
 function createStore(client: QueryClient, roomId: string) {
   const listeners = new Set<() => void>();
   const store = {
@@ -84,14 +82,9 @@ class ExpenseRecovery {
     private readonly roomId: string,
   ) {
     this.unsubscribeQueryCache = client.getQueryCache().subscribe((event) => {
-      if (
-        event.type !== "updated" ||
-        event.query.queryKey[0] !== "room-expenses" ||
-        event.query.queryKey[1] !== roomId
-      )
+      if (event.type !== "updated" || event.query.queryKey[0] !== "room-expenses" || event.query.queryKey[1] !== roomId)
         return;
-      if (event.action.type === "success" && event.query.queryKey[2] === "list")
-        this.listRevision++;
+      if (event.action.type === "success" && event.query.queryKey[2] === "list") this.listRevision++;
       if (event.action.type === "error") {
         this.handleError(event.action.error);
       }
@@ -120,18 +113,13 @@ class ExpenseRecovery {
   };
   handleError = (error: unknown) => {
     const e = error as { status?: number; code?: string } | null;
-    if (
-      e?.status === 403 ||
-      (e?.status === 404 && e.code !== "EXPENSE_NOT_FOUND")
-    )
-      this.revoke();
+    if (e?.status === 403 || (e?.status === 404 && e.code !== "EXPENSE_NOT_FOUND")) this.revoke();
   };
   message = (body: string): Promise<void> => {
     try {
       const event = JSON.parse(body);
       if (event?.roomId !== this.roomId) return Promise.resolve();
-      if (event.type === "EXPENSES_INVALIDATED")
-        return this.refresh("expenses");
+      if (event.type === "EXPENSES_INVALIDATED") return this.refresh("expenses");
       if (event.type === "BUDGET_INVALIDATED") return this.refresh("budget");
     } catch {}
     return Promise.resolve();
@@ -139,8 +127,7 @@ class ExpenseRecovery {
   refresh = (scope: Scope): Promise<void> => {
     if (this.status === "revoked") return Promise.resolve();
     if (scope === "visible" && this.status === "refreshing" && this.running) return this.running;
-    const background =
-      scope !== "all" && (this.status === "ready" || this.status === "refreshing");
+    const background = scope !== "all" && (this.status === "ready" || this.status === "refreshing");
     this.setStatus(background ? "refreshing" : "pending");
     const batch = (this.queued ??= this.startBatch());
     SCOPE_READS[scope].forEach((key) => batch.keys.add(key));

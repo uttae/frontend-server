@@ -54,22 +54,12 @@ it("refreshes the six mounted queries once on entry and routes minimal own-sessi
     "summary-krw",
   ]);
   api.read.mockClear();
-  await recovery.message(
-    JSON.stringify({ roomId: "other", type: "EXPENSES_INVALIDATED" }),
-  );
+  await recovery.message(JSON.stringify({ roomId: "other", type: "EXPENSES_INVALIDATED" }));
   expect(api.read).not.toHaveBeenCalled();
-  await recovery.message(
-    JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }),
-  );
-  expect(api.read.mock.calls.map((c) => c[0]).sort()).toEqual([
-    "list",
-    "summary",
-    "summary-krw",
-  ]);
+  await recovery.message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }));
+  expect(api.read.mock.calls.map((c) => c[0]).sort()).toEqual(["list", "summary", "summary-krw"]);
   api.read.mockClear();
-  await recovery.message(
-    JSON.stringify({ roomId: "r", type: "BUDGET_INVALIDATED" }),
-  );
+  await recovery.message(JSON.stringify({ roomId: "r", type: "BUDGET_INVALIDATED" }));
   expect(api.read.mock.calls.map((c) => c[0])).toEqual(["budget"]);
   client.clear();
 });
@@ -136,21 +126,18 @@ it("rejects failed reads and does not report ready", async () => {
 it.each([
   { status: 403, code: "NOT_ROOM_MEMBER" },
   { status: 404, code: "ROOM_NOT_FOUND" },
-])(
-  "revokes room access and prevents late cache repopulation: %s",
-  async (error) => {
-    const client = new QueryClient();
-    const recovery = await loadedRecovery(client);
-    client.setQueryData(expenseKeys.list("r"), ["private"]);
-    api.read.mockRejectedValueOnce(error);
-    await expect(recovery.refresh("budget")).rejects.toEqual(error);
-    expect(recovery.getSnapshot()).toBe("revoked");
-    expect(client.getQueryData(expenseKeys.list("r"))).toBeUndefined();
-    api.read.mockClear();
-    await recovery.refresh("all");
-    expect(api.read).not.toHaveBeenCalled();
-  },
-);
+])("revokes room access and prevents late cache repopulation: %s", async (error) => {
+  const client = new QueryClient();
+  const recovery = await loadedRecovery(client);
+  client.setQueryData(expenseKeys.list("r"), ["private"]);
+  api.read.mockRejectedValueOnce(error);
+  await expect(recovery.refresh("budget")).rejects.toEqual(error);
+  expect(recovery.getSnapshot()).toBe("revoked");
+  expect(client.getQueryData(expenseKeys.list("r"))).toBeUndefined();
+  api.read.mockClear();
+  await recovery.refresh("all");
+  expect(api.read).not.toHaveBeenCalled();
+});
 it("record-only 404 and authentication errors do not revoke the room", () => {
   const client = new QueryClient();
   const recovery = getExpenseRecovery(client, "r");
@@ -182,8 +169,7 @@ it("forced room exit stops recovery and fences late reads", async () => {
   );
   const reading = recovery.refresh("budget").catch(() => {});
   await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
-  const { evictRoomFromClientCaches } =
-    await import("@/lib/stomp/forced-room-exit-dispatch");
+  const { evictRoomFromClientCaches } = await import("@/lib/stomp/forced-room-exit-dispatch");
   evictRoomFromClientCaches(client, "r");
   finish([]);
   await reading;
@@ -192,7 +178,6 @@ it("forced room exit stops recovery and fences late reads", async () => {
   client.clear();
 });
 
-
 it.each(["forced", "query-error"])(
   "%s revocation disposes the query-cache listener and stays terminal",
   async (source) => {
@@ -200,24 +185,31 @@ it.each(["forced", "query-error"])(
     const recovery = getExpenseRecovery(client, "r");
     const handleError = vi.spyOn(recovery, "handleError");
     if (source === "forced") {
-      const { evictRoomFromClientCaches } =
-        await import("@/lib/stomp/forced-room-exit-dispatch");
+      const { evictRoomFromClientCaches } = await import("@/lib/stomp/forced-room-exit-dispatch");
       evictRoomFromClientCaches(client, "r");
     } else {
-      await client.fetchQuery({
-        queryKey: expenseKeys.budget("r"),
-        queryFn: async () => { throw { status: 403 }; },
-        retry: false,
-      }).catch(() => {});
+      await client
+        .fetchQuery({
+          queryKey: expenseKeys.budget("r"),
+          queryFn: async () => {
+            throw { status: 403 };
+          },
+          retry: false,
+        })
+        .catch(() => {});
     }
     handleError.mockClear();
     const revision = recovery.listRevision;
     client.setQueryData(expenseKeys.list("r"), ["later-session"]);
-    await client.fetchQuery({
-      queryKey: expenseKeys.budget("r"),
-      queryFn: async () => { throw new Error("later-session error"); },
-      retry: false,
-    }).catch(() => {});
+    await client
+      .fetchQuery({
+        queryKey: expenseKeys.budget("r"),
+        queryFn: async () => {
+          throw new Error("later-session error");
+        },
+        retry: false,
+      })
+      .catch(() => {});
     expect(handleError).not.toHaveBeenCalled();
     expect(recovery.listRevision).toBe(revision);
     expect(getExpenseRecovery(client, "r")).toBe(recovery);
@@ -283,7 +275,6 @@ it("late revoked-controller errors cannot invalidate a fresh admission in flight
   client.clear();
 });
 
-
 it.each(["members", "currencies"])(
   "visible revalidation retries failed %s before reporting ready",
   async (dependency) => {
@@ -311,56 +302,69 @@ it.each(["members", "currencies"])(
 );
 
 it("revalidates a ready room in the background and coalesces overlapping tab-return events", async () => {
- const client = new QueryClient();
- const recovery = await loadedRecovery(client);
- let finish!: (value: never[]) => void;
- api.read.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
- const first = recovery.refresh("visible");
- try {
-  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
-  expect(recovery.getSnapshot()).toBe("refreshing");
-  const second = recovery.refresh("visible");
-  expect(second).toBe(first);
-  finish([]);
-  await Promise.all([first, second]);
-  expect(api.read).toHaveBeenCalledTimes(6);
-  expect(recovery.getSnapshot()).toBe("ready");
- } finally {
-  finish?.([]);
-  await first.catch(() => {});
-  client.clear();
- }
+  const client = new QueryClient();
+  const recovery = await loadedRecovery(client);
+  let finish!: (value: never[]) => void;
+  api.read.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const first = recovery.refresh("visible");
+  try {
+    await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+    expect(recovery.getSnapshot()).toBe("refreshing");
+    const second = recovery.refresh("visible");
+    expect(second).toBe(first);
+    finish([]);
+    await Promise.all([first, second]);
+    expect(api.read).toHaveBeenCalledTimes(6);
+    expect(recovery.getSnapshot()).toBe("ready");
+  } finally {
+    finish?.([]);
+    await first.catch(() => {});
+    client.clear();
+  }
 });
 
 it("keeps the ledger visible (refreshing) when a real expense change arrives during background revalidation", async () => {
- const client = new QueryClient();
- const recovery = await loadedRecovery(client);
- let finish!: (value: never[]) => void;
- api.read.mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
- const first = recovery.refresh("visible");
- try {
-  await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
-  expect(recovery.getSnapshot()).toBe("refreshing");
-  const change = recovery.message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }));
-  expect(recovery.getSnapshot()).toBe("refreshing");
-  finish([]);
-  await Promise.all([first, change]);
-  expect(recovery.getSnapshot()).toBe("ready");
- } finally {
-  finish?.([]);
-  await first.catch(() => {});
-  client.clear();
- }
+  const client = new QueryClient();
+  const recovery = await loadedRecovery(client);
+  let finish!: (value: never[]) => void;
+  api.read.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const first = recovery.refresh("visible");
+  try {
+    await vi.waitFor(() => expect(finish).toBeTypeOf("function"));
+    expect(recovery.getSnapshot()).toBe("refreshing");
+    const change = recovery.message(JSON.stringify({ roomId: "r", type: "EXPENSES_INVALIDATED" }));
+    expect(recovery.getSnapshot()).toBe("refreshing");
+    finish([]);
+    await Promise.all([first, change]);
+    expect(recovery.getSnapshot()).toBe("ready");
+  } finally {
+    finish?.([]);
+    await first.catch(() => {});
+    client.clear();
+  }
 });
-it.each(["expenses", "budget"] as const)("a %s change on a ready ledger refreshes in the background, but entry recovery is a foreground load", async (scope) => {
- const client = new QueryClient();
- const recovery = await loadedRecovery(client);
- const change = recovery.refresh(scope);
- expect(recovery.getSnapshot()).toBe("refreshing");
- await change;
- const entry = recovery.refresh("all");
- expect(recovery.getSnapshot()).toBe("pending");
- await entry;
- expect(recovery.getSnapshot()).toBe("ready");
- client.clear();
-});
+it.each(["expenses", "budget"] as const)(
+  "a %s change on a ready ledger refreshes in the background, but entry recovery is a foreground load",
+  async (scope) => {
+    const client = new QueryClient();
+    const recovery = await loadedRecovery(client);
+    const change = recovery.refresh(scope);
+    expect(recovery.getSnapshot()).toBe("refreshing");
+    await change;
+    const entry = recovery.refresh("all");
+    expect(recovery.getSnapshot()).toBe("pending");
+    await entry;
+    expect(recovery.getSnapshot()).toBe("ready");
+    client.clear();
+  },
+);

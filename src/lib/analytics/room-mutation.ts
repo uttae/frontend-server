@@ -11,7 +11,7 @@ type RoomMutationEvent = typeof AnalyticsEvents.inviteCodeIssued | typeof Analyt
 
 function roomRole(client: QueryClient, roomId: string) {
   const detail = client.getQueryData<RoomDetail>(roomDetailQueryKey(roomId));
-  const summary = client.getQueryData<RoomListResponse>(ROOMS_QUERY_KEY)?.rooms.find(room => room.id === roomId);
+  const summary = client.getQueryData<RoomListResponse>(ROOMS_QUERY_KEY)?.rooms.find((room) => room.id === roomId);
   return toAnalyticsRoomRole(detail?.role ?? summary?.role);
 }
 
@@ -25,22 +25,35 @@ export async function trackRoomMutation<Result>(
   const actor = readSessionUserId(client);
   const selectedRoom = useSessionStore.getState().currentRoomId;
   const role = roomRole(client, roomId);
-  let active = actor !== undefined && Boolean(role) &&
-    useSessionStore.getState().sessionReady && analyticsConsentStore.isGranted();
+  let active =
+    actor !== undefined &&
+    Boolean(role) &&
+    useSessionStore.getState().sessionReady &&
+    analyticsConsentStore.isGranted();
   const checkScope = () => {
     const session = useSessionStore.getState();
-    const member = client.getQueryData<RoomMemberListResponse>(roomMembersQueryKey(roomId))
-      ?.members.find(member => member.userId === actor);
-    if (!session.sessionReady || session.currentRoomId !== selectedRoom ||
-      readSessionUserId(client) !== actor || !analyticsConsentStore.isGranted() ||
-      !roomRole(client, roomId) || (member && (member.status !== "ACTIVE" || !toAnalyticsRoomRole(member.role)))) {
+    const member = client
+      .getQueryData<RoomMemberListResponse>(roomMembersQueryKey(roomId))
+      ?.members.find((member) => member.userId === actor);
+    if (
+      !session.sessionReady ||
+      session.currentRoomId !== selectedRoom ||
+      readSessionUserId(client) !== actor ||
+      !analyticsConsentStore.isGranted() ||
+      !roomRole(client, roomId) ||
+      (member && (member.status !== "ACTIVE" || !toAnalyticsRoomRole(member.role)))
+    ) {
       active = false;
     }
   };
   checkScope();
-  const watchedKeys = [sessionUserQueryKey, roomDetailQueryKey(roomId), roomMembersQueryKey(roomId), ROOMS_QUERY_KEY]
-    .map(key => JSON.stringify(key));
-  const unsubscribeCache = client.getQueryCache().subscribe(change => {
+  const watchedKeys = [
+    sessionUserQueryKey,
+    roomDetailQueryKey(roomId),
+    roomMembersQueryKey(roomId),
+    ROOMS_QUERY_KEY,
+  ].map((key) => JSON.stringify(key));
+  const unsubscribeCache = client.getQueryCache().subscribe((change) => {
     if (!watchedKeys.includes(JSON.stringify(change.query.queryKey))) return;
     if (change.type === "removed") active = false;
     checkScope();

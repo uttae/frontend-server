@@ -28,15 +28,12 @@ export function useDebouncedPlacePredictions(options: {
     buildRequest,
   } = options;
 
-  const [predictions, setPredictions] = useState<
-    google.maps.places.PlacePrediction[]
-  >([]);
+  const [predictions, setPredictions] = useState<google.maps.places.PlacePrediction[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sessionTokenRef =
-    useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
   const fetchGenRef = useRef(0);
 
   const cancelPending = useCallback(() => {
@@ -68,11 +65,7 @@ export function useDebouncedPlacePredictions(options: {
         sessionTokenRef.current = null;
       }
 
-      if (
-        disabled ||
-        !placesLibReady ||
-        value.trim().length < minInputLength
-      ) {
+      if (disabled || !placesLibReady || value.trim().length < minInputLength) {
         setPredictions([]);
         setIsOpen(false);
         return;

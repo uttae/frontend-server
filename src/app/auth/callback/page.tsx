@@ -29,12 +29,7 @@ function AuthCallbackContent() {
     const returnedState = searchParams.get("state");
     const pending = consumeOAuthPendingSession();
 
-    if (
-      !code ||
-      !returnedState ||
-      !pending ||
-      returnedState !== pending.state
-    ) {
+    if (!code || !returnedState || !pending || returnedState !== pending.state) {
       router.replace(pendingInviteAuthPath("/login?error=OAuthCallback"));
       return;
     }

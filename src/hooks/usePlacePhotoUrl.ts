@@ -1,15 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  loadPlacePhotoUrl,
-  placePhotoUrlQueryDefaults,
-  placePhotoUrlQueryKey,
-} from "@/lib/place-photo-query";
+import { loadPlacePhotoUrl, placePhotoUrlQueryDefaults, placePhotoUrlQueryKey } from "@/lib/place-photo-query";
 
-export function placePhotoUrlQueryOptions(
-  googlePlaceId: string | null | undefined,
-  options?: { enabled?: boolean },
-) {
+export function placePhotoUrlQueryOptions(googlePlaceId: string | null | undefined, options?: { enabled?: boolean }) {
   const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
   return {
     queryKey: placePhotoUrlQueryKey(id),
@@ -19,9 +12,6 @@ export function placePhotoUrlQueryOptions(
   };
 }
 
-export function usePlacePhotoUrlQuery(
-  googlePlaceId: string | null | undefined,
-  options?: { enabled?: boolean },
-) {
+export function usePlacePhotoUrlQuery(googlePlaceId: string | null | undefined, options?: { enabled?: boolean }) {
   return useQuery(placePhotoUrlQueryOptions(googlePlaceId, options));
 }

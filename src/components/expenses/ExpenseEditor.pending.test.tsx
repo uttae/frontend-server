@@ -78,13 +78,17 @@ afterEach(async () => {
 async function mount(expense: Expense | undefined = base) {
   await act(async () => root.render(<ExpenseEditor initial={{ expense }} onClose={mocks.close} />));
 }
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]')!;
 const form = () => dialog().querySelector("form")!;
 type Role = "결제자" | "부담자";
 function picker(title: Role) {
   return [...dialog().querySelectorAll<HTMLFieldSetElement>("fieldset[aria-labelledby]")].find(
-    (fieldset) => document.getElementById(fieldset.getAttribute("aria-labelledby")!)?.firstElementChild?.textContent === title,
+    (fieldset) =>
+      document.getElementById(fieldset.getAttribute("aria-labelledby")!)?.firstElementChild?.textContent === title,
   )!;
 }
 const text = (title: Role) => picker(title).textContent ?? "";
@@ -101,12 +105,17 @@ function checkboxOf(title: Role, label: string) {
     .querySelector<HTMLElement>('[role="checkbox"]')!;
 }
 function removeButton(title: Role) {
-  const buttons = [...picker(title).querySelectorAll<HTMLButtonElement>("button")].filter((node) => node.textContent === "제외");
+  const buttons = [...picker(title).querySelectorAll<HTMLButtonElement>("button")].filter(
+    (node) => node.textContent === "제외",
+  );
   expect(buttons).toHaveLength(1);
   return buttons[0];
 }
 function roleError() {
-  return picker("결제자").parentElement!.parentElement!.querySelector(':scope > [data-slot="field-error"]')?.textContent ?? null;
+  return (
+    picker("결제자").parentElement!.parentElement!.querySelector(':scope > [data-slot="field-error"]')?.textContent ??
+    null
+  );
 }
 const formMessage = () => form().querySelector(':scope > p[role="alert"]')?.textContent ?? null;
 const saveButton = () => dialog().querySelector<HTMLButtonElement>('button[type="submit"]')!;
@@ -144,26 +153,40 @@ it.each(["결제자", "부담자"] as const)(
     expect(text(title)).not.toContain("승인 대기");
     expect(picker(title).querySelectorAll("button")).toHaveLength(0);
     await submit();
-    expect(mocks.save).toHaveBeenCalledWith({
-      expenseGroup: "PREPARATION", scheduleId: null, scheduleItemId: null,
-      totalAmount: "100", currency: "KRW", category: "OTHER", memo: "source memo",
-      payerUserIds: [1], participantUserIds: [1],
-    }, 10, 0);
+    expect(mocks.save).toHaveBeenCalledWith(
+      {
+        expenseGroup: "PREPARATION",
+        scheduleId: null,
+        scheduleItemId: null,
+        totalAmount: "100",
+        currency: "KRW",
+        category: "OTHER",
+        memo: "source memo",
+        payerUserIds: [1],
+        participantUserIds: [1],
+      },
+      10,
+      0,
+    );
     expect(expense).toEqual(source);
   },
 );
 
-it.each(["memo", "amount", "unchanged"])("retains PENDING and rejects %s edits until explicit removal", async (edit) => {
-  await mount();
-  if (edit === "memo") await type(dialog().querySelector("textarea")!, "edited");
-  else if (edit === "amount") await type(dialog().querySelector<HTMLInputElement>('input[inputmode="decimal"]')!, "200");
-  await submit();
-  expect(mocks.save).not.toHaveBeenCalled();
-  expect(selectedCount("결제자")).toBe(2);
-  expect(roleError()).toContain("선택할 수 없는 멤버");
-  expect(formMessage()).toBeNull();
-  expect(text("결제자")).toContain("승인 대기");
-});
+it.each(["memo", "amount", "unchanged"])(
+  "retains PENDING and rejects %s edits until explicit removal",
+  async (edit) => {
+    await mount();
+    if (edit === "memo") await type(dialog().querySelector("textarea")!, "edited");
+    else if (edit === "amount")
+      await type(dialog().querySelector<HTMLInputElement>('input[inputmode="decimal"]')!, "200");
+    await submit();
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(selectedCount("결제자")).toBe(2);
+    expect(roleError()).toContain("선택할 수 없는 멤버");
+    expect(formMessage()).toBeNull();
+    expect(text("결제자")).toContain("승인 대기");
+  },
+);
 
 it("removes the same PENDING person independently from each role", async () => {
   await mount({ ...base, participantUserIds: [1, 2] });
@@ -175,11 +198,19 @@ it("removes the same PENDING person independently from each role", async () => {
   expect(mocks.save).not.toHaveBeenCalled();
   await click(removeButton("부담자"));
   await submit();
-  expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ payerUserIds: [1], participantUserIds: [1] }), 10, 0);
+  expect(mocks.save).toHaveBeenCalledWith(
+    expect.objectContaining({ payerUserIds: [1], participantUserIds: [1] }),
+    10,
+    0,
+  );
 });
 
 it.each(["결제자", "부담자"] as const)("reports a clear error when the last %s is removed", async (title) => {
-  await mount({ ...base, payerUserIds: title === "결제자" ? [2] : [1], participantUserIds: title === "부담자" ? [2] : [1] });
+  await mount({
+    ...base,
+    payerUserIds: title === "결제자" ? [2] : [1],
+    participantUserIds: title === "부담자" ? [2] : [1],
+  });
   await click(removeButton(title));
   expect(selectedCount(title)).toBe(0);
   await submit();
@@ -218,29 +249,41 @@ it("preserves unknown roles, disallows copying/readding unknowns, and still sele
   expect(text("결제자")).not.toContain("#98");
   expect(text("부담자")).not.toContain("#99");
   await submit();
-  expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1, 98] }), 10, 0);
+  expect(mocks.save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1, 98] }),
+    10,
+    0,
+  );
   await click(checkboxOf("결제자", "#99"));
   expect(text("결제자")).not.toContain("#99");
   await click(checkboxOf("결제자", "나간 멤버"));
   await submit();
-  expect(mocks.save).toHaveBeenLastCalledWith(expect.objectContaining({ payerUserIds: [1, 3], participantUserIds: [1, 98] }), 10, 0);
+  expect(mocks.save).toHaveBeenLastCalledWith(
+    expect.objectContaining({ payerUserIds: [1, 3], participantUserIds: [1, 98] }),
+    10,
+    0,
+  );
 });
 
-it.each(["pending", "error"] as MemberQueryStatus[])("does not infer membership or alter selections during member %s", async (memberStatus) => {
-  await mount();
-  mocks.state = { ...mocks.state, members: [], memberStatus };
-  await act(async () => root.render(<ExpenseEditor initial={{ expense: base }} onClose={mocks.close} />));
-  expect(dialog().querySelectorAll("fieldset[aria-labelledby]")).toHaveLength(0);
-  for (const label of ["승인 대기", "(알 수 없음)", "나간 멤버", "제외"]) expect(dialog().textContent).not.toContain(label);
-  expect(saveButton().disabled).toBe(true);
-  await act(async () => form().requestSubmit());
-  await flush();
-  expect(mocks.save).not.toHaveBeenCalled();
-  mocks.state = { ...mocks.state, members, memberStatus: "success" };
-  await act(async () => root.render(<ExpenseEditor initial={{ expense: base }} onClose={mocks.close} />));
-  expect(checkedIds("결제자")).toEqual([1]);
-  expect(selectedCount("결제자")).toBe(2);
-  expect(checkedIds("부담자")).toEqual([1]);
-  expect(selectedCount("부담자")).toBe(1);
-  expect(text("결제자")).toContain("승인 대기");
-});
+it.each(["pending", "error"] as MemberQueryStatus[])(
+  "does not infer membership or alter selections during member %s",
+  async (memberStatus) => {
+    await mount();
+    mocks.state = { ...mocks.state, members: [], memberStatus };
+    await act(async () => root.render(<ExpenseEditor initial={{ expense: base }} onClose={mocks.close} />));
+    expect(dialog().querySelectorAll("fieldset[aria-labelledby]")).toHaveLength(0);
+    for (const label of ["승인 대기", "(알 수 없음)", "나간 멤버", "제외"])
+      expect(dialog().textContent).not.toContain(label);
+    expect(saveButton().disabled).toBe(true);
+    await act(async () => form().requestSubmit());
+    await flush();
+    expect(mocks.save).not.toHaveBeenCalled();
+    mocks.state = { ...mocks.state, members, memberStatus: "success" };
+    await act(async () => root.render(<ExpenseEditor initial={{ expense: base }} onClose={mocks.close} />));
+    expect(checkedIds("결제자")).toEqual([1]);
+    expect(selectedCount("결제자")).toBe(2);
+    expect(checkedIds("부담자")).toEqual([1]);
+    expect(selectedCount("부담자")).toBe(1);
+    expect(text("결제자")).toContain("승인 대기");
+  },
+);

@@ -40,11 +40,7 @@ function isValidViewport(v: unknown): v is RoomMapViewport {
   const lat = o.lat;
   const lng = o.lng;
   const zoom = o.zoom;
-  if (
-    typeof lat !== "number" ||
-    typeof lng !== "number" ||
-    typeof zoom !== "number"
-  ) {
+  if (typeof lat !== "number" || typeof lng !== "number" || typeof zoom !== "number") {
     return false;
   }
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(zoom)) {
@@ -62,10 +58,7 @@ export function readRoomMapViewport(roomId: string): RoomMapViewport | null {
   return isValidViewport(entry) ? entry : null;
 }
 
-export function writeRoomMapViewport(
-  roomId: string,
-  viewport: RoomMapViewport,
-): void {
+export function writeRoomMapViewport(roomId: string, viewport: RoomMapViewport): void {
   const rid = roomKey(roomId);
   if (!rid.length || !isValidViewport(viewport)) return;
   const all = loadAll();

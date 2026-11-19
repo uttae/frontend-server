@@ -4,9 +4,7 @@ import type { PlanDayData } from "@/lib/plan/types";
 import { formatMobileDayDate } from "@/lib/plan/mobilePlanFormat";
 import { formatKoreanDateLabel, parseLocalYmd } from "@/lib/plan/tripRange";
 
-export function sortRoomSchedules<T extends { dayNumber: number }>(
-  schedules: T[],
-): T[] {
+export function sortRoomSchedules<T extends { dayNumber: number }>(schedules: T[]): T[] {
   return [...schedules].sort((a, b) => a.dayNumber - b.dayNumber);
 }
 

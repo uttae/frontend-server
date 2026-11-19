@@ -4,10 +4,7 @@ import { QueryClient } from "@tanstack/react-query";
 import type { Client } from "@stomp/stompjs";
 import { afterEach, expect, it, vi } from "vitest";
 import { hookHarness } from "@/test/hook-harness";
-import {
-  STOMP_CONNECTION_ISSUE_MESSAGE,
-  useStompConnectionStore,
-} from "@/stores/stomp-connection-store";
+import { STOMP_CONNECTION_ISSUE_MESSAGE, useStompConnectionStore } from "@/stores/stomp-connection-store";
 import {
   useStompClientLifecycleEffect,
   useStompOnlineRetryEffect,
@@ -188,9 +185,7 @@ it("stops reconnecting and shows the banner once the last allowed attempt fails"
 
   await failReconnects(client, 1);
   expect(client.deactivate).toHaveBeenCalledTimes(1);
-  expect(useStompConnectionStore.getState().connectionIssue).toBe(
-    STOMP_CONNECTION_ISSUE_MESSAGE,
-  );
+  expect(useStompConnectionStore.getState().connectionIssue).toBe(STOMP_CONNECTION_ISSUE_MESSAGE);
 
   client.onConnect(CONNECTED_FRAME);
   expect(useStompConnectionStore.getState().connectionIssue).toBeNull();

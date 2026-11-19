@@ -12,11 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { BookmarkPlacePreviewCard } from "./BookmarkPlacePreviewCard";
-import {
-  useBookmarkCategories,
-  useDeleteRoomBookmarkItem,
-  useMoveRoomBookmark,
-} from "@/hooks/useRooms";
+import { useBookmarkCategories, useDeleteRoomBookmarkItem, useMoveRoomBookmark } from "@/hooks/useRooms";
 import type { BookmarkedPlace } from "@/types/bookmark";
 
 type MenuPhase = "main" | "pickCategory";
@@ -32,13 +28,7 @@ export function BookmarkPlaceRow({
   currentCategoryId: number;
   onOpenDetail: () => void;
 }) {
-  const {
-    id,
-    name,
-    address,
-    primaryTypeDisplayName,
-    googlePlaceId,
-  } = place;
+  const { id, name, address, primaryTypeDisplayName, googlePlaceId } = place;
   const bookmarkId = Number.parseInt(id, 10);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,13 +36,11 @@ export function BookmarkPlaceRow({
 
   const { data: categories } = useBookmarkCategories(roomId);
   const { mutate: moveBookmark, isPending: moving } = useMoveRoomBookmark();
-  const { mutate: deleteItem, isPending: deleting } =
-    useDeleteRoomBookmarkItem();
+  const { mutate: deleteItem, isPending: deleting } = useDeleteRoomBookmarkItem();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const busy = moving || deleting;
-  const otherCategories =
-    categories?.filter((c) => c.categoryId !== currentCategoryId) ?? [];
+  const otherCategories = categories?.filter((c) => c.categoryId !== currentCategoryId) ?? [];
 
   const handleMoveTo = (targetCategoryId: number) => {
     if (!Number.isFinite(bookmarkId) || busy) return;
@@ -114,11 +102,7 @@ export function BookmarkPlaceRow({
           <DropdownMenuContent align="end" className="w-46 max-h-[min(22rem,var(--available-height))]">
             {menuPhase === "main" ? (
               <>
-                <DropdownMenuItem
-                  closeOnClick={false}
-                  disabled={busy}
-                  onClick={() => setMenuPhase("pickCategory")}
-                >
+                <DropdownMenuItem closeOnClick={false} disabled={busy} onClick={() => setMenuPhase("pickCategory")}>
                   카테고리 변경
                 </DropdownMenuItem>
                 <DropdownMenuItem variant="destructive" disabled={busy} onClick={handleDelete}>

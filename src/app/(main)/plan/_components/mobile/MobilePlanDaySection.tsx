@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  ArrowSortIcon,
-  CalendarAddIcon,
-  CoinIcon,
-  SettingsIcon,
-  TrashIcon,
-} from "@/assets/icons";
+import { ArrowSortIcon, CalendarAddIcon, CoinIcon, SettingsIcon, TrashIcon } from "@/assets/icons";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { expensesInScope } from "@/lib/expenses/expense-scope";

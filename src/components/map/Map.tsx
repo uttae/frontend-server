@@ -28,14 +28,8 @@ import {
   viewportSearchRadiusMetersFromBounds,
   writeDestinationLatLngToSession,
 } from "@/lib/maps";
-import {
-  DESTINATION_MAP_ZOOM,
-  useTripMapBootstrap,
-} from "@/hooks/useTripMapBootstrap";
-import {
-  readRoomMapViewport,
-  writeRoomMapViewport,
-} from "@/lib/map-room-viewport-storage";
+import { DESTINATION_MAP_ZOOM, useTripMapBootstrap } from "@/hooks/useTripMapBootstrap";
+import { readRoomMapViewport, writeRoomMapViewport } from "@/lib/map-room-viewport-storage";
 import { MAP_DETAIL_PANEL_COVER_WIDTH } from "@/lib/layout-tokens";
 import { isPlanPath } from "@/lib/layout/mainChromeLayoutWidth";
 import { isMobileMapPathname } from "@/lib/mobile-view";
@@ -55,10 +49,7 @@ import { RouteIcon } from "@/assets/icons";
 import { MapPinIcon } from "@/components/icons";
 import { MapPinWithPlaceName, MapPlaceName } from "@/components/map/MapPinWithPlaceName";
 import { MapBookmarkPins } from "./MapBookmarkPins";
-import {
-  MAP_PIN_SELECTED_DISPLAY_SIZE_PX,
-  mapPinBodyBorderProps,
-} from "./map-pin-stroke";
+import { MAP_PIN_SELECTED_DISPLAY_SIZE_PX, mapPinBodyBorderProps } from "./map-pin-stroke";
 import { MapSearchHereButton } from "./MapSearchHereButton";
 import { SearchPlacePreview } from "./SearchPlacePreview";
 import { MapDiscoverToolbar } from "./MapDiscoverToolbar";
@@ -178,13 +169,7 @@ function MapBootstrapSync({
   return null;
 }
 
-function DestinationPanController({
-  roomId,
-  destination,
-}: {
-  roomId: string | null;
-  destination: string | null;
-}) {
+function DestinationPanController({ roomId, destination }: { roomId: string | null; destination: string | null }) {
   const map = useMap();
   const geocodingLib = useMapsLibrary("geocoding");
   const appliedDestRef = useRef<string | null>(null);
@@ -206,15 +191,13 @@ function DestinationPanController({
     if (appliedDestRef.current === dest) return;
 
     const hadPreviousDest = appliedDestRef.current !== null;
-    const savedViewport =
-      rid.length > 0 ? readRoomMapViewport(rid) : null;
+    const savedViewport = rid.length > 0 ? readRoomMapViewport(rid) : null;
     if (!hadPreviousDest && savedViewport) {
       appliedDestRef.current = dest;
       return;
     }
 
-    const fromCache =
-      rid.length > 0 ? readDestinationLatLngFromSession(rid, dest) : null;
+    const fromCache = rid.length > 0 ? readDestinationLatLngFromSession(rid, dest) : null;
     if (fromCache) {
       map.setCenter(fromCache);
       map.setZoom(DESTINATION_MAP_ZOOM);
@@ -259,10 +242,12 @@ function MapSearchResultPins() {
   const status = usePlaceSearchStore((s) => s.status);
   const kind = usePlaceSearchStore((s) => s.confirmationKind);
   const fittedItemsRef = useRef<typeof items | null>(null);
-  const preview = pinsFocus === "search" && !isMobileDevice && kind === "whole" && !selectedPlace
-    ? items.find((item) => item.googlePlaceId === searchSelectedId)
-    : undefined;
-  const selectedPlaceId = isMobileDevice && !selectedPlace ? searchSelectedId ?? "" : selectedPlace?.googlePlaceId?.trim() ?? "";
+  const preview =
+    pinsFocus === "search" && !isMobileDevice && kind === "whole" && !selectedPlace
+      ? items.find((item) => item.googlePlaceId === searchSelectedId)
+      : undefined;
+  const selectedPlaceId =
+    isMobileDevice && !selectedPlace ? (searchSelectedId ?? "") : (selectedPlace?.googlePlaceId?.trim() ?? "");
 
   useEffect(() => {
     if (!map || !preview) return;
@@ -271,7 +256,17 @@ function MapSearchResultPins() {
   }, [map, preview]);
 
   useEffect(() => {
-    if (!map || isMobileDevice || pinsFocus !== "search" || kind !== "whole" || status !== "done" || !items.length || usePlaceSearchStore.getState().selectedId || fittedItemsRef.current === items) return;
+    if (
+      !map ||
+      isMobileDevice ||
+      pinsFocus !== "search" ||
+      kind !== "whole" ||
+      status !== "done" ||
+      !items.length ||
+      usePlaceSearchStore.getState().selectedId ||
+      fittedItemsRef.current === items
+    )
+      return;
     fittedItemsRef.current = items;
     if (items.length === 1) {
       moveMapTo(map, items[0].location, { zoom: 16 });
@@ -298,11 +293,17 @@ function MapSearchResultPins() {
             position={{ lat: pin.lat, lng: pin.lng }}
             onClick={(e) => {
               e.stop();
-              const result = usePlaceSearchStore.getState().items.find((item) => item.googlePlaceId === pin.googlePlaceId);
+              const result = usePlaceSearchStore
+                .getState()
+                .items.find((item) => item.googlePlaceId === pin.googlePlaceId);
               if (result) {
                 usePlaceSearchStore.getState().select(result.googlePlaceId);
                 if (!isMobileDevice && kind === "specific") {
-                  setSelectedPlace(result, { itinerarySource: "search", analyticsSource: "search", preserveMapZoom: true });
+                  setSelectedPlace(result, {
+                    itinerarySource: "search",
+                    analyticsSource: "search",
+                    preserveMapZoom: true,
+                  });
                 } else {
                   setSelectedPlace(null);
                 }
@@ -325,19 +326,31 @@ function MapSearchResultPins() {
           </AdvancedMarker>
         ))}
       {preview ? (
-        <InfoWindow key={preview.googlePlaceId} anchor={previewMarker} pixelOffset={SEARCH_PREVIEW_GAP_OFFSET}
-          maxWidth={260} shouldFocus={false} headerDisabled ariaLabel={`${preview.name} 미리보기`}
+        <InfoWindow
+          key={preview.googlePlaceId}
+          anchor={previewMarker}
+          pixelOffset={SEARCH_PREVIEW_GAP_OFFSET}
+          maxWidth={260}
+          shouldFocus={false}
+          headerDisabled
+          ariaLabel={`${preview.name} 미리보기`}
           onClose={() => {
             if (usePlaceSearchStore.getState().selectedId === preview.googlePlaceId)
               usePlaceSearchStore.getState().select(null);
-          }}>
-          <SearchPlacePreview place={preview} onClose={() => usePlaceSearchStore.getState().select(null)} onOpenDetail={() => {
-            setSelectedPlace(preview, {
-              itinerarySource: "search", analyticsSource: "search",
-              analyticsRankBucket: usePlaceSearchStore.getState().searchRankBuckets[preview.googlePlaceId],
-              preserveMapZoom: true,
-            });
-          }} />
+          }}
+        >
+          <SearchPlacePreview
+            place={preview}
+            onClose={() => usePlaceSearchStore.getState().select(null)}
+            onOpenDetail={() => {
+              setSelectedPlace(preview, {
+                itinerarySource: "search",
+                analyticsSource: "search",
+                analyticsRankBucket: usePlaceSearchStore.getState().searchRankBuckets[preview.googlePlaceId],
+                preserveMapZoom: true,
+              });
+            }}
+          />
         </InfoWindow>
       ) : null}
     </>
@@ -362,34 +375,36 @@ export default function TripMap({
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
   const planRouteMode = useWebPlanRouteMode();
   const setMapCamera = useMapCenterStore((s) => s.setMapCamera);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
-    null,
-  );
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [rating, setRating] = useState<RatingValue>("all");
   const [openNow, setOpenNow] = useState<OpenValue>("all");
   const [discoverFailed, setDiscoverFailed] = useState(false);
   const [showBookmarkPins, setShowBookmarkPins] = useState(true);
 
-  useEffect(() => useMapPinsFocusStore.subscribe((state, previous) => {
-    if (state.focus !== "search" || state.writeEpoch === previous.writeEpoch) return;
-    setSelectedCategoryId(null);
-    setRating("all");
-    setOpenNow("all");
-  }), []);
+  useEffect(
+    () =>
+      useMapPinsFocusStore.subscribe((state, previous) => {
+        if (state.focus !== "search" || state.writeEpoch === previous.writeEpoch) return;
+        setSelectedCategoryId(null);
+        setRating("all");
+        setOpenNow("all");
+      }),
+    [],
+  );
 
   const currentRoomId = useSessionStore((s) => s.currentRoomId);
   const { data: roomsData, isFetched: roomsFetched } = useRoomsList();
-  const { data: roomDetail, isFetched: roomDetailFetched } =
-    useRoomDetail(currentRoomId);
-  const { destination, mapMetaReady } = resolveMapDestination(currentRoomId, roomsData, roomsFetched, roomDetail, roomDetailFetched);
+  const { data: roomDetail, isFetched: roomDetailFetched } = useRoomDetail(currentRoomId);
+  const { destination, mapMetaReady } = resolveMapDestination(
+    currentRoomId,
+    roomsData,
+    roomsFetched,
+    roomDetail,
+    roomDetailFetched,
+  );
 
   const geocodingLib = useMapsLibrary("geocoding");
-  const bootstrap = useTripMapBootstrap(
-    currentRoomId,
-    destination,
-    mapMetaReady,
-    geocodingLib,
-  );
+  const bootstrap = useTripMapBootstrap(currentRoomId, destination, mapMetaReady, geocodingLib);
 
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingViewportRef = useRef<{
@@ -424,10 +439,7 @@ export default function TripMap({
   const handleCameraChanged = useCallback(
     (ev: MapCameraChangedEvent) => {
       const { center, zoom, bounds } = ev.detail;
-      const radiusMeters = viewportSearchRadiusMetersFromBounds(
-        center,
-        bounds,
-      );
+      const radiusMeters = viewportSearchRadiusMetersFromBounds(center, bounds);
       setMapCamera({
         mapCenter: { lat: center.lat, lng: center.lng },
         zoom,
@@ -435,8 +447,7 @@ export default function TripMap({
         bounds,
       });
 
-      const rid =
-        typeof currentRoomId === "string" ? currentRoomId.trim() : "";
+      const rid = typeof currentRoomId === "string" ? currentRoomId.trim() : "";
       if (!rid.length) return;
 
       pendingViewportRef.current = {
@@ -502,16 +513,10 @@ export default function TripMap({
       type="button"
       onClick={() => setShowBookmarkPins((v) => !v)}
       aria-pressed={showBookmarkPins}
-      aria-label={
-        showBookmarkPins
-          ? "북마크 장소 표시 끄기"
-          : "북마크 장소 표시 켜기"
-      }
+      aria-label={showBookmarkPins ? "북마크 장소 표시 끄기" : "북마크 장소 표시 켜기"}
       title="북마크 장소 표시"
       className={`pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-md ring-2 ring-black/5 transition ${
-        showBookmarkPins
-          ? "bg-primary text-white"
-          : "bg-white text-dark-gray hover:bg-gray-50"
+        showBookmarkPins ? "bg-primary text-white" : "bg-white text-dark-gray hover:bg-gray-50"
       }`}
     >
       <Bookmark className="h-5 w-5" strokeWidth={2.2} aria-hidden />
@@ -522,11 +527,7 @@ export default function TripMap({
     <div className="relative h-full min-h-0 w-full min-w-0" data-map-controls-inset={isMobileDevice ? undefined : ""}>
       <div className="absolute inset-0 min-h-0 overflow-hidden">
         {!bootstrap.ready ? (
-          <div
-            className="h-full w-full bg-[#e8e6e3]"
-            aria-busy="true"
-            aria-label="지도 위치 불러오는 중"
-          />
+          <div className="h-full w-full bg-[#e8e6e3]" aria-busy="true" aria-label="지도 위치 불러오는 중" />
         ) : (
           <GoogleMap
             key={`${currentRoomId ?? "no-room"}:${destination ?? ""}`}
@@ -546,37 +547,44 @@ export default function TripMap({
             onClick={handleMapClick}
             onCameraChanged={handleCameraChanged}
           >
-          <MapBootstrapSync
-            ready={bootstrap.ready}
-            center={bootstrap.center}
-            zoom={bootstrap.zoom}
-            roomId={currentRoomId}
-          />
-          <SelectedPlaceController />
-          {!routeView && isMobileDevice ? <MobileSearchSelection /> : null}
-          {routeView || isMobileDevice ? null : <PlanFocusCameraController roomId={currentRoomId} />}
-          <DestinationPanController
-            roomId={currentRoomId}
-            destination={destination}
-          />
+            <MapBootstrapSync
+              ready={bootstrap.ready}
+              center={bootstrap.center}
+              zoom={bootstrap.zoom}
+              roomId={currentRoomId}
+            />
+            <SelectedPlaceController />
+            {!routeView && isMobileDevice ? <MobileSearchSelection /> : null}
+            {routeView || isMobileDevice ? null : <PlanFocusCameraController roomId={currentRoomId} />}
+            <DestinationPanController roomId={currentRoomId} destination={destination} />
 
-          {routeView ? <RouteViewMarkers routeView={routeView} /> : (
-            <>
-              <PlanItineraryMapRoutes />
-              <MapDiscoverPlaces selectedCategoryId={selectedCategoryId} rating={rating} openNow={openNow} onSearchFailedChange={setDiscoverFailed} />
-              <MapBookmarkPins roomId={currentRoomId} enabled={showBookmarkPins}
-                hiddenNormalizedPlaceIds={isPlanPage ? planStopPlaceIds : undefined} />
-              <MapSearchResultPins />
-            </>
-          )}
+            {routeView ? (
+              <RouteViewMarkers routeView={routeView} />
+            ) : (
+              <>
+                <PlanItineraryMapRoutes />
+                <MapDiscoverPlaces
+                  selectedCategoryId={selectedCategoryId}
+                  rating={rating}
+                  openNow={openNow}
+                  onSearchFailedChange={setDiscoverFailed}
+                />
+                <MapBookmarkPins
+                  roomId={currentRoomId}
+                  enabled={showBookmarkPins}
+                  hiddenNormalizedPlaceIds={isPlanPage ? planStopPlaceIds : undefined}
+                />
+                <MapSearchResultPins />
+              </>
+            )}
 
-          {!routeView && <SelectedPlaceMarker />}
+            {!routeView && <SelectedPlaceMarker />}
 
-          {routeView || isMobileDevice ? null : (
-            <MapControl position={ControlPosition.RIGHT_BOTTOM}>
-              <div className="mr-6">{bookmarkToggle}</div>
-            </MapControl>
-          )}
+            {routeView || isMobileDevice ? null : (
+              <MapControl position={ControlPosition.RIGHT_BOTTOM}>
+                <div className="mr-6">{bookmarkToggle}</div>
+              </MapControl>
+            )}
           </GoogleMap>
         )}
       </div>
@@ -610,7 +618,9 @@ export default function TripMap({
 
       {!bootstrap.ready || routeView ? null : (
         <>
-          {planRouteMode ? null : <MapSearchHereButton discoverCategoryId={selectedCategoryId} discoverFailed={discoverFailed} />}
+          {planRouteMode ? null : (
+            <MapSearchHereButton discoverCategoryId={selectedCategoryId} discoverFailed={discoverFailed} />
+          )}
           {isMobileDevice ? (
             <div className="pointer-events-none absolute bottom-6 left-4 z-[16] flex flex-col items-center gap-3">
               {onOpenRouteView ? (
@@ -634,30 +644,30 @@ export default function TripMap({
 
 function RouteViewMarkers({ routeView }: Readonly<{ routeView: MapRouteView }>) {
   return (
-            <>
-              <PlanItineraryMapRoutes routeDay={routeView} />
-              <RouteViewCameraController
-                camera={routeView.camera}
-                locations={routeView.locations}
-                focusedItemId={routeView.focusedItemId}
-                expanded={routeView.expanded}
-                candidate={routeView.candidate}
-              />
-              {routeView.candidate?.location ? (
-                <AdvancedMarker
-                  position={routeView.candidate.location}
-                  zIndex={routeView.candidate.focused ? 200 : 90}
-                  onClick={(e) => {
-                    e.stop();
-                    routeView.onCandidateClick();
-                  }}
-                >
-                  <span className="block text-primary drop-shadow-md">
-                    <MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} />
-                  </span>
-                </AdvancedMarker>
-              ) : null}
-            </>
+    <>
+      <PlanItineraryMapRoutes routeDay={routeView} />
+      <RouteViewCameraController
+        camera={routeView.camera}
+        locations={routeView.locations}
+        focusedItemId={routeView.focusedItemId}
+        expanded={routeView.expanded}
+        candidate={routeView.candidate}
+      />
+      {routeView.candidate?.location ? (
+        <AdvancedMarker
+          position={routeView.candidate.location}
+          zIndex={routeView.candidate.focused ? 200 : 90}
+          onClick={(e) => {
+            e.stop();
+            routeView.onCandidateClick();
+          }}
+        >
+          <span className="block text-primary drop-shadow-md">
+            <MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} />
+          </span>
+        </AdvancedMarker>
+      ) : null}
+    </>
   );
 }
 
@@ -673,29 +683,28 @@ function SelectedPlaceMarker() {
   const bookmarkColor = selectedPlace?.fromBookmark ? selectedPlace.bookmarkCategoryColor?.trim() : undefined;
   let colorClass = "text-primary";
   if (selectedPlace?.fromBookmark) colorClass = bookmarkColor ? "" : "text-secondary";
-  return <>
-          {selectedPlace?.location && !selectedIsPlanFocus && (
-            <AdvancedMarker
-              position={selectedPlace.location}
-              zIndex={1000}
-              title={selectedPlace.name}
-              onClick={(e) => e.stop()}
+  return (
+    <>
+      {selectedPlace?.location && !selectedIsPlanFocus && (
+        <AdvancedMarker
+          position={selectedPlace.location}
+          zIndex={1000}
+          title={selectedPlace.name}
+          onClick={(e) => e.stop()}
+        >
+          <div className="flex flex-col items-center">
+            <span
+              className={`block drop-shadow-md ${colorClass}`}
+              style={bookmarkColor ? { color: bookmarkColor } : undefined}
             >
-              <div className="flex flex-col items-center">
-              <span
-                className={`block drop-shadow-md ${colorClass}`}
-                style={bookmarkColor ? { color: bookmarkColor } : undefined}
-              >
-                <MapPinIcon
-                  size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX}
-                  {...mapPinBodyBorderProps}
-                />
-              </span>
-              {!isMobileDevice ? <MapPlaceName name={selectedPlace.name}/> : null}
-              </div>
-            </AdvancedMarker>
-          )}
-  </>;
+              <MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} />
+            </span>
+            {!isMobileDevice ? <MapPlaceName name={selectedPlace.name} /> : null}
+          </div>
+        </AdvancedMarker>
+      )}
+    </>
+  );
 }
 
 function resolveMapDestination(
@@ -705,16 +714,10 @@ function resolveMapDestination(
   roomDetail: ReturnType<typeof useRoomDetail>["data"],
   roomDetailFetched: boolean,
 ) {
-  const listDestination =
-    roomsData?.rooms.find((r) => r.id === currentRoomId)?.destinations?.[0] ??
-    null;
-  const detailDestination =
-    roomDetail?.id === currentRoomId
-      ? (roomDetail.destinations?.[0] ?? null)
-      : null;
+  const listDestination = roomsData?.rooms.find((r) => r.id === currentRoomId)?.destinations?.[0] ?? null;
+  const detailDestination = roomDetail?.id === currentRoomId ? (roomDetail.destinations?.[0] ?? null) : null;
   const destination = listDestination ?? detailDestination;
-  const mapMetaReady =
-    roomsFetched || (roomDetailFetched && Boolean(destination?.trim()));
+  const mapMetaReady = roomsFetched || (roomDetailFetched && Boolean(destination?.trim()));
 
   return { destination, mapMetaReady };
 }
@@ -734,5 +737,11 @@ function MobileSearchSelection() {
     return settleSearchSnapshotAfterMove(map);
   }, [map, focus, selectedPlace, selectedId, lat, lng]);
   if (!item || focus !== "search" || selectedPlace) return null;
-  return <AdvancedMarker position={item.location} onClick={(event) => event.stop()}><span className="block text-primary drop-shadow-md"><MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} /></span></AdvancedMarker>;
+  return (
+    <AdvancedMarker position={item.location} onClick={(event) => event.stop()}>
+      <span className="block text-primary drop-shadow-md">
+        <MapPinIcon size={MAP_PIN_SELECTED_DISPLAY_SIZE_PX} {...mapPinBodyBorderProps} />
+      </span>
+    </AdvancedMarker>
+  );
 }

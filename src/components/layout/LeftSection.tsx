@@ -3,17 +3,9 @@
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { useMainChromeLayoutWidth } from "@/contexts/MainChromeLayoutWidthContext";
 
-export default function LeftSection({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function LeftSection({ children }: { children: React.ReactNode }) {
   const { isMobileDevice } = useMobileView();
-  const {
-    leftSectionAnimateMaxWidth,
-    leftSectionAnimateMinWidth,
-    layoutTransition,
-  } = useMainChromeLayoutWidth();
+  const { leftSectionAnimateMaxWidth, leftSectionAnimateMinWidth, layoutTransition } = useMainChromeLayoutWidth();
   const timing = `${layoutTransition.duration}s cubic-bezier(${layoutTransition.ease.join(",")})`;
 
   return (

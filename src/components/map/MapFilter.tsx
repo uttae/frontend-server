@@ -7,11 +7,7 @@ import { cn } from "@/lib/utils";
 
 import { MapChipToggle } from "./MapChipToggle";
 import { MapSearchIcon } from "./MapSearchIcon";
-import {
-  RATING_OPTIONS,
-  type OpenValue,
-  type RatingValue,
-} from "./map-filters";
+import { RATING_OPTIONS, type OpenValue, type RatingValue } from "./map-filters";
 
 type MapFilterProps = {
   rating: RatingValue;
@@ -35,10 +31,7 @@ export default function MapFilter({
   return (
     <div className={cn("flex flex-nowrap gap-1.5", className)}>
       <RatingSelect value={rating} onChange={setRating} onOpenChange={onRatingDropdownOpenChange} />
-      <MapChipToggle
-        pressed={isOpenOnly}
-        onPressedChange={(pressed) => setOpenNow(pressed ? "open" : "all")}
-      >
+      <MapChipToggle pressed={isOpenOnly} onPressedChange={(pressed) => setOpenNow(pressed ? "open" : "all")}>
         영업 중
       </MapChipToggle>
     </div>
@@ -88,12 +81,7 @@ function RatingSelect({
       open={isOpen}
       onOpenChange={changeOpen}
     >
-      <Chip
-        variant="outline"
-        size="md"
-        selected={isActive}
-        render={<SelectPrimitive.Trigger aria-label="평점 필터" />}
-      >
+      <Chip variant="outline" size="md" selected={isActive} render={<SelectPrimitive.Trigger aria-label="평점 필터" />}>
         <span>{triggerLabel}</span>
         <SelectPrimitive.Icon className="flex shrink-0 transition-transform data-popup-open:rotate-180 motion-reduce:transition-none">
           <MapSearchIcon name="chevron-down" />

@@ -13,8 +13,7 @@ describe("toPlaceDetailResult", () => {
   it("기존 googleMapsUri 대신 권장 placeUri를 장소 링크로 매핑한다", () => {
     expect(placeDetailDataModule).toHaveProperty("toPlaceDetailResult");
 
-    const { toPlaceDetailResult } =
-      placeDetailDataModule as PlaceDetailDataModule;
+    const { toPlaceDetailResult } = placeDetailDataModule as PlaceDetailDataModule;
     const detail: PlaceDetail = {
       googlePlaceId: "ChIJ-test",
       name: "성수 카페",
@@ -39,17 +38,27 @@ describe("toPlaceDetailResult", () => {
       reviews: [],
     };
 
-    expect(toPlaceDetailResult(detail).placeUri).toBe(
-      "https://maps.google.com/recommended-place",
-    );
+    expect(toPlaceDetailResult(detail).placeUri).toBe("https://maps.google.com/recommended-place");
   });
 });
 it("nullable resolve fields remain absent without fabricated coordinates or summary", () => {
   const result = placeDetailDataModule.toPlaceDetailResult({
-    googlePlaceId: "null", name: null, formattedAddress: null, location: { lat: null, lng: 2 },
-    primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null,
-    phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null,
-    regularOpeningHours: null, reviews: [{ rating: null, text: null, authorDisplayName: null, publishTime: null, relativePublishTimeDescription: null }],
+    googlePlaceId: "null",
+    name: null,
+    formattedAddress: null,
+    location: { lat: null, lng: 2 },
+    primaryType: null,
+    primaryTypeDisplayName: null,
+    rating: null,
+    userRatingCount: null,
+    phoneNumber: null,
+    websiteUri: null,
+    googleMapsUri: null,
+    googleMapsLinks: null,
+    regularOpeningHours: null,
+    reviews: [
+      { rating: null, text: null, authorDisplayName: null, publishTime: null, relativePublishTimeDescription: null },
+    ],
   });
   expect(result.location).toBeUndefined();
   expect(result.reviewSummary).toBeNull();

@@ -89,7 +89,10 @@ export function HeaderMemberPreview() {
               </AvatarGroupCount>
             ) : null}
             <span aria-hidden className="flex">
-              <ChevronDownIcon size={20} className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")} />
+              <ChevronDownIcon
+                size={20}
+                className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")}
+              />
             </span>
             {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="right-0.5 top-1" /> : null}
           </PopoverTrigger>
@@ -112,7 +115,10 @@ export function HeaderMemberPreview() {
                   setDropdownOpen(false);
                   requestTransfer(member);
                 }}
-                className={cn(MEMBER_LIST_MAX_HEIGHT_CLASS, "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0")}
+                className={cn(
+                  MEMBER_LIST_MAX_HEIGHT_CLASS,
+                  "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0",
+                )}
               />
             </section>
             <hr className="border-border-subtle" />

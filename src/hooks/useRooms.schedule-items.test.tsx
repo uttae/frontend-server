@@ -1,10 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
-import {
-  QueryClient,
-  QueryClientProvider,
-  QueryObserver,
-} from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, QueryObserver } from "@tanstack/react-query";
 import { expect, it, vi } from "vitest";
 
 import type { RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
@@ -85,10 +81,7 @@ it("refetches the day after the user's own delete so an older in-flight refetch 
   });
   const key = scheduleItemsQueryKey("room-1", 10);
   client.setQueryData(key, [place(100), place(101)]);
-  const unwatch = new QueryObserver(
-    client,
-    schedulePlanPlacesQueryOptions(client, "room-1", 10),
-  ).subscribe(() => {});
+  const unwatch = new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room-1", 10)).subscribe(() => {});
   let resolveBeforeDelete!: (rows: RoomScheduleItem[]) => void;
   api.getScheduleItems
     .mockReturnValueOnce(
@@ -178,14 +171,9 @@ it("cancels an in-flight day refetch so its older list cannot overwrite the opti
   const client = newClient();
   const key = scheduleItemsQueryKey("room-1", 10);
   client.setQueryData(key, [place(100), place(101)]);
-  const unwatch = new QueryObserver(
-    client,
-    schedulePlanPlacesQueryOptions(client, "room-1", 10),
-  ).subscribe(() => {});
+  const unwatch = new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room-1", 10)).subscribe(() => {});
   const olderFetch = deferred<RoomScheduleItem[]>();
-  api.getScheduleItems
-    .mockReturnValueOnce(olderFetch.promise)
-    .mockResolvedValue(items(101, 100));
+  api.getScheduleItems.mockReturnValueOnce(olderFetch.promise).mockResolvedValue(items(101, 100));
   api.reorderScheduleItem.mockResolvedValueOnce(items(101, 100));
   const hook = hookHarness(
     () => useReorderScheduleItem(),
@@ -264,7 +252,13 @@ it("keeps a saved cross-day move as saved even when the follow-up day refetch fa
   try {
     await hook.render(undefined);
     await act(async () => {
-      await hook.current.mutateAsync({ roomId: "room-1", sourceScheduleId: 10, itemId: 101, targetScheduleId: 20, targetOrderIndex: 1 });
+      await hook.current.mutateAsync({
+        roomId: "room-1",
+        sourceScheduleId: 10,
+        itemId: 101,
+        targetScheduleId: 20,
+        targetOrderIndex: 1,
+      });
     });
     expect(ids(client.getQueryData<PlanPlace[]>(sourceKey))).toEqual([100]);
     expect(ids(client.getQueryData<PlanPlace[]>(targetKey))).toEqual([200, 101]);
@@ -284,8 +278,7 @@ it("moves the day and renumbers day numbers and dates before the response, and r
     () => useMoveRoomSchedule(),
     (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
-  const shown = () =>
-    client.getQueryData<RoomSchedule[]>(key)?.map((s) => [s.scheduleId, s.dayNumber, s.date]);
+  const shown = () => client.getQueryData<RoomSchedule[]>(key)?.map((s) => [s.scheduleId, s.dayNumber, s.date]);
   try {
     await hook.render(undefined);
     let saving!: Promise<unknown>;
@@ -321,10 +314,7 @@ it("draws only the latest order when two reorders on the same day overlap, and r
   const client = newClient();
   const key = scheduleItemsQueryKey("room-1", 10);
   client.setQueryData(key, [place(100), place(101), place(102)]);
-  const unwatch = new QueryObserver(
-    client,
-    schedulePlanPlacesQueryOptions(client, "room-1", 10),
-  ).subscribe(() => {});
+  const unwatch = new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room-1", 10)).subscribe(() => {});
   const first = deferred<RoomScheduleItem[]>();
   const second = deferred<RoomScheduleItem[]>();
   api.reorderScheduleItem.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
@@ -338,11 +328,21 @@ it("draws only the latest order when two reorders on the same day overlap, and r
     let firstSaving!: Promise<unknown>;
     let secondSaving!: Promise<unknown>;
     await act(async () => {
-      firstSaving = hook.current.mutateAsync({ roomId: "room-1", scheduleId: 10, itemId: 100, body: { newOrderIndex: 2 } });
+      firstSaving = hook.current.mutateAsync({
+        roomId: "room-1",
+        scheduleId: 10,
+        itemId: 100,
+        body: { newOrderIndex: 2 },
+      });
     });
     await hook.flush();
     await act(async () => {
-      secondSaving = hook.current.mutateAsync({ roomId: "room-1", scheduleId: 10, itemId: 101, body: { newOrderIndex: 2 } });
+      secondSaving = hook.current.mutateAsync({
+        roomId: "room-1",
+        scheduleId: 10,
+        itemId: 101,
+        body: { newOrderIndex: 2 },
+      });
     });
     await hook.flush();
     expect(ids(client.getQueryData<PlanPlace[]>(key))).toEqual([102, 100, 101]);
@@ -410,10 +410,7 @@ it("rejects a failed reorder right away without waiting for the day refetch, so 
   const client = newClient();
   const key = scheduleItemsQueryKey("room-1", 10);
   client.setQueryData(key, [place(100), place(101)]);
-  const unwatch = new QueryObserver(
-    client,
-    schedulePlanPlacesQueryOptions(client, "room-1", 10),
-  ).subscribe(() => {});
+  const unwatch = new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room-1", 10)).subscribe(() => {});
   api.reorderScheduleItem.mockRejectedValueOnce(new Error("저장 실패"));
   api.getScheduleItems.mockReset().mockReturnValue(new Promise<RoomScheduleItem[]>(() => {}));
   const hook = hookHarness(

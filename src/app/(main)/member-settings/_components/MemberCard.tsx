@@ -2,7 +2,12 @@
 
 import { MenuDotHorizontalIcon, UserEditIcon, UserXIcon } from "@/assets/icons";
 import { Badge } from "@/components/ui/badge";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { UserAvatar } from "@/components/user/UserAvatar";
 import type { RoomMemberStatus } from "@/lib/api/rooms";
 import { cn } from "@/lib/utils";
@@ -43,11 +48,7 @@ function MemberConnectionStatus({ member }: Readonly<{ member: MemberCardData }>
 export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Readonly<Props>) {
   const isLeft = member.status === "LEFT";
   const isOnline = member.connectionStatus === "online";
-  const canAct =
-    isViewerHost &&
-    !member.isCurrentUser &&
-    member.role !== "HOST" &&
-    !isLeft;
+  const canAct = isViewerHost && !member.isCurrentUser && member.role !== "HOST" && !isLeft;
 
   return (
     <div className={cn("flex min-h-[72px] items-center gap-3", isLeft && "opacity-60")}>
@@ -59,7 +60,12 @@ export function MemberCard({ member, isViewerHost, onKick, onTransfer }: Readonl
       />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className={cn("truncate text-body-m-regular font-medium mobile:text-body-s-regular", isOnline || member.isCurrentUser ? "text-text" : "text-text-subtle")}>
+        <span
+          className={cn(
+            "truncate text-body-m-regular font-medium mobile:text-body-s-regular",
+            isOnline || member.isCurrentUser ? "text-text" : "text-text-subtle",
+          )}
+        >
           {member.name}
           {member.isCurrentUser ? " (나)" : ""}
         </span>

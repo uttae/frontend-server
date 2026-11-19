@@ -5,10 +5,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/image", () => ({
-  default: (props: ImgHTMLAttributes<HTMLImageElement> & {
-    priority?: boolean;
-    unoptimized?: boolean;
-  }) => {
+  default: (
+    props: ImgHTMLAttributes<HTMLImageElement> & {
+      priority?: boolean;
+      unoptimized?: boolean;
+    },
+  ) => {
     const { priority, unoptimized, ...imageProps } = props;
     void priority;
     void unoptimized;
@@ -24,9 +26,15 @@ describe("LandingView", () => {
   it("renders the final Figma A+C wording and section order in server HTML", () => {
     const html = renderToStaticMarkup(<LandingView />);
     const story = [
-      "올인원 해외여행", "여행을 계획할 때마다", "복잡한 여행 계획은",
-      "장소를 검색하고", "저장한 장소로", "친구와 함께 계획하고",
-      "여행 계획은 PC에서 편리하게", "이렇게 완성하세요!", "우리 함께할 때",
+      "올인원 해외여행",
+      "여행을 계획할 때마다",
+      "복잡한 여행 계획은",
+      "장소를 검색하고",
+      "저장한 장소로",
+      "친구와 함께 계획하고",
+      "여행 계획은 PC에서 편리하게",
+      "이렇게 완성하세요!",
+      "우리 함께할 때",
     ];
     let previous = -1;
     for (const copy of story) {
@@ -46,7 +54,14 @@ describe("LandingView", () => {
   it("preserves login, navigation and legal destinations without fake device UI", () => {
     const html = renderToStaticMarkup(<LandingView />);
     expect(html.match(/href="\/login"/g)).toHaveLength(3);
-    for (const href of ["/#features", "/#how-it-works", "/terms", "/privacy", "/operations-policy", "/copyright-policy"]) {
+    for (const href of [
+      "/#features",
+      "/#how-it-works",
+      "/terms",
+      "/privacy",
+      "/operations-policy",
+      "/copyright-policy",
+    ]) {
       expect(html).toContain(`href="${href}"`);
     }
     expect(html).toContain('href="mailto:contact@uttae.app"');

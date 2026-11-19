@@ -76,11 +76,7 @@ function contentBounds(data: Buffer, size: number) {
   };
 }
 
-function expectBrandGlyph(
-  data: Buffer,
-  size: number,
-  contentRatio = APP_ICON_CONTENT_RATIO,
-) {
+function expectBrandGlyph(data: Buffer, size: number, contentRatio = APP_ICON_CONTENT_RATIO) {
   let transparent = 0;
   let opaque = 0;
   let pureBlue = 0;
@@ -123,11 +119,7 @@ function expectBrandGlyph(
   expect(bounds.verticalDrift).toBeLessThanOrEqual(CENTERING_TOLERANCE);
 }
 
-async function expectGlyphPng(
-  bytes: Buffer,
-  size: number,
-  contentRatio = APP_ICON_CONTENT_RATIO,
-) {
+async function expectGlyphPng(bytes: Buffer, size: number, contentRatio = APP_ICON_CONTENT_RATIO) {
   const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
   expect([info.width, info.height, info.channels]).toEqual([size, size, 4]);
@@ -135,15 +127,16 @@ async function expectGlyphPng(
 }
 
 describe("official blue glyph assets", () => {
-  it.each([["S", 23], ["M", 45], ["L", 90]] as const)(
-    "renders symbol %s with the original glyph proportions and accessible name",
-    (size, dimension) => {
-      const html = renderToStaticMarkup(<BrandLogo variant="symbol" size={size} />);
-      expect(html).toContain(`src="/brand/Glyph_${size}.svg"`);
-      expect(html).toContain(`width="${dimension}" height="${dimension}"`);
-      expect(html).toContain('alt="우때 로고"');
-    },
-  );
+  it.each([
+    ["S", 23],
+    ["M", 45],
+    ["L", 90],
+  ] as const)("renders symbol %s with the original glyph proportions and accessible name", (size, dimension) => {
+    const html = renderToStaticMarkup(<BrandLogo variant="symbol" size={size} />);
+    expect(html).toContain(`src="/brand/Glyph_${size}.svg"`);
+    expect(html).toContain(`width="${dimension}" height="${dimension}"`);
+    expect(html).toContain('alt="우때 로고"');
+  });
 
   it.each(appIconPngs)("exports %s as a transparent, safely inset blue PNG", async (url, size) => {
     expect((await sharp(asset(url)).metadata()).format).toBe("png");

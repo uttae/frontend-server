@@ -57,7 +57,11 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
                 </span>
               ))}
             </p>
-            <p className="flex gap-0.5"><TripDate date={room.startDate} /><span aria-hidden>-</span><TripDate date={room.endDate} /></p>
+            <p className="flex gap-0.5">
+              <TripDate date={room.startDate} />
+              <span aria-hidden>-</span>
+              <TripDate date={room.endDate} />
+            </p>
           </div>
         </div>
       </Link>

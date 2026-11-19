@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type WheelEvent,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
 
 import { ChevronLeftIcon, CloseIcon } from "@/assets/icons";
 import { SHEET_DISMISS_DISTANCE } from "@/components/mobile/sheet-gesture";
@@ -146,8 +138,7 @@ export function PlaceDetailSheet({
 
       if (!drag.dragging) {
         if (Math.abs(dy) < DRAG_START_THRESHOLD_PX) return;
-        const canDrag =
-          !expandedRef.current || drag.fromHeader || (drag.atTop && dy > 0);
+        const canDrag = !expandedRef.current || drag.fromHeader || (drag.atTop && dy > 0);
         if (!canDrag) {
           dragRef.current = null;
           return;
@@ -240,10 +231,7 @@ export function PlaceDetailSheet({
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        className={cn(SCROLL_AREA_CLASS, expanded ? "overflow-y-auto" : "overflow-hidden")}
-      >
+      <div ref={scrollRef} className={cn(SCROLL_AREA_CLASS, expanded ? "overflow-y-auto" : "overflow-hidden")}>
         <div ref={peekRef}>{peek}</div>
         {children}
       </div>

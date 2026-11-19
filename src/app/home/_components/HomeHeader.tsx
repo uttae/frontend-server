@@ -42,7 +42,9 @@ export function HomeHeader() {
   };
 
   return (
-    <header className={`sticky top-0 z-40 h-16 shrink-0 border-b border-border-subtle bg-fill-subtle mobile:h-14 ${pathname === "/home" ? "mobile:border-b" : "mobile:border-b-0"}`}>
+    <header
+      className={`sticky top-0 z-40 h-16 shrink-0 border-b border-border-subtle bg-fill-subtle mobile:h-14 ${pathname === "/home" ? "mobile:border-b" : "mobile:border-b-0"}`}
+    >
       <div className="mx-auto flex h-full max-w-[1184px] items-center justify-between gap-4 px-6 mobile:px-5">
         <div className="[&_img]:h-[22px] [&_img]:w-[75.5px]">
           <BrandLogo variant="combination" size="S" alt="로고" />
@@ -53,11 +55,7 @@ export function HomeHeader() {
             aria-label="프로필"
             className="flex size-12 items-center justify-center rounded-[8px] transition hover:bg-fill focus-visible:outline-2 focus-visible:outline-primary"
           >
-            {user?.profileImageUrl ? (
-              <UserAvatar user={user} size={36} />
-            ) : (
-              <Avatar size={36} aria-hidden />
-            )}
+            {user?.profileImageUrl ? <UserAvatar user={user} size={36} /> : <Avatar size={36} aria-hidden />}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" alignOffset={8} sideOffset={0.5} size="lg" className="w-60">
             {user && (
@@ -67,8 +65,7 @@ export function HomeHeader() {
               </DropdownMenuHeader>
             )}
             <DropdownMenuLinkItem render={<Link href="/home/my-info" />}>
-              <UserIcon />
-              내 정보
+              <UserIcon />내 정보
             </DropdownMenuLinkItem>
             <DropdownMenuItem closeOnClick={false} onClick={handleLogout}>
               <SignLogoutIcon />

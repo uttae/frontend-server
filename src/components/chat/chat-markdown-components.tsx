@@ -17,37 +17,21 @@ function strongClassName(variant: ChatMarkdownVariant): string {
   return "font-semibold";
 }
 
-export function createChatMarkdownComponents(
-  variant: ChatMarkdownVariant,
-): Components {
+export function createChatMarkdownComponents(variant: ChatMarkdownVariant): Components {
   const linkCls = getChatLinkClassName(variant);
   const strongCls = strongClassName(variant);
 
   return {
     p({ children }) {
       const preserveLayout = variant === "mine" || variant === "other";
-      return (
-        <p
-          className={cn(
-            "mb-1 last:mb-0 break-words",
-            preserveLayout && "whitespace-pre-wrap",
-          )}
-        >
-          {children}
-        </p>
-      );
+      return <p className={cn("mb-1 last:mb-0 break-words", preserveLayout && "whitespace-pre-wrap")}>{children}</p>;
     },
     br() {
       return <br />;
     },
     a({ href, children }) {
       return (
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={linkCls}
-        >
+        <a href={href} target="_blank" rel="noopener noreferrer" className={linkCls}>
           {children}
         </a>
       );
@@ -59,18 +43,10 @@ export function createChatMarkdownComponents(
       return <em className="italic">{children}</em>;
     },
     ul({ children }) {
-      return (
-        <ul className="my-1 list-disc space-y-0.5 break-words pl-4 last:mb-0">
-          {children}
-        </ul>
-      );
+      return <ul className="my-1 list-disc space-y-0.5 break-words pl-4 last:mb-0">{children}</ul>;
     },
     ol({ children }) {
-      return (
-        <ol className="my-1 list-decimal space-y-0.5 break-words pl-4 last:mb-0">
-          {children}
-        </ol>
-      );
+      return <ol className="my-1 list-decimal space-y-0.5 break-words pl-4 last:mb-0">{children}</ol>;
     },
     li({ children }) {
       return <li className="break-words">{children}</li>;
@@ -78,17 +54,9 @@ export function createChatMarkdownComponents(
     code({ className, children }) {
       const isBlock = className?.includes("language-");
       if (isBlock) {
-        return (
-          <code className={cn("block whitespace-pre-wrap break-words", className)}>
-            {children}
-          </code>
-        );
+        return <code className={cn("block whitespace-pre-wrap break-words", className)}>{children}</code>;
       }
-      return (
-        <code className="rounded bg-black/10 px-1 py-0.5 font-mono text-[0.9em] break-words">
-          {children}
-        </code>
-      );
+      return <code className="rounded bg-black/10 px-1 py-0.5 font-mono text-[0.9em] break-words">{children}</code>;
     },
     pre({ children }) {
       return (
@@ -99,9 +67,7 @@ export function createChatMarkdownComponents(
     },
     blockquote({ children }) {
       return (
-        <blockquote className="my-1 border-l-2 border-slate-300/80 pl-2 text-gray-700 last:mb-0">
-          {children}
-        </blockquote>
+        <blockquote className="my-1 border-l-2 border-slate-300/80 pl-2 text-gray-700 last:mb-0">{children}</blockquote>
       );
     },
     table({ children }) {
@@ -115,18 +81,10 @@ export function createChatMarkdownComponents(
       return <thead className="bg-black/5">{children}</thead>;
     },
     th({ children }) {
-      return (
-        <th className="border border-slate-300/80 px-2 py-1 text-left font-semibold">
-          {children}
-        </th>
-      );
+      return <th className="border border-slate-300/80 px-2 py-1 text-left font-semibold">{children}</th>;
     },
     td({ children }) {
-      return (
-        <td className="border border-slate-300/80 px-2 py-1 align-top">
-          {children}
-        </td>
-      );
+      return <td className="border border-slate-300/80 px-2 py-1 align-top">{children}</td>;
     },
     hr() {
       return <hr className="my-2 border-slate-300/80" />;

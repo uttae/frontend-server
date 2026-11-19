@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  readDestinationLatLngFromSession,
-  writeDestinationLatLngToSession,
-} from "@/lib/maps";
+import { readDestinationLatLngFromSession, writeDestinationLatLngToSession } from "@/lib/maps";
 import { readRoomMapViewport } from "@/lib/map-room-viewport-storage";
 import { useClientReady } from "./useClientReady";
 
@@ -40,15 +37,7 @@ export function useTripMapBootstrap(
   } | null>(null);
 
   useEffect(() => {
-    if (
-      !clientReady ||
-      !rid ||
-      !roomsFetched ||
-      stored ||
-      !dest ||
-      !geocodingLib?.Geocoder
-    )
-      return;
+    if (!clientReady || !rid || !roomsFetched || stored || !dest || !geocodingLib?.Geocoder) return;
     let cancelled = false;
     const geocoder = new geocodingLib.Geocoder();
     geocoder.geocode({ address: dest }, (results, status) => {
@@ -67,11 +56,7 @@ export function useTripMapBootstrap(
   if (roomsFetched && clientReady) {
     if (stored) return { ready: true, ...stored };
     if (!dest) return { ready: true, center: DEFAULT_MAP_CENTER, zoom: 13 };
-    if (
-      geocoded?.rid === rid &&
-      geocoded.dest === dest &&
-      geocoded.library === geocodingLib
-    ) {
+    if (geocoded?.rid === rid && geocoded.dest === dest && geocoded.library === geocodingLib) {
       return {
         ready: true,
         center: geocoded.center ?? DEFAULT_MAP_CENTER,

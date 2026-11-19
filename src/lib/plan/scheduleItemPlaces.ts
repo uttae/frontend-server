@@ -8,10 +8,7 @@ import {
   type CreateScheduleItemResponse,
   type RoomScheduleItem,
 } from "@/lib/api/rooms/schedule-items";
-import {
-  fetchAndSeedPlacePreviews,
-  reconcileSchedulePlanPlacesAfterPreviewSeed,
-} from "@/lib/places/place-batch-cache";
+import { fetchAndSeedPlacePreviews, reconcileSchedulePlanPlacesAfterPreviewSeed } from "@/lib/places/place-batch-cache";
 import { fetchPlacePreview } from "@/lib/places/place-queries";
 import {
   buildPlanPlacesFromItemsWithPreviewEnrichment,
@@ -23,9 +20,7 @@ import { getQueryClient } from "@/lib/query-client";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 import type { PlanPlace } from "@/lib/plan/types";
 
-export function sortRoomScheduleItemsByOrder(
-  items: RoomScheduleItem[],
-): RoomScheduleItem[] {
+export function sortRoomScheduleItemsByOrder(items: RoomScheduleItem[]): RoomScheduleItem[] {
   return [...items].sort((a, b) => a.orderIndex - b.orderIndex);
 }
 
@@ -54,14 +49,9 @@ function memoFromScheduleItemPatch(
   return memoFromScheduleItem(updated);
 }
 
-function patchPlanPlaceFromScheduleItem(
-  existing: PlanPlace,
-  item: RoomScheduleItem,
-): PlanPlace {
-  const hasServerStart =
-    typeof item.startTime === "string" && item.startTime.trim().length > 0;
-  const hasServerEnd =
-    typeof item.endTime === "string" && item.endTime.length > 0;
+function patchPlanPlaceFromScheduleItem(existing: PlanPlace, item: RoomScheduleItem): PlanPlace {
+  const hasServerStart = typeof item.startTime === "string" && item.startTime.trim().length > 0;
+  const hasServerEnd = typeof item.endTime === "string" && item.endTime.length > 0;
   const next: PlanPlace = {
     ...existing,
     googlePlaceId: item.googlePlaceId,
@@ -87,9 +77,7 @@ async function mergeScheduleItemsIntoPlanPlaces(
 ): Promise<PlanPlace[] | null> {
   if (!prev || prev.length === 0) return null;
 
-  const prevWithId = prev.filter(
-    (p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number",
-  );
+  const prevWithId = prev.filter((p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number");
   if (prevWithId.length !== prev.length) return null;
 
   const byId = new Map<number, PlanPlace>();
@@ -139,9 +127,7 @@ async function mergeScheduleItemsIntoPlanPlaces(
   return out;
 }
 
-async function buildPlanPlacesFromScheduleItems(
-  items: RoomScheduleItem[],
-): Promise<PlanPlace[]> {
+async function buildPlanPlacesFromScheduleItems(items: RoomScheduleItem[]): Promise<PlanPlace[]> {
   const qc = getQueryClient();
   if (qc) {
     return buildPlanPlacesFromItemsWithPreviewEnrichment(qc, items);
@@ -157,9 +143,8 @@ export function removeScheduleItemFromPlanPlacesCache(
   scheduleId: number,
   deletedItemId: number,
 ): void {
-  queryClient.setQueryData<PlanPlace[]>(
-    scheduleItemsQueryKey(roomId.trim(), scheduleId),
-    (old) => old?.filter((p) => p.itemId !== deletedItemId),
+  queryClient.setQueryData<PlanPlace[]>(scheduleItemsQueryKey(roomId.trim(), scheduleId), (old) =>
+    old?.filter((p) => p.itemId !== deletedItemId),
   );
 }
 
@@ -213,15 +198,8 @@ export async function ensureSchedulePlanPlacesEnriched(
     return queryClient.getQueryData<PlanPlace[]>(key) ?? cached;
   }
 
-  const items = await resolveScheduleItemsFromCacheOrHydrate(
-    queryClient,
-    rid,
-    scheduleId,
-  );
-  const places = await buildPlanPlacesFromItemsWithPreviewEnrichment(
-    queryClient,
-    items,
-  );
+  const items = await resolveScheduleItemsFromCacheOrHydrate(queryClient, rid, scheduleId);
+  const places = await buildPlanPlacesFromItemsWithPreviewEnrichment(queryClient, items);
   queryClient.setQueryData(key, places);
   return places;
 }
@@ -238,27 +216,19 @@ async function fetchSchedulePlanPlaces(
     return ensureSchedulePlanPlacesEnriched(queryClient, roomId, scheduleId);
   }
   const items = await getScheduleItems(roomId, scheduleId, signal);
-  const prev = queryClient.getQueryData<PlanPlace[]>(
-    scheduleItemsQueryKey(roomId, scheduleId),
-  );
+  const prev = queryClient.getQueryData<PlanPlace[]>(scheduleItemsQueryKey(roomId, scheduleId));
   return (
     (await mergeScheduleItemsIntoPlanPlaces(prev, items)) ??
     buildPlanPlacesFromItemsWithPreviewEnrichment(queryClient, items)
   );
 }
 
-export function schedulePlanPlacesQueryOptions(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number | null,
-) {
+export function schedulePlanPlacesQueryOptions(queryClient: QueryClient, roomId: string, scheduleId: number | null) {
   const rid = roomId.trim();
   return queryOptions({
     queryKey: scheduleItemsQueryKey(rid || null, scheduleId),
     queryFn: async ({ signal }): Promise<PlanPlace[]> =>
-      rid.length > 0 && scheduleId !== null
-        ? fetchSchedulePlanPlaces(queryClient, rid, scheduleId, signal)
-        : [],
+      rid.length > 0 && scheduleId !== null ? fetchSchedulePlanPlaces(queryClient, rid, scheduleId, signal) : [],
     staleTime: Infinity,
     refetchOnMount: (query) => {
       const data = query.state.data;
@@ -300,11 +270,8 @@ export function applyRoomScheduleItemToPlanPlaces(
   const out = prev.map((p) => {
     if (p.itemId !== updated.itemId) return p;
     found = true;
-    const hasServerStart =
-      typeof updated.startTime === "string" &&
-      updated.startTime.trim().length > 0;
-    const hasServerEnd =
-      typeof updated.endTime === "string" && updated.endTime.length > 0;
+    const hasServerStart = typeof updated.startTime === "string" && updated.startTime.trim().length > 0;
+    const hasServerEnd = typeof updated.endTime === "string" && updated.endTime.length > 0;
     const next: PlanPlace = {
       ...p,
       googlePlaceId: updated.googlePlaceId,
@@ -326,9 +293,7 @@ export function applyRoomScheduleItemToPlanPlaces(
   return found ? out : null;
 }
 
-async function planPlaceFromScheduleItem(
-  item: RoomScheduleItem,
-): Promise<PlanPlace> {
+async function planPlaceFromScheduleItem(item: RoomScheduleItem): Promise<PlanPlace> {
   try {
     const preview = await fetchPlacePreview(item.googlePlaceId);
     return {
@@ -359,10 +324,7 @@ async function planPlaceFromScheduleItem(
   }
 }
 
-function resolveInsertTargetIndex(
-  insertIndex: number,
-  listLength: number,
-): number {
+function resolveInsertTargetIndex(insertIndex: number, listLength: number): number {
   if (listLength <= 0) return 0;
   if (insertIndex >= listLength) return listLength - 1;
   return Math.max(0, Math.min(insertIndex, listLength - 1));
@@ -385,11 +347,7 @@ export function mergeCreatedScheduleItemDelta(
   }
 
   const targetIndex = response.createdItem.orderIndex;
-  if (
-    !Number.isInteger(targetIndex) ||
-    targetIndex < 0 ||
-    targetIndex > next.length
-  ) {
+  if (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex > next.length) {
     return null;
   }
 
@@ -427,10 +385,7 @@ export async function applyCreatedScheduleItemToPlanPlaces(
   );
 }
 
-export async function fetchScheduleItemsAsPlanPlaces(
-  roomId: string,
-  scheduleId: number,
-): Promise<PlanPlace[]> {
+export async function fetchScheduleItemsAsPlanPlaces(roomId: string, scheduleId: number): Promise<PlanPlace[]> {
   const rid = roomId.trim();
   if (!rid.length) return [];
 
@@ -440,11 +395,7 @@ export async function fetchScheduleItemsAsPlanPlaces(
     const cached = qc.getQueryData<PlanPlace[]>(key);
     if (cached != null) return cached;
 
-    const items = await resolveScheduleItemsFromCacheOrHydrate(
-      qc,
-      rid,
-      scheduleId,
-    );
+    const items = await resolveScheduleItemsFromCacheOrHydrate(qc, rid, scheduleId);
     const places = await buildPlanPlacesFromScheduleItems(items);
     qc.setQueryData(key, places);
     return places;

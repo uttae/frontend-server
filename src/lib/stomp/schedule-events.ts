@@ -40,9 +40,7 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-export function parseRoomScheduleMessage(
-  body: string,
-): RoomScheduleChangedEvent | null {
+export function parseRoomScheduleMessage(body: string): RoomScheduleChangedEvent | null {
   try {
     const raw = JSON.parse(body) as Partial<RoomScheduleChangedEvent>;
     const roomId = String(raw.roomId ?? "").trim();
@@ -57,11 +55,7 @@ export function parseRoomScheduleMessage(
 
     if (type === "SCHEDULE_ITEM_MOVED") {
       const scheduleIds = raw.scheduleIds;
-      if (
-        !Array.isArray(scheduleIds) ||
-        scheduleIds.length < 2 ||
-        !scheduleIds.every(isFiniteNumber)
-      ) {
+      if (!Array.isArray(scheduleIds) || scheduleIds.length < 2 || !scheduleIds.every(isFiniteNumber)) {
         return null;
       }
       return raw as RoomScheduleChangedEvent;

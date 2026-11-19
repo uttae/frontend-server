@@ -23,7 +23,7 @@ it("generic and explicit consumers see packing URL from their first render", asy
     return current;
   });
   await hook.render(undefined);
-  expect(seen.every(room => room === id)).toBe(true);
+  expect(seen.every((room) => room === id)).toBe(true);
   expect(useSessionStore.getState().currentRoomId).toBe(id);
   expect(sessionStorage.getItem(SESSION_CURRENT_ROOM_ID_KEY)).toBe(id);
   await hook.unmount();

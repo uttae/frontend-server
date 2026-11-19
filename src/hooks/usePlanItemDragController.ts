@@ -67,14 +67,8 @@ export type PlanItemSectionDrop = {
 };
 
 export type PlanItemDragValue = {
-  getListProps: (
-    scheduleId: number,
-    places: readonly PlanPlace[],
-  ) => PlanItemDragListProps;
-  getSectionDrop: (
-    scheduleId: number,
-    places: readonly PlanPlace[] | undefined,
-  ) => PlanItemSectionDrop;
+  getListProps: (scheduleId: number, places: readonly PlanPlace[]) => PlanItemDragListProps;
+  getSectionDrop: (scheduleId: number, places: readonly PlanPlace[] | undefined) => PlanItemSectionDrop;
 };
 
 const PlanItemDragContext = createContext<PlanItemDragValue | null>(null);
@@ -207,9 +201,7 @@ export function usePlanItemDragController(roomId: string): PlanItemDragValue {
     (scheduleId: number, places: readonly PlanPlace[]): PlanItemDragListProps => {
       const previewActive =
         drag !== null &&
-        (drag.dropped === null ||
-          drag.dropped.scheduleId !== scheduleId ||
-          drag.dropped.places === places);
+        (drag.dropped === null || drag.dropped.scheduleId !== scheduleId || drag.dropped.places === places);
       const isSource = drag?.sourceScheduleId === scheduleId;
       const isOver = drag?.overScheduleId === scheduleId;
 
@@ -228,8 +220,7 @@ export function usePlanItemDragController(roomId: string): PlanItemDragValue {
           previewMode = { kind: "insert", previewIndex: drag.overIndex, insertHeight: drag.rowHeight };
         }
       }
-      const motionEnabled =
-        previewActive && (isSource || isOver) && !prefersReducedMotion;
+      const motionEnabled = previewActive && (isSource || isOver) && !prefersReducedMotion;
 
       const handleDragOver = (e: DragEvent<Element>) => {
         const current = dragRef.current;
@@ -259,9 +250,7 @@ export function usePlanItemDragController(roomId: string): PlanItemDragValue {
         if (!current || current.dropped) return;
         const fallbackIndex = scheduleId === current.sourceScheduleId ? current.sourceIndex : 0;
         const targetIndex =
-          current.overScheduleId === scheduleId && current.overIndex !== null
-            ? current.overIndex
-            : fallbackIndex;
+          current.overScheduleId === scheduleId && current.overIndex !== null ? current.overIndex : fallbackIndex;
         dropOn(scheduleId, targetIndex, places);
       };
 
@@ -334,8 +323,7 @@ export function usePlanItemDragController(roomId: string): PlanItemDragValue {
   const getSectionDrop = useCallback(
     (scheduleId: number, places: readonly PlanPlace[] | undefined): PlanItemSectionDrop => {
       const fromItineraryList = (e: DragEvent<Element>) =>
-        e.target instanceof Element &&
-        e.target.closest(`[${PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR}]`) !== null;
+        e.target instanceof Element && e.target.closest(`[${PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR}]`) !== null;
 
       const isTarget =
         drag !== null &&

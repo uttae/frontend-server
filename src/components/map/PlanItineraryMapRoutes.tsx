@@ -20,17 +20,9 @@ import {
 } from "@/lib/plan/scheduleItemRoutePersistedQuery";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
 import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
-import {
-  scheduleIdsToRouteColors,
-  sortedScheduleIdsForRouteColors,
-} from "@/lib/plan/planRouteDayColors";
-import {
-  filterVisiblePlanMapStops,
-  type PlanMapStopForOffset,
-} from "@/lib/plan/planItineraryMapMarkerOffset";
-import {
-  flattenPlanItinerarySegmentsFromPlaces,
-} from "@/lib/plan/planItineraryMapSegments";
+import { scheduleIdsToRouteColors, sortedScheduleIdsForRouteColors } from "@/lib/plan/planRouteDayColors";
+import { filterVisiblePlanMapStops, type PlanMapStopForOffset } from "@/lib/plan/planItineraryMapMarkerOffset";
+import { flattenPlanItinerarySegmentsFromPlaces } from "@/lib/plan/planItineraryMapSegments";
 import { planItinerarySegmentMapPathQueryKey } from "@/lib/query-keys";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
@@ -65,33 +57,24 @@ export function PlanItineraryMapRoutes({
   const webFocusScheduleId = webFocus?.scheduleId ?? null;
   const webFocusNorm = webFocus?.googlePlaceId ? normalizeGooglePlaceResourceId(webFocus.googlePlaceId) : null;
   const selectedGid =
-    !routeDay &&
-    selectedPlace?.googlePlaceId &&
-    selectedPlace.googlePlaceId.trim().length > 0
+    !routeDay && selectedPlace?.googlePlaceId && selectedPlace.googlePlaceId.trim().length > 0
       ? normalizeGooglePlaceResourceId(selectedPlace.googlePlaceId.trim())
       : null;
   const selectedNorm = selectedGid !== null && selectedGid !== webFocusNorm ? selectedGid : null;
 
-  const visibleByScheduleId = usePlanScheduleRouteVisibilityStore(
-    (s) => s.visibleByScheduleId,
-  );
-  const visibilityOrder = usePlanScheduleRouteVisibilityStore(
-    (s) => s.visibilityOrder,
-  );
+  const visibleByScheduleId = usePlanScheduleRouteVisibilityStore((s) => s.visibleByScheduleId);
+  const visibilityOrder = usePlanScheduleRouteVisibilityStore((s) => s.visibilityOrder);
   const routeDayScheduleId = routeDay?.scheduleId ?? null;
   const inRouteView = routeDay != null;
   const routesReady = routeDay?.routesReady ?? true;
   const singleDayScheduleId = inRouteView ? routeDayScheduleId : webFocusScheduleId;
   const singleDay = inRouteView || webFocusScheduleId !== null;
-  const visibleScheduleIds = useMemo(
-    () => {
-      if (singleDay) return singleDayScheduleId !== null ? [singleDayScheduleId] : [];
-      return Object.keys(visibleByScheduleId)
-        .map(Number)
-        .filter((id) => Number.isFinite(id) && visibleByScheduleId[id] === true);
-    },
-    [singleDay, singleDayScheduleId, visibleByScheduleId],
-  );
+  const visibleScheduleIds = useMemo(() => {
+    if (singleDay) return singleDayScheduleId !== null ? [singleDayScheduleId] : [];
+    return Object.keys(visibleByScheduleId)
+      .map(Number)
+      .filter((id) => Number.isFinite(id) && visibleByScheduleId[id] === true);
+  }, [singleDay, singleDayScheduleId, visibleByScheduleId]);
 
   const orderedScheduleIdsForQueries = useMemo(
     () => [...visibleScheduleIds].sort((a, b) => a - b),
@@ -111,23 +94,15 @@ export function PlanItineraryMapRoutes({
   const placesQueries = useQueries({
     queries: orderedScheduleIdsForQueries.map((scheduleId) => ({
       ...schedulePlanPlacesQueryOptions(queryClient, rid, scheduleId),
-      enabled:
-        rid.length > 0 &&
-        orderedScheduleIdsForQueries.length > 0 &&
-        schedulesHydrated,
+      enabled: rid.length > 0 && orderedScheduleIdsForQueries.length > 0 && schedulesHydrated,
       refetchOnWindowFocus: false,
     })),
   });
 
   const savingMoveScheduleIds = useScheduleItemMoveSavingDays(rid);
 
-  const buckets = orderedScheduleIdsForQueries.map(
-    (_, idx) => placesQueries[idx]?.data ?? [],
-  );
-  const segments = flattenPlanItinerarySegmentsFromPlaces(
-    routesReady ? orderedScheduleIdsForQueries : [],
-    buckets,
-  );
+  const buckets = orderedScheduleIdsForQueries.map((_, idx) => placesQueries[idx]?.data ?? []);
+  const segments = flattenPlanItinerarySegmentsFromPlaces(routesReady ? orderedScheduleIdsForQueries : [], buckets);
 
   const fingerprintByScheduleId = new Map<number, string>(
     orderedScheduleIdsForQueries.map((scheduleId, bucketIdx) => [
@@ -161,16 +136,10 @@ export function PlanItineraryMapRoutes({
           ),
         );
         return {
-          path: await decodeOrientedPlanItinerarySegmentPath(
-            seg,
-            route?.encodedPolyline,
-          ),
+          path: await decodeOrientedPlanItinerarySegmentPath(seg, route?.encodedPolyline),
         };
       },
-      enabled:
-        rid.length > 0 &&
-        segments.length > 0 &&
-        !savingMoveScheduleIds.includes(seg.scheduleId),
+      enabled: rid.length > 0 && segments.length > 0 && !savingMoveScheduleIds.includes(seg.scheduleId),
       staleTime: Infinity,
       refetchOnMount: false,
       refetchOnWindowFocus: false,
@@ -185,8 +154,7 @@ export function PlanItineraryMapRoutes({
     const pts = query.data?.path ?? [];
     const polylineKey = `${seg.scheduleId}-${seg.segmentSourceItemId}-${seg.destinationItemId}-${seg.travelModeCanon}`;
 
-    const routeColor =
-      routeColorByScheduleId.get(seg.scheduleId) ?? fallbackRouteStroke;
+    const routeColor = routeColorByScheduleId.get(seg.scheduleId) ?? fallbackRouteStroke;
 
     if (pts.length) {
       polylines.push(
@@ -228,10 +196,7 @@ export function PlanItineraryMapRoutes({
       const places = buckets[bucketIdx] ?? [];
       places.forEach((place, orderIndex) => {
         const loc = place.location;
-        const gid =
-          typeof place.googlePlaceId === "string"
-            ? place.googlePlaceId.trim()
-            : "";
+        const gid = typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
         if (!loc || typeof place.itemId !== "number" || !gid.length) return;
         const legacyId = normalizeGooglePlaceResourceId(gid);
         if (selectedNorm != null && legacyId === selectedNorm) return;
@@ -247,19 +212,12 @@ export function PlanItineraryMapRoutes({
   }, [orderedScheduleIdsForQueries, buckets, selectedNorm]);
 
   const visibleStops = useMemo(
-    () =>
-      filterVisiblePlanMapStops(
-        stopsForOffset,
-        singleDay ? visibleScheduleIds : visibilityOrder,
-      ),
+    () => filterVisiblePlanMapStops(stopsForOffset, singleDay ? visibleScheduleIds : visibilityOrder),
     [singleDay, stopsForOffset, visibilityOrder, visibleScheduleIds],
   );
 
   const placeByScheduleAndItemId = useMemo(() => {
-    const map = new Map<
-      string,
-      { place: (typeof buckets)[number][number]; scheduleId: number }
-    >();
+    const map = new Map<string, { place: (typeof buckets)[number][number]; scheduleId: number }>();
     orderedScheduleIdsForQueries.forEach((scheduleId, bucketIdx) => {
       const places = buckets[bucketIdx] ?? [];
       places.forEach((place) => {
@@ -272,25 +230,19 @@ export function PlanItineraryMapRoutes({
 
   const stopMarkers: Array<JSX.Element> = [];
   for (const stop of visibleStops) {
-    const entry = placeByScheduleAndItemId.get(
-      `${stop.scheduleId}-${stop.itemId}`,
-    );
+    const entry = placeByScheduleAndItemId.get(`${stop.scheduleId}-${stop.itemId}`);
     if (!entry) continue;
     const { place, scheduleId } = entry;
     const loc = place.location;
-    const gid =
-      typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
+    const gid = typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
     if (!loc || !gid.length) continue;
 
     const legacyId = normalizeGooglePlaceResourceId(gid);
-    const dayColor =
-      routeColorByScheduleId.get(scheduleId) ?? fallbackRouteStroke;
+    const dayColor = routeColorByScheduleId.get(scheduleId) ?? fallbackRouteStroke;
     const focused =
       routeDay != null
         ? routeDay.focusedItemId === place.itemId
-        : webFocus !== null &&
-          webFocus.scheduleId === scheduleId &&
-          webFocus.itemId === place.itemId;
+        : webFocus !== null && webFocus.scheduleId === scheduleId && webFocus.itemId === place.itemId;
     const itemId = place.itemId;
     stopMarkers.push(
       <AdvancedMarker

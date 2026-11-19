@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChevronDownIcon,
-  MenuDotHorizontalIcon,
-  PlusIcon,
-  SectionGrapIcon,
-  TrashIcon,
-} from "@/assets/icons";
+import { ChevronDownIcon, MenuDotHorizontalIcon, PlusIcon, SectionGrapIcon, TrashIcon } from "@/assets/icons";
 import { ExpenseIcon } from "@/components/icons/ExpenseIcon";
 import {
   DropdownMenu,
@@ -83,42 +77,26 @@ export function PlanDaySection({
   const panelId = useId();
 
   const trackedSid =
-    typeof itineraryScheduleId === "number" &&
-    Number.isFinite(itineraryScheduleId)
-      ? itineraryScheduleId
-      : undefined;
+    typeof itineraryScheduleId === "number" && Number.isFinite(itineraryScheduleId) ? itineraryScheduleId : undefined;
 
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
 
   const hasKeyInStore = usePlanItineraryExpandedStore(
-    (s) =>
-      trackedSid !== undefined &&
-      Object.prototype.hasOwnProperty.call(s.expandedByScheduleId, trackedSid),
+    (s) => trackedSid !== undefined && Object.prototype.hasOwnProperty.call(s.expandedByScheduleId, trackedSid),
   );
 
   const storedExpanded = usePlanItineraryExpandedStore((s) =>
-    trackedSid !== undefined
-      ? Boolean(s.expandedByScheduleId[trackedSid])
-      : false,
+    trackedSid !== undefined ? Boolean(s.expandedByScheduleId[trackedSid]) : false,
   );
 
-  const expanded =
-    trackedSid === undefined
-      ? localExpanded
-      : !hasKeyInStore
-        ? defaultExpanded
-        : storedExpanded;
+  const expanded = trackedSid === undefined ? localExpanded : !hasKeyInStore ? defaultExpanded : storedExpanded;
 
-  const setScheduleExpanded = usePlanItineraryExpandedStore(
-    (s) => s.setScheduleExpanded,
-  );
+  const setScheduleExpanded = usePlanItineraryExpandedStore((s) => s.setScheduleExpanded);
 
   const routeVisible = usePlanScheduleRouteVisibilityStore((s) =>
     trackedSid !== undefined ? (s.visibleByScheduleId[trackedSid] ?? true) : false,
   );
-  const setRouteVisible = usePlanScheduleRouteVisibilityStore(
-    (s) => s.setRouteVisible,
-  );
+  const setRouteVisible = usePlanScheduleRouteVisibilityStore((s) => s.setRouteVisible);
 
   const toggle = useCallback(() => {
     if (trackedSid !== undefined) {
@@ -156,9 +134,7 @@ export function PlanDaySection({
               tabIndex={dragDisabled ? -1 : 0}
               aria-label="일차 순서 변경"
               draggable={!dragDisabled}
-              onDragStart={
-                dragDisabled ? undefined : dragHandleProps.onDragStart
-              }
+              onDragStart={dragDisabled ? undefined : dragHandleProps.onDragStart}
               onDragEnd={dragDisabled ? undefined : dragHandleProps.onDragEnd}
               onClick={(e) => e.stopPropagation()}
               onKeyDown={(e) => {
@@ -186,17 +162,12 @@ export function PlanDaySection({
             <span className="flex min-w-0 items-center gap-2">
               <h2 className="shrink-0 text-title-l text-text">{title}</h2>
               {subtitle ? (
-                <span className="min-w-0 truncate text-label-l-emphasis text-text-subtle">
-                  {subtitle}
-                </span>
+                <span className="min-w-0 truncate text-label-l-emphasis text-text-subtle">{subtitle}</span>
               ) : null}
             </span>
             <ChevronDownIcon
               size={20}
-              className={cn(
-                "text-icon transition-transform motion-reduce:transition-none",
-                !expanded && "-rotate-90",
-              )}
+              className={cn("text-icon transition-transform motion-reduce:transition-none", !expanded && "-rotate-90")}
             />
           </button>
           {showScheduleMenu ? (
@@ -207,9 +178,7 @@ export function PlanDaySection({
                 disabled={isScheduleMenuDisabled}
                 className={cn(
                   "-m-1 shrink-0 rounded-md p-1 text-icon transition-colors",
-                  isScheduleMenuDisabled
-                    ? "cursor-not-allowed opacity-40"
-                    : "cursor-pointer hover:bg-fill-strong",
+                  isScheduleMenuDisabled ? "cursor-not-allowed opacity-40" : "cursor-pointer hover:bg-fill-strong",
                 )}
               >
                 <MenuDotHorizontalIcon size={20} />
@@ -257,12 +226,7 @@ export function PlanDaySection({
           </div>
         ) : null}
       </div>
-      <div
-        id={`${panelId}-panel`}
-        role="region"
-        aria-labelledby={`${panelId}-trigger`}
-        hidden={!expanded}
-      >
+      <div id={`${panelId}-panel`} role="region" aria-labelledby={`${panelId}-trigger`} hidden={!expanded}>
         {children}
       </div>
     </section>

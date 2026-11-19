@@ -33,8 +33,7 @@ export function MapWithDetailPanel({
     setMapSectionEl(el);
   }, []);
 
-  const { setToolbarRef, panelTopPx } =
-    useMapDiscoverToolbarOffset(mapSectionEl);
+  const { setToolbarRef, panelTopPx } = useMapDiscoverToolbarOffset(mapSectionEl);
   const planRouteMode = useWebPlanRouteMode();
 
   const visibleStyle = mobileInline ? undefined : { minWidth: MAIN_MAP_MIN_WIDTH_PX };
@@ -48,14 +47,15 @@ export function MapWithDetailPanel({
       style={hidden ? { display: "none" } : visibleStyle}
       className={cn(
         "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-clip",
-        mobileInline
-          ? "flex"
-          : "hidden border-l border-gray-border s1:flex",
+        mobileInline ? "flex" : "hidden border-l border-gray-border s1:flex",
       )}
     >
       <MapToolbarLayoutProvider setToolbarRef={setToolbarRef}>
-        <Map routeView={routeView} onOpenRouteView={onOpenRouteView}
-          search={!mobileInline && !routeView ? <MapPlaceSearch mobile={false} hidden={planRouteMode} /> : undefined} />
+        <Map
+          routeView={routeView}
+          onOpenRouteView={onOpenRouteView}
+          search={!mobileInline && !routeView ? <MapPlaceSearch mobile={false} hidden={planRouteMode} /> : undefined}
+        />
       </MapToolbarLayoutProvider>
 
       {children}

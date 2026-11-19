@@ -11,12 +11,7 @@ interface ChatPanelHeaderProps {
 const iconButtonClass =
   "flex size-10 shrink-0 cursor-pointer items-center justify-center self-center rounded-md text-icon-subtle transition-colors hover:bg-fill hover:text-icon focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-export function ChatPanelHeader({
-  isMinimized,
-  onMaximize,
-  onMinimize,
-  onClose,
-}: ChatPanelHeaderProps) {
+export function ChatPanelHeader({ isMinimized, onMaximize, onMinimize, onClose }: ChatPanelHeaderProps) {
   return (
     <div
       className={cn(
@@ -39,12 +34,7 @@ export function ChatPanelHeader({
         {isMinimized ? <ArrowMaximizeIcon /> : <ArrowMinimizeIcon />}
       </button>
       {isMinimized ? (
-        <button
-          type="button"
-          onClick={onClose}
-          className={iconButtonClass}
-          aria-label="채팅 닫기"
-        >
+        <button type="button" onClick={onClose} className={iconButtonClass} aria-label="채팅 닫기">
           <CloseIcon />
         </button>
       ) : null}

@@ -38,13 +38,9 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
     refetch,
   } = useRoomBookmarks(roomId, categoryIdOk);
 
-  const bookmarkRows = useMemo(
-    () => normalizeBookmarkRows(bookmarkRowsRaw),
-    [bookmarkRowsRaw],
-  );
+  const bookmarkRows = useMemo(() => normalizeBookmarkRows(bookmarkRowsRaw), [bookmarkRowsRaw]);
 
-  const bookmarkListReady =
-    !bookmarksLoading && bookmarkRowsRaw !== undefined && !!roomId;
+  const bookmarkListReady = !bookmarksLoading && bookmarkRowsRaw !== undefined && !!roomId;
 
   const placeQueryDefs = useMemo(() => {
     if (!bookmarkListReady) return [];
@@ -134,9 +130,7 @@ export function BookmarkFolderDetailView({ folder }: { folder: BookmarkFolder })
         <BookmarkFolderDetailHeader folder={folder} />
         <div className={`${SCROLLBAR} space-y-3 py-10`}>
           <p className="text-center text-body-m-regular mobile:text-body-s-regular text-primary">
-            {bookmarksErr instanceof Error
-              ? bookmarksErr.message
-              : "목록을 불러오지 못했습니다."}
+            {bookmarksErr instanceof Error ? bookmarksErr.message : "목록을 불러오지 못했습니다."}
           </p>
           <div className="text-center">
             <button

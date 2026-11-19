@@ -1,23 +1,14 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { afterEach, describe, expect, it } from "vitest";
 
-import {
-  bookmarkCategoriesQueryKey,
-  roomAllBookmarksQueryKey,
-} from "@/lib/query-keys";
-import type {
-  RoomBookmarkChangedEvent,
-  RoomBookmarkChangedType,
-} from "@/types/roomBookmarkStomp";
+import { bookmarkCategoriesQueryKey, roomAllBookmarksQueryKey } from "@/lib/query-keys";
+import type { RoomBookmarkChangedEvent, RoomBookmarkChangedType } from "@/types/roomBookmarkStomp";
 
 import { invalidateRoomBookmarkQueries } from "./bookmarks-invalidation";
 
 const ROOM = "room";
 
-const event = (
-  type: RoomBookmarkChangedType,
-  roomId = ROOM,
-): RoomBookmarkChangedEvent => ({
+const event = (type: RoomBookmarkChangedType, roomId = ROOM): RoomBookmarkChangedEvent => ({
   type,
   roomId,
   actorUserId: 2,
@@ -60,23 +51,21 @@ afterEach(() => {
 });
 
 describe("invalidateRoomBookmarkQueries", () => {
-  it.each<RoomBookmarkChangedType>([
-    "BOOKMARK_CREATED",
-    "BOOKMARK_UPDATED",
-    "BOOKMARK_DELETED",
-    "CATEGORY_DELETED",
-  ])("%s는 폴더 목록과 전체 북마크를 함께(병렬로) 다시 받는다", async (type) => {
-    const client = newClient();
-    const categories = watch(client, bookmarkCategoriesQueryKey(ROOM));
-    const bookmarks = watch(client, roomAllBookmarksQueryKey(ROOM));
+  it.each<RoomBookmarkChangedType>(["BOOKMARK_CREATED", "BOOKMARK_UPDATED", "BOOKMARK_DELETED", "CATEGORY_DELETED"])(
+    "%s는 폴더 목록과 전체 북마크를 함께(병렬로) 다시 받는다",
+    async (type) => {
+      const client = newClient();
+      const categories = watch(client, bookmarkCategoriesQueryKey(ROOM));
+      const bookmarks = watch(client, roomAllBookmarksQueryKey(ROOM));
 
-    const done = invalidateRoomBookmarkQueries(client, event(type));
+      const done = invalidateRoomBookmarkQueries(client, event(type));
 
-    await expect.poll(() => [categories.fetches(), bookmarks.fetches()]).toEqual([1, 1]);
-    categories.resolveAll();
-    bookmarks.resolveAll();
-    await done;
-  });
+      await expect.poll(() => [categories.fetches(), bookmarks.fetches()]).toEqual([1, 1]);
+      categories.resolveAll();
+      bookmarks.resolveAll();
+      await done;
+    },
+  );
 
   it.each<RoomBookmarkChangedType>(["CATEGORY_CREATED", "CATEGORY_UPDATED"])(
     "%s는 폴더 목록만 다시 받는다",

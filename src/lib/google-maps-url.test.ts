@@ -32,9 +32,7 @@ describe("buildGoogleMapsDirectionsUrl", () => {
     expect(url.searchParams.get("origin")).toBe("서울역");
     expect(url.searchParams.get("origin_place_id")).toBe("ChIJ-origin");
     expect(url.searchParams.get("destination")).toBe("성수 카페 & 베이커리");
-    expect(url.searchParams.get("destination_place_id")).toBe(
-      "ChIJ-destination",
-    );
+    expect(url.searchParams.get("destination_place_id")).toBe("ChIJ-destination");
     expect(url.searchParams.get("travelmode")).toBe("transit");
   });
 

@@ -3,11 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
 import type { PlanPlace } from "@/lib/plan/types";
-import {
-  roomSchedulesQueryKey,
-  scheduleItemsQueryKey,
-  sessionUserQueryKey,
-} from "@/lib/query-keys";
+import { roomSchedulesQueryKey, scheduleItemsQueryKey, sessionUserQueryKey } from "@/lib/query-keys";
 import type { RoomScheduleChangedEvent } from "@/lib/stomp/schedule-events";
 
 const fixtures = vi.hoisted(() => ({
@@ -30,14 +26,9 @@ vi.mock("@/lib/places/place-queries", () => ({
   }),
 }));
 vi.mock("@/lib/plan/schedule-bulk-hydration", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/plan/schedule-bulk-hydration")>(),
-  buildPlanPlacesFromItemsWithPreviewEnrichment: async (
-    _queryClient: unknown,
-    items: RoomScheduleItem[],
-  ) =>
-    [...items]
-      .sort((a, b) => a.orderIndex - b.orderIndex)
-      .map((item) => fixtures.place(item.itemId)),
+  ...(await importOriginal<typeof import("@/lib/plan/schedule-bulk-hydration")>()),
+  buildPlanPlacesFromItemsWithPreviewEnrichment: async (_queryClient: unknown, items: RoomScheduleItem[]) =>
+    [...items].sort((a, b) => a.orderIndex - b.orderIndex).map((item) => fixtures.place(item.itemId)),
   resolveScheduleItemsFromCacheOrHydrate: vi.fn(),
 }));
 vi.mock("@/lib/rooms", () => ({
@@ -48,10 +39,7 @@ vi.mock("@/lib/query-client", () => ({
 }));
 vi.mock("@/lib/tab-id", () => ({ getTabId: () => "tab-a" }));
 
-import {
-  removeScheduleItemFromPlanPlacesCache,
-  schedulePlanPlacesQueryOptions,
-} from "@/lib/plan/scheduleItemPlaces";
+import { removeScheduleItemFromPlanPlacesCache, schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 
 const ROOM_ID = "room-1";
@@ -80,10 +68,7 @@ function deferred<T>() {
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-function remoteEvent(
-  type: RoomScheduleChangedEvent["type"],
-  itemId: number,
-): RoomScheduleChangedEvent {
+function remoteEvent(type: RoomScheduleChangedEvent["type"], itemId: number): RoomScheduleChangedEvent {
   return {
     roomId: ROOM_ID,
     actorUserId: 2,
@@ -100,13 +85,11 @@ describe("schedule day list refetch order", () => {
   let unwatch: () => void;
 
   const watchDayList = () => {
-    unwatch = new QueryObserver(
-      client,
-      schedulePlanPlacesQueryOptions(client, ROOM_ID, SCHEDULE_ID),
-    ).subscribe(() => {});
+    unwatch = new QueryObserver(client, schedulePlanPlacesQueryOptions(client, ROOM_ID, SCHEDULE_ID)).subscribe(
+      () => {},
+    );
   };
-  const dayItemIds = () =>
-    client.getQueryData<PlanPlace[]>(DAY_KEY)?.map((place) => place.itemId);
+  const dayItemIds = () => client.getQueryData<PlanPlace[]>(DAY_KEY)?.map((place) => place.itemId);
 
   beforeEach(() => {
     client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -128,17 +111,9 @@ describe("schedule day list refetch order", () => {
       .mockReturnValueOnce(afterFirstReorder.promise)
       .mockReturnValueOnce(afterSecondReorder.promise);
 
-    const first = dispatchRoomScheduleEvent(
-      client,
-      remoteEvent("SCHEDULE_ITEMS_REORDERED", 101),
-    );
-    const second = dispatchRoomScheduleEvent(
-      client,
-      remoteEvent("SCHEDULE_ITEMS_REORDERED", 100),
-    );
-    await vi.waitFor(() =>
-      expect(fixtures.getScheduleItems).toHaveBeenCalledTimes(2),
-    );
+    const first = dispatchRoomScheduleEvent(client, remoteEvent("SCHEDULE_ITEMS_REORDERED", 101));
+    const second = dispatchRoomScheduleEvent(client, remoteEvent("SCHEDULE_ITEMS_REORDERED", 100));
+    await vi.waitFor(() => expect(fixtures.getScheduleItems).toHaveBeenCalledTimes(2));
     afterSecondReorder.resolve(items(101, 102, 100));
     afterFirstReorder.resolve(items(101, 100, 102));
     await Promise.all([first, second]);
@@ -154,21 +129,11 @@ describe("schedule day list refetch order", () => {
     watchDayList();
     const afterCreate = deferred<RoomScheduleItem[]>();
     const afterDelete = deferred<RoomScheduleItem[]>();
-    fixtures.getScheduleItems
-      .mockReturnValueOnce(afterCreate.promise)
-      .mockReturnValueOnce(afterDelete.promise);
+    fixtures.getScheduleItems.mockReturnValueOnce(afterCreate.promise).mockReturnValueOnce(afterDelete.promise);
 
-    const created = dispatchRoomScheduleEvent(
-      client,
-      remoteEvent("SCHEDULE_ITEM_CREATED", 103),
-    );
-    const deleted = dispatchRoomScheduleEvent(
-      client,
-      remoteEvent("SCHEDULE_ITEM_DELETED", 103),
-    );
-    await vi.waitFor(() =>
-      expect(fixtures.getScheduleItems).toHaveBeenCalledTimes(2),
-    );
+    const created = dispatchRoomScheduleEvent(client, remoteEvent("SCHEDULE_ITEM_CREATED", 103));
+    const deleted = dispatchRoomScheduleEvent(client, remoteEvent("SCHEDULE_ITEM_DELETED", 103));
+    await vi.waitFor(() => expect(fixtures.getScheduleItems).toHaveBeenCalledTimes(2));
     afterDelete.resolve(items(100, 101, 102));
     afterCreate.resolve(items(100, 101, 102, 103));
     await Promise.all([created, deleted]);
@@ -179,18 +144,11 @@ describe("schedule day list refetch order", () => {
 
   it("restarts a first load that was sent before the event", async () => {
     const beforeReorder = deferred<RoomScheduleItem[]>();
-    fixtures.getScheduleItems
-      .mockReturnValueOnce(beforeReorder.promise)
-      .mockResolvedValueOnce(items(101, 100));
+    fixtures.getScheduleItems.mockReturnValueOnce(beforeReorder.promise).mockResolvedValueOnce(items(101, 100));
     watchDayList();
-    await vi.waitFor(() =>
-      expect(fixtures.getScheduleItems).toHaveBeenCalledOnce(),
-    );
+    await vi.waitFor(() => expect(fixtures.getScheduleItems).toHaveBeenCalledOnce());
 
-    await dispatchRoomScheduleEvent(
-      client,
-      remoteEvent("SCHEDULE_ITEMS_REORDERED", 101),
-    );
+    await dispatchRoomScheduleEvent(client, remoteEvent("SCHEDULE_ITEMS_REORDERED", 101));
     beforeReorder.resolve(items(100, 101));
     await settle();
 
@@ -202,9 +160,7 @@ describe("schedule day list refetch order", () => {
     client.setQueryData(DAY_KEY, [100, 101].map(fixtures.place));
     watchDayList();
     const beforeDelete = deferred<RoomScheduleItem[]>();
-    fixtures.getScheduleItems
-      .mockReturnValueOnce(beforeDelete.promise)
-      .mockResolvedValueOnce(items(100));
+    fixtures.getScheduleItems.mockReturnValueOnce(beforeDelete.promise).mockResolvedValueOnce(items(100));
 
     void client.invalidateQueries({ queryKey: DAY_KEY, exact: true });
     removeScheduleItemFromPlanPlacesCache(client, ROOM_ID, SCHEDULE_ID, 101);

@@ -3,9 +3,7 @@ import type { ExpenseCurrency } from "@/lib/api/rooms/expenses";
 const PREFIX = "hau:expense-add-currency:v1:";
 
 function userPrefix(userId: number | undefined): string | null {
-  return typeof userId === "number" && Number.isSafeInteger(userId) && userId > 0
-    ? `${PREFIX}${userId}:`
-    : null;
+  return typeof userId === "number" && Number.isSafeInteger(userId) && userId > 0 ? `${PREFIX}${userId}:` : null;
 }
 
 function preferenceKey(userId: number | undefined, roomId: string): string | null {
@@ -19,8 +17,7 @@ export function preferredExpenseCurrency(
   roomId: string,
   currencies: readonly ExpenseCurrency[],
 ): string {
-  const fallback = currencies.find((item) => item.currency === "KRW")?.currency
-    ?? currencies[0]?.currency ?? "";
+  const fallback = currencies.find((item) => item.currency === "KRW")?.currency ?? currencies[0]?.currency ?? "";
   const key = preferenceKey(userId, roomId);
   if (!key || typeof window === "undefined") return fallback;
   try {
@@ -31,11 +28,7 @@ export function preferredExpenseCurrency(
   }
 }
 
-export function rememberExpenseCurrency(
-  userId: number | undefined,
-  roomId: string,
-  currency: string,
-): void {
+export function rememberExpenseCurrency(userId: number | undefined, roomId: string, currency: string): void {
   const key = preferenceKey(userId, roomId);
   if (!key || !currency || typeof window === "undefined") return;
   try {
@@ -54,7 +47,9 @@ export function clearExpenseCurrencyPreferencesForUser(userId: number | undefine
       if (key?.startsWith(prefix)) keys.push(key);
     }
     for (const key of keys) {
-      try { storage.removeItem(key); } catch {}
+      try {
+        storage.removeItem(key);
+      } catch {}
     }
   } catch {}
 }

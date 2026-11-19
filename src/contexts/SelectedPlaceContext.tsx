@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-  type MutableRefObject,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import type { SearchRankBucket } from "@/lib/analytics/context";
 import type { AnalyticsSource, ItinerarySource } from "@/lib/analytics/track";
 import type { SearchResultCardProps } from "@/types/place";
@@ -27,10 +19,7 @@ export type SetSelectedPlaceOptions = {
 
 type SelectedPlaceContextType = {
   selectedPlace: SearchResultCardProps | null;
-  setSelectedPlace: (
-    place: SearchResultCardProps | null,
-    options?: SetSelectedPlaceOptions,
-  ) => void;
+  setSelectedPlace: (place: SearchResultCardProps | null, options?: SetSelectedPlaceOptions) => void;
   placeSelectionCameraRef: MutableRefObject<PlaceSelectionCamera>;
   itinerarySource: ItinerarySource | null;
   analyticsRankBucket: SearchRankBucket | null;
@@ -51,8 +40,7 @@ const SelectedPlaceContext = createContext<SelectedPlaceContextType>({
 });
 
 export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
-  const [selectedPlace, setSelectedPlaceState] =
-    useState<SearchResultCardProps | null>(null);
+  const [selectedPlace, setSelectedPlaceState] = useState<SearchResultCardProps | null>(null);
   const placeSelectionCameraRef = useRef<PlaceSelectionCamera>("full");
   const [entry, setEntry] = useState<{
     itinerarySource: ItinerarySource | null;
@@ -68,43 +56,35 @@ export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
     onBack: null,
   });
 
-  const setSelectedPlace = useCallback(
-    (
-      place: SearchResultCardProps | null,
-      options?: SetSelectedPlaceOptions,
-    ) => {
-      if (place === null) {
-        placeSelectionCameraRef.current = "full";
-        setEntry({
-          itinerarySource: null,
-          analyticsRankBucket: null,
-          analyticsRankPending: false,
-          analyticsSource: null,
-          onBack: null,
-        });
-        setSelectedPlaceState(null);
-        return;
-      }
+  const setSelectedPlace = useCallback((place: SearchResultCardProps | null, options?: SetSelectedPlaceOptions) => {
+    if (place === null) {
+      placeSelectionCameraRef.current = "full";
       setEntry({
-        itinerarySource:
-          options?.itinerarySource ?? options?.analyticsSource ?? null,
-        analyticsRankBucket: options?.analyticsRankBucket ?? null,
-        analyticsRankPending: options?.analyticsRankPending ?? false,
-        analyticsSource:
-          options?.analyticsSource ?? options?.itinerarySource ?? null,
-        onBack: options?.onBack ?? null,
+        itinerarySource: null,
+        analyticsRankBucket: null,
+        analyticsRankPending: false,
+        analyticsSource: null,
+        onBack: null,
       });
-      if (options?.skipMapRecenter === true) {
-        placeSelectionCameraRef.current = "none";
-      } else if (options?.preserveMapZoom === true) {
-        placeSelectionCameraRef.current = "pan-only";
-      } else {
-        placeSelectionCameraRef.current = "full";
-      }
-      setSelectedPlaceState(place);
-    },
-    [],
-  );
+      setSelectedPlaceState(null);
+      return;
+    }
+    setEntry({
+      itinerarySource: options?.itinerarySource ?? options?.analyticsSource ?? null,
+      analyticsRankBucket: options?.analyticsRankBucket ?? null,
+      analyticsRankPending: options?.analyticsRankPending ?? false,
+      analyticsSource: options?.analyticsSource ?? options?.itinerarySource ?? null,
+      onBack: options?.onBack ?? null,
+    });
+    if (options?.skipMapRecenter === true) {
+      placeSelectionCameraRef.current = "none";
+    } else if (options?.preserveMapZoom === true) {
+      placeSelectionCameraRef.current = "pan-only";
+    } else {
+      placeSelectionCameraRef.current = "full";
+    }
+    setSelectedPlaceState(place);
+  }, []);
 
   return (
     <SelectedPlaceContext.Provider

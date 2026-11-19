@@ -2,8 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api/rooms/schedule-items", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>();
+  const actual = await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>();
   return {
     ...actual,
     getScheduleItemRoute: vi.fn(),
@@ -35,14 +34,10 @@ beforeAll(async () => {
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
 
-  ({ resolveScheduleSegmentRoute } = await import(
-    "@/lib/plan/scheduleSegmentRoute"
-  ));
+  ({ resolveScheduleSegmentRoute } = await import("@/lib/plan/scheduleSegmentRoute"));
   ({ scheduleItemRouteQueryKey } = await import("@/lib/query-keys"));
   ({ registerQueryClient } = await import("@/lib/query-client"));
-  ({ getScheduleItemRoute: getScheduleItemRouteMock } = vi.mocked(
-    await import("@/lib/api/rooms/schedule-items"),
-  ));
+  ({ getScheduleItemRoute: getScheduleItemRouteMock } = vi.mocked(await import("@/lib/api/rooms/schedule-items")));
 });
 
 beforeEach(() => {

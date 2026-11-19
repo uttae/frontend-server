@@ -203,8 +203,8 @@ html:has([data-mobile-main-tabs]) {
   --color-status-cautionary: var(--orange-600);
   --color-status-negative: var(--red-600);
 
-  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", sans-serif;
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", sans-serif;
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;

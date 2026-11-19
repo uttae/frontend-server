@@ -10,10 +10,7 @@ import { planCopy } from "@/lib/plan/planCopy";
 import { dayNumberForInsertAfterDayIndex } from "@/lib/plan/scheduleMerge";
 import { useCreateRoomSchedule } from "@/hooks/useRooms";
 import { Chip } from "@/components/ui/chip";
-import {
-  useMobilePlanDayFilterStore,
-  type MobilePlanDayFilter,
-} from "@/stores/mobile-plan-day-filter-store";
+import { useMobilePlanDayFilterStore, type MobilePlanDayFilter } from "@/stores/mobile-plan-day-filter-store";
 
 import { MobilePlanDaySection } from "./MobilePlanDaySection";
 import { MobilePlanDragProvider, useMobilePlanDragController } from "./mobilePlanDrag";
@@ -39,10 +36,8 @@ export function MobilePlanView({
   const filter = useMobilePlanDayFilterStore((s) => s.filterByRoomId[roomId] ?? "all");
   const setRoomFilter = useMobilePlanDayFilterStore((s) => s.setFilter);
   const setFilter = (next: MobilePlanDayFilter) => setRoomFilter(roomId, next);
-  const activeFilter =
-    filter !== "all" && !schedules.some((s) => s.scheduleId === filter) ? "all" : filter;
-  const visibleSchedules =
-    activeFilter === "all" ? schedules : schedules.filter((s) => s.scheduleId === activeFilter);
+  const activeFilter = filter !== "all" && !schedules.some((s) => s.scheduleId === filter) ? "all" : filter;
+  const visibleSchedules = activeFilter === "all" ? schedules : schedules.filter((s) => s.scheduleId === activeFilter);
 
   const [editing, setEditing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -86,9 +81,7 @@ export function MobilePlanView({
     );
   } else if (schedules.length === 0) {
     scheduleContent = (
-      <p className="px-4 py-6 text-center text-body-s-regular text-text-subtle">
-        {planCopy.scheduleEmpty}
-      </p>
+      <p className="px-4 py-6 text-center text-body-s-regular text-text-subtle">{planCopy.scheduleEmpty}</p>
     );
   } else {
     scheduleContent = visibleSchedules.map((schedule) => {

@@ -1,11 +1,7 @@
 import { isCancelledError, type QueryClient } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api/client";
-import type {
-  RoomDetail,
-  RoomListItem,
-  RoomListResponse,
-} from "@/lib/api/rooms";
+import type { RoomDetail, RoomListItem, RoomListResponse } from "@/lib/api/rooms";
 import { getRoomDetail, getRoomSchedules } from "@/lib/api/rooms";
 import type { RoomScheduleWithItems } from "@/lib/api/rooms/schedules";
 import { apiUrl } from "@/lib/api/http";
@@ -16,18 +12,9 @@ import {
 } from "@/lib/plan/schedule-bulk-hydration";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
-import {
-  ROOMS_QUERY_KEY,
-  roomDetailQueryKey,
-  roomSchedulesQueryKey,
-  scheduleItemsQueryKey,
-} from "@/lib/query-keys";
+import { ROOMS_QUERY_KEY, roomDetailQueryKey, roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 
-export function removeCachesForDeletedSchedule(
-  queryClient: QueryClient,
-  roomId: string,
-  scheduleId: number,
-): void {
+export function removeCachesForDeletedSchedule(queryClient: QueryClient, roomId: string, scheduleId: number): void {
   const rid = roomId.trim();
   if (!rid.length) return;
 
@@ -64,11 +51,7 @@ export function resolveViewerIsHost(sources: {
   detailRole?: string | null;
   memberRole?: string | null;
 }): boolean {
-  return (
-    isHostRole(sources.listRole) ||
-    isHostRole(sources.detailRole) ||
-    isHostRole(sources.memberRole)
-  );
+  return isHostRole(sources.listRole) || isHostRole(sources.detailRole) || isHostRole(sources.memberRole);
 }
 
 export function selectHostRoom(
@@ -101,22 +84,13 @@ export async function hydrateRoomSchedulesFromServer(
   const startedAt = Date.now();
   const schedules = await getRoomSchedules(rid, { includeItems: true, signal });
   const sorted = sortRoomSchedules(schedules);
-  const placesBySchedule = await buildSchedulePlacesFromSchedulesWithItems(
-    queryClient,
-    sorted,
-  );
+  const placesBySchedule = await buildSchedulePlacesFromSchedulesWithItems(queryClient, sorted);
   if (signal?.aborted) return sorted;
 
-  const prevSchedules =
-    queryClient.getQueryData<RoomScheduleWithItems[]>(
-      roomSchedulesQueryKey(rid),
-    ) ?? [];
+  const prevSchedules = queryClient.getQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid)) ?? [];
   const prevIds = prevSchedules.map((s) => s.scheduleId);
 
-  queryClient.setQueryData<RoomScheduleWithItems[]>(
-    roomSchedulesQueryKey(rid),
-    sorted,
-  );
+  queryClient.setQueryData<RoomScheduleWithItems[]>(roomSchedulesQueryKey(rid), sorted);
 
   const nextIds = new Set(sorted.map((s) => s.scheduleId));
   for (const prevId of prevIds) {
@@ -146,16 +120,12 @@ export async function awaitRoomSchedulesHydrated(
 
   return queryClient.fetchQuery({
     queryKey: roomSchedulesQueryKey(rid),
-    queryFn: ({ signal }) =>
-      hydrateRoomSchedulesFromServer(queryClient, rid, signal),
+    queryFn: ({ signal }) => hydrateRoomSchedulesFromServer(queryClient, rid, signal),
     staleTime: Infinity,
   });
 }
 
-export async function waitForRoomSchedulesHydration(
-  queryClient: QueryClient,
-  roomId: string,
-): Promise<boolean> {
+export async function waitForRoomSchedulesHydration(queryClient: QueryClient, roomId: string): Promise<boolean> {
   const rid = roomId.trim();
   const queryKey = roomSchedulesQueryKey(rid);
   if (!rid.length || queryClient.isFetching({ queryKey, exact: true }) === 0) {
@@ -177,10 +147,7 @@ export async function waitForRoomSchedulesHydration(
   return true;
 }
 
-export async function refreshRoomSchedules(
-  queryClient: QueryClient,
-  roomId: string,
-): Promise<RoomScheduleWithItems[]> {
+export async function refreshRoomSchedules(queryClient: QueryClient, roomId: string): Promise<RoomScheduleWithItems[]> {
   const rid = roomId.trim();
   if (!rid.length) return [];
 
@@ -188,16 +155,12 @@ export async function refreshRoomSchedules(
   await queryClient.cancelQueries({ queryKey, exact: true });
   return queryClient.fetchQuery({
     queryKey,
-    queryFn: ({ signal }) =>
-      hydrateRoomSchedulesFromServer(queryClient, rid, signal),
+    queryFn: ({ signal }) => hydrateRoomSchedulesFromServer(queryClient, rid, signal),
     staleTime: 0,
   });
 }
 
-export async function syncRoomDetailFromServer(
-  queryClient: QueryClient,
-  roomId: string,
-): Promise<void> {
+export async function syncRoomDetailFromServer(queryClient: QueryClient, roomId: string): Promise<void> {
   const rid = roomId.trim();
   if (!rid.length) return;
   let detail: RoomDetail;
@@ -231,17 +194,13 @@ export type RoomAccessVerdict = "ok" | "forbidden" | "error";
 const VALIDATE_ROOM_ACCESS_FORBIDDEN_RETRIES = 3;
 const VALIDATE_ROOM_ACCESS_RETRY_BASE_MS = 400;
 
-export async function validateRoomAccess(
-  roomId: string,
-): Promise<RoomAccessVerdict> {
+export async function validateRoomAccess(roomId: string): Promise<RoomAccessVerdict> {
   const rid = roomId.trim();
   if (!rid.length) return "error";
 
   const delayAfterAttempt = async (attempt: number) => {
     if (attempt < VALIDATE_ROOM_ACCESS_FORBIDDEN_RETRIES - 1) {
-      await new Promise((r) =>
-        setTimeout(r, VALIDATE_ROOM_ACCESS_RETRY_BASE_MS * (attempt + 1)),
-      );
+      await new Promise((r) => setTimeout(r, VALIDATE_ROOM_ACCESS_RETRY_BASE_MS * (attempt + 1)));
     }
   };
 

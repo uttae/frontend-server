@@ -35,54 +35,36 @@ export function subscribeRoomStompTopics(
 ): RoomTopicsUnsubscriber {
   const subscribedRoomId = roomId.trim();
 
-  const membersSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/members`,
-    (message) => {
-      const event = parseRoomMemberMessage(message.body);
+  const membersSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/members`, (message) => {
+    const event = parseRoomMemberMessage(message.body);
+    if (!event) return;
+    dispatchRoomMemberEvent(queryClientRef.current, subscribedRoomId, event);
+    if (event.type === "MEMBER_LEFT" && event.detail?.userId === readSessionUserId(queryClientRef.current)) {
+      options.onSelfLeftRoom?.(subscribedRoomId);
+    }
+  });
+
+  const presenceSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/presence`, (message) => {
+    const event = parseRoomPresenceMessage(message.body);
+    if (!event) return;
+    dispatchRoomPresence(queryClientRef.current, subscribedRoomId, event);
+  });
+
+  const bookmarksSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/bookmarks`, (message) => {
+    void (async () => {
+      try {
+        await applyRoomBookmarkStompMessage(queryClientRef.current, message.body);
+      } catch {}
+    })();
+  });
+
+  const schedulesSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/schedules`, (message) => {
+    void (async () => {
+      const event = parseRoomScheduleMessage(message.body);
       if (!event) return;
-      dispatchRoomMemberEvent(queryClientRef.current, subscribedRoomId, event);
-      if (
-        event.type === "MEMBER_LEFT" &&
-        event.detail?.userId === readSessionUserId(queryClientRef.current)
-      ) {
-        options.onSelfLeftRoom?.(subscribedRoomId);
-      }
-    },
-  );
-
-  const presenceSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/presence`,
-    (message) => {
-      const event = parseRoomPresenceMessage(message.body);
-      if (!event) return;
-      dispatchRoomPresence(queryClientRef.current, subscribedRoomId, event);
-    },
-  );
-
-  const bookmarksSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/bookmarks`,
-    (message) => {
-      void (async () => {
-        try {
-          await applyRoomBookmarkStompMessage(
-            queryClientRef.current,
-            message.body,
-          );
-        } catch {}
-      })();
-    },
-  );
-
-  const schedulesSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/schedules`,
-    (message) => {
-      void (async () => {
-        const event = parseRoomScheduleMessage(message.body);
-        if (!event) return;
-        await dispatchRoomScheduleEvent(queryClientRef.current, event);
-      })();
-    },
-  );
+      await dispatchRoomScheduleEvent(queryClientRef.current, event);
+    })();
+  });
 
   const userErrorsSub = client.subscribe(`/user/queue/errors`, (message) => {
     const payload = parseUserErrorMessage(message.body);
@@ -90,24 +72,18 @@ export function subscribeRoomStompTopics(
     dispatchUserError(payload);
   });
 
-  const messagesSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/messages`,
-    (message) => {
-      try {
-        const parsed: unknown = JSON.parse(message.body);
-        const msg = normalizeServerChatMessage(parsed);
-        if (!msg) return;
-        invalidateRoomUnreadCount(queryClientRef.current, subscribedRoomId);
-        options.onRoomChatMessage?.(msg);
-      } catch {}
-    },
-  );
+  const messagesSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/messages`, (message) => {
+    try {
+      const parsed: unknown = JSON.parse(message.body);
+      const msg = normalizeServerChatMessage(parsed);
+      if (!msg) return;
+      invalidateRoomUnreadCount(queryClientRef.current, subscribedRoomId);
+      options.onRoomChatMessage?.(msg);
+    } catch {}
+  });
 
   optimisticPatchSelfOnline(queryClientRef.current, subscribedRoomId);
-  scheduleRoomMembersResyncAfterSubscribe(
-    queryClientRef.current,
-    subscribedRoomId,
-  );
+  scheduleRoomMembersResyncAfterSubscribe(queryClientRef.current, subscribedRoomId);
   resyncRoomDataAfterSubscribe(queryClientRef.current, subscribedRoomId);
 
   return () => {

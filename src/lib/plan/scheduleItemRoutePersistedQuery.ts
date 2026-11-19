@@ -1,9 +1,4 @@
-import type {
-  OmitKeyof,
-  QueryClient,
-  QueryKey,
-  UseQueryOptions,
-} from "@tanstack/react-query";
+import type { OmitKeyof, QueryClient, QueryKey, UseQueryOptions } from "@tanstack/react-query";
 
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
 import { resolveScheduleSegmentRoute } from "@/lib/plan/scheduleSegmentRoute";
@@ -26,28 +21,19 @@ export function persistedScheduleItemRouteQueryOptions(
   travelMode: ScheduleTravelModeValue | null,
   fingerprintTrimmed: string,
   flags: PersistedScheduleRoutePersistFlags,
-): OmitKeyof<
-  UseQueryOptions<RouteCached, Error, RouteCached, QueryKey>,
-  "queryKey"
-> & { queryKey: ReturnType<typeof scheduleItemRouteQueryKey> } {
+): OmitKeyof<UseQueryOptions<RouteCached, Error, RouteCached, QueryKey>, "queryKey"> & {
+  queryKey: ReturnType<typeof scheduleItemRouteQueryKey>;
+} {
   const rid = roomIdTrimmed.trim();
   const sid = scheduleId;
   const sidOk = typeof sid === "number" && Number.isFinite(sid);
-  const itemOk =
-    typeof segmentSourceItemId === "number" &&
-    Number.isFinite(segmentSourceItemId);
-  const destOk =
-    typeof destinationItemId === "number" &&
-    Number.isFinite(destinationItemId);
+  const itemOk = typeof segmentSourceItemId === "number" && Number.isFinite(segmentSourceItemId);
+  const destOk = typeof destinationItemId === "number" && Number.isFinite(destinationItemId);
   const fp = fingerprintTrimmed.trim();
 
-  const keyEligible =
-    flags.segmentReady && travelMode !== null && rid.length > 0 && sidOk && itemOk && destOk;
+  const keyEligible = flags.segmentReady && travelMode !== null && rid.length > 0 && sidOk && itemOk && destOk;
 
-  const network =
-    typeof flags.networkEnabled === "boolean"
-      ? flags.networkEnabled
-      : flags.segmentReady;
+  const network = typeof flags.networkEnabled === "boolean" ? flags.networkEnabled : flags.segmentReady;
 
   const enabled = keyEligible && network;
 
@@ -58,28 +44,12 @@ export function persistedScheduleItemRouteQueryOptions(
   const keyMode = sidOk && itemOk && destOk && rid.length > 0 ? travelMode : null;
 
   const sessionSeed: RouteCached | undefined =
-    fp.length > 0 &&
-    typeof window !== "undefined" &&
-    keyEligible &&
-    rid.length > 0
-      ? readScheduleRouteFromSessionStorage(
-          rid,
-          sid!,
-          segmentSourceItemId!,
-          destinationItemId!,
-          travelMode,
-          fp,
-        )
+    fp.length > 0 && typeof window !== "undefined" && keyEligible && rid.length > 0
+      ? readScheduleRouteFromSessionStorage(rid, sid!, segmentSourceItemId!, destinationItemId!, travelMode, fp)
       : undefined;
 
   return {
-    queryKey: scheduleItemRouteQueryKey(
-      keyRoom,
-      keySchedule,
-      keySegment,
-      keyDestination,
-      keyMode,
-    ),
+    queryKey: scheduleItemRouteQueryKey(keyRoom, keySchedule, keySegment, keyDestination, keyMode),
     ...(sessionSeed !== undefined
       ? {
           initialData: sessionSeed,
@@ -87,14 +57,16 @@ export function persistedScheduleItemRouteQueryOptions(
         }
       : {}),
     queryFn: (): Promise<RouteCached> =>
-      travelMode === null ? Promise.resolve(null) : resolveScheduleSegmentRoute({
-        roomId: rid,
-        scheduleId: sid!,
-        segmentSourceItemId: segmentSourceItemId!,
-        destinationItemId: destinationItemId!,
-        travelMode,
-        scheduleFingerprint: fp,
-      }),
+      travelMode === null
+        ? Promise.resolve(null)
+        : resolveScheduleSegmentRoute({
+            roomId: rid,
+            scheduleId: sid!,
+            segmentSourceItemId: segmentSourceItemId!,
+            destinationItemId: destinationItemId!,
+            travelMode,
+            scheduleFingerprint: fp,
+          }),
     enabled,
     staleTime: 1000 * 60 * 60 * 6,
     refetchOnMount: false,

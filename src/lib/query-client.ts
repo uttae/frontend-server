@@ -1,9 +1,4 @@
-import {
-  QueryClient,
-  type InvalidateOptions,
-  type InvalidateQueryFilters,
-  type Query,
-} from "@tanstack/react-query";
+import { QueryClient, type InvalidateOptions, type InvalidateQueryFilters, type Query } from "@tanstack/react-query";
 
 import { isNetworkError } from "@/lib/api/errors";
 
@@ -56,9 +51,7 @@ export async function invalidateAfterChange(
   const firstLoads = {
     ...filters,
     predicate: (query: Query) =>
-      query.state.data === undefined &&
-      query.state.fetchStatus !== "idle" &&
-      (filters.predicate?.(query) ?? true),
+      query.state.data === undefined && query.state.fetchStatus !== "idle" && (filters.predicate?.(query) ?? true),
   };
   if (queryClient.getQueryCache().findAll(firstLoads).length > 0) {
     await queryClient.cancelQueries(firstLoads);

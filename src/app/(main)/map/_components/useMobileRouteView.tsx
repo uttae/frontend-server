@@ -17,10 +17,7 @@ import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import { buildMapRouteHref, MOBILE_MAP_PATH } from "@/lib/mobile-view";
 import { insertAnchorAfterItem } from "@/lib/plan/insertPosition";
 import { formatMonthDayKo, summarizePlaceExpenses } from "@/lib/plan/mobilePlanFormat";
-import {
-  scheduleIdsToRouteColors,
-  sortedScheduleIdsForRouteColors,
-} from "@/lib/plan/planRouteDayColors";
+import { scheduleIdsToRouteColors, sortedScheduleIdsForRouteColors } from "@/lib/plan/planRouteDayColors";
 import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import { sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import type { PlanPlace } from "@/lib/plan/types";
@@ -114,11 +111,14 @@ export function useMobileRouteView({
   schedules.forEach((s, dayIndex) => {
     const dayPlaces = dayPlacesQueries[dayIndex]?.data ?? EMPTY_PLACES;
     placesBySchedule.set(s.scheduleId, dayPlaces);
-    const places = dayPlaces.filter(
-      (p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number",
-    );
+    const places = dayPlaces.filter((p): p is PlanPlace & { itemId: number } => typeof p.itemId === "number");
     if (places.length === 0) {
-      baseEntries.push({ kind: "empty", key: `empty-${s.scheduleId}`, scheduleId: s.scheduleId, dayNumber: dayIndex + 1 });
+      baseEntries.push({
+        kind: "empty",
+        key: `empty-${s.scheduleId}`,
+        scheduleId: s.scheduleId,
+        dayNumber: dayIndex + 1,
+      });
       return;
     }
     places.forEach((place, index) => {
@@ -240,54 +240,54 @@ export function useMobileRouteView({
   function buildRouteView(): MapRouteView | undefined {
     if (!active) return undefined;
     return {
-        scheduleId: activeScheduleId,
-        color: activeScheduleId === null ? FALLBACK_DAY_COLOR : dayColor(activeScheduleId),
-        focusedItemId,
-        routesReady,
-        onStopClick: (itemId) => {
-          const index = entries.findIndex((e) => e.kind === "place" && e.itemId === itemId);
-          if (index >= 0) focusEntry(index, "pan");
-        },
-        onCandidateClick: () => {
-          const index = entries.findIndex((e) => e.kind === "candidate");
-          if (index >= 0) focusEntry(index, "pan");
-        },
-        camera: focus.key === null ? { kind: "place", seq: 0 } : focus.camera,
-        locations,
-        expanded: isExpanded,
-        candidate:
-          ghostOnMap && candidate
-            ? {
-                googlePlaceId: candidate.googlePlaceId,
-                location: candidateLocation,
-                focused: focused?.kind === "candidate",
-              }
-            : null,
-        onPlaceClick: (googlePlaceId, location) => {
-          const placeId = normalizeGooglePlaceResourceId(googlePlaceId);
-          const index = entries.findIndex(
-            (e) => e.kind === "place" && normalizeGooglePlaceResourceId(e.place.googlePlaceId?.trim() ?? "") === placeId,
-          );
-          if (index >= 0) {
-            setCandidate(null);
-            focusEntry(index);
-            return;
-          }
-          if (!focused) return;
-          const anchorKey = focused.kind === "candidate" && candidate ? candidate.anchorKey : focused.key;
-          const nextAnchorIndex = baseEntries.findIndex((e) => e.key === anchorKey);
-          const nextAnchor = baseEntries[nextAnchorIndex];
-          if (!nextAnchor) return;
-          candidateSeqRef.current += 1;
-          const id = candidateSeqRef.current;
-          setExpanded(false);
-          setCandidate({ id, googlePlaceId: placeId, location, anchorKey });
-          focusKey(`candidate-${id}`, nextAnchor.kind === "empty" ? nextAnchorIndex : nextAnchorIndex + 1);
-        },
-        onBackgroundClick: () => {
-          if (candidate) closeCandidate();
-        },
-      };
+      scheduleId: activeScheduleId,
+      color: activeScheduleId === null ? FALLBACK_DAY_COLOR : dayColor(activeScheduleId),
+      focusedItemId,
+      routesReady,
+      onStopClick: (itemId) => {
+        const index = entries.findIndex((e) => e.kind === "place" && e.itemId === itemId);
+        if (index >= 0) focusEntry(index, "pan");
+      },
+      onCandidateClick: () => {
+        const index = entries.findIndex((e) => e.kind === "candidate");
+        if (index >= 0) focusEntry(index, "pan");
+      },
+      camera: focus.key === null ? { kind: "place", seq: 0 } : focus.camera,
+      locations,
+      expanded: isExpanded,
+      candidate:
+        ghostOnMap && candidate
+          ? {
+              googlePlaceId: candidate.googlePlaceId,
+              location: candidateLocation,
+              focused: focused?.kind === "candidate",
+            }
+          : null,
+      onPlaceClick: (googlePlaceId, location) => {
+        const placeId = normalizeGooglePlaceResourceId(googlePlaceId);
+        const index = entries.findIndex(
+          (e) => e.kind === "place" && normalizeGooglePlaceResourceId(e.place.googlePlaceId?.trim() ?? "") === placeId,
+        );
+        if (index >= 0) {
+          setCandidate(null);
+          focusEntry(index);
+          return;
+        }
+        if (!focused) return;
+        const anchorKey = focused.kind === "candidate" && candidate ? candidate.anchorKey : focused.key;
+        const nextAnchorIndex = baseEntries.findIndex((e) => e.key === anchorKey);
+        const nextAnchor = baseEntries[nextAnchorIndex];
+        if (!nextAnchor) return;
+        candidateSeqRef.current += 1;
+        const id = candidateSeqRef.current;
+        setExpanded(false);
+        setCandidate({ id, googlePlaceId: placeId, location, anchorKey });
+        focusKey(`candidate-${id}`, nextAnchor.kind === "empty" ? nextAnchorIndex : nextAnchorIndex + 1);
+      },
+      onBackgroundClick: () => {
+        if (candidate) closeCandidate();
+      },
+    };
   }
 
   const goToDay = (dayNumber: number) => {
@@ -328,81 +328,86 @@ export function useMobileRouteView({
     expensesInScope(expenses.list.data ?? [], { scheduleId, scheduleItemId: itemId, label: "" });
 
   function renderEntry(entry: StripEntry, index: number): ReactNode {
-    if (entry.kind === "empty") return (
-              <MobileRouteEmptyDayCard dayNumber={entry.dayNumber} />
-
-    );
-    if (entry.kind === "candidate") return (
-              <MobileRouteCandidateCard
-                googlePlaceId={entry.googlePlaceId}
-                badgeColor={dayColor(entry.scheduleId)}
-                onAdd={addCandidate}
-                onClose={closeCandidate}
-                expanded={isExpanded}
-                onExpand={() => {
-                  if (index !== focusedIndex) focusEntry(index);
-                  setExpandedAndRecenter(true);
-                }}
-                onCollapse={() => setExpandedAndRecenter(false)}
-                detailActive={index === focusedIndex}
-              />
-
-    );
+    if (entry.kind === "empty") return <MobileRouteEmptyDayCard dayNumber={entry.dayNumber} />;
+    if (entry.kind === "candidate")
+      return (
+        <MobileRouteCandidateCard
+          googlePlaceId={entry.googlePlaceId}
+          badgeColor={dayColor(entry.scheduleId)}
+          onAdd={addCandidate}
+          onClose={closeCandidate}
+          expanded={isExpanded}
+          onExpand={() => {
+            if (index !== focusedIndex) focusEntry(index);
+            setExpandedAndRecenter(true);
+          }}
+          onCollapse={() => setExpandedAndRecenter(false)}
+          detailActive={index === focusedIndex}
+        />
+      );
     return (
-              <MobileRoutePlaceCard
-                place={entry.place}
-                orderNumber={entry.orderNumber}
-                badgeColor={dayColor(entry.scheduleId)}
-                highlighted={addPlace.recentlyAddedItemId === entry.itemId}
-                expenseSummary={summarizePlaceExpenses(itemExpenses(entry.scheduleId, entry.itemId))}
-                canAddExpense={expenses.canManage}
-                expanded={isExpanded}
-                onExpand={() => {
-                  if (index !== focusedIndex) focusEntry(index);
-                  setExpandedAndRecenter(true);
-                }}
-                onCollapse={() => setExpandedAndRecenter(false)}
-                onOpenActions={() => setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "actions", place: entry.place } })}
-                onOpenExpenses={() => openPlaceExpenses(expenses, entry.scheduleId, entry.place)}
-                onEditMemo={() => setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "memo", place: entry.place } })}
-                onEditTime={() => setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "time", place: entry.place } })}
-                detail={isExpanded ? <MobileRoutePlaceDetail place={entry.place} active={index === focusedIndex} /> : null}
-              />
-
-    );
-  }
-
-  function renderCards(): ReactNode {
-  if (!active) {
-    return null;
-  } else if (schedulesQuery.isLoading || (schedules.length > 0 && entries.length === 0)) {
-    return <RouteCardSlot><MobileRoutePlaceCardSkeleton /></RouteCardSlot>;
-  } else if (schedulesQuery.isLoadingError) {
-    return (
-      <RouteCardSlot>
-        <MobileRouteMessageCard tone="error" title="일정을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." />
-      </RouteCardSlot>
-    );
-  } else if (entries.length === 0) {
-    return (
-      <RouteCardSlot>
-        <MobileRouteMessageCard title="일정이 없어요" description="일정 화면에서 일차를 추가해보세요." />
-      </RouteCardSlot>
-    );
-  } else {
-    return (
-      <MobileRouteCardCarousel
-        focusedKey={focused?.key ?? null}
-        onFocusChange={(index) => focusEntry(index)}
-        onPreviewChange={setPreviewIndex}
-        cards={entries.map((entry, index) => ({
-          key: entry.key,
-          node: renderEntry(entry, index),
-        }))}
+      <MobileRoutePlaceCard
+        place={entry.place}
+        orderNumber={entry.orderNumber}
+        badgeColor={dayColor(entry.scheduleId)}
+        highlighted={addPlace.recentlyAddedItemId === entry.itemId}
+        expenseSummary={summarizePlaceExpenses(itemExpenses(entry.scheduleId, entry.itemId))}
+        canAddExpense={expenses.canManage}
+        expanded={isExpanded}
+        onExpand={() => {
+          if (index !== focusedIndex) focusEntry(index);
+          setExpandedAndRecenter(true);
+        }}
+        onCollapse={() => setExpandedAndRecenter(false)}
+        onOpenActions={() =>
+          setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "actions", place: entry.place } })
+        }
+        onOpenExpenses={() => openPlaceExpenses(expenses, entry.scheduleId, entry.place)}
+        onEditMemo={() => setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "memo", place: entry.place } })}
+        onEditTime={() => setRouteSheet({ scheduleId: entry.scheduleId, sheet: { kind: "time", place: entry.place } })}
+        detail={isExpanded ? <MobileRoutePlaceDetail place={entry.place} active={index === focusedIndex} /> : null}
       />
     );
   }
 
+  function renderCards(): ReactNode {
+    if (!active) {
+      return null;
+    } else if (schedulesQuery.isLoading || (schedules.length > 0 && entries.length === 0)) {
+      return (
+        <RouteCardSlot>
+          <MobileRoutePlaceCardSkeleton />
+        </RouteCardSlot>
+      );
+    } else if (schedulesQuery.isLoadingError) {
+      return (
+        <RouteCardSlot>
+          <MobileRouteMessageCard
+            tone="error"
+            title="일정을 불러오지 못했어요"
+            description="잠시 후 다시 시도해 주세요."
+          />
+        </RouteCardSlot>
+      );
+    } else if (entries.length === 0) {
+      return (
+        <RouteCardSlot>
+          <MobileRouteMessageCard title="일정이 없어요" description="일정 화면에서 일차를 추가해보세요." />
+        </RouteCardSlot>
+      );
+    } else {
+      return (
+        <MobileRouteCardCarousel
+          focusedKey={focused?.key ?? null}
+          onFocusChange={(index) => focusEntry(index)}
+          onPreviewChange={setPreviewIndex}
+          cards={entries.map((entry, index) => ({
+            key: entry.key,
+            node: renderEntry(entry, index),
+          }))}
+        />
+      );
+    }
   }
 
   const sheetSchedule = routeSheet ? schedules.find((s) => s.scheduleId === routeSheet.scheduleId) : undefined;
@@ -438,9 +443,7 @@ export function useMobileRouteView({
             <MapCloseButton label="경로 보기 닫기" onClick={close} className="pointer-events-auto" />
           </div>
         </div>
-        <div className={cn("transition-[height] duration-300 ease-out", isExpanded && "h-[70%]")}>
-          {renderCards()}
-        </div>
+        <div className={cn("transition-[height] duration-300 ease-out", isExpanded && "h-[70%]")}>{renderCards()}</div>
       </div>
 
       {routeSheet && sheetSchedule ? (
@@ -491,11 +494,17 @@ function insertCandidate(baseEntries: StripEntry[], candidate: RouteCandidate | 
   return { entries, anchorIndex, ghost };
 }
 
-function resolveFocusedIndex(entries: StripEntry[], focus: Focus, initialItemId: number | null,
-  day: number, scheduleCount: number) {
+function resolveFocusedIndex(
+  entries: StripEntry[],
+  focus: Focus,
+  initialItemId: number | null,
+  day: number,
+  scheduleCount: number,
+) {
   let focusedIndex: number;
   if (focus.key === null) {
-    const byItem = initialItemId === null ? -1 : entries.findIndex((e) => e.kind === "place" && e.itemId === initialItemId);
+    const byItem =
+      initialItemId === null ? -1 : entries.findIndex((e) => e.kind === "place" && e.itemId === initialItemId);
     focusedIndex = byItem >= 0 ? byItem : entries.findIndex((e) => e.dayNumber === Math.min(day, scheduleCount));
   } else {
     const byKey = entries.findIndex((e) => e.key === focus.key);

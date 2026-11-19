@@ -65,10 +65,7 @@ export function DateRangeField({
           <span className="flex h-8 w-full min-w-0 items-center gap-1">
             <CalendarIcon size={20} className={cn("shrink-0", readOnly ? "text-icon-disabled" : "text-icon-subtle")} />
             <span
-              className={cn(
-                "truncate px-1 text-body-m-regular",
-                ymd && !readOnly ? "text-text" : "text-text-subtle",
-              )}
+              className={cn("truncate px-1 text-body-m-regular", ymd && !readOnly ? "text-text" : "text-text-subtle")}
             >
               {formatYmdSlash(ymd) || "YY/MM/DD"}
             </span>

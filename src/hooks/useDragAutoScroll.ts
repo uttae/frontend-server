@@ -11,19 +11,12 @@ export type UseDragAutoScrollOptions = {
   maxSpeed?: number;
 };
 
-function resolveScrollRoot(
-  scrollRootRef?: RefObject<HTMLElement | null>,
-): HTMLElement | null {
+function resolveScrollRoot(scrollRootRef?: RefObject<HTMLElement | null>): HTMLElement | null {
   if (scrollRootRef?.current) return scrollRootRef.current;
   return resolveMainContentScrollRoot();
 }
 
-function applyEdgeAutoScroll(
-  scrollRoot: HTMLElement,
-  clientY: number,
-  edgeZone: number,
-  maxSpeed: number,
-): void {
+function applyEdgeAutoScroll(scrollRoot: HTMLElement, clientY: number, edgeZone: number, maxSpeed: number): void {
   const rect = scrollRoot.getBoundingClientRect();
   const distFromTop = clientY - rect.top;
   const distFromBottom = rect.bottom - clientY;
@@ -70,12 +63,7 @@ export function useDragAutoScroll({
     const tick = () => {
       const scrollRoot = resolveScrollRoot(scrollRootRefRef.current);
       if (scrollRoot) {
-        applyEdgeAutoScroll(
-          scrollRoot,
-          pointerYRef.current,
-          edgeZone,
-          maxSpeed,
-        );
+        applyEdgeAutoScroll(scrollRoot, pointerYRef.current, edgeZone, maxSpeed);
       }
       rafId = requestAnimationFrame(tick);
     };

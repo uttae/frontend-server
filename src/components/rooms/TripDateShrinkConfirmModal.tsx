@@ -19,11 +19,7 @@ type Props = {
 
 const TITLE = "여행 기간을 줄일까요?";
 
-export function TripDateShrinkConfirmModal({
-  isPending,
-  onClose,
-  onConfirm,
-}: Readonly<Props>) {
+export function TripDateShrinkConfirmModal({ isPending, onClose, onConfirm }: Readonly<Props>) {
   return (
     <AlertDialog
       open

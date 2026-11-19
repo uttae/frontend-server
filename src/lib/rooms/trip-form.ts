@@ -1,29 +1,21 @@
 import { z } from "zod";
 
-import {
-  isTripScheduleDayLimitExceeded,
-  TRIP_SCHEDULE_DAY_LIMIT_MESSAGE,
-} from "@/lib/plan/schedulePolicy";
+import { isTripScheduleDayLimitExceeded, TRIP_SCHEDULE_DAY_LIMIT_MESSAGE } from "@/lib/plan/schedulePolicy";
 
 export const ROOM_TRIP_TITLE_MAX_LENGTH = 20;
 export const TRIP_DESTINATIONS_MAX_COUNT = 5;
 export const TRIP_DESTINATION_MAX_LENGTH = 100;
 
-export const TRIP_DATE_RANGE_INVALID_MESSAGE =
-  "종료일은 시작일 이후여야 해요." as const;
+export const TRIP_DATE_RANGE_INVALID_MESSAGE = "종료일은 시작일 이후여야 해요." as const;
 
 export const TRIP_TITLE_REQUIRED_MESSAGE = "여행 제목을 입력해 주세요." as const;
 export const TRIP_DESTINATIONS_REQUIRED_MESSAGE = "여행지를 하나 이상 선택해 주세요." as const;
 export const TRIP_DESTINATIONS_INVALID_MESSAGE = "여행지는 서로 다른 곳으로 5개까지 선택해 주세요." as const;
 export const TRIP_DATES_REQUIRED_MESSAGE = "여행 기간을 선택해 주세요." as const;
 
-export const TRIP_START_BEFORE_MIN_MESSAGE =
-  "시작일은 최초 여행 시작일 이전으로 바꿀 수 없어요." as const;
+export const TRIP_START_BEFORE_MIN_MESSAGE = "시작일은 최초 여행 시작일 이전으로 바꿀 수 없어요." as const;
 
-export function isTripStartBeforeMin(
-  startDate: string,
-  minYmd: string,
-): boolean {
+export function isTripStartBeforeMin(startDate: string, minYmd: string): boolean {
   const min = minYmd.trim();
   return Boolean(min && startDate.trim() && startDate < min);
 }

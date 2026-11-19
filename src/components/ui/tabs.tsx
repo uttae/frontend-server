@@ -88,22 +88,26 @@ const tabsTriggerVariants = cva(
       {
         variant: "line",
         size: "md",
-        className: "min-h-11 text-label-l-regular aria-selected:text-label-l-emphasis data-disabled:text-label-l-regular",
+        className:
+          "min-h-11 text-label-l-regular aria-selected:text-label-l-emphasis data-disabled:text-label-l-regular",
       },
       {
         variant: "line",
         size: "sm",
-        className: "min-h-10 text-label-m-regular aria-selected:text-label-m-emphasis data-disabled:text-label-m-regular",
+        className:
+          "min-h-10 text-label-m-regular aria-selected:text-label-m-emphasis data-disabled:text-label-m-regular",
       },
       {
         variant: ["solid", "outline"],
         size: "lg",
-        className: "min-h-11 text-label-l-regular aria-selected:text-label-l-emphasis data-disabled:text-label-l-regular",
+        className:
+          "min-h-11 text-label-l-regular aria-selected:text-label-l-emphasis data-disabled:text-label-l-regular",
       },
       {
         variant: ["solid", "outline"],
         size: "md",
-        className: "min-h-9 text-label-m-regular aria-selected:text-label-m-emphasis data-disabled:text-label-m-regular",
+        className:
+          "min-h-9 text-label-m-regular aria-selected:text-label-m-emphasis data-disabled:text-label-m-regular",
       },
     ],
   },
@@ -112,11 +116,7 @@ const tabsTriggerVariants = cva(
 function TabsTrigger({ className, ...props }: Readonly<Omit<TabsPrimitive.Tab.Props, "className"> & ClassNameProp>) {
   const style = useContext(TabsStyleContext);
   return (
-    <TabsPrimitive.Tab
-      data-slot="tabs-trigger"
-      className={cn(tabsTriggerVariants(style), className)}
-      {...props}
-    />
+    <TabsPrimitive.Tab data-slot="tabs-trigger" className={cn(tabsTriggerVariants(style), className)} {...props} />
   );
 }
 

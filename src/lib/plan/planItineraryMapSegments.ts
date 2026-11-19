@@ -1,8 +1,5 @@
 import type { PlanPlace } from "@/lib/plan/types";
-import {
-  canonicalScheduleTravelMode,
-  type ScheduleTravelModeValue,
-} from "@/lib/plan/scheduleTravelMode";
+import { canonicalScheduleTravelMode, type ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 
 export type PlanItinerarySegmentDescriptor = {
   scheduleId: number;
@@ -27,10 +24,8 @@ export function flattenPlanItinerarySegmentsFromPlaces(
     for (let i = 0; i < places.length - 1; i += 1) {
       const a = places[i]!;
       const b = places[i + 1]!;
-      const o =
-        typeof a.googlePlaceId === "string" ? a.googlePlaceId.trim() : "";
-      const d =
-        typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
+      const o = typeof a.googlePlaceId === "string" ? a.googlePlaceId.trim() : "";
+      const d = typeof b.googlePlaceId === "string" ? b.googlePlaceId.trim() : "";
       if (typeof a.itemId !== "number" || typeof b.itemId !== "number" || !o.length || !d.length) {
         continue;
       }

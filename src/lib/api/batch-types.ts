@@ -5,14 +5,10 @@ export type BatchItemError = {
   errorCode?: string;
 };
 
-export function isBatchItemOk<T extends { status: BatchItemStatus }>(
-  item: T,
-): item is T & { status: "OK" } {
+export function isBatchItemOk<T extends { status: BatchItemStatus }>(item: T): item is T & { status: "OK" } {
   return item.status === "OK";
 }
 
-export function isBatchItemError(
-  item: { status?: string },
-): item is BatchItemError {
+export function isBatchItemError(item: { status?: string }): item is BatchItemError {
   return item.status === "ERROR" || item.status === "FAILED";
 }

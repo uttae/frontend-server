@@ -23,11 +23,13 @@ afterEach(async () => {
 });
 
 it("keeps menu trigger and portal actions out of the day host while retaining keyboard controls", async () => {
-  await act(async () => root.render(
-    <div {...hostEvents}>
-      <PlanDaySection title="1일차" onRequestInsertScheduleAfter={addDay} />
-    </div>,
-  ));
+  await act(async () =>
+    root.render(
+      <div {...hostEvents}>
+        <PlanDaySection title="1일차" onRequestInsertScheduleAfter={addDay} />
+      </div>,
+    ),
+  );
   const trigger = document.querySelector<HTMLButtonElement>('[aria-label="일차 메뉴"]')!;
   for (const type of ["mousedown", "pointerdown", "touchstart"]) {
     await act(async () => trigger.dispatchEvent(new MouseEvent(type, { bubbles: true })));
@@ -42,7 +44,9 @@ it("keeps menu trigger and portal actions out of the day host while retaining ke
   await act(async () => item.click());
   expect(addDay).toHaveBeenCalledOnce();
   expect(outer).not.toHaveBeenCalled();
-  await act(async () => trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true })));
+  await act(async () =>
+    trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true, cancelable: true })),
+  );
   expect(trigger.getAttribute("aria-expanded")).toBe("true");
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   expect(trigger.getAttribute("aria-expanded")).toBe("false");

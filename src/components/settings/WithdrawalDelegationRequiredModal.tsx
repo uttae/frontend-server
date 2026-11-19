@@ -41,8 +41,7 @@ export function WithdrawalDelegationRequiredModal({ rooms, onClose }: Props) {
         <AlertDialogHeader>
           <AlertDialogTitle>{TITLE}</AlertDialogTitle>
           <AlertDialogDescription>
-            아래 여행에서 방장을 다른 멤버에게 넘긴 뒤 탈퇴할 수 있어요. 여행
-            이름을 누르면 멤버 설정으로 이동합니다.
+            아래 여행에서 방장을 다른 멤버에게 넘긴 뒤 탈퇴할 수 있어요. 여행 이름을 누르면 멤버 설정으로 이동합니다.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {rooms.length > 0 && (

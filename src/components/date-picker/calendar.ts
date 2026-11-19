@@ -87,8 +87,6 @@ function formatMonthDayWeekday(ymd: string): string {
 export function formatSelectionSummary({ start, end }: DateRange): string {
   if (!start) return "날짜를 선택해 주세요";
   if (!end || end === start) return formatMonthDayWeekday(start);
-  const nights = Math.round(
-    (parseLocalYmd(end).getTime() - parseLocalYmd(start).getTime()) / MS_PER_DAY,
-  );
+  const nights = Math.round((parseLocalYmd(end).getTime() - parseLocalYmd(start).getTime()) / MS_PER_DAY);
   return `${formatMonthDayWeekday(start)} - ${formatMonthDayWeekday(end)} (${nights}박)`;
 }

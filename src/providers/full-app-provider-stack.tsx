@@ -21,16 +21,14 @@ function SessionReconciler() {
   const previousPathname = useRef<string | null>(null);
 
   useLayoutEffect(() => {
-    previousPathname.current =
-      beginClientSessionReconciliationTransition({
-        previousPathname: previousPathname.current,
-        pathname,
-        markSessionPending: () =>
-          useSessionStore.getState().setSessionReady(false),
-        reconcile: () => {
-          void reconcileClientSession(queryClient);
-        },
-      });
+    previousPathname.current = beginClientSessionReconciliationTransition({
+      previousPathname: previousPathname.current,
+      pathname,
+      markSessionPending: () => useSessionStore.getState().setSessionReady(false),
+      reconcile: () => {
+        void reconcileClientSession(queryClient);
+      },
+    });
   }, [pathname, queryClient]);
 
   return null;
@@ -44,14 +42,10 @@ export function FullAppProviderStack({ children }: { children: ReactNode }) {
       <SessionReconciler />
       <StompProvider>
         <GoogleMapsProvider>
-          <AppChromeShell analytics={<AnalyticsRouteTracker />}>
-            {children}
-          </AppChromeShell>
+          <AppChromeShell analytics={<AnalyticsRouteTracker />}>{children}</AppChromeShell>
         </GoogleMapsProvider>
       </StompProvider>
-      {process.env.NEXT_PUBLIC_RQ_DEVTOOLS === "1" ? (
-        <ReactQueryDevtools initialIsOpen={false} />
-      ) : null}
+      {process.env.NEXT_PUBLIC_RQ_DEVTOOLS === "1" ? <ReactQueryDevtools initialIsOpen={false} /> : null}
     </QueryClientProvider>
   );
 }

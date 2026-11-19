@@ -8,10 +8,7 @@ import {
   roomUnreadCountQueryKey,
 } from "@/lib/query-keys";
 
-export function resyncRoomDataAfterSubscribe(
-  queryClient: QueryClient,
-  roomId: string,
-): void {
+export function resyncRoomDataAfterSubscribe(queryClient: QueryClient, roomId: string): void {
   const rid = roomId.trim();
   if (!rid.length) return;
 

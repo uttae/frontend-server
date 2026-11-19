@@ -11,18 +11,9 @@ type MapCategoryChipsProps = {
   className?: string;
 };
 
-export function MapCategoryChips({
-  selectedCategoryId,
-  onSelectCategory,
-  className,
-}: MapCategoryChipsProps) {
+export function MapCategoryChips({ selectedCategoryId, onSelectCategory, className }: MapCategoryChipsProps) {
   return (
-    <div
-      className={cn(
-        "pointer-events-auto flex min-w-0 max-w-full flex-nowrap gap-1.5",
-        className,
-      )}
-    >
+    <div className={cn("pointer-events-auto flex min-w-0 max-w-full flex-nowrap gap-1.5", className)}>
       {MAP_PLACE_CATEGORIES.map((cat) => (
         <MapChipToggle
           key={cat.id}

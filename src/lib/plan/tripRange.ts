@@ -9,14 +9,7 @@ export function parseLocalYmd(s: string): Date {
   const y = parts[0];
   const m = parts[1];
   const d = parts[2];
-  if (
-    y === undefined ||
-    m === undefined ||
-    d === undefined ||
-    Number.isNaN(y) ||
-    Number.isNaN(m) ||
-    Number.isNaN(d)
-  ) {
+  if (y === undefined || m === undefined || d === undefined || Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) {
     return startOfLocalDay(new Date());
   }
   return new Date(y, m - 1, d);
@@ -75,11 +68,7 @@ export function tripYmdBoundsFromRoomSources(
   if (fromList?.startDate && fromList?.endDate) {
     return { startYmd: fromList.startDate, endYmd: fromList.endDate };
   }
-  if (
-    detailFallback?.id === roomId &&
-    detailFallback.startDate &&
-    detailFallback.endDate
-  ) {
+  if (detailFallback?.id === roomId && detailFallback.startDate && detailFallback.endDate) {
     return {
       startYmd: detailFallback.startDate,
       endYmd: detailFallback.endDate,

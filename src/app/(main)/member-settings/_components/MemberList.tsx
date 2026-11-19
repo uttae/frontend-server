@@ -36,19 +36,26 @@ export function MemberList({
     <ul className={cn("flex flex-col divide-y divide-border-subtle", className)}>
       {me ? (
         <li>
-          <MemberCard member={toMemberCardData(me, true)} isViewerHost={isHost} onKick={() => {}} onTransfer={() => {}} />
-        </li>
-      ) : null}
-      {[...others].sort((a, b) => Number(b.isOnline) - Number(a.isOnline)).map((member) => (
-        <li key={member.userId}>
           <MemberCard
-            member={toMemberCardData(member, false)}
+            member={toMemberCardData(me, true)}
             isViewerHost={isHost}
-            onKick={() => onKick(member)}
-            onTransfer={() => onTransfer(member)}
+            onKick={() => {}}
+            onTransfer={() => {}}
           />
         </li>
-      ))}
+      ) : null}
+      {[...others]
+        .sort((a, b) => Number(b.isOnline) - Number(a.isOnline))
+        .map((member) => (
+          <li key={member.userId}>
+            <MemberCard
+              member={toMemberCardData(member, false)}
+              isViewerHost={isHost}
+              onKick={() => onKick(member)}
+              onTransfer={() => onTransfer(member)}
+            />
+          </li>
+        ))}
     </ul>
   );
 }

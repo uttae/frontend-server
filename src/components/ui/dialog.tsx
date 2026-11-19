@@ -109,7 +109,10 @@ function DialogContent({
         className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-150 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"
       />
       {fixedWidth ? (
-        <DialogPrimitive.Viewport data-slot="dialog-viewport" className="fixed inset-0 z-50 flex overflow-auto px-5 py-4">
+        <DialogPrimitive.Viewport
+          data-slot="dialog-viewport"
+          className="fixed inset-0 z-50 flex overflow-auto px-5 py-4"
+        >
           {popup}
         </DialogPrimitive.Viewport>
       ) : (
@@ -154,22 +157,15 @@ function DialogBody({ className, ...props }: Readonly<ComponentProps<"div">>) {
 }
 
 function DialogFooter({ className, ...props }: Readonly<ComponentProps<"div">>) {
-  return (
-    <div
-      data-slot="dialog-footer"
-      className={cn("flex gap-2 *:min-w-0 *:flex-1", className)}
-      {...props}
-    />
-  );
+  return <div data-slot="dialog-footer" className={cn("flex gap-2 *:min-w-0 *:flex-1", className)} {...props} />;
 }
 
-function DialogTitle({ className, ...props }: Readonly<Omit<DialogPrimitive.Title.Props, "className"> & { className?: string }>) {
+function DialogTitle({
+  className,
+  ...props
+}: Readonly<Omit<DialogPrimitive.Title.Props, "className"> & { className?: string }>) {
   return (
-    <DialogPrimitive.Title
-      data-slot="dialog-title"
-      className={cn("text-title-l text-text", className)}
-      {...props}
-    />
+    <DialogPrimitive.Title data-slot="dialog-title" className={cn("text-title-l text-text", className)} {...props} />
   );
 }
 

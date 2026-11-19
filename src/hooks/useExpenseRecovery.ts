@@ -6,15 +6,8 @@ import { getExpenseRecovery } from "@/lib/expenses/expense-recovery";
 
 export function useExpenseRecovery(roomId: string, enabled: boolean) {
   const queryClient = useQueryClient();
-  const recovery = useMemo(
-    () => getExpenseRecovery(queryClient, roomId),
-    [queryClient, roomId],
-  );
-  const status = useSyncExternalStore(
-    recovery.subscribe,
-    recovery.getSnapshot,
-    recovery.getSnapshot,
-  );
+  const recovery = useMemo(() => getExpenseRecovery(queryClient, roomId), [queryClient, roomId]);
+  const status = useSyncExternalStore(recovery.subscribe, recovery.getSnapshot, recovery.getSnapshot);
   const { client, connected } = useStompContext();
   const revoked = status === "revoked";
   const previousConnection = useRef<{
@@ -29,8 +22,7 @@ export function useExpenseRecovery(roomId: string, enabled: boolean) {
     }
     const previous = previousConnection.current;
     const entering = previous?.recovery !== recovery;
-    const connectionEstablished = connected && client &&
-      (!previous?.connected || previous.client !== client);
+    const connectionEstablished = connected && client && (!previous?.connected || previous.client !== client);
     previousConnection.current = { recovery, client, connected };
     const subscription =
       connected && client

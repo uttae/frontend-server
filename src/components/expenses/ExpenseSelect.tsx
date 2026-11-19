@@ -116,7 +116,10 @@ function ExpenseSelectSheet({
         aria-controls={isOpen ? sheetId : undefined}
         disabled={disabled}
         onClick={() => setIsSheetOpen(true)}
-        className={cn("flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50", compact && "min-h-10 gap-2 px-3 text-[14px] leading-5 mobile:min-h-11")}
+        className={cn(
+          "flex min-h-12 w-full min-w-0 items-center justify-between gap-3 rounded-lg border border-border bg-fill-subtle px-3.5 py-2 text-left text-[16px] leading-6 font-normal cursor-pointer transition-colors enabled:hover:border-primary/40 enabled:hover:bg-gray-50 aria-expanded:border-primary/50 aria-expanded:bg-primary/5 focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50",
+          compact && "min-h-10 gap-2 px-3 text-[14px] leading-5 mobile:min-h-11",
+        )}
       >
         <span className={cn("min-w-0 break-words", !selected && "text-text-subtle")}>
           {selected?.label ?? placeholder}
@@ -144,7 +147,10 @@ function ExpenseSelectSheet({
             {options.map((option) => (
               <label
                 key={option.value}
-                className={cn("flex min-h-12 cursor-pointer items-center justify-between text-body-s-emphasis", compact && "text-[14px] leading-5")}
+                className={cn(
+                  "flex min-h-12 cursor-pointer items-center justify-between text-body-s-emphasis",
+                  compact && "text-[14px] leading-5",
+                )}
               >
                 {option.value === "ALL" ? "전체" : option.label}
                 <RadioGroupItem value={option.value} />

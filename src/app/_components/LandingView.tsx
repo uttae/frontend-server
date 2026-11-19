@@ -7,13 +7,15 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import styles from "./landing.module.css";
 
 export function LandingView() {
-  return <div className={`${styles.landing} font-sans antialiased`}>
-    <LandingHeader />
-    <main>
-      <LandingHero />
-      <LandingDesignSections />
-      <LandingFinalCta />
-    </main>
-    <SiteFooter className={styles.footer} logo={<LandingLogo />} />
-  </div>;
+  return (
+    <div className={`${styles.landing} font-sans antialiased`}>
+      <LandingHeader />
+      <main>
+        <LandingHero />
+        <LandingDesignSections />
+        <LandingFinalCta />
+      </main>
+      <SiteFooter className={styles.footer} logo={<LandingLogo />} />
+    </div>
+  );
 }

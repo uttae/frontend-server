@@ -6,12 +6,7 @@ export function isChatHistoryPrependSnapshot(
   nextCount: number,
   nextFirstId: string | undefined,
 ): boolean {
-  return (
-    nextCount > prevCount &&
-    prevCount > 0 &&
-    nextFirstId !== undefined &&
-    nextFirstId !== prevFirstId
-  );
+  return nextCount > prevCount && prevCount > 0 && nextFirstId !== undefined && nextFirstId !== prevFirstId;
 }
 
 export function isChatHistoryAppendSnapshot(
@@ -20,12 +15,7 @@ export function isChatHistoryAppendSnapshot(
   nextCount: number,
   nextFirstId: string | undefined,
 ): boolean {
-  return (
-    nextCount > prevCount &&
-    prevCount > 0 &&
-    nextFirstId !== undefined &&
-    nextFirstId === prevFirstId
-  );
+  return nextCount > prevCount && prevCount > 0 && nextFirstId !== undefined && nextFirstId === prevFirstId;
 }
 
 export function groupConsecutiveMessages(
@@ -63,9 +53,7 @@ export function groupConsecutiveMessages(
     const sameSenderGroup =
       prev &&
       prev.type === msg.type &&
-      ((msg.type === "mine" || msg.type === "other") &&
-      prev.senderUserId != null &&
-      msg.senderUserId != null
+      ((msg.type === "mine" || msg.type === "other") && prev.senderUserId != null && msg.senderUserId != null
         ? prev.senderUserId === msg.senderUserId
         : prev.sender === msg.sender);
 
@@ -81,9 +69,7 @@ export function groupConsecutiveMessages(
   if (!splitAfterMessageId) return groups;
 
   return groups.flatMap((group) => {
-    const boundaryIndex = group.findIndex(
-      (msg) => msg.id === splitAfterMessageId,
-    );
+    const boundaryIndex = group.findIndex((msg) => msg.id === splitAfterMessageId);
     if (boundaryIndex < 0 || boundaryIndex === group.length - 1) return [group];
     return [group.slice(0, boundaryIndex + 1), group.slice(boundaryIndex + 1)];
   });

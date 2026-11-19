@@ -45,22 +45,26 @@ export function MobileRoutePlaceDetail({
   const showSkeleton = !active || (isLoading && !detail);
 
   function renderDetail() {
-    if (isError && !detail && active) return (
-      <div className="p-3.5">
-        <Alert>
-          <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
-          <AlertAction>
-            <button type="button" onClick={() => void refetch()} className="text-primary underline">다시 시도</button>
-          </AlertAction>
-        </Alert>
-      </div>
-    );
-    if (showSkeleton) return (
-      <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
-        <Skeleton render={<span />} className="h-5 w-24" />
-        <Skeleton render={<span />} tone="subtle" className="h-16 w-full rounded-md" />
-      </output>
-    );
+    if (isError && !detail && active)
+      return (
+        <div className="p-3.5">
+          <Alert>
+            <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
+            <AlertAction>
+              <button type="button" onClick={() => void refetch()} className="text-primary underline">
+                다시 시도
+              </button>
+            </AlertAction>
+          </Alert>
+        </div>
+      );
+    if (showSkeleton)
+      return (
+        <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
+          <Skeleton render={<span />} className="h-5 w-24" />
+          <Skeleton render={<span />} tone="subtle" className="h-16 w-full rounded-md" />
+        </output>
+      );
     return (
       <div className="mt-3">
         <PlaceDetailTabs
@@ -95,7 +99,6 @@ export function MobileRoutePlaceDetail({
       </div>
 
       {renderDetail()}
-
     </div>
   );
 }

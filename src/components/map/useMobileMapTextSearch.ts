@@ -15,15 +15,9 @@ import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { PLACES_SEARCH_PAGE_SIZE } from "@/lib/places/placesSearchPageSize";
 import { clampPlacesSearchRadiusMeters } from "@/lib/places/placesSearchRadius";
 import { useMapCenterStore } from "@/stores/map-center-store";
-import {
-  searchPinWriteStillValid,
-  useMapPinsFocusStore,
-} from "@/stores/map-pins-focus-store";
+import { searchPinWriteStillValid, useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
-import {
-  useSearchRecenterStore,
-  type SearchMapSnapshot,
-} from "@/stores/search-recenter-store";
+import { useSearchRecenterStore, type SearchMapSnapshot } from "@/stores/search-recenter-store";
 
 export function useMobileMapTextSearch() {
   const analyticsRoomId = useAnalyticsRoomId();
@@ -32,9 +26,7 @@ export function useMobileMapTextSearch() {
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
   const zoom = useMapCenterStore((s) => s.zoom);
   const radiusMeters = useMapCenterStore((s) => s.radiusMeters);
-  const searchRecenterRequestId = useSearchRecenterStore(
-    (s) => s.searchRecenterRequestId,
-  );
+  const searchRecenterRequestId = useSearchRecenterStore((s) => s.searchRecenterRequestId);
 
   const viewport: SearchMapSnapshot | null = mapCenter
     ? {

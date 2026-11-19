@@ -159,9 +159,7 @@ export default function NewTripPage() {
 
         {error && (
           <p className="mt-3 text-center text-body-m-regular mobile:text-body-s-regular text-primary">
-            {error instanceof Error
-              ? error.message
-              : "방 생성에 실패했어요. 다시 시도해주세요."}
+            {error instanceof Error ? error.message : "방 생성에 실패했어요. 다시 시도해주세요."}
           </p>
         )}
 

@@ -142,13 +142,32 @@ export function MobilePlanPlaceSheets({
 
   if (sheet.kind !== "actions") return null;
 
-  return <PlaceActionsMenu place={place} itemId={itemId} canInsert={canInsert}
-    places={places} scheduleId={scheduleId} expenses={expenses} close={close}
-    onInsertFromSearch={onInsertFromSearch} onChangeSheet={onChangeSheet} />;
+  return (
+    <PlaceActionsMenu
+      place={place}
+      itemId={itemId}
+      canInsert={canInsert}
+      places={places}
+      scheduleId={scheduleId}
+      expenses={expenses}
+      close={close}
+      onInsertFromSearch={onInsertFromSearch}
+      onChangeSheet={onChangeSheet}
+    />
+  );
 }
 
-function PlaceActionsMenu({ place, itemId, canInsert, places, scheduleId, expenses,
-  close, onInsertFromSearch, onChangeSheet }: Readonly<{
+function PlaceActionsMenu({
+  place,
+  itemId,
+  canInsert,
+  places,
+  scheduleId,
+  expenses,
+  close,
+  onInsertFromSearch,
+  onChangeSheet,
+}: Readonly<{
   place: PlanPlace;
   itemId: number | null;
   canInsert: boolean;
@@ -161,7 +180,12 @@ function PlaceActionsMenu({ place, itemId, canInsert, places, scheduleId, expens
 }>) {
   const skipReturnFocus = useRef(false);
   return (
-    <Drawer open onOpenChange={(open) => { if (!open) close(); }}>
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) close();
+      }}
+    >
       <DrawerContent closeLabel="장소 메뉴 닫기" finalFocus={() => !skipReturnFocus.current}>
         <DrawerHeader>
           <DrawerTitle>{place.title}</DrawerTitle>
@@ -187,9 +211,7 @@ function PlaceActionsMenu({ place, itemId, canInsert, places, scheduleId, expens
                   <MobileSheetMenuItem
                     icon={SavedAddIcon}
                     label="북마크에서 추가"
-                    onClick={() =>
-                      onChangeSheet({ kind: "bookmark", anchor: insertAnchorAfterItem(places, itemId) })
-                    }
+                    onClick={() => onChangeSheet({ kind: "bookmark", anchor: insertAnchorAfterItem(places, itemId) })}
                   />
                   <hr className="my-1 shrink-0 border-border-subtle" />
                 </>

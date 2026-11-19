@@ -1,10 +1,7 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
 
-import {
-  useMoveScheduleItemToSchedule,
-  useReorderScheduleItem,
-} from "@/hooks/useRooms";
+import { useMoveScheduleItemToSchedule, useReorderScheduleItem } from "@/hooks/useRooms";
 import { messageForSaveError } from "@/lib/api/errors";
 import { resolvePlanItemDrop, type PlanItemDrop } from "@/lib/plan/planItemDrop";
 

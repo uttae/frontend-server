@@ -21,9 +21,10 @@ const issuesOf = (result: { error?: { issues: { path: PropertyKey[]; message: st
 
 describe("createTripFormSchema", () => {
   it("trims title and destinations for submit", () => {
-    expect(
-      createTripFormSchema().parse({ ...valid, title: "  봄 여행  ", destinations: [" 서울 ", "부산"] }),
-    ).toEqual({ ...valid, destinations: ["서울", "부산"] });
+    expect(createTripFormSchema().parse({ ...valid, title: "  봄 여행  ", destinations: [" 서울 ", "부산"] })).toEqual({
+      ...valid,
+      destinations: ["서울", "부산"],
+    });
   });
 
   it("puts each issue on the field name shown on screen", () => {
@@ -55,7 +56,9 @@ describe("createTripFormSchema", () => {
   });
 
   it("allows a start date before today when no minimum is given (trip edit)", () => {
-    expect(createTripFormSchema().safeParse({ ...valid, startDate: "2000-01-01", endDate: "2000-01-02" }).success).toBe(true);
+    expect(createTripFormSchema().safeParse({ ...valid, startDate: "2000-01-01", endDate: "2000-01-02" }).success).toBe(
+      true,
+    );
   });
 });
 

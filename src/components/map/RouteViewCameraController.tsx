@@ -49,7 +49,10 @@ function placesFittingAround<T extends google.maps.LatLngLiteral>(
       minY: Math.min(box.minY, y),
       maxY: Math.max(box.maxY, y),
     };
-    if (fitting.length > 0 && ((next.maxX - next.minX) * scale > widthPx || (next.maxY - next.minY) * scale > heightPx)) {
+    if (
+      fitting.length > 0 &&
+      ((next.maxX - next.minX) * scale > widthPx || (next.maxY - next.minY) * scale > heightPx)
+    ) {
       continue;
     }
     box = next;
@@ -154,4 +157,3 @@ export function RouteViewCameraController({
 
   return null;
 }
-

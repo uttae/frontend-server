@@ -31,7 +31,11 @@ it("takes the settled result camera as the search-here baseline", () => {
   const { map, fire } = fakeMap();
   settleSearchSnapshotAfterMove(map);
   fire("idle");
-  expect(useSearchRecenterStore.getState().searchSnapshot).toEqual({ center: { lat: 1, lng: 2 }, zoom: 14, radius: 1500 });
+  expect(useSearchRecenterStore.getState().searchSnapshot).toEqual({
+    center: { lat: 1, lng: 2 },
+    zoom: 14,
+    radius: 1500,
+  });
 });
 
 it.each(["pointerdown", "wheel"])("keeps the searched area when the user %s the map before it settles", (event) => {

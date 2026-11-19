@@ -15,7 +15,10 @@ import { MobileSearchResultCarousel } from "./MobileSearchResultCarousel";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 
-export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
+export function MapPlaceSearch({
+  mobile,
+  hidden = false,
+}: Readonly<{
   mobile: boolean;
   hidden?: boolean;
 }>) {
@@ -34,17 +37,15 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   const retry = () => {
     if (confirmationKind === "specific") {
       if (mobile) {
-        flushSync(() =>
-          useMobileMapSearchStore.getState().openSearch(),
-        );
+        flushSync(() => useMobileMapSearchStore.getState().openSearch());
         useMobileMapSearchStore.getState().focusInput?.();
       } else inputRef.current?.focus();
       return;
     }
     void confirm({ query, kind: "whole", session: null, generation: 0 });
   };
-  const hasFeedback = status === "pending" || (searchMode === "text" &&
-    (status === "error" || (status === "done" && !items.length)));
+  const hasFeedback =
+    status === "pending" || (searchMode === "text" && (status === "error" || (status === "done" && !items.length)));
   const feedback = hasFeedback ? (
     <SearchFeedback status={status} error={error} hasItems={items.length > 0} retry={retry} />
   ) : null;
@@ -87,29 +88,37 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
           {feedback}
         </div>
       ) : null}
-      {mobile && focus === "search" && !selectedPlace ? (
-        <MobileSearchResultCarousel />
-      ) : null}
+      {mobile && focus === "search" && !selectedPlace ? <MobileSearchResultCarousel /> : null}
     </>
   );
 }
 
-function SearchFeedback({ status, error, hasItems, retry }: Readonly<{
+function SearchFeedback({
+  status,
+  error,
+  hasItems,
+  retry,
+}: Readonly<{
   status: string;
   error: string | null;
   hasItems: boolean;
   retry: () => void;
 }>) {
   if (status === "pending") return <Spinner aria-label="장소 검색 중" />;
-  if (status === "error") return (
-    <div role="alert" className="flex items-center justify-between gap-2 text-body-s-regular text-text">
-      <span className="min-w-0">{error}</span>
-      <button type="button" aria-label="다시 시도" onClick={retry}
-        className="-m-3 grid size-11 shrink-0 cursor-pointer place-items-center text-icon-subtle hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary">
-        <RefreshIcon size={20} />
-      </button>
-    </div>
-  );
+  if (status === "error")
+    return (
+      <div role="alert" className="flex items-center justify-between gap-2 text-body-s-regular text-text">
+        <span className="min-w-0">{error}</span>
+        <button
+          type="button"
+          aria-label="다시 시도"
+          onClick={retry}
+          className="-m-3 grid size-11 shrink-0 cursor-pointer place-items-center text-icon-subtle hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <RefreshIcon size={20} />
+        </button>
+      </div>
+    );
   if (status !== "done") return null;
   if (!hasItems) return <output className="text-body-s-regular text-text-subtle">검색 결과가 없어요.</output>;
   return null;

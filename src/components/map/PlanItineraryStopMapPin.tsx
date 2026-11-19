@@ -22,13 +22,7 @@ export function PlanItineraryStopMapPin({
   const trimmed = typeof pinColor === "string" ? pinColor.trim() : "";
 
   return (
-    <span
-      className={cn(
-        "relative inline-block",
-        trimmed.length === 0 && "text-primary",
-        className,
-      )}
-    >
+    <span className={cn("relative inline-block", trimmed.length === 0 && "text-primary", className)}>
       <span className={cn("relative block origin-bottom drop-shadow-md", emphasized && "scale-[1.3]")}>
         <MapPinIconWithoutCircle
           size={MAP_PIN_DISPLAY_SIZE_PX}
@@ -38,7 +32,9 @@ export function PlanItineraryStopMapPin({
         <span
           className={cn(
             "pointer-events-none absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 font-semibold tabular-nums leading-none tracking-tight text-white",
-            twoDigits ? "text-body-s-regular mobile:text-body-xs-regular" : "text-body-l-regular mobile:text-body-m-regular",
+            twoDigits
+              ? "text-body-s-regular mobile:text-body-xs-regular"
+              : "text-body-l-regular mobile:text-body-m-regular",
           )}
           style={{ textShadow: "0 1px 2px rgba(0,0,0,0.42)" }}
           aria-hidden

@@ -44,11 +44,7 @@ type MobilePlanDragValue = {
   registerList: (scheduleId: number, el: HTMLElement | null) => void;
   registerRow: (scheduleId: number, index: number, el: HTMLElement | null) => void;
   registerPlaces: (scheduleId: number, places: PlanPlace[]) => void;
-  startDrag: (
-    scheduleId: number,
-    index: number,
-    e: ReactPointerEvent<HTMLElement>,
-  ) => void;
+  startDrag: (scheduleId: number, index: number, e: ReactPointerEvent<HTMLElement>) => void;
   rowStyle: (scheduleId: number, index: number, places: readonly PlanPlace[]) => CSSProperties | undefined;
 };
 
@@ -62,10 +58,11 @@ export function useMobilePlanDrag(): MobilePlanDragValue {
   return value;
 }
 
-type RowOffsetInput = Pick<
-  ActiveDrag,
-  "sourceScheduleId" | "sourceIndex" | "targetScheduleId" | "targetIndex"
-> & { scheduleId: number; index: number; shift: number };
+type RowOffsetInput = Pick<ActiveDrag, "sourceScheduleId" | "sourceIndex" | "targetScheduleId" | "targetIndex"> & {
+  scheduleId: number;
+  index: number;
+  shift: number;
+};
 
 export function mobilePlanRowOffset({
   sourceScheduleId,
@@ -161,8 +158,7 @@ export function useMobilePlanDragController({
       const hit =
         drag.days.find((d) => center >= d.top - DAY_HIT_MARGIN_PX && center <= d.bottom + DAY_HIT_MARGIN_PX) ??
         drag.days.reduce((best, d) => {
-          const dist = (day: DaySnapshot) =>
-            center < day.top ? day.top - center : Math.max(0, center - day.bottom);
+          const dist = (day: DaySnapshot) => (center < day.top ? day.top - center : Math.max(0, center - day.bottom));
           return dist(d) < dist(best) ? d : best;
         });
       const sameDay = hit.scheduleId === drag.sourceScheduleId;

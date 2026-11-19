@@ -7,15 +7,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./dialog";
 
 let host: HTMLDivElement;
 let root: Root;
-const nextFrame = () => act(async () => { await new Promise(resolve => requestAnimationFrame(() => resolve(null))); });
-const renderDialog = (fixedWidth: boolean) => act(async () => root.render(
-  <Dialog open>
-    <DialogContent size="lg" fixedWidth={fixedWidth}>
-      <DialogHeader><DialogTitle>비용 추가</DialogTitle></DialogHeader>
-      <input aria-label="제목" />
-    </DialogContent>
-  </Dialog>,
-));
+const nextFrame = () =>
+  act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
+  });
+const renderDialog = (fixedWidth: boolean) =>
+  act(async () =>
+    root.render(
+      <Dialog open>
+        <DialogContent size="lg" fixedWidth={fixedWidth}>
+          <DialogHeader>
+            <DialogTitle>비용 추가</DialogTitle>
+          </DialogHeader>
+          <input aria-label="제목" />
+        </DialogContent>
+      </Dialog>,
+    ),
+  );
 
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);

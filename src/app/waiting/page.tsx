@@ -11,10 +11,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useCheckJoinStatus } from "@/hooks/useRooms";
 import { getRoomDetail, HttpError } from "@/lib/api/rooms";
 import { trackAnalyticsEvent } from "@/lib/analytics/track";
-import {
-  completeWaitingJoinApproval,
-  joinStatusForWaitingUi,
-} from "@/lib/join-room-workflow";
+import { completeWaitingJoinApproval, joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { roomDetailQueryKey } from "@/lib/query-keys";
 import { useSessionStore } from "@/stores/session-store";
 
@@ -76,9 +73,7 @@ function WaitingContent() {
           {isRejected ? "참여 거절" : "승인 대기"}
         </Badge>
 
-        <h1 className="text-title-l text-text">
-          {isRejected ? "참여 요청이 거절됐어요" : "참여 요청을 보냈어요"}
-        </h1>
+        <h1 className="text-title-l text-text">{isRejected ? "참여 요청이 거절됐어요" : "참여 요청을 보냈어요"}</h1>
 
         <p className="break-words text-title-m text-text">{roomTitle}</p>
 
@@ -116,9 +111,7 @@ function WaitingContent() {
       </div>
 
       {!isRejected && (
-        <p className="w-full max-w-[480px] text-body-s-regular text-text-subtle">
-          페이지를 닫아도 요청은 유지돼요.
-        </p>
+        <p className="w-full max-w-[480px] text-body-s-regular text-text-subtle">페이지를 닫아도 요청은 유지돼요.</p>
       )}
     </div>
   );

@@ -1,15 +1,20 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useSyncExternalStore } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-import { type QueryClient, useQueryClient } from '@tanstack/react-query';
-import { useSessionUser } from '@/hooks/useSessionUser';
-import { useSessionStore } from '@/stores/session-store';
-import { sessionUserQueryKey } from '@/lib/query-keys';
-import { isPackingPath, parseRoomContextPath } from '@/lib/room-context-path';
-import { getPackingCoordinator, releasePackingCoordinator, type PackingCoordinator, type PackingState } from '@/lib/packing/coordinator';
+import { useEffect, useLayoutEffect, useMemo, useSyncExternalStore } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useSessionUser } from "@/hooks/useSessionUser";
+import { useSessionStore } from "@/stores/session-store";
+import { sessionUserQueryKey } from "@/lib/query-keys";
+import { isPackingPath, parseRoomContextPath } from "@/lib/room-context-path";
+import {
+  getPackingCoordinator,
+  releasePackingCoordinator,
+  type PackingCoordinator,
+  type PackingState,
+} from "@/lib/packing/coordinator";
 
-const empty: PackingState = {data:null,status:'loading',message:null,confirmation:null};
+const empty: PackingState = { data: null, status: "loading", message: null, confirmation: null };
 const emptySnapshot = () => empty;
 const emptySubscribe = () => () => {};
 const guarded = new WeakSet<PackingCoordinator>();
@@ -23,50 +28,58 @@ function guardScope(client: QueryClient, coordinator: PackingCoordinator, roomId
     guarded.delete(coordinator);
     releasePackingCoordinator(client, roomId, userId, coordinator);
   };
-  const unsubscribeSession = useSessionStore.subscribe(session => {
+  const unsubscribeSession = useSessionStore.subscribe((session) => {
     if (!session.sessionReady || session.currentRoomId !== roomId) release();
   });
-  const unsubscribeQuery = client.getQueryCache().subscribe(event => {
+  const unsubscribeQuery = client.getQueryCache().subscribe((event) => {
     const key = event.query.queryKey;
     if (JSON.stringify(key) === JSON.stringify(sessionUserQueryKey)) {
       const user = event.query.state.data as { id?: number } | undefined;
-      if (event.type === 'removed' || user?.id !== userId) release();
+      if (event.type === "removed" || user?.id !== userId) release();
     }
   });
 }
 
 export function usePackingList() {
-  const pathname=usePathname();
-  const router=useRouter();
-  const client=useQueryClient();
-  const {data:user}=useSessionUser();
-  const sessionReady=useSessionStore(s=>s.sessionReady);
-  const currentRoomId=useSessionStore(s=>s.currentRoomId);
-  const route=parseRoomContextPath(pathname);
-  const roomId=isPackingPath(pathname) && !route.invalidPackingPath ? route.roomId : null;
-  const userId=user?.id;
-  const enabled=!!roomId && sessionReady && Number.isSafeInteger(userId) && (userId ?? 0)>0 && currentRoomId===roomId;
-  const coordinator=useMemo(()=>enabled && roomId && userId ? getPackingCoordinator(client,roomId,userId) : null,[client,enabled,roomId,userId]);
-  const state=useSyncExternalStore(coordinator?.subscribe ?? emptySubscribe,coordinator?.getSnapshot ?? emptySnapshot,emptySnapshot);
-  useLayoutEffect(()=>{
-    if(!coordinator || !roomId || !userId) return;
-    guardScope(client,coordinator,roomId,userId);
+  const pathname = usePathname();
+  const router = useRouter();
+  const client = useQueryClient();
+  const { data: user } = useSessionUser();
+  const sessionReady = useSessionStore((s) => s.sessionReady);
+  const currentRoomId = useSessionStore((s) => s.currentRoomId);
+  const route = parseRoomContextPath(pathname);
+  const roomId = isPackingPath(pathname) && !route.invalidPackingPath ? route.roomId : null;
+  const userId = user?.id;
+  const enabled =
+    !!roomId && sessionReady && Number.isSafeInteger(userId) && (userId ?? 0) > 0 && currentRoomId === roomId;
+  const coordinator = useMemo(
+    () => (enabled && roomId && userId ? getPackingCoordinator(client, roomId, userId) : null),
+    [client, enabled, roomId, userId],
+  );
+  const state = useSyncExternalStore(
+    coordinator?.subscribe ?? emptySubscribe,
+    coordinator?.getSnapshot ?? emptySnapshot,
+    emptySnapshot,
+  );
+  useLayoutEffect(() => {
+    if (!coordinator || !roomId || !userId) return;
+    guardScope(client, coordinator, roomId, userId);
     return () => coordinator.cancelConfirmation();
-  },[client,coordinator,roomId,userId]);
-  useEffect(()=>{
-    if(!coordinator) return;
-    const recoverIfNeeded=()=>{
-      const {status}=coordinator.getSnapshot();
-      if(status!=='ready' && status!=='writing') void coordinator.refresh();
+  }, [client, coordinator, roomId, userId]);
+  useEffect(() => {
+    if (!coordinator) return;
+    const recoverIfNeeded = () => {
+      const { status } = coordinator.getSnapshot();
+      if (status !== "ready" && status !== "writing") void coordinator.refresh();
     };
     recoverIfNeeded();
-    window.addEventListener('online',recoverIfNeeded);
-    return ()=>window.removeEventListener('online',recoverIfNeeded);
-  },[coordinator]);
-  useEffect(()=>{
-    if(state.status!=='revoked' || state.exitToHome === false) return;
+    window.addEventListener("online", recoverIfNeeded);
+    return () => window.removeEventListener("online", recoverIfNeeded);
+  }, [coordinator]);
+  useEffect(() => {
+    if (state.status !== "revoked" || state.exitToHome === false) return;
     useSessionStore.getState().clearCurrentRoomId();
-    router.replace('/home');
-  },[router,state.status,state.exitToHome]);
-  return {state,coordinator,scopeKey:enabled ? `${roomId}:${userId}` : `inactive:${pathname}:${userId ?? ''}`};
+    router.replace("/home");
+  }, [router, state.status, state.exitToHome]);
+  return { state, coordinator, scopeKey: enabled ? `${roomId}:${userId}` : `inactive:${pathname}:${userId ?? ""}` };
 }

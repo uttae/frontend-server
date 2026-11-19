@@ -51,7 +51,7 @@ function render(source, sourceSize, size, ratio) {
   const leading = Math.floor(remaining / 2);
   const trailing = remaining - leading;
 
-  return sharp(source, { density: 72 * size / sourceSize })
+  return sharp(source, { density: (72 * size) / sourceSize })
     .resize(contentSize, contentSize, { fit: "fill" })
     .extend({
       top: leading,

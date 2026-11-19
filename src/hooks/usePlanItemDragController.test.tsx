@@ -37,17 +37,38 @@ function rows(count: number, top = 0) {
     const row = document.createElement("div");
     const y = top + index * ROW_HEIGHT;
     row.getBoundingClientRect = () =>
-      ({ top: y, bottom: y + ROW_HEIGHT, height: ROW_HEIGHT, left: 0, right: 200, width: 200, x: 0, y, toJSON: () => ({}) }) as DOMRect;
+      ({
+        top: y,
+        bottom: y + ROW_HEIGHT,
+        height: ROW_HEIGHT,
+        left: 0,
+        right: 200,
+        width: 200,
+        x: 0,
+        y,
+        toJSON: () => ({}),
+      }) as DOMRect;
     return row;
   });
 }
 
 function dragEvent(transfer: DataTransfer, target: Element, clientY: number) {
-  const event = { dataTransfer: transfer, currentTarget: target, target, relatedTarget: null, clientX: 10, clientY, preventDefault: () => {} };
+  const event = {
+    dataTransfer: transfer,
+    currentTarget: target,
+    target,
+    relatedTarget: null,
+    clientX: 10,
+    clientY,
+    preventDefault: () => {},
+  };
   return { ...event, nativeEvent: event } as unknown as DragEvent<Element>;
 }
 
-const nextFrame = () => act(async () => { await new Promise((resolve) => requestAnimationFrame(resolve)); });
+const nextFrame = () =>
+  act(async () => {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  });
 
 function renderController() {
   return hookHarness((roomId: string) => usePlanItemDragController(roomId));
@@ -61,7 +82,12 @@ async function startFirstItemDrag(
 ) {
   await hook.render("room-a");
   els.forEach((el, i) => hook.current.getListProps(10, day).getRowProps(i).ref(el));
-  await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)));
+  await act(async () =>
+    hook.current
+      .getListProps(10, day)
+      .getRowProps(0)
+      .placeCardDragProps.onDragStart(dragEvent(transfer, els[0]!, 10)),
+  );
 }
 
 beforeEach(() => {
@@ -75,10 +101,14 @@ it("saves the dragged item at the dropped index even when the day's list changed
   const transfer = dataTransfer();
   try {
     await startFirstItemDrag(hook, day, els, transfer);
-    await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDragOver(dragEvent(transfer, els[0]!, 190)));
+    await act(async () =>
+      hook.current.getListProps(10, day).dropZoneProps.onDragOver(dragEvent(transfer, els[0]!, 190)),
+    );
     await nextFrame();
     const changed = [place(3), ...day];
-    await act(async () => hook.current.getListProps(10, changed).dropZoneProps.onDrop(dragEvent(transfer, els[0]!, 190)));
+    await act(async () =>
+      hook.current.getListProps(10, changed).dropZoneProps.onDrop(dragEvent(transfer, els[0]!, 190)),
+    );
 
     expect(commit.fn).toHaveBeenCalledExactlyOnceWith(
       { itemId: 1, from: { scheduleId: 10, index: 0 }, to: { scheduleId: 10, index: 1, length: 3 } },
@@ -96,7 +126,9 @@ it("keeps the dropped order on screen until the cache shows it, then draws the c
   const transfer = dataTransfer();
   try {
     await startFirstItemDrag(hook, day, els, transfer);
-    await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDragOver(dragEvent(transfer, els[0]!, 290)));
+    await act(async () =>
+      hook.current.getListProps(10, day).dropZoneProps.onDragOver(dragEvent(transfer, els[0]!, 290)),
+    );
     await nextFrame();
     await act(async () => hook.current.getListProps(10, day).dropZoneProps.onDrop(dragEvent(transfer, els[0]!, 290)));
     await act(async () => hook.current.getListProps(10, day).getRowProps(0).placeCardDragProps.onDragEnd());
@@ -128,8 +160,15 @@ it("moves to another day's list at the previewed index, and to the front when dr
     await hook.render("room-a");
     day1Rows.forEach((el, i) => hook.current.getListProps(10, day1).getRowProps(i).ref(el));
     day2Rows.forEach((el, i) => hook.current.getListProps(20, day2).getRowProps(i).ref(el));
-    await act(async () => hook.current.getListProps(10, day1).getRowProps(1).placeCardDragProps.onDragStart(dragEvent(transfer, day1Rows[1]!, 110)));
-    await act(async () => hook.current.getListProps(20, day2).dropZoneProps.onDragOver(dragEvent(transfer, day2Rows[1]!, 520)));
+    await act(async () =>
+      hook.current
+        .getListProps(10, day1)
+        .getRowProps(1)
+        .placeCardDragProps.onDragStart(dragEvent(transfer, day1Rows[1]!, 110)),
+    );
+    await act(async () =>
+      hook.current.getListProps(20, day2).dropZoneProps.onDragOver(dragEvent(transfer, day2Rows[1]!, 520)),
+    );
     await nextFrame();
 
     expect(hook.current.getSectionDrop(20, day2).isTarget).toBe(true);
@@ -146,7 +185,12 @@ it("moves to another day's list at the previewed index, and to the front when dr
     expect(hook.current.getListProps(10, day1).getRowProps(1).placeCardDragProps.isDragging).toBe(true);
 
     await act(async () => commit.fn.mock.lastCall![1]());
-    await act(async () => hook.current.getListProps(10, day1).getRowProps(0).placeCardDragProps.onDragStart(dragEvent(transfer, day1Rows[0]!, 10)));
+    await act(async () =>
+      hook.current
+        .getListProps(10, day1)
+        .getRowProps(0)
+        .placeCardDragProps.onDragStart(dragEvent(transfer, day1Rows[0]!, 10)),
+    );
     const header = document.createElement("header");
     const section = hook.current.getSectionDrop(20, day2);
     await act(async () => section.props.onDragOver(dragEvent(transfer, header, 300)));
@@ -186,7 +230,12 @@ it("starts the next drag while the previous drop is still saving, and the earlie
     const [, firstSave] = commit.fn.mock.lastCall!;
     expect(hook.current.getListProps(10, day).getRowProps(1).placeCardDragProps.dragDisabled).toBe(false);
 
-    await act(async () => hook.current.getListProps(10, day).getRowProps(2).placeCardDragProps.onDragStart(dragEvent(transfer, els[2]!, 250)));
+    await act(async () =>
+      hook.current
+        .getListProps(10, day)
+        .getRowProps(2)
+        .placeCardDragProps.onDragStart(dragEvent(transfer, els[2]!, 250)),
+    );
     expect(hook.current.getListProps(10, day).getRowProps(2).placeCardDragProps.isDragging).toBe(true);
     await act(async () => firstSave());
     expect(hook.current.getListProps(10, day).isItemDragActive).toBe(true);

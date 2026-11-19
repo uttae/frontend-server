@@ -13,7 +13,9 @@ const state = vi.hoisted(() => ({
 vi.mock("@/hooks/useRooms", () => ({
   useRoomSchedules: () => ({ data: [{}, {}, {}] }),
 }));
-const update = { mutate: state.update, isPending: false, error: null } as unknown as ComponentProps<typeof RoomTripEditForm>["update"];
+const update = { mutate: state.update, isPending: false, error: null } as unknown as ComponentProps<
+  typeof RoomTripEditForm
+>["update"];
 vi.mock("./DestinationChipsField", () => ({
   DestinationChipsField: (props: ComponentProps<typeof DestinationChipsField>) => {
     state.destinations = props;
@@ -105,7 +107,9 @@ it("keeps the values from when it opened while the server changes and saves the 
   const second = createRoot(container);
   const opened = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-28", endDate: "2027-01-31" };
   await act(async () => second.render(<RoomTripEditForm update={update} room={opened} />));
-  await act(async () => second.render(<RoomTripEditForm update={update} room={{ ...opened, startDate: "2027-01-30" }} />));
+  await act(async () =>
+    second.render(<RoomTripEditForm update={update} room={{ ...opened, startDate: "2027-01-30" }} />),
+  );
   expect(state.dates!.value.start).toBe("2027-01-28");
   await typeTitle(container, "C");
   await act(async () => applyButton(container).click());

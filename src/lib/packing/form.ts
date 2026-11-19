@@ -16,4 +16,6 @@ export const packingNameSchema = {
   item: z.string().superRefine((name, ctx) => addPackingIssue(ctx, () => normalizePackingName(name, "item"))),
 };
 
-export const packingMemoSchema = z.string().superRefine((memo, ctx) => addPackingIssue(ctx, () => normalizePackingMemo(memo)));
+export const packingMemoSchema = z
+  .string()
+  .superRefine((memo, ctx) => addPackingIssue(ctx, () => normalizePackingMemo(memo)));

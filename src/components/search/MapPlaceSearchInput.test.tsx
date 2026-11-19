@@ -9,7 +9,9 @@ vi.mock("@/lib/api/client", () => ({ apiFetch: vi.fn() }));
 const sdk = { fetch: vi.mocked(apiFetch) };
 let issued = 0;
 let testTime = Date.now();
-function autocompleteCalls() { return sdk.fetch.mock.calls.filter(([url]) => String(url).endsWith("/places/autocomplete")); }
+function autocompleteCalls() {
+  return sdk.fetch.mock.calls.filter(([url]) => String(url).endsWith("/places/autocomplete"));
+}
 let root: Root, host: HTMLDivElement;
 const confirm = vi.fn(),
   invalidate = vi.fn();
@@ -21,26 +23,23 @@ const p = {
 beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.useFakeTimers();
-  vi.setSystemTime(testTime += 3600000);
+  vi.setSystemTime((testTime += 3600000));
   issued = 0;
   useMapCenterStore.setState({ mapCenter: { lat: 1, lng: 2 } });
-  sdk.fetch.mockReset().mockImplementation(async (url) => String(url).endsWith("/places/sessions")
-    ? Response.json({ sessionToken: `token-${++issued}`, expiresAt: Date.now() + 1800000 }, { status: 201 })
-    : Response.json({ suggestions: [{ placePrediction: p }] }));
+  sdk.fetch
+    .mockReset()
+    .mockImplementation(async (url) =>
+      String(url).endsWith("/places/sessions")
+        ? Response.json({ sessionToken: `token-${++issued}`, expiresAt: Date.now() + 1800000 }, { status: 201 })
+        : Response.json({ suggestions: [{ placePrediction: p }] }),
+    );
   confirm.mockReset().mockResolvedValue(true);
   invalidate.mockReset();
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
   await act(async () =>
-    root.render(
-      <MapPlaceSearchInput
-        onConfirm={confirm}
-        onInvalidate={invalidate}
-        onClear={vi.fn()}
-        scopeKey="a"
-      />,
-    ),
+    root.render(<MapPlaceSearchInput onConfirm={confirm} onInvalidate={invalidate} onClear={vi.fn()} scopeKey="a" />),
   );
 });
 afterEach(async () => {
@@ -51,10 +50,7 @@ afterEach(async () => {
 async function type(value: string) {
   await act(async () => {
     const input = host.querySelector("input")!;
-    Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!.call(input, value);
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
@@ -63,17 +59,13 @@ async function wait() {
 }
 async function key(key: string) {
   await act(async () =>
-    host
-      .querySelector("input")!
-      .dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })),
+    host.querySelector("input")!.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true })),
   );
 }
 it("puts all results first; unselected Enter confirms the original query without a prediction", async () => {
   await type("원래");
   await wait();
-  expect(host.querySelector('[role="option"]')?.textContent).toContain(
-    "'원래' 모든 결과보기",
-  );
+  expect(host.querySelector('[role="option"]')?.textContent).toContain("'원래' 모든 결과보기");
   await key("Enter");
   expect(confirm).toHaveBeenCalledWith(
     expect.objectContaining({ query: "원래", kind: "whole", prediction: undefined, session: null }),
@@ -85,9 +77,7 @@ it("arrow-selected recommendation Enter confirms only that prediction", async ()
   await key("ArrowDown");
   await key("ArrowDown");
   await key("Enter");
-  expect(confirm).toHaveBeenCalledWith(
-    expect.objectContaining({ query: "원래", kind: "specific", prediction: p }),
-  );
+  expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ query: "원래", kind: "specific", prediction: p }));
 });
 it("rejects blank input and duplicate confirmations", async () => {
   await type(" ");
@@ -102,9 +92,13 @@ it("rejects blank input and duplicate confirmations", async () => {
 });
 it("ignores suggestions returned after clear", async () => {
   let finish!: (v: Response) => void;
-  sdk.fetch.mockImplementation(async url => String(url).endsWith("/places/sessions")
-    ? Response.json({ sessionToken: "old", expiresAt: Date.now()+60000 }, { status: 201 })
-    : new Promise(r => { finish = r; }));
+  sdk.fetch.mockImplementation(async (url) =>
+    String(url).endsWith("/places/sessions")
+      ? Response.json({ sessionToken: "old", expiresAt: Date.now() + 60000 }, { status: 201 })
+      : new Promise((r) => {
+          finish = r;
+        }),
+  );
   await type("원래");
   await wait();
   await type("");
@@ -123,82 +117,160 @@ it("ignores old suggestions after new input and rotates consumed token for subse
 });
 
 it("debounces issuance and uses server string token and required map coordinates", async () => {
-  await type("첫"); await type("둘"); await type("셋");
-  expect(sdk.fetch).not.toHaveBeenCalled(); await wait();
-  expect(issued).toBe(1); expect(autocompleteCalls()).toHaveLength(1);
-  expect(JSON.parse(autocompleteCalls()[0][1]!.body as string)).toEqual({ sessionToken: "token-1", input: "셋", latitude: 1, longitude: 2 });
+  await type("첫");
+  await type("둘");
+  await type("셋");
+  expect(sdk.fetch).not.toHaveBeenCalled();
+  await wait();
+  expect(issued).toBe(1);
+  expect(autocompleteCalls()).toHaveLength(1);
+  expect(JSON.parse(autocompleteCalls()[0][1]!.body as string)).toEqual({
+    sessionToken: "token-1",
+    input: "셋",
+    latitude: 1,
+    longitude: 2,
+  });
 });
 it("null text is safe and Unicode codepoint match includes entire emoji", async () => {
-  sdk.fetch.mockImplementation(async url => String(url).endsWith("/places/sessions")
-    ? Response.json({ sessionToken: "unicode", expiresAt: Date.now()+60000 }, { status: 201 })
-    : Response.json({ suggestions: [{ placePrediction: { placeId: "unicode", text: null, structuredFormat: { mainText: { text: "가😀나", matches: [{ startOffset: 1, endOffset: 2 }] }, secondaryText: null } } }, { placePrediction: { placeId: "null", text: null, structuredFormat: null } }] }));
-  await type("원래"); await wait();
+  sdk.fetch.mockImplementation(async (url) =>
+    String(url).endsWith("/places/sessions")
+      ? Response.json({ sessionToken: "unicode", expiresAt: Date.now() + 60000 }, { status: 201 })
+      : Response.json({
+          suggestions: [
+            {
+              placePrediction: {
+                placeId: "unicode",
+                text: null,
+                structuredFormat: {
+                  mainText: { text: "가😀나", matches: [{ startOffset: 1, endOffset: 2 }] },
+                  secondaryText: null,
+                },
+              },
+            },
+            { placePrediction: { placeId: "null", text: null, structuredFormat: null } },
+          ],
+        }),
+  );
+  await type("원래");
+  await wait();
   expect(host.querySelector("mark")?.textContent).toBe("😀");
   expect(host.textContent).toContain("가😀나");
   expect(host.textContent).not.toContain("null");
 });
 it("expired token cannot resolve selected prediction", async () => {
-  await type("원래"); await wait();
+  await type("원래");
+  await wait();
   await act(async () => vi.advanceTimersByTimeAsync(1800001));
-  await key("ArrowDown"); await key("ArrowDown"); await key("Enter");
+  await key("ArrowDown");
+  await key("ArrowDown");
+  await key("Enter");
   expect(confirm).not.toHaveBeenCalled();
 });
 it("close abandons predictions so immediate reopen Enter cannot consume old token", async () => {
-  await type("원래"); await wait(); await key("Escape");
+  await type("원래");
+  await wait();
+  await key("Escape");
   await act(async () => host.querySelector("input")!.dispatchEvent(new FocusEvent("focusin", { bubbles: true })));
   await key("Enter");
   expect(confirm.mock.calls[0]?.[0].prediction).toBeUndefined();
 });
 it("rapid input while session issuance pending stays single-flight and skips stale autocomplete", async () => {
   let finish!: (r: Response) => void;
-  sdk.fetch.mockImplementation(async url => String(url).endsWith("/places/sessions")
-    ? new Promise(r => { finish = r; })
-    : Response.json({ suggestions: [{ placePrediction: p }] }));
-  await type("첫"); await wait(); await type("다음"); await wait();
+  sdk.fetch.mockImplementation(async (url) =>
+    String(url).endsWith("/places/sessions")
+      ? new Promise((r) => {
+          finish = r;
+        })
+      : Response.json({ suggestions: [{ placePrediction: p }] }),
+  );
+  await type("첫");
+  await wait();
+  await type("다음");
+  await wait();
   expect(sdk.fetch.mock.calls.filter(([url]) => String(url).endsWith("/places/sessions"))).toHaveLength(1);
-  await act(async () => finish(Response.json({ sessionToken: "slow", expiresAt: Date.now()+60000 }, { status: 201 })));
+  await act(async () =>
+    finish(Response.json({ sessionToken: "slow", expiresAt: Date.now() + 60000 }, { status: 201 })),
+  );
   expect(autocompleteCalls()).toHaveLength(1);
   expect(JSON.parse(autocompleteCalls()[0][1]!.body as string).input).toBe("다음");
 });
 it("429 respects shared wait without request loop on further input", async () => {
-  sdk.fetch.mockResolvedValue(Response.json({ code: "RATE_LIMIT_EXCEEDED", message: "잠시 후" }, { status: 429, headers: { "Retry-After": "60" } }));
-  await type("첫"); await wait(); await type("다음"); await wait();
+  sdk.fetch.mockResolvedValue(
+    Response.json(
+      { code: "RATE_LIMIT_EXCEEDED", message: "잠시 후" },
+      { status: 429, headers: { "Retry-After": "60" } },
+    ),
+  );
+  await type("첫");
+  await wait();
+  await type("다음");
+  await wait();
   expect(sdk.fetch).toHaveBeenCalledTimes(1);
   expect(host.textContent).toContain("잠시 후");
 });
 it("network failure shows the default notice under all results instead of the raw error", async () => {
   sdk.fetch.mockRejectedValue(new TypeError("Failed to fetch"));
-  await type("원래"); await wait();
-  expect([...host.querySelectorAll('[role="option"]')].map((option) => option.textContent))
-    .toEqual(["'원래' 모든 결과보기"]);
+  await type("원래");
+  await wait();
+  expect([...host.querySelectorAll('[role="option"]')].map((option) => option.textContent)).toEqual([
+    "'원래' 모든 결과보기",
+  ]);
   expect(host.textContent).toContain("검색 추천을 불러오지 못했어요. 다시 입력해주세요.");
   expect(host.textContent).not.toContain("Failed to fetch");
 });
 it("nullable structured main text falls back to actual complete prediction text", async () => {
   await act(async () => vi.advanceTimersByTimeAsync(61000));
-  sdk.fetch.mockImplementation(async url => String(url).endsWith("/places/sessions")
-    ? Response.json({ sessionToken: "nullable-main", expiresAt: Date.now()+60000 }, { status: 201 })
-    : Response.json({ suggestions: [{ placePrediction: { placeId: "id", text: { text: "전체 실제 이름", matches: null }, structuredFormat: { mainText: { text: null, matches: null }, secondaryText: null } } }] }));
-  await type("원래"); await wait();
+  sdk.fetch.mockImplementation(async (url) =>
+    String(url).endsWith("/places/sessions")
+      ? Response.json({ sessionToken: "nullable-main", expiresAt: Date.now() + 60000 }, { status: 201 })
+      : Response.json({
+          suggestions: [
+            {
+              placePrediction: {
+                placeId: "id",
+                text: { text: "전체 실제 이름", matches: null },
+                structuredFormat: { mainText: { text: null, matches: null }, secondaryText: null },
+              },
+            },
+          ],
+        }),
+  );
+  await type("원래");
+  await wait();
   expect(host.querySelectorAll('[role="option"]')[1]?.textContent).toContain("전체 실제 이름");
 });
 
-it.each(["whole", "specific"])("retains successful desktop %s input without invalidating published results", async kind => {
-  await type("원래"); await wait();
-  const invalidations = invalidate.mock.calls.length;
-  if (kind === "specific") { await key("ArrowDown"); await key("ArrowDown"); }
-  await key("Enter");
-  expect(host.querySelector("input")!.value).toBe(kind === "specific" ? "추천" : "원래");
-  expect(host.querySelector('[role="listbox"]')).toBeNull();
-  expect(invalidate).toHaveBeenCalledTimes(invalidations);
-});
+it.each(["whole", "specific"])(
+  "retains successful desktop %s input without invalidating published results",
+  async (kind) => {
+    await type("원래");
+    await wait();
+    const invalidations = invalidate.mock.calls.length;
+    if (kind === "specific") {
+      await key("ArrowDown");
+      await key("ArrowDown");
+    }
+    await key("Enter");
+    expect(host.querySelector("input")!.value).toBe(kind === "specific" ? "추천" : "원래");
+    expect(host.querySelector('[role="listbox"]')).toBeNull();
+    expect(invalidate).toHaveBeenCalledTimes(invalidations);
+  },
+);
 it("retains failed input for retry and never clears a newer draft after a late success", async () => {
   confirm.mockResolvedValueOnce(false);
-  await type("실패 검색"); await wait(); await key("Enter");
+  await type("실패 검색");
+  await wait();
+  await key("Enter");
   expect(host.querySelector("input")!.value).toBe("실패 검색");
   let finish!: (success: boolean) => void;
-  confirm.mockReturnValueOnce(new Promise<boolean>(resolve => { finish = resolve; }));
-  await type("진행 검색"); await wait(); await key("Enter");
+  confirm.mockReturnValueOnce(
+    new Promise<boolean>((resolve) => {
+      finish = resolve;
+    }),
+  );
+  await type("진행 검색");
+  await wait();
+  await key("Enter");
   await type("새 입력");
   await act(async () => finish(true));
   expect(host.querySelector("input")!.value).toBe("새 입력");
@@ -206,12 +278,21 @@ it("retains failed input for retry and never clears a newer draft after a late s
 
 it("opens from an icon with focus, clears Filled to an expanded Default field, and Escape restores the icon", async () => {
   const clear = vi.fn();
-  await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="a"/>));
-  await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="b"/>));
+  await act(async () =>
+    root.render(
+      <MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="a" />,
+    ),
+  );
+  await act(async () =>
+    root.render(
+      <MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={clear} scopeKey="b" />,
+    ),
+  );
   expect(host.querySelector("input")).toBeNull();
   await act(async () => (host.querySelector('button[aria-label="장소 검색 열기"]') as HTMLButtonElement).click());
   expect(document.activeElement).toBe(host.querySelector("input"));
-  await type("원래"); await wait();
+  await type("원래");
+  await wait();
   await key("Enter");
   await act(async () => (host.querySelector('button[aria-label="검색어 지우기"]') as HTMLButtonElement).click());
   expect(host.querySelector("input")!.value).toBe("");
@@ -227,8 +308,18 @@ it("opens from an icon with focus, clears Filled to an expanded Default field, a
   expect(document.activeElement).toBe(host.querySelector('button[aria-label="장소 검색 열기"]'));
 });
 
- it("collapses empty desktop search on outside blur but preserves typed text and recommendation selection", async () => {
-  await act(async () => root.render(<MapPlaceSearchInput collapsible onConfirm={confirm} onInvalidate={invalidate} onClear={vi.fn()} scopeKey="outside"/>));
+it("collapses empty desktop search on outside blur but preserves typed text and recommendation selection", async () => {
+  await act(async () =>
+    root.render(
+      <MapPlaceSearchInput
+        collapsible
+        onConfirm={confirm}
+        onInvalidate={invalidate}
+        onClear={vi.fn()}
+        scopeKey="outside"
+      />,
+    ),
+  );
   const outside = document.createElement("button");
   document.body.append(outside);
   try {
@@ -237,30 +328,36 @@ it("opens from an icon with focus, clears Filled to an expanded Default field, a
     expect(host.querySelector("input")).toBeNull();
     expect(document.activeElement).toBe(outside);
     await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="장소 검색 열기"]')!.click());
-    await type("원래"); await wait();
+    await type("원래");
+    await wait();
     await act(async () => outside.focus());
     expect(host.querySelector("input")!.value).toBe("원래");
     await act(async () => host.querySelector("input")!.focus());
     await wait();
     await act(async () => host.querySelectorAll<HTMLButtonElement>('[role="option"] button')[1].click());
-    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({kind:"specific"}));
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ kind: "specific" }));
     expect(host.querySelector("input")!.value).toBe("추천");
-  } finally { outside.remove(); }
+  } finally {
+    outside.remove();
+  }
 });
 
 it("uses one active suggestion when switching between keyboard and mouse", async () => {
-  await type("원래"); await wait();
+  await type("원래");
+  await wait();
   await key("ArrowDown");
   expect(host.querySelector('[aria-selected="true"]')?.textContent).toContain("모든 결과보기");
   const recommendation = host.querySelectorAll<HTMLButtonElement>('[role="option"] button')[1];
   await act(async () => recommendation.dispatchEvent(new MouseEvent("mousemove", { bubbles: true })));
   expect(host.querySelectorAll('[aria-selected="true"]')).toHaveLength(1);
   expect(host.querySelector('[aria-selected="true"]')?.textContent).toContain("추천");
-  expect(host.querySelector("input")!.getAttribute("aria-activedescendant")).toBe(host.querySelector('[aria-selected="true"]')!.id);
+  expect(host.querySelector("input")!.getAttribute("aria-activedescendant")).toBe(
+    host.querySelector('[aria-selected="true"]')!.id,
+  );
   await key("ArrowUp");
   expect(host.querySelectorAll('[aria-selected="true"]')).toHaveLength(1);
   expect(host.querySelector('[aria-selected="true"]')?.textContent).toContain("모든 결과보기");
   await act(async () => recommendation.dispatchEvent(new MouseEvent("mousemove", { bubbles: true })));
   await key("Enter");
-  expect(confirm).toHaveBeenCalledWith(expect.objectContaining({kind:"specific", prediction:p}));
+  expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ kind: "specific", prediction: p }));
 });

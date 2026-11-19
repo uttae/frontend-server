@@ -3,11 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 
-import {
-  searchPlaces,
-  searchPlacesInArea,
-  type PlaceSearchItem,
-} from "@/lib/api/places";
+import { searchPlaces, searchPlacesInArea, type PlaceSearchItem } from "@/lib/api/places";
 import type { SearchResultCardProps } from "@/types/place";
 
 export type PlaceSearchResult = SearchResultCardProps & {
@@ -20,9 +16,7 @@ export type PlaceSearchPage = {
   nextPageToken: string | null;
 };
 
-function mapPlaceSearchItem(
-  item: PlaceSearchItem,
-): Omit<PlaceSearchResult, "image"> {
+function mapPlaceSearchItem(item: PlaceSearchItem): Omit<PlaceSearchResult, "image"> {
   return {
     googlePlaceId: item.googlePlaceId,
     name: item.name,
@@ -77,16 +71,7 @@ export function placesSearchQueryKey(
   pageSize: number,
   pageIndex: number,
 ) {
-  return [
-    "places",
-    "search",
-    query,
-    latitude,
-    longitude,
-    radius,
-    pageSize,
-    pageIndex,
-  ] as const;
+  return ["places", "search", query, latitude, longitude, radius, pageSize, pageIndex] as const;
 }
 
 type SearchSessionKey = string;
@@ -101,12 +86,8 @@ function buildSearchSessionKey(
   return [query, latitude, longitude, radius ?? "", pageSize].join("|");
 }
 
-function sessionKeyFromPlacesSearchQueryKey(
-  queryKey: readonly unknown[],
-): SearchSessionKey {
-  return [queryKey[2], queryKey[3], queryKey[4], queryKey[5], queryKey[6]].join(
-    "|",
-  );
+function sessionKeyFromPlacesSearchQueryKey(queryKey: readonly unknown[]): SearchSessionKey {
+  return [queryKey[2], queryKey[3], queryKey[4], queryKey[5], queryKey[6]].join("|");
 }
 
 export function usePlacesSearch(
@@ -118,28 +99,19 @@ export function usePlacesSearch(
   searchGeneration: number,
 ) {
   const trimmedQuery = query.trim();
-  const enabled =
-    trimmedQuery.length > 0 &&
-    latitude !== null &&
-    longitude !== null &&
-    pageSize > 0;
+  const enabled = trimmedQuery.length > 0 && latitude !== null && longitude !== null && pageSize > 0;
 
-  const sessionKey = enabled
-    ? buildSearchSessionKey(trimmedQuery, latitude!, longitude!, radius, pageSize)
-    : "";
+  const sessionKey = enabled ? buildSearchSessionKey(trimmedQuery, latitude!, longitude!, radius, pageSize) : "";
 
-  const paginationEpoch = enabled
-    ? `${sessionKey}@${searchGeneration}`
-    : `disabled@${searchGeneration}`;
+  const paginationEpoch = enabled ? `${sessionKey}@${searchGeneration}` : `disabled@${searchGeneration}`;
 
   const [pagination, setPagination] = useState({
     epoch: paginationEpoch,
     pageIndex: 0,
     tokens: [undefined] as (string | undefined)[],
   });
-  const current = pagination.epoch === paginationEpoch
-    ? pagination
-    : { epoch: paginationEpoch, pageIndex: 0, tokens: [undefined] };
+  const current =
+    pagination.epoch === paginationEpoch ? pagination : { epoch: paginationEpoch, pageIndex: 0, tokens: [undefined] };
   if (pagination.epoch !== paginationEpoch) {
     setPagination(current);
   }
@@ -147,14 +119,10 @@ export function usePlacesSearch(
   const pageToken = current.tokens[pageIndex];
 
   const queryResult = useQuery({
-    queryKey: [...placesSearchQueryKey(
-      trimmedQuery,
-      latitude,
-      longitude,
-      radius,
-      pageSize,
-      pageIndex,
-    ), searchGeneration],
+    queryKey: [
+      ...placesSearchQueryKey(trimmedQuery, latitude, longitude, radius, pageSize, pageIndex),
+      searchGeneration,
+    ],
     queryFn: () =>
       fetchPlacesPageWithPhotos({
         query: trimmedQuery,
@@ -168,24 +136,22 @@ export function usePlacesSearch(
     staleTime: 30_000,
     placeholderData: (previousData, previousQuery) => {
       if (!previousData || !previousQuery) return undefined;
-      return sessionKeyFromPlacesSearchQueryKey(previousQuery.queryKey) ===
-        sessionKey && previousQuery.queryKey[8] === searchGeneration
+      return sessionKeyFromPlacesSearchQueryKey(previousQuery.queryKey) === sessionKey &&
+        previousQuery.queryKey[8] === searchGeneration
         ? previousData
         : undefined;
     },
   });
 
   const items = queryResult.data?.items ?? [];
-  const nextPageToken = queryResult.isPlaceholderData
-    ? null
-    : queryResult.data?.nextPageToken;
+  const nextPageToken = queryResult.isPlaceholderData ? null : queryResult.data?.nextPageToken;
   const hasNextPage = Boolean(nextPageToken);
   const hasPreviousPage = pageIndex > 0;
 
   const goToPreviousPage = useCallback(() => {
-    setPagination((prev) => prev.epoch === paginationEpoch
-      ? { ...prev, pageIndex: Math.max(0, prev.pageIndex - 1) }
-      : prev);
+    setPagination((prev) =>
+      prev.epoch === paginationEpoch ? { ...prev, pageIndex: Math.max(0, prev.pageIndex - 1) } : prev,
+    );
   }, [paginationEpoch, setPagination]);
 
   const goToNextPage = useCallback(() => {

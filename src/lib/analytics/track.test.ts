@@ -14,9 +14,7 @@ afterEach(() => {
 });
 
 function dataLayerCommands(dataLayer: readonly unknown[]): unknown[][] {
-  return dataLayer.map((command) =>
-    Array.from(command as ArrayLike<unknown>),
-  );
+  return dataLayer.map((command) => Array.from(command as ArrayLike<unknown>));
 }
 
 describe("AnalyticsEvents", () => {
@@ -46,8 +44,7 @@ describe("AnalyticsEvents", () => {
   });
 
   it("keeps search-result analytics free of raw search terms", () => {
-    type SearchResultParams =
-      AnalyticsEventParamsMap[typeof AnalyticsEvents.search];
+    type SearchResultParams = AnalyticsEventParamsMap[typeof AnalyticsEvents.search];
 
     expectTypeOf<SearchResultParams>().toEqualTypeOf<{
       room_id?: string;
@@ -58,18 +55,15 @@ describe("AnalyticsEvents", () => {
 
   it("reserves source and exposes interaction_source for product interactions", () => {
     type EventWithReservedSource = {
-      [EventName in keyof AnalyticsEventParamsMap]:
-        AnalyticsEventParamsMap[EventName] extends undefined
-          ? never
-          : "source" extends keyof AnalyticsEventParamsMap[EventName]
-            ? EventName
-            : never;
+      [EventName in keyof AnalyticsEventParamsMap]: AnalyticsEventParamsMap[EventName] extends undefined
+        ? never
+        : "source" extends keyof AnalyticsEventParamsMap[EventName]
+          ? EventName
+          : never;
     }[keyof AnalyticsEventParamsMap];
 
     expectTypeOf<EventWithReservedSource>().toEqualTypeOf<never>();
-    expectTypeOf<
-      AnalyticsEventParamsMap[typeof AnalyticsEvents.addToItinerary]
-    >().toEqualTypeOf<{
+    expectTypeOf<AnalyticsEventParamsMap[typeof AnalyticsEvents.addToItinerary]>().toEqualTypeOf<{
       room_id: string;
       interaction_source: "bookmark" | "chat" | "map" | "plan" | "search";
       item_count_bucket: "0" | "1" | "2_3" | "4_7" | "8_plus";
@@ -78,9 +72,7 @@ describe("AnalyticsEvents", () => {
   });
 
   it("does not require browser URL context during SSR", () => {
-    expect(() =>
-      trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder, { room_id: "test-room" }),
-    ).not.toThrow();
+    expect(() => trackAnalyticsEvent(AnalyticsEvents.createBookmarkFolder, { room_id: "test-room" })).not.toThrow();
   });
 });
 
@@ -103,29 +95,18 @@ describe("buildTutorialExitAnalyticsEvent", () => {
   });
 
   it.each([-1, 5])("rejects an invalid skip step index: %i", (stepIndex) => {
-    expect(() =>
-      buildTutorialExitAnalyticsEvent("skip", stepIndex),
-    ).toThrow(RangeError);
+    expect(() => buildTutorialExitAnalyticsEvent("skip", stepIndex)).toThrow(RangeError);
   });
 });
 
 describe("buildAnalyticsUserIdCommand", () => {
   it("sets an opaque string user ID for an authenticated user", () => {
-    expect(buildAnalyticsUserIdCommand(42)).toEqual([
-      "set",
-      { user_id: "42" },
-    ]);
+    expect(buildAnalyticsUserIdCommand(42)).toEqual(["set", { user_id: "42" }]);
   });
 
-  it.each([null, undefined, 0, Number.NaN])(
-    "clears the user ID for an invalid or signed-out value: %s",
-    (userId) => {
-      expect(buildAnalyticsUserIdCommand(userId)).toEqual([
-        "set",
-        { user_id: null },
-      ]);
-    },
-  );
+  it.each([null, undefined, 0, Number.NaN])("clears the user ID for an invalid or signed-out value: %s", (userId) => {
+    expect(buildAnalyticsUserIdCommand(userId)).toEqual(["set", { user_id: null }]);
+  });
 });
 
 describe("analytics consent gate", () => {
@@ -138,12 +119,8 @@ describe("analytics consent gate", () => {
       cookie: "uttae_analytics_consent=v1:denied",
     });
     vi.resetModules();
-    const { AnalyticsEvents, trackAnalyticsEvent } = await import(
-      "@/lib/analytics/track"
-    );
-    const { initializeGoogleAnalytics } = await import(
-      "@/lib/analytics/client"
-    );
+    const { AnalyticsEvents, trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    const { initializeGoogleAnalytics } = await import("@/lib/analytics/client");
 
     trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     expect(window.dataLayer).toEqual([]);
@@ -152,9 +129,7 @@ describe("analytics consent gate", () => {
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
     trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
-    expect(dataLayerCommands(window.dataLayer ?? [])).toEqual([
-      ["event", "expense_created", {}],
-    ]);
+    expect(dataLayerCommands(window.dataLayer ?? [])).toEqual([["event", "expense_created", {}]]);
   });
 
   it("uses session state for general events when cookie persistence fails", async () => {
@@ -173,15 +148,9 @@ describe("analytics consent gate", () => {
       set cookie(_value: string) {},
     });
     vi.resetModules();
-    const { analyticsConsentStore } = await import(
-      "@/lib/analytics/consent-store"
-    );
-    const { AnalyticsEvents, trackAnalyticsEvent } = await import(
-      "@/lib/analytics/track"
-    );
-    const { initializeGoogleAnalytics } = await import(
-      "@/lib/analytics/client"
-    );
+    const { analyticsConsentStore } = await import("@/lib/analytics/consent-store");
+    const { AnalyticsEvents, trackAnalyticsEvent } = await import("@/lib/analytics/track");
+    const { initializeGoogleAnalytics } = await import("@/lib/analytics/client");
 
     expect(analyticsConsentStore.set("granted")).toEqual({
       persisted: false,
@@ -190,9 +159,7 @@ describe("analytics consent gate", () => {
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
     trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
-    expect(dataLayerCommands(dataLayer)).toEqual([
-      ["event", "expense_created", {}],
-    ]);
+    expect(dataLayerCommands(dataLayer)).toEqual([["event", "expense_created", {}]]);
 
     dataLayer.length = 0;
     staleCookie = "uttae_analytics_consent=v1:granted";
@@ -220,13 +187,9 @@ describe("analytics consent gate", () => {
       set cookie(_value: string) {},
     });
     vi.resetModules();
-    const { analyticsConsentStore } = await import(
-      "@/lib/analytics/consent-store"
-    );
+    const { analyticsConsentStore } = await import("@/lib/analytics/consent-store");
     const { setAnalyticsUserId } = await import("@/lib/analytics/track");
-    const { initializeGoogleAnalytics } = await import(
-      "@/lib/analytics/client"
-    );
+    const { initializeGoogleAnalytics } = await import("@/lib/analytics/client");
 
     setAnalyticsUserId(42);
     expect(dataLayer).toEqual([]);
@@ -238,9 +201,7 @@ describe("analytics consent gate", () => {
     initializeGoogleAnalytics("G-TEST123", false);
     dataLayer.length = 0;
     setAnalyticsUserId(42);
-    expect(dataLayerCommands(dataLayer)).toEqual([
-      ["set", { user_id: "42" }],
-    ]);
+    expect(dataLayerCommands(dataLayer)).toEqual([["set", { user_id: "42" }]]);
 
     dataLayer.length = 0;
     staleCookie = "uttae_analytics_consent=v1:granted";

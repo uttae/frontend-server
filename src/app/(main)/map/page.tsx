@@ -25,11 +25,7 @@ export default function MapPage() {
 
   if (!isMobileDevice) return null;
   return (
-    <MapWithDetailPanel
-      mobileInline
-      routeView={routeView.mapRouteView}
-      onOpenRouteView={routeView.open}
-    >
+    <MapWithDetailPanel mobileInline routeView={routeView.mapRouteView} onOpenRouteView={routeView.open}>
       {routeView.overlay}
     </MapWithDetailPanel>
   );

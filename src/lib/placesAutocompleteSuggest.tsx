@@ -12,10 +12,7 @@ export const DESTINATION_INCLUDED_PRIMARY_TYPES: readonly string[] = [
   "postal_code",
 ];
 
-export function circleLocationBias(
-  center: google.maps.LatLngLiteral,
-  radiusMeters: number,
-): google.maps.CircleLiteral {
+export function circleLocationBias(center: google.maps.LatLngLiteral, radiusMeters: number): google.maps.CircleLiteral {
   return { center, radius: radiusMeters };
 }
 
@@ -33,9 +30,7 @@ export function formattableToHighlightedNodes(
     const start = r.startOffset;
     const end = r.endOffset;
     if (start > cursor) {
-      parts.push(
-        <span key={`pre-${i}-${start}`}>{text.slice(cursor, start)}</span>,
-      );
+      parts.push(<span key={`pre-${i}-${start}`}>{text.slice(cursor, start)}</span>);
     }
     parts.push(
       <span key={`m-${i}-${start}`} className={matchClassName}>
@@ -53,13 +48,8 @@ export function formattableToHighlightedNodes(
 export async function fetchPlacePredictionsForRequest(
   request: google.maps.places.AutocompleteRequest,
 ): Promise<google.maps.places.PlacePrediction[]> {
-  const { suggestions } =
-    await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
-      request,
-    );
-  return suggestions
-    .map((s) => s.placePrediction)
-    .filter((p): p is google.maps.places.PlacePrediction => p != null);
+  const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+  return suggestions.map((s) => s.placePrediction).filter((p): p is google.maps.places.PlacePrediction => p != null);
 }
 
 export function newAutocompleteSessionToken(): google.maps.places.AutocompleteSessionToken {
@@ -84,9 +74,7 @@ export function PlacePredictionInlineDescription({
   return (
     <>
       <span className={primaryTextClassName}>{mainParts}</span>
-      {secondaryText ? (
-        <span className={secondaryTextClassName}>{secondaryText}</span>
-      ) : null}
+      {secondaryText ? <span className={secondaryTextClassName}>{secondaryText}</span> : null}
     </>
   );
 }

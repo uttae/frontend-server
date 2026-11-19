@@ -63,19 +63,13 @@ export function MobileRouteCandidateCard({
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           {isLoading && !detail ? (
-            <output
-              aria-label="장소 정보 불러오는 중"
-              aria-busy
-              className="flex flex-col gap-1.5 pt-0.5"
-            >
+            <output aria-label="장소 정보 불러오는 중" aria-busy className="flex flex-col gap-1.5 pt-0.5">
               <Skeleton render={<span />} className="h-5 w-2/3" />
               <Skeleton render={<span />} tone="subtle" className="h-4 w-1/2" />
             </output>
           ) : (
             <>
-              <h3 className="line-clamp-2 break-words text-title-s text-text">
-                {name}
-              </h3>
+              <h3 className="line-clamp-2 break-words text-title-s text-text">{name}</h3>
               <CandidateMetadata category={category} address={address} rating={detail?.rating} />
             </>
           )}
@@ -129,34 +123,31 @@ export function MobileRouteCandidateCard({
   );
 }
 
-function CandidateMetadata({ category, address, rating }: Readonly<{
+function CandidateMetadata({
+  category,
+  address,
+  rating,
+}: Readonly<{
   category: string;
   address: string;
   rating: number | null | undefined;
 }>) {
   return (
-              <p className="flex min-w-0 items-center gap-1 text-body-s-regular text-text-subtle">
-                {category ? <span className="shrink-0">{category}</span> : null}
-                {rating != null ? (
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    {category ? <span aria-hidden>·</span> : null}
-                    <ReactionStarIcon
-                      size={14}
-                      className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
-                    />
-                    <span className="tabular-nums">
-                      {rating.toFixed(1)}
-                    </span>
-                  </span>
-                ) : null}
-                {address ? (
-                  <>
-                    {category || rating != null ? (
-                      <span aria-hidden>·</span>
-                    ) : null}
-                    <span className="truncate">{address}</span>
-                  </>
-                ) : null}
-              </p>
+    <p className="flex min-w-0 items-center gap-1 text-body-s-regular text-text-subtle">
+      {category ? <span className="shrink-0">{category}</span> : null}
+      {rating != null ? (
+        <span className="flex shrink-0 items-center gap-0.5">
+          {category ? <span aria-hidden>·</span> : null}
+          <ReactionStarIcon size={14} className="fill-current text-[var(--orange-500)] [&_path]:stroke-none" />
+          <span className="tabular-nums">{rating.toFixed(1)}</span>
+        </span>
+      ) : null}
+      {address ? (
+        <>
+          {category || rating != null ? <span aria-hidden>·</span> : null}
+          <span className="truncate">{address}</span>
+        </>
+      ) : null}
+    </p>
   );
 }

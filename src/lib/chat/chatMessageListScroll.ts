@@ -7,10 +7,7 @@ export function scrollRootToBottomInstant(root: HTMLDivElement) {
   root.scrollTop = Math.max(0, root.scrollHeight - root.clientHeight);
 }
 
-export function setIsAtBottomIfChanged(
-  setIsAtBottom: Dispatch<SetStateAction<boolean>>,
-  near: boolean,
-) {
+export function setIsAtBottomIfChanged(setIsAtBottom: Dispatch<SetStateAction<boolean>>, near: boolean) {
   setIsAtBottom((prev) => (prev === near ? prev : near));
 }
 
@@ -43,9 +40,7 @@ export function scrollReadBoundaryToBottom(
     return;
   }
 
-  const headId =
-    groups.find((g) => g.some((m) => m.id === fallbackMessageId))?.[0]?.id ??
-    fallbackMessageId;
+  const headId = groups.find((g) => g.some((m) => m.id === fallbackMessageId))?.[0]?.id ?? fallbackMessageId;
   const el = root.querySelector(`[data-chat-anchor="${CSS.escape(headId)}"]`);
   if (el instanceof HTMLElement) {
     el.scrollIntoView({ behavior: "auto", block: "end" });
@@ -58,17 +53,10 @@ export function scrollReadBoundaryToBottom(
   setIsAtBottomIfChanged(setIsAtBottom, true);
 }
 
-export function applyScrollAnchor(
-  root: HTMLDivElement,
-  followTail: boolean,
-  distFromBottom: number,
-) {
+export function applyScrollAnchor(root: HTMLDivElement, followTail: boolean, distFromBottom: number) {
   if (followTail) {
     scrollRootToBottomInstant(root);
     return;
   }
-  root.scrollTop = Math.max(
-    0,
-    root.scrollHeight - root.clientHeight - distFromBottom,
-  );
+  root.scrollTop = Math.max(0, root.scrollHeight - root.clientHeight - distFromBottom);
 }

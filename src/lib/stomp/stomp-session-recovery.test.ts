@@ -68,18 +68,15 @@ describe("refreshSessionBeforeReconnect", () => {
     expect(client.deactivate).not.toHaveBeenCalled();
   });
 
-  it.each([503, 500])(
-    "lets stompjs attempt the connection when the session check returns %i",
-    async (status) => {
-      fetchMock.mockResolvedValueOnce(new Response(null, { status }));
-      const { client, run } = setup();
+  it.each([503, 500])("lets stompjs attempt the connection when the session check returns %i", async (status) => {
+    fetchMock.mockResolvedValueOnce(new Response(null, { status }));
+    const { client, run } = setup();
 
-      await run();
+    await run();
 
-      expect(client.deactivate).not.toHaveBeenCalled();
-      expect(mocks.expire).not.toHaveBeenCalled();
-    },
-  );
+    expect(client.deactivate).not.toHaveBeenCalled();
+    expect(mocks.expire).not.toHaveBeenCalled();
+  });
 
   it("treats a network failure as transient", async () => {
     fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));

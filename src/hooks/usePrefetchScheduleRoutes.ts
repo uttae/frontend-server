@@ -16,10 +16,7 @@ export function usePrefetchScheduleRoutes(
 
   const scheduleKey = `${roomId.trim()}:${scheduleId}`;
 
-  const fingerprint = useMemo(
-    () => schedulePlacesFingerprint([...places]),
-    [places],
-  );
+  const fingerprint = useMemo(() => schedulePlacesFingerprint([...places]), [places]);
 
   useLayoutEffect(() => {
     if (!enabled || !roomId.trim() || places.length < 2 || !fingerprint.length) {
@@ -32,12 +29,7 @@ export function usePrefetchScheduleRoutes(
 
     let cancelled = false;
 
-    void fetchAndSeedScheduleRoutesBatch(
-      queryClient,
-      roomId,
-      scheduleId,
-      places,
-    ).finally(() => {
+    void fetchAndSeedScheduleRoutesBatch(queryClient, roomId, scheduleId, places).finally(() => {
       if (!cancelled) {
         setCompletedKeys((keys) => new Set(keys).add(scheduleKey));
       }

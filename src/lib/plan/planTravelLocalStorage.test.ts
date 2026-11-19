@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  readScheduleRouteFromSessionStorage,
-  writeScheduleRouteToSessionStorage,
-} from "./planTravelLocalStorage";
+import { readScheduleRouteFromSessionStorage, writeScheduleRouteToSessionStorage } from "./planTravelLocalStorage";
 
 function memoryStorage(): Storage {
   const map = new Map<string, string>();
@@ -38,11 +35,7 @@ describe("구간 경로 sessionStorage", () => {
     const toC = { distanceMeters: 999, durationSeconds: 60, travelMode: "DRIVING" };
     writeScheduleRouteToSessionStorage("room-1", 10, 1, 3, "DRIVING", "fp-1-2-3", toC);
 
-    expect(
-      readScheduleRouteFromSessionStorage("room-1", 10, 1, 2, "DRIVING", "fp-1-2-3"),
-    ).toBeUndefined();
-    expect(
-      readScheduleRouteFromSessionStorage("room-1", 10, 1, 3, "DRIVING", "fp-1-2-3"),
-    ).toEqual(toC);
+    expect(readScheduleRouteFromSessionStorage("room-1", 10, 1, 2, "DRIVING", "fp-1-2-3")).toBeUndefined();
+    expect(readScheduleRouteFromSessionStorage("room-1", 10, 1, 3, "DRIVING", "fp-1-2-3")).toEqual(toC);
   });
 });

@@ -23,10 +23,14 @@ export function RoomTripReadOnlyFields({ idPrefix, values }: Readonly<{ idPrefix
   return (
     <div className="flex min-w-0 flex-col gap-6">
       <Field label="여행 제목">
-        <p className={FIELD_BOX_CLASS}><span className="truncate">{title.trim() || "—"}</span></p>
+        <p className={FIELD_BOX_CLASS}>
+          <span className="truncate">{title.trim() || "—"}</span>
+        </p>
       </Field>
       <Field label="목적지">
-        <p className={FIELD_BOX_CLASS}><span className="truncate">{destinations.join(", ") || "—"}</span></p>
+        <p className={FIELD_BOX_CLASS}>
+          <span className="truncate">{destinations.join(", ") || "—"}</span>
+        </p>
       </Field>
       <DateRangeField idPrefix={idPrefix} value={{ start: startDate, end: endDate }} readOnly onChange={() => {}} />
     </div>

@@ -11,10 +11,7 @@ import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
 import { useChatActions } from "@/hooks/useChatActions";
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-} from "@/lib/analytics/track";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 
 import type { SearchResultCardProps } from "./SearchResultCard";
 import { AddToBookmarkModal } from "./AddToBookmarkModal";
@@ -70,16 +67,16 @@ export function PlaceDetailPanel({
 
   const itinerarySource = selectedItinerarySource ?? "search";
 
-  const { data: detailData, isLoading: isDetailLoading, isError: isDetailError, refetch } =
-    usePlaceDetailData(googlePlaceId);
+  const {
+    data: detailData,
+    isLoading: isDetailLoading,
+    isError: isDetailError,
+    refetch,
+  } = usePlaceDetailData(googlePlaceId);
 
-  const displayName =
-    (detailData?.name && detailData.name.trim().length > 0
-      ? detailData.name
-      : name) || name;
+  const displayName = (detailData?.name && detailData.name.trim().length > 0 ? detailData.name : name) || name;
   const displayCategory =
-    (detailData?.primaryTypeDisplayName &&
-    detailData.primaryTypeDisplayName.trim().length > 0
+    (detailData?.primaryTypeDisplayName && detailData.primaryTypeDisplayName.trim().length > 0
       ? detailData.primaryTypeDisplayName
       : category) || category;
   const lastTrackedPlaceIdRef = useRef<string | null>(null);
@@ -168,52 +165,46 @@ export function PlaceDetailPanel({
       {isDetailLoading && googlePlaceId ? (
         <HeroSkeleton />
       ) : (
-        <HeroImage
-          googlePlaceId={googlePlaceId}
-          fallbackImage={image}
-          name={displayName}
-        />
+        <HeroImage googlePlaceId={googlePlaceId} fallbackImage={image} name={displayName} />
       )}
     </div>
   );
 
-  const sendToChatDisabled =
-    !googlePlaceId || (!location && !detailData?.location && isDetailLoading);
-  const openScheduleModal = googlePlaceId
-    ? () => setScheduleModalOpen(true)
-    : undefined;
-  const openBookmarkModal = googlePlaceId
-    ? () => setBookmarkModalOpen(true)
-    : undefined;
+  const sendToChatDisabled = !googlePlaceId || (!location && !detailData?.location && isDetailLoading);
+  const openScheduleModal = googlePlaceId ? () => setScheduleModalOpen(true) : undefined;
+  const openBookmarkModal = googlePlaceId ? () => setBookmarkModalOpen(true) : undefined;
 
-  const tabs = isDetailError && !detailData ? (
-    <div className="p-3.5">
-      <Alert>
-        <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
-        <AlertAction>
-          <button type="button" onClick={() => void refetch()} className="text-primary underline">다시 시도</button>
-        </AlertAction>
-      </Alert>
-    </div>
-  ) : (
-    <PlaceDetailTabs
-      home={{
-        isOpen: openNow,
-        address: displayAddress,
-        phone,
-        hours,
-        website,
-        googleMapsUrl: detailData?.placeUri ?? undefined,
-        reviewSummary,
-      }}
-      reviews={{
-        rating: displayRating,
-        userRatingCount,
-        reviews,
-        reviewsUri: detailData?.reviewsUri,
-      }}
-    />
-  );
+  const tabs =
+    isDetailError && !detailData ? (
+      <div className="p-3.5">
+        <Alert>
+          <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
+          <AlertAction>
+            <button type="button" onClick={() => void refetch()} className="text-primary underline">
+              다시 시도
+            </button>
+          </AlertAction>
+        </Alert>
+      </div>
+    ) : (
+      <PlaceDetailTabs
+        home={{
+          isOpen: openNow,
+          address: displayAddress,
+          phone,
+          hours,
+          website,
+          googleMapsUrl: detailData?.placeUri ?? undefined,
+          reviewSummary,
+        }}
+        reviews={{
+          rating: displayRating,
+          userRatingCount,
+          reviews,
+          reviewsUri: detailData?.reviewsUri,
+        }}
+      />
+    );
 
   const modals = (
     <>

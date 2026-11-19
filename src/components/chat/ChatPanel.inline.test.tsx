@@ -2,34 +2,75 @@
 import { act } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-const boundary = vi.hoisted(() => ({ sendAi: vi.fn(), sendChat: vi.fn(), pathname: "/chat", push: vi.fn(), back: vi.fn(), replace: vi.fn(), waitingForMembers: false }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: boundary.push, back: boundary.back, replace: boundary.replace }), usePathname: () => boundary.pathname }));
+const boundary = vi.hoisted(() => ({
+  sendAi: vi.fn(),
+  sendChat: vi.fn(),
+  pathname: "/chat",
+  push: vi.fn(),
+  back: vi.fn(),
+  replace: vi.fn(),
+  waitingForMembers: false,
+}));
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: boundary.push, back: boundary.back, replace: boundary.replace }),
+  usePathname: () => boundary.pathname,
+}));
 vi.mock("@/hooks/useCurrentRoomTitle", () => ({ useCurrentRoomTitle: () => "제주 여행" }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRooms", () => ({ useRoomMembers: () => ({ data: { members: [] } }) }));
-vi.mock("@/hooks/useChatMessages", () => ({ useChatMessages: () => ({
-  messages: [{ id: "hello", type: "system", text: "여행 대화를 시작합니다" }],
-  waitingForMembers: boundary.waitingForMembers,
-  sendChatMessage: boundary.sendChat, sendAiMessage: boundary.sendAi,
-  sendCancelAiRequest: vi.fn(), fetchOlderMessages: vi.fn(), fetchNewerMessages: vi.fn(),
-  jumpToLatest: vi.fn(), hasMore: false, hasMoreNewer: false,
-  isFetchingOlder: false, isFetchingNewer: false, readMarkerMessageId: null,
-  readDividerPlacement: null, scrollToAnchor: null, markMessagesRead: vi.fn(),
-}) }));
-vi.mock("@/lib/client-env", () => ({ clientEnv: {
-  NEXT_PUBLIC_API_BASE_URL: "http://127.0.0.1:9", NEXT_PUBLIC_GOOGLE_CLIENT_ID: "synthetic",
-  NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "http://127.0.0.1:9", NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "synthetic",
-} }));
+vi.mock("@/hooks/useChatMessages", () => ({
+  useChatMessages: () => ({
+    messages: [{ id: "hello", type: "system", text: "여행 대화를 시작합니다" }],
+    waitingForMembers: boundary.waitingForMembers,
+    sendChatMessage: boundary.sendChat,
+    sendAiMessage: boundary.sendAi,
+    sendCancelAiRequest: vi.fn(),
+    fetchOlderMessages: vi.fn(),
+    fetchNewerMessages: vi.fn(),
+    jumpToLatest: vi.fn(),
+    hasMore: false,
+    hasMoreNewer: false,
+    isFetchingOlder: false,
+    isFetchingNewer: false,
+    readMarkerMessageId: null,
+    readDividerPlacement: null,
+    scrollToAnchor: null,
+    markMessagesRead: vi.fn(),
+  }),
+}));
+vi.mock("@/lib/client-env", () => ({
+  clientEnv: {
+    NEXT_PUBLIC_API_BASE_URL: "http://127.0.0.1:9",
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: "synthetic",
+    NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "http://127.0.0.1:9",
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "synthetic",
+  },
+}));
 import { ChatPanel } from "./ChatPanel";
 import { useChatPanelStore } from "@/stores/chat-panel-store";
 
 it("keeps messages and the working AI composer inside one inline panel", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
-  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
   HTMLElement.prototype.scrollTo = vi.fn();
   HTMLElement.prototype.scrollIntoView = vi.fn();
-  const host = document.createElement("div"); document.body.append(host);
+  const host = document.createElement("div");
+  document.body.append(host);
   const root = createRoot(host);
   useChatPanelStore.setState({ minimized: false });
   Object.defineProperty(window.history, "length", { configurable: true, value: 2 });
@@ -43,7 +84,7 @@ it("keeps messages and the working AI composer inside one inline panel", async (
     expect(host.textContent).not.toContain("0명 접속중");
     expect(host.querySelector('[aria-label="채팅 닫기"]')).toBeNull();
     expect(host.firstElementChild?.className).not.toContain("absolute");
-    const ai = [...host.querySelectorAll("button")].find(button => button.textContent === "@ai")!;
+    const ai = [...host.querySelectorAll("button")].find((button) => button.textContent === "@ai")!;
     await act(async () => ai.click());
     const suggest = host.querySelector<HTMLButtonElement>('[aria-label="입력란에 장소 추천 요청 문구 넣기"]')!;
     await act(async () => suggest.click());
@@ -70,18 +111,35 @@ it("keeps messages and the working AI composer inside one inline panel", async (
     expect(boundary.back).not.toHaveBeenCalled();
     expect(boundary.replace).not.toHaveBeenCalled();
   } finally {
-    await act(async () => root.unmount()); host.remove();
-    useChatPanelStore.setState({ minimized: false }); vi.unstubAllGlobals();
+    await act(async () => root.unmount());
+    host.remove();
+    useChatPanelStore.setState({ minimized: false });
+    vi.unstubAllGlobals();
   }
 });
 
 it("보낸 사람 이름을 찾을 멤버 목록을 받기 전에는 메시지 대신 로딩 표시를 두고, 입력창은 그대로 둔다", async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-  vi.stubGlobal("ResizeObserver", class { observe() {} unobserve() {} disconnect() {} });
-  vi.stubGlobal("IntersectionObserver", class { observe() {} unobserve() {} disconnect() {} });
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
   HTMLElement.prototype.scrollTo = vi.fn();
   HTMLElement.prototype.scrollIntoView = vi.fn();
-  const host = document.createElement("div"); document.body.append(host);
+  const host = document.createElement("div");
+  document.body.append(host);
   const root = createRoot(host);
   useChatPanelStore.setState({ minimized: false });
   boundary.waitingForMembers = true;

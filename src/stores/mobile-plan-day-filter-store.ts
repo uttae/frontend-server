@@ -9,6 +9,5 @@ type MobilePlanDayFilterState = {
 
 export const useMobilePlanDayFilterStore = create<MobilePlanDayFilterState>((set) => ({
   filterByRoomId: {},
-  setFilter: (roomId, filter) =>
-    set((s) => ({ filterByRoomId: { ...s.filterByRoomId, [roomId]: filter } })),
+  setFilter: (roomId, filter) => set((s) => ({ filterByRoomId: { ...s.filterByRoomId, [roomId]: filter } })),
 }));

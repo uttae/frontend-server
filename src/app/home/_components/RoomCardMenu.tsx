@@ -44,20 +44,16 @@ export function RoomCardMenu({ room, onDelete, onLeave }: Props) {
           ) : null}
           {isHostRole(room.role) ? (
             <DropdownMenuItem variant="destructive" onClick={() => onDelete(room)}>
-              <TrashIcon />
-              방 삭제하기
+              <TrashIcon />방 삭제하기
             </DropdownMenuItem>
           ) : (
             <DropdownMenuItem onClick={() => onLeave(room)}>
-              <SignLogoutIcon />
-              방 나가기
+              <SignLogoutIcon />방 나가기
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {inviteOpen && (
-        <InviteRoomModal room={room} finalFocus={triggerRef} onClose={() => setInviteOpen(false)} />
-      )}
+      {inviteOpen && <InviteRoomModal room={room} finalFocus={triggerRef} onClose={() => setInviteOpen(false)} />}
     </>
   );
 }

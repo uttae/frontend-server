@@ -18,8 +18,7 @@ export const MAP_DETAIL_PANEL_COVER_WIDTH = `calc(0.625rem + ${MAP_DETAIL_PANEL_
 export const PLAN_PLACE_CARD_MIN_SIZE_REM = "6rem" as const;
 
 export const PLAN_PLACE_CARD_TW = {
-  article:
-    "flex flex-col rounded-[12px] bg-fill-elevate px-3 pt-3 ring-[0.5px] ring-border-subtle",
+  article: "flex flex-col rounded-[12px] bg-fill-elevate px-3 pt-3 ring-[0.5px] ring-border-subtle",
   contents: "flex min-w-0 items-start gap-3.5 pb-3",
   placeInfo: "flex min-w-0 flex-1 items-center gap-3",
   thumbnail: "relative size-25 shrink-0 overflow-hidden rounded-md bg-fill-strong",
@@ -40,16 +39,12 @@ export const PLAN_PLACE_CARD_TW = {
   memoActionIcon: "shrink-0 text-icon-subtle group-data-filled:text-primary",
   editorModule:
     "relative flex w-full items-start gap-3 rounded-[12px] bg-fill-strong px-4 py-3 ring-[0.5px] ring-border text-body-s-regular mobile:text-body-xs-regular text-text",
-  editorSideLabelWrapper:
-    "flex shrink-0 flex-col items-center justify-center gap-1 pt-0.5 text-dark-gray",
-  editorSideLabelText:
-    "text-body-xs-emphasis font-medium leading-none text-dark-gray",
+  editorSideLabelWrapper: "flex shrink-0 flex-col items-center justify-center gap-1 pt-0.5 text-dark-gray",
+  editorSideLabelText: "text-body-xs-emphasis font-medium leading-none text-dark-gray",
   editorBody: "flex min-w-0 flex-1 flex-col gap-2",
-  editorFooterRow:
-    "-mt-1 flex flex-wrap items-start justify-end gap-2 text-body-xs-regular",
+  editorFooterRow: "-mt-1 flex flex-wrap items-start justify-end gap-2 text-body-xs-regular",
   timeFieldLabel: "text-body-xs-emphasis font-medium leading-none text-dark-gray/90",
-  timeFieldsRow:
-    "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-2",
+  timeFieldsRow: "grid w-full min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-2",
   timeField: "flex min-w-0 w-full flex-col gap-1",
   timeInputCompact:
     "h-9 min-w-0 w-full rounded-md border border-gray-200 bg-white px-2 text-body-s-regular shadow-none transition focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary/30",

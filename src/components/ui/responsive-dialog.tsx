@@ -66,7 +66,13 @@ type ResponsiveDialogContentProps = {
   children?: ReactNode;
 };
 
-function ResponsiveDialogContent({ size, fixedWidth, drawerSize, showCloseButton, ...props }: Readonly<ResponsiveDialogContentProps>) {
+function ResponsiveDialogContent({
+  size,
+  fixedWidth,
+  drawerSize,
+  showCloseButton,
+  ...props
+}: Readonly<ResponsiveDialogContentProps>) {
   const isDrawer = useResponsiveDialogIsDrawer();
   return isDrawer ? (
     <DrawerContent size={drawerSize} {...props} />

@@ -1,24 +1,10 @@
 "use client";
 
-import {
-  useEffect,
-  useEffectEvent,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useEffectEvent, useRef, useState, type FormEvent, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
-import {
-  CloseIcon,
-  LocationErrorIcon,
-  LocationIcon,
-  SearchIcon,
-  type IconProps,
-} from "@/assets/icons";
+import { CloseIcon, LocationErrorIcon, LocationIcon, SearchIcon, type IconProps } from "@/assets/icons";
 import { SearchBar, SearchBarBack, SearchBarClear, SearchBarInput } from "@/components/ui/search-bar";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import {
@@ -48,9 +34,7 @@ type SuggestState =
 
 const LOCATION_BIAS_RADIUS_M = 50_000;
 
-function predictionToEntry(
-  prediction: google.maps.places.PlacePrediction,
-): MapSearchPlaceEntry {
+function predictionToEntry(prediction: google.maps.places.PlacePrediction): MapSearchPlaceEntry {
   return {
     type: "place",
     googlePlaceId: prediction.placeId,
@@ -69,9 +53,20 @@ type MobilePlaceSearchScreenProps = Readonly<{
   resetKey?: number;
 }>;
 
-export function MobilePlaceSearchScreen(props: MobilePlaceSearchScreenProps & Partial<Pick<MapMobileSearchProps, "onConfirm" | "onInvalidate" | "onClear" | "scopeKey" | "initialQuery">>) {
+export function MobilePlaceSearchScreen(
+  props: MobilePlaceSearchScreenProps &
+    Partial<Pick<MapMobileSearchProps, "onConfirm" | "onInvalidate" | "onClear" | "scopeKey" | "initialQuery">>,
+) {
   if (props.onConfirm && props.onInvalidate && props.onClear && props.scopeKey) {
-    return <MapMobileSearchScreen {...props} onConfirm={props.onConfirm} onInvalidate={props.onInvalidate} onClear={props.onClear} scopeKey={props.scopeKey} />;
+    return (
+      <MapMobileSearchScreen
+        {...props}
+        onConfirm={props.onConfirm}
+        onInvalidate={props.onInvalidate}
+        onClear={props.onClear}
+        scopeKey={props.scopeKey}
+      />
+    );
   }
   return <LegacyMobilePlaceSearchScreen {...props} />;
 }
@@ -96,8 +91,7 @@ function LegacyMobilePlaceSearchScreen({
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fetchGenRef = useRef(0);
-  const sessionTokenRef =
-    useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const sessionTokenRef = useRef<google.maps.places.AutocompleteSessionToken | null>(null);
 
   const [previousResetKey, setPreviousResetKey] = useState(resetKey);
   if (previousResetKey !== resetKey) {
@@ -268,9 +262,7 @@ function LegacyMobilePlaceSearchScreen({
                     key={mapSearchHistoryEntryKey(entry)}
                     icon={SearchIcon}
                     title={entry.query}
-                    onSelect={() =>
-                      onSubmitQuery ? commitQuery(entry.query) : updateInput(entry.query)
-                    }
+                    onSelect={() => (onSubmitQuery ? commitQuery(entry.query) : updateInput(entry.query))}
                     onRemove={remove}
                   />
                 );
@@ -290,12 +282,8 @@ function LegacyMobilePlaceSearchScreen({
                   onSelect={() => void handleSelect(entry)}
                 />
               ))}
-            {suggest.status === "done" && suggest.items.length === 0 && (
-              <MessageRow text="검색 결과 없음" />
-            )}
-            {suggest.status === "error" && (
-              <MessageRow text="검색 결과를 불러오지 못했어요. 다시 시도해주세요." />
-            )}
+            {suggest.status === "done" && suggest.items.length === 0 && <MessageRow text="검색 결과 없음" />}
+            {suggest.status === "error" && <MessageRow text="검색 결과를 불러오지 못했어요. 다시 시도해주세요." />}
           </ul>
         )}
       </div>
@@ -304,8 +292,7 @@ function LegacyMobilePlaceSearchScreen({
   );
 }
 
-const ROW_CLASS =
-  "flex h-14 items-center border-b-[0.5px] border-border-subtle pl-3.5";
+const ROW_CLASS = "flex h-14 items-center border-b-[0.5px] border-border-subtle pl-3.5";
 
 function SearchRow({
   icon: Icon,
@@ -334,9 +321,7 @@ function SearchRow({
         <Icon size={20} className="text-icon-subtle" />
         <span className="flex min-w-0 flex-1 flex-col pl-2.5 pr-4">
           <span className="truncate text-body-s-emphasis text-text">{title}</span>
-          {subtitle ? (
-            <span className="truncate text-caption-m-regular text-text-subtle">{subtitle}</span>
-          ) : null}
+          {subtitle ? <span className="truncate text-caption-m-regular text-text-subtle">{subtitle}</span> : null}
         </span>
       </button>
       {onRemove ? (

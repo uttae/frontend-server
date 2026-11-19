@@ -6,10 +6,7 @@ import { MobilePlaceSearchScreen } from "@/components/search/MobilePlaceSearchSc
 import type { MapSearchPlaceEntry } from "@/lib/map-search-history";
 import { fetchPlaceDetail, normalizePreviewLocation } from "@/lib/places/place-queries";
 import type { SearchConfirmation } from "@/lib/places/search-session";
-import {
-  placeSearchResultsToMapPins,
-  setActiveSearchMapPins,
-} from "@/lib/active-search-map-pins";
+import { placeSearchResultsToMapPins, setActiveSearchMapPins } from "@/lib/active-search-map-pins";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
 import { useSearchRecenterStore } from "@/stores/search-recenter-store";
@@ -22,13 +19,7 @@ type Props = {
   scopeKey: string;
   initialQuery?: string;
 };
-export function MobileMapSearch({
-  confirm,
-  invalidate,
-  clearSearch,
-  scopeKey,
-  initialQuery,
-}: Readonly<Props>) {
+export function MobileMapSearch({ confirm, invalidate, clearSearch, scopeKey, initialQuery }: Readonly<Props>) {
   const textSearchNonce = useMobileMapSearchStore((s) => s.textSearchNonce);
   const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const open = useMobileMapSearchStore((s) => s.open);
@@ -51,9 +42,7 @@ export function MobileMapSearch({
     if (success) closeSearch();
     return success;
   }
-  async function handleSelectHistory(
-    entry: MapSearchPlaceEntry,
-  ): Promise<MapSearchPlaceEntry | null> {
+  async function handleSelectHistory(entry: MapSearchPlaceEntry): Promise<MapSearchPlaceEntry | null> {
     const generation = usePlaceSearchStore.getState().invalidate();
     setSelectedPlace(null);
     usePlaceSearchStore.setState({
@@ -66,8 +55,7 @@ export function MobileMapSearch({
     try {
       const detail = await fetchPlaceDetail(entry.googlePlaceId);
       const state = usePlaceSearchStore.getState();
-      if (state.generation !== generation || state.scope !== scopeKey)
-        return null;
+      if (state.generation !== generation || state.scope !== scopeKey) return null;
       const location = normalizePreviewLocation(detail.location);
       if (!location) throw new Error("장소 좌표를 확인할 수 없어요.");
       const item = {

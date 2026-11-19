@@ -3,7 +3,7 @@ const FIRST_DAY_ROUTE_COLOR = "#0183ff";
 const FIRST_DAY_ROUTE_HUE = 211;
 
 function hslToRgb(hDeg: number, sPct: number, lPct: number): [number, number, number] {
-  const hNorm = ((((hDeg % 360) + 360) % 360) / 360);
+  const hNorm = (((hDeg % 360) + 360) % 360) / 360;
   const s = Math.max(0, Math.min(100, sPct)) / 100;
   const l = Math.max(0, Math.min(100, lPct)) / 100;
 
@@ -27,22 +27,14 @@ function hslToRgb(hDeg: number, sPct: number, lPct: number): [number, number, nu
   const rr = hueToRgb(pp, qq, hNorm + 1 / 3);
   const gg = hueToRgb(pp, qq, hNorm);
   const bb = hueToRgb(pp, qq, hNorm - 1 / 3);
-  return [
-    Math.round(rr * 255),
-    Math.round(gg * 255),
-    Math.round(bb * 255),
-  ];
+  return [Math.round(rr * 255), Math.round(gg * 255), Math.round(bb * 255)];
 }
 
 function rgbToHex(r: number, g: number, b: number): string {
-  return `#${[r, g, b]
-    .map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0"))
-    .join("")}`;
+  return `#${[r, g, b].map((n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0")).join("")}`;
 }
 
-export function sortedScheduleIdsForRouteColors(
-  scheduleIdsByPresence: Record<number, boolean>,
-): number[] {
+export function sortedScheduleIdsForRouteColors(scheduleIdsByPresence: Record<number, boolean>): number[] {
   return Object.keys(scheduleIdsByPresence)
     .map((k) => Number(k))
     .filter((id) => Number.isFinite(id))

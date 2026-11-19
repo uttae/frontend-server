@@ -9,10 +9,7 @@ import {
   roomSchedulesQueryKey,
   roomUnreadCountQueryKey,
 } from "@/lib/query-keys";
-import {
-  resyncRoomDataAfterSubscribe,
-  resyncUserQueueDataAfterSubscribe,
-} from "./room-resync-dispatch";
+import { resyncRoomDataAfterSubscribe, resyncUserQueueDataAfterSubscribe } from "./room-resync-dispatch";
 
 const clients: QueryClient[] = [];
 function newClient() {

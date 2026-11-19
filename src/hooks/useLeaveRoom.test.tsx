@@ -17,7 +17,15 @@ vi.mock("@/lib/api/rooms", async (importOriginal) => ({
 }));
 
 const rooms = (ids: string[]): RoomListResponse => ({
-  rooms: ids.map((id) => ({ id, title: id, destinations: [], startDate: null, endDate: null, role: "MEMBER", joinedAt: "" })),
+  rooms: ids.map((id) => ({
+    id,
+    title: id,
+    destinations: [],
+    startDate: null,
+    endDate: null,
+    role: "MEMBER",
+    joinedAt: "",
+  })),
   nextCursor: null,
   hasNext: false,
 });
@@ -31,15 +39,25 @@ it("방을 나가면 그 방 캐시는 다시 받지 않고 지우고, 방 목�
   client.setQueryData(roomMembersQueryKey("other"), { members: [] });
 
   let leave: ReturnType<typeof useLeaveRoom>["mutateAsync"] | undefined;
-  const capture = (value: typeof leave) => { leave = value; };
+  const capture = (value: typeof leave) => {
+    leave = value;
+  };
   function Probe({ onRender }: { onRender: (value: typeof leave) => void }) {
     onRender(useLeaveRoom().mutateAsync);
     return null;
   }
   const root = createRoot(document.createElement("div"));
   try {
-    await act(async () => root.render(<QueryClientProvider client={client}><Probe onRender={capture} /></QueryClientProvider>));
-    await act(async () => { await leave!("left"); });
+    await act(async () =>
+      root.render(
+        <QueryClientProvider client={client}>
+          <Probe onRender={capture} />
+        </QueryClientProvider>,
+      ),
+    );
+    await act(async () => {
+      await leave!("left");
+    });
 
     expect(client.getQueryState(roomMembersQueryKey("left"))).toBeUndefined();
     expect(client.getQueryState(roomMembersQueryKey("other"))?.isInvalidated).toBe(false);

@@ -28,7 +28,10 @@ export class PlaceSessionError extends Error {
     public readonly code: string,
     message: string,
     public readonly retryAfterMs: number | null = null,
-  ) { super(message); this.name = "PlaceSessionError"; }
+  ) {
+    super(message);
+    this.name = "PlaceSessionError";
+  }
 }
 const bucketWaits = { search: 0, read: 0 };
 function parseRetryAfterMs(retryAfter: string | null): number | null {
@@ -40,7 +43,7 @@ function parseRetryAfterMs(retryAfter: string | null): number | null {
 }
 async function responseError(res: Response, bucket: keyof typeof bucketWaits): Promise<PlaceSessionError> {
   const raw = await tryParseJson(res);
-  const error = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+  const error = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const retryAfterMs = parseRetryAfterMs(res.headers.get("Retry-After"));
   if (res.status === 429) bucketWaits[bucket] = Date.now() + (retryAfterMs ?? 60000);
   return new PlaceSessionError(
@@ -53,9 +56,16 @@ async function responseError(res: Response, bucket: keyof typeof bucketWaits): P
 async function post<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const bucket = path === "/places/resolve" ? "read" : "search";
   if (bucketWaits[bucket] > Date.now())
-    throw new PlaceSessionError(429, "RATE_LIMIT_EXCEEDED", "잠시 후 다시 검색해주세요.", bucketWaits[bucket] - Date.now());
+    throw new PlaceSessionError(
+      429,
+      "RATE_LIMIT_EXCEEDED",
+      "잠시 후 다시 검색해주세요.",
+      bucketWaits[bucket] - Date.now(),
+    );
   const res = await apiFetch(apiUrl(path), {
-    method: "POST", ...(body === undefined ? {} : jsonBody(body)), signal,
+    method: "POST",
+    ...(body === undefined ? {} : jsonBody(body)),
+    signal,
   });
   if (!res.ok) throw await responseError(res, bucket);
   return res.json() as Promise<T>;
@@ -63,9 +73,15 @@ async function post<T>(path: string, body?: unknown, signal?: AbortSignal): Prom
 export function issuePlaceSession(signal?: AbortSignal) {
   return post<PlaceSession>("/places/sessions", undefined, signal);
 }
-export function autocompletePlaces(params: {
-  sessionToken: string; input: string; latitude: number; longitude: number;
-}, signal?: AbortSignal) {
+export function autocompletePlaces(
+  params: {
+    sessionToken: string;
+    input: string;
+    latitude: number;
+    longitude: number;
+  },
+  signal?: AbortSignal,
+) {
   return post<{ suggestions: { placePrediction: PlacePrediction }[] }>("/places/autocomplete", params, signal);
 }
 export function resolvePlaceSession(sessionToken: string, googlePlaceId: string, signal?: AbortSignal) {

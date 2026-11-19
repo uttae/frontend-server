@@ -43,20 +43,11 @@ export function resolveRoomIdFromStoreAndUrl(
   return trimmedRoomId(urlRoomId) ?? trimmedRoomId(storeRoomId);
 }
 
-export function resolveCurrentRoomId(
-  storeRoomId: string | null | undefined,
-  urlRoomId?: string | null,
-): string | null {
-  return (
-    resolveRoomIdFromStoreAndUrl(storeRoomId, urlRoomId) ??
-    readCurrentRoomIdFromSessionStorage()
-  );
+export function resolveCurrentRoomId(storeRoomId: string | null | undefined, urlRoomId?: string | null): string | null {
+  return resolveRoomIdFromStoreAndUrl(storeRoomId, urlRoomId) ?? readCurrentRoomIdFromSessionStorage();
 }
 
-export function resolveRoomIdFromPathname(
-  storeRoomId: string | null | undefined,
-  pathname: string,
-): string | null {
+export function resolveRoomIdFromPathname(storeRoomId: string | null | undefined, pathname: string): string | null {
   const route = parseRoomContextPath(pathname);
   if (route.invalidPackingPath) return null;
   return resolveRoomIdFromStoreAndUrl(storeRoomId, route.roomId);

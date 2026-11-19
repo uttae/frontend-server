@@ -63,14 +63,8 @@ function ExpenseEditorConflict({
   else if (conflict.failed) message = "최신 비용 조회에 실패했어요. 저장은 중단돼요.";
   const unavailable = pending ? <Spinner aria-label={message} /> : <p>{message}</p>;
   return (
-    <div
-      role="alert"
-      className="space-y-3 rounded-xl border border-gray-border p-3"
-    >
-      <p>
-        비용이 변경되었어요. 입력 내용은 유지돼요. 최신 비용을 확인해
-        주세요.
-      </p>
+    <div role="alert" className="space-y-3 rounded-xl border border-gray-border p-3">
+      <p>비용이 변경되었어요. 입력 내용은 유지돼요. 최신 비용을 확인해 주세요.</p>
       {conflict.latest ? (
         <>
           <ExpenseList
@@ -85,17 +79,9 @@ function ExpenseEditorConflict({
             busy={false}
           />
           {conflictMoved ? (
-            <p>
-              연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신
-              비용을 다시 열어 주세요.
-            </p>
+            <p>연결 위치가 변경되었어요. 입력 내용을 복사한 뒤 최신 비용을 다시 열어 주세요.</p>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={pending || targetChanged}
-              onClick={onContinue}
-            >
+            <Button variant="outline" size="sm" disabled={pending || targetChanged} onClick={onContinue}>
               최신 비용 확인 후 수정 계속
             </Button>
           )}
@@ -118,21 +104,14 @@ function amountPlaceholder(currency: { fractionDigits: number } | undefined) {
 }
 
 function revealError(element: Element | null | undefined) {
-  const reduceMotion = typeof window !== "undefined" &&
-    window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  const reduceMotion = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
   element?.scrollIntoView({
     block: "nearest",
     behavior: reduceMotion ? "instant" : "smooth",
   });
 }
 
-export function ExpenseEditor({
-  initial,
-  onClose,
-}: {
-  initial: ExpenseEntry;
-  onClose: () => void;
-}) {
+export function ExpenseEditor({ initial, onClose }: { initial: ExpenseEntry; onClose: () => void }) {
   const context = useExpenseContext();
   const { isMobileDevice } = useMobileView();
   const [original, setOriginal] = useState(initial.expense);
@@ -142,24 +121,19 @@ export function ExpenseEditor({
   } | null>(null);
   const self =
     context.canManage &&
-    context.members.some(
-      (member) =>
-        member.userId === context.currentUserId && member.status === "ACTIVE",
-    )
+    context.members.some((member) => member.userId === context.currentUserId && member.status === "ACTIVE")
       ? context.currentUserId
       : undefined;
   const [defaultValues] = useState<ExpenseFormValues>(() =>
     original
       ? { ...original }
       : {
-          expenseGroup:
-            initial.scheduleId === undefined ? "PREPARATION" : "TRIP_DAY",
+          expenseGroup: initial.scheduleId === undefined ? "PREPARATION" : "TRIP_DAY",
           scheduleId: initial.scheduleId ?? null,
           scheduleItemId: initial.scheduleItemId ?? null,
           totalAmount: "",
           currency:
-            context.currencies.data?.find((c) => c.currency === "KRW")
-              ?.currency ??
+            context.currencies.data?.find((c) => c.currency === "KRW")?.currency ??
             context.currencies.data?.[0]?.currency ??
             "",
           category: "",
@@ -173,7 +147,7 @@ export function ExpenseEditor({
   const errorMessageRef = useRef<HTMLParagraphElement>(null);
   function reportError(message: string) {
     setError(message);
-    if (message) setErrorOccurrence(count => count + 1);
+    if (message) setErrorOccurrence((count) => count + 1);
   }
   useEffect(() => {
     if (!error) return;
@@ -226,10 +200,7 @@ export function ExpenseEditor({
         if (!original) rememberExpenseCurrency(context.currentUserId, context.roomId, payload.currency);
         onClose();
       } catch (e) {
-        if (
-          e instanceof ExpenseApiError &&
-          (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")
-        ) {
+        if (e instanceof ExpenseApiError && (e.code === "EXPENSE_CONFLICT" || e.code === "EXPENSE_NOT_FOUND")) {
           await recover();
         }
         reportError(e instanceof Error ? e.message : "비용을 저장하지 못했어요.");
@@ -243,35 +214,36 @@ export function ExpenseEditor({
   const manuallySelectedCurrency = useRef<string | null>(null);
   const preferenceScope = `${context.currentUserId ?? ""}:${context.roomId}`;
   useEffect(() => {
-    if (original || !context.currencies.isSuccess || manuallySelectedCurrency.current === preferenceScope)
-      return;
-    const selected = preferredExpenseCurrency(
-      context.currentUserId,
-      context.roomId,
-      context.currencies.data ?? [],
-    );
+    if (original || !context.currencies.isSuccess || manuallySelectedCurrency.current === preferenceScope) return;
+    const selected = preferredExpenseCurrency(context.currentUserId, context.roomId, context.currencies.data ?? []);
     if (form.getFieldValue("currency") !== selected)
       form.setFieldValue("currency", selected, { dontUpdateMeta: true, dontRunListeners: true, dontValidate: true });
-  }, [form, original, context.currentUserId, context.roomId, context.currencies.data, context.currencies.isSuccess, preferenceScope]);
+  }, [
+    form,
+    original,
+    context.currentUserId,
+    context.roomId,
+    context.currencies.data,
+    context.currencies.isSuccess,
+    preferenceScope,
+  ]);
 
   const places = useSchedulePlanPlaces(context.roomId, body.scheduleId);
-  const currentTarget = context.list?.data?.find(
-    (e) => e.id === original?.id,
-  );
+  const currentTarget = context.list?.data?.find((e) => e.id === original?.id);
   const targetChanged = Boolean(
     original &&
-      context.list?.isSuccess &&
-      (!currentTarget ||
-        currentTarget.expenseGroup !== original.expenseGroup ||
-        currentTarget.scheduleId !== original.scheduleId ||
-        currentTarget.scheduleItemId !== original.scheduleItemId),
+    context.list?.isSuccess &&
+    (!currentTarget ||
+      currentTarget.expenseGroup !== original.expenseGroup ||
+      currentTarget.scheduleId !== original.scheduleId ||
+      currentTarget.scheduleItemId !== original.scheduleItemId),
   );
   const conflictMoved = Boolean(
     conflict?.latest &&
-      original &&
-      (conflict.latest.expenseGroup !== original.expenseGroup ||
-        conflict.latest.scheduleId !== original.scheduleId ||
-        conflict.latest.scheduleItemId !== original.scheduleItemId),
+    original &&
+    (conflict.latest.expenseGroup !== original.expenseGroup ||
+      conflict.latest.scheduleId !== original.scheduleId ||
+      conflict.latest.scheduleItemId !== original.scheduleItemId),
   );
   async function recover() {
     if (!original) return;
@@ -293,15 +265,14 @@ export function ExpenseEditor({
     (body.expenseGroup === "PREPARATION" || places.isSuccess);
   const currencyOf = (code: string) => context.currencies.data?.find((c) => c.currency === code);
   const currency = currencyOf(body.currency);
-  const days = (scheduleId: number | null) => context.schedules.map((s) => ({
-    ...s,
-    items:
-      s.scheduleId === scheduleId
-        ? (places.data ?? []).flatMap((p) =>
-            p.itemId === undefined ? [] : [{ itemId: p.itemId }],
-          )
-        : [],
-  }));
+  const days = (scheduleId: number | null) =>
+    context.schedules.map((s) => ({
+      ...s,
+      items:
+        s.scheduleId === scheduleId
+          ? (places.data ?? []).flatMap((p) => (p.itemId === undefined ? [] : [{ itemId: p.itemId }]))
+          : [],
+    }));
 
   async function submit() {
     submitLock.current = true;
@@ -323,9 +294,14 @@ export function ExpenseEditor({
     void submit();
   }
 
-  const memberFallback = context.memberStatus === "error"
-              ? <output className="block text-body-s-regular mobile:text-body-xs-regular text-dark-gray">멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.</output>
-              : <Spinner aria-label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />;
+  const memberFallback =
+    context.memberStatus === "error" ? (
+      <output className="block text-body-s-regular mobile:text-body-xs-regular text-dark-gray">
+        멤버 정보 조회 실패. 기존 선택은 유지되며 저장은 잠시 중단돼요.
+      </output>
+    ) : (
+      <Spinner aria-label="멤버 정보 불러오는 중" className="flex min-h-28 w-full" />
+    );
   return (
     <ResponsiveDialog
       open
@@ -360,13 +336,18 @@ export function ExpenseEditor({
                   return (
                     <Field>
                       <FieldLabel htmlFor={nameId}>제목 (선택)</FieldLabel>
-                      <Input id={nameId} name="expense-title" aria-label="제목 (선택)" maxLength={100}
+                      <Input
+                        id={nameId}
+                        name="expense-title"
+                        aria-label="제목 (선택)"
+                        maxLength={100}
                         placeholder="제목 없음"
                         value={field.state.value ?? ""}
                         onChange={(event) => field.handleChange(event.target.value)}
                         onBlur={field.handleBlur}
                         aria-invalid={fieldError ? true : undefined}
-                        aria-describedby={fieldError ? `${nameId}-error` : undefined} />
+                        aria-describedby={fieldError ? `${nameId}-error` : undefined}
+                      />
                       <FieldError id={`${nameId}-error`}>{fieldError}</FieldError>
                     </Field>
                   );
@@ -408,10 +389,14 @@ export function ExpenseEditor({
                 </form.Field>
               </div>
               {!context.currencies.isSuccess && (
-                <output className={context.currencies.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
-                  {context.currencies.isError
-                    ? "통화 목록 조회에 실패했어요."
-                    : "통화 목록을 불러오는 중…"}
+                <output
+                  className={
+                    context.currencies.isError
+                      ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
+                      : "sr-only"
+                  }
+                >
+                  {context.currencies.isError ? "통화 목록 조회에 실패했어요." : "통화 목록을 불러오는 중…"}
                 </output>
               )}
               <Field>
@@ -420,11 +405,7 @@ export function ExpenseEditor({
                   id={dayId}
                   label="일차 구분"
                   disabled={pending}
-                  value={
-                    body.expenseGroup === "PREPARATION"
-                      ? "PREPARATION"
-                      : String(body.scheduleId)
-                  }
+                  value={body.expenseGroup === "PREPARATION" ? "PREPARATION" : String(body.scheduleId)}
                   options={[
                     { value: "PREPARATION", label: "여행 준비" },
                     ...context.schedules.map((s) => ({
@@ -452,7 +433,7 @@ export function ExpenseEditor({
                         disabled={pending || body.expenseGroup === "PREPARATION" || !places.isSuccess}
                         options={[
                           { value: "", label: "장소 연결 없음" },
-                          ...(body.expenseGroup === "TRIP_DAY" ? places.data ?? [] : [])
+                          ...(body.expenseGroup === "TRIP_DAY" ? (places.data ?? []) : [])
                             .filter((p) => p.itemId !== undefined)
                             .map((p) => ({ value: String(p.itemId), label: p.title })),
                         ]}
@@ -461,10 +442,14 @@ export function ExpenseEditor({
                       />
                       <FieldError>{fieldError}</FieldError>
                       {body.expenseGroup === "TRIP_DAY" && !places.isSuccess && (
-                        <p className={places.isError ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray" : "sr-only"}>
-                          {places.isError
-                            ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요."
-                            : "장소 확인 중…"}
+                        <p
+                          className={
+                            places.isError
+                              ? "text-body-s-regular mobile:text-body-xs-regular text-dark-gray"
+                              : "sr-only"
+                          }
+                        >
+                          {places.isError ? "장소 조회에 실패했어요. 새로고침 후 다시 시도해 주세요." : "장소 확인 중…"}
                         </p>
                       )}
                     </Field>
@@ -556,14 +541,11 @@ export function ExpenseEditor({
               </form.Field>
             </fieldset>
             {!context.canManage && context.memberStatus === "success" && (
-              <p role="alert">
-                현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.
-              </p>
+              <p role="alert">현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.</p>
             )}
             {targetChanged && (
               <p role="alert">
-                비용이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤
-                최신 비용을 다시 열어 주세요.
+                비용이 삭제되었거나 다른 위치로 이동했어요. 입력 내용을 복사한 뒤 최신 비용을 다시 열어 주세요.
               </p>
             )}
             {conflict && (

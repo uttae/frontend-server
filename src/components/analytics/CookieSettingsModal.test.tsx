@@ -7,10 +7,7 @@ vi.mock("@/lib/analytics/client", () => ({
   revokeGoogleAnalyticsConsent: vi.fn(),
 }));
 import { createAnalyticsConsentStore } from "@/lib/analytics/consent-store";
-import {
-  readAnalyticsConsentCookie,
-  writeAnalyticsConsentCookie,
-} from "@/lib/analytics/consent-cookie";
+import { readAnalyticsConsentCookie, writeAnalyticsConsentCookie } from "@/lib/analytics/consent-cookie";
 import { revokeGoogleAnalyticsConsent } from "@/lib/analytics/client";
 let CookieSettingsProvider: typeof import("./CookieSettingsProvider").CookieSettingsProvider;
 let CookieSettingsButton: typeof import("./CookieSettingsProvider").CookieSettingsButton;
@@ -20,8 +17,7 @@ let root: Root;
 let host: HTMLDivElement;
 function button(label: string) {
   const found = [...document.querySelectorAll("button")].find(
-    (node) =>
-      node.textContent === label || node.getAttribute("aria-label") === label,
+    (node) => node.textContent === label || node.getAttribute("aria-label") === label,
   );
   expect(found, label).toBeTruthy();
   return found!;
@@ -36,9 +32,7 @@ function resultMessage() {
   return dialog()!.querySelector<HTMLElement>('[aria-live="polite"]')!;
 }
 function isPageScrollLocked() {
-  return [document.documentElement, document.body].some(
-    (element) => element.style.overflowY === "hidden",
-  );
+  return [document.documentElement, document.body].some((element) => element.style.overflowY === "hidden");
 }
 async function settle() {
   await act(async () => {
@@ -82,8 +76,7 @@ beforeEach(async () => {
   Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
   vi.clearAllMocks();
   vi.resetModules();
-  ({ CookieSettingsProvider, CookieSettingsButton } =
-    await import("./CookieSettingsProvider"));
+  ({ CookieSettingsProvider, CookieSettingsButton } = await import("./CookieSettingsProvider"));
   ({ analyticsConsentStore } = await import("@/lib/analytics/consent-store"));
   document.cookie = "uttae_analytics_consent=; Max-Age=0; Path=/";
   document.cookie = "_ga=; Max-Age=0; Path=/";
@@ -101,10 +94,7 @@ describe("cookie settings modal", () => {
     const opened = dialog()!;
     expect(opened).not.toBeNull();
     expect(opened.hasAttribute("data-open")).toBe(true);
-    expect(
-      document.getElementById(opened.getAttribute("aria-labelledby")!)
-        ?.textContent,
-    ).toBe("쿠키 설정");
+    expect(document.getElementById(opened.getAttribute("aria-labelledby")!)?.textContent).toBe("쿠키 설정");
     expect(opened.contains(document.activeElement)).toBe(true);
     expect(host.getAttribute("aria-hidden")).toBe("true");
     expect(button("저장").disabled).toBe(false);
@@ -119,18 +109,12 @@ describe("cookie settings modal", () => {
     expect(document.activeElement).toBe(first);
     await pressTab(true);
     expect(document.activeElement).toBe(last);
-    await act(async () =>
-      last.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-      ),
-    );
+    await act(async () => last.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
     await settle();
     expect(dialog()).toBeNull();
     expect(document.activeElement).toBe(button("쿠키 설정"));
     expect(host.hasAttribute("aria-hidden")).toBe(false);
-    expect(
-      window.location.pathname + window.location.search + window.location.hash,
-    ).toBe("/home?view=all#footer");
+    expect(window.location.pathname + window.location.search + window.location.hash).toBe("/home?view=all#footer");
     await click("쿠키 설정");
     expect(toggle().getAttribute("aria-checked")).toBe("false");
   });
@@ -146,9 +130,7 @@ describe("cookie settings modal", () => {
     await click("쿠키 설정");
     expect(toggle().getAttribute("aria-checked")).toBe("false");
     await toggleDraft();
-    await act(async () =>
-      document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!.click(),
-    );
+    await act(async () => document.querySelector<HTMLElement>('[data-slot="dialog-overlay"]')!.click());
     await settle();
     expect(dialog()).toBeNull();
     expect(document.cookie).toContain("v1:denied");
@@ -184,10 +166,7 @@ describe("cookie settings modal", () => {
     const live = resultMessage();
     expect(live.textContent).toBe("");
     for (const label of ["취소", "저장"]) {
-      expect(
-        button(label).compareDocumentPosition(live) &
-          Node.DOCUMENT_POSITION_FOLLOWING,
-      ).toBeTruthy();
+      expect(button(label).compareDocumentPosition(live) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }
     await click("저장");
     expect(dialog()).not.toBeNull();
@@ -234,9 +213,7 @@ it("keeps the dialog open and reports a blocked cookie write accurately", async 
   vi.spyOn(document, "cookie", "set").mockImplementation(() => {});
   await click("저장");
   expect(dialog()).not.toBeNull();
-  expect(resultMessage().textContent).toContain(
-    "브라우저에 저장하지 못했습니다",
-  );
+  expect(resultMessage().textContent).toContain("브라우저에 저장하지 못했습니다");
   expect(toggle().getAttribute("aria-checked")).toBe("true");
   expect(document.cookie).not.toContain("v1:granted");
 });
@@ -249,18 +226,15 @@ describe("analytics allow switch", () => {
     expect(toggle!.getAttribute("aria-checked")).toBe("false");
     expect(toggle!.type).toBe("button");
     expect(toggle!.getAttribute("aria-labelledby")).toBeTruthy();
-    expect(
-      document.getElementById(toggle!.getAttribute("aria-labelledby")!)
-        ?.textContent,
-    ).toBe("분석 쿠키");
+    expect(document.getElementById(toggle!.getAttribute("aria-labelledby")!)?.textContent).toBe("분석 쿠키");
     expect(toggle!.textContent?.trim()).toBe("");
     const descriptionIds = toggle!.getAttribute("aria-describedby")!.split(" ");
     for (const id of descriptionIds) {
       expect(document.getElementById(id)).not.toBeNull();
     }
-    expect(
-      descriptionIds.map((id) => document.getElementById(id)!.textContent).join(" "),
-    ).toContain("Google Analytics");
+    expect(descriptionIds.map((id) => document.getElementById(id)!.textContent).join(" ")).toContain(
+      "Google Analytics",
+    );
     expect(dialog()!.textContent).not.toContain("저장을 누르면");
     expect(analyticsConsentStore.getSnapshot()).toBe("pending");
     await act(async () => toggle!.click());
@@ -298,11 +272,7 @@ it("retains the draft through disclosure and keyboard focus, without applying it
   expect(toggle().getAttribute("aria-checked")).toBe("false");
   expect(analyticsConsentStore.getSnapshot()).toBe("granted");
   expect(revokeGoogleAnalyticsConsent).not.toHaveBeenCalled();
-  await act(async () =>
-    summary.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-    ),
-  );
+  await act(async () => summary.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await settle();
   expect(dialog()).toBeNull();
   expect(document.activeElement).toBe(button("쿠키 설정"));

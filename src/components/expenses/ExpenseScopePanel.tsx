@@ -28,11 +28,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 import { ExpenseApiError, type Expense } from "@/lib/api/rooms/expenses";
-import {
-  expensesInScope,
-  totalsByCurrency,
-  type ExpenseScope,
-} from "@/lib/expenses/expense-scope";
+import { expensesInScope, totalsByCurrency, type ExpenseScope } from "@/lib/expenses/expense-scope";
 
 import { formatExpenseAmount } from "./ExpenseViews";
 import { ExpensePlaceLabel } from "./ExpensePlaceLabel";
@@ -77,8 +73,10 @@ export function ExpenseScopePanel({
     try {
       await onDelete(selected);
     } catch (error) {
-      if (error instanceof ExpenseApiError &&
-          (error.code === "EXPENSE_CONFLICT" || error.code === "EXPENSE_NOT_FOUND")) {
+      if (
+        error instanceof ExpenseApiError &&
+        (error.code === "EXPENSE_CONFLICT" || error.code === "EXPENSE_NOT_FOUND")
+      ) {
         try {
           await onRetry();
           setError("비용이 변경되었거나 삭제되었어요. 최신 내역을 확인한 뒤 다시 선택해 주세요.");
@@ -116,27 +114,49 @@ export function ExpenseScopePanel({
       >
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>{scope.label} 비용</ResponsiveDialogTitle>
-          {scope.subtitle ? (
-            <ResponsiveDialogDescription>{scope.subtitle}</ResponsiveDialogDescription>
-          ) : null}
+          {scope.subtitle ? <ResponsiveDialogDescription>{scope.subtitle}</ResponsiveDialogDescription> : null}
         </ResponsiveDialogHeader>
 
         <ResponsiveDialogBody>
           <p className="text-body-s-regular text-dark-gray">총 비용 · {scoped.length}건</p>
           <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-title-m mobile:text-title-s font-bold tabular-nums">
-            {totals.length ? totals.map(({ currency, amount }) => (
-              <span key={currency}>{formatExpenseAmount(amount)} {currency}</span>
-            )) : <span>—</span>}
+            {totals.length ? (
+              totals.map(({ currency, amount }) => (
+                <span key={currency}>
+                  {formatExpenseAmount(amount)} {currency}
+                </span>
+              ))
+            ) : (
+              <span>—</span>
+            )}
           </div>
 
-          {error && <p role="alert" className="mt-3 text-body-s-regular text-status-negative">{error}</p>}
-          <h3 ref={listHeading} tabIndex={-1} className="mt-4 text-body-s-emphasis font-semibold text-dark-gray focus:outline-none">내역</h3>
+          {error && (
+            <p role="alert" className="mt-3 text-body-s-regular text-status-negative">
+              {error}
+            </p>
+          )}
+          <h3
+            ref={listHeading}
+            tabIndex={-1}
+            className="mt-4 text-body-s-emphasis font-semibold text-dark-gray focus:outline-none"
+          >
+            내역
+          </h3>
           {isPending && !scoped.length ? (
             <Spinner aria-label="비용 불러오는 중" className="flex w-full py-5" />
           ) : isError && !scoped.length ? (
             <div className="space-y-3 py-5 text-body-s-regular text-dark-gray">
               <p role="alert">비용 조회에 실패했어요.</p>
-              <button type="button" onClick={() => { void Promise.resolve(onRetry()).catch(() => setError("비용 조회에 실패했어요. 다시 시도해 주세요.")); }} className="cursor-pointer text-primary-strong underline">다시 시도</button>
+              <button
+                type="button"
+                onClick={() => {
+                  void Promise.resolve(onRetry()).catch(() => setError("비용 조회에 실패했어요. 다시 시도해 주세요."));
+                }}
+                className="cursor-pointer text-primary-strong underline"
+              >
+                다시 시도
+              </button>
             </div>
           ) : scoped.length ? (
             <ul className="mt-2 divide-y divide-gray-border">
@@ -145,7 +165,9 @@ export function ExpenseScopePanel({
                   <div className="flex min-h-11 min-w-0 flex-1 items-center justify-between gap-3 px-2 py-2 text-body-s-regular">
                     <span className="flex min-w-0 flex-col gap-0.5">
                       <span className="truncate">{expenseTitle(expense)}</span>
-                      {expense.memo && <span className="truncate text-body-xs-regular text-dark-gray">{expense.memo}</span>}
+                      {expense.memo && (
+                        <span className="truncate text-body-xs-regular text-dark-gray">{expense.memo}</span>
+                      )}
                       {expense.scheduleId !== null && expense.scheduleItemId !== null ? (
                         <ExpensePlaceLabel
                           roomId={roomId}
@@ -175,7 +197,11 @@ export function ExpenseScopePanel({
                         aria-label={`${expenseTitle(expense)} ${formatExpenseAmount(expense.totalAmount)} ${expense.currency} 비용 삭제`}
                         title="비용 삭제"
                         disabled={disabled}
-                        onClick={(event) => { deleteOpener.current = event.currentTarget; setError(""); setSelected(expense); }}
+                        onClick={(event) => {
+                          deleteOpener.current = event.currentTarget;
+                          setError("");
+                          setSelected(expense);
+                        }}
                         className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-lg text-dark-gray transition-colors enabled:hover:bg-gray-50 enabled:hover:text-text focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <Trash2 size={18} aria-hidden="true" />
@@ -219,8 +245,13 @@ export function ExpenseScopePanel({
   );
 }
 
-
-function ExpenseDeleteDialog({ expense, pending, onCancel, onConfirm, finalFocus }: Readonly<{
+function ExpenseDeleteDialog({
+  expense,
+  pending,
+  onCancel,
+  onConfirm,
+  finalFocus,
+}: Readonly<{
   expense: Expense;
   pending: boolean;
   onCancel: () => void;
@@ -235,21 +266,28 @@ function ExpenseDeleteDialog({ expense, pending, onCancel, onConfirm, finalFocus
       }}
       closeDisabled={pending}
     >
-      <AlertDialogContent
-        aria-busy={pending}
-        finalFocus={finalFocus}
-      >
+      <AlertDialogContent aria-busy={pending} finalFocus={finalFocus}>
         <AlertDialogHeader>
           <AlertDialogTitle>비용을 삭제할까요?</AlertDialogTitle>
           <AlertDialogDescription>삭제한 내역은 복구할 수 없어요.</AlertDialogDescription>
         </AlertDialogHeader>
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gray-50 px-4 py-3">
           <span className="min-w-0 break-words text-body-s-emphasis">{expenseTitle(expense)}</span>
-          <span className="shrink-0 text-body-s-emphasis font-semibold tabular-nums">{formatExpenseAmount(expense.totalAmount)} {expense.currency}</span>
+          <span className="shrink-0 text-body-s-emphasis font-semibold tabular-nums">
+            {formatExpenseAmount(expense.totalAmount)} {expense.currency}
+          </span>
         </div>
         <AlertDialogFooter>
-          <AlertDialogCancel aria-label="비용 삭제 취소" disabled={pending}>취소</AlertDialogCancel>
-          <AlertDialogAction tone="critical" aria-label="비용 삭제 확인" loading={pending} loadingLabel="삭제 중" onClick={onConfirm}>
+          <AlertDialogCancel aria-label="비용 삭제 취소" disabled={pending}>
+            취소
+          </AlertDialogCancel>
+          <AlertDialogAction
+            tone="critical"
+            aria-label="비용 삭제 확인"
+            loading={pending}
+            loadingLabel="삭제 중"
+            onClick={onConfirm}
+          >
             비용 삭제
           </AlertDialogAction>
         </AlertDialogFooter>

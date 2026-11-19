@@ -10,16 +10,10 @@ import { cn } from "@/lib/utils";
 
 import { menuPointerBoundary } from "./PlanDaySection";
 
-export const PLAN_PLACE_CARD_INTERACTIVE_SELECTOR =
-  "textarea, input, select, button, a, [data-plan-card-no-drag]";
+export const PLAN_PLACE_CARD_INTERACTIVE_SELECTOR = "textarea, input, select, button, a, [data-plan-card-no-drag]";
 
-export function isPlanPlaceCardInteractiveTarget(
-  target: EventTarget | null,
-): boolean {
-  return (
-    target instanceof HTMLElement &&
-    Boolean(target.closest(PLAN_PLACE_CARD_INTERACTIVE_SELECTOR))
-  );
+export function isPlanPlaceCardInteractiveTarget(target: EventTarget | null): boolean {
+  return target instanceof HTMLElement && Boolean(target.closest(PLAN_PLACE_CARD_INTERACTIVE_SELECTOR));
 }
 
 export function PlanOrderIndexBadge({
@@ -31,12 +25,8 @@ export function PlanOrderIndexBadge({
   backgroundColorHex?: string;
   className?: string;
 }) {
-  const hex =
-    typeof backgroundColorHex === "string" ?
-      backgroundColorHex.trim()
-    : "";
-  const customBg =
-    hex.length === 7 && hex.startsWith("#") && /^#[0-9a-fA-F]{6}$/.test(hex);
+  const hex = typeof backgroundColorHex === "string" ? backgroundColorHex.trim() : "";
+  const customBg = hex.length === 7 && hex.startsWith("#") && /^#[0-9a-fA-F]{6}$/.test(hex);
 
   return (
     <span

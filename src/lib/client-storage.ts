@@ -14,10 +14,7 @@ export function clearUserScopedBrowserStorage(): void {
   const PLAN_TRAVEL_MODE_PREFIX = "hau:plan:travelMode:v1:";
   const LEGACY_SESSION_PERSIST_KEY = "hau:session";
 
-  function removeStorageKeysMatching(
-    storage: Storage,
-    predicate: (key: string) => boolean,
-  ): void {
+  function removeStorageKeysMatching(storage: Storage, predicate: (key: string) => boolean): void {
     const toRemove: string[] = [];
     for (let i = 0; i < storage.length; i++) {
       const k = storage.key(i);
@@ -30,22 +27,18 @@ export function clearUserScopedBrowserStorage(): void {
     }
   }
 
-  removeStorageKeysMatching(sessionStorage, (k) =>
-    k.startsWith(PLAN_ROUTE_PREFIX) || k.startsWith(PLAN_TRAVEL_MODE_PREFIX),
+  removeStorageKeysMatching(
+    sessionStorage,
+    (k) => k.startsWith(PLAN_ROUTE_PREFIX) || k.startsWith(PLAN_TRAVEL_MODE_PREFIX),
   );
 
   removeStorageKeysMatching(
     localStorage,
-    (k) =>
-      k.startsWith(PLAN_ROUTE_PREFIX) ||
-      k.startsWith(PLAN_TRAVEL_MODE_PREFIX) ||
-      k === LEGACY_SESSION_PERSIST_KEY,
+    (k) => k.startsWith(PLAN_ROUTE_PREFIX) || k.startsWith(PLAN_TRAVEL_MODE_PREFIX) || k === LEGACY_SESSION_PERSIST_KEY,
   );
 }
 
-export function tearDownClientSession(options?: {
-  queryClient?: QueryClient;
-}): void {
+export function tearDownClientSession(options?: { queryClient?: QueryClient }): void {
   const queryClient = options?.queryClient ?? getQueryClient();
   if (queryClient && readSessionUserId(queryClient) !== undefined) {
     resetAmplitudeIdentityOnLogout();

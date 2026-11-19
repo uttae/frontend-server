@@ -12,8 +12,10 @@ import { inviteShareMetadata } from "@/lib/share-metadata";
 
 const document = readFileSync(resolve(process.cwd(), "public/invite-preview.html"), "utf8");
 const meta = new Map(
-  [...document.matchAll(/<meta (?:property|name)="([^"]+)" content="([^"]*)"\s*\/?\s*>/g)]
-    .map((match) => [match[1], match[2]]),
+  [...document.matchAll(/<meta (?:property|name)="([^"]+)" content="([^"]*)"\s*\/?\s*>/g)].map((match) => [
+    match[1],
+    match[2],
+  ]),
 );
 
 describe("invite share metadata", () => {
@@ -74,11 +76,13 @@ describe("invite share metadata", () => {
     expect(invitePageMetadata.openGraph).toMatchObject({
       title: meta.get("og:title"),
       description: meta.get("og:description"),
-      images: [{
-        url: inviteShareMetadata.imagePath,
-        width: Number(meta.get("og:image:width")),
-        height: Number(meta.get("og:image:height")),
-      }],
+      images: [
+        {
+          url: inviteShareMetadata.imagePath,
+          width: Number(meta.get("og:image:width")),
+          height: Number(meta.get("og:image:height")),
+        },
+      ],
     });
     expect(invitePageMetadata.twitter).toMatchObject({
       card: meta.get("twitter:card"),

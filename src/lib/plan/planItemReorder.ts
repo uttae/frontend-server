@@ -7,16 +7,11 @@ export const PLAN_ITEM_DND_INDEX_MIME = "application/x-plan-item-index";
 
 export const PLAN_ITEM_ITINERARY_DROP_ZONE_ATTR = "data-plan-itinerary-drop-zone";
 
-export const PLAN_ITEM_REORDER_ROW_TRANSITION =
-  "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
+export const PLAN_ITEM_REORDER_ROW_TRANSITION = "transform 200ms cubic-bezier(0.2, 0, 0, 1)";
 
 export type PlanItemRowRect = Pick<DOMRect, "top" | "height">;
 
-export function beginPlanItemDrag(
-  event: DragEvent,
-  source: HTMLElement,
-  fromIndex: number,
-): void {
+export function beginPlanItemDrag(event: DragEvent, source: HTMLElement, fromIndex: number): void {
   setHtmlDragImageFromPointer(event, source);
   const dataTransfer = event.dataTransfer;
   if (!dataTransfer) return;
@@ -26,27 +21,19 @@ export function beginPlanItemDrag(
   dataTransfer.setData("text/plain", String(fromIndex));
 }
 
-export function clampCrossDayTargetOrderIndex(
-  index: number,
-  placesLength: number,
-): number {
+export function clampCrossDayTargetOrderIndex(index: number, placesLength: number): number {
   if (placesLength <= 0) return 0;
   return Math.max(0, Math.min(index, placesLength));
 }
 
-function snapshotRowRects(
-  rowElements: readonly (HTMLElement | null)[],
-): PlanItemRowRect[] {
+function snapshotRowRects(rowElements: readonly (HTMLElement | null)[]): PlanItemRowRect[] {
   return rowElements.map((el) => {
     const rect = el?.getBoundingClientRect();
     return { top: rect?.top ?? 0, height: rect?.height ?? 0 };
   });
 }
 
-function adjustRowRectsForScrollDelta(
-  rects: readonly PlanItemRowRect[],
-  scrollDelta: number,
-): PlanItemRowRect[] {
+function adjustRowRectsForScrollDelta(rects: readonly PlanItemRowRect[], scrollDelta: number): PlanItemRowRect[] {
   if (scrollDelta === 0) return [...rects];
   return rects.map((r) => ({ top: r.top - scrollDelta, height: r.height }));
 }
@@ -80,10 +67,7 @@ export class PlanItemRowLayoutSnapshot {
   }
 }
 
-export function computePreviewIndex(
-  pointerY: number,
-  rowRects: readonly PlanItemRowRect[],
-): number {
+export function computePreviewIndex(pointerY: number, rowRects: readonly PlanItemRowRect[]): number {
   const length = rowRects.length;
   if (length <= 0) return 0;
 
@@ -104,19 +88,12 @@ export function computePreviewIndex(
   return length - 1;
 }
 
-export function computeInsertTranslateY(
-  index: number,
-  previewIndex: number,
-  insertHeight: number,
-): number {
+export function computeInsertTranslateY(index: number, previewIndex: number, insertHeight: number): number {
   if (insertHeight <= 0 || previewIndex < 0) return 0;
   return index >= previewIndex ? insertHeight : 0;
 }
 
-export function computeInsertDisplayOrderIndex(
-  index: number,
-  previewIndex: number,
-): number {
+export function computeInsertDisplayOrderIndex(index: number, previewIndex: number): number {
   return index >= previewIndex ? index + 2 : index + 1;
 }
 
@@ -133,24 +110,12 @@ export type PlanItemRowPreviewMode =
       insertHeight: number;
     };
 
-export function computePlanItemRowPreviewTranslateY(
-  index: number,
-  mode: PlanItemRowPreviewMode | null,
-): number {
+export function computePlanItemRowPreviewTranslateY(index: number, mode: PlanItemRowPreviewMode | null): number {
   if (mode == null) return 0;
   if (mode.kind === "reorder") {
-    return computeRowTranslateY(
-      index,
-      mode.fromIndex,
-      mode.previewIndex,
-      mode.rowHeights,
-    );
+    return computeRowTranslateY(index, mode.fromIndex, mode.previewIndex, mode.rowHeights);
   }
-  return computeInsertTranslateY(
-    index,
-    mode.previewIndex,
-    mode.insertHeight,
-  );
+  return computeInsertTranslateY(index, mode.previewIndex, mode.insertHeight);
 }
 
 export function computePlanItemRowPreviewOrderIndex(
@@ -162,12 +127,7 @@ export function computePlanItemRowPreviewOrderIndex(
   if (mode.kind === "insert") {
     return computeInsertDisplayOrderIndex(index, mode.previewIndex);
   }
-  return computeDisplayOrderIndex(
-    index,
-    mode.fromIndex,
-    mode.previewIndex,
-    placesLength,
-  );
+  return computeDisplayOrderIndex(index, mode.fromIndex, mode.previewIndex, placesLength);
 }
 
 export function computeRowTranslateY(

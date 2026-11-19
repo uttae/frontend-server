@@ -3,11 +3,7 @@
 import Link from "next/link";
 import type { MouseEvent, ReactNode } from "react";
 
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-  type AnalyticsEventParamsMap,
-} from "@/lib/analytics/track";
+import { AnalyticsEvents, trackAnalyticsEvent, type AnalyticsEventParamsMap } from "@/lib/analytics/track";
 
 import { cn } from "@/lib/utils";
 
@@ -23,9 +19,7 @@ export function LandingActionLink({
   analytics?: Omit<AnalyticsEventParamsMap["cta_click"], "page_type">;
 }) {
   const trackActivation = (event: MouseEvent<HTMLAnchorElement>) => {
-    const isActivation = event.type === "auxclick"
-      ? event.button === 1
-      : event.button === 0;
+    const isActivation = event.type === "auxclick" ? event.button === 1 : event.button === 0;
     if (!analytics || !isActivation) return;
     trackAnalyticsEvent(AnalyticsEvents.ctaClick, {
       page_type: "landing",

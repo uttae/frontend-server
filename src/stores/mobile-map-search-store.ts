@@ -20,8 +20,6 @@ export const useMobileMapSearchStore = create<MobileMapSearchState>((set) => ({
   setFocusInput: (focusInput) => set({ focusInput }),
   textQuery: "",
   textSearchNonce: 0,
-  submitTextSearch: (query) =>
-    set((s) => ({ textQuery: query.trim(), textSearchNonce: s.textSearchNonce + 1 })),
-  clearTextSearch: () =>
-    set((s) => ({ textQuery: "", textSearchNonce: s.textSearchNonce + 1 })),
+  submitTextSearch: (query) => set((s) => ({ textQuery: query.trim(), textSearchNonce: s.textSearchNonce + 1 })),
+  clearTextSearch: () => set((s) => ({ textQuery: "", textSearchNonce: s.textSearchNonce + 1 })),
 }));

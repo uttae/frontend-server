@@ -45,20 +45,17 @@ describe("resolveAnalyticsRuntime", () => {
     });
   });
 
-  it.each([undefined, "", "UA-123", "G-invalid id"])(
-    "rejects an invalid measurement ID: %s",
-    (measurementId) => {
-      expect(
-        resolveAnalyticsRuntime({
-          debugMode: "true",
-          measurementId,
-          nodeEnv: "production",
-        }),
-      ).toEqual({
-        debugMode: true,
-        enabled: false,
-        measurementId: null,
-      });
-    },
-  );
+  it.each([undefined, "", "UA-123", "G-invalid id"])("rejects an invalid measurement ID: %s", (measurementId) => {
+    expect(
+      resolveAnalyticsRuntime({
+        debugMode: "true",
+        measurementId,
+        nodeEnv: "production",
+      }),
+    ).toEqual({
+      debugMode: true,
+      enabled: false,
+      measurementId: null,
+    });
+  });
 });

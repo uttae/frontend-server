@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { RoomMember } from "@/lib/api/rooms/types";
 
-import {
-  createExpenseFormSchema,
-  EXPENSE_BUDGET_INVALID_MESSAGE,
-  expenseBudgetSchema,
-} from "./expense-form";
+import { createExpenseFormSchema, EXPENSE_BUDGET_INVALID_MESSAGE, expenseBudgetSchema } from "./expense-form";
 
 const usd = { currency: "USD", fractionDigits: 2, maximumAmount: "999999999999999.99" };
 const member = (userId: number): RoomMember => ({
@@ -54,9 +50,9 @@ describe("createExpenseFormSchema", () => {
     expect(issuesOf(schema.safeParse({ ...values, currency: "JPY" }))).toEqual([
       { path: ["totalAmount"], message: "서버 통화 목록에서 통화를 선택해 주세요." },
     ]);
-    expect(issuesOf(schema.safeParse({ ...values, expenseGroup: "TRIP_DAY", scheduleId: 10, scheduleItemId: 999 }))).toEqual([
-      { path: ["scheduleItemId"], message: "유효한 일차와 해당 일차의 장소를 선택해 주세요." },
-    ]);
+    expect(
+      issuesOf(schema.safeParse({ ...values, expenseGroup: "TRIP_DAY", scheduleId: 10, scheduleItemId: 999 })),
+    ).toEqual([{ path: ["scheduleItemId"], message: "유효한 일차와 해당 일차의 장소를 선택해 주세요." }]);
     expect(issuesOf(schema.safeParse({ ...values, participantUserIds: [] }))).toEqual([
       { path: ["payerUserIds"], message: "결제자와 부담자를 각각 한 명 이상, 중복 없이 선택해 주세요." },
     ]);

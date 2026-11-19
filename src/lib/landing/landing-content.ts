@@ -1,12 +1,4 @@
-import {
-  Bot,
-  LogIn,
-  MapPin,
-  Route,
-  UserPlus,
-  Users,
-  type LucideIcon,
-} from "lucide-react";
+import { Bot, LogIn, MapPin, Route, UserPlus, Users, type LucideIcon } from "lucide-react";
 
 import { PUBLIC_FOUNDERS } from "@/lib/public-site";
 
@@ -32,8 +24,7 @@ export type LandingTeamMember = {
   linkedinUrl: string;
 };
 
-export const LANDING_CONTAINER_CLASS =
-  "mx-auto w-full max-w-[1180px] px-5 landing-sm:px-6";
+export const LANDING_CONTAINER_CLASS = "mx-auto w-full max-w-[1180px] px-5 landing-sm:px-6";
 export const LANDING_SECTION_PY = "py-20 landing-lg:py-28";
 
 export const LANDING_VALUES: readonly LandingValue[] = [
@@ -60,9 +51,7 @@ export const LANDING_HOW_STEPS: readonly LandingHowStep[] = [
   { step: "03", title: "일정과 이동 동선 완성하기", icon: Route },
 ];
 
-export const LANDING_TEAM_MEMBERS: readonly LandingTeamMember[] = PUBLIC_FOUNDERS.map(
-  (founder) => ({
-    ...founder,
-    description: "서울시립대학교 컴퓨터과학부",
-  }),
-);
+export const LANDING_TEAM_MEMBERS: readonly LandingTeamMember[] = PUBLIC_FOUNDERS.map((founder) => ({
+  ...founder,
+  description: "서울시립대학교 컴퓨터과학부",
+}));

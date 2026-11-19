@@ -3,10 +3,7 @@ import type { PlanItinerarySegmentDescriptor } from "@/lib/plan/planItineraryMap
 
 const STORAGE_KEY = "hau:destination-center-v1";
 
-type Payload = Record<
-  string,
-  { lat: number; lng: number; destination: string }
->;
+type Payload = Record<string, { lat: number; lng: number; destination: string }>;
 
 function loadAll(): Payload {
   if (typeof sessionStorage === "undefined") return {};
@@ -63,10 +60,7 @@ export function writeDestinationLatLngToSession(
 export const MAP_MIN_ZOOM = 3;
 export const MAP_MAX_ZOOM = 21;
 
-type GoogleMapsDirectionsTravelMode =
-  | "WALKING"
-  | "TRANSIT"
-  | "DRIVING";
+type GoogleMapsDirectionsTravelMode = "WALKING" | "TRANSIT" | "DRIVING";
 
 const GOOGLE_MAPS_DIRECTIONS_TRAVEL_MODE = {
   WALKING: "walking",
@@ -74,13 +68,7 @@ const GOOGLE_MAPS_DIRECTIONS_TRAVEL_MODE = {
   DRIVING: "driving",
 } as const satisfies Record<GoogleMapsDirectionsTravelMode, string>;
 
-export function buildGoogleMapsPlaceUrl({
-  placeId,
-  query,
-}: {
-  placeId: string;
-  query?: string;
-}): string | null {
+export function buildGoogleMapsPlaceUrl({ placeId, query }: { placeId: string; query?: string }): string | null {
   const id = placeId.trim();
   if (!id.length) return null;
   const q = (query ?? "").trim() || id;
@@ -133,10 +121,7 @@ export const MAP_PAN_RESTRICTION: google.maps.MapRestriction = {
   strictBounds: true,
 };
 
-export function panToWithinWorld(
-  map: google.maps.Map,
-  target: google.maps.LatLngLiteral,
-): void {
+export function panToWithinWorld(map: google.maps.Map, target: google.maps.LatLngLiteral): void {
   const center = map.getCenter();
   if (center && Math.abs(target.lng - center.lng()) > 180) {
     map.setCenter(target);
@@ -170,17 +155,22 @@ export function moveMapTo(
   const projection = map.getProjection();
   const from = center && projection ? projection.fromLatLngToPoint(center) : null;
   const to = projection ? projection.fromLatLngToPoint(target) : null;
-  if (zoomChanges || currentZoom === undefined || !center || !projection || !from || !to || Math.abs(target.lng - center.lng()) > 180) {
+  if (
+    zoomChanges ||
+    currentZoom === undefined ||
+    !center ||
+    !projection ||
+    !from ||
+    !to ||
+    Math.abs(target.lng - center.lng()) > 180
+  ) {
     panToWithinWorld(map, target);
     if (zoomChanges) map.setZoom(zoom);
     return () => {};
   }
   const div = map.getDiv();
   const scale = 2 ** currentZoom;
-  const screens = Math.hypot(
-    ((to.x - from.x) * scale) / div.clientWidth,
-    ((to.y - from.y) * scale) / div.clientHeight,
-  );
+  const screens = Math.hypot(((to.x - from.x) * scale) / div.clientWidth, ((to.y - from.y) * scale) / div.clientHeight);
   if (!(screens <= PAN_ANIMATION_MAX_SCREENS)) {
     map.setCenter(target);
     return () => {};
@@ -235,10 +225,7 @@ export function googlePlacesJsLocalizedText(value: unknown): string {
   return "";
 }
 
-export function haversineMeters(
-  a: google.maps.LatLngLiteral,
-  b: google.maps.LatLngLiteral,
-): number {
+export function haversineMeters(a: google.maps.LatLngLiteral, b: google.maps.LatLngLiteral): number {
   const R = 6371000;
   const φ1 = (a.lat * Math.PI) / 180;
   const φ2 = (b.lat * Math.PI) / 180;
@@ -246,8 +233,7 @@ export function haversineMeters(
   const Δλ = ((b.lng - a.lng) * Math.PI) / 180;
   const sinΔφ = Math.sin(Δφ / 2);
   const sinΔλ = Math.sin(Δλ / 2);
-  const x =
-    sinΔφ * sinΔφ + Math.cos(φ1) * Math.cos(φ2) * sinΔλ * sinΔλ;
+  const x = sinΔφ * sinΔφ + Math.cos(φ1) * Math.cos(φ2) * sinΔλ * sinΔλ;
   return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(Math.max(0, 1 - x)));
 }
 
@@ -271,9 +257,7 @@ export function viewportSearchRadiusMetersFromBounds(
     lat: center.lat,
     lng: bounds.west,
   });
-  return clampPlacesSearchRadiusMeters(
-    Math.min(toNorth, toSouth, toEast, toWest),
-  );
+  return clampPlacesSearchRadiusMeters(Math.min(toNorth, toSouth, toEast, toWest));
 }
 
 export function shouldSuggestPlacesSearchRecenter(params: {
@@ -286,9 +270,7 @@ export function shouldSuggestPlacesSearchRecenter(params: {
   const dist = haversineMeters(params.mapCenter, params.snapshotCenter);
   const threshold = Math.max(200, params.snapshotRadiusMeters * 0.1);
   const zoomDelta =
-    params.zoom != null && params.snapshotZoom != null
-      ? Math.abs(params.zoom - params.snapshotZoom)
-      : 0;
+    params.zoom != null && params.snapshotZoom != null ? Math.abs(params.zoom - params.snapshotZoom) : 0;
   return dist > threshold || zoomDelta >= 1;
 }
 
@@ -352,12 +334,8 @@ export async function decodePlanSegmentPathLatLng(
   if (!encoded.length) return [];
 
   try {
-    const { encoding } = (await google.maps.importLibrary(
-      "geometry",
-    )) as unknown as PlanGeometryLibrary;
-    return encoding
-      .decodePath(encoded)
-      .map((point) => ({ lat: point.lat(), lng: point.lng() }));
+    const { encoding } = (await google.maps.importLibrary("geometry")) as unknown as PlanGeometryLibrary;
+    return encoding.decodePath(encoded).map((point) => ({ lat: point.lat(), lng: point.lng() }));
   } catch {
     return [];
   }
@@ -372,14 +350,14 @@ function mixRgbTowardsBlack(hex: string, blend: number): string {
   const t = Math.max(0, Math.min(1, blend));
   return `#${[r, g, b]
     .map((c) =>
-      Math.round(c * (1 - t)).toString(16).padStart(2, "0"),
+      Math.round(c * (1 - t))
+        .toString(16)
+        .padStart(2, "0"),
     )
     .join("")}`;
 }
 
-export function buildPlanItineraryRouteArrowIcons(
-  routeStrokeHex: string,
-): google.maps.IconSequence[] {
+export function buildPlanItineraryRouteArrowIcons(routeStrokeHex: string): google.maps.IconSequence[] {
   const strokeDark = mixRgbTowardsBlack(routeStrokeHex.trim(), 0.22);
   return [
     {
@@ -397,9 +375,7 @@ export function buildPlanItineraryRouteArrowIcons(
   ];
 }
 
-export function buildPlanItineraryRouteConnectorDotIcons(
-  routeStrokeHex: string,
-): google.maps.IconSequence[] {
+export function buildPlanItineraryRouteConnectorDotIcons(routeStrokeHex: string): google.maps.IconSequence[] {
   const color = routeStrokeHex.trim() || "#f12d33";
   return [
     {
@@ -427,11 +403,7 @@ export async function decodeOrientedPlanItinerarySegmentPath(
 ): Promise<google.maps.LatLngLiteral[]> {
   let pts = await decodePlanSegmentPathLatLng(encodedPolyline);
   if (seg.originLocation && seg.destLocation && pts.length >= 2) {
-    pts = orientPathSmallerStopToLarger(
-      pts,
-      seg.originLocation,
-      seg.destLocation,
-    );
+    pts = orientPathSmallerStopToLarger(pts, seg.originLocation, seg.destLocation);
   }
   return pts;
 }

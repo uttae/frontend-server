@@ -34,12 +34,7 @@ export function ExpenseDialog({
         if (!open) onClose();
       }}
     >
-      <ResponsiveDialogContent
-        size="xl"
-        fixedWidth
-        drawerSize="belowNav"
-        closeLabel={`${title} 닫기`}
-      >
+      <ResponsiveDialogContent size="xl" fixedWidth drawerSize="belowNav" closeLabel={`${title} 닫기`}>
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
           {description && isMobileDevice ? (

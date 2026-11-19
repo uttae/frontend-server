@@ -5,11 +5,7 @@ import { cn } from "@/lib/utils";
 
 function Field({ className, ...props }: Readonly<ComponentProps<"div">>) {
   return (
-    <div
-      data-slot="field"
-      className={cn("group/field flex w-full min-w-0 flex-col gap-1", className)}
-      {...props}
-    />
+    <div data-slot="field" className={cn("group/field flex w-full min-w-0 flex-col gap-1", className)} {...props} />
   );
 }
 
@@ -90,13 +86,4 @@ function FieldCount({ className, ...props }: Readonly<ComponentProps<"span">>) {
   );
 }
 
-export {
-  Field,
-  FieldHeader,
-  FieldLabel,
-  FieldSuffix,
-  FieldFooter,
-  FieldDescription,
-  FieldError,
-  FieldCount,
-};
+export { Field, FieldHeader, FieldLabel, FieldSuffix, FieldFooter, FieldDescription, FieldError, FieldCount };

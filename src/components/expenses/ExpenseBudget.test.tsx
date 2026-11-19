@@ -2,11 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import {
-  ExpenseApiError,
-  type ExpenseBudget,
-  type ExpenseKrwSummary,
-} from "@/lib/api/rooms/expenses";
+import { ExpenseApiError, type ExpenseBudget, type ExpenseKrwSummary } from "@/lib/api/rooms/expenses";
 import { ExpenseBudgetModal } from "./ExpenseBudgetModal";
 import { ExpenseBudgetSummary } from "./ExpenseBudgetSummary";
 const mocks = vi.hoisted(() => ({
@@ -26,7 +22,10 @@ const budget: ExpenseBudget = {
   version: 2,
 };
 const reference: ExpenseKrwSummary = {
-  expenses: [], categories: [], days: [], payers: [],
+  expenses: [],
+  categories: [],
+  days: [],
+  payers: [],
   filtered: { originalTotals: [], convertedTotalKrw: "501", isComplete: true, missingCurrencies: [] },
   originalTotals: [{ currency: "USD", totalAmount: "1.00" }],
   convertedTotalKrw: "501",
@@ -72,9 +71,7 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 async function modal(initial = budget) {
-  await act(async () =>
-    root.render(<ExpenseBudgetModal initial={initial} onClose={mocks.close} />),
-  );
+  await act(async () => root.render(<ExpenseBudgetModal initial={initial} onClose={mocks.close} />));
 }
 async function summary() {
   await act(async () => root.render(<ExpenseBudgetSummary />));
@@ -94,85 +91,61 @@ function input() {
 }
 async function type(value: string) {
   await act(async () => {
-    Object.getOwnPropertyDescriptor(
-      HTMLInputElement.prototype,
-      "value",
-    )!.set!.call(input(), value);
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input(), value);
     input().dispatchEvent(new Event("input", { bubbles: true }));
   });
 }
 async function submit() {
   await act(async () => {
-    document
-      .querySelector("form")!
-      .dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    document.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
   });
 }
 const text = () => document.body.textContent!;
-it.each([null, "0", "123456789"])(
-  "prefills %s without conflating unset with zero",
-  async (amount) => {
-    await modal({ ...budget, budgetKrw: amount });
-    expect(document.querySelector("h2")?.textContent).toBe(
-      amount === null ? "예산 설정" : "예산 수정",
-    );
-    expect(input().value).toBe(amount === "123456789" ? "123,456,789" : amount ?? "");
-    expect(text()).toContain("여행 전체의 예산을 설정해 주세요.");
-    expect(text()).not.toContain("원화 정수로 입력해 주세요.");
-    expect(document.querySelector("select")).toBeNull();
-    await click("취소");
-    expect(mocks.close).toHaveBeenCalledOnce();
-    expect(mocks.save).not.toHaveBeenCalled();
-  },
-);
+it.each([null, "0", "123456789"])("prefills %s without conflating unset with zero", async (amount) => {
+  await modal({ ...budget, budgetKrw: amount });
+  expect(document.querySelector("h2")?.textContent).toBe(amount === null ? "예산 설정" : "예산 수정");
+  expect(input().value).toBe(amount === "123456789" ? "123,456,789" : (amount ?? ""));
+  expect(text()).toContain("여행 전체의 예산을 설정해 주세요.");
+  expect(text()).not.toContain("원화 정수로 입력해 주세요.");
+  expect(document.querySelector("select")).toBeNull();
+  await click("취소");
+  expect(mocks.close).toHaveBeenCalledOnce();
+  expect(mocks.save).not.toHaveBeenCalled();
+});
 it("close and Escape cancel without saving", async () => {
   await modal();
   await type("888");
   await click("예산 수정 닫기");
   await act(async () => {
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
-    );
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
   });
   expect(mocks.close).toHaveBeenCalledTimes(2);
   expect(mocks.save).not.toHaveBeenCalled();
 });
-it.each(["0", "0001", "999999999999999"])(
-  "sends exact allowed ASCII draft %s and opened version",
+it.each(["0", "0001", "999999999999999"])("sends exact allowed ASCII draft %s and opened version", async (value) => {
+  await modal();
+  await type(value);
+  await submit();
+  expect(mocks.save).toHaveBeenCalledWith({
+    budgetKrw: value,
+    expectedVersion: 2,
+  });
+  expect(mocks.close).toHaveBeenCalledOnce();
+});
+it.each(["", " ", " 1", "1 ", "-1", "+1", "1.0", "1e3", "１２３", "١٢٣", "1000000000000000"])(
+  "rejects invalid budget %j without losing draft",
   async (value) => {
     await modal();
     await type(value);
     await submit();
-    expect(mocks.save).toHaveBeenCalledWith({
-      budgetKrw: value,
-      expectedVersion: 2,
-    });
-    expect(mocks.close).toHaveBeenCalledOnce();
+    expect(mocks.save).not.toHaveBeenCalled();
+    expect(input().value).toBe(value === "1000000000000000" ? "1,000,000,000,000,000" : value);
+    expect(input().getAttribute("aria-invalid")).toBe("true");
+    const error = document.getElementById(input().getAttribute("aria-describedby")!);
+    expect(error?.getAttribute("role")).toBe("alert");
+    expect(error?.textContent).toContain("1~15자리 숫자");
   },
 );
-it.each([
-  "",
-  " ",
-  " 1",
-  "1 ",
-  "-1",
-  "+1",
-  "1.0",
-  "1e3",
-  "１２３",
-  "١٢٣",
-  "1000000000000000",
-])("rejects invalid budget %j without losing draft", async (value) => {
-  await modal();
-  await type(value);
-  await submit();
-  expect(mocks.save).not.toHaveBeenCalled();
-  expect(input().value).toBe(value === "1000000000000000" ? "1,000,000,000,000,000" : value);
-  expect(input().getAttribute("aria-invalid")).toBe("true");
-  const error = document.getElementById(input().getAttribute("aria-describedby")!);
-  expect(error?.getAttribute("role")).toBe("alert");
-  expect(error?.textContent).toContain("1~15자리 숫자");
-});
 it("locks duplicate submit and close while pending, and preserves draft on failure", async () => {
   let reject!: (e: Error) => void;
   mocks.save.mockImplementationOnce(
@@ -200,9 +173,7 @@ it("locks duplicate submit and close while pending, and preserves draft on failu
   expect(button("저장").disabled).toBe(false);
 });
 it("409 preserves draft; failed latest read blocks retry until explicit successful review", async () => {
-  mocks.save.mockRejectedValueOnce(
-    new ExpenseApiError(409, "BUDGET_CONFLICT", "changed"),
-  );
+  mocks.save.mockRejectedValueOnce(new ExpenseApiError(409, "BUDGET_CONFLICT", "changed"));
   mocks.latest.mockRejectedValueOnce(new Error("offline"));
   await modal();
   await type("456");
@@ -227,9 +198,7 @@ it("409 preserves draft; failed latest read blocks retry until explicit successf
   });
 });
 it("another conflict requires another review and does not auto overwrite", async () => {
-  mocks.save.mockRejectedValue(
-    new ExpenseApiError(409, "BUDGET_CONFLICT", "changed"),
-  );
+  mocks.save.mockRejectedValue(new ExpenseApiError(409, "BUDGET_CONFLICT", "changed"));
   await modal();
   await type("456");
   await submit();
@@ -251,7 +220,10 @@ it("summary opens shared modal for unset or zero budget", async () => {
   mocks.state = state({ ...budget, budgetKrw: null });
   await summary();
   expect(text()).not.toContain("미설정");
-  expect([...host.querySelectorAll("h3")].find(h => h.textContent === "전체 예산")?.parentElement?.querySelector("p")?.textContent).toBe("—");
+  expect(
+    [...host.querySelectorAll("h3")].find((h) => h.textContent === "전체 예산")?.parentElement?.querySelector("p")
+      ?.textContent,
+  ).toBe("—");
   await click("예산 설정");
   const dialog = document.querySelector('[role="dialog"]');
   expect(dialog?.hasAttribute("data-open")).toBe(true);
@@ -273,10 +245,7 @@ it.each([
   ["1000", "1001", "1,001원", "-1원"],
   ["999999999999999", "9007199254740993", "9,007,199,254,740,993원", "-8,007,199,254,740,994원"],
 ])("preserves exact budget and remaining amounts for budget %s and total %s", async (b, total, expected, remaining) => {
-  mocks.state = state(
-    { ...budget, budgetKrw: b },
-    { ...reference, convertedTotalKrw: total },
-  );
+  mocks.state = state({ ...budget, budgetKrw: b }, { ...reference, convertedTotalKrw: total });
   await summary();
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
   expect(text()).not.toMatch(/참고 잔여 예산|참고 예산 초과|예산과 최신/);
@@ -299,7 +268,10 @@ it.each([
   expect(host.querySelector('[aria-label="남은 예산"]')?.textContent).toContain("—");
 });
 it.each(["pending", "error"])("shows a dash with no conversion data while %s", async (status) => {
-  mocks.state = { ...state(), krwSummary: { data: undefined, isPending: status === "pending", isError: status === "error", isSuccess: false } };
+  mocks.state = {
+    ...state(),
+    krwSummary: { data: undefined, isPending: status === "pending", isError: status === "error", isSuccess: false },
+  };
   await summary();
   expect(host.querySelector("h3")?.parentElement?.textContent).toContain("—");
   expect(text()).not.toContain("예산과 최신");
@@ -321,8 +293,7 @@ it.each([
   await summary();
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
   expect(text()).not.toContain("환산 가능한 비용 합계");
-  if (patch.convertedTotalKrw === null)
-    expect(text()).toContain("—");
+  if (patch.convertedTotalKrw === null) expect(text()).toContain("—");
   if (patch.stale && patch.rateDate !== null) {
     expect(text()).toContain("환율 갱신에 실패하여 이전 성공 환율을 사용한 참고값이에요.");
     expect(text()).toContain("501원");
@@ -332,23 +303,20 @@ it.each([
     expect(text()).not.toContain("2026-09-11");
   }
 });
-it.each(["budget", "krwSummary"])(
-  "withholds comparison after %s read fails even with cached data",
-  async (key) => {
-    const current = state();
-    mocks.state = {
-      ...current,
-      [key]: {
-        ...current[key as "budget" | "krwSummary"],
-        isSuccess: false,
-        isError: true,
-      },
-    };
-    await summary();
-    expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
-    expect(text()).toContain("조회에 실패");
-  },
-);
+it.each(["budget", "krwSummary"])("withholds comparison after %s read fails even with cached data", async (key) => {
+  const current = state();
+  mocks.state = {
+    ...current,
+    [key]: {
+      ...current[key as "budget" | "krwSummary"],
+      isSuccess: false,
+      isError: true,
+    },
+  };
+  await summary();
+  expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
+  expect(text()).toContain("조회에 실패");
+});
 it("partial zero is labelled and unset never becomes a zero budget", async () => {
   mocks.state = state(
     { ...budget, budgetKrw: null },
@@ -364,7 +332,10 @@ it("partial zero is labelled and unset never becomes a zero budget", async () =>
   expect(text()).toContain("0원");
   expect(host.querySelector('button[aria-label="원화 합계 안내"]')).not.toBeNull();
   expect(text()).not.toContain("미설정");
-  expect([...host.querySelectorAll("h3")].find(h => h.textContent === "전체 예산")?.parentElement?.querySelector("p")?.textContent).toBe("—");
+  expect(
+    [...host.querySelectorAll("h3")].find((h) => h.textContent === "전체 예산")?.parentElement?.querySelector("p")
+      ?.textContent,
+  ).toBe("—");
   expect(document.querySelector('[aria-label="예산 비교"]')).toBeNull();
 });
 it.each(["disconnected", "pending", "error"])(
@@ -411,18 +382,14 @@ it("keeps caret after middle edits and skips formatting commas on deletion", asy
 it("preserves long whole-room totals without truncation", async () => {
   mocks.state = state(budget, { ...reference, convertedTotalKrw: "9007199254740993" });
   await summary();
-  const total = [...host.querySelectorAll("p")].find(
-    (p) => p.textContent === "9,007,199,254,740,993원",
-  )!;
+  const total = [...host.querySelectorAll("p")].find((p) => p.textContent === "9,007,199,254,740,993원")!;
   expect(total.textContent).toBe("9,007,199,254,740,993원");
 });
 
 it("groups budget and edit control on a white card with wrapping space for large amounts", async () => {
   mocks.state = state({ ...budget, budgetKrw: "999999999999999" });
   await summary();
-  const title = [...host.querySelectorAll("h3")].find(
-    (h) => h.textContent === "전체 예산",
-  )!;
+  const title = [...host.querySelectorAll("h3")].find((h) => h.textContent === "전체 예산")!;
   const content = title.parentElement!;
   const card = content.parentElement!;
   expect(content.querySelector("p")?.textContent).toBe("999,999,999,999,999원");
@@ -443,10 +410,8 @@ it("announces both pending budget reads with native status outputs", async () =>
   mocks.state = pending;
   await summary();
   const outputs = [...host.querySelectorAll("output")];
-  expect(outputs.map(output => output.textContent)).toEqual([
-    "원화 참고 요약을 불러오는 중…", "예산을 불러오는 중…",
-  ]);
-  expect(outputs.every(output => output.style.display === "block")).toBe(true);
+  expect(outputs.map((output) => output.textContent)).toEqual(["원화 참고 요약을 불러오는 중…", "예산을 불러오는 중…"]);
+  expect(outputs.every((output) => output.style.display === "block")).toBe(true);
 });
 
 it("shows an exact remaining budget only with complete synchronized values", async () => {

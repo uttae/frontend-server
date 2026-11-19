@@ -1,6 +1,9 @@
 import {
-  resolvePlaceSession, PlaceSessionError,
-  type PlacePrediction, type PlaceResolveResponse, type PlaceSession,
+  resolvePlaceSession,
+  PlaceSessionError,
+  type PlacePrediction,
+  type PlaceResolveResponse,
+  type PlaceSession,
 } from "@/lib/api/place-sessions";
 import { getQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey, normalizePreviewLocation } from "./place-queries";
@@ -16,29 +19,43 @@ export type ResolvedSearchAnchor = PlaceResolveResponse & {
   googlePlaceId: string;
   location: google.maps.LatLngLiteral;
 };
-const resolutions = new WeakMap<PlaceSession, {
-  googlePlaceId: string; promise: Promise<PlaceResolveResponse>;
-}>();
+const resolutions = new WeakMap<
+  PlaceSession,
+  {
+    googlePlaceId: string;
+    promise: Promise<PlaceResolveResponse>;
+  }
+>();
 async function resolveWithInProgressRetry(
-  session: PlaceSession, googlePlaceId: string, isCurrent: () => boolean,
+  session: PlaceSession,
+  googlePlaceId: string,
+  isCurrent: () => boolean,
 ): Promise<PlaceResolveResponse> {
   try {
     return await resolvePlaceSession(session.sessionToken, googlePlaceId);
   } catch (error) {
     if (!(error instanceof PlaceSessionError) || error.code !== "PLACE_SESSION_IN_PROGRESS") throw error;
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     if (!isCurrent()) throw new DOMException("Search abandoned", "AbortError");
   }
   return resolvePlaceSession(session.sessionToken, googlePlaceId);
 }
 export function terminatePredictionSession(
-  prediction: PlacePrediction, session: PlaceSession | null, isCurrent: () => boolean = () => true,
+  prediction: PlacePrediction,
+  session: PlaceSession | null,
+  isCurrent: () => boolean = () => true,
 ): Promise<PlaceResolveResponse> {
   if (!session || session.expiresAt <= Date.now())
-    return Promise.reject(new PlaceSessionError(400, "PLACE_SESSION_INVALID", "검색 세션이 만료됐어요. 다시 입력해주세요."));
+    return Promise.reject(
+      new PlaceSessionError(400, "PLACE_SESSION_INVALID", "검색 세션이 만료됐어요. 다시 입력해주세요."),
+    );
   const existing = resolutions.get(session);
-  if (existing) return existing.googlePlaceId === prediction.placeId ? existing.promise
-    : Promise.reject(new PlaceSessionError(409, "PLACE_SESSION_CONFLICT", "이미 확인한 검색 세션입니다. 다시 검색해주세요."));
+  if (existing)
+    return existing.googlePlaceId === prediction.placeId
+      ? existing.promise
+      : Promise.reject(
+          new PlaceSessionError(409, "PLACE_SESSION_CONFLICT", "이미 확인한 검색 세션입니다. 다시 검색해주세요."),
+        );
   const promise = resolveWithInProgressRetry(session, prediction.placeId, isCurrent);
   resolutions.set(session, { googlePlaceId: prediction.placeId, promise });
   return promise;
@@ -56,7 +73,8 @@ type SearchResolution = {
   termination: PlaceResolveResponse["termination"] | "failed" | "not-requested";
 };
 async function resolveSearchPrediction<T>(
-  args: ConfirmPlaceSearchArgs<T>, prediction: PlacePrediction,
+  args: ConfirmPlaceSearchArgs<T>,
+  prediction: PlacePrediction,
 ): Promise<ResolvedSearchAnchor | null> {
   try {
     const resolved = await terminatePredictionSession(prediction, args.session, args.isCurrent);
@@ -72,9 +90,9 @@ async function resolveSearchPrediction<T>(
     return null;
   }
 }
-export async function confirmPlaceSearch<T>(args: ConfirmPlaceSearchArgs<T>): Promise<
-  SearchResolution & { items: T[] } | null
-> {
+export async function confirmPlaceSearch<T>(
+  args: ConfirmPlaceSearchArgs<T>,
+): Promise<(SearchResolution & { items: T[] }) | null> {
   const query = args.query.trim();
   if (!query) throw new Error("검색어를 입력해주세요.");
   if (!args.isCurrent()) return null;

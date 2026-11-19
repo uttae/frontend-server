@@ -29,14 +29,7 @@ type MobileMemoSheetProps = Readonly<{
   onClose: () => void;
 }>;
 
-export function MobileMemoSheet({
-  roomId,
-  scheduleId,
-  itemId,
-  placeName,
-  memo,
-  onClose,
-}: MobileMemoSheetProps) {
+export function MobileMemoSheet({ roomId, scheduleId, itemId, placeName, memo, onClose }: MobileMemoSheetProps) {
   const initial = memo.trim();
   const [editStartMemo, setEditStartMemo] = useState<string | null>(null);
   const hasRemoteChange = editStartMemo !== null && editStartMemo !== initial;
@@ -75,7 +68,13 @@ export function MobileMemoSheet({
   const dirty = useStore(form.store, (state) => state.values.memo.trim() !== initial);
 
   return (
-    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isWriting}>
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      closeDisabled={isWriting}
+    >
       <DrawerContent
         closeLabel={hasMemo ? "메모 수정 닫기" : "메모 추가 닫기"}
         initialFocus={() => {
@@ -126,9 +125,7 @@ export function MobileMemoSheet({
                       aria-describedby={error ? `${descriptionId} ${errorId}` : descriptionId}
                       className="h-36"
                     />
-                    <FieldDescription id={descriptionId}>
-                      예약 정보나 함께 기억할 내용을 남겨보세요.
-                    </FieldDescription>
+                    <FieldDescription id={descriptionId}>예약 정보나 함께 기억할 내용을 남겨보세요.</FieldDescription>
                     <FieldFooter>
                       <FieldError id={errorId}>{error}</FieldError>
                       <FieldCount>
@@ -153,13 +150,7 @@ export function MobileMemoSheet({
               삭제
             </Button>
           ) : null}
-          <Button
-            type="submit"
-            form={formId}
-            loading={isSaving}
-            loadingLabel="저장 중"
-            disabled={isDeleting || !dirty}
-          >
+          <Button type="submit" form={formId} loading={isSaving} loadingLabel="저장 중" disabled={isDeleting || !dirty}>
             저장
           </Button>
         </DrawerFooter>

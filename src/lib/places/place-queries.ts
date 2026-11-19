@@ -10,10 +10,7 @@ import {
   type PlacePreviewResponse,
 } from "@/lib/api/places";
 import { normalizeGooglePlaceResourceId } from "@/lib/maps";
-import {
-  createPlaceBatchLoader,
-  type PlaceBatchResult,
-} from "@/lib/places/place-batch-loader";
+import { createPlaceBatchLoader, type PlaceBatchResult } from "@/lib/places/place-batch-loader";
 import { getQueryClient } from "@/lib/query-client";
 
 export const placeDetailQueryDefaults = {
@@ -41,25 +38,10 @@ export function normalizePreviewLocation(
 ): { lat: number; lng: number } | undefined {
   if (!location || typeof location !== "object") return undefined;
 
-  const lat =
-    "latitude" in location
-      ? location.latitude
-      : "lat" in location
-        ? location.lat
-        : undefined;
-  const lng =
-    "longitude" in location
-      ? location.longitude
-      : "lng" in location
-        ? location.lng
-        : undefined;
+  const lat = "latitude" in location ? location.latitude : "lat" in location ? location.lat : undefined;
+  const lng = "longitude" in location ? location.longitude : "lng" in location ? location.lng : undefined;
 
-  if (
-    typeof lat !== "number" ||
-    !Number.isFinite(lat) ||
-    typeof lng !== "number" ||
-    !Number.isFinite(lng)
-  ) {
+  if (typeof lat !== "number" || !Number.isFinite(lat) || typeof lng !== "number" || !Number.isFinite(lng)) {
     return undefined;
   }
   return { lat, lng };
@@ -78,9 +60,7 @@ export function normalizePlacePreview(raw: PlacePreviewResponse): PlacePreview {
     formattedAddress: raw.formattedAddress,
     location: normalizePreviewLocation(raw.location),
     primaryType: normalizeOptionalPreviewString(raw.primaryType),
-    primaryTypeDisplayName: normalizeOptionalPreviewString(
-      raw.primaryTypeDisplayName,
-    ),
+    primaryTypeDisplayName: normalizeOptionalPreviewString(raw.primaryTypeDisplayName),
   };
 }
 
@@ -107,13 +87,7 @@ export function resolvePreviewGooglePlaceId(googlePlaceId: string): string {
   return raw.length ? normalizeGooglePlaceResourceId(raw) : "";
 }
 
-function hasPreviewIdAndName({
-  googlePlaceId,
-  name,
-}: {
-  googlePlaceId?: unknown;
-  name?: unknown;
-}): boolean {
+function hasPreviewIdAndName({ googlePlaceId, name }: { googlePlaceId?: unknown; name?: unknown }): boolean {
   return (
     typeof googlePlaceId === "string" &&
     googlePlaceId.trim().length > 0 &&
@@ -122,9 +96,7 @@ function hasPreviewIdAndName({
   );
 }
 
-function previewBatchItemResult(
-  item: PlacePreviewBatchItem,
-): PlaceBatchResult<PlacePreview> | null {
+function previewBatchItemResult(item: PlacePreviewBatchItem): PlaceBatchResult<PlacePreview> | null {
   if (isBatchItemError(item)) {
     return {
       ok: false,
@@ -168,19 +140,14 @@ export function placePreviewQueryOptions(googlePlaceId: string) {
   };
 }
 
-export function seededPlacePreviewQueryOptions(
-  googlePlaceId: string,
-  options?: { enabled?: boolean },
-) {
+export function seededPlacePreviewQueryOptions(googlePlaceId: string, options?: { enabled?: boolean }) {
   const id = resolvePreviewGooglePlaceId(googlePlaceId);
   const enabled = (options?.enabled ?? true) && id.length > 0;
   return {
     queryKey: placePreviewQueryKey(id),
     queryFn: (): PlacePreview => {
       const queryClient = getQueryClient();
-      const cached = queryClient?.getQueryData<PlacePreview>(
-        placePreviewQueryKey(id),
-      );
+      const cached = queryClient?.getQueryData<PlacePreview>(placePreviewQueryKey(id));
       if (cached) return cached;
       throw new Error("Place preview not seeded");
     },

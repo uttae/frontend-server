@@ -11,24 +11,18 @@ import { useSessionStore } from "@/stores/session-store";
 
 const EMPTY = new Set<string>();
 
-export function usePlanItineraryStopNormalizedPlaceIds(
-  enabled: boolean,
-): ReadonlySet<string> {
+export function usePlanItineraryStopNormalizedPlaceIds(enabled: boolean): ReadonlySet<string> {
   const roomIdRaw = useSessionStore((s) => s.currentRoomId);
   const rid = typeof roomIdRaw === "string" ? roomIdRaw.trim() : "";
   const queryClient = useQueryClient();
   const { isSuccess: schedulesHydrated } = useRoomSchedules(rid || null);
 
-  const visibleByScheduleId = usePlanScheduleRouteVisibilityStore(
-    (s) => s.visibleByScheduleId,
-  );
+  const visibleByScheduleId = usePlanScheduleRouteVisibilityStore((s) => s.visibleByScheduleId);
   const visibleScheduleIds = useMemo(
     () =>
       Object.keys(visibleByScheduleId)
         .map((k) => Number(k))
-        .filter(
-          (id) => Number.isFinite(id) && visibleByScheduleId[id] === true,
-        ),
+        .filter((id) => Number.isFinite(id) && visibleByScheduleId[id] === true),
     [visibleByScheduleId],
   );
 
@@ -40,11 +34,7 @@ export function usePlanItineraryStopNormalizedPlaceIds(
   const placesQueries = useQueries({
     queries: orderedScheduleIdsForQueries.map((scheduleId) => ({
       ...schedulePlanPlacesQueryOptions(queryClient, rid, scheduleId),
-      enabled:
-        enabled &&
-        rid.length > 0 &&
-        orderedScheduleIdsForQueries.length > 0 &&
-        schedulesHydrated,
+      enabled: enabled && rid.length > 0 && orderedScheduleIdsForQueries.length > 0 && schedulesHydrated,
       refetchOnWindowFocus: false,
     })),
   });
@@ -56,10 +46,7 @@ export function usePlanItineraryStopNormalizedPlaceIds(
     orderedScheduleIdsForQueries.forEach((_, bucketIdx) => {
       const places = placesQueries[bucketIdx]?.data ?? [];
       for (const place of places) {
-        const gid =
-          typeof place.googlePlaceId === "string"
-            ? place.googlePlaceId.trim()
-            : "";
+        const gid = typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
         if (!gid.length) continue;
         ids.add(normalizeGooglePlaceResourceId(gid));
       }

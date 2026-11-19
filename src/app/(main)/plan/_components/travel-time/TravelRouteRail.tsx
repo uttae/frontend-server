@@ -3,10 +3,7 @@ import { Minus } from "lucide-react";
 import { PlusIcon } from "@/assets/icons";
 import { cn } from "@/lib/utils";
 
-import {
-  PLAN_SEGMENT_RAIL_CLASS,
-  planSegmentAddButtonClassName,
-} from "./travelSegmentRailLayout";
+import { PLAN_SEGMENT_RAIL_CLASS, planSegmentAddButtonClassName } from "./travelSegmentRailLayout";
 
 type TravelRouteRailProps = {
   className?: string;
@@ -25,7 +22,7 @@ export function TravelRouteRail({
 }: TravelRouteRailProps) {
   return (
     <div className={cn(PLAN_SEGMENT_RAIL_CLASS, className)}>
-      {isAddVisible ?
+      {isAddVisible ? (
         <button
           type="button"
           aria-label="장소 추가 닫기"
@@ -35,14 +32,11 @@ export function TravelRouteRail({
             e.stopPropagation();
             onAddClick?.();
           }}
-          className={cn(
-            planSegmentAddButtonClassName(true),
-            addDisabled && "pointer-events-none opacity-40",
-          )}
+          className={cn(planSegmentAddButtonClassName(true), addDisabled && "pointer-events-none opacity-40")}
         >
           <Minus className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
         </button>
-      : showAddOnHover ?
+      ) : showAddOnHover ? (
         <button
           type="button"
           aria-label="이 위치에 장소 추가"
@@ -60,7 +54,7 @@ export function TravelRouteRail({
         >
           <PlusIcon size={16} />
         </button>
-      : null}
+      ) : null}
     </div>
   );
 }

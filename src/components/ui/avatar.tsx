@@ -92,7 +92,10 @@ function AvatarGroupCount({ className, ...props }: Readonly<ComponentProps<"span
   return (
     <span
       data-slot="avatar-group-count"
-      className={cn("flex shrink-0 items-center text-label-l-emphasis text-text-subtle [&_svg]:text-icon-subtle", className)}
+      className={cn(
+        "flex shrink-0 items-center text-label-l-emphasis text-text-subtle [&_svg]:text-icon-subtle",
+        className,
+      )}
       {...props}
     />
   );

@@ -17,10 +17,7 @@ export type RoomScheduleMoveRequest = {
   targetDayNumber: number;
 };
 
-export async function createRoomSchedule(
-  roomId: string,
-  body: RoomScheduleCreateRequest,
-): Promise<RoomSchedule> {
+export async function createRoomSchedule(roomId: string, body: RoomScheduleCreateRequest): Promise<RoomSchedule> {
   return requestJson(
     apiUrl(`/rooms/${roomId}/schedules`),
     { method: "POST", ...jsonBody(body) },
@@ -45,15 +42,16 @@ export async function getRoomSchedules(
   if (options?.includeItems) {
     url.searchParams.set("includeItems", "true");
   }
-  return requestJson(url.toString(), { signal: options?.signal }, {
-    errorMessage: "일정 목록 조회 실패",
-  });
+  return requestJson(
+    url.toString(),
+    { signal: options?.signal },
+    {
+      errorMessage: "일정 목록 조회 실패",
+    },
+  );
 }
 
-export async function deleteRoomSchedule(
-  roomId: string,
-  scheduleId: number,
-): Promise<void> {
+export async function deleteRoomSchedule(roomId: string, scheduleId: number): Promise<void> {
   return requestVoid(
     apiUrl(`/rooms/${roomId}/schedules/${scheduleId}`),
     { method: "DELETE" },

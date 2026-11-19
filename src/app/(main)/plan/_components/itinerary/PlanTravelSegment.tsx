@@ -31,9 +31,7 @@ export function PlanTravelSegment({
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex min-h-10 items-center pr-3">{children}</div>
-        {showAddControls && addControls ?
-          <div className="pb-2">{addControls}</div>
-        : null}
+        {showAddControls && addControls ? <div className="pb-2">{addControls}</div> : null}
       </div>
     </div>
   );

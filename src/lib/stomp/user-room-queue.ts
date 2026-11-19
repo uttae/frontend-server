@@ -20,21 +20,13 @@ function parseOptionalServerMessage(raw: Record<string, unknown>): string | unde
   return message || undefined;
 }
 
-export function parseUserRoomQueueMessage(
-  body: string,
-): UserRoomQueueMessage | null {
+export function parseUserRoomQueueMessage(body: string): UserRoomQueueMessage | null {
   try {
     const raw = JSON.parse(body) as Record<string, unknown>;
-    const actionType =
-      typeof raw?.actionType === "string" ? raw.actionType : "";
+    const actionType = typeof raw?.actionType === "string" ? raw.actionType : "";
 
     const roomIdRaw = raw.roomId;
-    const roomId =
-      typeof roomIdRaw === "string"
-        ? roomIdRaw.trim()
-        : roomIdRaw != null
-          ? String(roomIdRaw).trim()
-          : "";
+    const roomId = typeof roomIdRaw === "string" ? roomIdRaw.trim() : roomIdRaw != null ? String(roomIdRaw).trim() : "";
     if (!roomId) return null;
 
     const serverMessage = parseOptionalServerMessage(raw);
@@ -65,13 +57,10 @@ export function parseUserRoomQueueMessage(
           : NaN;
     if (!Number.isFinite(requesterId)) return null;
 
-    const nickname =
-      typeof raw.nickname === "string" ? raw.nickname.trim() : "";
+    const nickname = typeof raw.nickname === "string" ? raw.nickname.trim() : "";
     const profileImageUrlRaw = raw.profileImageUrl;
     const profileImageUrl =
-      typeof profileImageUrlRaw === "string" && profileImageUrlRaw.trim()
-        ? profileImageUrlRaw.trim()
-        : null;
+      typeof profileImageUrlRaw === "string" && profileImageUrlRaw.trim() ? profileImageUrlRaw.trim() : null;
 
     return {
       kind: "join_request",

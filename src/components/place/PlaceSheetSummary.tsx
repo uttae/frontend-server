@@ -1,9 +1,4 @@
-import {
-  CalendarAddIcon,
-  ChatIcon,
-  ReactionStarIcon,
-  SavedIcon,
-} from "@/assets/icons";
+import { CalendarAddIcon, ChatIcon, ReactionStarIcon, SavedIcon } from "@/assets/icons";
 
 type Props = Readonly<{
   name: string;
@@ -37,14 +32,9 @@ export function PlaceSheetSummary({
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <p className="text-caption-l-regular text-text">{category}</p>
             <div className="flex items-center gap-[5px]">
-              <ReactionStarIcon
-                size={16}
-                className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
-              />
+              <ReactionStarIcon size={16} className="fill-current text-[var(--orange-500)] [&_path]:stroke-none" />
               <span className="flex items-center gap-0.5 whitespace-nowrap">
-                <span className="text-caption-l-emphasis text-text">
-                  {rating != null ? rating.toFixed(1) : "-"}
-                </span>
+                <span className="text-caption-l-emphasis text-text">{rating != null ? rating.toFixed(1) : "-"}</span>
                 {userRatingCount != null && (
                   <span className="text-caption-l-regular text-text-subtle">
                     ({userRatingCount.toLocaleString()}개)

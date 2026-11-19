@@ -28,7 +28,6 @@ export const PUBLIC_FOUNDERS = [
     role: "Co-founder",
     githubUrl: "https://github.com/parkjuyeong0312",
     githubLabel: "parkjuyeong0312",
-    linkedinUrl:
-      "https://www.linkedin.com/in/%EC%A3%BC%EC%98%81-%EB%B0%95-75a83a2a4/",
+    linkedinUrl: "https://www.linkedin.com/in/%EC%A3%BC%EC%98%81-%EB%B0%95-75a83a2a4/",
   },
 ] as const;

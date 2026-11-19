@@ -4,37 +4,23 @@ import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import {
-  useCreateRoomSchedule,
-  useDeleteRoomSchedule,
-  useRoomSchedules,
-} from "@/hooks/useRooms";
+import { useCreateRoomSchedule, useDeleteRoomSchedule, useRoomSchedules } from "@/hooks/useRooms";
 import { usePlanMapFocusStore } from "@/stores/plan-map-focus-store";
 import { useSessionStore } from "@/stores/session-store";
 import { usePlanItineraryExpandedStore } from "@/stores/plan-itinerary-expanded-store";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 
-import {
-  dayNumberForInsertAfterDayIndex,
-  mergeSchedulesWithPlaces,
-  sortRoomSchedules,
-} from "@/lib/plan/scheduleMerge";
+import { dayNumberForInsertAfterDayIndex, mergeSchedulesWithPlaces, sortRoomSchedules } from "@/lib/plan/scheduleMerge";
 import { cn } from "@/lib/utils";
 import { MAIN_CARD_INNER_PADDING_X_CLASS } from "@/lib/layout-tokens";
 import { MainPageHeader } from "@/components/layout/MainPageHeader";
 import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 
 import { usePlanScheduleDayReorder } from "@/hooks/usePlanScheduleDayReorder";
-import {
-  PlanItemDragProvider,
-  usePlanItemDragController,
-} from "@/hooks/usePlanItemDragController";
+import { PlanItemDragProvider, usePlanItemDragController } from "@/hooks/usePlanItemDragController";
 import { planCopy } from "@/lib/plan/planCopy";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
-import {
-  bucketMemberCount,
-  toAnalyticsRoomRole,
-} from "@/lib/analytics/context";
+import { bucketMemberCount, toAnalyticsRoomRole } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { MobilePlanView } from "../mobile/MobilePlanView";
@@ -44,16 +30,13 @@ export function PlanPageView() {
   const { isMobileDevice } = useMobileView();
   const clearPlanFocus = usePlanMapFocusStore((s) => s.clearFocus);
   useEffect(() => () => clearPlanFocus(), [clearPlanFocus]);
-  
+
   const storedId = useSessionStore((s) => s.currentRoomId);
-  const roomId =
-    typeof storedId === "string" && storedId.trim().length > 0
-      ? storedId.trim()
-      : "";
+  const roomId = typeof storedId === "string" && storedId.trim().length > 0 ? storedId.trim() : "";
   const roomIdForQueries = roomId.length > 0 ? roomId : null;
 
   const { data: roomDetail } = useRoomDetail(roomIdForQueries);
-  
+
   const lastTrackedPlanIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!roomDetail || lastTrackedPlanIdRef.current === roomDetail.id) return;
@@ -65,58 +48,38 @@ export function PlanPageView() {
     });
   }, [roomDetail]);
 
-  const {
-    data: schedules,
-    isPending,
-    isError,
-    isLoadingError,
-  } = useRoomSchedules(roomIdForQueries);
-  const { mutate: deleteSchedule, isPending: isDeletingSchedule } =
-    useDeleteRoomSchedule();
+  const { data: schedules, isPending, isError, isLoadingError } = useRoomSchedules(roomIdForQueries);
+  const { mutate: deleteSchedule, isPending: isDeletingSchedule } = useDeleteRoomSchedule();
   const [dayToDelete, setDayToDelete] = useState<{
     scheduleId: number;
     isLast: boolean;
   } | null>(null);
-  const { mutateAsync: createScheduleAsync, isPending: isCreatingSchedule } =
-    useCreateRoomSchedule();
+  const { mutateAsync: createScheduleAsync, isPending: isCreatingSchedule } = useCreateRoomSchedule();
 
   const scheduleList = useMemo(() => schedules ?? [], [schedules]);
-  const sortedSchedules = useMemo(
-    () => sortRoomSchedules(scheduleList),
-    [scheduleList],
-  );
+  const sortedSchedules = useMemo(() => sortRoomSchedules(scheduleList), [scheduleList]);
 
-  const { getSectionProps, listContainerProps, isMovePending } =
-    usePlanScheduleDayReorder({
-      roomId,
-      schedules: sortedSchedules,
-    });
+  const { getSectionProps, listContainerProps, isMovePending } = usePlanScheduleDayReorder({
+    roomId,
+    schedules: sortedSchedules,
+  });
 
   const planItemDrag = usePlanItemDragController(roomId);
 
-  const scheduleExpansionSyncKey = useMemo(
-    () => sortedSchedules.map((s) => s.scheduleId).join(","),
-    [sortedSchedules],
-  );
-  const expansionRoomResetRevision = usePlanItineraryExpandedStore(
-    (s) => s.roomResetRevision,
-  );
+  const scheduleExpansionSyncKey = useMemo(() => sortedSchedules.map((s) => s.scheduleId).join(","), [sortedSchedules]);
+  const expansionRoomResetRevision = usePlanItineraryExpandedStore((s) => s.roomResetRevision);
 
   useLayoutEffect(() => {
     const ids =
       scheduleExpansionSyncKey.length > 0
-        ? scheduleExpansionSyncKey
-            .split(",")
-            .map(Number)
-            .filter(Number.isFinite)
+        ? scheduleExpansionSyncKey.split(",").map(Number).filter(Number.isFinite)
         : [];
     usePlanItineraryExpandedStore.getState().syncScheduleExpansionState(ids);
     usePlanScheduleRouteVisibilityStore.getState().syncRouteVisibility(ids);
   }, [scheduleExpansionSyncKey, expansionRoomResetRevision]);
 
   const planDays = useMemo(
-    () =>
-      scheduleList.length > 0 ? mergeSchedulesWithPlaces(scheduleList) : [],
+    () => (scheduleList.length > 0 ? mergeSchedulesWithPlaces(scheduleList) : []),
     [scheduleList],
   );
 
@@ -151,28 +114,17 @@ export function PlanPageView() {
       if (isCreatingSchedule) return;
       const dayNumber = dayNumberForInsertAfterDayIndex(dayIndex);
       void createScheduleAsync({ roomId, body: { dayNumber } }).catch((e) => {
-        toast.error(
-          e instanceof Error && e.message.trim()
-            ? e.message
-            : "일차를 추가하지 못했어요.",
-        );
+        toast.error(e instanceof Error && e.message.trim() ? e.message : "일차를 추가하지 못했어요.");
       });
     },
     [createScheduleAsync, isCreatingSchedule, roomId],
   );
 
-  const showInitialLoading = Boolean(
-    roomId.length > 0 && isPending && schedules === undefined,
-  );
+  const showInitialLoading = Boolean(roomId.length > 0 && isPending && schedules === undefined);
 
   const pageContentClassName = "overflow-x-auto pb-8";
 
-  const pageHeader = (
-    <MainPageHeader
-      title="일정"
-      description="여행 일정을 한 눈에 확인하세요."
-    />
-  );
+  const pageHeader = <MainPageHeader title="일정" description="여행 일정을 한 눈에 확인하세요." />;
 
   const deleteDayDialog = dayToDelete ? (
     <ConfirmDialog
@@ -258,18 +210,12 @@ export function PlanPageView() {
                       subtitle={day.dateLabel}
                       dateHeading={day.shortDateLabel}
                       onRequestDeleteSchedule={
-                        sortedSchedules[dayIndex]
-                          ? () => handleDeleteScheduleDay(dayIndex)
-                          : undefined
+                        sortedSchedules[dayIndex] ? () => handleDeleteScheduleDay(dayIndex) : undefined
                       }
                       onRequestInsertScheduleAfter={
-                        sortedSchedules[dayIndex]
-                          ? () => handleInsertScheduleAfter(dayIndex)
-                          : undefined
+                        sortedSchedules[dayIndex] ? () => handleInsertScheduleAfter(dayIndex) : undefined
                       }
-                      isScheduleMenuDisabled={
-                        isCreatingSchedule || isDeletingSchedule || isMovePending
-                      }
+                      isScheduleMenuDisabled={isCreatingSchedule || isDeletingSchedule || isMovePending}
                       {...sectionProps}
                     />
                   );

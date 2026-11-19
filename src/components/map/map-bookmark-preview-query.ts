@@ -10,14 +10,9 @@ export function buildMapBookmarkPreviewPlan<T extends MapBookmarkRow>(
   rows: readonly T[],
   hiddenNormalizedPlaceIds: ReadonlySet<string> | undefined,
 ) {
-  const visibleBookmarks = filterVisibleMapBookmarks(
-    rows,
-    hiddenNormalizedPlaceIds,
-  );
+  const visibleBookmarks = filterVisibleMapBookmarks(rows, hiddenNormalizedPlaceIds);
   return {
     visibleBookmarks,
-    queryOptions: visibleBookmarks.map((row) =>
-      placePreviewQueryOptions(row.googlePlaceId),
-    ),
+    queryOptions: visibleBookmarks.map((row) => placePreviewQueryOptions(row.googlePlaceId)),
   };
 }

@@ -28,10 +28,9 @@ export function summarizePlaceExpenses(expenses: readonly Expense[]): string | n
   const totals = totalsByCurrency(expenses);
   const [first, ...rest] = totals;
   if (!first) return null;
-  const primary = rest.reduce((best, current) =>
-    (countByCurrency.get(current.currency) ?? 0) > (countByCurrency.get(best.currency) ?? 0)
-      ? current
-      : best,
+  const primary = rest.reduce(
+    (best, current) =>
+      (countByCurrency.get(current.currency) ?? 0) > (countByCurrency.get(best.currency) ?? 0) ? current : best,
     first,
   );
   const others = expenses.length - (countByCurrency.get(primary.currency) ?? 0);

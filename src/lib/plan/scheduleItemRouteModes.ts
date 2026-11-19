@@ -1,37 +1,20 @@
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
 
-import {
-  canonicalScheduleTravelMode,
-  type ScheduleTravelModeValue,
-} from "@/lib/plan/scheduleTravelMode";
+import { canonicalScheduleTravelMode, type ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 
-export type ScheduleItemRouteSummary = Pick<
-  ScheduleItemRouteResponse,
-  "distanceMeters" | "durationSeconds"
->;
+export type ScheduleItemRouteSummary = Pick<ScheduleItemRouteResponse, "distanceMeters" | "durationSeconds">;
 
 export function buildScheduleItemRouteSummariesByMode(
   route: ScheduleItemRouteResponse | null | undefined,
 ): Partial<Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>> {
   if (!route || typeof route !== "object") return {};
 
-  const out: Partial<
-    Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>
-  > = {};
+  const out: Partial<Record<ScheduleTravelModeValue, ScheduleItemRouteSummary>> = {};
 
-  const consider = (
-    partial: Pick<ScheduleItemRouteResponse, keyof ScheduleItemRouteResponse>,
-  ): void => {
-    const tm =
-      typeof partial.travelMode === "string"
-        ? partial.travelMode.trim()
-        : "";
+  const consider = (partial: Pick<ScheduleItemRouteResponse, keyof ScheduleItemRouteResponse>): void => {
+    const tm = typeof partial.travelMode === "string" ? partial.travelMode.trim() : "";
     const canon = tm.length ? canonicalScheduleTravelMode(tm) : null;
-    if (
-      canon == null ||
-      typeof partial.distanceMeters !== "number" ||
-      typeof partial.durationSeconds !== "number"
-    ) {
+    if (canon == null || typeof partial.distanceMeters !== "number" || typeof partial.durationSeconds !== "number") {
       return;
     }
     if (partial.distanceMeters < 0 || partial.durationSeconds < 0) return;

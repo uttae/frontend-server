@@ -11,7 +11,8 @@ let direction: EventTarget & { type: string; lock: ReturnType<typeof vi.fn> };
 
 beforeEach(() => {
   direction = Object.assign(new EventTarget(), {
-    type: "portrait-primary", lock: vi.fn().mockResolvedValue(undefined),
+    type: "portrait-primary",
+    lock: vi.fn().mockResolvedValue(undefined),
   });
   vi.stubGlobal("screen", { orientation: direction, width: 1300, height: 600 });
   vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (Linux; Android 13) Mobile", maxTouchPoints: 5 });
@@ -28,7 +29,13 @@ afterEach(async () => {
 });
 
 async function renderChrome() {
-  await act(async () => root.render(<MobileChrome><textarea defaultValue="여행 메모" /></MobileChrome>));
+  await act(async () =>
+    root.render(
+      <MobileChrome>
+        <textarea defaultValue="여행 메모" />
+      </MobileChrome>,
+    ),
+  );
 }
 
 function expectNoForcedTransform(element: Element) {
