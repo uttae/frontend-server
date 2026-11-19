@@ -32,11 +32,22 @@ beforeEach(() => {
   host = document.createElement("div");
   root = createRoot(host);
 });
-afterEach(async () => { await act(async () => root.unmount()); });
+afterEach(async () => {
+  await act(async () => root.unmount());
+});
 
 async function render(focusedItemId: number, locations: MapRouteView["locations"], cam = camera) {
-  await act(async () => root.render(<RouteViewCameraController camera={cam} locations={locations}
-    focusedItemId={focusedItemId} expanded={false} candidate={null} />));
+  await act(async () =>
+    root.render(
+      <RouteViewCameraController
+        camera={cam}
+        locations={locations}
+        focusedItemId={focusedItemId}
+        expanded={false}
+        candidate={null}
+      />,
+    ),
+  );
 }
 
 it("선택 장소 위치가 늦게 도착하면 그 위치로 이동한다", async () => {

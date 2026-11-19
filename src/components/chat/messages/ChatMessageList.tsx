@@ -2,20 +2,10 @@
 
 import { Spinner } from "@/components/ui/spinner";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
 import type { ChatMessage } from "@/types/chat";
 import { cn } from "@/lib/utils";
-import type {
-  ChatScrollAnchorRequest,
-  ReadDividerPlacement,
-} from "@/lib/chat/readBoundary";
+import type { ChatScrollAnchorRequest, ReadDividerPlacement } from "@/lib/chat/readBoundary";
 import {
   applyScrollAnchor,
   CHAT_NEAR_BOTTOM_PX,
@@ -28,30 +18,17 @@ import {
   isChatHistoryAppendSnapshot,
   isChatHistoryPrependSnapshot,
 } from "../chat-message-utils";
-import {
-  OtherMessageGroup,
-  MyMessageGroup,
-  SystemMessage,
-  AiMessageGroup,
-} from "./ChatMessageGroup";
+import { OtherMessageGroup, MyMessageGroup, SystemMessage, AiMessageGroup } from "./ChatMessageGroup";
 import { PlaceShareCard } from "./PlaceShareCard";
 import { JumpToBottomButton } from "./JumpToBottomButton";
 import { NewMessagePreviewButton } from "./NewMessagePreviewButton";
 import { ChatReadDivider } from "./ChatReadDivider";
 
-/** 일반 채팅(내 것 포함)·장소 공유만 하단 미리보기 대상 — AI·시스템 제외 */
 function isPreviewMessage(message: ChatMessage): boolean {
-  return (
-    message.type === "other" ||
-    message.type === "mine" ||
-    message.type === "place"
-  );
+  return message.type === "other" || message.type === "mine" || message.type === "place";
 }
 
-function syncFollowTailFromScrollRoot(
-  root: HTMLDivElement,
-  followTailRef: MutableRefObject<boolean>,
-) {
+function syncFollowTailFromScrollRoot(root: HTMLDivElement, followTailRef: MutableRefObject<boolean>) {
   const dist = root.scrollHeight - root.scrollTop - root.clientHeight;
   followTailRef.current = dist < CHAT_NEAR_BOTTOM_PX;
 }
@@ -82,21 +59,12 @@ export function ChatMessageList({
   hasMoreNewer?: boolean;
   isLoadingNewer?: boolean;
   onJumpToLatest?: () => void;
-  /** 패널 열림 세션 동안 고정되는 읽음 구분선 기준 메시지 id */
   readMarkerMessageId?: string | null;
-  /** 세션 시작 시 고정된 구분선 DOM 위치 */
   readDividerPlacement?: ReadDividerPlacement | null;
-  /** read-status·bridge 후 스크롤 요청 — key가 바뀔 때마다 1회 적용 */
   scrollToAnchor?: ChatScrollAnchorRequest | null;
-  /** 스크롤이 하단 근처일 때 읽음 처리 */
   onAtBottom?: () => void;
 }) {
-  // 읽음 구분선이 같은 발신자의 후속 메시지와 한 그룹으로 합쳐지면 그룹 끝을
-  // 따라 내려간다. 세션 시작 때 정한 메시지 바로 뒤에서 그룹을 끊어 DOM 위치를 고정한다.
-  const groups = groupConsecutiveMessages(
-    messages,
-    readDividerPlacement?.afterMessageId,
-  );
+  const groups = groupConsecutiveMessages(messages, readDividerPlacement?.afterMessageId);
   const bottomRef = useRef<HTMLDivElement>(null);
   const bottomSentinelRef = useRef<HTMLDivElement>(null);
   const scrollRootRef = useRef<HTMLDivElement>(null);
@@ -105,21 +73,13 @@ export function ChatMessageList({
   const prevFirstIdRef = useRef<string | undefined>(undefined);
   const scrollPreserveRef = useRef({ sh: 0, st: 0 });
   const didInitialScrollRef = useRef(false);
-  /** 이미 처리한 scrollToAnchor key — 같은 요청 중복 스크롤 방지 */
   const lastScrollAnchorKeyRef = useRef<number | null>(null);
-  /** 사용자가 직접 스크롤할 때만 갱신. 레이아웃만 바뀌어 dist가 커져도 끊기지 않게 함 */
   const followTailRef = useRef(true);
-  /** 패널 리사이즈·최소화 전환 시 하단에서 떨어진 거리(px) 복원용 */
   const distFromBottomRef = useRef(0);
-  /** 절취선으로 이동하며 발생한 scroll 이벤트가 최신 메시지 추적을 켜지 않도록 보호 */
   const restoringReadBoundaryRef = useRef(false);
   const [isAtBottom, setIsAtBottom] = useState(true);
-  /** 하단으로 부드럽게 이동 중 상태 정리용 */
   const [smoothJumpToBottom, setSmoothJumpToBottom] = useState(false);
-  /** 위로 스크롤한 동안 도착한 다른 멤버의 최신 메시지 */
-  const [newMessagePreview, setNewMessagePreview] =
-    useState<ChatMessage | null>(null);
-  /** 스크롤바 폭(px) — 하단 버튼이 스크롤바에 가리지 않게 그만큼 오른쪽을 비운다 */
+  const [newMessagePreview, setNewMessagePreview] = useState<ChatMessage | null>(null);
   const [scrollbarWidth, setScrollbarWidth] = useState(0);
 
   const scrollToBottomSmooth = useCallback(() => {
@@ -141,9 +101,7 @@ export function ChatMessageList({
   const scrollToMessage = useCallback((messageId: string) => {
     const root = scrollRootRef.current;
     if (!root) return;
-    const el = root.querySelector(
-      `[data-chat-anchor="${CSS.escape(messageId)}"]`,
-    );
+    const el = root.querySelector(`[data-chat-anchor="${CSS.escape(messageId)}"]`);
     if (el instanceof HTMLElement) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -190,22 +148,11 @@ export function ChatMessageList({
       didInitialScrollRef.current = false;
     }
 
-    const prepended = isChatHistoryPrependSnapshot(
-      prevCount,
-      prevFirst,
-      count,
-      firstId,
-    );
-    const appended = isChatHistoryAppendSnapshot(
-      prevCount,
-      prevFirst,
-      count,
-      firstId,
-    );
+    const prepended = isChatHistoryPrependSnapshot(prevCount, prevFirst, count, firstId);
+    const appended = isChatHistoryAppendSnapshot(prevCount, prevFirst, count, firstId);
     const hasFrozenDivider =
       readMarkerMessageId != null &&
-      (readDividerPlacement?.afterMessageId != null ||
-        readDividerPlacement?.beforeFirst === true);
+      (readDividerPlacement?.afterMessageId != null || readDividerPlacement?.beforeFirst === true);
 
     let didTailScroll = false;
 
@@ -223,13 +170,7 @@ export function ChatMessageList({
         bottom?.scrollIntoView({ behavior: "auto", block: "end" });
         syncFollowTailFromScrollRoot(root, followTailRef);
       }
-    } else if (
-      followTailRef.current &&
-      !prepended &&
-      !appended &&
-      count > 0 &&
-      root.scrollHeight > prevSh
-    ) {
+    } else if (followTailRef.current && !prepended && !appended && count > 0 && root.scrollHeight > prevSh) {
       scrollRootToBottomInstant(root);
       didTailScroll = true;
     }
@@ -245,13 +186,7 @@ export function ChatMessageList({
     setIsAtBottomIfChanged(setIsAtBottom, nearAfter);
 
     const newest = messages[count - 1];
-    if (
-      appended &&
-      !nearAfter &&
-      newest &&
-      isPreviewMessage(newest)
-    ) {
-      // 스크롤 보정이 끝난 다음 프레임에 표시 — 그 사이 하단에 닿았으면 띄우지 않는다
+    if (appended && !nearAfter && newest && isPreviewMessage(newest)) {
       requestAnimationFrame(() => {
         const r = scrollRootRef.current;
         if (!r) return;
@@ -271,15 +206,8 @@ export function ChatMessageList({
       } else {
         restoringReadBoundaryRef.current = true;
         followTailRef.current = false;
-        scrollReadBoundaryToBottom(
-          root,
-          targetId,
-          groups,
-          followTailRef,
-          setIsAtBottom,
-        );
-        distFromBottomRef.current =
-          root.scrollHeight - root.scrollTop - root.clientHeight;
+        scrollReadBoundaryToBottom(root, targetId, groups, followTailRef, setIsAtBottom);
+        distFromBottomRef.current = root.scrollHeight - root.scrollTop - root.clientHeight;
         scrollPreserveRef.current = {
           sh: root.scrollHeight,
           st: root.scrollTop,
@@ -287,15 +215,8 @@ export function ChatMessageList({
         requestAnimationFrame(() => {
           const r = scrollRootRef.current;
           if (!r || lastScrollAnchorKeyRef.current !== scrollToAnchor.key) return;
-          scrollReadBoundaryToBottom(
-            r,
-            targetId,
-            groups,
-            followTailRef,
-            setIsAtBottom,
-          );
-          distFromBottomRef.current =
-            r.scrollHeight - r.scrollTop - r.clientHeight;
+          scrollReadBoundaryToBottom(r, targetId, groups, followTailRef, setIsAtBottom);
+          distFromBottomRef.current = r.scrollHeight - r.scrollTop - r.clientHeight;
           scrollPreserveRef.current = { sh: r.scrollHeight, st: r.scrollTop };
           requestAnimationFrame(() => {
             if (lastScrollAnchorKeyRef.current !== scrollToAnchor.key) return;
@@ -316,13 +237,7 @@ export function ChatMessageList({
         setIsAtBottomIfChanged(setIsAtBottom, d < CHAT_NEAR_BOTTOM_PX);
       });
     }
-  }, [
-    messages,
-    scrollToAnchor,
-    groups,
-    readMarkerMessageId,
-    readDividerPlacement,
-  ]);
+  }, [messages, scrollToAnchor, groups, readMarkerMessageId, readDividerPlacement]);
 
   useEffect(() => {
     const root = scrollRootRef.current;
@@ -375,7 +290,6 @@ export function ChatMessageList({
     };
   }, [smoothJumpToBottom]);
 
-  /** 최소화↔확대·패널 높이 변경 시 scrollTop만 유지되면 위로 밀려 보이므로 앵커 복원 */
   useLayoutEffect(() => {
     const root = scrollRootRef.current;
     if (!root) return;
@@ -440,17 +354,8 @@ export function ChatMessageList({
           isMinimized && "chat-message-list-scroll--minimized",
         )}
       >
-        <div
-          className={cn(
-            "flex flex-col",
-            isMinimized ? "gap-1 px-2" : "gap-1 px-3",
-          )}
-        >
-          <div
-            ref={topSentinelRef}
-            className={cn("shrink-0", isMinimized ? "min-h-1" : "min-h-2")}
-            aria-hidden
-          />
+        <div className={cn("flex flex-col", isMinimized ? "gap-1 px-2" : "gap-1 px-3")}>
+          <div ref={topSentinelRef} className={cn("shrink-0", isMinimized ? "min-h-1" : "min-h-2")} aria-hidden />
           {isLoadingOlder ? (
             <div
               className={cn(
@@ -461,9 +366,7 @@ export function ChatMessageList({
               <Spinner aria-label="이전 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
             </div>
           ) : null}
-          {readMarkerMessageId != null &&
-          readDividerPlacement?.beforeFirst &&
-          groups.length > 0 ? (
+          {readMarkerMessageId != null && readDividerPlacement?.beforeFirst && groups.length > 0 ? (
             <ChatReadDivider isMinimized={isMinimized} />
           ) : null}
           {groups.map((group, groupIndex) => {
@@ -475,34 +378,17 @@ export function ChatMessageList({
 
             const inner =
               type === "system" ? (
-                <div
-                  className={cn(
-                    "flex flex-col items-center",
-                    isMinimized ? "gap-0.5" : "gap-1",
-                  )}
-                >
+                <div className={cn("flex flex-col items-center", isMinimized ? "gap-0.5" : "gap-1")}>
                   {group.map((m) => (
-                    <SystemMessage
-                      key={m.id}
-                      message={m}
-                      isMinimized={isMinimized}
-                    />
+                    <SystemMessage key={m.id} message={m} isMinimized={isMinimized} />
                   ))}
                 </div>
               ) : type === "place" ? (
                 <PlaceShareCard message={group[0]} isMinimized={isMinimized} />
               ) : type === "mine" ? (
-                <MyMessageGroup
-                  messages={group}
-                  isMinimized={isMinimized}
-                  onCancelAiRequest={onCancelAiRequest}
-                />
+                <MyMessageGroup messages={group} isMinimized={isMinimized} onCancelAiRequest={onCancelAiRequest} />
               ) : type === "ai" ? (
-                <AiMessageGroup
-                  messages={group}
-                  isMinimized={isMinimized}
-                  onReplyTargetClick={scrollToMessage}
-                />
+                <AiMessageGroup messages={group} isMinimized={isMinimized} onReplyTargetClick={scrollToMessage} />
               ) : (
                 <OtherMessageGroup messages={group} isMinimized={isMinimized} />
               );
@@ -529,11 +415,7 @@ export function ChatMessageList({
               <Spinner aria-label="다음 메시지 불러오는 중" size={isMinimized ? 16 : 20} />
             </div>
           ) : null}
-          <div
-            ref={bottomSentinelRef}
-            className="h-px w-full shrink-0"
-            aria-hidden
-          />
+          <div ref={bottomSentinelRef} className="h-px w-full shrink-0" aria-hidden />
           <div ref={bottomRef} className="h-0 shrink-0" />
         </div>
       </div>
@@ -546,11 +428,7 @@ export function ChatMessageList({
         />
       ) : null}
       {!isAtBottom && !newMessagePreview ? (
-        <JumpToBottomButton
-          isMinimized={isMinimized}
-          scrollbarWidth={scrollbarWidth}
-          onClick={handleJumpClick}
-        />
+        <JumpToBottomButton isMinimized={isMinimized} scrollbarWidth={scrollbarWidth} onClick={handleJumpClick} />
       ) : null}
     </div>
   );

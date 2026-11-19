@@ -2,17 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import {
-  readDestinationLatLngFromSession,
-  writeDestinationLatLngToSession,
-} from "@/lib/maps";
+import { readDestinationLatLngFromSession, writeDestinationLatLngToSession } from "@/lib/maps";
 import { readRoomMapViewport } from "@/lib/map-room-viewport-storage";
 import { useClientReady } from "./useClientReady";
 
 const DEFAULT_MAP_CENTER = { lat: 37.5665, lng: 126.978 };
 export const DESTINATION_MAP_ZOOM = 12;
 
-/** 방별 저장 뷰포트·목적지 캐시를 먼저 사용하고 필요한 경우에만 지오코딩합니다. */
 export function useTripMapBootstrap(
   roomId: string | null | undefined,
   destination: string | null | undefined,
@@ -41,15 +37,7 @@ export function useTripMapBootstrap(
   } | null>(null);
 
   useEffect(() => {
-    if (
-      !clientReady ||
-      !rid ||
-      !roomsFetched ||
-      stored ||
-      !dest ||
-      !geocodingLib?.Geocoder
-    )
-      return;
+    if (!clientReady || !rid || !roomsFetched || stored || !dest || !geocodingLib?.Geocoder) return;
     let cancelled = false;
     const geocoder = new geocodingLib.Geocoder();
     geocoder.geocode({ address: dest }, (results, status) => {
@@ -68,11 +56,7 @@ export function useTripMapBootstrap(
   if (roomsFetched && clientReady) {
     if (stored) return { ready: true, ...stored };
     if (!dest) return { ready: true, center: DEFAULT_MAP_CENTER, zoom: 13 };
-    if (
-      geocoded?.rid === rid &&
-      geocoded.dest === dest &&
-      geocoded.library === geocodingLib
-    ) {
+    if (geocoded?.rid === rid && geocoded.dest === dest && geocoded.library === geocodingLib) {
       return {
         ready: true,
         center: geocoded.center ?? DEFAULT_MAP_CENTER,

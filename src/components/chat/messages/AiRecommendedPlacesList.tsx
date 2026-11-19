@@ -10,28 +10,17 @@ import {
 import { useOpenPlaceOnMap } from "@/hooks/useOpenPlaceOnMap";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { stripRecommendedPlaceReasonPrefix } from "@/lib/recommended-place-reason";
-import type {
-  AiPlaceRecommendationHeading,
-  AiRecommendedPlace,
-} from "@/types/chat";
+import type { AiPlaceRecommendationHeading, AiRecommendedPlace } from "@/types/chat";
 import { cn } from "@/lib/utils";
 
-function AiRecommendedPlaceRow({
-  place,
-  isMinimized,
-}: {
-  place: AiRecommendedPlace;
-  isMinimized: boolean;
-}) {
+function AiRecommendedPlaceRow({ place, isMinimized }: { place: AiRecommendedPlace; isMinimized: boolean }) {
   const openPlaceOnMap = useOpenPlaceOnMap();
   const setMapCenter = useMapCenterStore((s) => s.setMapCenter);
 
   const displayRating = place.rating ?? null;
   const displayReviewCount = place.userRatingCount ?? null;
 
-  const reasonDisplay = place.reason
-    ? stripRecommendedPlaceReasonPrefix(place.reason, place.placeId)
-    : "";
+  const reasonDisplay = place.reason ? stripRecommendedPlaceReasonPrefix(place.reason, place.placeId) : "";
 
   function handleClick() {
     setMapCenter({ lat: place.lat, lng: place.lng });
@@ -90,16 +79,10 @@ export function AiRecommendedPlacesList({
   if (!places.length) return null;
 
   const titleCls = chatAiBubblePlaceRecommendationHeadingTitleClass(isMinimized);
-  const subtitleCls =
-    chatAiBubblePlaceRecommendationHeadingSubtitleClass(isMinimized);
+  const subtitleCls = chatAiBubblePlaceRecommendationHeadingSubtitleClass(isMinimized);
 
   return (
-    <div
-      className={cn(
-        "mt-2 flex flex-col gap-2 border-t border-slate-300/80 pt-2",
-        className,
-      )}
-    >
+    <div className={cn("mt-2 flex flex-col gap-2 border-t border-slate-300/80 pt-2", className)}>
       {heading?.title ? (
         <div className={titleCls}>
           <ChatMarkdownContent text={heading.title} variant="ai" />
@@ -112,11 +95,7 @@ export function AiRecommendedPlacesList({
       ) : null}
       <div className="flex flex-col gap-4">
         {places.map((p) => (
-          <AiRecommendedPlaceRow
-            key={`${p.placeId}-${p.name}`}
-            place={p}
-            isMinimized={isMinimized}
-          />
+          <AiRecommendedPlaceRow key={`${p.placeId}-${p.name}`} place={p} isMinimized={isMinimized} />
         ))}
       </div>
     </div>

@@ -8,7 +8,6 @@ function roundCoord(n: number): string {
 
 const NS_ROUTE = "hau:plan:route:v1";
 
-/** 구간 = 출발 항목 → 도착 항목. 도착 항목이 없던 예전 형식(`…:출발:수단`)은 이 key와 겹치지 않아 읽지 않는다 */
 function routeStorageKey(
   roomId: string,
   scheduleId: number,
@@ -29,16 +28,10 @@ function routeBodyOk(b: unknown): b is ScheduleItemRouteResponse {
   if (!b || typeof b !== "object") return false;
   const o = b as Record<string, unknown>;
   return (
-    typeof o.distanceMeters === "number" &&
-    typeof o.durationSeconds === "number" &&
-    typeof o.travelMode === "string"
+    typeof o.distanceMeters === "number" && typeof o.durationSeconds === "number" && typeof o.travelMode === "string"
   );
 }
 
-/**
- * 일정 지문 — `itemId` 순서와 장소 정체성(Place ID·좌표)을 포함해
- * 순서만 같고 장소만 바뀐 경우에도 sessionStorage 경로 캐시가 엇나가지 않게 합니다.
- */
 export function schedulePlacesFingerprint(places: PlanPlace[]): string {
   const parts: string[] = [];
   for (const p of places) {
@@ -47,10 +40,7 @@ export function schedulePlacesFingerprint(places: PlanPlace[]): string {
     const lat = p.location?.lat;
     const lng = p.location?.lng;
     const loc =
-      typeof lat === "number" &&
-      typeof lng === "number" &&
-      Number.isFinite(lat) &&
-      Number.isFinite(lng)
+      typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng)
         ? `${roundCoord(lat)},${roundCoord(lng)}`
         : "";
     parts.push(`${p.itemId}:${gid}:${loc}`);
@@ -71,28 +61,16 @@ function removeSessionStorageKeysMatchingPrefixes(prefixes: string[]): void {
   for (const k of toRemove) {
     try {
       sessionStorage.removeItem(k);
-    } catch {
-      /* quota */
-    }
+    } catch {}
   }
 }
 
-/** 해당 일차 경로 sessionStorage 항목 일괄 제거 */
-export function clearPersistedScheduleRoutesForSchedule(
-  roomId: string,
-  scheduleId: number,
-): void {
+export function clearPersistedScheduleRoutesForSchedule(roomId: string, scheduleId: number): void {
   const rid = roomId.trim();
   if (!rid.length) return;
-  removeSessionStorageKeysMatchingPrefixes([
-    `${NS_ROUTE}:${rid}:${scheduleId}:`,
-  ]);
+  removeSessionStorageKeysMatchingPrefixes([`${NS_ROUTE}:${rid}:${scheduleId}:`]);
 }
 
-/**
- * @returns `undefined` — 캐시 없음/불일치
- * @returns `null` — sessionStorage에 “경로 없음(204)”이 저장됨
- */
 export function readScheduleRouteFromSessionStorage(
   roomId: string,
   scheduleId: number,
@@ -128,18 +106,9 @@ export function writeScheduleRouteToSessionStorage(
 ): void {
   if (typeof window === "undefined" || !fp) return;
   try {
-    const key = routeStorageKey(
-      roomId,
-      scheduleId,
-      segmentSourceItemId,
-      destinationItemId,
-      travelMode,
-    );
+    const key = routeStorageKey(roomId, scheduleId, segmentSourceItemId, destinationItemId, travelMode);
     if (data === null) {
-      sessionStorage.setItem(
-        key,
-        JSON.stringify({ fp, kind: "empty" } satisfies PersistedRouteV1),
-      );
+      sessionStorage.setItem(key, JSON.stringify({ fp, kind: "empty" } satisfies PersistedRouteV1));
     } else {
       sessionStorage.setItem(
         key,
@@ -150,9 +119,5 @@ export function writeScheduleRouteToSessionStorage(
         } satisfies PersistedRouteV1),
       );
     }
-  } catch {
-    /* quota / private mode */
-  }
+  } catch {}
 }
-
-

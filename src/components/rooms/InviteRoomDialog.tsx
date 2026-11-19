@@ -5,10 +5,6 @@ import type { ComponentProps } from "react";
 import { AddMemberPanel } from "@/app/(main)/member-settings/_components/AddMemberPanel";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-/**
- * 초대하기 모달 — PC 헤더와 홈 방 카드 메뉴가 같이 쓴다. 불러오기·오류·권한 안내는 `AddMemberPanel`이 맡는다.
- * 마운트되면 열린 상태라 호출부가 조건부로 그린다. 메뉴 항목처럼 여는 요소가 닫힌 뒤 사라지면 finalFocus로 돌아갈 곳을 준다
- */
 export function InviteRoomDialog({
   roomId,
   inviteCode,

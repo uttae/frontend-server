@@ -31,11 +31,14 @@ export function useChatPanelMinimizedSize() {
     [clampSize],
   );
 
-  const persistSize = useCallback((next: ChatPanelMinimizedSize) => {
-    const clamped = clampSize(next.width, next.height);
-    setSizeState(clamped);
-    writeChatPanelMinimizedSize(clamped);
-  }, [clampSize]);
+  const persistSize = useCallback(
+    (next: ChatPanelMinimizedSize) => {
+      const clamped = clampSize(next.width, next.height);
+      setSizeState(clamped);
+      writeChatPanelMinimizedSize(clamped);
+    },
+    [clampSize],
+  );
 
   return { size, setSize, persistSize, clampSize };
 }

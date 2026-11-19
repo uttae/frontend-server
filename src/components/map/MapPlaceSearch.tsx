@@ -15,9 +15,11 @@ import { MobileSearchResultCarousel } from "./MobileSearchResultCarousel";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useMapPinsFocusStore } from "@/stores/map-pins-focus-store";
 
-export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
+export function MapPlaceSearch({
+  mobile,
+  hidden = false,
+}: Readonly<{
   mobile: boolean;
-  /** PC 검색창 숨김(웹 동선보기) — 입력값·자동완성을 지키려고 언마운트하지 않는다 */
   hidden?: boolean;
 }>) {
   const { confirm, invalidate, clearSearch, scopeKey, inputResetKey } = useMapPlaceSearch(mobile);
@@ -34,21 +36,16 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
   const confirmation = (value: SearchConfirmation) => confirm(value);
   const retry = () => {
     if (confirmationKind === "specific") {
-      // A failed server session must be replaced by fresh predictions.
-      // Return to the chosen-place input instead of changing its intent to whole search.
       if (mobile) {
-        flushSync(() =>
-          useMobileMapSearchStore.getState().openSearch(),
-        );
+        flushSync(() => useMobileMapSearchStore.getState().openSearch());
         useMobileMapSearchStore.getState().focusInput?.();
       } else inputRef.current?.focus();
       return;
     }
     void confirm({ query, kind: "whole", session: null, generation: 0 });
   };
-  // 「현 위치에서 검색」의 실패·결과 없음은 검색창이 아니라 그 버튼 자리에서 알린다(MapSearchHereButton)
-  const hasFeedback = status === "pending" || (searchMode === "text" &&
-    (status === "error" || (status === "done" && !items.length)));
+  const hasFeedback =
+    status === "pending" || (searchMode === "text" && (status === "error" || (status === "done" && !items.length)));
   const feedback = hasFeedback ? (
     <SearchFeedback status={status} error={error} hasItems={items.length > 0} retry={retry} />
   ) : null;
@@ -79,7 +76,6 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
             onInvalidate={invalidate}
             onClear={clearSearch}
           />
-          {/* 다시 검색하려고 검색창에 들어가면 추천 목록과 같은 자리라 안내를 숨긴다 */}
           {feedback ? (
             <div className="absolute right-0 top-full mt-1 w-[353px] max-w-full rounded-lg border border-border-subtle bg-fill-subtle p-3 group-has-[input:focus]/search:hidden">
               {feedback}
@@ -92,30 +88,37 @@ export function MapPlaceSearch({ mobile, hidden = false }: Readonly<{
           {feedback}
         </div>
       ) : null}
-      {mobile && focus === "search" && !selectedPlace ? (
-        <MobileSearchResultCarousel />
-      ) : null}
+      {mobile && focus === "search" && !selectedPlace ? <MobileSearchResultCarousel /> : null}
     </>
   );
 }
 
-function SearchFeedback({ status, error, hasItems, retry }: Readonly<{
+function SearchFeedback({
+  status,
+  error,
+  hasItems,
+  retry,
+}: Readonly<{
   status: string;
   error: string | null;
   hasItems: boolean;
   retry: () => void;
 }>) {
   if (status === "pending") return <Spinner aria-label="장소 검색 중" />;
-  if (status === "error") return (
-    <div role="alert" className="flex items-center justify-between gap-2 text-body-s-regular text-text">
-      <span className="min-w-0">{error}</span>
-      {/* 아이콘은 20px, 누르는 영역은 44px */}
-      <button type="button" aria-label="다시 시도" onClick={retry}
-        className="-m-3 grid size-11 shrink-0 cursor-pointer place-items-center text-icon-subtle hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary">
-        <RefreshIcon size={20} />
-      </button>
-    </div>
-  );
+  if (status === "error")
+    return (
+      <div role="alert" className="flex items-center justify-between gap-2 text-body-s-regular text-text">
+        <span className="min-w-0">{error}</span>
+        <button
+          type="button"
+          aria-label="다시 시도"
+          onClick={retry}
+          className="-m-3 grid size-11 shrink-0 cursor-pointer place-items-center text-icon-subtle hover:opacity-80 focus-visible:outline-2 focus-visible:outline-primary"
+        >
+          <RefreshIcon size={20} />
+        </button>
+      </div>
+    );
   if (status !== "done") return null;
   if (!hasItems) return <output className="text-body-s-regular text-text-subtle">검색 결과가 없어요.</output>;
   return null;

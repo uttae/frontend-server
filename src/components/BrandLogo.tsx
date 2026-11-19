@@ -4,14 +4,7 @@ type BrandLogoProps = {
   alt?: string;
 };
 
-/**
- * 앱 공식 로고 SVG — Safari 호환을 위해 네이티브 `<img>` 사용.
- */
-export function BrandLogo({
-  variant = "combination",
-  size = "M",
-  alt = "우때 로고",
-}: Readonly<BrandLogoProps>) {
+export function BrandLogo({ variant = "combination", size = "M", alt = "우때 로고" }: Readonly<BrandLogoProps>) {
   const LOGO_ASSETS = {
     symbol: {
       S: { src: "/brand/Glyph_S.svg", width: 23, height: 23 },
@@ -50,7 +43,7 @@ export function BrandLogo({
   const logoConfig = LOGO_ASSETS[variant][size];
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- local brand asset; Safari-safe
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={logoConfig.src}
       alt={alt}

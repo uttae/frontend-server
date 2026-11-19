@@ -13,14 +13,45 @@ function seeded() {
   const qc = new QueryClient();
   qc.setQueryData<RoomMemberListResponse>(roomMembersQueryKey(ROOM), {
     members: [
-      { userId: 1, nickname: "나", profileImageUrl: null, role: "HOST", status: "ACTIVE", joinedAt: "", isOnline: true },
-      { userId: 2, nickname: "대상", profileImageUrl: null, role: "MEMBER", status: "ACTIVE", joinedAt: "", isOnline: true },
-      { userId: 3, nickname: "다른", profileImageUrl: null, role: "MEMBER", status: "ACTIVE", joinedAt: "", isOnline: false },
+      {
+        userId: 1,
+        nickname: "나",
+        profileImageUrl: null,
+        role: "HOST",
+        status: "ACTIVE",
+        joinedAt: "",
+        isOnline: true,
+      },
+      {
+        userId: 2,
+        nickname: "대상",
+        profileImageUrl: null,
+        role: "MEMBER",
+        status: "ACTIVE",
+        joinedAt: "",
+        isOnline: true,
+      },
+      {
+        userId: 3,
+        nickname: "다른",
+        profileImageUrl: null,
+        role: "MEMBER",
+        status: "ACTIVE",
+        joinedAt: "",
+        isOnline: false,
+      },
     ],
   });
   qc.setQueryData<RoomDetail>(roomDetailQueryKey(ROOM), {
-    id: ROOM, title: "여행", destinations: [], startDate: null, endDate: null,
-    inviteCode: "CODE", memberCount: 3, role: "HOST", createdAt: "",
+    id: ROOM,
+    title: "여행",
+    destinations: [],
+    startDate: null,
+    endDate: null,
+    inviteCode: "CODE",
+    memberCount: 3,
+    role: "HOST",
+    createdAt: "",
   });
   qc.setQueryData<RoomListResponse>(ROOMS_QUERY_KEY, {
     rooms: [
@@ -39,13 +70,19 @@ describe("applyHostTransferToCache", () => {
     applyHostTransferToCache(qc, ROOM, 1, 2);
 
     const members = qc.getQueryData<RoomMemberListResponse>(roomMembersQueryKey(ROOM))!.members;
-    expect(members.map((m) => [m.userId, m.role])).toEqual([[1, "MEMBER"], [2, "HOST"], [3, "MEMBER"]]);
+    expect(members.map((m) => [m.userId, m.role])).toEqual([
+      [1, "MEMBER"],
+      [2, "HOST"],
+      [3, "MEMBER"],
+    ]);
     const detail = qc.getQueryData<RoomDetail>(roomDetailQueryKey(ROOM))!;
     expect(detail).toMatchObject({ role: "MEMBER", inviteCode: "CODE" });
     const rooms = qc.getQueryData<RoomListResponse>(ROOMS_QUERY_KEY)!.rooms;
     expect(rooms.map((r) => r.role)).toEqual(["MEMBER", "HOST"]);
 
-    expect(resolveViewerIsHost({ listRole: rooms[0].role, detailRole: detail.role, memberRole: members[0].role })).toBe(false);
+    expect(resolveViewerIsHost({ listRole: rooms[0].role, detailRole: detail.role, memberRole: members[0].role })).toBe(
+      false,
+    );
   });
 
   it("캐시가 없으면 아무것도 만들지 않는다", () => {

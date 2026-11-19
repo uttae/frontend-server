@@ -10,10 +10,7 @@ import { planCopy } from "@/lib/plan/planCopy";
 import { dayNumberForInsertAfterDayIndex } from "@/lib/plan/scheduleMerge";
 import { useCreateRoomSchedule } from "@/hooks/useRooms";
 import { Chip } from "@/components/ui/chip";
-import {
-  useMobilePlanDayFilterStore,
-  type MobilePlanDayFilter,
-} from "@/stores/mobile-plan-day-filter-store";
+import { useMobilePlanDayFilterStore, type MobilePlanDayFilter } from "@/stores/mobile-plan-day-filter-store";
 
 import { MobilePlanDaySection } from "./MobilePlanDaySection";
 import { MobilePlanDragProvider, useMobilePlanDragController } from "./mobilePlanDrag";
@@ -21,17 +18,13 @@ import { useMobileAddPlaceSearch } from "./useMobileAddPlaceSearch";
 
 type MobilePlanViewProps = Readonly<{
   roomId: string;
-  /** dayNumber 순으로 정렬된 일차 */
   schedules: RoomSchedule[];
   isLoading: boolean;
   isError: boolean;
-  /** 일차 추가·삭제·이동 중 */
   menuDisabled: boolean;
-  /** 일차 삭제 확인 다이얼로그를 연다 — 마지막 일차면 비우기 */
   onRequestDeleteDay: (dayIndex: number) => void;
 }>;
 
-/** 모바일 일정 화면 — 상단 일차 탭(전체/Day N 필터)과 일차별 장소 목록 */
 export function MobilePlanView({
   roomId,
   schedules,
@@ -40,23 +33,17 @@ export function MobilePlanView({
   menuDisabled,
   onRequestDeleteDay,
 }: MobilePlanViewProps) {
-  // 선택한 탭은 방별 스토어에 둬서 지도·채팅 등을 다녀와도 유지한다
   const filter = useMobilePlanDayFilterStore((s) => s.filterByRoomId[roomId] ?? "all");
   const setRoomFilter = useMobilePlanDayFilterStore((s) => s.setFilter);
   const setFilter = (next: MobilePlanDayFilter) => setRoomFilter(roomId, next);
-  // 선택한 일차가 삭제되면 전체로 돌아간다
-  const activeFilter =
-    filter !== "all" && !schedules.some((s) => s.scheduleId === filter) ? "all" : filter;
-  const visibleSchedules =
-    activeFilter === "all" ? schedules : schedules.filter((s) => s.scheduleId === activeFilter);
+  const activeFilter = filter !== "all" && !schedules.some((s) => s.scheduleId === filter) ? "all" : filter;
+  const visibleSchedules = activeFilter === "all" ? schedules : schedules.filter((s) => s.scheduleId === activeFilter);
 
-  // 순서 편집 — 모든 일차가 함께 들어가고, 다른 일차로도 옮길 수 있다
   const [editing, setEditing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragController = useMobilePlanDragController({ roomId, editing, scrollRef });
 
   function finishEditing() {
-    // 순서는 옮길 때마다 저장되므로 여기서는 편집 모드만 끝낸다
     setEditing(false);
     toast.success("변경사항이 저장되었습니다.");
   }
@@ -76,7 +63,6 @@ export function MobilePlanView({
     }
   }
 
-  // ─── 장소 추가: 지도와 같은 전체 화면 검색을 재사용 ─────────────────────
   const addPlace = useMobileAddPlaceSearch({ roomId, backLabel: "일정으로 돌아가기" });
 
   const tabs: { key: MobilePlanDayFilter; label: string }[] = [
@@ -95,9 +81,7 @@ export function MobilePlanView({
     );
   } else if (schedules.length === 0) {
     scheduleContent = (
-      <p className="px-4 py-6 text-center text-body-s-regular text-text-subtle">
-        {planCopy.scheduleEmpty}
-      </p>
+      <p className="px-4 py-6 text-center text-body-s-regular text-text-subtle">{planCopy.scheduleEmpty}</p>
     );
   } else {
     scheduleContent = visibleSchedules.map((schedule) => {

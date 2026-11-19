@@ -49,19 +49,19 @@ function useExpenses(roomId: string) {
   const { data: user } = useSessionUser();
   const sessionReady = useSessionStore((session) => session.sessionReady);
   const currentRoomId = useSessionStore((session) => session.currentRoomId);
-  // A late response must never be attributed to the next account or room.
   const analyticsScope = useRef<{ active: boolean } | null>(null);
   const analyticsMounted = useRef(false);
   useLayoutEffect(() => {
     analyticsMounted.current = true;
     const session = useSessionStore.getState();
     const scope = {
-      active: session.sessionReady && session.currentRoomId === roomId &&
-        user?.id !== undefined && readSessionUserId(client) === user.id,
+      active:
+        session.sessionReady &&
+        session.currentRoomId === roomId &&
+        user?.id !== undefined &&
+        readSessionUserId(client) === user.id,
     };
     analyticsScope.current = scope;
-    // Session teardown and account/room changes happen before React rerenders.
-    // Invalidate captured tokens permanently, including tokens from new writes.
     const invalidate = () => {
       if (analyticsScope.current) analyticsScope.current.active = false;
     };
@@ -70,8 +70,7 @@ function useExpenses(roomId: string) {
     });
     const unsubscribeQuery = client.getQueryCache().subscribe((event) => {
       if (JSON.stringify(event.query.queryKey) !== JSON.stringify(sessionUserQueryKey)) return;
-      if (event.type === "removed" || readSessionUserId(client) !== user?.id)
-        invalidate();
+      if (event.type === "removed" || readSessionUserId(client) !== user?.id) invalidate();
     });
     return () => {
       analyticsMounted.current = false;
@@ -82,38 +81,30 @@ function useExpenses(roomId: string) {
   }, [client, roomId, user?.id, sessionReady, currentRoomId]);
   function captureAnalyticsScope() {
     const session = useSessionStore.getState();
-    if (!analyticsMounted.current || !session.sessionReady ||
-      session.currentRoomId !== roomId || user?.id === undefined ||
-      readSessionUserId(client) !== user.id) return null;
-    // A batched roundtrip can leave React dependencies unchanged. New writes
-    // get a fresh token; pending writes retain their permanently invalid token.
+    if (
+      !analyticsMounted.current ||
+      !session.sessionReady ||
+      session.currentRoomId !== roomId ||
+      user?.id === undefined ||
+      readSessionUserId(client) !== user.id
+    )
+      return null;
     if (!analyticsScope.current?.active) analyticsScope.current = { active: true };
     return analyticsScope.current;
   }
-  const { recovery, revoked, syncStatus } = useExpenseRecovery(
-    roomId,
-    Boolean(roomId && user),
-  );
+  const { recovery, revoked, syncStatus } = useExpenseRecovery(roomId, Boolean(roomId && user));
   const enabled = Boolean(roomId && user) && !revoked;
-  // A complete successful GET is required before declaring an ID unknown.
-  // The shared presence cache may contain only a partial STOMP member snapshot.
   const memberQuery = useQuery({
     queryKey: expenseKeys.members(roomId),
     queryFn: ({ signal }) => getRoomMembers(roomId, signal),
     enabled,
     retry: false,
-    // 다른 가계부 조회와 같이 복구·무효화로만 다시 받는다(멤버 이벤트도 이 key를 무효화한다)
     staleTime: Infinity,
-    // Visibility recovery already refreshes members with the other room data.
     refetchOnWindowFocus: false,
   });
   const members = memberQuery.data?.members ?? [];
-  const canManage =
-    !revoked && canManageExpenses(user?.id, members, memberQuery.status);
+  const canManage = !revoked && canManageExpenses(user?.id, members, memberQuery.status);
   const schedules = useRoomSchedules(revoked ? null : roomId || null);
-  // Recovery owns focus/reconnect reads; manual refresh remains available.
-  // 입장·연결 성립 복구(refresh "all")와 변경 알림·본인 저장의 무효화로만 다시 받는다. 재마운트만으로는 받지 않아
-  // 입장 때 복구 조회와 겹치지 않는다. 화면 밖에서 무효화된 조회는 다시 붙을 때 받는다
   const options = {
     enabled,
     retry: false,
@@ -144,8 +135,6 @@ function useExpenses(roomId: string) {
   const [krwFilters, setKrwFilters] = useState<ExpenseKrwFilters>({});
   const filteredKrwSummary = useQuery({
     ...options,
-    // The unfiltered view already has krwSummary; do not mount another observer
-    // onto that stale query when returning to All and trigger a whole-room refetch.
     enabled: enabled && Object.keys(krwFilters).length > 0,
     queryKey: [...expenseKeys.krwSummary(roomId), krwFilters],
     queryFn: ({ signal }) => getExpenseKrwSummary(roomId, krwFilters, signal),
@@ -153,9 +142,7 @@ function useExpenses(roomId: string) {
   const budgetMutation = useMutation({
     mutationFn: async (body: ExpenseBudgetInput) => {
       if (!canManage || recovery.getSnapshot() === "revoked")
-        throw new Error(
-          "현재 참여 중인 방장과 멤버만 예산을 변경할 수 있어요.",
-        );
+        throw new Error("현재 참여 중인 방장과 멤버만 예산을 변경할 수 있어요.");
       const scope = captureAnalyticsScope();
       const record = await putExpenseBudget(roomId, body);
       if (scope?.active && recovery.getSnapshot() !== "revoked")
@@ -166,9 +153,7 @@ function useExpenses(roomId: string) {
     onError: recovery.handleError,
     onSuccess: async (record) => {
       if (recovery.getSnapshot() === "revoked") return;
-      const current = client.getQueryData<ExpenseBudget>(
-        expenseKeys.budget(roomId),
-      );
+      const current = client.getQueryData<ExpenseBudget>(expenseKeys.budget(roomId));
       if (current && current.version > record.version) {
         await recovery.refresh("budget").catch(() => {});
         return;
@@ -178,10 +163,8 @@ function useExpenses(roomId: string) {
         exact: true,
       });
       if (recovery.getSnapshot() === "revoked") return;
-      client.setQueryData<ExpenseBudget>(
-        expenseKeys.budget(roomId),
-        (previous) =>
-          previous && previous.version > record.version ? previous : record,
+      client.setQueryData<ExpenseBudget>(expenseKeys.budget(roomId), (previous) =>
+        previous && previous.version > record.version ? previous : record,
       );
     },
   });
@@ -202,14 +185,10 @@ function useExpenses(roomId: string) {
   });
   const mutation = useMutation({
     mutationFn: async (
-      op:
-        | { body: ExpenseInput; id?: number; expectedVersion?: number }
-        | { deleteId: number; expectedVersion: number },
+      op: { body: ExpenseInput; id?: number; expectedVersion?: number } | { deleteId: number; expectedVersion: number },
     ) => {
       if (!canManage || recovery.getSnapshot() === "revoked")
-        throw new Error(
-          "현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.",
-        );
+        throw new Error("현재 참여 중인 방장과 멤버만 비용을 변경할 수 있어요.");
       const scope = captureAnalyticsScope();
       let record: Expense | void;
       let event:
@@ -223,17 +202,14 @@ function useExpenses(roomId: string) {
         record = await createExpense(roomId, op.body);
         event = AnalyticsEvents.expenseCreated;
       } else {
-        if (op.expectedVersion === undefined)
-          throw new Error("수정할 비용을 다시 열어 주세요.");
+        if (op.expectedVersion === undefined) throw new Error("수정할 비용을 다시 열어 주세요.");
         record = await patchExpense(roomId, op.id, {
           ...op.body,
           expectedVersion: op.expectedVersion,
         });
         event = AnalyticsEvents.expenseUpdated;
       }
-      // Count the committed write before cache reconciliation or recovery reads.
-      if (scope?.active && recovery.getSnapshot() !== "revoked")
-        trackAnalyticsEvent(event, { room_id: roomId });
+      if (scope?.active && recovery.getSnapshot() !== "revoked") trackAnalyticsEvent(event, { room_id: roomId });
       return record;
     },
     retry: false,
@@ -242,8 +218,7 @@ function useExpenses(roomId: string) {
     onSuccess: async (record, op, revision) => {
       if (recovery.getSnapshot() === "revoked") return;
       const previous = client.getQueryData<Expense[]>(expenseKeys.list(roomId));
-      const existing =
-        record && previous?.find((item) => item.id === record.id);
+      const existing = record && previous?.find((item) => item.id === record.id);
       if (
         (existing && record && existing.version > record.version) ||
         (!existing && revision !== recovery.listRevision)
@@ -251,26 +226,18 @@ function useExpenses(roomId: string) {
         await recovery.refresh("expenses").catch(() => {});
         return;
       }
-      // Cancel earlier reads before installing the committed REST result.
       await client.cancelQueries({
         queryKey: expenseKeys.list(roomId),
         exact: true,
       });
       if (recovery.getSnapshot() === "revoked") return;
-      client.setQueryData<Expense[]>(
-        expenseKeys.list(roomId),
-        (previous = []) => {
-          if ("deleteId" in op)
-            return previous.filter((e) => e.id !== op.deleteId);
-          if (!record) return previous;
-          const existing = previous.find((item) => item.id === record.id);
-          if (existing && existing.version > record.version) return previous;
-          return [...previous.filter((e) => e.id !== record.id), record].sort(
-            (a, b) => a.id - b.id,
-          );
-        },
-      );
-      // The write committed; failed follow-up reads are shown by syncStatus.
+      client.setQueryData<Expense[]>(expenseKeys.list(roomId), (previous = []) => {
+        if ("deleteId" in op) return previous.filter((e) => e.id !== op.deleteId);
+        if (!record) return previous;
+        const existing = previous.find((item) => item.id === record.id);
+        if (existing && existing.version > record.version) return previous;
+        return [...previous.filter((e) => e.id !== record.id), record].sort((a, b) => a.id - b.id);
+      });
       await recovery.refresh("expenses").catch(() => {});
     },
   });
@@ -284,14 +251,12 @@ function useExpenses(roomId: string) {
       lock.current = false;
     }
   }
-  // A filter request updates only the selected list, not whole-trip synchronization.
   const reads = [list, summary, budget, krwSummary, currencies, memberQuery];
   let resolvedSyncStatus = syncStatus;
   if (syncStatus === "ready") {
-    if (reads.some(query => query.isError)) resolvedSyncStatus = "error";
-    else if (reads.some(query => !query.isSuccess)) resolvedSyncStatus = "pending";
-    // 다른 화면의 무효화(일정 변경·멤버 이벤트 등)로 있던 값을 두고 다시 받는 중 — 금액을 비우지 않는다
-    else if (reads.some(query => query.isFetching)) resolvedSyncStatus = "refreshing";
+    if (reads.some((query) => query.isError)) resolvedSyncStatus = "error";
+    else if (reads.some((query) => !query.isSuccess)) resolvedSyncStatus = "pending";
+    else if (reads.some((query) => query.isFetching)) resolvedSyncStatus = "refreshing";
   }
   return {
     roomId,
@@ -314,14 +279,12 @@ function useExpenses(roomId: string) {
     saveBudget,
     budgetBusy: budgetMutation.isPending,
     readLatestBudget: async () => {
-      if (recovery.getSnapshot() === "revoked")
-        throw new Error("방 접근 권한이 없어요.");
+      if (recovery.getSnapshot() === "revoked") throw new Error("방 접근 권한이 없어요.");
       await client.cancelQueries({
         queryKey: expenseKeys.budget(roomId),
         exact: true,
       });
-      if (recovery.getSnapshot() === "revoked")
-        throw new Error("방 접근 권한이 없어요.");
+      if (recovery.getSnapshot() === "revoked") throw new Error("방 접근 권한이 없어요.");
       return client.fetchQuery({
         queryKey: expenseKeys.budget(roomId),
         queryFn: ({ signal }) => getExpenseBudget(roomId, signal),
@@ -330,19 +293,15 @@ function useExpenses(roomId: string) {
       });
     },
     busy: mutation.isPending,
-    save: (body: ExpenseInput, id?: number, expectedVersion?: number) =>
-      run({ body, id, expectedVersion }),
-    remove: (expense: Expense) =>
-      run({ deleteId: expense.id, expectedVersion: expense.version }),
+    save: (body: ExpenseInput, id?: number, expectedVersion?: number) => run({ body, id, expectedVersion }),
+    remove: (expense: Expense) => run({ deleteId: expense.id, expectedVersion: expense.version }),
     readLatest: async (id: number) => {
-      if (recovery.getSnapshot() === "revoked")
-        throw new Error("방 접근 권한이 없어요.");
+      if (recovery.getSnapshot() === "revoked") throw new Error("방 접근 권한이 없어요.");
       await client.cancelQueries({
         queryKey: expenseKeys.list(roomId),
         exact: true,
       });
-      if (recovery.getSnapshot() === "revoked")
-        throw new Error("방 접근 권한이 없어요.");
+      if (recovery.getSnapshot() === "revoked") throw new Error("방 접근 권한이 없어요.");
       const records = await client.fetchQuery({
         queryKey: expenseKeys.list(roomId),
         queryFn: ({ signal }) => getExpenses(roomId, signal),
@@ -354,10 +313,7 @@ function useExpenses(roomId: string) {
     refresh: () =>
       recovery.getSnapshot() === "revoked"
         ? Promise.resolve([])
-        : Promise.all([
-            recovery.refresh("all"),
-            schedules.refetch(),
-          ]),
+        : Promise.all([recovery.refresh("all"), schedules.refetch()]),
   };
 }
 type ExpenseContextValue = ReturnType<typeof useExpenses> & {
@@ -392,29 +348,27 @@ function ExpenseProviderLifetime({
           isError={state.list.isError}
           canManage={state.canManage}
           busy={state.busy}
-          onAdd={() => setEntry(scope.scheduleItemId === undefined
-            ? { scheduleId: scope.scheduleId }
-            : { scheduleId: scope.scheduleId, scheduleItemId: scope.scheduleItemId })}
+          onAdd={() =>
+            setEntry(
+              scope.scheduleItemId === undefined
+                ? { scheduleId: scope.scheduleId }
+                : { scheduleId: scope.scheduleId, scheduleItemId: scope.scheduleItemId },
+            )
+          }
           onEdit={(expense) => setEntry({ expense })}
           onDelete={state.remove}
           onRetry={() => state.list.refetch({ throwOnError: true })}
           onClose={() => setScope(null)}
         />
       )}
-      {!state.revoked && entry && (
-        <ExpenseEditor initial={entry} onClose={() => setEntry(null)} />
-      )}
+      {!state.revoked && entry && <ExpenseEditor initial={entry} onClose={() => setEntry(null)} />}
     </ExpenseContext.Provider>
   );
 }
 export function ExpenseProvider(props: Readonly<{ roomId: string; children: ReactNode }>) {
   const client = useQueryClient();
   const store = getExpenseRecoveryStore(client, props.roomId);
-  const recovery = useSyncExternalStore(
-    store.subscribe,
-    store.getSnapshot,
-    store.getSnapshot,
-  );
+  const recovery = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);
   return <ExpenseProviderLifetime key={recovery.generation} {...props} />;
 }
 export function ExpenseEntryButton({
@@ -439,9 +393,7 @@ export function ExpenseEntryButton({
   if (!context?.canManage) return null;
   const scope = { scheduleId, scheduleItemId, label: scopeLabel, subtitle: scopeSubtitle };
   const scoped = expensesInScope(context.list.data ?? [], scope);
-  const summaryLabel = !context.list.isSuccess
-    ? "비용 보기"
-    : (summarizePlaceExpenses(scoped) ?? label);
+  const summaryLabel = !context.list.isSuccess ? "비용 보기" : (summarizePlaceExpenses(scoped) ?? label);
   return (
     <button
       type="button"
@@ -455,16 +407,21 @@ export function ExpenseEntryButton({
       onClick={(e) => {
         e.stopPropagation();
         if (context.list.isSuccess && !scoped.length) {
-          context.open(scheduleItemId === undefined
-            ? { scheduleId }
-            : { scheduleId, scheduleItemId });
+          context.open(scheduleItemId === undefined ? { scheduleId } : { scheduleId, scheduleItemId });
         } else {
           context.openScope(scope);
         }
       }}
       className={cn(className, "group min-w-0 max-w-full text-left", "disabled:cursor-not-allowed disabled:opacity-50")}
     >
-      {icon}<span id={scheduleItemId === undefined ? undefined : summaryId} className="min-w-0 truncate" title={scheduleItemId === undefined ? undefined : summaryLabel}>{summaryLabel}</span>
+      {icon}
+      <span
+        id={scheduleItemId === undefined ? undefined : summaryId}
+        className="min-w-0 truncate"
+        title={scheduleItemId === undefined ? undefined : summaryLabel}
+      >
+        {summaryLabel}
+      </span>
     </button>
   );
 }

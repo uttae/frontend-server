@@ -4,10 +4,8 @@ export function logPlacePhotoImageError(args: {
   placeName?: string | null;
   image: HTMLImageElement;
 }): void {
-  const googlePlaceId =
-    typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
-  const placeName =
-    typeof args.placeName === "string" ? args.placeName.trim() : "";
+  const googlePlaceId = typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
+  const placeName = typeof args.placeName === "string" ? args.placeName.trim() : "";
 
   console.warn("[PHOTO-URL] img error", {
     source: args.source,

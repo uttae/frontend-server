@@ -1,4 +1,3 @@
-/** Reserve the day heading and place-card footprint during an initial query. */
 export function PlanLoadingSkeleton({
   places = false,
   className = "",

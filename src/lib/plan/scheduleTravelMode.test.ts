@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  SCHEDULE_TRAVEL_MODES,
-  canonicalScheduleTravelMode,
-} from "./scheduleTravelMode";
+import { SCHEDULE_TRAVEL_MODES, canonicalScheduleTravelMode } from "./scheduleTravelMode";
 
 describe("scheduleTravelMode", () => {
   it("고를 수 있는 이동수단에 자전거가 없다", () => {

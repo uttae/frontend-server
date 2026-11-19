@@ -23,7 +23,6 @@ const failed = (googlePlaceId: string) => ({
   errorCode: "EXTERNAL_API_ERROR",
 });
 
-/** 같은 커밋에 미리보기 쿼리 여러 개가 마운트된 것처럼 한 태스크 안에서 queryFn을 부른다 */
 async function loadPreviews(ids: string[]) {
   const { placePreviewQueryOptions } = await import("@/lib/places/place-queries");
   return Promise.allSettled(ids.map((id) => placePreviewQueryOptions(id).queryFn()));

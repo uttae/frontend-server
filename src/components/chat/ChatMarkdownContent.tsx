@@ -39,10 +39,7 @@ export function ChatMarkdownContent({
 
   return (
     <div className={cn("break-words", className)}>
-      <Markdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
-        components={createChatMarkdownComponents(variant)}
-      >
+      <Markdown remarkPlugins={[remarkGfm, remarkBreaks]} components={createChatMarkdownComponents(variant)}>
         {text}
       </Markdown>
     </div>

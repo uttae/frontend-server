@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 
 import { SidebarPingBadge } from "./SidebarPingBadge";
 
-/** 드롭다운 구성원 목록 — 4명(카드 72px + 사이 간격·구분선)까지 보이고 넘치면 스크롤 */
 const MEMBER_LIST_MAX_HEIGHT_CLASS = "max-h-[339px]";
 
 function memberPreviewLabel(memberCount: number, pendingJoinRequestsCount: number) {
@@ -25,10 +24,6 @@ function memberPreviewLabel(memberCount: number, pendingJoinRequestsCount: numbe
   return pendingJoinRequestsCount > 0 ? `${label}, 참여 요청 ${pendingJoinRequestsCount}건` : label;
 }
 
-/**
- * PC 헤더 우측 — 구성원 미리보기(드롭다운으로 구성원 관리)와 초대하기(모달).
- * 헤더(@container/header) 폭 480px 미만이면 초대하기 버튼을 숨기고 드롭다운의 방 나가기 위에 넣는다
- */
 export function HeaderMemberPreview() {
   const {
     user,
@@ -62,12 +57,9 @@ export function HeaderMemberPreview() {
   return (
     <div data-tutorial-target="member-settings" className="flex shrink-0 items-center">
       {visible.length > 0 ? (
-        // 패널 안 구성원 옵션 메뉴(MemberCard DropdownMenu)는 이 패널의 React 자식이라 Base UI가 안쪽으로 본다.
-        // 메뉴 포털은 패널 포털 안에 붙고(FloatingPortal parentPortalNode), 메뉴를 누르면 패널 Popup의 capture 핸들러가 먼저 '안쪽'으로 표시해(useDismiss insideReactTree) 패널이 닫히지 않는다
         <Popover
           open={dropdownOpen}
           onOpenChange={(open) => {
-            // 패널은 body 포털이라 헤더 컨테이너 쿼리가 닿지 않는다. 열 때 헤더 초대하기가 숨었는지 보고 패널에 넣는다
             if (open && headerInviteRef.current) {
               setInviteInPanel(getComputedStyle(headerInviteRef.current).display === "none");
             }
@@ -86,7 +78,6 @@ export function HeaderMemberPreview() {
                   size={32}
                   tone={isOnline ? "primary" : "neutral"}
                   ring={isOnline ? "online" : "offline"}
-                  // 앞사람(본인)이 위에 온다
                   style={{ zIndex: visible.length - index }}
                 />
               ))}
@@ -98,9 +89,11 @@ export function HeaderMemberPreview() {
               </AvatarGroupCount>
             ) : null}
             <span aria-hidden className="flex">
-              <ChevronDownIcon size={20} className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")} />
+              <ChevronDownIcon
+                size={20}
+                className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")}
+              />
             </span>
-            {/* 참여 요청 점 — 꺾쇠와 떨어지게 알약 오른쪽 위 둥근 테두리 쪽에 둔다(점 가운데가 알약 바깥선 오른쪽에서 10·위에서 12) */}
             {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="right-0.5 top-1" /> : null}
           </PopoverTrigger>
           <PopoverContent align="end" aria-label="구성원 관리">
@@ -122,7 +115,10 @@ export function HeaderMemberPreview() {
                   setDropdownOpen(false);
                   requestTransfer(member);
                 }}
-                className={cn(MEMBER_LIST_MAX_HEIGHT_CLASS, "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0")}
+                className={cn(
+                  MEMBER_LIST_MAX_HEIGHT_CLASS,
+                  "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0",
+                )}
               />
             </section>
             <hr className="border-border-subtle" />

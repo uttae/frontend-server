@@ -9,9 +9,7 @@ import { useMobileView } from "@/contexts/MobileViewContext";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 
 import { useMapToolbarLayout } from "@/contexts/MapToolbarLayoutContext";
-import {
-  MAP_TOOLBAR_Z_CLASS,
-} from "@/lib/layout/mapDetailPanelLayout";
+import { MAP_TOOLBAR_Z_CLASS } from "@/lib/layout/mapDetailPanelLayout";
 import { cn } from "@/lib/utils";
 
 import MapFilter from "./MapFilter";
@@ -21,7 +19,6 @@ import { MapCategoryChips } from "./MapCategoryChips";
 import type { OpenValue, RatingValue } from "./map-filters";
 
 type MapDiscoverToolbarProps = {
-  /** 웹 동선보기에서 숨김 — 상세 패널은 최솟값(필터 한 줄 아래) 자리로 간다 */
   hidden?: boolean;
   search?: ReactNode;
   selectedCategoryId: string | null;
@@ -52,25 +49,37 @@ export function MapDiscoverToolbar({
   }
 
   return (
-    <div ref={setToolbarRef} hidden={hidden}
-      className={cn("map-discover-toolbar pointer-events-none absolute inset-x-0 top-0 px-6 py-3 mobile:px-5", MAP_TOOLBAR_Z_CLASS)}>
+    <div
+      ref={setToolbarRef}
+      hidden={hidden}
+      className={cn(
+        "map-discover-toolbar pointer-events-none absolute inset-x-0 top-0 px-6 py-3 mobile:px-5",
+        MAP_TOOLBAR_Z_CLASS,
+      )}
+    >
       {isMobileDevice ? <MobileMapSearchBar /> : null}
       <div className="flex min-h-12 min-w-0 flex-nowrap items-center gap-6">
         <div className="pointer-events-auto min-w-0 flex-1">
-          {/* Figma Chip에는 그림자가 없어 지도 위에 뜨는 그림자를 칩마다 주지 않고 이 줄에 준다. 색은 검색 말풍선과 같은 #0000001a, drop-shadow 5px는 box-shadow 10px와 같은 퍼짐이다 */}
           <div className="-my-2 overflow-x-auto py-2 drop-shadow-[0_2px_5px_#0000001a] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {category ? (
               <div className="flex w-max flex-nowrap items-center gap-1.5">
                 <MapChipToggle pressed onPressedChange={resetCategory}>
-                  <category.icon className="text-primary-strong"/><span>{category.label}</span>
+                  <category.icon className="text-primary-strong" />
+                  <span>{category.label}</span>
                 </MapChipToggle>
-                <MapFilter rating={rating} openNow={openNow} setRating={setRating} setOpenNow={setOpenNow}/>
-                <Chip variant="outline" size="md" className="w-9 px-0"
-                  render={<button type="button" aria-label="카테고리 필터 초기화" onClick={resetCategory}/>}>
-                  <CloseIcon/>
+                <MapFilter rating={rating} openNow={openNow} setRating={setRating} setOpenNow={setOpenNow} />
+                <Chip
+                  variant="outline"
+                  size="md"
+                  className="w-9 px-0"
+                  render={<button type="button" aria-label="카테고리 필터 초기화" onClick={resetCategory} />}
+                >
+                  <CloseIcon />
                 </Chip>
               </div>
-            ) : <MapCategoryChips selectedCategoryId={selectedCategoryId} onSelectCategory={onSelectCategory}/>}
+            ) : (
+              <MapCategoryChips selectedCategoryId={selectedCategoryId} onSelectCategory={onSelectCategory} />
+            )}
           </div>
         </div>
         {!isMobileDevice ? search : null}
@@ -79,14 +88,12 @@ export function MapDiscoverToolbar({
   );
 }
 
-/** 모바일 지도 상단 검색바 — 누르면 전체 화면 검색(`MobileMapSearch`)을 연다. 엔터 검색 중이면 검색어와 지우기 버튼을 보여준다 */
 function MobileMapSearchBar() {
   const textQuery = useMobileMapSearchStore((s) => s.textQuery);
   const clearTextSearch = useMobileMapSearchStore((s) => s.clearTextSearch);
 
   function handleOpen() {
     const { openSearch } = useMobileMapSearchStore.getState();
-    // 검색 화면을 먼저 그린 뒤 같은 탭 안에서 focus해야 iOS에서도 키보드가 뜬다
     flushSync(openSearch);
     useMobileMapSearchStore.getState().focusInput?.();
   }

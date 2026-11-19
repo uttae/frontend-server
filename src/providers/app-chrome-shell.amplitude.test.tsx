@@ -9,9 +9,7 @@ const amplitudeRuntime = vi.hoisted(() => ({
 }));
 
 vi.mock("@/components/analytics/ConsentGatedAnalytics", () => ({
-  ConsentGatedAnalytics: ({ children }: { children: ReactNode }) => (
-    <div data-amplitude-root>{children}</div>
-  ),
+  ConsentGatedAnalytics: ({ children }: { children: ReactNode }) => <div data-amplitude-root>{children}</div>,
 }));
 
 vi.mock("@/components/mobile/MobileChrome", () => ({

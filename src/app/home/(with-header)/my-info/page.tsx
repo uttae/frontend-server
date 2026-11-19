@@ -19,10 +19,7 @@ import { useSessionUser } from "@/hooks/useSessionUser";
 import { logout } from "@/lib/api/auth";
 import { tearDownClientSession } from "@/lib/client-storage";
 import { clearExpenseCurrencyPreferencesForUser } from "@/lib/expenses/expense-currency-preference";
-import {
-  withdrawAccount,
-  type RoomRequiringDelegation,
-} from "@/lib/api/user";
+import { withdrawAccount, type RoomRequiringDelegation } from "@/lib/api/user";
 
 const PROVIDER_LABELS: Record<string, string> = {
   GOOGLE: "Google",
@@ -40,9 +37,7 @@ export default function MyInfoPage() {
 
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [delegationRooms, setDelegationRooms] = useState<
-    RoomRequiringDelegation[] | null
-  >(null);
+  const [delegationRooms, setDelegationRooms] = useState<RoomRequiringDelegation[] | null>(null);
 
   async function handleLogout() {
     if (isLoggingOut) return;
@@ -90,13 +85,10 @@ export default function MyInfoPage() {
             href="/home"
             className="inline-flex items-center gap-1 text-label-m-regular mobile:text-label-s-regular text-dark-gray transition hover:text-neutral-900"
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            방 목록으로 돌아가기
+            <ArrowLeft className="h-4 w-4" aria-hidden />방 목록으로 돌아가기
           </Link>
 
-          <h1 className="mt-4 text-heading-s mobile:text-title-l font-bold tracking-tight text-neutral-900">
-            내 정보
-          </h1>
+          <h1 className="mt-4 text-heading-s mobile:text-title-l font-bold tracking-tight text-neutral-900">내 정보</h1>
 
           {isLoading && (
             <div className="flex items-center justify-center py-20">
@@ -104,7 +96,6 @@ export default function MyInfoPage() {
             </div>
           )}
 
-          {/* users/me 조회 실패는 예외 대신 null로 반환된다 */}
           {!isLoading && !user && (
             <div className="mt-6 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-16 text-center">
               <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-dark-gray">
@@ -131,9 +122,7 @@ export default function MyInfoPage() {
                     <p className="break-words text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-black">
                       {user.nickname}
                     </p>
-                    <p className="text-body-xs-regular text-dark-gray">
-                      {providerLabel(user.provider)}로 로그인 중
-                    </p>
+                    <p className="text-body-xs-regular text-dark-gray">{providerLabel(user.provider)}로 로그인 중</p>
                   </div>
                 </div>
 
@@ -145,9 +134,7 @@ export default function MyInfoPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-body-xs-regular text-dark-gray">
-                      로그인 방식
-                    </dt>
+                    <dt className="text-body-xs-regular text-dark-gray">로그인 방식</dt>
                     <dd className="mt-1 text-body-s-regular mobile:text-body-xs-regular text-black">
                       {providerLabel(user.provider)}
                     </dd>
@@ -205,10 +192,7 @@ export default function MyInfoPage() {
       )}
 
       {delegationRooms && (
-        <WithdrawalDelegationRequiredModal
-          rooms={delegationRooms}
-          onClose={() => setDelegationRooms(null)}
-        />
+        <WithdrawalDelegationRequiredModal rooms={delegationRooms} onClose={() => setDelegationRooms(null)} />
       )}
     </>
   );

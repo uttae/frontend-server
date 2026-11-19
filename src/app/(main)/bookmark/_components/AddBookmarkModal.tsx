@@ -4,14 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { useId, type ComponentProps } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHeader, FieldLabel, FieldSuffix } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import type { BookmarkFolder } from "@/types/bookmark";
@@ -22,16 +15,7 @@ import {
   bookmarkFolderTitleSchema,
 } from "@/lib/bookmarks/bookmark-folder-form";
 
-const COLOR_PRESETS = [
-  "#EAB308",
-  "#14B8A6",
-  "#F12D33",
-  "#3B82F6",
-  "#A855F7",
-  "#EC4899",
-  "#22C55E",
-  "#F97316",
-] as const;
+const COLOR_PRESETS = ["#EAB308", "#14B8A6", "#F12D33", "#3B82F6", "#A855F7", "#EC4899", "#22C55E", "#F97316"] as const;
 
 type Mode = "create" | "edit";
 
@@ -53,11 +37,8 @@ export function AddBookmarkModal({
   busy = false,
   onClose,
   onSave,
-  /** 비어 있을 때 실제로 쓰이는 이름(다음 번호 반영). 없으면 기본 라벨만 표시 */
   untitledNameHint,
-  /** 서버/저장 오류 시 인라인 표시 (토스트 대신) */
   formError = null,
-  /** 닫힌 뒤 포커스를 돌려줄 곳. 메뉴 항목에서 열면 사라진 항목 대신 메뉴 버튼을 준다 */
   finalFocus,
 }: {
   mode: Mode;
@@ -70,13 +51,11 @@ export function AddBookmarkModal({
   finalFocus?: ComponentProps<typeof DialogContent>["finalFocus"];
 }) {
   const formId = useId();
-  // 저장 요청(mutation)은 부모가 갖는다. 진행·실패는 부모의 busy·formError로 받는다
   const form = useForm({
     defaultValues: {
       title: initialTitle(mode, initialFolder),
       color: initialColor(mode, initialFolder),
     },
-    // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
     onSubmit: ({ value }) => {
       onSave(bookmarkFolderFormSchema.parse(value));
     },
@@ -86,7 +65,6 @@ export function AddBookmarkModal({
     <Dialog
       open
       closeDisabled={busy}
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 저장 중에는 Esc·딤·취소를 막는다
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
@@ -107,7 +85,6 @@ export function AddBookmarkModal({
           className="flex flex-col gap-5"
           onSubmit={(event) => {
             event.preventDefault();
-            // 라이브러리는 연타를 막지 않는다. busy는 부모 mutation의 isPending
             if (busy || form.state.isSubmitting) return;
             void form.handleSubmit();
           }}
@@ -159,8 +136,7 @@ export function AddBookmarkModal({
                       style={{
                         backgroundColor: hex,
                         borderColor: field.state.value === hex ? "#171717" : "transparent",
-                        boxShadow:
-                          field.state.value === hex ? "0 0 0 2px white, 0 0 0 4px #171717" : "",
+                        boxShadow: field.state.value === hex ? "0 0 0 2px white, 0 0 0 4px #171717" : "",
                       }}
                       aria-pressed={field.state.value === hex}
                     />
@@ -191,12 +167,7 @@ export function AddBookmarkModal({
 
         <DialogFooter>
           <DialogClose render={<Button variant="weak" />}>취소</DialogClose>
-          <Button
-            type="submit"
-            form={formId}
-            loading={busy}
-            loadingLabel={mode === "edit" ? "저장 중" : "추가 중"}
-          >
+          <Button type="submit" form={formId} loading={busy} loadingLabel={mode === "edit" ? "저장 중" : "추가 중"}>
             {mode === "edit" ? "저장" : "추가"}
           </Button>
         </DialogFooter>

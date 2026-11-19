@@ -68,11 +68,7 @@ describe("moveRoomScheduleToDay", () => {
     date,
     createdAt: "",
   });
-  const schedules = [
-    schedule(30, 3, "2026-10-03"),
-    schedule(10, 1, "2026-10-01"),
-    schedule(20, 2, "2026-10-02"),
-  ];
+  const schedules = [schedule(30, 3, "2026-10-03"), schedule(10, 1, "2026-10-01"), schedule(20, 2, "2026-10-02")];
 
   it("일차를 옮기고 dayNumber·date를 새 자리대로 다시 매긴다 — 날짜는 자리에 남는다", () => {
     expect(moveRoomScheduleToDay(schedules, 30, 1)).toEqual([
@@ -83,9 +79,7 @@ describe("moveRoomScheduleToDay", () => {
   });
 
   it("뒤로 옮겨도 같다", () => {
-    expect(
-      moveRoomScheduleToDay(schedules, 10, 3)?.map((s) => [s.scheduleId, s.dayNumber, s.date]),
-    ).toEqual([
+    expect(moveRoomScheduleToDay(schedules, 10, 3)?.map((s) => [s.scheduleId, s.dayNumber, s.date])).toEqual([
       [20, 1, "2026-10-01"],
       [30, 2, "2026-10-02"],
       [10, 3, "2026-10-03"],

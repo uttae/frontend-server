@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, useState, useEffect, type ReactNode } from "react";
 import { width } from "@/lib/layout-tokens";
 
 type WidthToken = keyof typeof width;
@@ -25,18 +18,13 @@ const SectionWidthContext = createContext<SectionWidthContextType>({
 export function SectionWidthProvider({ children }: { children: ReactNode }) {
   const [maxWidth, setMaxWidth] = useState("");
   const value = useMemo(() => ({ maxWidth, setMaxWidth }), [maxWidth]);
-  return (
-    <SectionWidthContext.Provider value={value}>
-      {children}
-    </SectionWidthContext.Provider>
-  );
+  return <SectionWidthContext.Provider value={value}>{children}</SectionWidthContext.Provider>;
 }
 
 export function useSectionWidth() {
   return useContext(SectionWidthContext);
 }
 
-/** Drop into any page to declaratively set the section max-width. */
 export function SetSectionMaxWidth({ value }: { value: WidthToken }) {
   const { setMaxWidth } = useSectionWidth();
   useEffect(() => {

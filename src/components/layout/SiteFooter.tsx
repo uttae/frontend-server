@@ -24,7 +24,11 @@ function FooterDot() {
   );
 }
 
-export function SiteFooter({ className, logo, variant = "default" }: {
+export function SiteFooter({
+  className,
+  logo,
+  variant = "default",
+}: {
   className?: string;
   logo?: ReactNode;
   variant?: "default" | "room-list";
@@ -38,18 +42,21 @@ export function SiteFooter({ className, logo, variant = "default" }: {
           <Link href="/" aria-label="우때 홈" className="w-fit [&_img]:h-[22px] [&_img]:w-[73px]">
             <BrandLogo variant="combination" size="S" />
           </Link>
-          <nav aria-label="정책 문서" className="flex min-h-[60px] flex-wrap items-center gap-x-5 gap-y-3 text-label-l-emphasis mobile:hidden">
+          <nav
+            aria-label="정책 문서"
+            className="flex min-h-[60px] flex-wrap items-center gap-x-5 gap-y-3 text-label-l-emphasis mobile:hidden"
+          >
             {POLICY_LINKS.map((item, index) => (
               <span key={item.href} className="inline-flex items-center gap-5">
                 {index > 0 && <span aria-hidden className="h-9 w-px bg-border" />}
-                <Link href={item.href} className="flex h-10 items-center hover:underline">{item.label}</Link>
+                <Link href={item.href} className="flex h-10 items-center hover:underline">
+                  {item.label}
+                </Link>
               </span>
             ))}
             <span className="inline-flex items-center gap-5">
               <span aria-hidden className="h-9 w-px bg-border" />
-              <CookieSettingsButton className="h-10 cursor-pointer hover:underline">
-                쿠키 설정
-              </CookieSettingsButton>
+              <CookieSettingsButton className="h-10 cursor-pointer hover:underline">쿠키 설정</CookieSettingsButton>
             </span>
           </nav>
           <nav aria-label="정책 문서" className="hidden mobile:flex mobile:flex-col mobile:text-label-s-emphasis">
@@ -57,21 +64,43 @@ export function SiteFooter({ className, logo, variant = "default" }: {
               {POLICY_LINKS.slice(0, 3).map((item, index) => (
                 <span key={item.href} className="inline-flex items-center gap-[14px]">
                   {index > 0 && <span aria-hidden className="h-6 w-px bg-border" />}
-                  <Link href={item.href} className="flex h-10 items-center whitespace-nowrap hover:underline">{item.label}</Link>
+                  <Link href={item.href} className="flex h-10 items-center whitespace-nowrap hover:underline">
+                    {item.label}
+                  </Link>
                 </span>
               ))}
             </div>
             <div className="flex h-10 items-center gap-[14px]">
-              <CookieSettingsButton className="h-10 cursor-pointer whitespace-nowrap hover:underline">쿠키설정</CookieSettingsButton>
+              <CookieSettingsButton className="h-10 cursor-pointer whitespace-nowrap hover:underline">
+                쿠키설정
+              </CookieSettingsButton>
               <span aria-hidden className="h-6 w-px bg-border" />
-              <Link href={POLICY_LINKS[3].href} className="flex h-10 items-center whitespace-nowrap hover:underline">{POLICY_LINKS[3].label}</Link>
+              <Link href={POLICY_LINKS[3].href} className="flex h-10 items-center whitespace-nowrap hover:underline">
+                {POLICY_LINKS[3].label}
+              </Link>
             </div>
           </nav>
           <dl className="grid w-fit grid-cols-1 gap-x-[100px] gap-y-1.5 text-label-l-regular mobile:w-full mobile:gap-y-3 mobile:text-label-s-regular md:grid-cols-[max-content_max-content]">
-            <div className="flex gap-[25px] mobile:order-1"><dt className="w-[68px] shrink-0 text-text-subtle">서비스명</dt><dd>우때</dd></div>
-            <div className="flex gap-[25px] mobile:order-3"><dt className="w-[68px] shrink-0 text-text-subtle">운영자</dt><dd>팀 우때 (Team Uttae)</dd></div>
-            <div className="flex gap-[25px] mobile:order-2"><dt className="w-[68px] shrink-0 text-text-subtle">이메일</dt><dd><a href={`mailto:${SUPPORT_EMAIL}`} className="hover:underline">{SUPPORT_EMAIL}</a></dd></div>
-            <div className="flex gap-[25px] mobile:order-4"><dt className="w-[68px] shrink-0 text-text-subtle">호스팅</dt><dd>Amazon Web Services (AWS)</dd></div>
+            <div className="flex gap-[25px] mobile:order-1">
+              <dt className="w-[68px] shrink-0 text-text-subtle">서비스명</dt>
+              <dd>우때</dd>
+            </div>
+            <div className="flex gap-[25px] mobile:order-3">
+              <dt className="w-[68px] shrink-0 text-text-subtle">운영자</dt>
+              <dd>팀 우때 (Team Uttae)</dd>
+            </div>
+            <div className="flex gap-[25px] mobile:order-2">
+              <dt className="w-[68px] shrink-0 text-text-subtle">이메일</dt>
+              <dd>
+                <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:underline">
+                  {SUPPORT_EMAIL}
+                </a>
+              </dd>
+            </div>
+            <div className="flex gap-[25px] mobile:order-4">
+              <dt className="w-[68px] shrink-0 text-text-subtle">호스팅</dt>
+              <dd>Amazon Web Services (AWS)</dd>
+            </div>
           </dl>
         </div>
       </footer>
@@ -79,21 +108,20 @@ export function SiteFooter({ className, logo, variant = "default" }: {
   }
 
   return (
-    <footer
-      className={cn("relative z-10 bg-primary text-white", className)}
-    >
+    <footer className={cn("relative z-10 bg-primary text-white", className)}>
       <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6">
         <div className="flex flex-col items-center">
-          {logo ? <Link href="/" aria-label="우때 홈">{logo}</Link> : null}
+          {logo ? (
+            <Link href="/" aria-label="우때 홈">
+              {logo}
+            </Link>
+          ) : null}
           <nav
             aria-label="정책 문서"
             className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-body-s-regular mobile:text-body-xs-regular"
           >
             {POLICY_LINKS.map((item, index) => (
-              <span
-                key={item.href}
-                className="inline-flex items-center gap-1.5"
-              >
+              <span key={item.href} className="inline-flex items-center gap-1.5">
                 {index > 0 ? <FooterDot /> : null}
                 <Link href={item.href} className={linkClassName}>
                   {item.label}
@@ -102,16 +130,15 @@ export function SiteFooter({ className, logo, variant = "default" }: {
             ))}
             <span className="inline-flex items-center gap-1.5">
               <FooterDot />
-              <CookieSettingsButton className={`${linkClassName} cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}>
+              <CookieSettingsButton
+                className={`${linkClassName} cursor-pointer rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white`}
+              >
                 쿠키 설정
               </CookieSettingsButton>
             </span>
           </nav>
 
-          <section
-            aria-label="운영자 정보"
-            className="mt-2.5 w-full border-t border-white/25 pt-2.5"
-          >
+          <section aria-label="운영자 정보" className="mt-2.5 w-full border-t border-white/25 pt-2.5">
             <dl className="mx-auto grid w-fit grid-cols-1 gap-y-1 text-body-s-regular mobile:text-body-xs-regular sm:grid-cols-2 sm:gap-x-10 sm:gap-y-1">
               <div className="flex min-w-0 gap-2">
                 <dt className="w-[3.25rem] shrink-0 text-white/50">서비스명</dt>
@@ -131,9 +158,7 @@ export function SiteFooter({ className, logo, variant = "default" }: {
               </div>
               <div className="flex min-w-0 gap-2">
                 <dt className="w-[3.25rem] shrink-0 text-white/50">호스팅</dt>
-                <dd className="min-w-0 text-white/85">
-                  Amazon Web Services (AWS)
-                </dd>
+                <dd className="min-w-0 text-white/85">Amazon Web Services (AWS)</dd>
               </div>
             </dl>
           </section>

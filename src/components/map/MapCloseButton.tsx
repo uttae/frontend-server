@@ -2,7 +2,6 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-/** 지도 위에 띄우는 작은 닫기 버튼 — 카테고리 탐색 닫기와 경로 보기 닫기가 함께 쓴다 */
 export function MapCloseButton({
   label,
   onClick,

@@ -10,9 +10,7 @@ import { sidebarNavButtonClassName } from "./sidebarNavButton";
 import { SidebarIcon } from "./SidebarIcon";
 
 export function SidebarFeedbackFormButton() {
-  const { visible: showBadge, dismiss } = useSessionPromptVisible(
-    FEEDBACK_FORM_CLICKED_KEY,
-  );
+  const { visible: showBadge, dismiss } = useSessionPromptVisible(FEEDBACK_FORM_CLICKED_KEY);
 
   return (
     <div className="relative w-full">

@@ -1,50 +1,25 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-  type MutableRefObject,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useRef, useState, type MutableRefObject, type ReactNode } from "react";
 import type { SearchRankBucket } from "@/lib/analytics/context";
 import type { AnalyticsSource, ItinerarySource } from "@/lib/analytics/track";
 import type { SearchResultCardProps } from "@/types/place";
 
-/** 장소 선택 직후 SelectedPlaceController가 적용하는 카메라 동작 */
 export type PlaceSelectionCamera = "full" | "pan-only" | "none";
 
 export type SetSelectedPlaceOptions = {
-  /** true면 카메라 변경 없음 — 예: 지도 내장 POI 직접 클릭 */
   skipMapRecenter?: boolean;
-  /**
-   * true면 현재 줌은 유지한 채 장소 위치로 패닝만 함 — 예: 지도 위 핀 클릭.
-   * `skipMapRecenter: true`이면 무시됩니다.
-   */
   preserveMapZoom?: boolean;
-  /** `add_to_itinerary`의 `interaction_source` — 장소 상세에서 일정 추가 시 사용 */
   itinerarySource?: ItinerarySource;
-  /** 검색 결과 선택 순위 버킷 — `view_place` 이벤트에서 사용 */
   analyticsRankBucket?: SearchRankBucket;
-  /** The visible recommendation is waiting for Text Search membership/rank. */
   analyticsRankPending?: boolean;
-  /** `view_place`의 `interaction_source` */
   analyticsSource?: AnalyticsSource;
-  /**
-   * 장소 상세의 뒤로가기(←) 동작 — 상세를 닫은 뒤 호출된다.
-   * 예: 지도 검색 화면에서 연 경우 검색 화면을 다시 연다. 없으면 상세만 닫는다(지도 클릭 상태로 복귀).
-   */
   onBack?: () => void;
 };
 
 type SelectedPlaceContextType = {
   selectedPlace: SearchResultCardProps | null;
-  setSelectedPlace: (
-    place: SearchResultCardProps | null,
-    options?: SetSelectedPlaceOptions,
-  ) => void;
+  setSelectedPlace: (place: SearchResultCardProps | null, options?: SetSelectedPlaceOptions) => void;
   placeSelectionCameraRef: MutableRefObject<PlaceSelectionCamera>;
   itinerarySource: ItinerarySource | null;
   analyticsRankBucket: SearchRankBucket | null;
@@ -65,8 +40,7 @@ const SelectedPlaceContext = createContext<SelectedPlaceContextType>({
 });
 
 export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
-  const [selectedPlace, setSelectedPlaceState] =
-    useState<SearchResultCardProps | null>(null);
+  const [selectedPlace, setSelectedPlaceState] = useState<SearchResultCardProps | null>(null);
   const placeSelectionCameraRef = useRef<PlaceSelectionCamera>("full");
   const [entry, setEntry] = useState<{
     itinerarySource: ItinerarySource | null;
@@ -82,43 +56,35 @@ export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
     onBack: null,
   });
 
-  const setSelectedPlace = useCallback(
-    (
-      place: SearchResultCardProps | null,
-      options?: SetSelectedPlaceOptions,
-    ) => {
-      if (place === null) {
-        placeSelectionCameraRef.current = "full";
-        setEntry({
-          itinerarySource: null,
-          analyticsRankBucket: null,
-          analyticsRankPending: false,
-          analyticsSource: null,
-          onBack: null,
-        });
-        setSelectedPlaceState(null);
-        return;
-      }
+  const setSelectedPlace = useCallback((place: SearchResultCardProps | null, options?: SetSelectedPlaceOptions) => {
+    if (place === null) {
+      placeSelectionCameraRef.current = "full";
       setEntry({
-        itinerarySource:
-          options?.itinerarySource ?? options?.analyticsSource ?? null,
-        analyticsRankBucket: options?.analyticsRankBucket ?? null,
-        analyticsRankPending: options?.analyticsRankPending ?? false,
-        analyticsSource:
-          options?.analyticsSource ?? options?.itinerarySource ?? null,
-        onBack: options?.onBack ?? null,
+        itinerarySource: null,
+        analyticsRankBucket: null,
+        analyticsRankPending: false,
+        analyticsSource: null,
+        onBack: null,
       });
-      if (options?.skipMapRecenter === true) {
-        placeSelectionCameraRef.current = "none";
-      } else if (options?.preserveMapZoom === true) {
-        placeSelectionCameraRef.current = "pan-only";
-      } else {
-        placeSelectionCameraRef.current = "full";
-      }
-      setSelectedPlaceState(place);
-    },
-    [],
-  );
+      setSelectedPlaceState(null);
+      return;
+    }
+    setEntry({
+      itinerarySource: options?.itinerarySource ?? options?.analyticsSource ?? null,
+      analyticsRankBucket: options?.analyticsRankBucket ?? null,
+      analyticsRankPending: options?.analyticsRankPending ?? false,
+      analyticsSource: options?.analyticsSource ?? options?.itinerarySource ?? null,
+      onBack: options?.onBack ?? null,
+    });
+    if (options?.skipMapRecenter === true) {
+      placeSelectionCameraRef.current = "none";
+    } else if (options?.preserveMapZoom === true) {
+      placeSelectionCameraRef.current = "pan-only";
+    } else {
+      placeSelectionCameraRef.current = "full";
+    }
+    setSelectedPlaceState(place);
+  }, []);
 
   return (
     <SelectedPlaceContext.Provider

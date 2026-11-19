@@ -8,14 +8,11 @@ import {
 } from "@/lib/session-room-storage";
 
 interface SessionStore {
-  /** `reconcileClientSession` 완료 후 true */
   sessionReady: boolean;
   setSessionReady: (ready: boolean) => void;
-  /** 현재 방 ID — 메모리 + sessionStorage(탭 수명) */
   currentRoomId: string | null;
   setCurrentRoomId: (id: string) => void;
   clearCurrentRoomId: () => void;
-  /** 로그아웃·강퇴·세션 무효 시 방 포인터·bootstrap 플래그 정리 */
   clearSessionRoomContext: () => void;
 }
 
@@ -46,7 +43,6 @@ export const useSessionStore = create<SessionStore>()((set) => ({
   },
 }));
 
-/** sessionStorage 방 ID를 Zustand에 동기 시드 */
 export function bootstrapCurrentRoomFromSessionStorage(pathname?: string): void {
   if (typeof window === "undefined") return;
   const route = parseRoomContextPath(pathname ?? window.location.pathname);

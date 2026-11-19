@@ -22,10 +22,7 @@ function describeUnknownError(error: unknown) {
   };
 }
 
-export async function refreshPlacePhotoUrl(
-  googlePlaceId: string,
-  queryClient?: QueryClient | null,
-): Promise<string> {
+export async function refreshPlacePhotoUrl(googlePlaceId: string, queryClient?: QueryClient | null): Promise<string> {
   const id = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
   if (!id.length) return "";
 
@@ -57,13 +54,11 @@ export function handlePlacePhotoImageError(args: {
   googlePlaceId?: string | null;
   placeName?: string | null;
   image: HTMLImageElement;
-  /** 다시 받아도 보여 줄 사진이 없을 때 — 깨진 이미지 대신 사진 없음 상태로 바꾸게 한다 */
   onPhotoUnavailable?: () => void;
 }): void {
   logPlacePhotoImageError(args);
 
-  const id =
-    typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
+  const id = typeof args.googlePlaceId === "string" ? args.googlePlaceId.trim() : "";
   if (!id.length || args.image.dataset.photoRefreshAttempted === "true") {
     args.onPhotoUnavailable?.();
     return;

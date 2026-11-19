@@ -9,9 +9,16 @@ import { bookmarkCategoriesQueryKey } from "@/lib/query-keys";
 import { useSessionStore } from "@/stores/session-store";
 import { AddToBookmarkModal } from "./AddToBookmarkModal";
 
-vi.mock("@/lib/client-env", () => ({ clientEnv: { NEXT_PUBLIC_API_BASE_URL: "https://api.example.test", NEXT_PUBLIC_GOOGLE_CLIENT_ID: "test", NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "https://example.test", NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "test" } }));
+vi.mock("@/lib/client-env", () => ({
+  clientEnv: {
+    NEXT_PUBLIC_API_BASE_URL: "https://api.example.test",
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: "test",
+    NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "https://example.test",
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "test",
+  },
+}));
 const api = vi.hoisted(() => ({ bookmarks: vi.fn() }));
-vi.mock("@/lib/api/rooms", async (original) => ({ ...await original<object>(), createRoomBookmarks: api.bookmarks }));
+vi.mock("@/lib/api/rooms", async (original) => ({ ...(await original<object>()), createRoomBookmarks: api.bookmarks }));
 vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { addToBookmark: "add_to_bookmark", createBookmarkFolder: "create_bookmark_folder" },
   trackAnalyticsEvent: vi.fn(),
@@ -22,13 +29,23 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 type CreateBody = { googlePlaceId: string; categoryIds: number[] };
 
-// 백엔드 BookmarkService.create 규칙: 이미 이 장소가 있는 폴더는 건너뛰고, 새로 만든 북마크만 돌려준다
 function serverWithPlaceIn(folders: Set<number>) {
   api.bookmarks.mockImplementation(async (roomId: string, { googlePlaceId, categoryIds }: CreateBody) =>
-    categoryIds.filter((id) => !folders.has(id)).map((categoryId) => {
-      folders.add(categoryId);
-      return { bookmarkId: 100 + categoryId, roomId, googlePlaceId, categoryId, category: "", addedBy: null, createdAt: "2026-11-17" };
-    }));
+    categoryIds
+      .filter((id) => !folders.has(id))
+      .map((categoryId) => {
+        folders.add(categoryId);
+        return {
+          bookmarkId: 100 + categoryId,
+          roomId,
+          googlePlaceId,
+          categoryId,
+          category: "",
+          addedBy: null,
+          createdAt: "2026-11-17",
+        };
+      }),
+  );
 }
 
 let client: QueryClient;
@@ -46,20 +63,33 @@ beforeEach(async () => {
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
-  await act(async () => root.render(
-    <QueryClientProvider client={client}><AddToBookmarkModal googlePlaceId="place" onClose={close} /></QueryClientProvider>,
-  ));
+  await act(async () =>
+    root.render(
+      <QueryClientProvider client={client}>
+        <AddToBookmarkModal googlePlaceId="place" onClose={close} />
+      </QueryClientProvider>,
+    ),
+  );
 });
-afterEach(async () => { await act(async () => root.unmount()); host.remove(); client.clear(); });
+afterEach(async () => {
+  await act(async () => root.unmount());
+  host.remove();
+  client.clear();
+});
 
 async function select(...folders: number[]) {
   for (const folder of folders) {
-    await act(async () => document.querySelector<HTMLButtonElement>(`[aria-label="폴더${folder} 북마크에서 선택"]`)!.click());
+    await act(async () =>
+      document.querySelector<HTMLButtonElement>(`[aria-label="폴더${folder} 북마크에서 선택"]`)!.click(),
+    );
   }
 }
 async function pressAdd() {
   const button = Array.from(document.querySelectorAll("button")).find((b) => b.textContent?.trim() === "추가");
-  await act(async () => { button!.click(); await new Promise((resolve) => setTimeout(resolve, 10)); });
+  await act(async () => {
+    button!.click();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  });
 }
 
 it("closes after adding the place to the selected folders that lacked it", async () => {
@@ -71,7 +101,10 @@ it("closes after adding the place to the selected folders that lacked it", async
   expect([...folders].sort()).toEqual([1, 2, 3]);
   expect(toast.success).toHaveBeenCalledTimes(1);
   expect(toast.error).not.toHaveBeenCalled();
-  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("add_to_bookmark", expect.objectContaining({ room_id: "room-a" }));
+  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith(
+    "add_to_bookmark",
+    expect.objectContaining({ room_id: "room-a" }),
+  );
   expect(close).toHaveBeenCalledTimes(1);
 });
 

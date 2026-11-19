@@ -18,12 +18,10 @@ function applyPendingIdentityReset(): boolean {
     identityResetPending = false;
     return true;
   } catch {
-    // Keep the boundary pending; don't attribute later events to the old identity.
     return false;
   }
 }
 
-/** Authenticated → logged-out transition only; never initializes or grants consent. */
 export function resetAmplitudeIdentityOnLogout(): void {
   if (typeof window === "undefined" || !amplitudeRuntime.enabled) return;
   pendingAmplitudeCommands.length = 0;
@@ -34,18 +32,15 @@ export function resetAmplitudeIdentityOnLogout(): void {
     return;
   }
 
-  // The SDK may not have started (for example consent is denied). Remove its
-  // saved identity now so a reload cannot restore the logged-out user's device.
   if (amplitudeRuntime.apiKey) {
     try {
       clearAnalyticsCookies([`AMP_${amplitudeRuntime.apiKey.slice(0, 10)}`]);
-    } catch {
-      // Storage restrictions must not block session teardown; retain pending reset.
-    }
+    } catch {}
   }
   if (amplitudeInitialization !== null) {
-    // Pause SDK autocapture until initialization can complete the identity reset.
-    try { amplitude.setOptOut(true); } catch { /* Analytics must not block logout. */ }
+    try {
+      amplitude.setOptOut(true);
+    } catch {}
   }
 }
 
@@ -58,11 +53,11 @@ function dispatchAmplitudeDataCommand(...args: unknown[]): void {
         ? (maybeProperties as Record<string, unknown>)
         : undefined;
     const roomId = getAnalyticsEventRoomId(nameOrProperties, eventProperties);
-    const propertiesWithoutRoom = eventProperties && "room_id" in eventProperties
-      ? Object.fromEntries(Object.entries(eventProperties).filter(([key]) => key !== "room_id"))
-      : eventProperties;
+    const propertiesWithoutRoom =
+      eventProperties && "room_id" in eventProperties
+        ? Object.fromEntries(Object.entries(eventProperties).filter(([key]) => key !== "room_id"))
+        : eventProperties;
     if (roomId) {
-      // Event-scoped groups never attach this room to the user's later events.
       amplitude.track({
         event_type: nameOrProperties,
         event_properties: { ...propertiesWithoutRoom, room_id: roomId },
@@ -92,11 +87,7 @@ function flushPendingAmplitudeCommands(): void {
 }
 
 export function initializeAmplitude(): void {
-  if (
-    typeof window === "undefined" ||
-    !amplitudeRuntime.enabled ||
-    !amplitudeRuntime.apiKey
-  ) {
+  if (typeof window === "undefined" || !amplitudeRuntime.enabled || !amplitudeRuntime.apiKey) {
     return;
   }
 

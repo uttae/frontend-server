@@ -1,7 +1,4 @@
-import {
-  messageForGoogleLoginError,
-  readNormalizedApiErrorCode,
-} from "@/lib/api/errors";
+import { messageForGoogleLoginError, readNormalizedApiErrorCode } from "@/lib/api/errors";
 import { tryParseJson } from "@/lib/api/http";
 
 const FETCH_OPTS: RequestInit = {
@@ -24,16 +21,10 @@ export type ExchangeGoogleCodeResult =
     }
   | { ok: false; status: number; errorCode?: string; message?: string };
 
-/** 백엔드가 reacceptance 응답에 expiresInSeconds를 생략할 경우 사용할 기본 TTL(10분). */
 const REACCEPTANCE_DEFAULT_TTL_SECONDS = 10 * 60;
 
-export async function exchangeGoogleCode(
-  code: string,
-  agreementsAccepted?: true,
-): Promise<ExchangeGoogleCodeResult> {
-  const requestBody = agreementsAccepted
-    ? { code, agreementsAccepted: true }
-    : { code };
+export async function exchangeGoogleCode(code: string, agreementsAccepted?: true): Promise<ExchangeGoogleCodeResult> {
+  const requestBody = agreementsAccepted ? { code, agreementsAccepted: true } : { code };
   const res = await fetch("/api/auth/google", {
     ...FETCH_OPTS,
     method: "POST",
@@ -101,12 +92,9 @@ export async function exchangeGoogleCode(
 }
 
 export type CompleteGoogleSignupResult =
-  | { ok: true }
-  | { ok: false; status: number; errorCode?: string; message: string };
+  { ok: true } | { ok: false; status: number; errorCode?: string; message: string };
 
-export async function completeGoogleSignup(
-  signupToken: string,
-): Promise<CompleteGoogleSignupResult> {
+export async function completeGoogleSignup(signupToken: string): Promise<CompleteGoogleSignupResult> {
   const res = await fetch("/api/auth/google/signup", {
     ...FETCH_OPTS,
     method: "POST",
@@ -121,24 +109,14 @@ export async function completeGoogleSignup(
     ok: false,
     status: res.status,
     errorCode: readNormalizedApiErrorCode(body),
-    message: messageForGoogleLoginError(
-      body,
-      "가입 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
-    ),
+    message: messageForGoogleLoginError(body, "가입 처리에 실패했습니다. 잠시 후 다시 시도해 주세요."),
   };
 }
 
 export type CompleteGoogleReacceptResult =
-  | { ok: true }
-  | { ok: false; status: number; errorCode?: string; message: string };
+  { ok: true } | { ok: false; status: number; errorCode?: string; message: string };
 
-/**
- * 재동의 확정.
- * BFF `POST /api/auth/google/reaccept` — 성공 시 access/refresh 쿠키가 발급된다.
- */
-export async function completeGoogleReaccept(
-  reacceptanceToken: string,
-): Promise<CompleteGoogleReacceptResult> {
+export async function completeGoogleReaccept(reacceptanceToken: string): Promise<CompleteGoogleReacceptResult> {
   const res = await fetch("/api/auth/google/reaccept", {
     ...FETCH_OPTS,
     method: "POST",
@@ -153,16 +131,11 @@ export async function completeGoogleReaccept(
     ok: false,
     status: res.status,
     errorCode: readNormalizedApiErrorCode(body),
-    message: messageForGoogleLoginError(
-      body,
-      "약관 재동의 처리에 실패했습니다. 잠시 후 다시 시도해 주세요.",
-    ),
+    message: messageForGoogleLoginError(body, "약관 재동의 처리에 실패했습니다. 잠시 후 다시 시도해 주세요."),
   };
 }
 
-async function refreshToken(): Promise<
-  { ok: true } | { ok: false; status: number }
-> {
+async function refreshToken(): Promise<{ ok: true } | { ok: false; status: number }> {
   const res = await fetch("/api/auth/refresh", {
     ...FETCH_OPTS,
     method: "POST",
@@ -174,7 +147,6 @@ async function refreshToken(): Promise<
 
 let pendingRefresh: Promise<boolean> | null = null;
 
-/** 브라우저: `POST /api/auth/refresh` — 동시 401에 대해 1회만 호출 */
 export async function tryClientRefresh(): Promise<boolean> {
   if (!pendingRefresh) {
     pendingRefresh = refreshToken()
@@ -186,9 +158,7 @@ export async function tryClientRefresh(): Promise<boolean> {
   return pendingRefresh;
 }
 
-export async function logout(): Promise<
-  { ok: true } | { ok: false; status: number }
-> {
+export async function logout(): Promise<{ ok: true } | { ok: false; status: number }> {
   const res = await fetch("/api/auth/logout", {
     ...FETCH_OPTS,
     method: "POST",

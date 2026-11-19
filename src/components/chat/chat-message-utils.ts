@@ -1,33 +1,21 @@
 import type { ChatMessage } from "@/types/chat";
 
-/** 과거 메시지 prepend 직후 리스트 스냅샷(스크롤·모션 분기용) */
 export function isChatHistoryPrependSnapshot(
   prevCount: number,
   prevFirstId: string | undefined,
   nextCount: number,
   nextFirstId: string | undefined,
 ): boolean {
-  return (
-    nextCount > prevCount &&
-    prevCount > 0 &&
-    nextFirstId !== undefined &&
-    nextFirstId !== prevFirstId
-  );
+  return nextCount > prevCount && prevCount > 0 && nextFirstId !== undefined && nextFirstId !== prevFirstId;
 }
 
-/** 하단에 메시지가 append된 직후 리스트 스냅샷(스크롤 위치 유지용) */
 export function isChatHistoryAppendSnapshot(
   prevCount: number,
   prevFirstId: string | undefined,
   nextCount: number,
   nextFirstId: string | undefined,
 ): boolean {
-  return (
-    nextCount > prevCount &&
-    prevCount > 0 &&
-    nextFirstId !== undefined &&
-    nextFirstId === prevFirstId
-  );
+  return nextCount > prevCount && prevCount > 0 && nextFirstId !== undefined && nextFirstId === prevFirstId;
 }
 
 export function groupConsecutiveMessages(
@@ -65,9 +53,7 @@ export function groupConsecutiveMessages(
     const sameSenderGroup =
       prev &&
       prev.type === msg.type &&
-      ((msg.type === "mine" || msg.type === "other") &&
-      prev.senderUserId != null &&
-      msg.senderUserId != null
+      ((msg.type === "mine" || msg.type === "other") && prev.senderUserId != null && msg.senderUserId != null
         ? prev.senderUserId === msg.senderUserId
         : prev.sender === msg.sender);
 
@@ -83,9 +69,7 @@ export function groupConsecutiveMessages(
   if (!splitAfterMessageId) return groups;
 
   return groups.flatMap((group) => {
-    const boundaryIndex = group.findIndex(
-      (msg) => msg.id === splitAfterMessageId,
-    );
+    const boundaryIndex = group.findIndex((msg) => msg.id === splitAfterMessageId);
     if (boundaryIndex < 0 || boundaryIndex === group.length - 1) return [group];
     return [group.slice(0, boundaryIndex + 1), group.slice(boundaryIndex + 1)];
   });

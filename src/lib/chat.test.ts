@@ -87,13 +87,9 @@ describe("partitionLiveMessages", () => {
 
 describe("mergeServerMessageLists", () => {
   it("keeps the written order when sequences were assigned out of order", () => {
-    // 거의 동시에 저장되면 먼저 쓴 메시지가 더 큰 sequence를 받을 수 있다
     const writtenFirst = { ...msg(42), createdAt: "2026-10-25T00:00:00.118Z" };
     const writtenLater = { ...msg(41), createdAt: "2026-10-25T00:00:00.139Z" };
-    expect(ids(mergeServerMessageLists([writtenLater], [writtenFirst]))).toEqual([
-      "m42",
-      "m41",
-    ]);
+    expect(ids(mergeServerMessageLists([writtenLater], [writtenFirst]))).toEqual(["m42", "m41"]);
   });
 
   it("keeps the later copy of the same message", () => {
@@ -143,12 +139,16 @@ describe("tailCursorOf", () => {
 describe("chatMessageUserIds", () => {
   it("메시지를 그릴 때 이름이 필요한 사람을 돌려준다", () => {
     expect(chatMessageUserIds({ ...msg(1), senderId: 9 })).toEqual([9]);
-    expect(chatMessageUserIds({ ...msg(2), messageType: "SYSTEM", metadata: { eventType: "MEMBER_JOINED", userId: "9" } })).toEqual([9]);
-    expect(chatMessageUserIds({
-      ...msg(3),
-      messageType: "SYSTEM",
-      metadata: { eventType: "HOST_DELEGATED", previousHostUserId: "1", newHostUserId: "9" },
-    })).toEqual([9]);
+    expect(
+      chatMessageUserIds({ ...msg(2), messageType: "SYSTEM", metadata: { eventType: "MEMBER_JOINED", userId: "9" } }),
+    ).toEqual([9]);
+    expect(
+      chatMessageUserIds({
+        ...msg(3),
+        messageType: "SYSTEM",
+        metadata: { eventType: "HOST_DELEGATED", previousHostUserId: "1", newHostUserId: "9" },
+      }),
+    ).toEqual([9]);
     expect(chatMessageUserIds({ ...msg(4), messageType: "AI_RESPONSE" })).toEqual([]);
   });
 });

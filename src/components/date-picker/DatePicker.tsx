@@ -19,7 +19,6 @@ import {
 } from "./calendar";
 import { MonthYearWheel } from "./MonthYearWheel";
 
-/** Figma Date Picker 원본 폭 — 카드 클래스 `w-[353px]`와 같은 값 */
 export const DATE_PICKER_WIDTH = 353;
 
 type CellKind = "default" | "selected" | "disabled" | "rangeStart" | "rangeMiddle" | "rangeEnd";
@@ -95,9 +94,7 @@ function DateCell({
         )}
       >
         {Number(ymd.slice(8))}
-        {disabled ? (
-          <span aria-hidden className="absolute left-3 top-5 h-px w-4 bg-text-disabled" />
-        ) : null}
+        {disabled ? <span aria-hidden className="absolute left-3 top-5 h-px w-4 bg-text-disabled" /> : null}
         {isToday ? (
           <span
             aria-hidden
@@ -113,23 +110,19 @@ function DateCell({
 }
 
 type DatePickerProps = Readonly<{
-  /** `range`: 한 달력에서 시작·종료를 고른다(고른 쪽만 바뀐다). `single`은 `value.start`만 쓴다 */
   mode?: "single" | "range";
   value: DateRange;
-  /** 이보다 이른 날짜는 고를 수 없다 (`YYYY-MM-DD`) */
   min?: string;
   onSelect: (ymd: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }>;
 
-/** Figma Design System `09 Date Picker` — Header / Weekday / Date(또는 연월 휠) / Footer */
 export function DatePicker({ mode = "range", value, min, onSelect, onCancel, onConfirm }: DatePickerProps) {
   const [todayYmd] = useState(() => formatDateYmd(new Date()));
   const initialFocus = value.start || (min && todayYmd < min ? min : todayYmd);
   const [view, setView] = useState<YearMonth>(() => toYearMonth(initialFocus));
   const [focusYmd, setFocusYmd] = useState(initialFocus);
-  /** 연월 휠을 연 시점의 달 — 휠에서 취소하면 되돌린다 */
   const [wheelOrigin, setWheelOrigin] = useState<YearMonth | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const moveFocusRef = useRef(true);
@@ -138,12 +131,10 @@ export function DatePicker({ mode = "range", value, min, onSelect, onCancel, onC
   const canGoPrev = !minMonth || monthIndex(view) > monthIndex(minMonth);
   const weeks = buildMonthWeeks(view);
   const days = weeks.flat().filter((ymd) => ymd != null);
-  // 방향키 이동용 roving tabindex — 다른 달을 보고 있으면 그 달 1일
   const tabbableYmd = days.includes(focusYmd) ? focusYmd : days[0]!;
   const thisYear = Number(todayYmd.slice(0, 4));
   const summary = formatSelectionSummary(mode === "single" ? { start: value.start, end: "" } : value);
 
-  // 처음 열릴 때와 방향키로 이동했을 때만 날짜 칸으로 포커스를 옮긴다
   useEffect(() => {
     if (!moveFocusRef.current) return;
     moveFocusRef.current = false;

@@ -20,21 +20,11 @@ import { messageForBookmarkCategorySaveError } from "@/lib/api/errors";
 import { AddBookmarkModal } from "@/app/(main)/bookmark/_components/AddBookmarkModal";
 import { FolderRibbonIcon } from "@/app/(main)/bookmark/_components/FolderRibbonIcon";
 import { pickUniqueUntitledBookmarkCategoryName } from "@/lib/bookmark-untitled-category-name";
-import {
-  useBookmarkCategories,
-  useCreateBookmarkCategory,
-  useCreateRoomBookmarksInCategories,
-} from "@/hooks/useRooms";
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-  type ItinerarySource,
-} from "@/lib/analytics/track";
+import { useBookmarkCategories, useCreateBookmarkCategory, useCreateRoomBookmarksInCategories } from "@/hooks/useRooms";
+import { AnalyticsEvents, trackAnalyticsEvent, type ItinerarySource } from "@/lib/analytics/track";
 import { cn } from "@/lib/utils";
 import { useSessionStore } from "@/stores/session-store";
 
-// 포털 안 클릭·터치가 React 트리를 따라 부모(지도 상세 패널·시트 드래그, 검색 결과 카드)로 올라가지 않게 포털 표면과 배경에서 끊는다.
-// 딤은 표면 밖이므로 표면과 배경 각각에서 차단한다. 키보드는 Base UI에 그대로 전달한다
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 const pointerBoundary = {
   onClick: stopPropagation,
@@ -51,13 +41,7 @@ type Props = {
   onAdded?: () => void;
 };
 
-export function AddToBookmarkModal({
-  googlePlaceId,
-  placeCategory,
-  source,
-  onClose,
-  onAdded,
-}: Props) {
+export function AddToBookmarkModal({ googlePlaceId, placeCategory, source, onClose, onAdded }: Props) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const {
     data: categories,
@@ -66,10 +50,8 @@ export function AddToBookmarkModal({
     error: categoriesErr,
     refetch,
   } = useBookmarkCategories(roomId);
-  const { mutate: addBookmarksBulk, isPending: isAddingBookmarks } =
-    useCreateRoomBookmarksInCategories();
-  const { mutate: createCategory, isPending: isCreatingCategory } =
-    useCreateBookmarkCategory();
+  const { mutate: addBookmarksBulk, isPending: isAddingBookmarks } = useCreateRoomBookmarksInCategories();
+  const { mutate: createCategory, isPending: isCreatingCategory } = useCreateBookmarkCategory();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
   const [createFolderModalKey, setCreateFolderModalKey] = useState(0);
@@ -106,7 +88,6 @@ export function AddToBookmarkModal({
         categoryIds: selectedAsArray,
       },
       {
-        // 응답은 새로 만든 북마크만 담는다. 이미 있던 폴더는 건너뛴 것이라 실패가 아니고, 고른 폴더 모두에 장소가 있게 됐으므로 닫는다
         onSuccess: (bookmarks) => {
           if (bookmarks.length > 0) {
             trackAnalyticsEvent(AnalyticsEvents.addToBookmark, {
@@ -128,19 +109,11 @@ export function AddToBookmarkModal({
     );
   };
 
-  const handleCreateFolderSave = ({
-    title,
-    color,
-  }: {
-    title: string;
-    color: string;
-  }) => {
+  const handleCreateFolderSave = ({ title, color }: { title: string; color: string }) => {
     if (!roomId || isCreatingCategory || isAddingBookmarks) return;
     const resolvedName = title.trim()
       ? title.trim()
-      : pickUniqueUntitledBookmarkCategoryName(
-          (categories ?? []).map((c) => c.name),
-        );
+      : pickUniqueUntitledBookmarkCategoryName((categories ?? []).map((c) => c.name));
     createCategory(
       { roomId, name: resolvedName, colorCode: color },
       {
@@ -154,12 +127,7 @@ export function AddToBookmarkModal({
         },
         onError: (e) => {
           setCreateFolderModalOpen(false);
-          setSubmitError(
-            messageForBookmarkCategorySaveError(
-              e,
-              "카테고리를 만들지 못했습니다.",
-            ),
-          );
+          setSubmitError(messageForBookmarkCategorySaveError(e, "카테고리를 만들지 못했습니다."));
         },
       },
     );
@@ -173,19 +141,22 @@ export function AddToBookmarkModal({
     <Dialog
       open
       closeDisabled={isAddingBookmarks}
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다. 추가 중에는 Esc·딤·닫기를 막는다.
-      // 새 북마크 대화상자가 위에 열려 있으면 Esc는 위 대화상자만 닫는다(Base UI 중첩)
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DialogContent {...pointerBoundary} backdropProps={pointerBoundary} size="sm" showCloseButton={false} className="max-h-[min(85dvh,560px)]">
+      <DialogContent
+        {...pointerBoundary}
+        backdropProps={pointerBoundary}
+        size="sm"
+        showCloseButton={false}
+        className="max-h-[min(85dvh,560px)]"
+      >
         <DialogHeader>
           <DialogTitle>북마크에 추가</DialogTitle>
           <DialogDescription>북마크를 선택한 뒤 추가해 주세요.</DialogDescription>
         </DialogHeader>
 
-        {/* 제목 줄·버튼은 고정하고 목록만 스크롤한다. 행 구분선·hover 배경이 표면 끝까지 닿도록 표면 padding만큼 넓힌다 */}
         <div className="-mx-5 min-h-0 overflow-y-auto border-b border-gray-border [scrollbar-color:rgba(0,0,0,0.15)_transparent] [scrollbar-gutter:stable]">
           <button
             type="button"
@@ -209,9 +180,7 @@ export function AddToBookmarkModal({
           {categoriesError && (
             <div className="space-y-2 px-5 py-6 text-center">
               <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-                {categoriesErr instanceof Error
-                  ? categoriesErr.message
-                  : "카테고리를 불러오지 못했습니다."}
+                {categoriesErr instanceof Error ? categoriesErr.message : "카테고리를 불러오지 못했습니다."}
               </p>
               <button
                 type="button"
@@ -288,10 +257,7 @@ export function AddToBookmarkModal({
           <Button
             loading={isAddingBookmarks}
             loadingLabel="추가 중"
-            disabled={
-              selectedIds.size === 0 ||
-              (categories?.length === 0 && !categoriesLoading)
-            }
+            disabled={selectedIds.size === 0 || (categories?.length === 0 && !categoriesLoading)}
             onClick={handleConfirmAdd}
           >
             추가
@@ -304,9 +270,7 @@ export function AddToBookmarkModal({
             mode="create"
             initialFolder={null}
             busy={isCreatingCategory || isAddingBookmarks}
-            untitledNameHint={pickUniqueUntitledBookmarkCategoryName(
-              (categories ?? []).map((c) => c.name),
-            )}
+            untitledNameHint={pickUniqueUntitledBookmarkCategoryName((categories ?? []).map((c) => c.name))}
             onClose={() => setCreateFolderModalOpen(false)}
             onSave={handleCreateFolderSave}
           />

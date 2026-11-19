@@ -22,10 +22,8 @@ export function MapWithDetailPanel({
 }: {
   mobileInline?: boolean;
   hidden?: boolean;
-  /** 모바일 경로 보기 — 검색창을 숨기고 지도에는 고른 일차만 그린다 */
   routeView?: MapRouteView;
   onOpenRouteView?: () => void;
-  /** 지도 위에 얹는 화면(경로 보기 카드·일차 탭 등) */
   children?: ReactNode;
 }) {
   const { selectedPlace, setSelectedPlace, onBack } = useSelectedPlace();
@@ -35,8 +33,7 @@ export function MapWithDetailPanel({
     setMapSectionEl(el);
   }, []);
 
-  const { setToolbarRef, panelTopPx } =
-    useMapDiscoverToolbarOffset(mapSectionEl);
+  const { setToolbarRef, panelTopPx } = useMapDiscoverToolbarOffset(mapSectionEl);
   const planRouteMode = useWebPlanRouteMode();
 
   const visibleStyle = mobileInline ? undefined : { minWidth: MAIN_MAP_MIN_WIDTH_PX };
@@ -50,19 +47,19 @@ export function MapWithDetailPanel({
       style={hidden ? { display: "none" } : visibleStyle}
       className={cn(
         "relative h-full min-h-0 min-w-0 flex-1 basis-0 overflow-clip",
-        mobileInline
-          ? "flex"
-          : "hidden border-l border-gray-border s1:flex",
+        mobileInline ? "flex" : "hidden border-l border-gray-border s1:flex",
       )}
     >
       <MapToolbarLayoutProvider setToolbarRef={setToolbarRef}>
-        <Map routeView={routeView} onOpenRouteView={onOpenRouteView}
-          search={!mobileInline && !routeView ? <MapPlaceSearch mobile={false} hidden={planRouteMode} /> : undefined} />
+        <Map
+          routeView={routeView}
+          onOpenRouteView={onOpenRouteView}
+          search={!mobileInline && !routeView ? <MapPlaceSearch mobile={false} hidden={planRouteMode} /> : undefined}
+        />
       </MapToolbarLayoutProvider>
 
       {children}
 
-      {/* Detail panel — 데스크톱: 지도 왼쪽에서 슬라이드 / 모바일: 헤더 아래 12px까지 펼쳐지는 바텀 시트 */}
       <div
         style={mobileInline ? undefined : { top: panelTopPx, width: MAP_DETAIL_PANEL_WIDTH }}
         className={cn(
@@ -90,7 +87,6 @@ export function MapWithDetailPanel({
         )}
       </div>
 
-      {/* 웹 동선보기에서는 숨기기만 한다 — 다시 마운트하면 입력값이 사라지고 주소의 검색어(`?q=`)로 다시 검색한다 */}
       {!routeView && mobileInline ? <MapPlaceSearch mobile hidden={planRouteMode} /> : null}
     </section>
   );

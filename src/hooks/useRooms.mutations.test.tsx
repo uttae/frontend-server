@@ -55,13 +55,15 @@ function mountHook() {
   );
 }
 
-/** 화면에 붙은 조회처럼 observer를 붙이고, 다시 받을 때의 응답은 테스트가 풀 때까지 붙잡는다 */
 function watchRefetch(queryKey: readonly unknown[]) {
   let finish: (() => void) | undefined;
   client.setQueryData(queryKey, []);
   const observer = new QueryObserver(client, {
     queryKey,
-    queryFn: () => new Promise<unknown[]>((resolve) => { finish = () => resolve([]); }),
+    queryFn: () =>
+      new Promise<unknown[]>((resolve) => {
+        finish = () => resolve([]);
+      }),
     staleTime: Infinity,
   });
   stops.push(observer.subscribe(() => {}));
@@ -84,16 +86,33 @@ afterEach(async () => {
 describe("응답 본문이 없는 변경은 목록을 다시 받을 때까지 끝나지 않는다(진행 표시 유지)", () => {
   it.each([
     ["강퇴", () => hook.current.kick.mutateAsync({ roomId: ROOM, userId: 2 }), api.kick, roomMembersQueryKey(ROOM)],
-    ["입장 승인", () => hook.current.approve.mutateAsync({ roomId: ROOM, requestId: 1 }), api.approve, joinRequestsQueryKey(ROOM)],
-    ["입장 거절", () => hook.current.reject.mutateAsync({ roomId: ROOM, requestId: 1 }), api.reject, joinRequestsQueryKey(ROOM)],
-    ["북마크 삭제", () => hook.current.deleteItem.mutateAsync({ roomId: ROOM, bookmarkId: 10, categoryId: 1 }), api.deleteBookmark, roomAllBookmarksQueryKey(ROOM)],
+    [
+      "입장 승인",
+      () => hook.current.approve.mutateAsync({ roomId: ROOM, requestId: 1 }),
+      api.approve,
+      joinRequestsQueryKey(ROOM),
+    ],
+    [
+      "입장 거절",
+      () => hook.current.reject.mutateAsync({ roomId: ROOM, requestId: 1 }),
+      api.reject,
+      joinRequestsQueryKey(ROOM),
+    ],
+    [
+      "북마크 삭제",
+      () => hook.current.deleteItem.mutateAsync({ roomId: ROOM, bookmarkId: 10, categoryId: 1 }),
+      api.deleteBookmark,
+      roomAllBookmarksQueryKey(ROOM),
+    ],
   ] as const)("%s", async (_name, run, request, queryKey) => {
     request.mockResolvedValueOnce(undefined);
     const list = watchRefetch(queryKey);
     let done = false;
 
     await act(async () => {
-      void run().then(() => { done = true; });
+      void run().then(() => {
+        done = true;
+      });
     });
     expect(done).toBe(false);
 
@@ -104,11 +123,36 @@ describe("응답 본문이 없는 변경은 목록을 다시 받을 때까지 �
 
 describe("실패해도 서버 기준으로 다시 맞춘다", () => {
   it.each([
-    ["강퇴", () => hook.current.kick.mutateAsync({ roomId: ROOM, userId: 2 }), api.kick, [roomMembersQueryKey(ROOM), ROOMS_QUERY_KEY]],
-    ["입장 승인", () => hook.current.approve.mutateAsync({ roomId: ROOM, requestId: 1 }), api.approve, [joinRequestsQueryKey(ROOM), roomMembersQueryKey(ROOM), ROOMS_QUERY_KEY]],
-    ["입장 거절", () => hook.current.reject.mutateAsync({ roomId: ROOM, requestId: 1 }), api.reject, [joinRequestsQueryKey(ROOM)]],
-    ["방장 위임", () => hook.current.transfer.mutateAsync({ roomId: ROOM, targetUserId: 2 }), api.transfer, [roomMembersQueryKey(ROOM), roomDetailQueryKey(ROOM), ROOMS_QUERY_KEY]],
-    ["북마크 삭제", () => hook.current.deleteItem.mutateAsync({ roomId: ROOM, bookmarkId: 10, categoryId: 1 }), api.deleteBookmark, [bookmarkCategoriesQueryKey(ROOM), roomAllBookmarksQueryKey(ROOM)]],
+    [
+      "강퇴",
+      () => hook.current.kick.mutateAsync({ roomId: ROOM, userId: 2 }),
+      api.kick,
+      [roomMembersQueryKey(ROOM), ROOMS_QUERY_KEY],
+    ],
+    [
+      "입장 승인",
+      () => hook.current.approve.mutateAsync({ roomId: ROOM, requestId: 1 }),
+      api.approve,
+      [joinRequestsQueryKey(ROOM), roomMembersQueryKey(ROOM), ROOMS_QUERY_KEY],
+    ],
+    [
+      "입장 거절",
+      () => hook.current.reject.mutateAsync({ roomId: ROOM, requestId: 1 }),
+      api.reject,
+      [joinRequestsQueryKey(ROOM)],
+    ],
+    [
+      "방장 위임",
+      () => hook.current.transfer.mutateAsync({ roomId: ROOM, targetUserId: 2 }),
+      api.transfer,
+      [roomMembersQueryKey(ROOM), roomDetailQueryKey(ROOM), ROOMS_QUERY_KEY],
+    ],
+    [
+      "북마크 삭제",
+      () => hook.current.deleteItem.mutateAsync({ roomId: ROOM, bookmarkId: 10, categoryId: 1 }),
+      api.deleteBookmark,
+      [bookmarkCategoriesQueryKey(ROOM), roomAllBookmarksQueryKey(ROOM)],
+    ],
   ] as const)("%s", async (_name, run, request, queryKeys) => {
     request.mockRejectedValueOnce(new Error("offline"));
     for (const queryKey of queryKeys) client.setQueryData(queryKey, []);

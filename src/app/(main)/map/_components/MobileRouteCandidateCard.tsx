@@ -11,11 +11,6 @@ import { cn } from "@/lib/utils";
 import { MobileRouteExpandedShell } from "./MobileRoutePlaceCard";
 import { MobileRoutePlaceDetail } from "./MobileRoutePlaceDetail";
 
-/**
- * 경로 보기에서 지도의 Google 장소를 누르면 카드 줄의 넣을 자리(고른 카드 바로 뒤)에 끼우는 후보 카드.
- * 일정 장소 카드와 같은 배치(배지·이름·분류)를 쓰되, 아직 넣지 않은 장소라 점선 테두리와 "+" 배지로 구분한다.
- * 카드를 누르면 다른 경로 카드처럼 사진·홈·리뷰 상세로 펼친다.
- */
 export function MobileRouteCandidateCard({
   googlePlaceId,
   badgeColor,
@@ -27,15 +22,12 @@ export function MobileRouteCandidateCard({
   detailActive,
 }: Readonly<{
   googlePlaceId: string;
-  /** 넣을 일차 색 */
   badgeColor: string;
-  /** 추가에 성공하면 true — 실패하면 카드를 남겨 다시 누를 수 있게 한다 */
   onAdd: () => Promise<boolean>;
   onClose: () => void;
   expanded: boolean;
   onExpand: () => void;
   onCollapse: () => void;
-  /** 가운데 카드일 때만 펼친 상세를 불러온다 */
   detailActive: boolean;
 }>) {
   const { data: detail, isLoading } = usePlaceDetailData(googlePlaceId);
@@ -48,11 +40,9 @@ export function MobileRouteCandidateCard({
     if (adding) return;
     setAdding(true);
     const added = await onAdd();
-    // 성공하면 카드가 사라지므로 실패했을 때만 되돌린다
     if (!added) setAdding(false);
   }
 
-  // 접힌 카드는 넘겨 보는 줄 높이(가장 긴 카드)를 채우고, 정보는 위·추가 버튼은 아래에 붙인다
   const card = (
     <div className={cn("relative", !expanded && "h-full")}>
       {expanded ? null : (
@@ -64,7 +54,6 @@ export function MobileRouteCandidateCard({
         />
       )}
       <div className="pointer-events-none relative flex h-full gap-3 pb-4 pl-3.5 pr-2 pt-3">
-        {/* 순번 자리 — 아직 순번이 없어 일차 색 점선 배지에 "+" */}
         <span
           aria-hidden
           className="mt-px flex size-6 shrink-0 items-center justify-center rounded-[5.5px] border border-dashed bg-fill-subtle"
@@ -74,19 +63,13 @@ export function MobileRouteCandidateCard({
         </span>
         <div className="flex min-w-0 flex-1 flex-col">
           {isLoading && !detail ? (
-            <output
-              aria-label="장소 정보 불러오는 중"
-              aria-busy
-              className="flex flex-col gap-1.5 pt-0.5"
-            >
+            <output aria-label="장소 정보 불러오는 중" aria-busy className="flex flex-col gap-1.5 pt-0.5">
               <Skeleton render={<span />} className="h-5 w-2/3" />
               <Skeleton render={<span />} tone="subtle" className="h-4 w-1/2" />
             </output>
           ) : (
             <>
-              <h3 className="line-clamp-2 break-words text-title-s text-text">
-                {name}
-              </h3>
+              <h3 className="line-clamp-2 break-words text-title-s text-text">{name}</h3>
               <CandidateMetadata category={category} address={address} rating={detail?.rating} />
             </>
           )}
@@ -115,7 +98,6 @@ export function MobileRouteCandidateCard({
 
   if (!expanded) {
     return (
-      // 다른 장소 카드와 같은 배경에 점선 테두리만 달리해 아직 넣지 않은 자리임을 보인다
       <div className="relative h-full rounded-md bg-fill-subtle">
         <DashedBorder active className="inset-[0.5px] size-[calc(100%-1px)]" />
         {card}
@@ -141,34 +123,31 @@ export function MobileRouteCandidateCard({
   );
 }
 
-function CandidateMetadata({ category, address, rating }: Readonly<{
+function CandidateMetadata({
+  category,
+  address,
+  rating,
+}: Readonly<{
   category: string;
   address: string;
   rating: number | null | undefined;
 }>) {
   return (
-              <p className="flex min-w-0 items-center gap-1 text-body-s-regular text-text-subtle">
-                {category ? <span className="shrink-0">{category}</span> : null}
-                {rating != null ? (
-                  <span className="flex shrink-0 items-center gap-0.5">
-                    {category ? <span aria-hidden>·</span> : null}
-                    <ReactionStarIcon
-                      size={14}
-                      className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
-                    />
-                    <span className="tabular-nums">
-                      {rating.toFixed(1)}
-                    </span>
-                  </span>
-                ) : null}
-                {address ? (
-                  <>
-                    {category || rating != null ? (
-                      <span aria-hidden>·</span>
-                    ) : null}
-                    <span className="truncate">{address}</span>
-                  </>
-                ) : null}
-              </p>
+    <p className="flex min-w-0 items-center gap-1 text-body-s-regular text-text-subtle">
+      {category ? <span className="shrink-0">{category}</span> : null}
+      {rating != null ? (
+        <span className="flex shrink-0 items-center gap-0.5">
+          {category ? <span aria-hidden>·</span> : null}
+          <ReactionStarIcon size={14} className="fill-current text-[var(--orange-500)] [&_path]:stroke-none" />
+          <span className="tabular-nums">{rating.toFixed(1)}</span>
+        </span>
+      ) : null}
+      {address ? (
+        <>
+          {category || rating != null ? <span aria-hidden>·</span> : null}
+          <span className="truncate">{address}</span>
+        </>
+      ) : null}
+    </p>
   );
 }

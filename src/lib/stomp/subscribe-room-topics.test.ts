@@ -14,39 +14,42 @@ vi.mock("@/lib/stomp/presence-dispatch", () => ({
   scheduleRoomMembersResyncAfterSubscribe: vi.fn(),
 }));
 
-it.each([true, false])("refreshes unread count only when its query is enabled (%s), without a chat handler", async (enabled) => {
-  const callbacks = new Map<string, (message: IMessage) => void>();
-  const client = {
-    subscribe: (topic: string, callback: (message: IMessage) => void) => {
-      callbacks.set(topic, callback);
-      return { unsubscribe: () => callbacks.delete(topic) };
-    },
-  } as unknown as Client;
-  const queryClient = new QueryClient();
-  const key = roomUnreadCountQueryKey("room");
-  queryClient.setQueryData(key, { unreadCount: 0 });
-  const observer = new QueryObserver(queryClient, {
-    queryKey: key,
-    queryFn: async () => ({ unreadCount: 3 }),
-    staleTime: Infinity,
-    enabled,
-  });
-  const stopObserver = observer.subscribe(() => {});
-  const unsubscribe = subscribeRoomStompTopics(client, "room", { current: queryClient }, {});
-  try {
-    callbacks.get("/topic/rooms/room/messages")!({
-      body: JSON.stringify({ id: "new", roomId: "room", messageType: "CHAT" }),
-    } as IMessage);
-    await vi.waitFor(() => {
-      expect(queryClient.getQueryData(key)).toEqual({ unreadCount: enabled ? 3 : 0 });
+it.each([true, false])(
+  "refreshes unread count only when its query is enabled (%s), without a chat handler",
+  async (enabled) => {
+    const callbacks = new Map<string, (message: IMessage) => void>();
+    const client = {
+      subscribe: (topic: string, callback: (message: IMessage) => void) => {
+        callbacks.set(topic, callback);
+        return { unsubscribe: () => callbacks.delete(topic) };
+      },
+    } as unknown as Client;
+    const queryClient = new QueryClient();
+    const key = roomUnreadCountQueryKey("room");
+    queryClient.setQueryData(key, { unreadCount: 0 });
+    const observer = new QueryObserver(queryClient, {
+      queryKey: key,
+      queryFn: async () => ({ unreadCount: 3 }),
+      staleTime: Infinity,
+      enabled,
     });
-    if (!enabled) expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
-  } finally {
-    unsubscribe();
-    stopObserver();
-    queryClient.clear();
-  }
-});
+    const stopObserver = observer.subscribe(() => {});
+    const unsubscribe = subscribeRoomStompTopics(client, "room", { current: queryClient }, {});
+    try {
+      callbacks.get("/topic/rooms/room/messages")!({
+        body: JSON.stringify({ id: "new", roomId: "room", messageType: "CHAT" }),
+      } as IMessage);
+      await vi.waitFor(() => {
+        expect(queryClient.getQueryData(key)).toEqual({ unreadCount: enabled ? 3 : 0 });
+      });
+      if (!enabled) expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true);
+    } finally {
+      unsubscribe();
+      stopObserver();
+      queryClient.clear();
+    }
+  },
+);
 
 it("본인 MEMBER_LEFT만 onSelfLeftRoom으로 알린다 — 다른 탭에서 방을 나간 경우", () => {
   const callbacks = new Map<string, (message: IMessage) => void>();

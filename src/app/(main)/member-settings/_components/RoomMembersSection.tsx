@@ -7,7 +7,6 @@ import { JoinRequestsSection } from "./JoinRequestsSection";
 import { MemberList } from "./MemberList";
 import { useMemberActions } from "./useMemberActions";
 
-/** 모바일 초대하기 페이지 — PC는 헤더 드롭다운·초대하기 모달을 쓴다 */
 export function RoomMembersSection() {
   const {
     roomId: currentRoomId,

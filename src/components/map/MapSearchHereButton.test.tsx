@@ -53,7 +53,9 @@ it("shows 검색 결과가 없어요 until closed, and again for the next search
   expect(notice()?.textContent).toBe("검색 결과가 없어요");
   await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="안내 닫기"]')!.click());
   expect(notice()).toBeNull();
-  await act(async () => { usePlaceSearchStore.getState().invalidate(); });
+  await act(async () => {
+    usePlaceSearchStore.getState().invalidate();
+  });
   await finishSearch({ searchMode: "map_recenter", status: "done", items: [] });
   expect(notice()).not.toBeNull();
 });
@@ -64,7 +66,6 @@ it("goes back to 현 위치에서 검색 when the map moves after a failure", as
   expect(button()?.textContent).toBe("현 위치에서 검색");
 });
 
-// 카테고리 칩으로 찾은 뒤 「현 위치에서 검색」이 실패해도(결과 없음이 아니라 오류) 같은 자리에서 다시 시도한다
 it("turns into 다시 시도 when the category search fails and asks the category search again", async () => {
   useSearchRecenterStore.getState().setDiscoverSnapshot({
     ...searched,

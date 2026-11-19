@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useMemo,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useBookmarkCategories } from "@/hooks/useRooms";
 import type { BookmarkCategory } from "@/lib/api/rooms";
 import { useSessionStore } from "@/stores/session-store";
@@ -15,9 +10,7 @@ type BookmarkFoldersContextValue = {
   folders: BookmarkFolder[];
 };
 
-const BookmarkFoldersContext = createContext<BookmarkFoldersContextValue | null>(
-  null,
-);
+const BookmarkFoldersContext = createContext<BookmarkFoldersContextValue | null>(null);
 
 function categoryToFolder(c: BookmarkCategory): BookmarkFolder {
   return {
@@ -38,11 +31,7 @@ export function BookmarkFoldersProvider({ children }: { children: ReactNode }) {
   }, [data, roomId]);
 
   const value = useMemo(() => ({ folders }), [folders]);
-  return (
-    <BookmarkFoldersContext.Provider value={value}>
-      {children}
-    </BookmarkFoldersContext.Provider>
-  );
+  return <BookmarkFoldersContext.Provider value={value}>{children}</BookmarkFoldersContext.Provider>;
 }
 
 export function useBookmarkFolders() {

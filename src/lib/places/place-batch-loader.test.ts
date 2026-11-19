@@ -5,7 +5,6 @@ import { createPlaceBatchLoader, type PlaceBatchResult } from "@/lib/places/plac
 
 type Outcome = "ok" | "failed" | "missing";
 
-/** id마다 응답 결과를 정한 batch 응답을 만든다 */
 function batchResponse(ids: string[], outcomeOf: (id: string) => Outcome) {
   const results = new Map<string, PlaceBatchResult<string>>();
   for (const id of ids) {
@@ -30,11 +29,7 @@ describe("createPlaceBatchLoader", () => {
   it("같은 태스크에서 들어온 id는 batch 하나로 보내고 같은 id는 한 번만 싣는다", async () => {
     const { fetchOne, fetchMany, load } = createLoader();
 
-    await expect(Promise.all([load("a"), load("b"), load("a")])).resolves.toEqual([
-      "many:a",
-      "many:b",
-      "many:a",
-    ]);
+    await expect(Promise.all([load("a"), load("b"), load("a")])).resolves.toEqual(["many:a", "many:b", "many:a"]);
     expect(fetchMany).toHaveBeenCalledExactlyOnceWith(["a", "b"]);
     expect(fetchOne).not.toHaveBeenCalled();
   });
@@ -56,15 +51,9 @@ describe("createPlaceBatchLoader", () => {
   });
 
   it("실패한 항목이 여러 개면 그 id만 batch로 한 번 더 보낸다", async () => {
-    const { fetchOne, fetchMany, load } = createLoader((id, call) =>
-      call === 1 && id !== "a" ? "failed" : "ok",
-    );
+    const { fetchOne, fetchMany, load } = createLoader((id, call) => (call === 1 && id !== "a" ? "failed" : "ok"));
 
-    await expect(Promise.all([load("a"), load("b"), load("c")])).resolves.toEqual([
-      "many:a",
-      "many:b",
-      "many:c",
-    ]);
+    await expect(Promise.all([load("a"), load("b"), load("c")])).resolves.toEqual(["many:a", "many:b", "many:c"]);
     expect(fetchMany.mock.calls).toEqual([[["a", "b", "c"]], [["b", "c"]]]);
     expect(fetchOne).not.toHaveBeenCalled();
   });
@@ -88,15 +77,9 @@ describe("createPlaceBatchLoader", () => {
   });
 
   it("batch 응답에서 빠진 id도 실패처럼 한 번 더 받는다", async () => {
-    const { fetchMany, load } = createLoader((id, call) =>
-      call === 1 && id !== "a" ? "missing" : "ok",
-    );
+    const { fetchMany, load } = createLoader((id, call) => (call === 1 && id !== "a" ? "missing" : "ok"));
 
-    await expect(Promise.all([load("a"), load("b"), load("c")])).resolves.toEqual([
-      "many:a",
-      "many:b",
-      "many:c",
-    ]);
+    await expect(Promise.all([load("a"), load("b"), load("c")])).resolves.toEqual(["many:a", "many:b", "many:c"]);
     expect(fetchMany.mock.calls).toEqual([[["a", "b", "c"]], [["b", "c"]]]);
   });
 
@@ -154,10 +137,7 @@ describe("createPlaceBatchLoader", () => {
       const settled = await Promise.allSettled(ids.map((id) => load(id)));
 
       expect(fetchMany.mock.calls).toEqual([[head], [tail]]);
-      expect(settled).toEqual([
-        ...head.map(fulfilled),
-        ...tail.map(() => ({ status: "rejected", reason: failure })),
-      ]);
+      expect(settled).toEqual([...head.map(fulfilled), ...tail.map(() => ({ status: "rejected", reason: failure }))]);
     });
 
     it("앞 묶음 요청이 실패하면 남은 묶음은 보내지 않고 모두 같은 에러로 실패한다", async () => {

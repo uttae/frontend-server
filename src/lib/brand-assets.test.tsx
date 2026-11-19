@@ -9,20 +9,11 @@ import { brandAssets, faviconAssets } from "@/lib/public-assets";
 
 const asset = (url: string) => readFileSync(resolve(process.cwd(), `public${url}`));
 
-/**
- * 파비콘과 랜딩 Figma 내보내기가 공유하는 브랜드 블루.
- * `/brand/*.svg`와 site.webmanifest는 아직 이전 값(#0099FF)이라 여기서 강제하지 않는다.
- */
 const BRAND_BLUE = [1, 131, 255] as const;
 
-/**
- * 캔버스 대비 글리프가 차지하는 비율. 가장자리까지 꽉 채우면 iOS 라운드 마스크와
- * PWA maskable 안전 영역에서 잘리므로 상한을 둔다.
- */
 const APP_ICON_CONTENT_RATIO = { min: 0.6, max: 0.78 };
 const TAB_ICON_CONTENT_RATIO = { min: 0.82, max: 0.9 };
 
-/** 좌우/상하 여백 차이 허용치 — 글리프가 캔버스 중앙에서 크게 밀리지 않도록 한다. */
 const CENTERING_TOLERANCE = 0.07;
 
 const tabFaviconPngs = [
@@ -36,19 +27,16 @@ const appIconPngs = [
   ["/favicon/android-chrome-512x512.png", 512],
 ] as const;
 
-/** ICO의 32bpp 무압축 DIB 프레임을 위에서 아래로 읽은 RGBA 버퍼로 바꾼다. */
 function decodeIcoFrame(frame: Buffer) {
   const headerSize = frame.readUInt32LE(0);
   const width = frame.readInt32LE(4);
-  // XOR 픽셀과 AND 마스크가 함께 담겨 높이가 2배로 기록된다.
   const height = frame.readInt32LE(8) / 2;
 
   expect(frame.readUInt16LE(14)).toBe(32);
-  expect(frame.readUInt32LE(16)).toBe(0); // BI_RGB, 무압축
+  expect(frame.readUInt32LE(16)).toBe(0);
 
   const data = Buffer.alloc(width * height * 4);
   for (let y = 0; y < height; y++) {
-    // DIB는 상하가 뒤집힌 채로, 채널은 BGRA 순서로 저장된다.
     const row = headerSize + (height - 1 - y) * width * 4;
     for (let x = 0; x < width; x++) {
       const from = row + x * 4;
@@ -63,7 +51,6 @@ function decodeIcoFrame(frame: Buffer) {
   return { data, width, height };
 }
 
-/** 알파가 있는 픽셀의 경계 상자 — 캔버스 대비 글리프의 크기와 치우침을 잰다. */
 function contentBounds(data: Buffer, size: number) {
   let minX = size;
   let minY = size;
@@ -89,15 +76,7 @@ function contentBounds(data: Buffer, size: number) {
   };
 }
 
-/**
- * 투명 배경 위에 단색 브랜드 블루 글리프가, 안전 여백을 두고 중앙에 놓였는지 검사한다.
- * 픽셀 단위 원본 대조 대신 이 계약만 확인해 내보내기 도구 교체를 허용한다.
- */
-function expectBrandGlyph(
-  data: Buffer,
-  size: number,
-  contentRatio = APP_ICON_CONTENT_RATIO,
-) {
+function expectBrandGlyph(data: Buffer, size: number, contentRatio = APP_ICON_CONTENT_RATIO) {
   let transparent = 0;
   let opaque = 0;
   let pureBlue = 0;
@@ -116,11 +95,8 @@ function expectBrandGlyph(
         if (red === BRAND_BLUE[0] && green === BRAND_BLUE[1] && blue === BRAND_BLUE[2]) {
           pureBlue++;
         } else {
-          // 내보내기 도구가 가장자리를 흰색 위에 합성해 불투명하게 남긴다.
-          // 브랜드 블루와 흰색 사이의 혼합만 허용하고, 다른 색조는 실패로 본다.
           const ratio = (red - BRAND_BLUE[0]) / (255 - BRAND_BLUE[0]);
           const blendedGreen = BRAND_BLUE[1] + ratio * (255 - BRAND_BLUE[1]);
-          // 파랑 채널은 브랜드 블루와 흰색 모두 255라 리샘플링 반올림만 흔들린다.
           if (blue < 253 || ratio < -0.02 || Math.abs(green - blendedGreen) > 3) {
             foreignColor++;
           }
@@ -130,7 +106,6 @@ function expectBrandGlyph(
   }
 
   expect(foreignColor).toBe(0);
-  // 가장자리 혼합을 빼면 글리프 본체는 단색 브랜드 블루여야 한다.
   expect(pureBlue / opaque).toBeGreaterThan(0.9);
   expect(opaque).toBeGreaterThan(size * size * 0.05);
   expect(transparent).toBeGreaterThan(size * size * 0.4);
@@ -144,11 +119,7 @@ function expectBrandGlyph(
   expect(bounds.verticalDrift).toBeLessThanOrEqual(CENTERING_TOLERANCE);
 }
 
-async function expectGlyphPng(
-  bytes: Buffer,
-  size: number,
-  contentRatio = APP_ICON_CONTENT_RATIO,
-) {
+async function expectGlyphPng(bytes: Buffer, size: number, contentRatio = APP_ICON_CONTENT_RATIO) {
   const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
   expect([info.width, info.height, info.channels]).toEqual([size, size, 4]);
@@ -156,15 +127,16 @@ async function expectGlyphPng(
 }
 
 describe("official blue glyph assets", () => {
-  it.each([["S", 23], ["M", 45], ["L", 90]] as const)(
-    "renders symbol %s with the original glyph proportions and accessible name",
-    (size, dimension) => {
-      const html = renderToStaticMarkup(<BrandLogo variant="symbol" size={size} />);
-      expect(html).toContain(`src="/brand/Glyph_${size}.svg"`);
-      expect(html).toContain(`width="${dimension}" height="${dimension}"`);
-      expect(html).toContain('alt="우때 로고"');
-    },
-  );
+  it.each([
+    ["S", 23],
+    ["M", 45],
+    ["L", 90],
+  ] as const)("renders symbol %s with the original glyph proportions and accessible name", (size, dimension) => {
+    const html = renderToStaticMarkup(<BrandLogo variant="symbol" size={size} />);
+    expect(html).toContain(`src="/brand/Glyph_${size}.svg"`);
+    expect(html).toContain(`width="${dimension}" height="${dimension}"`);
+    expect(html).toContain('alt="우때 로고"');
+  });
 
   it.each(appIconPngs)("exports %s as a transparent, safely inset blue PNG", async (url, size) => {
     expect((await sharp(asset(url)).metadata()).format).toBe("png");
@@ -185,7 +157,6 @@ describe("official blue glyph assets", () => {
         }),
       );
 
-      // 사이즈마다 따로 만든 게 아니라 같은 규칙으로 뽑혔는지 — 반올림 오차 범위만 허용.
       for (const ratio of ratios) {
         expect(ratio).toBeCloseTo(ratios[0], 1);
       }

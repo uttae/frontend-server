@@ -9,10 +9,7 @@ import {
   roomSchedulesQueryKey,
   roomUnreadCountQueryKey,
 } from "@/lib/query-keys";
-import {
-  resyncRoomDataAfterSubscribe,
-  resyncUserQueueDataAfterSubscribe,
-} from "./room-resync-dispatch";
+import { resyncRoomDataAfterSubscribe, resyncUserQueueDataAfterSubscribe } from "./room-resync-dispatch";
 
 const clients: QueryClient[] = [];
 function newClient() {
@@ -47,7 +44,6 @@ describe("resyncRoomDataAfterSubscribe", () => {
 
     await expect.poll(() => scheduleFetches).toBe(2);
     expect(client.getQueryState(bookmarkCategoriesQueryKey("room"))?.isInvalidated).toBe(true);
-    // 카테고리별 북마크는 전체 목록에서 거르므로 전체 목록 하나만 무효화하면 된다
     expect(client.getQueryState(roomAllBookmarksQueryKey("room"))?.isInvalidated).toBe(true);
     expect(client.getQueryState(roomUnreadCountQueryKey("room"))?.isInvalidated).toBe(true);
     stop();

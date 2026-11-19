@@ -53,7 +53,10 @@ describe("dispatchRoomPresence", () => {
 
     dispatchRoomPresence(client, ROOM_ID, connected(2));
 
-    expect(onlineOf(client)).toEqual([[1, false], [2, true]]);
+    expect(onlineOf(client)).toEqual([
+      [1, false],
+      [2, true],
+    ]);
     expect(client.getQueryState(KEY)?.isInvalidated).toBe(false);
   });
 
@@ -95,7 +98,6 @@ describe("dispatchRoomPresence", () => {
     });
     stops.push(observer.subscribe(() => {}));
 
-    // 2번이 접속하기 전에 출발한 조회
     void observer.refetch();
     await expect.poll(() => responses.length).toBe(1);
 
@@ -105,7 +107,12 @@ describe("dispatchRoomPresence", () => {
     responses[1]!({ members: [member(1), member(2, { isOnline: true })] });
     responses[0]!({ members: [member(1), member(2)] });
 
-    await expect.poll(() => onlineOf(client)).toEqual([[1, false], [2, true]]);
+    await expect
+      .poll(() => onlineOf(client))
+      .toEqual([
+        [1, false],
+        [2, true],
+      ]);
   });
 });
 
@@ -116,6 +123,9 @@ describe("optimisticPatchSelfOnline", () => {
 
     optimisticPatchSelfOnline(client, ROOM_ID);
 
-    expect(onlineOf(client)).toEqual([[1, true], [2, false]]);
+    expect(onlineOf(client)).toEqual([
+      [1, true],
+      [2, false],
+    ]);
   });
 });

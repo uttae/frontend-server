@@ -19,9 +19,7 @@ export function HeroImage({
   name: string;
 }) {
   const { data: queriedPhotoUrl, isLoading } = usePlacePhotoUrlQuery(googlePlaceId);
-  const { visibleUrl: photoUrl, markUnavailable } = useVisiblePlacePhotoUrl(
-    queriedPhotoUrl || fallbackImage || null,
-  );
+  const { visibleUrl: photoUrl, markUnavailable } = useVisiblePlacePhotoUrl(queriedPhotoUrl || fallbackImage || null);
 
   if (!photoUrl && isLoading) {
     return <HeroSkeleton />;

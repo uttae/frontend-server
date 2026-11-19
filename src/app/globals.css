@@ -1,36 +1,25 @@
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
 @import "tailwindcss";
 @import "tw-animate-css";
-/* 휠 피커 기본 스타일 — components 레이어에 둬서 Tailwind 유틸리티가 덮어쓸 수 있게 한다 */
 @import "@ncdai/react-wheel-picker/style.css" layer(components);
 @config "../../tailwind.config.js";
-/* 제품 서체 Pretendard — Figma Typography/Foundation 기준 */
-
-/**
- * 모바일 전용 유틸리티 배리언트 —
- * MobileViewProvider가 <html>에 붙이는 `is-mobile-device` 클래스가 있을 때만
- * 규칙이 적용된다. 예) `text-[15px] mobile:text-[13px]`
- */
 @custom-variant mobile (&:where(.is-mobile-device, .is-mobile-device *));
 
-/* 검색 말풍선의 여백·표면·그림자는 Figma 6156:14635 기준으로 맞춘다. */
 .gm-style-iw-c:has([data-search-place-preview]) {
   border-radius: 8px;
   background: var(--color-fill-subtle);
   box-shadow: 0 2px 10px #0000001a;
-  padding: 0 !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 padding을 검색 말풍선에서만 재정의한다. */
+  padding: 0 !important;
 }
 
 .gm-style-iw-d:has([data-search-place-preview]) {
-  overflow: auto !important; /* NOSONAR: S9423 — Google Maps의 인라인 overflow:scroll에 의한 불필요한 스크롤바를 제거한다. */
+  overflow: auto !important;
 }
 
-/* 검색 추천은 기존 상세 패널(z-20) 위에서 선택할 수 있어야 한다. */
 .map-discover-toolbar:has(input[aria-expanded="true"]) {
   z-index: 25;
 }
 
-/* 원본 말풍선 꼬리(14×12)를 Google 기본 삼각형 대신 사용한다. */
 .gm-style-iw-t:has([data-search-place-preview]) > .gm-style-iw-tc {
   width: 14px;
   height: 12px;
@@ -47,9 +36,8 @@
   box-shadow: none;
 }
 
-/* PC 지도 버튼은 지도 끝에서 아래·좌우 모두 24px — 확대·축소(+/−)의 아래는 저작권 줄과 기본 여백으로 이미 24px이라 오른쪽만 넓힌다. */
 [data-map-controls-inset] .gm-bundled-control {
-  margin-right: 24px !important; /* NOSONAR: S9423 — Google Maps가 주입하는 인라인 margin(10px)을 재정의한다. */
+  margin-right: 24px !important;
 }
 
 @layer base {
@@ -57,23 +45,15 @@
     @apply font-sans;
   }
 
-  /* Base UI 권장: iOS 26 Safari에서 대화상자 딤(position: absolute)이 스크롤한 뒤에도 화면 전체를 덮게 한다 */
   body {
     position: relative;
   }
-
-  /* 스크롤바 공간 예약은 폭 유지가 필요한 본문·목록에서만 개별 지정한다. */
 }
 
-/* 모바일 하단 탭바(위 선 1px + 메뉴 52px + 기기 safe area)가 있을 때만 토스트를 그 위로 올림 */
 html:has([data-mobile-main-tabs]) {
   --toast-bottom-inset: calc(53px + env(safe-area-inset-bottom));
 }
 
-/**
- * 채팅 메시지 목록 스크롤 영역 — 스크롤바 트랙·막대 항상 표시
- * (패딩은 내부 콘텐츠 래퍼에 두어 말풍선과 스크롤바가 겹치지 않게 함)
- */
 .chat-message-list-scroll {
   overflow-x: hidden;
   overflow-y: auto;
@@ -103,7 +83,6 @@ html:has([data-mobile-main-tabs]) {
   background-color: #94a3b8;
 }
 
-/* 최소화 패널 — 스크롤 트랙·막대를 확대 모드보다 좁게 */
 .chat-message-list-scroll--minimized {
   scrollbar-width: thin;
 }
@@ -116,18 +95,7 @@ html:has([data-mobile-main-tabs]) {
   min-height: 2rem;
 }
 
-/* ============================================================
- * 디자인 토큰 — Figma "🐰디자인-디자인 시스템"(node 161:9) 기반
- * 값의 정본은 이 파일과 tailwind.config.js다. 쓰는 순서는 Design.md 1-1을 따른다.
- *
- * primitive(--gray-*, --blue-* …)는 semantic이 참조하는 원천 값이다.
- * 컴포넌트는 semantic(--color-*)을 쓰고, 맞는 semantic이 없을 때만
- * primitive를 bg-[var(--gray-800)]처럼 직접 쓴다.
- * tailwind.config.js 에는 semantic과 레거시 별칭(신규 사용 금지)이 등록되어 있다.
- * ============================================================ */
 :root {
-  /* ---------- 1. PRIMITIVE ---------- */
-  /* Gray */
   --gray-0: #ffffff;
   --gray-50: #fdfdfd;
   --gray-100: #f6f6f8;
@@ -141,7 +109,6 @@ html:has([data-mobile-main-tabs]) {
   --gray-900: #1f2229;
   --gray-950: #16181d;
 
-  /* Blue */
   --blue-50: #edf9ff;
   --blue-100: #d6f2ff;
   --blue-200: #b5e8ff;
@@ -154,7 +121,6 @@ html:has([data-mobile-main-tabs]) {
   --blue-900: #005bd9;
   --blue-950: #004293;
 
-  /* Lime */
   --lime-50: #f6ffe2;
   --lime-100: #efffc5;
   --lime-200: #e7ffa8;
@@ -167,7 +133,6 @@ html:has([data-mobile-main-tabs]) {
   --lime-900: #00ab2e;
   --lime-950: #006e1d;
 
-  /* Green */
   --green-50: #eefff5;
   --green-100: #ceffe4;
   --green-200: #93ffc2;
@@ -180,7 +145,6 @@ html:has([data-mobile-main-tabs]) {
   --green-900: #00460f;
   --green-950: #00250a;
 
-  /* Red */
   --red-50: #fffafa;
   --red-100: #ffebec;
   --red-200: #ffd4d4;
@@ -193,7 +157,6 @@ html:has([data-mobile-main-tabs]) {
   --red-900: #7e0000;
   --red-950: #410000;
 
-  /* Orange */
   --orange-50: #fffcf8;
   --orange-100: #fff4e4;
   --orange-200: #ffe5c2;
@@ -206,52 +169,42 @@ html:has([data-mobile-main-tabs]) {
   --orange-900: #6d3700;
   --orange-950: #3a1d00;
 
-  /* ---------- 2. SEMANTIC (primitive 참조) ---------- */
-  /* Primary */
   --color-primary-subtle: var(--blue-100);
   --color-primary-default: var(--blue-700);
   --color-primary-strong: var(--blue-900);
 
-  /* Secondary */
   --color-secondary-subtle: var(--lime-200);
   --color-secondary-default: var(--lime-500);
   --color-secondary-strong: var(--lime-800);
 
-  /* Text */
   --color-text-subtle: var(--gray-700);
   --color-text-default: var(--gray-950);
   --color-text-disabled: var(--gray-400);
   --color-text-inverse: var(--gray-50);
 
-  /* Icon */
   --color-icon-subtle: var(--gray-600);
   --color-icon-default: var(--gray-800);
   --color-icon-disabled: var(--gray-400);
   --color-icon-inverse: var(--gray-100);
 
-  /* Fill */
   --color-fill-subtle: var(--gray-50);
   --color-fill-default: var(--gray-100);
   --color-fill-strong: var(--gray-200);
   --color-fill-elevate: var(--gray-0);
 
-  /* Border */
   --color-border-subtle: var(--gray-200);
   --color-border-default: var(--gray-300);
   --color-border-hover: var(--gray-700);
 
-  /* Background */
   --color-background-default: var(--gray-50);
   --color-background-strong: var(--gray-200);
 
-  /* Status */
   --color-status-positive: var(--green-600);
   --color-status-cautionary: var(--orange-600);
   --color-status-negative: var(--red-600);
 
-  /* ---------- 3. TYPOGRAPHY ---------- */
-  --font-sans: "Pretendard Variable", Pretendard, -apple-system,
-    BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", sans-serif;
+  --font-sans:
+    "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", sans-serif;
 
   --font-weight-regular: 400;
   --font-weight-medium: 500;

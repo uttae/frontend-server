@@ -2,8 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/api/rooms/schedule-items", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>();
+  const actual = await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>();
   return {
     ...actual,
     getScheduleItemRoute: vi.fn(),
@@ -35,14 +34,10 @@ beforeAll(async () => {
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
 
-  ({ resolveScheduleSegmentRoute } = await import(
-    "@/lib/plan/scheduleSegmentRoute"
-  ));
+  ({ resolveScheduleSegmentRoute } = await import("@/lib/plan/scheduleSegmentRoute"));
   ({ scheduleItemRouteQueryKey } = await import("@/lib/query-keys"));
   ({ registerQueryClient } = await import("@/lib/query-client"));
-  ({ getScheduleItemRoute: getScheduleItemRouteMock } = vi.mocked(
-    await import("@/lib/api/rooms/schedule-items"),
-  ));
+  ({ getScheduleItemRoute: getScheduleItemRouteMock } = vi.mocked(await import("@/lib/api/rooms/schedule-items")));
 });
 
 beforeEach(() => {
@@ -115,7 +110,6 @@ describe("resolveScheduleSegmentRoute", () => {
     expect(getScheduleItemRouteMock).toHaveBeenCalledTimes(1);
   });
 
-  /** 캐시 쓰기는 이 리졸버를 queryFn으로 쓰는 쿼리가 맡는다 */
   it("캐시에 직접 쓰지 않는다", async () => {
     getScheduleItemRouteMock.mockResolvedValue(ROUTE);
 

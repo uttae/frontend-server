@@ -127,9 +127,7 @@ describe("Amplitude browser client", () => {
 
   it("preserves queued commands and allows retry after initialization fails", async () => {
     const firstInitialization = deferred<void>();
-    amplitude.initAll
-      .mockReturnValueOnce(firstInitialization.promise)
-      .mockResolvedValueOnce();
+    amplitude.initAll.mockReturnValueOnce(firstInitialization.promise).mockResolvedValueOnce();
     vi.stubGlobal("window", {});
     const client = await import("@/lib/analytics/amplitude");
 

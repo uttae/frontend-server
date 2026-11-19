@@ -254,7 +254,7 @@ src/hooks/use*.ts            조회 훅(useQuery)·변경 훅(useMutation)·화�
 - 요청은 `src/lib/api`의 함수로만 보낸다(`apiFetch`가 401 토큰 갱신과 세션 만료를 처리한다). 컴포넌트는 `fetch`도 API 함수도 직접 부르지 않고 훅을 쓴다.
 - 실패는 `HttpError`로 던진다. `requestJson`·`requestVoid`에는 `useHttpError: true`를 넘긴다(없으면 `status`가 없는 `Error`가 된다). 화면은 `status`를 직접 비교하지 않고 `src/lib/api/errors.ts`의 판정·문구 함수를 쓴다.
 - 키는 팩토리로만 만들고 queryFn이 쓰는 값을 모두 넣는다. 방 데이터 키는 `[세그먼트, roomId, …]` 순서다(강퇴·방 삭제 때 두 번째 자리로 캐시를 지운다). 개인 데이터 키에는 사용자 ID를 넣는다.
-- 조회 훅은 키·queryFn·`enabled`와 필요한 `select`·`placeholderData`·`staleTime`만 둔다. 전역 기본값(`createQueryClient`)과 같은 값은 다시 쓰지 않고, 다른 값에는 갱신 사유를 주석으로 단다.
+- 조회 훅은 키·queryFn·`enabled`와 필요한 `select`·`placeholderData`·`staleTime`만 둔다. 전역 기본값(`createQueryClient`)과 같은 값은 다시 쓰지 않는다.
 - 브로드캐스트와 본인 수정으로 갱신되는 방 데이터는 `staleTime: Infinity`로 둔다(전역은 60초). 무효화로 갱신받는 쿼리에는 `refetchOnMount: false`를 두지 않는다. 화면 밖에서 무효화된 캐시가 다시 마운트돼도 갱신되지 않는다.
 - 변경 훅 하나는 동작 하나다. 캐시 반영과 쓰기 분석 이벤트는 훅에, 토스트·닫기·이동은 호출부 `mutate(vars, { onSuccess, onError })`에 둔다.
 - 캐시는 응답으로 `setQueryData`하는 것이 기본이다. 응답으로 확정할 수 없을 때만 필요한 범위를 무효화하고, 그 promise를 반환해 재조회가 끝날 때까지 `isPending`을 유지한다.
@@ -585,8 +585,8 @@ z-index는 같은 스태킹 컨텍스트 안에서만 비교된다. 그래서 �
 
 - 토큰 이름은 `tailwind.config.js`에서 고른다. 색 우선순위와 원시 색 쓰는 법은 Design.md 1-1을 따른다. 레거시 별칭(`dark-gray`·`gray-border` 등)은 쓰지 않는다.
 - 타이포는 토큰 하나로 쓴다. display·heading·title은 `text-<역할>-<크기>`(`text-title-m`), body·label·caption은 굵기까지 붙인다(`text-body-s-regular`). `text-body-s`처럼 없는 이름은 CSS가 생기지 않는다.
-- 타이포 토큰에 `font-*`·`leading-*`·`tracking-*`·`/N`을 덧붙이지 않는다(토큰 값을 덮거나 굵기·자간이 빠진다). 맞는 토큰이 없으면 Figma 값대로 크기·줄 높이·굵기를 함께 임의값으로 쓰고(`text-[17px]/[24px] font-semibold`) 근거 주석을 단다(Design.md 1-2).
-- radius는 재정의된 토큰을 쓴다(`rounded-md` = 8px, Tailwind 기본과 다르다). 그림자 토큰은 아직 없다. `shadow-sm` 같은 Tailwind 기본값 대신 Figma 값을 임의값과 근거 주석으로 쓴다. 같은 임의값이 반복되면 토큰 추가를 요청한다.
+- 타이포 토큰에 `font-*`·`leading-*`·`tracking-*`·`/N`을 덧붙이지 않는다(토큰 값을 덮거나 굵기·자간이 빠진다). 맞는 토큰이 없으면 Figma 값대로 크기·줄 높이·굵기를 함께 임의값으로 쓴다(`text-[17px]/[24px] font-semibold`, Design.md 1-2).
+- radius는 재정의된 토큰을 쓴다(`rounded-md` = 8px, Tailwind 기본과 다르다). 그림자 토큰은 아직 없다. `shadow-sm` 같은 Tailwind 기본값 대신 Figma 값을 임의값으로 쓴다. 같은 임의값이 반복되면 토큰 추가를 요청한다.
 - 클래스는 `cn()`으로만 합친다. 템플릿 리터럴은 겹친 클래스(`px-2`와 바깥 `px-4`)를 정리하지 못하고, 조립한 이름(`` `bg-${tone}` ``)은 Tailwind가 소스에서 찾지 못한다. 변형은 cva(`class-variance-authority`)로 모은다.
 - 상태 스타일은 aria 속성을 variant로 읽는다(`aria-expanded:bg-fill`, `aria-current="page"`는 `aria-[current=page]:`). aria가 없는 상태만 `data-*`로 둔다. 여러 하위가 함께 따르는 루트 상태(채팅 최소화·밀도)는 하위마다 prop으로 내리지 않고, 루트의 `data-minimized`를 하위가 `group-data-minimized/chat:`처럼 읽는다.
 - 전역 요소 스타일은 `@layer base`에 둔다. 레이어 밖 CSS는 모든 유틸리티를 이긴다.

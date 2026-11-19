@@ -19,9 +19,6 @@ function AuthCallbackContent() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
-  // React Strict Mode (Next dev) 에서 useEffect 가 두 번 실행되면
-  // sessionStorage 의 pendingInviteCode/oauth_pending 가 첫 실행에서 비워져
-  // 두 번째 실행이 home/login 으로 잘못 리다이렉트한다. 코드 교환도 1회만 시도.
   const ranRef = useRef(false);
 
   useEffect(() => {
@@ -32,12 +29,7 @@ function AuthCallbackContent() {
     const returnedState = searchParams.get("state");
     const pending = consumeOAuthPendingSession();
 
-    if (
-      !code ||
-      !returnedState ||
-      !pending ||
-      returnedState !== pending.state
-    ) {
+    if (!code || !returnedState || !pending || returnedState !== pending.state) {
       router.replace(pendingInviteAuthPath("/login?error=OAuthCallback"));
       return;
     }

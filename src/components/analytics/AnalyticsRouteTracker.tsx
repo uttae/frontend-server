@@ -5,10 +5,7 @@ import { usePathname } from "next/navigation";
 
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { trackAnalyticsPageView } from "@/lib/analytics/client";
-import {
-  buildSessionPageViewPlan,
-  executeSessionPageViewPlan,
-} from "@/lib/analytics/page-view-session";
+import { buildSessionPageViewPlan, executeSessionPageViewPlan } from "@/lib/analytics/page-view-session";
 import { resolveAnalyticsRoomId } from "@/lib/analytics/room-context";
 import { setAnalyticsUserId } from "@/lib/analytics/track";
 import { shouldSkipReconcileClientSession } from "@/lib/auth-session";
@@ -35,10 +32,8 @@ export function AnalyticsRouteTracker() {
       queryStatus,
       currentRoomId: useSessionStore.getState().currentRoomId,
       lastTrackedRoomId: lastTrackedRoomId.current,
-      // SessionReconciler의 layout effect가 같은 commit에서 갱신한 값을 읽는다.
       sessionReady: useSessionStore.getState().sessionReady,
-      skipSessionReconciliation:
-        shouldSkipReconcileClientSession(pathname),
+      skipSessionReconciliation: shouldSkipReconcileClientSession(pathname),
       userId,
     });
 
@@ -56,8 +51,6 @@ export function AnalyticsRouteTracker() {
       userId: plan.userId,
     });
     if (!plan.pageView) {
-      // Enrich dedupe context without resending the anonymous view. A later
-      // real A → B room switch on this pathname can then count as navigation.
       if (lastTrackedPathname.current === pathname && observedRoomId) {
         lastTrackedRoomId.current = observedRoomId;
       }

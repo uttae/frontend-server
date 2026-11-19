@@ -6,27 +6,17 @@ import type { ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 import { getQueryClient } from "@/lib/query-client";
 import { scheduleItemRouteQueryKey } from "@/lib/query-keys";
 
-/** `null` — 마지막 항목이거나 경로 없음(204) */
 export type ScheduleSegmentRoute = ScheduleItemRouteResponse | null;
 
 export type ResolveScheduleSegmentRouteArgs = {
   roomId: string;
   scheduleId: number;
   segmentSourceItemId: number;
-  /** 다음 장소의 `itemId` — 서버가 그 순간의 순서와 관계없이 이 항목까지 계산한다 */
   destinationItemId: number;
   travelMode: ScheduleTravelModeValue;
-  /** 일정 지문 — 비면 sessionStorage에 기록하지 않습니다. */
   scheduleFingerprint?: string;
 };
 
-/**
- * 구간 `(room, schedule, 출발 항목, 도착 항목, 이동수단)` 경로를 가져오는 fetch 본체입니다.
- * 거리·소요 시간과 지도 폴리라인이 같은 캐시 항목을 공유하도록 일정 리스트와 지도가 모두
- * 이 함수를 queryFn으로 쓰는 하나의 쿼리(`scheduleItemRouteQueryKey`)를 거칩니다.
- *
- * in-flight 합치기와 캐시 쓰기는 이 함수를 queryFn으로 쓰는 쿼리(React Query)가 맡아, 여기서 직접 캐시에 쓰지 않습니다.
- */
 export async function resolveScheduleSegmentRoute({
   roomId,
   scheduleId,
@@ -38,40 +28,19 @@ export async function resolveScheduleSegmentRoute({
   const rid = roomId.trim();
   if (!rid.length) return null;
 
-  /** 저장 이동수단 기준 batch가 이 구간·수단을 시딩했을 수 있어 완료를 기다림 */
   await awaitScheduleRoutesBatch(rid, scheduleId);
 
-  const routeKey = scheduleItemRouteQueryKey(
-    rid,
-    scheduleId,
-    segmentSourceItemId,
-    destinationItemId,
-    travelMode,
-  );
+  const routeKey = scheduleItemRouteQueryKey(rid, scheduleId, segmentSourceItemId, destinationItemId, travelMode);
   const cached = getQueryClient()?.getQueryState<ScheduleSegmentRoute>(routeKey);
   if (cached?.data !== undefined && !cached.isInvalidated) {
     return cached.data;
   }
 
-  const fresh = await getScheduleItemRoute(
-    rid,
-    scheduleId,
-    segmentSourceItemId,
-    destinationItemId,
-    travelMode,
-  );
+  const fresh = await getScheduleItemRoute(rid, scheduleId, segmentSourceItemId, destinationItemId, travelMode);
 
   const fp = scheduleFingerprint?.trim() ?? "";
   if (fp.length > 0) {
-    writeScheduleRouteToSessionStorage(
-      rid,
-      scheduleId,
-      segmentSourceItemId,
-      destinationItemId,
-      travelMode,
-      fp,
-      fresh,
-    );
+    writeScheduleRouteToSessionStorage(rid, scheduleId, segmentSourceItemId, destinationItemId, travelMode, fp, fresh);
   }
 
   return fresh;
