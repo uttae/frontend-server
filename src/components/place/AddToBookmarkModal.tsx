@@ -70,10 +70,7 @@ export function AddToBookmarkModal({
     useCreateRoomBookmarksInCategories();
   const { mutate: createCategory, isPending: isCreatingCategory } =
     useCreateBookmarkCategory();
-  const [submitFeedback, setSubmitFeedback] = useState<{
-    message: string;
-    variant: "error" | "neutral";
-  } | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false);
   const [createFolderModalKey, setCreateFolderModalKey] = useState(0);
   const [selectedIds, setSelectedIds] = useState(() => new Set<number>());
@@ -85,7 +82,7 @@ export function AddToBookmarkModal({
       else next.add(categoryId);
       return next;
     });
-    setSubmitFeedback(null);
+    setSubmitError(null);
   }, []);
 
   const openCreateFolderModal = () => {
@@ -95,52 +92,13 @@ export function AddToBookmarkModal({
 
   const selectedAsArray = useMemo(() => Array.from(selectedIds), [selectedIds]);
 
-  const notifyResult = useCallback(
-    ({
-      added,
-      skippedDuplicate,
-      firstHardError,
-    }: {
-      added: number;
-      skippedDuplicate: number;
-      firstHardError: Error | null;
-    }) => {
-      if (firstHardError) {
-        const parts = [firstHardError.message];
-        if (added > 0) {
-          parts.push(`추가한 북마크는 ${added}개예요`);
-        }
-        setSubmitFeedback({
-          message: parts.join(" "),
-          variant: "error",
-        });
-        return;
-      }
-      if (added > 0 && skippedDuplicate > 0) {
-        setSubmitFeedback({
-          message: `${added}개 북마크에 추가했어요. ${skippedDuplicate}개 북마크에는 이미 이 장소가 있어요.`,
-          variant: "neutral",
-        });
-      } else if (added === 0 && skippedDuplicate > 0) {
-        setSubmitFeedback({
-          message: "해당 장소가 모든 선택 카테고리에 이미 추가되어 있어요.",
-          variant: "error",
-        });
-      }
-    },
-    [],
-  );
-
   const handleConfirmAdd = () => {
     if (!roomId || isAddingBookmarks) return;
     if (selectedAsArray.length === 0) {
-      setSubmitFeedback({
-        message: "북마크를 하나 이상 선택해 주세요.",
-        variant: "error",
-      });
+      setSubmitError("북마크를 하나 이상 선택해 주세요.");
       return;
     }
-    setSubmitFeedback(null);
+    setSubmitError(null);
     addBookmarksBulk(
       {
         roomId,
@@ -148,26 +106,20 @@ export function AddToBookmarkModal({
         categoryIds: selectedAsArray,
       },
       {
-        onSuccess: (result) => {
-          notifyResult(result);
-          if (result.firstHardError) {
-            toast.error("북마크에 추가하지 못했어요.");
-          } else if (result.added > 0) {
-            toast.success("북마크에 추가했어요.");
-          } else if (result.skippedDuplicate > 0) {
-            toast.error("이미 선택한 북마크에 추가된 장소예요.");
-          }
-          if (result.added > 0) {
+        // 응답은 새로 만든 북마크만 담는다. 이미 있던 폴더는 건너뛴 것이라 실패가 아니고, 고른 폴더 모두에 장소가 있게 됐으므로 닫는다
+        onSuccess: (bookmarks) => {
+          if (bookmarks.length > 0) {
             trackAnalyticsEvent(AnalyticsEvents.addToBookmark, {
               room_id: roomId,
               place_category: placeCategory,
               interaction_source: source,
             });
             onAdded?.();
+            toast.success("북마크에 추가했어요.");
+          } else {
+            toast.info("이미 북마크에 추가된 장소예요.");
           }
-          if (!result.firstHardError && result.skippedDuplicate === 0) {
-            onClose();
-          }
+          onClose();
         },
         onError: () => {
           toast.error("북마크에 추가하지 못했어요.");
@@ -197,18 +149,17 @@ export function AddToBookmarkModal({
             room_id: roomId,
           });
           setCreateFolderModalOpen(false);
-          setSubmitFeedback(null);
+          setSubmitError(null);
           setSelectedIds((prev) => new Set(prev).add(created.categoryId));
         },
         onError: (e) => {
           setCreateFolderModalOpen(false);
-          setSubmitFeedback({
-            message: messageForBookmarkCategorySaveError(
+          setSubmitError(
+            messageForBookmarkCategorySaveError(
               e,
               "카테고리를 만들지 못했습니다.",
             ),
-            variant: "error",
-          });
+          );
         },
       },
     );
@@ -325,16 +276,9 @@ export function AddToBookmarkModal({
             </div>
           )}
 
-          {submitFeedback && (
-            <p
-              className={cn(
-                "border-t border-gray-border px-5 py-3 text-center text-body-m-regular mobile:text-body-s-regular",
-                submitFeedback.variant === "error"
-                  ? "text-primary"
-                  : "text-dark-gray",
-              )}
-            >
-              {submitFeedback.message}
+          {submitError && (
+            <p className="border-t border-gray-border px-5 py-3 text-center text-body-m-regular mobile:text-body-s-regular text-primary">
+              {submitError}
             </p>
           )}
         </div>

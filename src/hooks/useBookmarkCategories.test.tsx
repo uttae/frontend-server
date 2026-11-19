@@ -80,11 +80,11 @@ it('여러 폴더에 북마크 추가가 실패해도 두 목록을 다시 받�
  const view = renderHooks(client, () => useCreateRoomBookmarksInCategories());
  try {
   await view.mount();
-  let result: Awaited<ReturnType<typeof view.result.current.mutateAsync>> | undefined;
-  await act(async () => { result = await view.result.current.mutateAsync({ roomId: 'room', googlePlaceId: 'place', categoryIds: [1] }); });
+  await act(async () => {
+   await expect(view.result.current.mutateAsync({ roomId: 'room', googlePlaceId: 'place', categoryIds: [1] })).rejects.toThrow('network');
+  });
 
-  // 오류는 결과 객체로 돌려주므로(throw 없음) onSettled가 실패 경로도 맡는다
-  expect(result?.firstHardError?.message).toBe('network');
+  // 실패해도 onSettled가 두 목록을 다시 받도록 표시한다
   expect(client.getQueryData(roomAllBookmarksQueryKey('room'))).toEqual([]);
   expect(client.getQueryState(bookmarkCategoriesQueryKey('room'))?.isInvalidated).toBe(true);
   expect(client.getQueryState(roomAllBookmarksQueryKey('room'))?.isInvalidated).toBe(true);
