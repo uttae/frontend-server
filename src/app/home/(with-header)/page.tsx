@@ -48,8 +48,8 @@ export default function HomePage() {
       <SiteFooter variant="room-list" className="hidden mobile:block" />
 
       {isMobileDevice && !isEmpty ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(24px+env(safe-area-inset-bottom))] z-30 flex justify-center px-5">
-          <NewTripLink className="pointer-events-auto shadow-[0_2px_5px_rgba(0,0,0,0.1)]" />
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(28px+env(safe-area-inset-bottom))] z-30 flex justify-center px-5">
+          <NewTripLink className="pointer-events-auto" />
         </div>
       ) : null}
 
