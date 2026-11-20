@@ -157,12 +157,12 @@ function DropdownMenuHeader({ className, ...props }: Readonly<ComponentProps<"di
   );
 }
 
-// 닉네임: label/xl/emphasis text/default. Figma 행간 22, 코드 토큰 24(Button lg와 같은 차이)라 Header 높이가 86 → 88
+// 닉네임: Figma label/xl/emphasis는 18/22인데 코드 토큰 label-xl-emphasis는 18/24라, Profile Header 86(5864:13003)에 맞춰 Figma 값을 임의값으로 쓴다
 function DropdownMenuHeaderTitle({ className, ...props }: Readonly<ComponentProps<"p">>) {
   return (
     <p
       data-slot="dropdown-menu-header-title"
-      className={cn("truncate text-label-xl-emphasis text-text", className)}
+      className={cn("truncate text-[18px]/[22px] font-bold tracking-[-0.02em] text-text", className)}
       {...props}
     />
   );
