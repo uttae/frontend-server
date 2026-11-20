@@ -94,7 +94,7 @@
 .howInner { height: 542px; }
 .how h2 { padding-top: 40px; text-align: center; }
 .how h2 span { color: var(--color-primary-default); }
-.cards { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4.402px; width: min(361px, calc(100% - 32px)); margin: 32px auto 0; padding: 0; list-style: none; }
+.cards { position: relative; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5.894px 4.201px; width: min(361px, calc(100% - 32px)); margin: 32px auto 0; padding: 0; list-style: none; }
 .card { position: relative; height: 193.041px; border-radius: 12px; background: var(--color-fill-subtle); border: 1px solid var(--landing-card-border); }
 .card:first-child, .card:last-child { background: var(--landing-sky); color: var(--color-text-inverse); border-color: transparent; }
 .cardCopy { position: relative; padding: 11px 13px; }
