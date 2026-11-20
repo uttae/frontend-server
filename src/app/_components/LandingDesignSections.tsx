@@ -15,7 +15,7 @@ function ProblemAndSolution() {
   return <>
     <section data-landing-section="problem" className={styles.problem}>
       <div className={styles.problemInner}>
-        <LandingArtwork name="problem-background.svg" width={1440} height={1198.2} className={styles.problemBackground} />
+        <LandingArtwork name="problem-background.svg" width={1920} height={1198.96} className={styles.problemBackground} />
         <LandingArtwork name="mobile-problem-background.svg" width={394} height={399.28} className={styles.mobileProblemBackground} />
         <div className={styles.problemTitle}>
           <p className={styles.eyebrow}>PROBLEM</p>
@@ -37,9 +37,7 @@ function ProblemAndSolution() {
     <section data-landing-section="solution" className={styles.solution}>
       <div className={styles.solutionInner}>
         <div className={styles.solutionTitle}>
-          {/* The approved desktop spells this SOULTION; mobile spells SOLUTION. */}
-          <p className={`${styles.eyebrow} ${styles.desktopOnly}`}>SOULTION</p>
-          <p className={`${styles.eyebrow} ${styles.mobileOnly}`}>SOLUTION</p>
+          <p className={styles.eyebrow}>SOLUTION</p>
           <h2>복잡한 여행 계획은 <span>우때 하나로 끝!</span></h2>
         </div>
         <LandingArtwork name="laptop-shadow.svg" mobileName="mobile-laptop-shadow.svg" width={1188} height={142} className={styles.laptopShadow} />
