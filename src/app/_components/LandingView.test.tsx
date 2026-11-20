@@ -41,6 +41,8 @@ describe("LandingView", () => {
     expect(html).not.toMatch(/흩어진 여행 계획을|REAL-TIME TRAVEL PLANNER|Co-founder/);
     expect(html).not.toContain('href="/product"');
     expect(html).not.toContain("opacity:0");
+    expect(html).toContain("SOLUTION");
+    expect(html).not.toContain("SOULTION");
   });
 
   it("preserves login, navigation and legal destinations without fake device UI", () => {
