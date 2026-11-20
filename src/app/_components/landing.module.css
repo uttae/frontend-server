@@ -257,7 +257,7 @@
   .finalCopy p { font-size: clamp(14px, 1.25cqw, 18px); line-height: 1.55556; }
   .landing .finalAction { margin-top: 5cqw; height: 56px; padding: 0 24px 0 32px; font-size: 20px; line-height: 28px; }
   .finalAction img { width: 28px; height: 28px; }
-  .footer > div { padding: 80px min(6.38889vw, 92px) 100px; }
+  .footer > div { padding: 60px min(7.5vw, 108px) 80px; }
   .footer > div > div { gap: 40px; }
   .footer nav { font-size: 16px; line-height: 22px; min-height: 60px; gap: 20px; flex-wrap: nowrap; }
   .footer nav > span { gap: 20px; }
