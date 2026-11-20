@@ -15,7 +15,7 @@ function ProblemAndSolution() {
   return <>
     <section data-landing-section="problem" className={styles.problem}>
       <div className={styles.problemInner}>
-        <LandingArtwork name="problem-background.svg" width={1440} height={1198.2} className={styles.problemBackground} />
+        <LandingArtwork name="problem-background.svg" width={1920} height={1198.96} className={styles.problemBackground} />
         <LandingArtwork name="mobile-problem-background.svg" width={394} height={399.28} className={styles.mobileProblemBackground} />
         <div className={styles.problemTitle}>
           <p className={styles.eyebrow}>PROBLEM</p>

@@ -52,8 +52,8 @@
 .windows { position: absolute; display: flex; gap: 3.283px; top: 172px; left: calc(50% - 216px); opacity: .5; }
 .windows > div { position: relative; overflow: hidden; width: calc(var(--window-width) * .27361px); height: 78.526px; border-radius: 16px; flex: none; }
 .windows img { position: absolute; max-width: none; top: -89.02%; height: 293.38%; }
-.problemDesktop { position: absolute; width: 202.472px; height: 129.965px; left: calc(50% - 101.626px); top: 197.45px; overflow: hidden; }
-.problemDesktop img { position: absolute; width: 127.12%; height: 111.37%; max-width: none; top: -5.68%; left: -13.56%; }
+.problemDesktop { position: absolute; width: 242px; height: 156px; left: calc(50% - 121.5px); top: 180px; overflow: hidden; }
+.problemDesktop img { position: absolute; width: 114.72%; height: 100%; max-width: none; top: 0; left: -7.36%; }
 .solutionInner { height: 356px; }
 .solutionTitle { position: relative; padding-top: 50px; text-align: center; }
 .solutionTitle h2 { margin-top: 8px; display: flex; gap: 4px; align-items: center; justify-content: center; }
@@ -181,12 +181,12 @@
   .suitcases img { position: absolute; width: 100%; height: 23.125cqw; top: calc(50% - 11.5625cqw + 7.5px); max-width: none; }
   .problemInner { height: auto; aspect-ratio: 1440 / 1200; }
   .mobileProblemBackground { display: none; }
-  .problemBackground { display: block; position: absolute; width: 100%; height: 99.85%; top: 0; }
+  .problemBackground { display: block; position: absolute; width: max(133.33333%, 100vw); height: 99.91333%; top: 0; left: 50%; transform: translateX(-50%); max-width: none; }
   .problemTitle { position: absolute; width: 100%; padding: 0; top: 11.66667%; }
   .problemTitle h2 { margin-top: 1.66667cqw; }
-  .windows { gap: .83333cqw; top: 30.83333%; left: -4.72222%; }
+  .windows { gap: .83333cqw; top: 29.16667%; left: -4.79167%; }
   .windows > div { width: calc(var(--window-width) / 14.4 * 1cqw); height: 19.93056cqw; }
-  .problemDesktop { width: 51.38889%; height: 39.58333%; left: 24.30556%; top: 38.58333%; }
+  .problemDesktop { width: 62.22222%; height: 48.16667%; left: 18.81944%; top: 35.08333%; }
   .solutionInner { height: auto; aspect-ratio: 1440 / 1094; }
   .solutionTitle { position: absolute; width: 100%; top: 14.62523%; padding: 0; }
   .solutionTitle h2 { margin-top: 1.11111cqw; gap: .55556cqw; }
