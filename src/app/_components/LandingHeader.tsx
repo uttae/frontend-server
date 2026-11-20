@@ -11,7 +11,7 @@ export function LandingHeader() {
       <div className={styles.headerMenu}>
         <nav aria-label="랜딩 페이지">
           <Link href="/#features">기능</Link>
-          <Link href="/#how-it-works">사용방법</Link>
+          <Link href="/#how-it-works">사용 방법</Link>
         </nav>
         <LandingActionLink href="/login" analytics={{ cta_id: "login", cta_position: "header" }} className={styles.login}>로그인</LandingActionLink>
       </div>

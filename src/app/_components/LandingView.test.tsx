@@ -50,6 +50,8 @@ describe("LandingView", () => {
       expect(html).toContain(`href="${href}"`);
     }
     expect(html).toContain('href="mailto:contact@uttae.app"');
+    expect(html).toMatch(/<a\b[^>]*href="\/#how-it-works"[^>]*>사용 방법<\/a>/);
+    expect(html).not.toContain("사용방법");
     expect(html).not.toMatch(/9:41|Status Bar|Home Indicator|Dynamic Island/);
     expect(html.match(/<h1[ >]/g)).toHaveLength(1);
   });

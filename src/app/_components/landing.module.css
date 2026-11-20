@@ -19,14 +19,14 @@
 .desktopOnly, .desktopBreak { display: none; }
 .mobileOnly { display: inline; }
 .eyebrow { color: var(--color-primary-default); font-size: 11px; font-weight: 600; line-height: 16px; }
-.header { background: var(--color-fill-subtle); }
-.headerInner { max-width: 1440px; height: 60px; margin: auto; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.header { height: 56px; border-bottom: 1px solid var(--color-border-subtle); background: var(--color-fill-subtle); }
+.headerInner { max-width: 1440px; height: 100%; margin: auto; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .logo { position: relative; display: block; width: 71px; height: 22px; flex: none; }
 .wordmark { position: absolute; left: 36.1%; top: 0; width: 63.6%; height: 100.03%; }
 .symbol { position: absolute; left: 0; top: 0; width: 30.76%; height: 99.97%; }
-.headerMenu { display: flex; align-items: center; gap: 12px; }
-.headerMenu nav { display: flex; }
-.headerMenu nav a { padding: 8px 16px; font-size: 14px; font-weight: 500; line-height: 20px; white-space: nowrap; }
+.headerMenu { display: flex; align-items: center; gap: 16px; }
+.headerMenu nav { display: flex; gap: 4px; }
+.headerMenu nav a { padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 700; line-height: 20px; white-space: nowrap; }
 .landing .login { height: 36px; padding: 8px 16px; border: 0; border-radius: 8px; font-size: 14px; line-height: 20px; font-weight: 700; }
 .landing .action { height: 52px; padding: 0 16px 0 24px; gap: 6px; border: 0; border-radius: 8px; font-size: 18px; font-weight: 700; line-height: 22px; white-space: nowrap; }
 .action img { width: 24px; height: 24px; flex: none; }
@@ -161,12 +161,11 @@
   .mobileOnly { display: none; }
   .landing h2 { font-size: clamp(22px, 2.77778cqw, 40px); line-height: 1.3; }
   .eyebrow { font-size: clamp(12px, 1.38889cqw, 20px); font-weight: 700; line-height: 1.4; }
-  .headerInner { height: 80px; padding-inline: min(6.38889vw, 92px); }
-  .logo { width: 97px; height: 30px; }
-  .headerMenu { gap: 32px; }
-  .headerMenu nav { gap: 24px; }
-  .headerMenu nav a { padding: 13px 16px; font-size: 16px; line-height: 22px; }
-  .landing .login { height: 48px; padding: 8px 20px; font-size: 16px; line-height: 22px; }
+  .header { height: 64px; }
+  .headerInner { padding-inline: min(10.55556vw, 152px); }
+  .logo { width: 73px; height: 22px; }
+  .wordmark { left: 38.36%; width: 61.64%; height: 100%; }
+  .symbol { width: 30.14%; height: 100%; }
   .hero { background: var(--color-primary-default); }
   .heroInner { height: auto; aspect-ratio: 1440 / 800; }
   .mobileHeroBackground { display: none; }
