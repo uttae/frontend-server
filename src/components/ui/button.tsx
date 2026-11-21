@@ -129,7 +129,7 @@ type ButtonProps = Omit<ButtonPrimitive.Props, "className"> &
 /**
  * Base UI Button 위의 디자인 시스템 버튼. Base UI처럼 기본 type이 "button"이라 제출 버튼은 type="submit"을 적는다.
  * 문구 옆 아이콘(@/assets/icons)은 직계 자식으로 넣고 data-icon="inline-start"·"inline-end"를 단다. 크기는 Size가 정한다.
- * render는 링크가 아닌 요소(div 등)에만 쓰고 nativeButton={false}를 함께 준다. 이동은 Next Link를 쓴다(버튼 모양 링크는 이번 범위 밖).
+ * render는 링크가 아닌 요소(div 등)에만 쓰고 nativeButton={false}를 함께 준다. 이동은 Next Link에 buttonVariants를 입힌다.
  * 아이콘만 있는 버튼은 쓰지 않는다(Icon Only 크기·필수 접근성 이름이 아직 없다).
  * loading 중 접근성 이름은 loadingLabel이다. aria-labelledby를 loadingLabel span으로 바꾸므로 호출부 aria-label·aria-labelledby보다 우선하고, loading이 끝나면 호출부 값으로 돌아간다.
  *
@@ -190,4 +190,4 @@ function Button({
   );
 }
 
-export { Button };
+export { Button, buttonVariants };
