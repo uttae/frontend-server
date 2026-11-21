@@ -19,9 +19,6 @@ import {
 } from "./calendar";
 import { MonthYearWheel } from "./MonthYearWheel";
 
-/** Figma Date Picker 원본 폭 — 카드 클래스 `w-[353px]`와 같은 값 */
-export const DATE_PICKER_WIDTH = 353;
-
 type CellKind = "default" | "selected" | "disabled" | "rangeStart" | "rangeMiddle" | "rangeEnd";
 
 const ARROW_DELTAS: Partial<Record<string, number>> = {
@@ -31,9 +28,9 @@ const ARROW_DELTAS: Partial<Record<string, number>> = {
   ArrowDown: 7,
 };
 
-function cellKind(ymd: string, mode: "single" | "range", { start, end }: DateRange, min?: string): CellKind {
+function cellKind(ymd: string, { start, end }: DateRange, min?: string): CellKind {
   if (min && ymd < min) return "disabled";
-  if (mode === "range" && start && end && end > start) {
+  if (start && end && end > start) {
     if (ymd === start) return "rangeStart";
     if (ymd === end) return "rangeEnd";
     if (ymd > start && ymd < end) return "rangeMiddle";
@@ -113,8 +110,6 @@ function DateCell({
 }
 
 type DatePickerProps = Readonly<{
-  /** `range`: 한 달력에서 시작·종료를 고른다(고른 쪽만 바뀐다). `single`은 `value.start`만 쓴다 */
-  mode?: "single" | "range";
   value: DateRange;
   /** 이보다 이른 날짜는 고를 수 없다 (`YYYY-MM-DD`) */
   min?: string;
@@ -124,7 +119,7 @@ type DatePickerProps = Readonly<{
 }>;
 
 /** Figma Design System `09 Date Picker` — Header / Weekday / Date(또는 연월 휠) / Footer */
-export function DatePicker({ mode = "range", value, min, onSelect, onCancel, onConfirm }: DatePickerProps) {
+export function DatePicker({ value, min, onSelect, onCancel, onConfirm }: DatePickerProps) {
   const [todayYmd] = useState(() => formatDateYmd(new Date()));
   const initialFocus = value.start || (min && todayYmd < min ? min : todayYmd);
   const [view, setView] = useState<YearMonth>(() => toYearMonth(initialFocus));
@@ -141,7 +136,7 @@ export function DatePicker({ mode = "range", value, min, onSelect, onCancel, onC
   // 방향키 이동용 roving tabindex — 다른 달을 보고 있으면 그 달 1일
   const tabbableYmd = days.includes(focusYmd) ? focusYmd : days[0]!;
   const thisYear = Number(todayYmd.slice(0, 4));
-  const summary = formatSelectionSummary(mode === "single" ? { start: value.start, end: "" } : value);
+  const summary = formatSelectionSummary(value);
 
   // 처음 열릴 때와 방향키로 이동했을 때만 날짜 칸으로 포커스를 옮긴다
   useEffect(() => {
@@ -240,7 +235,7 @@ export function DatePicker({ mode = "range", value, min, onSelect, onCancel, onC
                     <DateCell
                       key={ymd}
                       ymd={ymd}
-                      kind={cellKind(ymd, mode, value, min)}
+                      kind={cellKind(ymd, value, min)}
                       isToday={ymd === todayYmd}
                       tabbable={ymd === tabbableYmd}
                       onSelect={(selected) => {

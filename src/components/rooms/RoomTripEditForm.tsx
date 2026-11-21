@@ -177,11 +177,9 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
           >
             {(field) => (
               <div className="flex min-w-0 flex-col gap-2">
-                {/* 스크롤되는 모달이고 칸 폭(약 176px)에 맞추면 달력이 절반 크기가 되어 팝업으로 띄운다 */}
                 <DateRangeField
                   idPrefix={idPrefix}
                   value={{ start: startDate, end: field.state.value }}
-                  popupOnly
                   onChange={(next) => {
                     form.setFieldValue("startDate", next.start);
                     field.handleChange(next.end);
