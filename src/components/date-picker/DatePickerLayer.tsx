@@ -2,38 +2,36 @@
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode, type RefObject } from "react";
 
 import { Dialog } from "@/components/ui/dialog";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 
-import { DATE_PICKER_WIDTH } from "./DatePicker";
-
-export type DatePickerPresentation = "anchored" | "popup";
+type DatePickerPlacement =
+  | { presentation: "popup" }
+  | {
+      presentation: "anchored";
+      anchor: ComponentProps<typeof PopoverContent>["anchor"];
+      boundaryRef: RefObject<HTMLElement | null>;
+      sideOffset: number;
+    };
 
 /**
  * 달력 표시 방식 — `anchored`는 누른 입력 칸 아래에 붙는 Popover, `popup`은 화면 가운데 Dialog다.
  * 모바일과 스크롤되는 모달 안에서는 `popup`을 쓴다 (Figma Date Picker Usage).
- * `anchored`는 입력 칸 폭에 맞춰 달력 전체를 같은 비율로 줄이거나 늘린다.
  * `popup`은 가로 최소 300px이고, 화면보다 높으면(6주짜리 달·가로 모드) 달력 안에서 세로로 스크롤한다.
  * 닫힘은 둘 다 Esc = 취소(`onEscape`), 바깥 클릭·키보드로 벗어남 = 확정(`onDismiss`)이다.
  * 열고 닫힐 때 포커스는 Base UI에 맡기지 않는다: 열면 DatePicker가 날짜 칸으로 옮기고, 닫히면 아래 effect가 연 칸으로 돌려준다.
  * 열린 동안만 마운트한다(닫힘 애니메이션 없음, 지금과 같음).
  */
 export function DatePickerLayer({
-  presentation,
-  anchorRef,
-  boundaryRef,
+  placement,
   label,
   onDismiss,
   onEscape,
   children,
 }: Readonly<{
-  presentation: DatePickerPresentation;
-  /** `anchored`에서 달력을 붙일 입력 칸 — 달력 폭·비율의 기준 */
-  anchorRef?: RefObject<HTMLElement | null>;
-  /** `anchored`에서 바깥 클릭·포커스 이탈 판정 범위 — 입력 칸 두 개를 함께 감싼 요소 */
-  boundaryRef?: RefObject<HTMLElement | null>;
+  placement: DatePickerPlacement;
   label: string;
   /** 바깥 클릭·키보드로 레이어를 벗어날 때 */
   onDismiss: () => void;
@@ -44,7 +42,6 @@ export function DatePickerLayer({
 
   // 자식(DatePicker)이 날짜 칸으로 포커스를 옮기기 전, 렌더 시점의 포커스가 레이어를 연 칸이다
   const [opener] = useState(() => document.activeElement);
-  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -56,18 +53,8 @@ export function DatePickerLayer({
     };
   }, [opener]);
 
-  // 첫 페인트 전에 입력 칸 폭을 재서 달력 비율을 맞춘다. 달력(Popover bare)은 이 칸과 같은 폭이다
-  useLayoutEffect(() => {
-    const anchor = anchorRef?.current;
-    if (presentation !== "anchored" || !anchor) return;
-    const fit = () => setZoom(anchor.clientWidth / DATE_PICKER_WIDTH);
-    fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(anchor);
-    return () => observer.disconnect();
-  }, [presentation, anchorRef]);
-
-  if (presentation === "anchored") {
+  if (placement.presentation === "anchored") {
+    const { anchor, boundaryRef, sideOffset } = placement;
     return (
       // 포커스는 달력 안에서만 돈다(WAI-ARIA 날짜 선택 대화상자). 달력이 body로 포털돼 Tab으로 빠져나가면 다음 칸이 아니라 페이지 맨 앞으로 갔다.
       // 바깥 클릭은 그대로 뒤로 전달되고(확정), Esc는 취소다
@@ -80,9 +67,8 @@ export function DatePickerLayer({
             onEscape();
             return;
           }
-          // 두 칸 묶음 안(다른 날짜 칸)을 누르거나 그리로 포커스가 가면 닫지 않는다. 그 칸의 onClick이 달력을 다시 붙인다
           const next = details.reason === "focus-out" ? document.activeElement : details.event.target;
-          if (next instanceof Node && boundaryRef?.current?.contains(next)) {
+          if (next instanceof Node && boundaryRef.current?.contains(next)) {
             details.cancel();
             return;
           }
@@ -91,15 +77,13 @@ export function DatePickerLayer({
       >
         <PopoverContent
           variant="bare"
-          anchor={anchorRef}
-          sideOffset={12}
+          anchor={anchor}
+          sideOffset={sideOffset}
           initialFocus={false}
           finalFocus={false}
           aria-label={label}
         >
-          <div ref={dialogRef} style={{ zoom }}>
-            {children}
-          </div>
+          <div ref={dialogRef}>{children}</div>
           {/* Base UI는 닫기 부품이 있어야 포커스를 가둔다(PopoverPopup modal && hasClosePart). 화면 읽기 프로그램 터치 사용자가 빠져나갈 길이기도 하다.
               보이지 않고 Tab 순서에도 넣지 않는다(키보드는 Esc·달력의 취소). 누르면 Esc처럼 취소다 */}
           <PopoverPrimitive.Close tabIndex={-1} className="sr-only">

@@ -16,8 +16,6 @@ type Session = {
   picked: PickedRange;
   /** 다음 클릭이 채울 칸 */
   edge: RangeEdge;
-  /** 달력을 연 칸 — 달력은 이 칸 아래에 붙는다 */
-  anchor: RangeEdge;
 };
 
 /**
@@ -31,20 +29,17 @@ export function useDateRangeDraft(value: DateRange, onConfirm: (next: DateRange)
     isOpen: session != null,
     /** 다음 클릭이 채울 칸 — 입력 칸 강조에 쓴다 */
     activeEdge: session?.edge ?? null,
-    anchorEdge: session?.anchor ?? null,
     /** 열려 있으면 고른 날짜를 얹은 기간, 닫혀 있으면 바깥 값 */
     range: session ? displayPickedRange(value, session.picked) : value,
     open(edge: RangeEdge) {
       setSession((current) => {
         const picked = current?.picked ?? {};
         const { start } = displayPickedRange(value, picked);
-        return { picked, edge: edge === "end" && !start ? "start" : edge, anchor: edge };
+        return { picked, edge: edge === "end" && !start ? "start" : edge };
       });
     },
     pick(ymd: string) {
-      setSession(
-        (current) => current && { ...pickRangeDate(value, current.picked, current.edge, ymd), anchor: current.anchor },
-      );
+      setSession((current) => current && pickRangeDate(value, current.picked, current.edge, ymd));
     },
     cancel() {
       setSession(null);

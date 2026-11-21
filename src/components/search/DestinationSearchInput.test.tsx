@@ -50,6 +50,35 @@ it("retains the selection-only hint association and does not refocus when cleare
   }
 });
 
+it("draws the emphasis box around its header and input and still clears the selection", async () => {
+  const host = document.createElement("div");
+  document.body.append(host);
+  const root = createRoot(host);
+  const change = vi.fn();
+  try {
+    await act(async () =>
+      root.render(
+        <DestinationSearchInput
+          appearance="emphasis"
+          header={<span>목적지 1/3</span>}
+          selectionOnly
+          value="서울"
+          onChange={change}
+        />,
+      ),
+    );
+    const input = host.querySelector("input")!;
+    expect(input.closest('[data-slot="field-box"]')?.textContent).toContain("목적지 1/3");
+    expect(document.getElementById(input.getAttribute("aria-describedby")!)?.textContent).toContain("목록에서 선택");
+    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="선택 지우기"]')!.click());
+    expect(input.value).toBe("");
+    expect(change).toHaveBeenCalledExactlyOnceWith("");
+  } finally {
+    await act(async () => root.unmount());
+    host.remove();
+  }
+});
+
 it("forwards the label control association and children", async () => {
   const host = document.createElement("div");
   const root = createRoot(host);
