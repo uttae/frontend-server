@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { forwardBackendSetCookies } from "@/lib/auth-cookies";
+import { authCookieHeader, forwardBackendSetCookies } from "@/lib/auth-cookies";
 import { requiredEnv } from "@/lib/required-env";
 
 const API_BASE = requiredEnv("API_BASE_URL");
@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      cookie: request.headers.get("cookie") ?? "",
+      cookie: authCookieHeader(request.headers.get("cookie")),
     },
   });
 
