@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { MapPin, Search, X } from "lucide-react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
@@ -10,12 +10,15 @@ import {
   PlacePredictionInlineDescription,
 } from "@/lib/placesAutocompleteSuggest";
 import { CloseIcon, SearchIcon } from "@/assets/icons";
+import { FieldBox, FieldBoxInput, FieldBoxRow } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_SELECTION_HINT =
   "직접 입력은 불가하며, 검색 후 목록에서 선택해 주세요.";
 
 type Prediction = google.maps.places.PlacePrediction;
+
+type Appearance = "default" | "field" | "emphasis";
 
 type Props = {
   value: string;
@@ -30,23 +33,28 @@ type Props = {
   leadingIconType?: "search" | "map-pin";
   /** true면 목록에서만 선택 — 입력·드롭다운 동작 동일하게 한 줄 필드 유지 */
   selectionOnly?: boolean;
-  /** `field`: 48px 테두리 입력칸 모양, 하단 안내 문구 없음 (여행 정보 수정 모달) */
-  appearance?: "default" | "field";
-};
+} & (
+  | {
+      /** `field`: 48px 테두리 입력칸 모양, 하단 안내 문구 없음 (여행 정보 수정 모달) */
+      appearance?: "default" | "field";
+      header?: never;
+    }
+  | { appearance: "emphasis"; header: ReactNode }
+);
 
-function DestinationLeadingIcon({ show, type, appearance }: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: "default" | "field" }>) {
+function DestinationLeadingIcon({ show, type, appearance }: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: Appearance }>) {
   if (!show) return null;
-  if (appearance === "field") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
+  if (appearance !== "default") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
   const Icon = type === "search" ? Search : MapPin;
   return <Icon size={15} className="shrink-0 text-dark-gray" />;
 }
 
 function DestinationClearButton({ appearance, selectionOnly, onClick }: Readonly<{
-  appearance: "default" | "field";
+  appearance: Appearance;
   selectionOnly: boolean;
   onClick: React.MouseEventHandler<HTMLButtonElement>;
 }>) {
-  const isField = appearance === "field";
+  const isField = appearance !== "default";
   return (
     <button
       type="button"
@@ -61,17 +69,18 @@ function DestinationClearButton({ appearance, selectionOnly, onClick }: Readonly
   );
 }
 
+const HINT_CLASS_NAMES: Record<Appearance, string> = {
+  default: "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray",
+  field: "mt-1 text-caption-s-regular text-text-subtle",
+  emphasis: "sr-only",
+};
+
 function DestinationSelectionHint({ id, appearance }: Readonly<{
   id: string;
-  appearance: "default" | "field";
+  appearance: Appearance;
 }>) {
   return (
-    <p
-      id={id}
-      className={appearance === "field"
-        ? "mt-1 text-caption-s-regular text-text-subtle"
-        : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"}
-    >
+    <p id={id} className={HINT_CLASS_NAMES[appearance]}>
       {DESTINATION_SELECTION_HINT}
     </p>
   );
@@ -91,6 +100,7 @@ export function DestinationSearchInput({
   leadingIconType = "map-pin",
   selectionOnly = false,
   appearance = "default",
+  header,
 }: Readonly<Props>) {
   const isField = appearance === "field";
   const showHint = selectionOnly;
@@ -227,51 +237,68 @@ export function DestinationSearchInput({
 
   const showClear = inputValue.trim() !== "";
 
+  const inputProps = {
+    ref: inputRef,
+    "aria-label": "목적지 검색",
+    type: "text",
+    value: inputValue,
+    onChange: handleInputChange,
+    onKeyDown: handleKeyDown,
+    onFocus: () => predictions.length > 0 && setIsOpen(true),
+    placeholder,
+    autoComplete: "off",
+    autoFocus,
+    ...(selectionOnly
+      ? ({
+          role: "combobox" as const,
+          "aria-autocomplete": "list" as const,
+          "aria-expanded": showDropdown,
+          "aria-haspopup": "listbox" as const,
+          "aria-describedby": showHint ? selectionOnlyFooterId : undefined,
+        } as const)
+      : {}),
+  } satisfies ComponentProps<"input">;
+  const leadingIcon = <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} appearance={appearance} />;
+  const clearButton = showClear ? (
+    <DestinationClearButton appearance={appearance} selectionOnly={selectionOnly} onClick={handleClear} />
+  ) : null;
+
   return (
     <div ref={containerRef}>
       <div className="relative">
-        <div
-          className={cn(
-            "flex w-full items-center gap-2",
-            // field는 Figma 02 Text Field의 Search Bar(5002:4377): 48px, padding L14 R10, gap 8, radius 8.
-            // 테두리는 Default border/default → Focused primary/default → 값이 있고 포커스가 없으면(Filled) primary/strong
-            isField
-              ? "h-12 rounded-md border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary [&:has(input:not(:placeholder-shown)):not(:focus-within)]:border-primary-strong"
-              : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
-          )}
-        >
-          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} appearance={appearance} />
-          <input
-            ref={inputRef}
-            aria-label="목적지 검색"
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => predictions.length > 0 && setIsOpen(true)}
-            placeholder={placeholder}
-            autoComplete="off"
-            autoFocus={autoFocus}
-            {...(selectionOnly
-              ? ({
-                  role: "combobox" as const,
-                  "aria-autocomplete": "list" as const,
-                  "aria-expanded": showDropdown,
-                  "aria-haspopup": "listbox" as const,
-                  "aria-describedby": showHint ? selectionOnlyFooterId : undefined,
-                } as const)
-              : {})}
+        {appearance === "emphasis" ? (
+          <FieldBox>
+            {header}
+            <FieldBoxRow>
+              {leadingIcon}
+              <FieldBoxInput {...inputProps} />
+              {clearButton}
+            </FieldBoxRow>
+          </FieldBox>
+        ) : (
+          <div
             className={cn(
-              "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
-              selectionOnly && "bg-transparent",
-              // Figma Text 프레임 오른쪽 4px, 입력 글자 text/default, 플레이스홀더 text/subtle
-              isField && "pr-1 text-text placeholder:text-text-subtle",
+              "flex w-full items-center gap-2",
+              // field는 Figma 02 Text Field의 Search Bar(5002:4377): 48px, padding L14 R10, gap 8, radius 8.
+              // 테두리는 Default border/default → Focused primary/default → 값이 있고 포커스가 없으면(Filled) primary/strong
+              isField
+                ? "h-12 rounded-md border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary [&:has(input:not(:placeholder-shown)):not(:focus-within)]:border-primary-strong"
+                : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
             )}
-          />
-          {showClear ? (
-            <DestinationClearButton appearance={appearance} selectionOnly={selectionOnly} onClick={handleClear} />
-          ) : null}
-        </div>
+          >
+            {leadingIcon}
+            <input
+              {...inputProps}
+              className={cn(
+                "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
+                selectionOnly && "bg-transparent",
+                // Figma Text 프레임 오른쪽 4px, 입력 글자 text/default, 플레이스홀더 text/subtle
+                isField && "pr-1 text-text placeholder:text-text-subtle",
+              )}
+            />
+            {clearButton}
+          </div>
+        )}
 
         {showDropdown ? (
           <ul
