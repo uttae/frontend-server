@@ -47,14 +47,13 @@ export async function trackRoomMutation<Result>(
     }
   };
   checkScope();
-  const watchedKeys = [
-    sessionUserQueryKey,
-    roomDetailQueryKey(roomId),
-    roomMembersQueryKey(roomId),
-    ROOMS_QUERY_KEY,
-  ].map((key) => JSON.stringify(key));
+  const watchedKeys = new Set(
+    [sessionUserQueryKey, roomDetailQueryKey(roomId), roomMembersQueryKey(roomId), ROOMS_QUERY_KEY].map((key) =>
+      JSON.stringify(key),
+    ),
+  );
   const unsubscribeCache = client.getQueryCache().subscribe((change) => {
-    if (!watchedKeys.includes(JSON.stringify(change.query.queryKey))) return;
+    if (!watchedKeys.has(JSON.stringify(change.query.queryKey))) return;
     if (change.type === "removed") active = false;
     checkScope();
   });

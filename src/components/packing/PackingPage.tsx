@@ -37,8 +37,12 @@ const linked = (value: string) =>
 const OPEN_DIALOG_SELECTOR = '[role="dialog"][data-open], [role="alertdialog"][data-open]';
 
 function PackingIcon({ name, size = 24 }: { name: keyof typeof packingIcons; size?: number }) {
-  const sourceSize =
-    name === "plusWhite" ? 16 : name === "collapse" || (name.startsWith("menu") && name !== "menu") ? 20 : 24;
+  let sourceSize = 24;
+  if (name === "plusWhite") {
+    sourceSize = 16;
+  } else if (name === "collapse" || (name.startsWith("menu") && name !== "menu")) {
+    sourceSize = 20;
+  }
   return (
     <span className={styles.icon} style={{ width: size, height: size }} aria-hidden="true">
       <Image

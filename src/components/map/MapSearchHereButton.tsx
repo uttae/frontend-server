@@ -13,7 +13,7 @@ export type MapSearchHereButtonProps = {
   discoverFailed: boolean;
 };
 
-export function MapSearchHereButton({ discoverCategoryId, discoverFailed }: MapSearchHereButtonProps) {
+export function MapSearchHereButton({ discoverCategoryId, discoverFailed }: Readonly<MapSearchHereButtonProps>) {
   const requestSearchRecenter = useSearchRecenterStore((s) => s.requestSearchRecenter);
   const requestDiscoverRecenter = useSearchRecenterStore((s) => s.requestDiscoverRecenter);
   const generation = usePlaceSearchStore((s) => s.generation);

@@ -9,7 +9,7 @@ type MainPageHeaderProps = {
   className?: string;
 };
 
-export function MainPageHeader({ title, description, action, className }: MainPageHeaderProps) {
+export function MainPageHeader({ title, description, action, className }: Readonly<MainPageHeaderProps>) {
   return (
     <div className={cn("flex min-h-19 min-w-0 items-center justify-between gap-3 py-3", className)}>
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">

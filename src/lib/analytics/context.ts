@@ -113,7 +113,11 @@ export function analyticsPagePath(pathname: string): string {
   const pagePath = separatorIndex === -1 ? pathname : pathname.slice(0, separatorIndex);
   if (!pagePath.startsWith("/")) return "/";
 
-  const normalizedPath = pagePath.length > 1 ? pagePath.replace(/\/+$/, "") : pagePath;
+  let pathEnd = pagePath.length;
+  if (pathEnd > 1) {
+    while (pathEnd > 0 && pagePath[pathEnd - 1] === "/") pathEnd--;
+  }
+  const normalizedPath = pagePath.slice(0, pathEnd);
   const dynamicPath = dynamicPagePaths.find(([pattern]) => pattern.test(normalizedPath));
   return dynamicPath?.[1] ?? normalizedPath;
 }

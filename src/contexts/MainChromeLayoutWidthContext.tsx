@@ -20,7 +20,7 @@ export type MainChromeLayoutWidth = {
 
 const MainChromeLayoutWidthContext = createContext<MainChromeLayoutWidth | null>(null);
 
-export function MainChromeLayoutWidthProvider({ children }: { children: ReactNode }) {
+export function MainChromeLayoutWidthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
   const { maxWidth: contentWidthToken } = useSectionWidth();
   const { isMobileDevice } = useMobileView();

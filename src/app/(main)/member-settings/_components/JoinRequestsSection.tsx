@@ -20,7 +20,7 @@ function formatRelativeTime(iso: string) {
   return `${Math.floor(hours / 24)}일 전`;
 }
 
-function JoinRequestCard({ request, roomId }: { request: JoinRequest; roomId: string }) {
+function JoinRequestCard({ request, roomId }: Readonly<{ request: JoinRequest; roomId: string }>) {
   const { mutate: approve, isPending: isApproving } = useApproveJoinRequest();
   const { mutate: reject, isPending: isRejecting } = useRejectJoinRequest();
   const isPending = isApproving || isRejecting;

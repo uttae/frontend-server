@@ -52,7 +52,7 @@ function scrollInputToCaret(el: HTMLTextAreaElement) {
   }
 }
 
-export function ChatInputBar({ isMinimized, onSendChat, onSendAi, sendDisabled = false }: ChatInputBarProps) {
+export function ChatInputBar({ isMinimized, onSendChat, onSendAi, sendDisabled = false }: Readonly<ChatInputBarProps>) {
   const [aiEnabled, setAiEnabled] = useState(false);
   const [message, setMessage] = useState("");
   const [mentionOpen, setMentionOpen] = useState(false);
@@ -246,7 +246,6 @@ export function ChatInputBar({ isMinimized, onSendChat, onSendAi, sendDisabled =
   }
 
   const hasContent = message.trim().length > 0;
-  const typo = resolveChatMessageTypography(isMinimized);
 
   return (
     <div
@@ -256,21 +255,7 @@ export function ChatInputBar({ isMinimized, onSendChat, onSendAi, sendDisabled =
       )}
     >
       <div ref={inputShellRef} className="relative flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-2 pt-1">
-        <AnimatePresence>
-          {aiEnabled && (
-            <motion.span
-              key="ai-overlay"
-              className={cn("pointer-events-none absolute left-0 top-1", typo.inputAiLabel)}
-              style={{ paddingLeft: chatTypography.aiOverlayInset }}
-              initial={reduceMotion ? false : chatAiLabelMotion.initial}
-              animate={reduceMotion ? { opacity: 1, x: 0 } : chatAiLabelMotion.animate}
-              exit={reduceMotion ? { opacity: 0, x: 0 } : chatAiLabelMotion.exit}
-              transition={reduceMotion ? { duration: 0 } : chatAiLabelMotion.transition}
-            >
-              {CHAT_AI_MENTION_LABEL}
-            </motion.span>
-          )}
-        </AnimatePresence>
+        <AiMentionOverlay aiEnabled={aiEnabled} isMinimized={isMinimized} reduceMotion={reduceMotion} />
         {mentionOpen && !aiEnabled ? (
           <div className="absolute left-4 right-4 top-full z-20 mt-0.5 overflow-hidden rounded-lg border border-gray-border bg-white py-1 shadow-md">
             <button
@@ -313,50 +298,13 @@ export function ChatInputBar({ isMinimized, onSendChat, onSendAi, sendDisabled =
         />
       </div>
       <div className={cn("flex shrink-0 items-center justify-between px-1 pb-1.5 pt-0.5")}>
-        <div className="flex min-w-0 items-center gap-1">
-          <motion.button
-            type="button"
-            onClick={toggleAi}
-            whileTap={reduceMotion ? undefined : chatTapSoft}
-            transition={chatTapTransition}
-            className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 transition-colors ${
-              aiEnabled ? "bg-primary text-white" : "bg-light-gray text-black/40"
-            }`}
-          >
-            <span className={typo.input}>{CHAT_AI_MENTION_LABEL}</span>
-            {aiEnabled && <Check className={cn(isMinimized ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={3} />}
-          </motion.button>
-          {aiEnabled ? (
-            <>
-              <motion.button
-                type="button"
-                onClick={() => fillAiDraft("장소 추천해줘.")}
-                whileTap={reduceMotion ? undefined : chatTapSoft}
-                transition={chatTapTransition}
-                aria-label="입력란에 장소 추천 요청 문구 넣기"
-                className={cn(
-                  "shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-2 py-1 text-black/80 transition hover:bg-light-gray",
-                  isMinimized ? "text-label-xs-regular" : "text-label-s-regular mobile:text-label-xs-regular",
-                )}
-              >
-                장소 추천
-              </motion.button>
-              <motion.button
-                type="button"
-                onClick={() => fillAiDraft("대화 요약해줘.")}
-                whileTap={reduceMotion ? undefined : chatTapSoft}
-                transition={chatTapTransition}
-                aria-label="입력란에 대화 요약 요청 문구 넣기"
-                className={cn(
-                  "shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-2 py-1 text-black/80 transition hover:bg-light-gray",
-                  isMinimized ? "text-label-xs-regular" : "text-label-s-regular mobile:text-label-xs-regular",
-                )}
-              >
-                대화 요약
-              </motion.button>
-            </>
-          ) : null}
-        </div>
+        <AiModeControls
+          aiEnabled={aiEnabled}
+          isMinimized={isMinimized}
+          reduceMotion={reduceMotion}
+          onToggle={toggleAi}
+          onFillDraft={fillAiDraft}
+        />
         <motion.button
           type="button"
           onClick={handleSend}
@@ -372,6 +320,97 @@ export function ChatInputBar({ isMinimized, onSendChat, onSendAi, sendDisabled =
           <ChatEnterIcon className={hasContent ? "text-primary" : "text-light-gray"} />
         </motion.button>
       </div>
+    </div>
+  );
+}
+
+function AiMentionOverlay({
+  aiEnabled,
+  isMinimized,
+  reduceMotion,
+}: Readonly<{
+  aiEnabled: boolean;
+  isMinimized: boolean;
+  reduceMotion: boolean | null;
+}>) {
+  const typo = resolveChatMessageTypography(isMinimized);
+  return (
+    <AnimatePresence>
+      {aiEnabled && (
+        <motion.span
+          key="ai-overlay"
+          className={cn("pointer-events-none absolute left-0 top-1", typo.inputAiLabel)}
+          style={{ paddingLeft: chatTypography.aiOverlayInset }}
+          initial={reduceMotion ? false : chatAiLabelMotion.initial}
+          animate={reduceMotion ? { opacity: 1, x: 0 } : chatAiLabelMotion.animate}
+          exit={reduceMotion ? { opacity: 0, x: 0 } : chatAiLabelMotion.exit}
+          transition={reduceMotion ? { duration: 0 } : chatAiLabelMotion.transition}
+        >
+          {CHAT_AI_MENTION_LABEL}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function AiModeControls({
+  aiEnabled,
+  isMinimized,
+  reduceMotion,
+  onToggle,
+  onFillDraft,
+}: Readonly<{
+  aiEnabled: boolean;
+  isMinimized: boolean;
+  reduceMotion: boolean | null;
+  onToggle: () => void;
+  onFillDraft: (text: string) => void;
+}>) {
+  const typo = resolveChatMessageTypography(isMinimized);
+  return (
+    <div className="flex min-w-0 items-center gap-1">
+      <motion.button
+        type="button"
+        onClick={onToggle}
+        whileTap={reduceMotion ? undefined : chatTapSoft}
+        transition={chatTapTransition}
+        className={`flex shrink-0 cursor-pointer items-center gap-1 rounded-lg px-2 py-1 transition-colors ${
+          aiEnabled ? "bg-primary text-white" : "bg-light-gray text-black/40"
+        }`}
+      >
+        <span className={typo.input}>{CHAT_AI_MENTION_LABEL}</span>
+        {aiEnabled && <Check className={cn(isMinimized ? "h-3 w-3" : "h-3.5 w-3.5")} strokeWidth={3} />}
+      </motion.button>
+      {aiEnabled ? (
+        <>
+          <motion.button
+            type="button"
+            onClick={() => onFillDraft("장소 추천해줘.")}
+            whileTap={reduceMotion ? undefined : chatTapSoft}
+            transition={chatTapTransition}
+            aria-label="입력란에 장소 추천 요청 문구 넣기"
+            className={cn(
+              "shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-2 py-1 text-black/80 transition hover:bg-light-gray",
+              isMinimized ? "text-label-xs-regular" : "text-label-s-regular mobile:text-label-xs-regular",
+            )}
+          >
+            장소 추천
+          </motion.button>
+          <motion.button
+            type="button"
+            onClick={() => onFillDraft("대화 요약해줘.")}
+            whileTap={reduceMotion ? undefined : chatTapSoft}
+            transition={chatTapTransition}
+            aria-label="입력란에 대화 요약 요청 문구 넣기"
+            className={cn(
+              "shrink-0 cursor-pointer rounded-lg border border-gray-border bg-white px-2 py-1 text-black/80 transition hover:bg-light-gray",
+              isMinimized ? "text-label-xs-regular" : "text-label-s-regular mobile:text-label-xs-regular",
+            )}
+          >
+            대화 요약
+          </motion.button>
+        </>
+      ) : null}
     </div>
   );
 }

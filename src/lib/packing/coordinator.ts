@@ -158,8 +158,9 @@ export class PackingCoordinator {
         this.revoke(error);
         return;
       }
+      const failureStatus = this.state.data ? "sync-error" : "error";
       this.publish({
-        status: this.state.status === "uncertain" ? "uncertain" : this.state.data ? "sync-error" : "error",
+        status: this.state.status === "uncertain" ? "uncertain" : failureStatus,
         message: this.state.data
           ? "최신 내용을 확인하지 못했어요. 다시 동기화한 뒤 저장해 주세요."
           : "준비물을 불러오지 못했어요. 다시 시도해 주세요.",
@@ -313,8 +314,9 @@ export class PackingCoordinator {
       const targetMissing = error instanceof PackingApiError && error.status === 404;
       const needsRead =
         isUncertain || targetMissing || (error instanceof PackingApiError && [409, 410].includes(error.status));
+      const failureStatus = needsRead ? "sync-error" : "ready";
       this.publish({
-        status: isUncertain ? "uncertain" : needsRead ? "sync-error" : "ready",
+        status: isUncertain ? "uncertain" : failureStatus,
         confirmation: null,
         message: isUncertain
           ? "저장 결과를 확인할 수 없어요. 동기화 후 내용을 확인해 주세요."

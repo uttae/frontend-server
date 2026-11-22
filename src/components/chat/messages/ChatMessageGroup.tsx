@@ -181,7 +181,7 @@ export function MyMessageGroup({
   );
 }
 
-export function SystemMessage({ message, isMinimized = false }: { message: ChatMessage; isMinimized?: boolean }) {
+export function SystemMessage({ message, isMinimized = false }: Readonly<{ message: ChatMessage; isMinimized?: boolean }>) {
   const { typo, chrome } = getChatPanelLook(isMinimized);
 
   return (

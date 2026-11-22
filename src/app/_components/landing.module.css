@@ -16,6 +16,9 @@
 .landing picture {
   display: contents;
 }
+.landing source {
+  display: none;
+}
 .landing h2 {
   font-size: 22px;
   font-weight: 700;
@@ -40,13 +43,15 @@
   line-height: 16px;
 }
 .header {
+  height: 56px;
+  border-bottom: 1px solid var(--color-border-subtle);
   background: var(--color-fill-subtle);
 }
 .headerInner {
   max-width: 1440px;
-  height: 60px;
+  height: 100%;
   margin: auto;
-  padding: 0 16px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -76,15 +81,17 @@
 .headerMenu {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 .headerMenu nav {
   display: flex;
+  gap: 4px;
 }
 .headerMenu nav a {
   padding: 8px 16px;
+  border-radius: 8px;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   line-height: 20px;
   white-space: nowrap;
 }
@@ -147,6 +154,7 @@
   background: #005bd9;
   border-radius: 4% / 5.291%;
 }
+
 .heroWebImage {
   position: absolute;
   left: 1.333333%;
@@ -159,7 +167,7 @@
 }
 .heroCopy {
   position: relative;
-  padding: 60px 16px 0;
+  padding: 60px 24px 0;
   text-align: center;
 }
 .heroCopy h1 {
@@ -242,19 +250,19 @@
 }
 .problemDesktop {
   position: absolute;
-  width: 202.472px;
-  height: 129.965px;
-  left: calc(50% - 101.626px);
-  top: 197.45px;
+  width: 242px;
+  height: 156px;
+  left: calc(50% - 121.5px);
+  top: 180px;
   overflow: hidden;
 }
 .problemDesktop img {
   position: absolute;
-  width: 127.12%;
-  height: 111.37%;
+  width: 114.72%;
+  height: 100%;
   max-width: none;
-  top: -5.68%;
-  left: -13.56%;
+  top: 0;
+  left: -7.36%;
 }
 .solutionInner {
   height: 356px;
@@ -319,8 +327,8 @@
 .feature h2 {
   margin-top: 20px;
 }
-.featureDescription {
-  margin-top: 8px !important;
+.landing .featureDescription {
+  margin-top: 8px;
   color: var(--color-text-subtle);
   font-size: 12px;
   line-height: 16px;
@@ -464,7 +472,7 @@
   position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4.402px;
+  gap: 5.894px 4.201px;
   width: min(361px, calc(100% - 32px));
   margin: 32px auto 0;
   padding: 0;
@@ -522,6 +530,7 @@
   position: absolute;
   max-width: none;
 }
+
 .passport {
   width: 132px;
   height: 132.492px;
@@ -645,6 +654,7 @@
 .landing .finalAction {
   margin-top: 32px;
 }
+
 .landing .footer {
   background: var(--color-fill-default);
   color: var(--color-text-default);
@@ -764,30 +774,24 @@
     font-weight: 700;
     line-height: 1.4;
   }
+  .header {
+    height: 64px;
+  }
   .headerInner {
-    height: 80px;
-    padding-inline: min(6.38889vw, 92px);
+    padding-inline: min(10.55556vw, 152px);
   }
   .logo {
-    width: 97px;
-    height: 30px;
+    width: 73px;
+    height: 22px;
   }
-  .headerMenu {
-    gap: 32px;
+  .wordmark {
+    left: 38.36%;
+    width: 61.64%;
+    height: 100%;
   }
-  .headerMenu nav {
-    gap: 24px;
-  }
-  .headerMenu nav a {
-    padding: 13px 16px;
-    font-size: 16px;
-    line-height: 22px;
-  }
-  .landing .login {
-    height: 48px;
-    padding: 8px 20px;
-    font-size: 16px;
-    line-height: 22px;
+  .symbol {
+    width: 30.14%;
+    height: 100%;
   }
   .hero {
     background: var(--color-primary-default);
@@ -846,9 +850,9 @@
   }
   .heroCopy p {
     margin-top: 1.38889cqw;
-    font-size: clamp(12px, 1.38889cqw, 20px);
-    font-weight: 700;
-    line-height: 1.4;
+    font-size: clamp(11px, 1.25cqw, 18px);
+    font-weight: 600;
+    line-height: 1.55556;
     white-space: nowrap;
   }
   .landing .heroAction {
@@ -859,7 +863,7 @@
     position: absolute;
     width: 23.125%;
     height: 40.125%;
-    left: 32.70833%;
+    left: 33.61111%;
     top: 55%;
   }
   .suitcases img {
@@ -879,9 +883,12 @@
   .problemBackground {
     display: block;
     position: absolute;
-    width: 100%;
-    height: 99.85%;
+    width: max(133.33333%, 100vw);
+    height: 99.91333%;
     top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: none;
   }
   .problemTitle {
     position: absolute;
@@ -894,18 +901,18 @@
   }
   .windows {
     gap: 0.83333cqw;
-    top: 30.83333%;
-    left: -4.72222%;
+    top: 29.16667%;
+    left: -4.79167%;
   }
   .windows > div {
     width: calc(var(--window-width) / 14.4 * 1cqw);
     height: 19.93056cqw;
   }
   .problemDesktop {
-    width: 51.38889%;
-    height: 39.58333%;
-    left: 24.30556%;
-    top: 38.58333%;
+    width: 62.22222%;
+    height: 48.16667%;
+    left: 18.81944%;
+    top: 35.08333%;
   }
   .solutionInner {
     height: auto;
@@ -954,7 +961,7 @@
     padding: 0;
   }
   .feature:nth-child(1) .featureCopy {
-    left: 71.31944%;
+    left: 69.02778%;
     top: 7.15052%;
   }
   .feature:nth-child(2) .featureCopy {
@@ -963,8 +970,8 @@
   }
   .feature:nth-child(3) .featureCopy {
     left: 68.95833%;
-    top: 71.86271%;
-    width: 25%;
+    top: 72.18448%;
+    width: 22.36111%;
   }
   .step {
     display: none;
@@ -973,13 +980,13 @@
     margin: 0;
     white-space: nowrap;
   }
-  .featureDescription {
-    margin-top: 1.11111cqw !important;
+  .landing .featureDescription {
+    margin-top: 1.11111cqw;
     font-size: clamp(11px, 1.25cqw, 18px);
     line-height: 1.55556;
     white-space: nowrap;
   }
-  .feature .tags {
+  .feature:nth-child(n) .tags {
     width: 17.56944cqw;
     max-width: none;
     padding: 0;
@@ -1276,7 +1283,7 @@
     height: 28px;
   }
   .footer > div {
-    padding: 80px min(6.38889vw, 92px) 100px;
+    padding: 60px min(7.5vw, 108px) 80px;
   }
   .footer > div > div {
     gap: 40px;

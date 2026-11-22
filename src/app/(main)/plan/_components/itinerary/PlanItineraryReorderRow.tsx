@@ -8,7 +8,7 @@ export type PlanItineraryReorderRowProps = {
   children: ReactNode;
 };
 
-export function PlanItineraryReorderRow({ rowRef, style, children }: PlanItineraryReorderRowProps) {
+export function PlanItineraryReorderRow({ rowRef, style, children }: Readonly<PlanItineraryReorderRowProps>) {
   return (
     <div ref={rowRef} style={style}>
       {children}

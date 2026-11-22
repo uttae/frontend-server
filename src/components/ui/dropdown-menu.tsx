@@ -15,6 +15,7 @@ function DropdownMenuTrigger(props: Readonly<MenuPrimitive.Trigger.Props>) {
 type DropdownMenuContentProps = Omit<MenuPrimitive.Popup.Props, "className"> &
   Pick<MenuPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset"> & {
     className?: string;
+
     size?: "sm" | "lg";
   };
 
@@ -41,6 +42,7 @@ function DropdownMenuContent({
           data-size={size}
           className={cn(
             "group/dropdown-menu flex w-max max-w-(--available-width) min-w-40 max-h-(--available-height) flex-col overflow-x-hidden overflow-y-auto rounded-[12px] bg-fill-elevate shadow-[0_2px_10px_#1f22291a] outline-none",
+
             "origin-(--transform-origin) transition-[opacity,scale] duration-150 ease-out data-starting-style:scale-95 data-starting-style:opacity-0 data-ending-style:scale-95 data-ending-style:opacity-0 data-instant:transition-none motion-reduce:transition-none",
             className,
           )}
@@ -57,6 +59,7 @@ const dropdownMenuItemVariants = cva(
     variants: {
       variant: {
         default: "",
+
         destructive: "text-[var(--red-800)] [&_svg]:text-status-negative",
       },
     },
@@ -115,7 +118,7 @@ function DropdownMenuHeaderTitle({ className, ...props }: Readonly<ComponentProp
   return (
     <p
       data-slot="dropdown-menu-header-title"
-      className={cn("truncate text-label-xl-emphasis text-text", className)}
+      className={cn("truncate text-[18px]/[22px] font-bold tracking-[-0.02em] text-text", className)}
       {...props}
     />
   );

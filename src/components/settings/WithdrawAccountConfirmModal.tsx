@@ -19,7 +19,7 @@ type Props = {
 
 const TITLE = "정말 탈퇴하시겠어요?";
 
-export function WithdrawAccountConfirmModal({ onClose, onConfirm, isPending }: Props) {
+export function WithdrawAccountConfirmModal({ onClose, onConfirm, isPending }: Readonly<Props>) {
   return (
     <AlertDialog
       open

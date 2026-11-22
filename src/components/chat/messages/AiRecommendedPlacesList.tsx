@@ -13,7 +13,7 @@ import { stripRecommendedPlaceReasonPrefix } from "@/lib/recommended-place-reaso
 import type { AiPlaceRecommendationHeading, AiRecommendedPlace } from "@/types/chat";
 import { cn } from "@/lib/utils";
 
-function AiRecommendedPlaceRow({ place, isMinimized }: { place: AiRecommendedPlace; isMinimized: boolean }) {
+function AiRecommendedPlaceRow({ place, isMinimized }: Readonly<{ place: AiRecommendedPlace; isMinimized: boolean }>) {
   const openPlaceOnMap = useOpenPlaceOnMap();
   const setMapCenter = useMapCenterStore((s) => s.setMapCenter);
 

@@ -10,7 +10,7 @@ function isSearchPath(pathname: string): boolean {
   return pathname === "/search";
 }
 
-export function MainContentScrollArea({ children, fill = false }: { children: ReactNode; fill?: boolean }) {
+export function MainContentScrollArea({ children, fill = false }: Readonly<{ children: ReactNode; fill?: boolean }>) {
   const pathname = usePathname();
   const scrollRef = useRef<HTMLDivElement>(null);
   const searchPage = isSearchPath(pathname);

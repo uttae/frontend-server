@@ -131,6 +131,8 @@ export default function LoginAgreementsPage() {
   const submitDisabled =
     consentState.isLoading || consentState.isError || !consentState.canProceed || isSubmitting || isExpired;
 
+  const consentLabel = isSignup ? "동의하고 가입하기" : "동의하고 계속하기";
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4 py-12">
       <div
@@ -189,7 +191,7 @@ export default function LoginAgreementsPage() {
             aria-disabled={submitDisabled}
             className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-label-xl-emphasis mobile:text-label-l-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting ? "처리 중…" : isSignup ? "동의하고 가입하기" : "동의하고 계속하기"}
+            {isSubmitting ? "처리 중…" : consentLabel}
           </button>
         </div>
       </div>

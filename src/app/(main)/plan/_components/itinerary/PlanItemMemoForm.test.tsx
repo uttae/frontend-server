@@ -100,3 +100,27 @@ it("shows the length error under the memo instead of a toast", async () => {
     await unmount();
   }
 });
+
+it("keeps memo clicks and typing keys inside the editor without cancelling text input", async () => {
+  const { container, unmount } = await setup("A");
+  const card = document.createElement("div");
+  card.append(container);
+  document.body.append(card);
+  const activateCard = vi.fn();
+  card.addEventListener("click", activateCard);
+  card.addEventListener("keydown", activateCard);
+  try {
+    const key = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+    await act(async () => {
+      textarea(container).click();
+      textarea(container).dispatchEvent(key);
+    });
+    expect(activateCard).not.toHaveBeenCalled();
+    expect(key.defaultPrevented).toBe(false);
+    await type(container, "AB");
+    expect(textarea(container).value).toBe("AB");
+  } finally {
+    await unmount();
+    card.remove();
+  }
+});

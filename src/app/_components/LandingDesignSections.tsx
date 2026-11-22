@@ -18,8 +18,8 @@ function ProblemAndSolution() {
         <div className={styles.problemInner}>
           <LandingArtwork
             name="problem-background.svg"
-            width={1440}
-            height={1198.2}
+            width={1920}
+            height={1198.96}
             className={styles.problemBackground}
           />
           <LandingArtwork
@@ -61,8 +61,7 @@ function ProblemAndSolution() {
       <section data-landing-section="solution" className={styles.solution}>
         <div className={styles.solutionInner}>
           <div className={styles.solutionTitle}>
-            <p className={`${styles.eyebrow} ${styles.desktopOnly}`}>SOULTION</p>
-            <p className={`${styles.eyebrow} ${styles.mobileOnly}`}>SOLUTION</p>
+            <p className={styles.eyebrow}>SOLUTION</p>
             <h2>
               복잡한 여행 계획은 <span>우때 하나로 끝!</span>
             </h2>
@@ -138,11 +137,12 @@ function Features() {
                 <br />
                 {index === 2 ? (
                   <>
-                    고민되는 순간에는 AI에게 장소와
+                    {"고민되는 순간에는 AI에게 장소와"}
                     <span className={styles.desktopBreak}>
                       <br />
                     </span>
-                    <span className={styles.mobileOnly}> </span>일정을 물어보세요.
+                    <span className={styles.mobileOnly}> </span>
+                    {"일정을 물어보세요."}
                   </>
                 ) : (
                   feature.description[1]

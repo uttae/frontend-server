@@ -16,11 +16,9 @@ export function useResolvedCurrentRoomId(urlRoomId?: string | null) {
   const ssrSafeRoomId = resolveRoomIdFromStoreAndUrl(currentRoomId, explicitRoomId);
 
   const roomContextReady = useClientReady();
-  const effectiveRoomId = route.invalidPackingPath
-    ? null
-    : roomContextReady
-      ? resolveCurrentRoomId(currentRoomId, explicitRoomId)
-      : ssrSafeRoomId;
+  let effectiveRoomId = ssrSafeRoomId;
+  if (route.invalidPackingPath) effectiveRoomId = null;
+  else if (roomContextReady) effectiveRoomId = resolveCurrentRoomId(currentRoomId, explicitRoomId);
 
   useLayoutEffect(() => {
     if (route.invalidPackingPath) return;

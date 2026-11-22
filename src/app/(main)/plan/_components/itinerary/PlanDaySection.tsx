@@ -82,14 +82,15 @@ export function PlanDaySection({
   const [localExpanded, setLocalExpanded] = useState(defaultExpanded);
 
   const hasKeyInStore = usePlanItineraryExpandedStore(
-    (s) => trackedSid !== undefined && Object.prototype.hasOwnProperty.call(s.expandedByScheduleId, trackedSid),
+    (s) => trackedSid !== undefined && Object.hasOwn(s.expandedByScheduleId, trackedSid),
   );
 
   const storedExpanded = usePlanItineraryExpandedStore((s) =>
     trackedSid !== undefined ? Boolean(s.expandedByScheduleId[trackedSid]) : false,
   );
 
-  const expanded = trackedSid === undefined ? localExpanded : !hasKeyInStore ? defaultExpanded : storedExpanded;
+  const persistedExpanded = hasKeyInStore ? storedExpanded : defaultExpanded;
+  const expanded = trackedSid === undefined ? localExpanded : persistedExpanded;
 
   const setScheduleExpanded = usePlanItineraryExpandedStore((s) => s.setScheduleExpanded);
 
@@ -226,9 +227,9 @@ export function PlanDaySection({
           </div>
         ) : null}
       </div>
-      <div id={`${panelId}-panel`} role="region" aria-labelledby={`${panelId}-trigger`} hidden={!expanded}>
+      <section id={`${panelId}-panel`} aria-labelledby={`${panelId}-trigger`} hidden={!expanded}>
         {children}
-      </div>
+      </section>
     </section>
   );
 }

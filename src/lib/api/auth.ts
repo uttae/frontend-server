@@ -23,6 +23,42 @@ export type ExchangeGoogleCodeResult =
 
 const REACCEPTANCE_DEFAULT_TTL_SECONDS = 10 * 60;
 
+function parseGoogleAuthentication(body: unknown): ExchangeGoogleCodeResult | undefined {
+  if (body === null || typeof body !== "object") return undefined;
+  const parsed = body as Record<string, unknown>;
+  if (
+    parsed.status === "SIGNUP_REQUIRED" &&
+    typeof parsed.signupToken === "string" &&
+    parsed.signupToken.length > 0 &&
+    typeof parsed.expiresInSeconds === "number" &&
+    Number.isFinite(parsed.expiresInSeconds) &&
+    parsed.expiresInSeconds > 0
+  ) {
+    return {
+      ok: true,
+      status: "SIGNUP_REQUIRED",
+      signupToken: parsed.signupToken,
+      expiresInSeconds: parsed.expiresInSeconds,
+    };
+  }
+  if (
+    parsed.status === "REACCEPTANCE_REQUIRED" &&
+    typeof parsed.reacceptanceToken === "string" &&
+    parsed.reacceptanceToken.length > 0
+  ) {
+    const rawTtl = parsed.expiresInSeconds;
+    const expiresInSeconds =
+      typeof rawTtl === "number" && Number.isFinite(rawTtl) && rawTtl > 0 ? rawTtl : REACCEPTANCE_DEFAULT_TTL_SECONDS;
+    return {
+      ok: true,
+      status: "REACCEPTANCE_REQUIRED",
+      reacceptanceToken: parsed.reacceptanceToken,
+      expiresInSeconds,
+    };
+  }
+  return undefined;
+}
+
 export async function exchangeGoogleCode(code: string, agreementsAccepted?: true): Promise<ExchangeGoogleCodeResult> {
   const requestBody = agreementsAccepted ? { code, agreementsAccepted: true } : { code };
   const res = await fetch("/api/auth/google", {
@@ -36,41 +72,8 @@ export async function exchangeGoogleCode(code: string, agreementsAccepted?: true
     const body = await tryParseJson(res);
     if (body === null) return { ok: true, status: "AUTHENTICATED" };
 
-    if (body !== null && typeof body === "object") {
-      const parsed = body as Record<string, unknown>;
-      if (
-        parsed.status === "SIGNUP_REQUIRED" &&
-        typeof parsed.signupToken === "string" &&
-        parsed.signupToken.length > 0 &&
-        typeof parsed.expiresInSeconds === "number" &&
-        Number.isFinite(parsed.expiresInSeconds) &&
-        parsed.expiresInSeconds > 0
-      ) {
-        return {
-          ok: true,
-          status: "SIGNUP_REQUIRED",
-          signupToken: parsed.signupToken,
-          expiresInSeconds: parsed.expiresInSeconds,
-        };
-      }
-      if (
-        parsed.status === "REACCEPTANCE_REQUIRED" &&
-        typeof parsed.reacceptanceToken === "string" &&
-        parsed.reacceptanceToken.length > 0
-      ) {
-        const rawTtl = parsed.expiresInSeconds;
-        const expiresInSeconds =
-          typeof rawTtl === "number" && Number.isFinite(rawTtl) && rawTtl > 0
-            ? rawTtl
-            : REACCEPTANCE_DEFAULT_TTL_SECONDS;
-        return {
-          ok: true,
-          status: "REACCEPTANCE_REQUIRED",
-          reacceptanceToken: parsed.reacceptanceToken,
-          expiresInSeconds,
-        };
-      }
-    }
+    const authentication = parseGoogleAuthentication(body);
+    if (authentication) return authentication;
 
     return {
       ok: false,

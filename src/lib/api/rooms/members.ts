@@ -14,7 +14,7 @@ function normalizeMemberListPayload(res: RoomMemberListResponse): RoomMemberList
       const picked = pickProfileImageUrl(m as unknown as Record<string, unknown>);
       const url = picked ?? m.profileImageUrl ?? null;
       const raw = m as RoomMember & { isOnline?: boolean; status?: string };
-      const status: RoomMemberStatus = raw.status === "LEFT" ? "LEFT" : raw.status === "PENDING" ? "PENDING" : "ACTIVE";
+      const status: RoomMemberStatus = raw.status === "LEFT" || raw.status === "PENDING" ? raw.status : "ACTIVE";
       return {
         ...m,
         profileImageUrl: url,

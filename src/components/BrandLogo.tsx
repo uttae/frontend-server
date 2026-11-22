@@ -1,10 +1,18 @@
+import { cn } from "@/lib/utils";
+
 type BrandLogoProps = {
   variant: "symbol" | "wordmark" | "combination" | "glyph";
   size: "S" | "M" | "L";
   alt?: string;
+  className?: string;
 };
 
-export function BrandLogo({ variant = "combination", size = "M", alt = "우때 로고" }: Readonly<BrandLogoProps>) {
+export function BrandLogo({
+  variant = "combination",
+  size = "M",
+  alt = "우때 로고",
+  className,
+}: Readonly<BrandLogoProps>) {
   const LOGO_ASSETS = {
     symbol: {
       S: { src: "/brand/Glyph_S.svg", width: 23, height: 23 },
@@ -43,14 +51,14 @@ export function BrandLogo({ variant = "combination", size = "M", alt = "우때 �
   const logoConfig = LOGO_ASSETS[variant][size];
 
   return (
-    // eslint-disable-next-line @next/next/no-img-element
+    // eslint-disable-next-line @next/next/no-img-element -- local brand asset; Safari-safe
     <img
       src={logoConfig.src}
       alt={alt}
       width={logoConfig.width}
       height={logoConfig.height}
       decoding="async"
-      className="block shrink-0"
+      className={cn("block shrink-0", className)}
     />
   );
 }

@@ -4,6 +4,7 @@ import type { ServerChatMessage } from "@/types/chat";
 
 import {
   chatMessageUserIds,
+  parseAiResponseStructuredMeta,
   mergeServerMessageLists,
   partitionLiveMessages,
   replaceExistingServerMessages,
@@ -150,5 +151,34 @@ describe("chatMessageUserIds", () => {
       }),
     ).toEqual([9]);
     expect(chatMessageUserIds({ ...msg(4), messageType: "AI_RESPONSE" })).toEqual([]);
+  });
+});
+
+describe("structured chat metadata", () => {
+  it("skips malformed section types without losing valid sections", () => {
+    const result = parseAiResponseStructuredMeta({
+      conversationSummary: JSON.stringify({
+        title: "Summary",
+        overview: "Overview",
+        sections: [
+          { type: " plans ", title: " Plans ", items: ["one", 2] },
+          { type: 2, title: "Numeric", items: [] },
+          ...[{}, ["plans"], null, true].map((type) => ({ type, title: "Invalid", items: [] })),
+        ],
+      }),
+    });
+    expect(result.conversationSummary?.sections).toEqual([
+      { type: "plans", title: "Plans", items: ["one"] },
+      { type: "2", title: "Numeric", items: [] },
+    ]);
+  });
+
+  it("uses legacy places when the recommendation block has only malformed rows", () => {
+    const result = parseAiResponseStructuredMeta({
+      place_recommendation: JSON.stringify({ title: " Nearby ", places: [null, {}] }),
+      recommendedPlaces: JSON.stringify([{ placeId: "p1", name: "Place", lat: 1, lng: 2 }]),
+    });
+    expect(result.placeRecommendationHeading).toEqual({ title: "Nearby" });
+    expect(result.recommendedPlaces?.map((place) => place.placeId)).toEqual(["p1"]);
   });
 });

@@ -36,7 +36,7 @@ function previewToSelectedPlacePayload(preview: PlacePreview) {
   };
 }
 
-export function MapBookmarkPins({ roomId, enabled, hiddenNormalizedPlaceIds }: MapBookmarkPinsProps) {
+export function MapBookmarkPins({ roomId, enabled, hiddenNormalizedPlaceIds }: Readonly<MapBookmarkPinsProps>) {
   const { selectedPlace, setSelectedPlace } = useSelectedPlace();
 
   const { data: categories, isSuccess: categoriesReady } = useBookmarkCategories(roomId, { enabled: !!roomId });

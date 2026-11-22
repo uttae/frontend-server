@@ -110,11 +110,10 @@ export function AddMemberPanel({
   }, [canIssue, detailInviteCode, inviteCode, isRoomDetailError, isRoomDetailLoading, regenerate, roomIdTrim]);
 
   const displayedCode = issuedCode === undefined ? detailInviteCode || null : issuedCode;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
   const inviteUrl =
     canShareInvite && displayedCode
-      ? buildSharedInviteUrl(
-          `${typeof window !== "undefined" ? window.location.origin : ""}/join/${encodeURIComponent(displayedCode)}`,
-        )
+      ? buildSharedInviteUrl(`${origin}/join/${encodeURIComponent(displayedCode)}`)
       : null;
 
   async function handleCopy() {

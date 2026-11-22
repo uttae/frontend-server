@@ -15,7 +15,7 @@ type ConsentGatedAnalyticsProps = {
   gaId: string;
 };
 
-export function ConsentGatedAnalytics({ children, debugMode, gaId }: ConsentGatedAnalyticsProps) {
+export function ConsentGatedAnalytics({ children, debugMode, gaId }: Readonly<ConsentGatedAnalyticsProps>) {
   const consent = useSyncExternalStore(
     analyticsConsentStore.subscribe,
     analyticsConsentStore.getSnapshot,

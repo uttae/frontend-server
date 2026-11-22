@@ -22,24 +22,10 @@ export function TravelRouteRail({
 }: TravelRouteRailProps) {
   return (
     <div className={cn(PLAN_SEGMENT_RAIL_CLASS, className)}>
-      {isAddVisible ? (
+      {isAddVisible || showAddOnHover ? (
         <button
           type="button"
-          aria-label="장소 추가 닫기"
-          disabled={addDisabled}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddClick?.();
-          }}
-          className={cn(planSegmentAddButtonClassName(true), addDisabled && "pointer-events-none opacity-40")}
-        >
-          <Minus className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-        </button>
-      ) : showAddOnHover ? (
-        <button
-          type="button"
-          aria-label="이 위치에 장소 추가"
+          aria-label={isAddVisible ? "장소 추가 닫기" : "이 위치에 장소 추가"}
           disabled={addDisabled}
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
@@ -47,12 +33,12 @@ export function TravelRouteRail({
             onAddClick?.();
           }}
           className={cn(
-            planSegmentAddButtonClassName(false),
-            "opacity-0 group-hover/segment:opacity-100",
+            planSegmentAddButtonClassName(isAddVisible),
+            !isAddVisible && "opacity-0 group-hover/segment:opacity-100",
             addDisabled && "pointer-events-none opacity-40",
           )}
         >
-          <PlusIcon size={16} />
+          {isAddVisible ? <Minus className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden /> : <PlusIcon size={16} />}
         </button>
       ) : null}
     </div>

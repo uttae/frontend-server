@@ -154,6 +154,8 @@ export function ChatMessageList({
       readMarkerMessageId != null &&
       (readDividerPlacement?.afterMessageId != null || readDividerPlacement?.beforeFirst === true);
 
+    const needsInitialScroll = prevCount === 0 && count > 0 && !didInitialScrollRef.current;
+    const tailContentGrew = !prepended && !appended && count > 0 && root.scrollHeight > prevSh;
     let didTailScroll = false;
 
     if (prepended && prevSh > 0) {
@@ -161,18 +163,15 @@ export function ChatMessageList({
       root.scrollTop = newSh - prevSh + prevSt;
     } else if (appended && hasFrozenDivider && !followTailRef.current) {
       root.scrollTop = prevSt;
-    } else if (appended && followTailRef.current) {
+    } else if (followTailRef.current && (appended || (!needsInitialScroll && tailContentGrew))) {
       scrollRootToBottomInstant(root);
       didTailScroll = true;
-    } else if (prevCount === 0 && count > 0 && !didInitialScrollRef.current) {
+    } else if (needsInitialScroll) {
       didInitialScrollRef.current = true;
       if (!scrollToAnchor) {
         bottom?.scrollIntoView({ behavior: "auto", block: "end" });
         syncFollowTailFromScrollRoot(root, followTailRef);
       }
-    } else if (followTailRef.current && !prepended && !appended && count > 0 && root.scrollHeight > prevSh) {
-      scrollRootToBottomInstant(root);
-      didTailScroll = true;
     }
 
     prevCountRef.current = count;

@@ -696,12 +696,9 @@ export function useChatMessages(roomId: string | null, options: UseChatMessagesO
 
   const rid = roomId?.trim() ?? "";
   const effectiveReadMarkerMessageId = fetchHistory && rid ? readMarkerMessageId : null;
+  const hasReadDivider = readDividerPlacement.afterMessageId != null || readDividerPlacement.beforeFirst;
   const effectiveReadDividerPlacement: ReadDividerPlacement | null =
-    fetchHistory && rid
-      ? readDividerPlacement.afterMessageId != null || readDividerPlacement.beforeFirst
-        ? readDividerPlacement
-        : null
-      : null;
+    fetchHistory && rid && hasReadDivider ? readDividerPlacement : null;
 
   return {
     messages,

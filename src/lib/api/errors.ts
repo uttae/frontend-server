@@ -95,7 +95,7 @@ export function readRoomsRequiringDelegationFromBody(body: unknown): RoomRequiri
     if (item === null || typeof item !== "object") continue;
     const o = item as Record<string, unknown>;
     const roomIdRaw = o.roomId;
-    const roomId = typeof roomIdRaw === "string" ? roomIdRaw.trim() : roomIdRaw != null ? String(roomIdRaw).trim() : "";
+    const roomId = typeof roomIdRaw === "string" || typeof roomIdRaw === "number" ? String(roomIdRaw).trim() : "";
     const titleRaw = o.title;
     const title = typeof titleRaw === "string" ? titleRaw.trim() : "";
     if (!roomId.length || !title.length) continue;
@@ -153,15 +153,16 @@ export function readUserFacingMessageFromApiBody(body: unknown): string | undefi
     const nm = n.message;
     if (typeof nm === "string" && nm.trim()) return nm.trim();
   }
-  const errors = o.errors;
-  if (errors !== null && typeof errors === "object" && !Array.isArray(errors)) {
-    for (const v of Object.values(errors as Record<string, unknown>)) {
-      if (typeof v === "string" && v.trim()) return v.trim();
-      if (Array.isArray(v)) {
-        const first = v.find((x) => typeof x === "string" && x.trim());
-        if (typeof first === "string") return first.trim();
-      }
-    }
+  return readValidationErrorMessage(o.errors);
+}
+
+function readValidationErrorMessage(errors: unknown): string | undefined {
+  if (errors === null || typeof errors !== "object" || Array.isArray(errors)) return undefined;
+  for (const value of Object.values(errors)) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+    if (!Array.isArray(value)) continue;
+    const first = value.find((item) => typeof item === "string" && item.trim());
+    if (typeof first === "string") return first.trim();
   }
   return undefined;
 }

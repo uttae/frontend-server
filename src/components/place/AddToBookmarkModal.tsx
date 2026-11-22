@@ -41,7 +41,7 @@ type Props = {
   onAdded?: () => void;
 };
 
-export function AddToBookmarkModal({ googlePlaceId, placeCategory, source, onClose, onAdded }: Props) {
+export function AddToBookmarkModal({ googlePlaceId, placeCategory, source, onClose, onAdded }: Readonly<Props>) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const {
     data: categories,

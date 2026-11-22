@@ -38,8 +38,12 @@ export function normalizePreviewLocation(
 ): { lat: number; lng: number } | undefined {
   if (!location || typeof location !== "object") return undefined;
 
-  const lat = "latitude" in location ? location.latitude : "lat" in location ? location.lat : undefined;
-  const lng = "longitude" in location ? location.longitude : "lng" in location ? location.lng : undefined;
+  let lat: unknown;
+  let lng: unknown;
+  if ("latitude" in location) lat = location.latitude;
+  else if ("lat" in location) lat = location.lat;
+  if ("longitude" in location) lng = location.longitude;
+  else if ("lng" in location) lng = location.lng;
 
   if (typeof lat !== "number" || !Number.isFinite(lat) || typeof lng !== "number" || !Number.isFinite(lng)) {
     return undefined;

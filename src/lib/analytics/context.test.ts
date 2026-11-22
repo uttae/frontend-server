@@ -78,6 +78,9 @@ describe("analytics context", () => {
     ["/packing/room-secret/", "/packing/[roomId]"],
     ["/bookmark/456/", "/bookmark/[folderId]"],
     ["/privacy", "/privacy"],
+    ["/", "/"],
+    ["///", ""],
+    ["/privacy///", "/privacy"],
     ["not-a-path", "/"],
   ] as const)("normalizes analytics page path %s to %s", (pathname, expected) => {
     expect(analyticsPagePath(pathname)).toBe(expected);

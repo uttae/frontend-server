@@ -111,7 +111,7 @@ function revealError(element: Element | null | undefined) {
   });
 }
 
-export function ExpenseEditor({ initial, onClose }: { initial: ExpenseEntry; onClose: () => void }) {
+export function ExpenseEditor({ initial, onClose }: Readonly<{ initial: ExpenseEntry; onClose: () => void }>) {
   const context = useExpenseContext();
   const { isMobileDevice } = useMobileView();
   const [original, setOriginal] = useState(initial.expense);

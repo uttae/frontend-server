@@ -107,11 +107,11 @@ export function parseRoomMemberMessage(body: string): RoomMemberPayload | null {
     }
 
     const roomIdRaw = raw.roomId;
-    const roomId = typeof roomIdRaw === "string" ? roomIdRaw : roomIdRaw != null ? String(roomIdRaw) : "";
+    const roomId = typeof roomIdRaw === "string" || typeof roomIdRaw === "number" ? String(roomIdRaw) : "";
 
     const content = typeof raw.content === "string" ? raw.content : undefined;
     const createdAt = typeof raw.createdAt === "string" ? raw.createdAt : "";
-    const id = typeof raw.id === "string" ? raw.id : raw.id != null ? String(raw.id) : "";
+    const id = typeof raw.id === "string" || typeof raw.id === "number" ? String(raw.id) : "";
 
     const base: RoomMemberPayloadBase = {
       roomId,

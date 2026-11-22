@@ -42,7 +42,7 @@ type Props = {
   onAdded?: () => void;
 };
 
-export function AddToScheduleModal({ googlePlaceId, placeCategory, source = "search", onClose, onAdded }: Props) {
+export function AddToScheduleModal({ googlePlaceId, placeCategory, source = "search", onClose, onAdded }: Readonly<Props>) {
   const roomId = useSessionStore((s) => s.currentRoomId);
   const rid = typeof roomId === "string" ? roomId.trim() : "";
 

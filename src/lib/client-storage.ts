@@ -7,25 +7,25 @@ import { readSessionUserId, setSessionUserCache } from "@/lib/session-user-cache
 import { clearCurrentRoomIdSessionStorage } from "@/lib/session-room-storage";
 import { useSessionStore } from "@/stores/session-store";
 
+function removeStorageKeysMatching(storage: Storage, predicate: (key: string) => boolean): void {
+  const toRemove: string[] = [];
+  for (let i = 0; i < storage.length; i++) {
+    const k = storage.key(i);
+    if (k && predicate(k)) toRemove.push(k);
+  }
+  for (const k of toRemove) {
+    try {
+      storage.removeItem(k);
+    } catch {}
+  }
+}
+
 export function clearUserScopedBrowserStorage(): void {
   if (typeof window === "undefined") return;
 
   const PLAN_ROUTE_PREFIX = "hau:plan:route:v1:";
   const PLAN_TRAVEL_MODE_PREFIX = "hau:plan:travelMode:v1:";
   const LEGACY_SESSION_PERSIST_KEY = "hau:session";
-
-  function removeStorageKeysMatching(storage: Storage, predicate: (key: string) => boolean): void {
-    const toRemove: string[] = [];
-    for (let i = 0; i < storage.length; i++) {
-      const k = storage.key(i);
-      if (k && predicate(k)) toRemove.push(k);
-    }
-    for (const k of toRemove) {
-      try {
-        storage.removeItem(k);
-      } catch {}
-    }
-  }
 
   removeStorageKeysMatching(
     sessionStorage,

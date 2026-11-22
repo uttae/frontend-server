@@ -40,7 +40,7 @@ const SelectedPlaceContext = createContext<SelectedPlaceContextType>({
 });
 
 export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
-  const [selectedPlace, setSelectedPlaceState] = useState<SearchResultCardProps | null>(null);
+  const [selectedPlaceState, setSelectedPlaceState] = useState<SearchResultCardProps | null>(null);
   const placeSelectionCameraRef = useRef<PlaceSelectionCamera>("full");
   const [entry, setEntry] = useState<{
     itinerarySource: ItinerarySource | null;
@@ -89,7 +89,7 @@ export function SelectedPlaceProvider({ children }: { children: ReactNode }) {
   return (
     <SelectedPlaceContext.Provider
       value={{
-        selectedPlace,
+        selectedPlace: selectedPlaceState,
         setSelectedPlace,
         placeSelectionCameraRef,
         ...entry,

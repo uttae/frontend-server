@@ -22,7 +22,10 @@ export function normalizePackingName(raw: string, kind: "part" | "item"): string
   if (
     typeof raw !== "string" ||
     raw.length > maximum ||
-    [...raw].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127)
+    [...raw].some((c) => {
+      const code = c.codePointAt(0) ?? 0;
+      return code < 32 || code === 127;
+    })
   )
     invalid(`이름은 줄바꿈 없이 1~${maximum}자로 입력해 주세요.`);
   const result = raw.trim();
@@ -34,7 +37,7 @@ export function normalizePackingMemo(raw: string): string | null {
     typeof raw !== "string" ||
     raw.length > 2000 ||
     [...raw].some((c) => {
-      const n = c.charCodeAt(0);
+      const n = c.codePointAt(0) ?? 0;
       return (n < 32 && n !== 9 && n !== 10 && n !== 13) || n === 127;
     })
   )

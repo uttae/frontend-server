@@ -19,7 +19,7 @@ export function parseRoomPresenceMessage(body: string): RoomPresenceChangedEvent
     }
 
     const roomIdRaw = raw.roomId;
-    const roomId = typeof roomIdRaw === "string" ? roomIdRaw : roomIdRaw != null ? String(roomIdRaw) : "";
+    const roomId = typeof roomIdRaw === "string" || typeof roomIdRaw === "number" ? String(roomIdRaw) : "";
 
     const userIdRaw = raw.userId;
     const uid = typeof userIdRaw === "number" && Number.isFinite(userIdRaw) ? userIdRaw : Number(userIdRaw);

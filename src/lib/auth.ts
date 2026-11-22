@@ -2,13 +2,13 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import { isProtectedAppPath, shouldSkipReconcileClientSession } from "@/lib/auth-session";
 import { clearUserScopedBrowserStorage, tearDownClientSession } from "@/lib/client-storage";
-import { fetchSessionUserRaw, fetchSessionUserResult, fetchSessionUserWithRetry } from "@/lib/session-user";
+import { fetchSessionUserResult } from "@/lib/session-user";
 import { readSessionUserCache, setSessionUserCache } from "@/lib/session-user-cache";
 import { useSessionStore } from "@/stores/session-store";
 
 export type { SessionUser } from "@/lib/session-user";
 export { checkClientAuthenticated, consumePendingInviteCode, setPendingInviteCode } from "@/lib/session-user-flow";
-export { fetchSessionUserRaw, fetchSessionUserResult, fetchSessionUserWithRetry };
+export { fetchSessionUserRaw, fetchSessionUserResult, fetchSessionUserWithRetry } from "@/lib/session-user";
 export type { FetchSessionUserResult } from "@/lib/session-user";
 
 export async function reconcileClientSession(queryClient: QueryClient): Promise<void> {

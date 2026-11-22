@@ -19,7 +19,7 @@ import {
 } from "@/lib/chat/chat-panel-minimized-size";
 import { minimizedPanelAnimate, panelVariants, panelTransition } from "./chat-animations";
 
-export function ChatPanel({ mobileInline = false, inline = false }: { mobileInline?: boolean; inline?: boolean }) {
+export function ChatPanel({ mobileInline = false, inline = false }: Readonly<{ mobileInline?: boolean; inline?: boolean }>) {
   const { chatState, openChat, minimizeChat, closeChat } = useChat();
   const isInline = mobileInline || inline;
   const isMinimized = !isInline && chatState === "minimized";

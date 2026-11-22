@@ -6,7 +6,8 @@ export type MemberQueryStatus = "pending" | "error" | "success";
 export function amountError(value: string, currency: ExpenseCurrency | undefined): string | null {
   if (!currency) return "서버 통화 목록에서 통화를 선택해 주세요.";
   const scale = currency.fractionDigits;
-  const pattern = new RegExp(`^[0-9]{1,15}${scale ? `\\.[0-9]{${scale}}` : ""}$`);
+  const fractionPattern = scale ? String.raw`\.[0-9]{${scale}}` : "";
+  const pattern = new RegExp(`^[0-9]{1,15}${fractionPattern}$`);
   if (!pattern.test(value))
     return `금액은 정수부 1~15자리, 소수 ${scale}자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.`;
   const units = BigInt(value.replace(".", ""));
@@ -29,9 +30,10 @@ export function expensePerson(userId: number, members: RoomMember[], status: Mem
       unknown: false,
     };
   const m = members.find((m) => m.userId === userId);
+  const leftSuffix = m?.status === "LEFT" ? " · 나간 멤버" : "";
   return {
     userId,
-    label: m ? `${m.nickname}${m.status === "LEFT" ? " · 나간 멤버" : ""}` : "(알 수 없음)",
+    label: m ? `${m.nickname}${leftSuffix}` : "(알 수 없음)",
     imageUrl: m?.profileImageUrl ?? null,
     unknown: !m,
   };

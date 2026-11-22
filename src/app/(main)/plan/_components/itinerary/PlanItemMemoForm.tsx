@@ -80,7 +80,7 @@ export function PlanItemMemoReadOnly({
   );
 }
 
-export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }: PlanItemMemoEditorProps) {
+export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }: Readonly<PlanItemMemoEditorProps>) {
   const incomingMemo = memo ?? "";
   const [editStartMemo, setEditStartMemo] = useState(incomingMemo);
   const [hasRemoteConflict, setHasRemoteConflict] = useState(false);
@@ -133,7 +133,13 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }
 
   return (
     <>
-      <div className={PLAN_PLACE_CARD_TW.editorModule} onMouseDown={stopCardActivation} onClick={stopCardActivation}>
+      <div
+        role="presentation"
+        className={PLAN_PLACE_CARD_TW.editorModule}
+        onMouseDown={stopCardActivation}
+        onClick={stopCardActivation}
+        onKeyDown={stopCardActivation}
+      >
         <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
           <MemoIcon size={16} />
         </div>

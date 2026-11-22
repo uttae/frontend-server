@@ -11,7 +11,7 @@ type SearchHereFloatingButtonProps = {
   onPress: () => void;
 };
 
-export function SearchHereFloatingButton({ label, onPress }: SearchHereFloatingButtonProps) {
+export function SearchHereFloatingButton({ label, onPress }: Readonly<SearchHereFloatingButtonProps>) {
   return (
     <button
       type="button"

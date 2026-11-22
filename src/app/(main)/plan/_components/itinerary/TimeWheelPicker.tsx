@@ -61,16 +61,36 @@ function TimeWheelColumn({
     userScroll.current = true;
   }
 
-  function select(index: number) {
-    const row = rows[index];
-    if (!active || !row) return;
-    userScroll.current = false;
-    onScrollingChange(label, false);
-    const centered = cyclic ? options.length + (index % options.length) : index;
-    setCenterIndex(centered);
-    if (scroller.current) scroller.current.scrollTop = centered * ROW_HEIGHT;
-    onSelect(row.value);
-  }
+  const select = useCallback(
+    (index: number) => {
+      const row = options[cyclic ? index % options.length : index];
+      if (!active || !row) return;
+      userScroll.current = false;
+      onScrollingChange(label, false);
+      const centered = cyclic ? options.length + (index % options.length) : index;
+      setCenterIndex(centered);
+      if (scroller.current) scroller.current.scrollTop = centered * ROW_HEIGHT;
+      onSelect(row.value);
+    },
+    [active, cyclic, label, onScrollingChange, onSelect, options],
+  );
+
+  useEffect(() => {
+    const element = scroller.current;
+    if (!element) return;
+    const handleScrollEnd = () => {
+      if (!active || !userScroll.current) return;
+      if (Math.abs(element.scrollTop - gestureStartTop.current) < ROW_HEIGHT / 2) {
+        userScroll.current = false;
+        onScrollingChange(label, false);
+        return;
+      }
+      const index = Math.max(0, Math.min(rows.length - 1, Math.round(element.scrollTop / ROW_HEIGHT)));
+      select(index);
+    };
+    element.addEventListener("scrollend", handleScrollEnd);
+    return () => element.removeEventListener("scrollend", handleScrollEnd);
+  }, [active, label, onScrollingChange, rows.length, select]);
 
   return (
     <div
@@ -87,16 +107,6 @@ function TimeWheelColumn({
       onScroll={(event) => {
         setCenterIndex(Math.max(0, Math.min(rows.length - 1, Math.round(event.currentTarget.scrollTop / ROW_HEIGHT))));
         if (active && userScroll.current) onScrollingChange(label, true);
-      }}
-      onScrollEnd={(event) => {
-        if (!active || !userScroll.current) return;
-        if (Math.abs(event.currentTarget.scrollTop - gestureStartTop.current) < ROW_HEIGHT / 2) {
-          userScroll.current = false;
-          onScrollingChange(label, false);
-          return;
-        }
-        const index = Math.max(0, Math.min(rows.length - 1, Math.round(event.currentTarget.scrollTop / ROW_HEIGHT)));
-        select(index);
       }}
       onKeyDown={(event) => {
         const offset = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;

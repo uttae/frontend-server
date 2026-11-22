@@ -14,7 +14,7 @@ import type {
 
 const ALLOWED: ReadonlySet<string> = new Set(["CHAT", "AI_REQUEST", "AI_RESPONSE", "PLACE_SHARE", "SYSTEM", "AI"]);
 
-export function normalizeMessageKind(raw: ServerChatMessageType | unknown): string {
+export function normalizeMessageKind(raw: unknown): string {
   if (raw == null) return "CHAT";
   if (typeof raw !== "string") return "CHAT";
   const t = raw.trim();
@@ -64,8 +64,8 @@ export function normalizeServerChatMessage(raw: unknown): ServerChatMessage | nu
 
   const messageType = coerceServerChatMessageType(r.messageType ?? r.message_type);
 
-  const createdAt =
-    typeof r.createdAt === "string" ? r.createdAt : typeof r.created_at === "string" ? r.created_at : "";
+  const legacyCreatedAt = typeof r.created_at === "string" ? r.created_at : "";
+  const createdAt = typeof r.createdAt === "string" ? r.createdAt : legacyCreatedAt;
 
   const senderId = parseFiniteNumber(r.senderId ?? r.sender_id) ?? 0;
 
@@ -222,40 +222,36 @@ function parseLegacyFlatRecommendedPlaces(meta: Record<string, string> | undefin
   return out.length > 0 ? out : undefined;
 }
 
+function parseRecommendedPlaces(raw: unknown): AiRecommendedPlace[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const places: AiRecommendedPlace[] = [];
+  for (const row of raw) {
+    const place = parseOneRecommendedPlace(row);
+    if (place) places.push(place);
+  }
+  return places.length > 0 ? places : undefined;
+}
+
+function parseRecommendationHeading(parsed: Record<string, unknown>): AiPlaceRecommendationHeading | undefined {
+  const title = pickString(parsed.title)?.trim();
+  const subtitle = pickString(parsed.subtitle)?.trim();
+  if (!title && !subtitle) return undefined;
+  return {
+    ...(title ? { title } : {}),
+    ...(subtitle ? { subtitle } : {}),
+  };
+}
+
 function parsePlaceRecommendationFromMeta(meta: Record<string, string> | undefined): {
   places?: AiRecommendedPlace[];
   heading?: AiPlaceRecommendationHeading;
 } {
   const rawStr = readMetaString(meta, "place_recommendation", "placeRecommendation");
-  let blockPlaces: AiRecommendedPlace[] | undefined;
-  let heading: AiPlaceRecommendationHeading | undefined;
-
-  if (rawStr !== undefined) {
-    const parsed = safeParseJson<unknown>(rawStr);
-    if (isRecord(parsed)) {
-      const title = pickString(parsed.title)?.trim();
-      const subtitle = pickString(parsed.subtitle)?.trim();
-      if (title || subtitle) {
-        heading = {
-          ...(title ? { title } : {}),
-          ...(subtitle ? { subtitle } : {}),
-        };
-      }
-      const placesRaw = parsed.places;
-      if (Array.isArray(placesRaw)) {
-        const out: AiRecommendedPlace[] = [];
-        for (const row of placesRaw) {
-          const p = parseOneRecommendedPlace(row);
-          if (p) out.push(p);
-        }
-        if (out.length > 0) blockPlaces = out;
-      }
-    }
-  }
-
+  const parsed = safeParseJson<unknown>(rawStr);
+  const blockPlaces = isRecord(parsed) ? parseRecommendedPlaces(parsed.places) : undefined;
+  const heading = isRecord(parsed) ? parseRecommendationHeading(parsed) : undefined;
   const legacy = parseLegacyFlatRecommendedPlaces(meta);
-  const places = blockPlaces?.length ? blockPlaces : legacy?.length ? legacy : undefined;
-
+  const places = blockPlaces ?? legacy;
   return {
     ...(places ? { places } : {}),
     ...(heading ? { heading } : {}),
@@ -269,7 +265,7 @@ function parseSections(raw: unknown): NonNullable<AiConversationSummaryPayload["
     if (!isRecord(row)) continue;
     const title = pickString(row.title)?.trim();
     const typeRaw = row.type;
-    const type = typeof typeRaw === "string" ? typeRaw.trim() : `${typeRaw ?? ""}`;
+    const type = typeof typeRaw === "string" || typeof typeRaw === "number" ? String(typeRaw).trim() : "";
     if (!title || type === "") continue;
     const itemsRaw = row.items;
     const items: string[] = Array.isArray(itemsRaw)
@@ -677,22 +673,24 @@ function parsePlaceShareMetadata(metadata: Record<string, string> | undefined): 
   };
 }
 
+function googlePlaceIdsFromServerMessage(msg: ServerChatMessage): string[] {
+  const kind = normalizeMessageKind(msg.messageType);
+  if (kind === "PLACE_SHARE") {
+    const place = parsePlaceShareMetadata(msg.metadata);
+    return typeof place?.googlePlaceId === "string" ? [place.googlePlaceId] : [];
+  }
+  if (kind === "AI_RESPONSE" || kind === "AI") {
+    return (parseAiResponseStructuredMeta(msg.metadata).recommendedPlaces ?? []).map((place) => place.placeId);
+  }
+  return [];
+}
+
 export function collectGooglePlaceIdsFromServerMessages(messages: ServerChatMessage[]): string[] {
   const ids = new Set<string>();
   for (const msg of messages) {
-    const kind = normalizeMessageKind(msg.messageType);
-    if (kind === "PLACE_SHARE") {
-      const place = parsePlaceShareMetadata(msg.metadata);
-      const id = typeof place?.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
+    for (const rawId of googlePlaceIdsFromServerMessage(msg)) {
+      const id = typeof rawId === "string" ? rawId.trim() : "";
       if (id.length > 0) ids.add(id);
-      continue;
-    }
-    if (kind === "AI_RESPONSE" || kind === "AI") {
-      const structured = parseAiResponseStructuredMeta(msg.metadata);
-      for (const rp of structured.recommendedPlaces ?? []) {
-        const id = typeof rp.placeId === "string" ? rp.placeId.trim() : "";
-        if (id.length > 0) ids.add(id);
-      }
     }
   }
   return [...ids];

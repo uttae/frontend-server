@@ -33,6 +33,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function JoinInviteLayout({ children }: { children: ReactNode }) {
+export default function JoinInviteLayout({ children }: Readonly<{ children: ReactNode }>) {
   return <>{children}</>;
 }
