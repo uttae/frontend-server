@@ -133,12 +133,18 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }
 
   return (
     <>
-      <div
-        role="presentation"
+      <form
+        aria-label="일정 메모 편집"
         className={PLAN_PLACE_CARD_TW.editorModule}
         onMouseDown={stopCardActivation}
         onClick={stopCardActivation}
         onKeyDown={stopCardActivation}
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!dirty || isPending) return;
+          void form.handleSubmit();
+        }}
       >
         <div className={PLAN_PLACE_CARD_TW.editorSideLabelWrapper}>
           <MemoIcon size={16} />
@@ -173,6 +179,7 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }
               {draft.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
             </span>
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => {
@@ -185,19 +192,12 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }
             >
               취소
             </Button>
-            <Button
-              tone="brand"
-              size="sm"
-              onClick={() => void form.handleSubmit()}
-              disabled={!dirty}
-              loading={isPending}
-              loadingLabel="저장 중"
-            >
+            <Button tone="brand" size="sm" type="submit" disabled={!dirty} loading={isPending} loadingLabel="저장 중">
               저장
             </Button>
           </div>
         </div>
-      </div>
+      </form>
 
       {overwriteDialogOpen ? (
         <ConfirmDialog

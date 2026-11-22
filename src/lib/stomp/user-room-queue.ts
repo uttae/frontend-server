@@ -57,7 +57,7 @@ export function parseUserRoomQueueMessage(body: string): UserRoomQueueMessage | 
 function parseJoinRequest(raw: Record<string, unknown>, roomId: string): UserRoomQueueMessage | null {
   const requesterIdRaw = raw.requesterId;
   const requesterId =
-    typeof requesterIdRaw === "number" || typeof requesterIdRaw === "string" ? Number(requesterIdRaw) : NaN;
+    typeof requesterIdRaw === "number" || typeof requesterIdRaw === "string" ? Number(requesterIdRaw) : Number.NaN;
   if (!Number.isFinite(requesterId)) return null;
 
   const nickname = typeof raw.nickname === "string" ? raw.nickname.trim() : "";

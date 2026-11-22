@@ -42,10 +42,18 @@ async function type(container: HTMLElement, value: string) {
 }
 async function setup(memo: string) {
   const container = document.createElement("div");
+  document.body.append(container);
   const root = createRoot(container);
   const render = (next: string) => act(async () => root.render(<PlanItemMemoEditor {...props} memo={next} />));
   await render(memo);
-  return { container, render, unmount: () => act(async () => root.unmount()) };
+  return {
+    container,
+    render,
+    unmount: async () => {
+      await act(async () => root.unmount());
+      container.remove();
+    },
+  };
 }
 
 it("refills with the server memo while untouched and asks before overwriting a changed memo", async () => {
@@ -117,8 +125,49 @@ it("keeps memo clicks and typing keys inside the editor without cancelling text 
     });
     expect(activateCard).not.toHaveBeenCalled();
     expect(key.defaultPrevented).toBe(false);
+    expect(state.update).not.toHaveBeenCalled();
     await type(container, "AB");
     expect(textarea(container).value).toBe("AB");
+  } finally {
+    await unmount();
+    card.remove();
+  }
+});
+
+it("submits the named memo form once without bubbling or navigating, and cancel never submits", async () => {
+  state.update.mockResolvedValue({});
+  const { container, unmount } = await setup("A");
+  const card = document.createElement("div");
+  card.append(container);
+  document.body.append(card);
+  const parentSubmit = vi.fn();
+  card.addEventListener("submit", parentSubmit);
+  try {
+    await type(container, "B\nC");
+    const editor = container.querySelector<HTMLFormElement>('form[aria-label="일정 메모 편집"]')!;
+    expect(editor).not.toBeNull();
+    expect(saveButton(container).type).toBe("submit");
+    const submissions: Event[] = [];
+    editor.addEventListener("submit", (event) => submissions.push(event));
+    await act(async () => saveButton(container).click());
+    expect(submissions).toHaveLength(1);
+    expect(submissions[0].defaultPrevented).toBe(true);
+    expect(parentSubmit).not.toHaveBeenCalled();
+    expect(state.update).toHaveBeenCalledExactlyOnceWith({
+      roomId: "r",
+      scheduleId: 1,
+      itemId: 2,
+      body: { memo: "B\nC" },
+    });
+    expect(props.onClose).toHaveBeenCalledOnce();
+
+    await type(container, "cancelled draft");
+    const cancel = [...container.querySelectorAll("button")].find((button) => button.textContent === "취소")!;
+    expect(cancel.type).toBe("button");
+    await act(async () => cancel.click());
+    expect(state.update).toHaveBeenCalledOnce();
+    expect(props.onClose).toHaveBeenCalledTimes(2);
+    expect(textarea(container).value).toBe("A");
   } finally {
     await unmount();
     card.remove();
