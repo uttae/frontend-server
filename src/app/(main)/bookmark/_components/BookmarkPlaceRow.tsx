@@ -12,14 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { BookmarkPlacePreviewCard } from "./BookmarkPlacePreviewCard";
-import {
-  useBookmarkCategories,
-  useDeleteRoomBookmarkItem,
-  useMoveRoomBookmark,
-} from "@/hooks/useRooms";
+import { useBookmarkCategories, useDeleteRoomBookmarkItem, useMoveRoomBookmark } from "@/hooks/useRooms";
 import type { BookmarkedPlace } from "@/types/bookmark";
 
-// '카테고리 변경'은 하위 메뉴 대신 같은 메뉴 안에서 목록으로 바꿔 보인다(지금 화면 흐름 유지, 디자이너 질문으로 남음)
 type MenuPhase = "main" | "pickCategory";
 
 export function BookmarkPlaceRow({
@@ -33,13 +28,7 @@ export function BookmarkPlaceRow({
   currentCategoryId: number;
   onOpenDetail: () => void;
 }) {
-  const {
-    id,
-    name,
-    address,
-    primaryTypeDisplayName,
-    googlePlaceId,
-  } = place;
+  const { id, name, address, primaryTypeDisplayName, googlePlaceId } = place;
   const bookmarkId = Number.parseInt(id, 10);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -47,13 +36,11 @@ export function BookmarkPlaceRow({
 
   const { data: categories } = useBookmarkCategories(roomId);
   const { mutate: moveBookmark, isPending: moving } = useMoveRoomBookmark();
-  const { mutate: deleteItem, isPending: deleting } =
-    useDeleteRoomBookmarkItem();
+  const { mutate: deleteItem, isPending: deleting } = useDeleteRoomBookmarkItem();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const busy = moving || deleting;
-  const otherCategories =
-    categories?.filter((c) => c.categoryId !== currentCategoryId) ?? [];
+  const otherCategories = categories?.filter((c) => c.categoryId !== currentCategoryId) ?? [];
 
   const handleMoveTo = (targetCategoryId: number) => {
     if (!Number.isFinite(bookmarkId) || busy) return;
@@ -64,7 +51,6 @@ export function BookmarkPlaceRow({
         categoryId: targetCategoryId,
         fromCategoryId: currentCategoryId,
       },
-      // 이동 항목은 누른 뒤에도 메뉴를 열어 두고(closeOnClick={false}) 성공하면 닫는다
       { onSuccess: () => setMenuOpen(false) },
     );
   };
@@ -102,7 +88,6 @@ export function BookmarkPlaceRow({
         <DropdownMenu
           open={menuOpen}
           onOpenChange={setMenuOpen}
-          // 닫힘 애니메이션이 끝난 뒤 첫 단계로 되돌린다(닫히는 동안 내용이 바뀌어 보이지 않게)
           onOpenChangeComplete={(open) => {
             if (!open) setMenuPhase("main");
           }}
@@ -114,15 +99,10 @@ export function BookmarkPlaceRow({
           >
             <MoreHorizontal className="size-5" />
           </DropdownMenuTrigger>
-          {/* 폭 184는 지금 메뉴 값. 높이는 지금 상한 22rem과 화면에 남은 높이 중 작은 쪽 */}
           <DropdownMenuContent align="end" className="w-46 max-h-[min(22rem,var(--available-height))]">
             {menuPhase === "main" ? (
               <>
-                <DropdownMenuItem
-                  closeOnClick={false}
-                  disabled={busy}
-                  onClick={() => setMenuPhase("pickCategory")}
-                >
+                <DropdownMenuItem closeOnClick={false} disabled={busy} onClick={() => setMenuPhase("pickCategory")}>
                   카테고리 변경
                 </DropdownMenuItem>
                 <DropdownMenuItem variant="destructive" disabled={busy} onClick={handleDelete}>

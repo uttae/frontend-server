@@ -5,21 +5,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlanLoadingSkeleton } from "../PlanLoadingSkeleton";
 import { toast } from "sonner";
 
-import {
-  useCreateScheduleItem,
-  useScheduleItemMoveSavingDays,
-  useSchedulePlanPlaces,
-} from "@/hooks/useRooms";
+import { useCreateScheduleItem, useScheduleItemMoveSavingDays, useSchedulePlanPlaces } from "@/hooks/useRooms";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { usePrefetchScheduleRoutes } from "@/hooks/usePrefetchScheduleRoutes";
 import { usePlanItemDrag } from "@/hooks/usePlanItemDragController";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { schedulePlacesFingerprint } from "@/lib/plan/planTravelLocalStorage";
-import {
-  scheduleIdsToRouteColors,
-  sortedScheduleIdsForRouteColors,
-} from "@/lib/plan/planRouteDayColors";
+import { scheduleIdsToRouteColors, sortedScheduleIdsForRouteColors } from "@/lib/plan/planRouteDayColors";
 import { usePlanScheduleRouteVisibilityStore } from "@/stores/plan-schedule-route-visibility-store";
 import { cn } from "@/lib/utils";
 
@@ -42,16 +35,12 @@ export type PlanItineraryProps = {
 
 export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
   const mapCenter = useMapCenterStore((s) => s.mapCenter);
-  const visibleByScheduleId = usePlanScheduleRouteVisibilityStore(
-    (s) => s.visibleByScheduleId,
-  );
+  const visibleByScheduleId = usePlanScheduleRouteVisibilityStore((s) => s.visibleByScheduleId);
   const routeColorByScheduleId = useMemo(
-    () =>
-      scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)),
+    () => scheduleIdsToRouteColors(sortedScheduleIdsForRouteColors(visibleByScheduleId)),
     [visibleByScheduleId],
   );
-  const orderBadgeColor =
-    routeColorByScheduleId.get(scheduleId) ?? "#f12d33";
+  const orderBadgeColor = routeColorByScheduleId.get(scheduleId) ?? "#f12d33";
 
   const {
     data: placesData,
@@ -62,50 +51,30 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
 
   const places = placesData ?? EMPTY_PLAN_PLACES;
 
-  const scheduleFingerprint = useMemo(
-    () => schedulePlacesFingerprint(places),
-    [places],
-  );
+  const scheduleFingerprint = useMemo(() => schedulePlacesFingerprint(places), [places]);
 
   const routeQueryEnabled =
-    !isLoading &&
-    !isFetchingPlaces &&
-    !isError &&
-    places.length >= 2 &&
-    scheduleFingerprint.length > 0;
+    !isLoading && !isFetchingPlaces && !isError && places.length >= 2 && scheduleFingerprint.length > 0;
 
-  const routesBatchSettled = usePrefetchScheduleRoutes(
-    roomId,
-    scheduleId,
-    places,
-    routeQueryEnabled,
-  );
+  const routesBatchSettled = usePrefetchScheduleRoutes(roomId, scheduleId, places, routeQueryEnabled);
 
-  // 장소 이동을 저장하는 동안 캐시는 새 순서지만 서버는 아직 옛 순서다 — 지금 새 구간 경로를 받으면
-  // 옛 이웃까지의 경로가 새 구간 key에 남는다. 저장이 끝나면(다시 받은 목록으로) 조회한다
   const isSavingPlaceMove = useScheduleItemMoveSavingDays(roomId).includes(scheduleId);
 
   const existingItemIds = useMemo(
-    () =>
-      new Set(
-        places
-          .map((p) => p.itemId)
-          .filter((id): id is number => typeof id === "number"),
-      ),
+    () => new Set(places.map((p) => p.itemId).filter((id): id is number => typeof id === "number")),
     [places],
   );
-  const { mutateAsync: createItem, isPending: isAdding } =
-    useCreateScheduleItem();
+  const { mutateAsync: createItem, isPending: isAdding } = useCreateScheduleItem();
 
-  const [activeInsertIndex, setActiveInsertIndex] = useState<number | null>(
-    null,
-  );
+  const [activeInsertIndex, setActiveInsertIndex] = useState<number | null>(null);
   const [bookmarkModal, setBookmarkModal] = useState<{
     insertIndex?: number;
   } | null>(null);
 
-  const { dropZoneProps, isItemDragActive, reservePaddingBottom, getRowProps } =
-    usePlanItemDrag().getListProps(scheduleId, places);
+  const { dropZoneProps, isItemDragActive, reservePaddingBottom, getRowProps } = usePlanItemDrag().getListProps(
+    scheduleId,
+    places,
+  );
 
   useEffect(() => {
     if (activeInsertIndex === null) return;
@@ -125,10 +94,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
   }, [activeInsertIndex]);
 
   const handlePickPrediction = useCallback(
-    async (
-      prediction: google.maps.places.PlacePrediction,
-      insertIndex?: number,
-    ) => {
+    async (prediction: google.maps.places.PlacePrediction, insertIndex?: number) => {
       const googlePlaceId = prediction.placeId;
       if (!googlePlaceId) {
         toast.error("장소 식별 정보를 찾을 수 없어요.");
@@ -159,38 +125,24 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
   const addControlsDisabled = isAdding;
 
   return (
-    <div
-      {...dropZoneProps}
-      className={cn(
-        !isLoading &&
-          places.length === 0 &&
-          isItemDragActive &&
-          "min-h-12",
-      )}
-    >
-      {isLoading ?
-        <PlanLoadingSkeleton places />
-      : null}
+    <div {...dropZoneProps} className={cn(!isLoading && places.length === 0 && isItemDragActive && "min-h-12")}>
+      {isLoading ? <PlanLoadingSkeleton places /> : null}
 
-      {isError ?
+      {isError ? (
         <p className="py-4 text-center text-body-m-regular mobile:text-body-s-regular text-primary">
           장소 목록을 불러오지 못했어요.
         </p>
-      : null}
+      ) : null}
 
-      {!isLoading && places.length === 0 ?
+      {!isLoading && places.length === 0 ? (
         <p className="py-4 text-center text-body-m-regular mobile:text-body-s-regular text-dark-gray">
           {planCopy.placesEmpty}
         </p>
-      : null}
+      ) : null}
 
       <div
         className="flex flex-col gap-0"
-        style={
-          reservePaddingBottom > 0
-            ? { paddingBottom: reservePaddingBottom }
-            : undefined
-        }
+        style={reservePaddingBottom > 0 ? { paddingBottom: reservePaddingBottom } : undefined}
       >
         {places.map((place, index) => {
           const { ref, style, placeCardDragProps } = getRowProps(index);
@@ -199,11 +151,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
           const nextItemId = places[index + 1]?.itemId;
 
           return (
-            <PlanItineraryReorderRow
-              key={place.id}
-              rowRef={ref}
-              style={style}
-            >
+            <PlanItineraryReorderRow key={place.id} rowRef={ref} style={style}>
               <PlanPlaceCard
                 place={place}
                 itineraryItemCount={places.length}
@@ -211,34 +159,23 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
                 scheduleTimeEdit={{ roomId, scheduleId }}
                 {...placeCardDragProps}
               />
-              {index < places.length - 1 &&
-              typeof place.itemId === "number" &&
-              typeof nextItemId === "number" ?
+              {index < places.length - 1 && typeof place.itemId === "number" && typeof nextItemId === "number" ? (
                 <PlanTravelSegment
                   isActive={segmentActive}
-                  onActivate={() =>
-                    setActiveInsertIndex((current) =>
-                      current === insertIndex ? null : insertIndex,
-                    )
-                  }
+                  onActivate={() => setActiveInsertIndex((current) => (current === insertIndex ? null : insertIndex))}
                   addDisabled={addControlsDisabled}
                   showAddControls={segmentActive}
                   addControls={
                     <PlanAddPlaceControls
                       coords={mapCenter}
                       disabled={addControlsDisabled}
-                      onPickPrediction={(p) =>
-                        void handlePickPrediction(p, insertIndex)
-                      }
-                      onOpenBookmark={() =>
-                        setBookmarkModal({ insertIndex })
-                      }
+                      onPickPrediction={(p) => void handlePickPrediction(p, insertIndex)}
+                      onOpenBookmark={() => setBookmarkModal({ insertIndex })}
                     />
                   }
                 >
                   <PlanTravelTime
                     contentOnly
-                    // 구간 줄을 카드 폭만큼 채워 Google 길찾기를 오른쪽 끝에 둔다
                     className="w-full"
                     roomId={roomId}
                     scheduleId={scheduleId}
@@ -260,7 +197,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
                     }
                   />
                 </PlanTravelSegment>
-              : null}
+              ) : null}
             </PlanItineraryReorderRow>
           );
         })}
@@ -273,12 +210,10 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
           onPickPrediction={(p) => void handlePickPrediction(p)}
           onOpenBookmark={() => setBookmarkModal({})}
         />
-        {isAdding ?
-          <Spinner aria-label="장소 추가 중" />
-        : null}
+        {isAdding ? <Spinner aria-label="장소 추가 중" /> : null}
       </div>
 
-      {bookmarkModal ?
+      {bookmarkModal ? (
         <AddFromBookmarkModal
           roomId={roomId}
           scheduleId={scheduleId}
@@ -289,7 +224,7 @@ export function PlanItinerary({ roomId, scheduleId }: PlanItineraryProps) {
             setActiveInsertIndex(null);
           }}
         />
-      : null}
+      ) : null}
     </div>
   );
 }

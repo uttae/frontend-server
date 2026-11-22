@@ -27,27 +27,38 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
-// Without backdrop forwarding, portal background events reach the owning card.
-it.each(["dialog", "alert-dialog"])("contains %s backdrop events without blocking dismissal", async kind => {
-  await act(async () => root.render(
-    <div {...hostEvents}>
-      {kind === "dialog" ? (
-        <Dialog open onOpenChange={open => { if (!open) close(); }}>
-          <DialogContent {...boundary} backdropProps={boundary}>
-            <DialogTitle>선택</DialogTitle>
-            <p>내용</p>
-          </DialogContent>
-        </Dialog>
-      ) : (
-        <AlertDialog open onOpenChange={open => { if (!open) close(); }}>
-          <AlertDialogContent {...boundary} backdropProps={boundary} backdropCloseLabel="배경 닫기">
-            <AlertDialogTitle>선택</AlertDialogTitle>
-            <p>내용</p>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-    </div>,
-  ));
+it.each(["dialog", "alert-dialog"])("contains %s backdrop events without blocking dismissal", async (kind) => {
+  await act(async () =>
+    root.render(
+      <div {...hostEvents}>
+        {kind === "dialog" ? (
+          <Dialog
+            open
+            onOpenChange={(open) => {
+              if (!open) close();
+            }}
+          >
+            <DialogContent {...boundary} backdropProps={boundary}>
+              <DialogTitle>선택</DialogTitle>
+              <p>내용</p>
+            </DialogContent>
+          </Dialog>
+        ) : (
+          <AlertDialog
+            open
+            onOpenChange={(open) => {
+              if (!open) close();
+            }}
+          >
+            <AlertDialogContent {...boundary} backdropProps={boundary} backdropCloseLabel="배경 닫기">
+              <AlertDialogTitle>선택</AlertDialogTitle>
+              <p>내용</p>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>,
+    ),
+  );
   const backdrop = document.querySelector(`[data-slot="${kind}-overlay"]`)!;
   const target = backdrop.querySelector("button") ?? backdrop;
   for (const type of ["mousedown", "pointerdown", "touchstart", "click"]) {

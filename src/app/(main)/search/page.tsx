@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMobileView } from "@/contexts/MobileViewContext";
 
-/** Preserve old search links without reinstating a search-only left panel. */
 export default function SearchPage() {
   const router = useRouter();
   const params = useSearchParams();

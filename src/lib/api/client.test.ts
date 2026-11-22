@@ -21,7 +21,6 @@ import { jsonBody } from "./http";
 const TAB_ID = "3f2b8c1e-7d4a-4e9b-9c2f-1a2b3c4d5e6f";
 const REQUEST_URL = "http://localhost:8080/rooms/room-1/schedules/10/items";
 
-/** apiFetch가 실제로 보낸 요청의 탭 ID 헤더 */
 function sentTabId(): string | null {
   const init: RequestInit | undefined = mocks.authenticatedFetch.mock.calls[0]?.[1];
   return new Headers(init?.headers).get("X-Client-Tab-Id");
@@ -69,7 +68,13 @@ describe("apiFetch tab ID header", () => {
   it.each([
     ["object", { "Content-Type": "application/json", "X-Extra": "1" }],
     ["Headers", new Headers({ "Content-Type": "application/json", "X-Extra": "1" })],
-    ["array", [["Content-Type", "application/json"], ["X-Extra", "1"]]],
+    [
+      "array",
+      [
+        ["Content-Type", "application/json"],
+        ["X-Extra", "1"],
+      ],
+    ],
   ] satisfies [string, HeadersInit][])("keeps existing %s headers", async (_, headers) => {
     await apiFetch(REQUEST_URL, { method: "POST", headers, body: "{}" });
 

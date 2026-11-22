@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useCallback, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import type { Client } from "@stomp/stompjs";
@@ -20,18 +12,12 @@ import {
   showRoomAccessLostToast,
   showRoomLeftToast,
 } from "@/lib/stomp/forced-room-exit-dispatch";
-import {
-  pathDefersRoomStompRoomTopics,
-  pathSuspendsStomp,
-} from "@/lib/stomp/stompPathPolicy";
+import { pathDefersRoomStompRoomTopics, pathSuspendsStomp } from "@/lib/stomp/stompPathPolicy";
 import { subscribeRoomStompTopics } from "@/lib/stomp/subscribe-room-topics";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
 import { resolveRoomIdFromPathname } from "@/lib/session-room-storage";
 import { useSessionUser } from "@/hooks/useSessionUser";
-import {
-  bootstrapCurrentRoomFromSessionStorage,
-  useSessionStore,
-} from "@/stores/session-store";
+import { bootstrapCurrentRoomFromSessionStorage, useSessionStore } from "@/stores/session-store";
 import type { ServerChatMessage } from "@/types/chat";
 
 import { StompConnectionBanner } from "@/components/stomp/StompConnectionBanner";
@@ -45,9 +31,7 @@ import {
 } from "./use-stomp-provider-effects";
 
 export type StompContextValue = StompConnectionState & {
-  setRoomChatMessageHandler: (
-    fn: ((msg: ServerChatMessage) => void) | null,
-  ) => void;
+  setRoomChatMessageHandler: (fn: ((msg: ServerChatMessage) => void) | null) => void;
 };
 
 const StompContext = createContext<StompContextValue>({
@@ -79,16 +63,12 @@ export function StompProvider({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   const getResolvedRoomId = useCallback((): string | null => {
-    return resolveRoomIdFromPathname(
-      useSessionStore.getState().currentRoomId,
-      pathnameRef.current,
-    );
+    return resolveRoomIdFromPathname(useSessionStore.getState().currentRoomId, pathnameRef.current);
   }, []);
 
   const clientRef = useRef<Client | null>(null);
   const roomTopicsUnsubRef = useRef<(() => void) | null>(null);
   const userRoomsQueueUnsubRef = useRef<(() => void) | null>(null);
-  /** pathname-only 재구독과 실제 방 전환을 구분 */
   const lastSubscribedRoomIdRef = useRef<string | null>(null);
   const forcedExitConsumedRef = useRef(false);
   const suppressCloseRecoveryRef = useRef(false);
@@ -151,7 +131,6 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
-  /** 같은 계정이 다른 탭에서 방을 나감 — 이 탭도 방 캐시를 비우고, 그 방을 보고 있으면 홈으로 보낸다 */
   const notifySelfLeftRoom = useCallback(
     (roomId: string) => {
       const rid = roomId.trim();
@@ -175,7 +154,6 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
-  /** 끊긴 동안 접근을 잃은 방에 다시 구독하다 거부됐을 때 — 놓친 개인 큐 알림 대신 HTTP 확인 결과로 내보낸다 */
   const notifyRoomAccessLost = useCallback(
     (roomId: string) => {
       const rid = roomId.trim();
@@ -199,39 +177,29 @@ export function StompProvider({ children }: { children: ReactNode }) {
     [getResolvedRoomId, handleForcedRoomExit],
   );
 
-  const roomChatMessageHandlerRef = useRef<
-    ((msg: ServerChatMessage) => void) | null
-  >(null);
+  const roomChatMessageHandlerRef = useRef<((msg: ServerChatMessage) => void) | null>(null);
 
   const onRoomChatMessage = useCallback((msg: ServerChatMessage) => {
     roomChatMessageHandlerRef.current?.(msg);
   }, []);
 
-  const setRoomChatMessageHandler = useCallback(
-    (fn: ((msg: ServerChatMessage) => void) | null) => {
-      roomChatMessageHandlerRef.current = fn;
-    },
-    [],
-  );
+  const setRoomChatMessageHandler = useCallback((fn: ((msg: ServerChatMessage) => void) | null) => {
+    roomChatMessageHandlerRef.current = fn;
+  }, []);
 
   const subscribeToRoomTopics = useCallback(
     (client: Client, roomId: string) => {
       const rid = roomId.trim();
-      if (
-        lastSubscribedRoomIdRef.current === rid &&
-        roomTopicsUnsubRef.current != null
-      ) {
+      if (lastSubscribedRoomIdRef.current === rid && roomTopicsUnsubRef.current != null) {
         return;
       }
       lastSubscribedRoomIdRef.current = rid;
       detachRoomTopicsOnly();
       forcedExitConsumedRef.current = false;
-      roomTopicsUnsubRef.current = subscribeRoomStompTopics(
-        client,
-        rid,
-        queryClientRef,
-        { onRoomChatMessage, onSelfLeftRoom: notifySelfLeftRoom },
-      );
+      roomTopicsUnsubRef.current = subscribeRoomStompTopics(client, rid, queryClientRef, {
+        onRoomChatMessage,
+        onSelfLeftRoom: notifySelfLeftRoom,
+      });
     },
     [detachRoomTopicsOnly, onRoomChatMessage, notifySelfLeftRoom],
   );

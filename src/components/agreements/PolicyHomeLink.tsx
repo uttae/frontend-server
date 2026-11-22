@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-// "/"는 세션이 있으면 /home으로, 없으면 랜딩으로 proxy에서 분기된다
 export function PolicyHomeLink() {
   return (
     <Link

@@ -16,9 +16,7 @@ describe("warmPlacePhotoQueriesFromChatHistory", () => {
   });
 
   it("does not warm photo URLs before place cards enter the viewport", async () => {
-    const { warmPlacePhotoQueriesFromChatHistory } = await import(
-      "@/lib/places/warmChatHistoryPlacePhotos"
-    );
+    const { warmPlacePhotoQueriesFromChatHistory } = await import("@/lib/places/warmChatHistoryPlacePhotos");
     const queryClient = new QueryClient();
 
     await warmPlacePhotoQueriesFromChatHistory(queryClient, [

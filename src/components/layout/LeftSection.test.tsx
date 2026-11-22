@@ -51,7 +51,12 @@ function DraftEditor() {
 }
 
 it("preserves drafts and the mounted page across bounded and unbounded widths", async () => {
-  const render = () => root.render(<LeftSection><DraftEditor /></LeftSection>);
+  const render = () =>
+    root.render(
+      <LeftSection>
+        <DraftEditor />
+      </LeftSection>,
+    );
   await act(async () => render());
   await act(async () => host.querySelector("button")!.click());
   const input = host.querySelector("input")!;

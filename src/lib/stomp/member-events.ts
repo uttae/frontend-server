@@ -1,11 +1,6 @@
 import { pickProfileImageUrl } from "@/lib/api/profileImage";
 
-/** 백엔드 `RoomMemberEventType` — 입장 요청은 `/user/queue/rooms` (JoinRequestPayload) */
-export type RoomMemberBroadcastType =
-  | "MEMBER_JOINED"
-  | "MEMBER_LEFT"
-  | "MEMBER_KICKED"
-  | "HOST_DELEGATED";
+export type RoomMemberBroadcastType = "MEMBER_JOINED" | "MEMBER_LEFT" | "MEMBER_KICKED" | "HOST_DELEGATED";
 
 type RoomMemberPayloadBase = {
   content?: string;
@@ -14,7 +9,6 @@ type RoomMemberPayloadBase = {
   roomId: string;
 };
 
-/** MEMBER_JOINED / MEMBER_LEFT / MEMBER_KICKED metadata — userId 필수, 표시 필드 optional */
 export type MemberUserSnapshotDetail = {
   userId: number;
   nickname?: string;
@@ -28,7 +22,6 @@ export type HostDelegatedDetail = {
   newHostNickname?: string;
 };
 
-/** `/topic/rooms/{roomId}/members` 브로드캐스트 본문 — metadata 파싱 결과를 `detail`로 둡니다 */
 export type RoomMemberPayload =
   | (RoomMemberPayloadBase & {
       type: "MEMBER_JOINED";
@@ -63,17 +56,14 @@ function parseFiniteNumber(v: unknown): number | null {
   return null;
 }
 
-function parseMemberUserSnapshot(
-  meta: Record<string, unknown>,
-): MemberUserSnapshotDetail | null {
+function parseMemberUserSnapshot(meta: Record<string, unknown>): MemberUserSnapshotDetail | null {
   const userId = parseFiniteNumber(meta.userId);
   if (userId == null) return null;
 
   const detail: MemberUserSnapshotDetail = { userId };
 
   const nicknameRaw = meta.nickname;
-  const nicknameTrim =
-    typeof nicknameRaw === "string" ? nicknameRaw.trim() : "";
+  const nicknameTrim = typeof nicknameRaw === "string" ? nicknameRaw.trim() : "";
   if (nicknameTrim.length > 0) detail.nickname = nicknameTrim;
 
   if ("profileImageUrl" in meta || "profile_image_url" in meta) {
@@ -83,9 +73,7 @@ function parseMemberUserSnapshot(
   return detail;
 }
 
-function parseHostDelegated(
-  meta: Record<string, unknown>,
-): HostDelegatedDetail | null {
+function parseHostDelegated(meta: Record<string, unknown>): HostDelegatedDetail | null {
   const previousHostUserId = parseFiniteNumber(meta.previousHostUserId);
   const newHostUserId = parseFiniteNumber(meta.newHostUserId);
   if (previousHostUserId == null || newHostUserId == null) return null;
@@ -97,10 +85,8 @@ function parseHostDelegated(
 
   const prevNickRaw = meta.previousHostNickname;
   const newNickRaw = meta.newHostNickname;
-  const previousHostNickname =
-    typeof prevNickRaw === "string" ? prevNickRaw.trim() : "";
-  const newHostNickname =
-    typeof newNickRaw === "string" ? newNickRaw.trim() : "";
+  const previousHostNickname = typeof prevNickRaw === "string" ? prevNickRaw.trim() : "";
+  const newHostNickname = typeof newNickRaw === "string" ? newNickRaw.trim() : "";
 
   if (previousHostNickname.length > 0) {
     detail.previousHostNickname = previousHostNickname;
@@ -116,32 +102,16 @@ export function parseRoomMemberMessage(body: string): RoomMemberPayload | null {
   try {
     const raw = JSON.parse(body) as Record<string, unknown>;
     const type = raw?.type;
-    if (
-      type !== "MEMBER_JOINED" &&
-      type !== "MEMBER_LEFT" &&
-      type !== "MEMBER_KICKED" &&
-      type !== "HOST_DELEGATED"
-    ) {
+    if (type !== "MEMBER_JOINED" && type !== "MEMBER_LEFT" && type !== "MEMBER_KICKED" && type !== "HOST_DELEGATED") {
       return null;
     }
 
     const roomIdRaw = raw.roomId;
-    const roomId =
-      typeof roomIdRaw === "string"
-        ? roomIdRaw
-        : roomIdRaw != null
-          ? String(roomIdRaw)
-          : "";
+    const roomId = typeof roomIdRaw === "string" || typeof roomIdRaw === "number" ? String(roomIdRaw) : "";
 
-    const content =
-      typeof raw.content === "string" ? raw.content : undefined;
+    const content = typeof raw.content === "string" ? raw.content : undefined;
     const createdAt = typeof raw.createdAt === "string" ? raw.createdAt : "";
-    const id =
-      typeof raw.id === "string"
-        ? raw.id
-        : raw.id != null
-          ? String(raw.id)
-          : "";
+    const id = typeof raw.id === "string" || typeof raw.id === "number" ? String(raw.id) : "";
 
     const base: RoomMemberPayloadBase = {
       roomId,

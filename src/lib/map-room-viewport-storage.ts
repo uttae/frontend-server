@@ -27,9 +27,7 @@ function saveAll(payload: Payload): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-  } catch {
-    /* quota / private mode */
-  }
+  } catch {}
 }
 
 function roomKey(roomId: string): string {
@@ -42,11 +40,7 @@ function isValidViewport(v: unknown): v is RoomMapViewport {
   const lat = o.lat;
   const lng = o.lng;
   const zoom = o.zoom;
-  if (
-    typeof lat !== "number" ||
-    typeof lng !== "number" ||
-    typeof zoom !== "number"
-  ) {
+  if (typeof lat !== "number" || typeof lng !== "number" || typeof zoom !== "number") {
     return false;
   }
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(zoom)) {
@@ -57,7 +51,6 @@ function isValidViewport(v: unknown): v is RoomMapViewport {
   return true;
 }
 
-/** 방별 마지막 지도 중심·줌 (브라우저 재시작 후 복원) */
 export function readRoomMapViewport(roomId: string): RoomMapViewport | null {
   const rid = roomKey(roomId);
   if (!rid.length) return null;
@@ -65,10 +58,7 @@ export function readRoomMapViewport(roomId: string): RoomMapViewport | null {
   return isValidViewport(entry) ? entry : null;
 }
 
-export function writeRoomMapViewport(
-  roomId: string,
-  viewport: RoomMapViewport,
-): void {
+export function writeRoomMapViewport(roomId: string, viewport: RoomMapViewport): void {
   const rid = roomKey(roomId);
   if (!rid.length || !isValidViewport(viewport)) return;
   const all = loadAll();

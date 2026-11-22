@@ -15,38 +15,23 @@ it.each([
   ["12.", 3, "12.000"],
   [".5", 2, "0.50"],
   ["12.99", 0, "12"],
-])(
-  "normalizes %s to %s decimal places only on blur",
-  async (value, fractionDigits, expected) => {
-    const change = vi.fn();
-    await act(async () => {
-      renderer = create(
-        <ExpenseAmountInput
-          value={value}
-          fractionDigits={fractionDigits}
-          onChange={change}
-          placeholder="0"
-        />,
-      );
-    });
-    expect(change).not.toHaveBeenCalled();
-    await act(async () => renderer.root.findByType("input").props.onBlur());
-    expect(change).toHaveBeenCalledWith(expected);
-  },
-);
+])("normalizes %s to %s decimal places only on blur", async (value, fractionDigits, expected) => {
+  const change = vi.fn();
+  await act(async () => {
+    renderer = create(
+      <ExpenseAmountInput value={value} fractionDigits={fractionDigits} onChange={change} placeholder="0" />,
+    );
+  });
+  expect(change).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findByType("input").props.onBlur());
+  expect(change).toHaveBeenCalledWith(expected);
+});
 it.each(["", ".", "abc", "12..34", "-1.23", "1e3", " 12", "12.00"])(
   "does not rewrite empty, malformed, or already normalized input %s",
   async (value) => {
     const change = vi.fn();
     await act(async () => {
-      renderer = create(
-        <ExpenseAmountInput
-          value={value}
-          fractionDigits={2}
-          onChange={change}
-          placeholder="0"
-        />,
-      );
+      renderer = create(<ExpenseAmountInput value={value} fractionDigits={2} onChange={change} placeholder="0" />);
     });
     await act(async () => renderer.root.findByType("input").props.onBlur());
     expect(change).not.toHaveBeenCalled();
@@ -55,9 +40,7 @@ it.each(["", ".", "abc", "12..34", "-1.23", "1e3", " 12", "12.00"])(
 it("keeps input unchanged while currency precision is unavailable", async () => {
   const change = vi.fn();
   await act(async () => {
-    renderer = create(
-      <ExpenseAmountInput value="12.345" onChange={change} placeholder="0" />,
-    );
+    renderer = create(<ExpenseAmountInput value="12.345" onChange={change} placeholder="0" />);
   });
   await act(async () => renderer.root.findByType("input").props.onBlur());
   expect(change).not.toHaveBeenCalled();

@@ -6,17 +6,24 @@ import { ExpenseDialog } from "./ExpenseDialog";
 import { ExpenseEditor } from "./ExpenseEditor";
 import { ExpenseScopePanel } from "./ExpenseScopePanel";
 
-// 딤·Esc·X로 닫히는지를 실제 Base UI 대화상자(PC)·시트(모바일 기기)로 본다. 끄는 거리·속도 기준은 Base UI Drawer가 맡아 여기서 보지 않는다
 const state = vi.hoisted(() => ({ mobile: true, busy: false }));
 vi.mock("@/contexts/MobileViewContext", () => ({
   useMobileView: () => ({ isMobileDevice: state.mobile }),
 }));
 vi.mock("./ExpenseProvider", () => ({
   useExpenseContext: () => ({
-    roomId: "r", currentUserId: 1, members: [], memberStatus: "success",
-    canManage: true, schedules: [], schedulesReady: true, busy: state.busy,
+    roomId: "r",
+    currentUserId: 1,
+    members: [],
+    memberStatus: "success",
+    canManage: true,
+    schedules: [],
+    schedulesReady: true,
+    busy: state.busy,
     currencies: { data: [{ currency: "KRW", fractionDigits: 0, maximumAmount: "999999999999999" }], isSuccess: true },
-    list: { data: [], isSuccess: true }, save: vi.fn(), readLatest: vi.fn(),
+    list: { data: [], isSuccess: true },
+    save: vi.fn(),
+    readLatest: vi.fn(),
   }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
@@ -28,27 +35,33 @@ let host: HTMLDivElement;
 const close = vi.fn();
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  state.mobile = true; state.busy = false; close.mockReset();
-  host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+  state.mobile = true;
+  state.busy = false;
+  close.mockReset();
+  host = document.createElement("div");
+  document.body.append(host);
+  root = createRoot(host);
 });
 afterEach(async () => {
-  await act(async () => root.unmount()); host.remove(); vi.unstubAllGlobals();
+  await act(async () => root.unmount());
+  host.remove();
+  vi.unstubAllGlobals();
 });
 
 async function settle() {
-  // Base UI는 열림·닫힘을 microtask·requestAnimationFrame·타이머로 반영한다
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 20)); });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
 }
-// 대화상자는 document.body로 포털된다. 사용자가 누르는 딤은 PC에서는 딤 요소, 시트에서는 딤 위를 덮는 시트 바깥 빈 곳이다
 const surface = () => document.querySelector<HTMLElement>('[role="dialog"]')!;
-const dim = () => document.querySelector<HTMLElement>(
-  state.mobile ? '[data-slot="drawer-viewport"]' : '[data-slot="dialog-overlay"]',
-)!;
+const dim = () =>
+  document.querySelector<HTMLElement>(state.mobile ? '[data-slot="drawer-viewport"]' : '[data-slot="dialog-overlay"]')!;
 const buttonNamed = (label: string) => document.querySelector<HTMLButtonElement>(`[aria-label="${label}"]`)!;
 function pointer(target: Element, type: string) {
-  target.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, detail: type === "click" ? 1 : 0 }));
+  target.dispatchEvent(
+    new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, detail: type === "click" ? 1 : 0 }),
+  );
 }
-/** 마우스 왼쪽 버튼으로 눌렀다 뗀다. 누른 곳과 뗀 곳이 다르면 click은 둘의 공통 조상이 아니라 뗀 곳에서 받는다고 단순화한다 */
 async function press(start: Element, end: Element = start) {
   await act(async () => {
     pointer(start, "pointerdown");
@@ -76,9 +89,20 @@ const kinds = {
   list: {
     closeLabel: "비용 목록 닫기",
     render: () => (
-      <ExpenseScopePanel scope={{ scheduleId: 2, label: "1일차" }} roomId="r" expenses={[]}
-        isPending={false} isError={false} canManage busy={state.busy} onAdd={() => {}}
-        onEdit={() => {}} onDelete={async () => {}} onRetry={() => {}} onClose={close} />
+      <ExpenseScopePanel
+        scope={{ scheduleId: 2, label: "1일차" }}
+        roomId="r"
+        expenses={[]}
+        isPending={false}
+        isError={false}
+        canManage
+        busy={state.busy}
+        onAdd={() => {}}
+        onEdit={() => {}}
+        onDelete={async () => {}}
+        onRetry={() => {}}
+        onClose={close}
+      />
     ),
   },
 } as const;
@@ -102,7 +126,6 @@ for (const [kind, { closeLabel, render }] of Object.entries(kinds)) {
       await press(title);
       await press(title, dim());
       expect(close).not.toHaveBeenCalled();
-      // 그 뒤 딤을 제대로 누르면 닫힌다
       await press(dim());
       expect(close).toHaveBeenCalledOnce();
     });
@@ -113,7 +136,6 @@ for (const [kind, { closeLabel, render }] of Object.entries(kinds)) {
       await press(dim());
       expect(close).not.toHaveBeenCalled();
       expect(surface()).not.toBeNull();
-      // 막힌 것은 딤만이다
       await pressEscape();
       expect(close).toHaveBeenCalledOnce();
     });
@@ -143,7 +165,6 @@ for (const [kind, { closeLabel, render }] of Object.entries(kinds)) {
       await settle();
       expect(close).not.toHaveBeenCalled();
       expect(surface()).not.toBeNull();
-      // 저장·삭제가 끝나면 다시 닫힌다
       state.busy = false;
       await act(async () => root.render(render()));
       await pressEscape();
@@ -154,12 +175,15 @@ for (const [kind, { closeLabel, render }] of Object.entries(kinds)) {
 
 describe("settlement dialog dismissal", () => {
   async function mount() {
-    await act(async () => root.render(
-      <ExpenseDialog title="정산 요약" onClose={close}><p>정산 내용</p></ExpenseDialog>,
-    ));
+    await act(async () =>
+      root.render(
+        <ExpenseDialog title="정산 요약" onClose={close}>
+          <p>정산 내용</p>
+        </ExpenseDialog>,
+      ),
+    );
     await settle();
   }
-  // 읽기 전용이라 PC·시트 모두 딤으로 닫는다(옛 ExpenseDialog와 같음)
   it.each([true, false])("closes by dim, Escape and the close button (mobile %s)", async (mobile) => {
     state.mobile = mobile;
     await mount();

@@ -4,11 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import { sessionUserQueryKey } from "@/lib/query-keys";
 import { fetchSessionUserRaw } from "@/lib/session-user";
-import {
-  readSessionUserCache,
-  readSessionUserId,
-  setSessionUserCache,
-} from "@/lib/session-user-cache";
+import { readSessionUserCache, readSessionUserId, setSessionUserCache } from "@/lib/session-user-cache";
 import { useSessionStore } from "@/stores/session-store";
 
 export type { SessionUser } from "@/lib/session-user";

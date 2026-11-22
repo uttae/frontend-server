@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import { SCHEDULE_ITEM_MEMO_TOO_LONG_MESSAGE, scheduleItemMemoSchema } from "./scheduleItemMemo";
 
 describe("scheduleItemMemoSchema", () => {
-  // 칸 아래 글자 수와 같은 기준(입력한 그대로의 길이)으로 본다
   it("trims the memo for save and counts the typed length", () => {
     expect(scheduleItemMemoSchema.parse("  예약 번호 123  ")).toBe("예약 번호 123");
     expect(scheduleItemMemoSchema.safeParse("가".repeat(2000)).success).toBe(true);

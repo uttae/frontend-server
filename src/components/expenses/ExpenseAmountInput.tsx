@@ -18,8 +18,7 @@ export function ExpenseAmountInput({
   fractionDigits?: number;
 } & Pick<
   ComponentProps<"input">,
-  "id" | "type" | "inputMode" | "autoComplete" | "disabled" |
-  "aria-invalid" | "aria-describedby" | "className"
+  "id" | "type" | "inputMode" | "autoComplete" | "disabled" | "aria-invalid" | "aria-describedby" | "className"
 >) {
   const input = useRef<HTMLInputElement>(null);
   const caret = useRef<number | null>(null);
@@ -39,7 +38,6 @@ export function ExpenseAmountInput({
     <Input
       {...inputProps}
       ref={input}
-      // 가계부의 다른 금액 표시처럼 고정폭 숫자로 그린다. Input의 글자 토큰(크기·굵기·색)은 덮지 않는다
       className={cn("tabular-nums", inputProps.className)}
       inputMode={inputProps.inputMode ?? "decimal"}
       value={formatted}
@@ -54,40 +52,27 @@ export function ExpenseAmountInput({
           !/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)
         )
           return;
-        // Work on decimal strings: pad or truncate, never round via floating point.
         const [integer, fraction = ""] = value.split(".");
         const normalized =
           (integer || "0") +
-          (fractionDigits
-            ? "." +
-              fraction.padEnd(fractionDigits, "0").slice(0, fractionDigits)
-            : "");
+          (fractionDigits ? "." + fraction.padEnd(fractionDigits, "0").slice(0, fractionDigits) : "");
         if (normalized !== value) onChange(normalized);
       }}
       onChange={(event) => {
         const element = event.target;
         caret.current =
-          element.selectionStart === null ||
-          element.selectionStart === undefined
+          element.selectionStart === null || element.selectionStart === undefined
             ? null
-            : element.value.slice(0, element.selectionStart).replaceAll(",", "")
-                .length;
+            : element.value.slice(0, element.selectionStart).replaceAll(",", "").length;
         onChange(element.value.replaceAll(",", ""));
       }}
       onKeyDown={(event) => {
         const element = event.currentTarget;
         const start = element.selectionStart;
-        if (
-          start === null ||
-          start !== element.selectionEnd ||
-          event.nativeEvent.isComposing
-        )
-          return;
-        // Treat separators as formatting when deleting, rather than reinserting them forever.
+        if (start === null || start !== element.selectionEnd || event.nativeEvent.isComposing) return;
         if (event.key === "Backspace" && element.value[start - 1] === ",")
           element.setSelectionRange(start - 1, start - 1);
-        if (event.key === "Delete" && element.value[start] === ",")
-          element.setSelectionRange(start + 1, start + 1);
+        if (event.key === "Delete" && element.value[start] === ",") element.setSelectionRange(start + 1, start + 1);
       }}
     />
   );

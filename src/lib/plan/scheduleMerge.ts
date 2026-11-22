@@ -4,13 +4,10 @@ import type { PlanDayData } from "@/lib/plan/types";
 import { formatMobileDayDate } from "@/lib/plan/mobilePlanFormat";
 import { formatKoreanDateLabel, parseLocalYmd } from "@/lib/plan/tripRange";
 
-export function sortRoomSchedules<T extends { dayNumber: number }>(
-  schedules: T[],
-): T[] {
+export function sortRoomSchedules<T extends { dayNumber: number }>(schedules: T[]): T[] {
   return [...schedules].sort((a, b) => a.dayNumber - b.dayNumber);
 }
 
-/** 0-based 일차 index 뒤에 삽입할 때 `POST /schedules` body의 `dayNumber` (1-based) */
 export function dayNumberForInsertAfterDayIndex(dayIndex: number): number {
   return dayIndex + 2;
 }

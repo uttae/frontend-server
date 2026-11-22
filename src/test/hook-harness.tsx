@@ -1,10 +1,7 @@
 import { act, useLayoutEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 
-export function hookHarness<P, R>(
-  useValue: (props: P) => R,
-  wrap: (child: ReactNode) => ReactNode = (child) => child,
-) {
+export function hookHarness<P, R>(useValue: (props: P) => R, wrap: (child: ReactNode) => ReactNode = (child) => child) {
   const container = document.createElement("div");
   document.body.append(container);
   const root = createRoot(container);

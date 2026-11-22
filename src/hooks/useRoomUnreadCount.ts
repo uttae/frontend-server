@@ -13,7 +13,6 @@ export function useRoomUnreadCount(roomId: string | null) {
   return useQuery({
     queryKey: roomUnreadCountQueryKey(id || null),
     queryFn: () => getRoomUnreadCount(id),
-    /** 패널 열림 중에는 GET 없음 — STOMP read + optimistic 캐시만 사용 */
     enabled: id.length > 0 && !chatPanelOpen,
     staleTime: Number.POSITIVE_INFINITY,
     refetchOnWindowFocus: false,

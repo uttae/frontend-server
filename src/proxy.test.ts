@@ -45,9 +45,7 @@ describe("invite preview proxy indexing contract", () => {
   ])("rewrites supported social preview UA %s with noindex headers", async (ua) => {
     const response = await proxy(inviteRequest(ua));
 
-    expect(response.headers.get("x-middleware-rewrite")).toBe(
-      "https://www.uttae.app/invite-preview.html",
-    );
+    expect(response.headers.get("x-middleware-rewrite")).toBe("https://www.uttae.app/invite-preview.html");
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(verifySessionWithOptionalRefresh).not.toHaveBeenCalled();
   });
@@ -103,9 +101,7 @@ describe("protected route redirect indexing contract", () => {
     const response = await proxy(appRequest(path));
 
     expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe(
-      "https://www.uttae.app/login",
-    );
+    expect(response.headers.get("location")).toBe("https://www.uttae.app/login");
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
   });
 });
@@ -115,26 +111,19 @@ describe("public entry route indexing contract", () => {
     verifySessionWithOptionalRefresh.mockReset();
   });
 
-  it.each(["/login", "/"])(
-    "marks the authenticated %s redirect noindex, nofollow",
-    async (path) => {
-      verifySessionWithOptionalRefresh.mockResolvedValue({
-        ok: true,
-        setCookies: ["session=refreshed; Path=/; HttpOnly"],
-      });
+  it.each(["/login", "/"])("marks the authenticated %s redirect noindex, nofollow", async (path) => {
+    verifySessionWithOptionalRefresh.mockResolvedValue({
+      ok: true,
+      setCookies: ["session=refreshed; Path=/; HttpOnly"],
+    });
 
-      const response = await proxy(appRequest(path));
+    const response = await proxy(appRequest(path));
 
-      expect(response.status).toBe(307);
-      expect(response.headers.get("location")).toBe(
-        "https://www.uttae.app/home",
-      );
-      expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
-      expect(response.headers.get("set-cookie")).toBe(
-        "session=refreshed; Path=/; HttpOnly",
-      );
-    },
-  );
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toBe("https://www.uttae.app/home");
+    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(response.headers.get("set-cookie")).toBe("session=refreshed; Path=/; HttpOnly");
+  });
 
   it("keeps the anonymous public root indexable", async () => {
     verifySessionWithOptionalRefresh.mockResolvedValue({

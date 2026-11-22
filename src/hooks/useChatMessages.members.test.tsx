@@ -33,7 +33,6 @@ vi.mock("@/contexts/StompContext", () => {
   };
   return { useStompContext: () => ({ client, connected: true, setRoomChatMessageHandler }) };
 });
-// 멤버 목록은 실제 useRoomMembers(TanStack)로 받는다 — 무효화가 같은 렌더에 반영되는지 보려고
 vi.mock("@/lib/api/rooms", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   getRoomMessageReadStatus: mocks.read,
@@ -49,15 +48,26 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const ROOM = "room";
 const member = (userId: number, nickname: string): Member => ({
-  userId, nickname, profileImageUrl: null, role: "MEMBER", status: "ACTIVE", joinedAt: "", isOnline: true,
+  userId,
+  nickname,
+  profileImageUrl: null,
+  role: "MEMBER",
+  status: "ACTIVE",
+  joinedAt: "",
+  isOnline: true,
 });
 const me = member(1, "나");
 const friend = member(2, "친구");
 const newcomer = member(9, "강신규");
 const at = (second: number) => new Date(Date.UTC(2026, 10, 8, 6, 0, second)).toISOString();
-// sequence는 빈 방 다음 1번부터 이어져야 실시간 메시지가 바로 붙는다(건너뛰면 빠진 구간으로 보고 따라잡기 조회)
 const chat = (id: string, senderId: number, sequence: number): ServerChatMessage => ({
-  roomId: ROOM, id, senderId, messageType: "CHAT", content: id, createdAt: at(sequence), sequence,
+  roomId: ROOM,
+  id,
+  senderId,
+  messageType: "CHAT",
+  content: id,
+  createdAt: at(sequence),
+  sequence,
 });
 const joined = (sequence: number): ServerChatMessage => ({
   roomId: ROOM,
@@ -120,14 +130,15 @@ it("멤버 목록에 없는 사람의 메시지는 목록을 다시 받는 동�
     mocks.stomp.handler?.(chat("after", 2, 3));
   });
 
-  // 받자마자 목록을 다시 받기 시작했고, 그 렌더에서 이미 숨겨져 '(알 수 없음)'이 잠깐도 보이지 않는다
   expect(mocks.getMembers).toHaveBeenCalledTimes(2);
-  expect(shown()).toEqual([["before", "친구"], ["after", "친구"]]);
+  expect(shown()).toEqual([
+    ["before", "친구"],
+    ["after", "친구"],
+  ]);
 
   await act(async () => refetch.resolve({ members: [me, friend, newcomer] }));
   await hook.flush();
 
-  // messages state는 그대로이고, 목록이 바뀌어 같은 계산이 이름을 그린다
   expect(shown()).toEqual([
     ["before", "친구"],
     ["join-9", "강신규님이 입장했어요"],
@@ -173,7 +184,10 @@ it("멤버 목록을 처음 받는 중이면 로딩 상태이고, 이름을 모�
   await act(async () => firstLoad.resolve({ members: [me, friend] }));
   await hook.flush();
   expect(hook.current.waitingForMembers).toBe(false);
-  expect(shown()).toEqual([["mine", "나"], ["theirs", "친구"]]);
+  expect(shown()).toEqual([
+    ["mine", "나"],
+    ["theirs", "친구"],
+  ]);
 });
 
 it("첫 멤버 목록을 받는 중에 새 멤버가 들어와도, 그 사람이 있는 새 목록으로 이름이 보인다", async () => {
@@ -186,12 +200,10 @@ it("첫 멤버 목록을 받는 중에 새 멤버가 들어와도, 그 사람이
   await act(async () => {
     mocks.stomp.handler?.(joined(1));
   });
-  // 첫 조회에 합류하지 않고 새로 받기 시작했다
   expect(mocks.getMembers).toHaveBeenCalledTimes(2);
 
   await act(async () => {
     refetch.resolve({ members: [me, friend, newcomer] });
-    // 입장 전에 출발한 첫 응답이 늦게 와도 버려진다
     firstLoad.resolve({ members: [me, friend] });
   });
   await hook.flush();

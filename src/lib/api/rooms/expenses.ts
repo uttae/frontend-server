@@ -2,7 +2,6 @@ import { apiFetch } from "@/lib/api/client";
 import { apiUrl, jsonBody, tryParseJson } from "@/lib/api/http";
 
 export type ExpenseGroup = "PREPARATION" | "TRIP_DAY";
-// Approved API enum order; labels are client-side display text.
 export const expenseCategories = [
   { value: "FLIGHT", label: "항공" },
   { value: "ACCOMMODATION", label: "숙박" },
@@ -17,10 +16,7 @@ export function isExpenseCategory(value: unknown): value is ExpenseCategory {
   return expenseCategories.some((category) => category.value === value);
 }
 export function expenseCategoryLabel(value: ExpenseCategory): string {
-  return (
-    expenseCategories.find((category) => category.value === value)?.label ??
-    value
-  );
+  return expenseCategories.find((category) => category.value === value)?.label ?? value;
 }
 export type ExpenseInput = {
   expenseGroup: ExpenseGroup;
@@ -74,15 +70,8 @@ export class ExpenseApiError extends Error {
     super(message);
   }
 }
-async function request<T>(
-  roomId: string,
-  suffix = "",
-  init?: RequestInit,
-): Promise<T> {
-  const res = await apiFetch(
-    apiUrl(`/rooms/${roomId}/expenses${suffix}`),
-    init,
-  );
+async function request<T>(roomId: string, suffix = "", init?: RequestInit): Promise<T> {
+  const res = await apiFetch(apiUrl(`/rooms/${roomId}/expenses${suffix}`), init);
   if (!res.ok) {
     const body = (await tryParseJson(res)) as {
       code?: string;
@@ -96,28 +85,17 @@ async function request<T>(
   }
   return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);
 }
-/** 조회 함수는 TanStack이 넘기는 `signal`을 받는다 — 무효화로 취소된 옛 조회의 HTTP 요청도 끊는다 */
-const readInit = (signal?: AbortSignal): RequestInit | undefined =>
-  signal ? { signal } : undefined;
-export const getExpenses = (roomId: string, signal?: AbortSignal) =>
-  request<Expense[]>(roomId, "", readInit(signal));
+const readInit = (signal?: AbortSignal): RequestInit | undefined => (signal ? { signal } : undefined);
+export const getExpenses = (roomId: string, signal?: AbortSignal) => request<Expense[]>(roomId, "", readInit(signal));
 export const getExpenseSummary = (roomId: string, signal?: AbortSignal) =>
   request<ExpenseSummary>(roomId, "/summary", readInit(signal));
 export const getExpenseCurrencies = (roomId: string, signal?: AbortSignal) =>
   request<ExpenseCurrency[]>(roomId, "/currencies", readInit(signal));
 export const createExpense = (roomId: string, body: ExpenseInput) =>
   request<Expense>(roomId, "", { method: "POST", ...jsonBody(body) });
-export const patchExpense = (
-  roomId: string,
-  id: number,
-  body: Partial<ExpenseInput> & { expectedVersion: number },
-) =>
+export const patchExpense = (roomId: string, id: number, body: Partial<ExpenseInput> & { expectedVersion: number }) =>
   request<Expense>(roomId, `/${id}`, { method: "PATCH", ...jsonBody(body) });
-export const deleteExpense = (
-  roomId: string,
-  id: number,
-  expectedVersion: number,
-) =>
+export const deleteExpense = (roomId: string, id: number, expectedVersion: number) =>
   request<void>(roomId, `/${id}?expectedVersion=${expectedVersion}`, {
     method: "DELETE",
   });
@@ -160,11 +138,7 @@ export const putExpenseBudget = (roomId: string, body: ExpenseBudgetInput) =>
     method: "PUT",
     ...jsonBody(body),
   });
-export const getExpenseKrwSummary = (
-  roomId: string,
-  filters: ExpenseKrwFilters = {},
-  signal?: AbortSignal,
-) => {
+export const getExpenseKrwSummary = (roomId: string, filters: ExpenseKrwFilters = {}, signal?: AbortSignal) => {
   const query = new URLSearchParams();
   for (const key of ["expenseGroup", "scheduleId", "category", "payerUserId"] as const) {
     const value = filters[key];

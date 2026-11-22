@@ -11,11 +11,8 @@ export interface SessionUser {
 }
 
 export type FetchSessionUserResult =
-  | { kind: "user"; user: SessionUser }
-  | { kind: "unauthenticated" }
-  | { kind: "network_error" };
+  { kind: "user"; user: SessionUser } | { kind: "unauthenticated" } | { kind: "network_error" };
 
-/** GET /users/me — 401 시 BFF refresh 후 1회 재시도; 네트워크 오류는 별도 구분 */
 export async function fetchSessionUserResult(): Promise<FetchSessionUserResult> {
   try {
     const { response: res } = await authenticatedFetch(`${API_BASE}/users/me`);
@@ -32,10 +29,7 @@ export async function fetchSessionUserRaw(): Promise<SessionUser | null> {
   return result.kind === "user" ? result.user : null;
 }
 
-export async function fetchSessionUserWithRetry(
-  attempts = 3,
-  baseDelayMs = 350,
-): Promise<SessionUser | null> {
+export async function fetchSessionUserWithRetry(attempts = 3, baseDelayMs = 350): Promise<SessionUser | null> {
   for (let i = 0; i < attempts; i++) {
     const result = await fetchSessionUserResult();
     if (result.kind === "user") return result.user;

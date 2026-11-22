@@ -24,7 +24,17 @@ function place(itemId: number): PlanPlace {
 function box(top: number, height: number) {
   const el = document.createElement("div");
   el.getBoundingClientRect = () =>
-    ({ top, bottom: top + height, height, left: 0, right: 300, width: 300, x: 0, y: top, toJSON: () => ({}) }) as DOMRect;
+    ({
+      top,
+      bottom: top + height,
+      height,
+      left: 0,
+      right: 300,
+      width: 300,
+      x: 0,
+      y: top,
+      toJSON: () => ({}),
+    }) as DOMRect;
   return el;
 }
 function pointer(type: string, clientY: number) {
@@ -41,7 +51,9 @@ describe("useMobilePlanDragController", () => {
     const hook = hookHarness(() => useMobilePlanDragController({ roomId: "room-a", editing: true, scrollRef }));
     const register = (scheduleId: number, places: PlanPlace[], top: number) => {
       hook.current.registerList(scheduleId, box(top, places.length * ROW_HEIGHT));
-      places.forEach((_, index) => hook.current.registerRow(scheduleId, index, box(top + index * ROW_HEIGHT, ROW_HEIGHT)));
+      places.forEach((_, index) =>
+        hook.current.registerRow(scheduleId, index, box(top + index * ROW_HEIGHT, ROW_HEIGHT)),
+      );
       hook.current.registerPlaces(scheduleId, places);
     };
     const drag = async (scheduleId: number, index: number, fromY: number, toY: number) => {
@@ -74,10 +86,10 @@ describe("useMobilePlanDragController", () => {
         { itemId: 1, from: { scheduleId: 10, index: 0 }, to: { scheduleId: 10, index: 2, length: 3 } },
         expect.any(Function),
       );
-      // 캐시가 아직 놓기 전 목록이면 손을 뗀 자리의 카드와 밀린 카드를 그대로 그린다 — 원래 자리로 튀지 않는다
       expect(hook.current.rowStyle(10, 0, day)?.transform).toBe("translateY(250px)");
-      expect(hook.current.rowStyle(10, 1, day)?.transform).toBe(`translateY(-${ROW_HEIGHT + MOBILE_EDIT_ROW_GAP_PX}px)`);
-      // onMutate가 캐시를 새 순서로 바꾸면 캐시를 그대로 그린다
+      expect(hook.current.rowStyle(10, 1, day)?.transform).toBe(
+        `translateY(-${ROW_HEIGHT + MOBILE_EDIT_ROW_GAP_PX}px)`,
+      );
       expect(hook.current.rowStyle(10, 0, [place(2), place(3), place(1)])).toBeUndefined();
 
       await act(async () => commit.fn.mock.lastCall![1]());

@@ -16,11 +16,8 @@ import {
 import { usePlanItemDropCommit } from "@/hooks/usePlanItemDropCommit";
 import type { PlanPlace } from "@/lib/plan/types";
 
-/** 편집 모드 카드 사이 간격(px) — 드래그 중 다른 카드를 밀어낼 거리 */
 export const MOBILE_EDIT_ROW_GAP_PX = 8;
-/** 대상 일차 판정 여유(px) — 목록 위아래로 이만큼 벗어나도 그 일차로 본다 */
 const DAY_HIT_MARGIN_PX = 32;
-/** 스크롤 영역 위아래 이 거리 안으로 끌면 자동 스크롤 */
 const AUTO_SCROLL_EDGE_PX = 72;
 const AUTO_SCROLL_MAX_SPEED_PX = 14;
 
@@ -32,33 +29,22 @@ type ActiveDrag = {
   sourceScheduleId: number;
   sourceIndex: number;
   place: PlanPlace;
-  /** 스크롤 콘텐츠 기준 좌표 */
   days: DaySnapshot[];
   startContentY: number;
   lastClientY: number;
   dy: number;
   targetScheduleId: number;
   targetIndex: number;
-  /**
-   * 놓아서 저장하는 중 — 놓을 때 출발·대상 일차 목록. 캐시(onMutate)가 그 목록을 바꿀 때까지 놓은 모양을 그대로 둔다.
-   * 먼저 풀면 캐시가 바뀌기 전 한 프레임 동안 옛 순서가 보인다(캐시 알림은 setTimeout 0 뒤)
-   */
   dropped: ReadonlyMap<number, readonly PlanPlace[]> | null;
 };
 
 type MobilePlanDragValue = {
   editing: boolean;
-  /** 드래그 중 카드가 놓일 일차 — 드래그 중이 아니면 null */
   dropTargetScheduleId: number | null;
   registerList: (scheduleId: number, el: HTMLElement | null) => void;
   registerRow: (scheduleId: number, index: number, el: HTMLElement | null) => void;
   registerPlaces: (scheduleId: number, places: PlanPlace[]) => void;
-  startDrag: (
-    scheduleId: number,
-    index: number,
-    e: ReactPointerEvent<HTMLElement>,
-  ) => void;
-  /** 그 일차 목록(캐시)의 행 위치 — 놓아서 저장 중이면 캐시가 바뀌기 전까지만 놓은 모양 */
+  startDrag: (scheduleId: number, index: number, e: ReactPointerEvent<HTMLElement>) => void;
   rowStyle: (scheduleId: number, index: number, places: readonly PlanPlace[]) => CSSProperties | undefined;
 };
 
@@ -72,10 +58,11 @@ export function useMobilePlanDrag(): MobilePlanDragValue {
   return value;
 }
 
-type RowOffsetInput = Pick<
-  ActiveDrag,
-  "sourceScheduleId" | "sourceIndex" | "targetScheduleId" | "targetIndex"
-> & { scheduleId: number; index: number; shift: number };
+type RowOffsetInput = Pick<ActiveDrag, "sourceScheduleId" | "sourceIndex" | "targetScheduleId" | "targetIndex"> & {
+  scheduleId: number;
+  index: number;
+  shift: number;
+};
 
 export function mobilePlanRowOffset({
   sourceScheduleId,
@@ -107,10 +94,6 @@ function autoScrollSpeed(y: number, top: number, bottom: number): number {
   return 0;
 }
 
-/**
- * 모바일 일정 순서 편집 드래그 — 모든 일차의 카드를 한 번에 다루고, 다른 일차로도 옮길 수 있다.
- * 놓으면 PC와 같은 놓기 결정(`usePlanItemDropCommit`)이 같은 일차는 순서 변경, 다른 일차는 일차 간 이동으로 저장한다.
- */
 export function useMobilePlanDragController({
   roomId,
   editing,
@@ -153,7 +136,6 @@ export function useMobilePlanDragController({
     placesBySchedule.current.set(scheduleId, places);
   }, []);
 
-  /** 뷰포트 y → 스크롤 콘텐츠 y */
   const toContentY = useCallback(
     (clientY: number) => {
       const scroll = scrollRef.current;
@@ -176,8 +158,7 @@ export function useMobilePlanDragController({
       const hit =
         drag.days.find((d) => center >= d.top - DAY_HIT_MARGIN_PX && center <= d.bottom + DAY_HIT_MARGIN_PX) ??
         drag.days.reduce((best, d) => {
-          const dist = (day: DaySnapshot) =>
-            center < day.top ? day.top - center : Math.max(0, center - day.bottom);
+          const dist = (day: DaySnapshot) => (center < day.top ? day.top - center : Math.max(0, center - day.bottom));
           return dist(d) < dist(best) ? d : best;
         });
       const sameDay = hit.scheduleId === drag.sourceScheduleId;
@@ -191,7 +172,6 @@ export function useMobilePlanDragController({
     [toContentY, updateActive],
   );
 
-  /** 놓기 — 저장을 시작했으면 캐시가 바뀔 때까지 놓은 모양을 두고, 아니면 바로 푼다 */
   const finishDrag = useCallback(() => {
     const drag = activeRef.current;
     if (!drag || drag.dropped) return;
@@ -225,7 +205,6 @@ export function useMobilePlanDragController({
 
   const startDrag = useCallback(
     (scheduleId: number, index: number, e: ReactPointerEvent<HTMLElement>) => {
-      // 끄는 중이면 다른 손가락은 무시한다. 앞서 놓은 장소를 저장하는 중이면 새 드래그가 그 상태를 덮는다
       if (!editing || (activeRef.current && !activeRef.current.dropped)) return;
       const place = placesBySchedule.current.get(scheduleId)?.[index];
       if (!place || typeof place.itemId !== "number") return;
@@ -262,7 +241,6 @@ export function useMobilePlanDragController({
     [editing, toContentY, updateActive],
   );
 
-  // 드래그 중에는 창 전체에서 포인터를 받고, 화면 끝 근처면 자동 스크롤한다(놓은 뒤 저장 중에는 받지 않는다)
   const dragging = active !== null && active.dropped === null;
   useEffect(() => {
     if (!dragging) return;
@@ -305,7 +283,6 @@ export function useMobilePlanDragController({
   const rowStyle = useCallback(
     (scheduleId: number, index: number, places: readonly PlanPlace[]): CSSProperties | undefined => {
       if (!active) return undefined;
-      // 저장 중 캐시가 놓을 때 목록에서 바뀌었으면(onMutate) 캐시를 그대로 그린다
       if (active.dropped?.has(scheduleId) && active.dropped.get(scheduleId) !== places) return undefined;
       const { sourceScheduleId, sourceIndex, targetScheduleId, targetIndex, dy, days } = active;
       if (scheduleId === sourceScheduleId && index === sourceIndex) {

@@ -10,10 +10,7 @@ import { toast } from "sonner";
 
 import { useRegenerateInviteCode } from "@/hooks/useRooms";
 import { isRoomMemberRole } from "@/lib/rooms";
-import {
-  bucketMemberCount,
-  toAnalyticsRoomRole,
-} from "@/lib/analytics/context";
+import { bucketMemberCount, toAnalyticsRoomRole } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 
 type Props = {
@@ -29,7 +26,13 @@ function normalizeInviteCode(inviteCode: string | null | undefined): string {
   return typeof inviteCode === "string" ? inviteCode.trim() : "";
 }
 
-function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetailError, isRegenerating }: Readonly<{
+function InviteFallback({
+  canIssue,
+  inviteCode,
+  isRoomDetailLoading,
+  isRoomDetailError,
+  isRegenerating,
+}: Readonly<{
   canIssue: boolean;
   inviteCode: Props["inviteCode"];
   isRoomDetailLoading: boolean;
@@ -43,7 +46,14 @@ function InviteFallback({ canIssue, inviteCode, isRoomDetailLoading, isRoomDetai
   if (isRoomDetailError) message = "방 정보를 불러오지 못했어요.";
   else if (!canIssue) message = "초대 링크를 사용할 수 없어요. 방 정보를 다시 확인해 주세요.";
   else if (inviteCode === undefined) message = "방 정보를 불러오지 못했어요. 아래에서 재발급을 눌러 주세요.";
-  return <span role={isRoomDetailError ? "alert" : undefined} className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle">{message}</span>;
+  return (
+    <span
+      role={isRoomDetailError ? "alert" : undefined}
+      className="truncate text-body-s-regular mobile:text-body-xs-regular text-text-subtle"
+    >
+      {message}
+    </span>
+  );
 }
 
 export function AddMemberPanel({
@@ -61,59 +71,50 @@ export function AddMemberPanel({
   const detailInviteCode = normalizeInviteCode(inviteCode);
   const [copied, setCopied] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => () => {
-    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
-  }, []);
-  const [issuedCode, setIssuedCode] = useState<
-    string | null | undefined
-  >(undefined);
-  // 개발 Strict Mode에서 effect가 재실행되어도 자동 발급은 방마다 한 번만 시도한다.
+  useEffect(
+    () => () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    },
+    [],
+  );
+  const [issuedCode, setIssuedCode] = useState<string | null | undefined>(undefined);
   const autoIssueAttemptedRoomRef = useRef<string | null>(null);
 
-  const { mutate: regenerate, isPending: isRegenerating } =
-    useRegenerateInviteCode();
+  const { mutate: regenerate, isPending: isRegenerating } = useRegenerateInviteCode();
 
   useEffect(() => {
     if (!roomIdTrim.length || isRoomDetailLoading || !canIssue) return;
 
     if (detailInviteCode) return;
 
-    if (
-      isRoomDetailError ||
-      inviteCode === undefined ||
-      autoIssueAttemptedRoomRef.current === roomIdTrim
-    ) {
+    if (isRoomDetailError || inviteCode === undefined || autoIssueAttemptedRoomRef.current === roomIdTrim) {
       return;
     }
 
     autoIssueAttemptedRoomRef.current = roomIdTrim;
 
     issueInFlight.current = true;
-    regenerate({ roomId: roomIdTrim, trigger: "automatic" }, {
-      onSuccess: ({ inviteCode: newCode }) => {
-        issueInFlight.current = false;
-        setIssuedCode(newCode);
+    regenerate(
+      { roomId: roomIdTrim, trigger: "automatic" },
+      {
+        onSuccess: ({ inviteCode: newCode }) => {
+          issueInFlight.current = false;
+          setIssuedCode(newCode);
+        },
+        onError: () => {
+          issueInFlight.current = false;
+          toast.error("초대 링크를 발급하지 못했어요.");
+        },
       },
-      onError: () => {
-        issueInFlight.current = false;
-        toast.error("초대 링크를 발급하지 못했어요.");
-      },
-    });
-  }, [
-    canIssue,
-    detailInviteCode,
-    inviteCode,
-    isRoomDetailError,
-    isRoomDetailLoading,
-    regenerate,
-    roomIdTrim,
-  ]);
+    );
+  }, [canIssue, detailInviteCode, inviteCode, isRoomDetailError, isRoomDetailLoading, regenerate, roomIdTrim]);
 
-  const displayedCode =
-    issuedCode === undefined ? detailInviteCode || null : issuedCode;
-  const inviteUrl = canShareInvite && displayedCode
-    ? buildSharedInviteUrl(`${typeof window !== "undefined" ? window.location.origin : ""}/join/${encodeURIComponent(displayedCode)}`)
-    : null;
+  const displayedCode = issuedCode === undefined ? detailInviteCode || null : issuedCode;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const inviteUrl =
+    canShareInvite && displayedCode
+      ? buildSharedInviteUrl(`${origin}/join/${encodeURIComponent(displayedCode)}`)
+      : null;
 
   async function handleCopy() {
     if (!inviteUrl || isRegenerating) return false;
@@ -121,10 +122,7 @@ export function AddMemberPanel({
       await navigator.clipboard.writeText(inviteUrl);
       trackAnalyticsEvent(AnalyticsEvents.sharePlan, {
         room_id: roomIdTrim,
-        member_count_bucket:
-          memberCount === undefined
-            ? undefined
-            : bucketMemberCount(memberCount),
+        member_count_bucket: memberCount === undefined ? undefined : bucketMemberCount(memberCount),
         method: "copy_link",
         role: toAnalyticsRoomRole(role),
       });
@@ -140,8 +138,7 @@ export function AddMemberPanel({
 
   async function handleShare() {
     if (!inviteUrl || isRegenerating) return;
-    const canShare =
-      typeof navigator !== "undefined" && typeof navigator.share === "function";
+    const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
     if (canShare) {
       try {
         await navigator.share({
@@ -150,10 +147,7 @@ export function AddMemberPanel({
         });
         trackAnalyticsEvent(AnalyticsEvents.sharePlan, {
           room_id: roomIdTrim,
-          member_count_bucket:
-            memberCount === undefined
-              ? undefined
-              : bucketMemberCount(memberCount),
+          member_count_bucket: memberCount === undefined ? undefined : bucketMemberCount(memberCount),
           method: "native_share",
           role: toAnalyticsRoomRole(role),
         });
@@ -169,16 +163,19 @@ export function AddMemberPanel({
     if (!roomIdTrim.length || !canIssue || isRegenerating || issueInFlight.current) return;
     setCopied(false);
     issueInFlight.current = true;
-    regenerate({ roomId: roomIdTrim, trigger: "explicit" }, {
-      onSuccess: ({ inviteCode: newCode }) => {
-        issueInFlight.current = false;
-        setIssuedCode(newCode);
+    regenerate(
+      { roomId: roomIdTrim, trigger: "explicit" },
+      {
+        onSuccess: ({ inviteCode: newCode }) => {
+          issueInFlight.current = false;
+          setIssuedCode(newCode);
+        },
+        onError: () => {
+          issueInFlight.current = false;
+          toast.error("초대 링크를 재발급하지 못했어요.");
+        },
       },
-      onError: () => {
-        issueInFlight.current = false;
-        toast.error("초대 링크를 재발급하지 못했어요.");
-      },
-    });
+    );
   }
 
   return (
@@ -187,7 +184,14 @@ export function AddMemberPanel({
         <div className="flex h-12 min-w-0 items-center gap-1 rounded-lg border border-border bg-fill pl-3.5 pr-1.5">
           <div className="flex min-w-0 flex-1 items-center">
             {inviteUrl ? (
-              <input aria-label="초대 링크" readOnly disabled={isRegenerating} value={inviteUrl} onFocus={(event) => event.currentTarget.select()} className="w-full min-w-0 truncate bg-transparent text-body-m-regular mobile:text-body-s-regular text-text-subtle outline-none disabled:opacity-40" />
+              <input
+                aria-label="초대 링크"
+                readOnly
+                disabled={isRegenerating}
+                value={inviteUrl}
+                onFocus={(event) => event.currentTarget.select()}
+                className="w-full min-w-0 truncate bg-transparent text-body-m-regular mobile:text-body-s-regular text-text-subtle outline-none disabled:opacity-40"
+              />
             ) : (
               <InviteFallback
                 canIssue={canIssue}
@@ -221,15 +225,15 @@ export function AddMemberPanel({
         </div>
 
         {canIssue ? (
-        <button
-          type="button"
-          onClick={handleRegenerate}
-          disabled={isRegenerating}
-          className="flex cursor-pointer items-center gap-1.5 self-start text-label-m-regular mobile:text-label-s-regular text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <RefreshIcon size={12} className={isRegenerating ? "animate-spin motion-reduce:animate-none" : undefined} />
-          {isRegenerating ? "재발급 중…" : "초대 링크 재발급"}
-        </button>
+          <button
+            type="button"
+            onClick={handleRegenerate}
+            disabled={isRegenerating}
+            className="flex cursor-pointer items-center gap-1.5 self-start text-label-m-regular mobile:text-label-s-regular text-dark-gray transition-colors hover:text-black disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <RefreshIcon size={12} className={isRegenerating ? "animate-spin motion-reduce:animate-none" : undefined} />
+            {isRegenerating ? "재발급 중…" : "초대 링크 재발급"}
+          </button>
         ) : null}
       </div>
     </div>

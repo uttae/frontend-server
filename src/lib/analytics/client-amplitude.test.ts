@@ -29,9 +29,5 @@ it("forwards consented key interactions to Amplitude without GA configuration", 
 
   client.sendAnalyticsDataCommand("event", "create_plan", { days: 3 });
 
-  expect(sendAmplitudeDataCommand).toHaveBeenCalledWith(
-    "event",
-    "create_plan",
-    { days: 3 },
-  );
+  expect(sendAmplitudeDataCommand).toHaveBeenCalledWith("event", "create_plan", { days: 3 });
 });

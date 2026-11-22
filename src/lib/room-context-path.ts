@@ -4,7 +4,6 @@ export function isPackingPath(pathname: string): boolean {
   return pathname === "/packing" || pathname.startsWith("/packing/");
 }
 
-/** An explicit invalid packing URL must never fall back to another room. */
 export function parseRoomContextPath(pathname: string): {
   roomId: string | null;
   invalidPackingPath: boolean;

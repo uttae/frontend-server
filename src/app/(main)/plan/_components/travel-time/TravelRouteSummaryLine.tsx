@@ -6,7 +6,6 @@ import { formatRouteDistance, formatRouteDuration } from "@/lib/plan/routeFormat
 type TravelRouteSummaryLineProps = {
   route: ScheduleItemRouteResponse | null | undefined;
   isPending: boolean;
-  /** 표시 가능한 경로가 없는 동안에만 조회 상태를 표시한다. */
   isFetching: boolean;
   isError: boolean;
   routeUnavailable: boolean;
@@ -19,33 +18,26 @@ export function TravelRouteSummaryLine({
   isError,
   routeUnavailable,
 }: TravelRouteSummaryLineProps) {
-  const routeOk =
-    route != null &&
-    route.durationSeconds >= 0 &&
-    route.distanceMeters >= 0;
+  const routeOk = route != null && route.durationSeconds >= 0 && route.distanceMeters >= 0;
 
-  /** 표시할 수 있는 값이 있으면 다른 쿼리의 `isFetching` 에 가리지 않음 */
   if (routeOk) {
     return (
       <>
         {formatRouteDuration(route.durationSeconds)}
-        <span data-route-separator className="mx-1 text-light-gray">·</span>
-        {/* 일정 이동 줄(TravelDirectionsCard)은 거리만 회색 보통 굵기로, 점 좌우 간격은 Figma Info gap 2로 줄인다 */}
+        <span data-route-separator className="mx-1 text-light-gray">
+          ·
+        </span>
         <span data-route-distance>{formatRouteDistance(route.distanceMeters)}</span>
       </>
     );
   }
 
   if (isFetching) {
-    return (
-      <Spinner aria-label="이동 시간 불러오는 중" size={16} />
-    );
+    return <Spinner aria-label="이동 시간 불러오는 중" size={16} />;
   }
 
   if (isPending) {
-    return (
-      <Spinner aria-label="이동 시간 불러오는 중" size={16} />
-    );
+    return <Spinner aria-label="이동 시간 불러오는 중" size={16} />;
   }
   if (isError) return <span className="text-status-negative">경로 조회 오류</span>;
   if (routeUnavailable) return "이동 안내 없음";

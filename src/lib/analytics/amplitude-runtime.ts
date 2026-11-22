@@ -22,9 +22,7 @@ export function resolveAmplitudeRuntime({
   const normalizedSampleRate = sessionReplaySampleRate?.trim();
   const configuredSampleRate = Number(normalizedSampleRate);
   const defaultSampleRate =
-    nodeEnv === "production"
-      ? DEFAULT_PRODUCTION_REPLAY_SAMPLE_RATE
-      : DEFAULT_NON_PRODUCTION_REPLAY_SAMPLE_RATE;
+    nodeEnv === "production" ? DEFAULT_PRODUCTION_REPLAY_SAMPLE_RATE : DEFAULT_NON_PRODUCTION_REPLAY_SAMPLE_RATE;
   const validConfiguredSampleRate =
     normalizedSampleRate !== undefined &&
     normalizedSampleRate !== "" &&
@@ -35,15 +33,12 @@ export function resolveAmplitudeRuntime({
   return {
     apiKey: normalizedApiKey || null,
     enabled: Boolean(normalizedApiKey),
-    sessionReplaySampleRate: validConfiguredSampleRate
-      ? configuredSampleRate
-      : defaultSampleRate,
+    sessionReplaySampleRate: validConfiguredSampleRate ? configuredSampleRate : defaultSampleRate,
   };
 }
 
 export const amplitudeRuntime = resolveAmplitudeRuntime({
   apiKey: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY,
   nodeEnv: process.env.NODE_ENV,
-  sessionReplaySampleRate:
-    process.env.NEXT_PUBLIC_AMPLITUDE_SESSION_REPLAY_SAMPLE_RATE,
+  sessionReplaySampleRate: process.env.NEXT_PUBLIC_AMPLITUDE_SESSION_REPLAY_SAMPLE_RATE,
 });

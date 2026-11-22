@@ -1,9 +1,4 @@
-import {
-  CalendarAddIcon,
-  ChatIcon,
-  ReactionStarIcon,
-  SavedIcon,
-} from "@/assets/icons";
+import { CalendarAddIcon, ChatIcon, ReactionStarIcon, SavedIcon } from "@/assets/icons";
 
 type Props = Readonly<{
   name: string;
@@ -19,7 +14,6 @@ type Props = Readonly<{
 const ICON_BUTTON_CLASS =
   "flex size-11 shrink-0 items-center justify-center disabled:cursor-not-allowed disabled:opacity-50";
 
-/** 모바일 바텀 시트용 장소 요약 — 이름·태그·평점, 북마크, 채팅/일정 버튼 */
 export function PlaceSheetSummary({
   name,
   category,
@@ -38,15 +32,9 @@ export function PlaceSheetSummary({
           <div className="flex min-w-0 flex-1 flex-col gap-3">
             <p className="text-caption-l-regular text-text">{category}</p>
             <div className="flex items-center gap-[5px]">
-              {/* Figma 인스턴스가 채운 별(stroke 없음)로 오버라이드되어 있어 fill로 칠하고 stroke는 끈다 */}
-              <ReactionStarIcon
-                size={16}
-                className="fill-current text-[var(--orange-500)] [&_path]:stroke-none"
-              />
+              <ReactionStarIcon size={16} className="fill-current text-[var(--orange-500)] [&_path]:stroke-none" />
               <span className="flex items-center gap-0.5 whitespace-nowrap">
-                <span className="text-caption-l-emphasis text-text">
-                  {rating != null ? rating.toFixed(1) : "-"}
-                </span>
+                <span className="text-caption-l-emphasis text-text">{rating != null ? rating.toFixed(1) : "-"}</span>
                 {userRatingCount != null && (
                   <span className="text-caption-l-regular text-text-subtle">
                     ({userRatingCount.toLocaleString()}개)

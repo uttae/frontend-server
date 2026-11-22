@@ -7,10 +7,8 @@ export type TimeParts = {
   minute: number | null;
 };
 
-/** 빈 시작 시간의 휠을 열면 들어가는 값(오전 10:00). 휠의 미리보기(오전·10·00)와 같다 */
 export const TIME_PICKER_DEFAULT_START_HM = "10:00";
 
-/** 빈 종료 시간의 휠을 열면 들어가는 값: 시작 + 1시간. 자정을 넘으면 다음 날 시각(23:30 → 00:30)이다 */
 export function defaultEndHm(startHm: string): string {
   const start = hmToMinutesSinceMidnight(startHm);
   if (start === null) return "";
@@ -24,7 +22,6 @@ export function timePartsFromHm(value: string): TimeParts {
   return { period: hour < 12 ? "AM" : "PM", hour: hour % 12, minute };
 }
 
-/** Empty, incomplete, and complete input have different save semantics. */
 export function timePartsToHm(parts: TimeParts): string | null {
   if (parts.period === null && parts.hour === null && parts.minute === null) return "";
   if (parts.period === null || parts.hour === null || parts.minute === null) return null;

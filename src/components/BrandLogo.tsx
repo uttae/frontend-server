@@ -7,9 +7,6 @@ type BrandLogoProps = {
   className?: string;
 };
 
-/**
- * 앱 공식 로고 SVG — Safari 호환을 위해 네이티브 `<img>` 사용.
- */
 export function BrandLogo({
   variant = "combination",
   size = "M",

@@ -48,8 +48,7 @@ describe("AnalyticsConsentSettingsView", () => {
   });
 
   it("announces a persistence failure without hiding the selected state", () => {
-    const message =
-      "선택은 현재 탭에 적용했지만 브라우저에 저장하지 못했습니다.";
+    const message = "선택은 현재 탭에 적용했지만 브라우저에 저장하지 못했습니다.";
     const html = renderToStaticMarkup(
       <AnalyticsConsentSettingsView
         consent="denied"
@@ -82,11 +81,7 @@ it("preserves the policy destination and all consent notice meanings in a disclo
   expect(html).toContain("<details");
   expect(html).not.toContain("쿠키 사용 안내");
   expect(html.match(/자세히 보기/g)).toHaveLength(1);
-  expect(html).toContain(
-    "허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다.",
-  );
-  expect(html).toContain(
-    "거부하거나 철회하면 Google Analytics 추적을 중단하고 브라우저의 분석 쿠키를 삭제합니다.",
-  );
+  expect(html).toContain("허용하면 서비스 이용 흐름과 기능 사용 통계를 수집합니다.");
+  expect(html).toContain("거부하거나 철회하면 Google Analytics 추적을 중단하고 브라우저의 분석 쿠키를 삭제합니다.");
   expect(html).toContain('href="/privacy"');
 });

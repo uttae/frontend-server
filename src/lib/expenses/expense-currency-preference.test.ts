@@ -15,11 +15,21 @@ function storage() {
   const entries = new Map<string, string>();
   return {
     entries,
-    get length() { return entries.size; },
-    key(index: number) { return [...entries.keys()][index] ?? null; },
-    getItem(key: string) { return entries.get(key) ?? null; },
-    setItem(key: string, value: string) { entries.set(key, value); },
-    removeItem(key: string) { entries.delete(key); },
+    get length() {
+      return entries.size;
+    },
+    key(index: number) {
+      return [...entries.keys()][index] ?? null;
+    },
+    getItem(key: string) {
+      return entries.get(key) ?? null;
+    },
+    setItem(key: string, value: string) {
+      entries.set(key, value);
+    },
+    removeItem(key: string) {
+      entries.delete(key);
+    },
   };
 }
 
@@ -55,7 +65,9 @@ it("uses the allowed-list fallback and never writes an anonymous key", () => {
 
 it("falls back when localStorage throws and during server rendering", () => {
   vi.stubGlobal("window", {
-    get localStorage() { throw new Error("unavailable"); },
+    get localStorage() {
+      throw new Error("unavailable");
+    },
   });
   expect(preferredExpenseCurrency(1, "room", currencies)).toBe("KRW");
   expect(() => rememberExpenseCurrency(1, "room", "USD")).not.toThrow();

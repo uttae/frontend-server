@@ -8,8 +8,12 @@ it("keeps unread count cleared when a pre-read response arrives late", async () 
   let respond!: (value: { unreadCount: number }) => void;
   client.setQueryData(key, { unreadCount: 4 });
   const observer = new QueryObserver(client, {
-    queryKey: key, staleTime: Infinity,
-    queryFn: () => new Promise<{ unreadCount: number }>(resolve => { respond = resolve; }),
+    queryKey: key,
+    staleTime: Infinity,
+    queryFn: () =>
+      new Promise<{ unreadCount: number }>((resolve) => {
+        respond = resolve;
+      }),
   });
   const stop = observer.subscribe(() => {});
   try {
@@ -20,6 +24,7 @@ it("keeps unread count cleared when a pre-read response arrives late", async () 
     await request;
     expect(client.getQueryData(key)).toEqual({ unreadCount: 0 });
   } finally {
-    stop(); client.clear();
+    stop();
+    client.clear();
   }
 });

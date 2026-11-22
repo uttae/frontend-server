@@ -26,7 +26,6 @@ const LEAVE_ERROR = "방나가기 실패했습니다.. 다시 시도해 주세�
 const TRANSFER_ERROR = "방장 위임을 실패했습니다. 다시 시도해 주세요.";
 const KICK_ERROR = "강제 퇴장을 실패했습니다. 다시 시도해 주세요.";
 
-/** 단일 확인 버튼 안내 다이얼로그 */
 function NoticeDialog({
   title,
   description,
@@ -41,19 +40,16 @@ function NoticeDialog({
   return (
     <AlertDialog
       open
-      // 열린 채 마운트되므로 닫기 요청(open=false)만 온다
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      {/* 지금처럼 딤을 눌러도 닫힌다 */}
       <AlertDialogContent backdropCloseLabel={`${title} 배경 닫기`}>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          {/* AlertDialogAction은 눌러도 저절로 닫히지 않는다 */}
           <AlertDialogAction onClick={onClose}>{actionLabel}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -61,16 +57,11 @@ function NoticeDialog({
   );
 }
 
-/**
- * 구성원 관리 동작(방장 위임·강제 퇴장·방 나가기)과 확인 다이얼로그.
- * 헤더 드롭다운과 모바일 초대하기 페이지가 함께 쓴다 — 다이얼로그는 `dialogs`를 렌더한 쪽에 붙는다.
- */
 export function useMemberActions() {
   const router = useRouter();
   const [leaveDialog, setLeaveDialog] = useState<LeaveDialog>(null);
   const [kickTarget, setKickTarget] = useState<RoomMember | null>(null);
   const [transferTarget, setTransferTarget] = useState<RoomMember | null>(null);
-  /** 열려 있는 확인 다이얼로그의 실패 안내 — 다이얼로그를 열거나 다시 시도하면 지운다 */
   const [actionError, setActionError] = useState<string | null>(null);
 
   const membership = useCurrentRoomMembership();
@@ -80,13 +71,8 @@ export function useMemberActions() {
   const { mutate: kick, isPending: isKicking } = useKickMember();
   const { mutateAsync: leaveAsync, isPending: isLeaving } = useLeaveRoom();
   const { mutate: transfer, isPending: isTransferring } = useTransferHost();
-  const hostCannotLeaveAlone = Boolean(
-    isHost && user && !isMembersLoading && others.length === 0,
-  );
-  /** 다른 멤버가 있으면 방장은 수동 위임 후에만 퇴장 가능 */
-  const hostNeedsManualDelegation = Boolean(
-    isHost && user && !isMembersLoading && others.length > 0,
-  );
+  const hostCannotLeaveAlone = Boolean(isHost && user && !isMembersLoading && others.length === 0);
+  const hostNeedsManualDelegation = Boolean(isHost && user && !isMembersLoading && others.length > 0);
 
   async function handleLeaveRoom() {
     if (!roomId || !user) return;

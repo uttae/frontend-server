@@ -23,7 +23,6 @@ vi.mock("@/lib/api/rooms/expenses", () => ({
   getExpenseKrwSummary: () => mocks.read("krw"),
   getExpenseCurrencies: () => mocks.read("currencies"),
 }));
-/** ExpenseProvider가 붙이는 6개 조회와 같은 key·옵션 — 복구는 무효화만 하고 이 조회들이 다시 받는다 */
 const EXPENSE_READS = [
   ["list", "list"],
   ["summary", "summary"],
@@ -45,73 +44,82 @@ function Probe() {
       refetchOnReconnect: false,
     })),
   });
-  return <>
-    <p>{syncStatus}</p>
-    <button onClick={() => { void recovery.refresh("all").catch(() => {}); }}>Retry</button>
-  </>;
+  return (
+    <>
+      <p>{syncStatus}</p>
+      <button
+        onClick={() => {
+          void recovery.refresh("all").catch(() => {});
+        }}
+      >
+        Retry
+      </button>
+    </>
+  );
 }
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
-it.each([30_000, 60_000, 90_000])("does not recover after %i ms alone; focus and visibility do not refetch either", async (elapsed) => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  vi.useFakeTimers();
-  const visibility = vi
-    .spyOn(document, "visibilityState", "get")
-    .mockReturnValue("visible");
-  const client = new QueryClient();
-  const host = document.createElement("div");
-  const root = createRoot(host);
-  try {
-    await act(async () => {
-      root.render(
-        <QueryClientProvider client={client}>
-          <Probe />
-        </QueryClientProvider>,
-      );
-    });
-    expect(mocks.read.mock.calls.map((c) => c[0]).sort()).toEqual([
-      "budget",
-      "currencies",
-      "krw",
-      "list",
-      "members",
-      "summary",
-    ]);
+it.each([30_000, 60_000, 90_000])(
+  "does not recover after %i ms alone; focus and visibility do not refetch either",
+  async (elapsed) => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.useFakeTimers();
+    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    const client = new QueryClient();
+    const host = document.createElement("div");
+    const root = createRoot(host);
+    try {
+      await act(async () => {
+        root.render(
+          <QueryClientProvider client={client}>
+            <Probe />
+          </QueryClientProvider>,
+        );
+      });
+      expect(mocks.read.mock.calls.map((c) => c[0]).sort()).toEqual([
+        "budget",
+        "currencies",
+        "krw",
+        "list",
+        "members",
+        "summary",
+      ]);
+      mocks.read.mockClear();
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(elapsed);
+      });
+      expect(mocks.read).not.toHaveBeenCalled();
+      visibility.mockReturnValue("hidden");
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+        await vi.advanceTimersByTimeAsync(60_000);
+      });
+      expect(mocks.read).not.toHaveBeenCalled();
+      visibility.mockReturnValue("visible");
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      expect(mocks.read).not.toHaveBeenCalled();
+      mocks.read.mockClear();
+      await act(async () => {
+        window.dispatchEvent(new Event("focus"));
+      });
+      expect(mocks.read).not.toHaveBeenCalled();
+    } finally {
+      await act(async () => root.unmount());
+      client.clear();
+    }
     mocks.read.mockClear();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(elapsed);
-    });
-    expect(mocks.read).not.toHaveBeenCalled();
-    visibility.mockReturnValue("hidden");
-    await act(async () => {
       window.dispatchEvent(new Event("focus"));
-      await vi.advanceTimersByTimeAsync(60_000);
+      await vi.advanceTimersByTimeAsync(30_000);
     });
     expect(mocks.read).not.toHaveBeenCalled();
-    visibility.mockReturnValue("visible");
-    await act(async () => {
-      document.dispatchEvent(new Event("visibilitychange"));
-    });
-    expect(mocks.read).not.toHaveBeenCalled();
-    mocks.read.mockClear();
-    await act(async () => {
-      window.dispatchEvent(new Event("focus"));
-    });
-    expect(mocks.read).not.toHaveBeenCalled();
-  } finally {
-    await act(async () => root.unmount());
-    client.clear();
-  }
-  mocks.read.mockClear();
-  await act(async () => {
-    window.dispatchEvent(new Event("focus"));
-    await vi.advanceTimersByTimeAsync(30_000);
-  });
-  expect(mocks.read).not.toHaveBeenCalled();
-});
+  },
+);
 
 it("entry with warm inactive cache and reconnect each fetch all six endpoints", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -141,7 +149,9 @@ it("entry with warm inactive cache and reconnect each fetch all six endpoints", 
     expect(host.querySelector("p")?.textContent).toBe("disconnected");
     expect(mocks.read).toHaveBeenCalledTimes(6);
     mocks.read.mockClear();
-    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
     expect(mocks.read).not.toHaveBeenCalled();
     mocks.connected = true;
     await act(async () => {
@@ -171,13 +181,24 @@ it("revoked remount/reconnect stays terminal; mounted old consumer cannot adopt 
   old.revoke();
   const host = document.createElement("div");
   const root = createRoot(host);
-  const render = (key = "old") => root.render(<QueryClientProvider client={client}><Probe key={key} /></QueryClientProvider>);
+  const render = (key = "old") =>
+    root.render(
+      <QueryClientProvider client={client}>
+        <Probe key={key} />
+      </QueryClientProvider>,
+    );
   try {
-    await act(async () => { render(); });
+    await act(async () => {
+      render();
+    });
     mocks.connected = false;
-    await act(async () => { render(); });
+    await act(async () => {
+      render();
+    });
     mocks.connected = true;
-    await act(async () => { render("remount"); });
+    await act(async () => {
+      render("remount");
+    });
     expect(host.querySelector("p")?.textContent).toBe("revoked");
     expect(mocks.read).not.toHaveBeenCalled();
     await act(async () => {
@@ -186,13 +207,17 @@ it("revoked remount/reconnect stays terminal; mounted old consumer cannot adopt 
     });
     expect(host.querySelector("p")?.textContent).toBe("revoked");
     expect(mocks.read).not.toHaveBeenCalled();
-    await act(async () => { render("authorized-entry"); });
+    await act(async () => {
+      render("authorized-entry");
+    });
     expect(host.querySelector("p")?.textContent).toBe("ready");
     expect(mocks.read).toHaveBeenCalledTimes(6);
     expect(old.getSnapshot()).toBe("revoked");
-  } finally { await act(async () => root.unmount()); client.clear(); }
+  } finally {
+    await act(async () => root.unmount());
+    client.clear();
+  }
 });
-
 
 it.each([
   ["EXPENSES_INVALIDATED", "BUDGET_INVALIDATED"],
@@ -209,19 +234,25 @@ it.each([
   const deferred = new Map<string, (value: unknown) => void>();
   try {
     await act(async () => {
-      root.render(<QueryClientProvider client={client}><Probe /></QueryClientProvider>);
+      root.render(
+        <QueryClientProvider client={client}>
+          <Probe />
+        </QueryClientProvider>,
+      );
     });
     const subscription = mocks.subscribe.mock.calls.find(([topic]) => topic === "/topic/rooms/r/expenses");
     expect(subscription).toBeDefined();
-    const deliver = (type: string) => subscription![1]({
-      body: JSON.stringify({ roomId: "r", type, sessionId: "same-account-session" }),
-    });
-    const stale = (key: string) => key === "budget" ? { budgetKrw: "260000", version: 1 } : [{ revision: 1 }];
-    const latest = (key: string) => key === "budget" ? { budgetKrw: "270000", version: 2 } : [{ revision: 2 }];
-    // Hold all recovery reads so frames arrive while older responses are in flight.
+    const deliver = (type: string) =>
+      subscription![1]({
+        body: JSON.stringify({ roomId: "r", type, sessionId: "same-account-session" }),
+      });
+    const stale = (key: string) => (key === "budget" ? { budgetKrw: "260000", version: 1 } : [{ revision: 1 }]);
+    const latest = (key: string) => (key === "budget" ? { budgetKrw: "270000", version: 2 } : [{ revision: 2 }]);
     mocks.read.mockImplementation((key) => new Promise((resolve) => deferred.set(key, resolve)));
     let reading!: Promise<void>;
-    await act(async () => { reading = recovery.refresh("all"); });
+    await act(async () => {
+      reading = recovery.refresh("all");
+    });
     expect(deferred.has("budget")).toBe(true);
     expect(deferred.has("list")).toBe(true);
     mocks.read.mockClear();
@@ -232,12 +263,9 @@ it.each([
       deliver(second);
       deliver(second);
     });
-    // 같은 틱의 중복 프레임은 한 번만 다시 받는다. 받는 중이던 옛 조회는 취소된다
     expect(mocks.read.mock.calls.map(([key]) => key).sort()).toEqual(["budget", "krw", "list", "summary"]);
-    // 아직 끝나지 않은 입장 복구(통화·멤버)가 남아 있다
     expect(recovery.getSnapshot()).toBe("pending");
     await act(async () => {
-      // 취소된 옛 응답이 늦게 와도 새 값을 덮지 않는다
       for (const [key, resolve] of [...deferred].reverse()) resolve(stale(key));
       await reading;
     });
@@ -264,10 +292,16 @@ it("invalidation and manual error retry still recover after an idle 90 seconds",
   const root = createRoot(host);
   try {
     await act(async () => {
-      root.render(<QueryClientProvider client={client}><Probe /></QueryClientProvider>);
+      root.render(
+        <QueryClientProvider client={client}>
+          <Probe />
+        </QueryClientProvider>,
+      );
     });
     mocks.read.mockClear();
-    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
     expect(mocks.read).not.toHaveBeenCalled();
     const deliver = mocks.subscribe.mock.calls[0][1];
     for (const [type, expected] of [
@@ -281,14 +315,25 @@ it("invalidation and manual error retry still recover after an idle 90 seconds",
       expect(mocks.read.mock.calls.map(([key]) => key).sort()).toEqual(expected);
     }
     mocks.read.mockRejectedValue(new Error("offline"));
-    await act(async () => { host.querySelector("button")!.click(); });
+    await act(async () => {
+      host.querySelector("button")!.click();
+    });
     expect(host.querySelector("p")?.textContent).toBe("error");
     mocks.read.mockResolvedValue([]).mockClear();
-    await act(async () => { await vi.advanceTimersByTimeAsync(90_000); });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(90_000);
+    });
     expect(mocks.read).not.toHaveBeenCalled();
-    await act(async () => { host.querySelector("button")!.click(); });
+    await act(async () => {
+      host.querySelector("button")!.click();
+    });
     expect(mocks.read.mock.calls.map(([key]) => key).sort()).toEqual([
-      "budget", "currencies", "krw", "list", "members", "summary",
+      "budget",
+      "currencies",
+      "krw",
+      "list",
+      "members",
+      "summary",
     ]);
     expect(host.querySelector("p")?.textContent).toBe("ready");
   } finally {

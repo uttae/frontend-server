@@ -1,4 +1,3 @@
-/** @type {import('tailwindcss').Config} */
 const layoutTokens = require("./src/lib/layout-tokens");
 
 module.exports = {
@@ -14,23 +13,15 @@ module.exports = {
         heading: ["var(--font-sans)"],
       },
       colors: {
-        /* 레거시 별칭 — 신규 코드에서 쓰지 않는다(semantic으로 대체).
-         * gray-300은 primitive --gray-300과 값이 다르다. */
         "light-gray": "#d9d9d9",
         "dark-gray": "#6a7282",
         "gray-border": "#e5e7eb",
         "bubble-gray": "#f1f1f1",
-        /** AI 응답 말풍선 — 밝은 뉴트럴 서피스에 진한 글자 (WCAG 대비용), 상대방 회색 말풍선과 톤 구분 */
         "ai-bubble": "#ebf1f5",
         "ai-bubble-border": "#c9d4df",
         "muted-brown": "#695656",
         "gray-300": "#e2e8f0",
 
-        /* ===== Figma 디자인 시스템 — Semantic =====
-         * primitive(gray/blue/lime…)는 Tailwind 기본 팔레트와 이름이 겹쳐
-         * 일부러 등록하지 않는다. globals.css 의 CSS 변수로만 존재한다.
-         * 신규 코드는 아래 semantic을 쓰고, 맞는 semantic이 없을 때만
-         * primitive를 bg-[var(--gray-800)]처럼 쓴다(Design.md 1-1). */
         primary: {
           subtle: "var(--color-primary-subtle)",
           DEFAULT: "var(--color-primary-default)",
@@ -75,7 +66,6 @@ module.exports = {
         },
       },
       fontSize: {
-        /* Figma Type Scale 기준 (Foundation 설명문이 아님) */
         "display-l": ["48px", { lineHeight: "60px", fontWeight: "700", letterSpacing: "-0.02em" }],
         "display-m": ["40px", { lineHeight: "52px", fontWeight: "700", letterSpacing: "-0.02em" }],
         "heading-l": ["32px", { lineHeight: "42px", fontWeight: "700", letterSpacing: "-0.02em" }],
@@ -123,7 +113,6 @@ module.exports = {
       screens: {
         s1: layoutTokens.width.s1,
         s2: layoutTokens.width.s2,
-        /** 랜딩 전용 — 기본 sm(640)·lg(1024)보다 낮은 기준 */
         "landing-sm": "480px",
         "landing-lg": "720px",
       },

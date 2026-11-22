@@ -10,8 +10,7 @@ export function useInViewport<T extends Element>(options?: {
   const [inViewport, setInViewport] = useState(false);
   const enabled = options?.enabled ?? true;
   const rootMargin = options?.rootMargin ?? "240px";
-  const supportsIntersectionObserver =
-    typeof IntersectionObserver !== "undefined";
+  const supportsIntersectionObserver = typeof IntersectionObserver !== "undefined";
 
   useEffect(() => {
     if (!enabled) {

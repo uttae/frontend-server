@@ -70,16 +70,15 @@ export default function NewTripPage() {
   const setCurrentRoomId = useSessionStore((s) => s.setCurrentRoomId);
   const { mutate: createRoom, isPending, error } = useCreateRoom();
 
-  // 새 여행만 시작일이 오늘 이후여야 한다
   const todayYmd = formatDateYmd(new Date());
   const tripSchema = createTripFormSchema({ startDateMin: todayYmd });
   const tripDatesSchema = createTripDatesSchema({ startDateMin: todayYmd });
 
   const form = useForm({
     defaultValues: EMPTY_TRIP,
-    // 제출 전에 이미 칸 오류가 있으면 TanStack은 첫 제출에서 칸 검사를 건너뛴다. 첫 제출부터 모든 칸 오류를 보이게 한다(저장은 칸 검사가 막는다)
+
     canSubmitWhenInvalid: true,
-    // value는 다듬기 전 값이라 스키마로 trim한 값을 보낸다
+
     onSubmit: ({ value }) => {
       createRoom(tripSchema.parse(value), {
         onSuccess: (room) => {
@@ -139,7 +138,7 @@ export default function NewTripPage() {
                         }
                         onBlur={() => {
                           field.handleBlur();
-                          // 비워 둔 채 지나가도 오류를 보인다. onBlur validator를 따로 두면 그 오류가 다음 blur까지 남아 입력해도 지워지지 않는다
+
                           void field.validate("change");
                         }}
                         placeholder="예: 봄 일본 여행, 하와이 신혼여행"
@@ -176,8 +175,8 @@ export default function NewTripPage() {
               name="endDate"
               validators={{
                 onChange: ({ value, fieldApi }) =>
-                  tripDatesSchema.safeParse({ startDate: fieldApi.form.getFieldValue("startDate"), endDate: value }).error
-                    ?.issues,
+                  tripDatesSchema.safeParse({ startDate: fieldApi.form.getFieldValue("startDate"), endDate: value })
+                    .error?.issues,
               }}
             >
               {(field) => (
@@ -210,7 +209,7 @@ export default function NewTripPage() {
             className="w-full"
             loading={isPending}
             loadingLabel="여행 만드는 중"
-            // 규칙 위반으로는 잠그지 않는다. 틀린 채 누르면 handleSubmit이 칸 검사로 막고 틀린 칸 아래에 오류를 보인다
+
             onClick={() => void form.handleSubmit()}
           >
             여행 시작하기

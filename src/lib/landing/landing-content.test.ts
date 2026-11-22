@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  LANDING_HOW_STEPS,
-  LANDING_TEAM_MEMBERS,
-  LANDING_VALUES,
-} from "@/lib/landing/landing-content";
+import { LANDING_HOW_STEPS, LANDING_TEAM_MEMBERS, LANDING_VALUES } from "@/lib/landing/landing-content";
 import { landingTypography } from "@/lib/landing/landing-typography";
 
 describe("landing content contracts", () => {
@@ -35,13 +31,10 @@ describe("landing content contracts", () => {
         description: "서울시립대학교 컴퓨터과학부",
         githubUrl: "https://github.com/parkjuyeong0312",
         githubLabel: "parkjuyeong0312",
-        linkedinUrl:
-          "https://www.linkedin.com/in/%EC%A3%BC%EC%98%81-%EB%B0%95-75a83a2a4/",
+        linkedinUrl: "https://www.linkedin.com/in/%EC%A3%BC%EC%98%81-%EB%B0%95-75a83a2a4/",
       },
     ]);
-    expect(new Set(LANDING_TEAM_MEMBERS.map((member) => member.role))).toEqual(
-      new Set(["Co-founder"]),
-    );
+    expect(new Set(LANDING_TEAM_MEMBERS.map((member) => member.role))).toEqual(new Set(["Co-founder"]));
   });
 
   it("does not use the landing display font in text styles", () => {

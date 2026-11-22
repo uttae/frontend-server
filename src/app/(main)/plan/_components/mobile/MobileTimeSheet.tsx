@@ -40,14 +40,12 @@ type MobileTimeSheetProps = Readonly<{
   scheduleId: number;
   itemId: number;
   placeName: string;
-  /** `9월 21일` */
   dateLabel?: string;
   startTime: string | null | undefined;
   endTime: string | null | undefined;
   onClose: () => void;
 }>;
 
-/** 방문 시간 시트 — 시작·종료 칸을 누르면 휠 피커로 고른다 */
 export function MobileTimeSheet({
   roomId,
   scheduleId,
@@ -60,7 +58,6 @@ export function MobileTimeSheet({
 }: MobileTimeSheetProps) {
   const serverStart = normalizeStartTimeToHm(startTime ?? "");
   const serverEnd = normalizeStartTimeToHm(endTime ?? "");
-  // 시작 시간이 없으면 열자마자 오전 10:00을 넣고 시작 휠을 연다. 그대로 확인하면 10:00으로 저장된다
   const [draftStart, setStart] = useState<TimeParts | undefined>(() =>
     serverStart ? undefined : timePartsFromHm(TIME_PICKER_DEFAULT_START_HM),
   );
@@ -82,7 +79,6 @@ export function MobileTimeSheet({
   ]
     .filter(Boolean)
     .join(" · ");
-  // 확인 버튼을 잠그는 오류. 휠에서 오전/오후·시·분을 다 고르지 않은 칸(null)은 스키마 전에 막는다
   const timeError =
     start === null || end === null
       ? "오전/오후, 시, 분을 모두 선택해 주세요."
@@ -90,8 +86,6 @@ export function MobileTimeSheet({
           ?.issues[0]?.message;
 
   function openField(field: Field) {
-    // 빈 칸의 휠을 열면 바로 값을 넣는다. 오전/오후·시·분 중 하나라도 안 고르면 "선택 중"으로 남아 저장되지 않기 때문이다
-    // 시작은 오전 10:00(초기화 뒤 다시 열 때 포함), 종료는 시작 + 1시간
     if (field === "end") {
       if (!start) return;
       if (activeField !== "end" && end === "") setEnd(timePartsFromHm(defaultEndHm(start)));
@@ -130,7 +124,13 @@ export function MobileTimeSheet({
   ];
 
   return (
-    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isPending}>
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      closeDisabled={isPending}
+    >
       <DrawerContent closeLabel="방문 시간 닫기">
         <DrawerHeader>
           <DrawerTitle>{placeName}</DrawerTitle>
@@ -191,7 +191,16 @@ export function MobileTimeSheet({
               }}
               className="relative flex h-8 items-center gap-1 text-label-xs-regular text-text-subtle disabled:text-text-disabled before:absolute before:-inset-y-1.5 before:inset-x-0 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <Image src={activeField === null && start === "" && end === "" ? "/icons/time-picker/reset-disabled.svg" : "/icons/time-picker/reset-active.svg"} width={16} height={16} alt="" />
+              <Image
+                src={
+                  activeField === null && start === "" && end === ""
+                    ? "/icons/time-picker/reset-disabled.svg"
+                    : "/icons/time-picker/reset-active.svg"
+                }
+                width={16}
+                height={16}
+                alt=""
+              />
               초기화
             </button>
           </div>

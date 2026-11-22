@@ -50,7 +50,6 @@ export default function JoinPage() {
         return;
       }
 
-      // An authenticated re-entry completes the detour (or replaces an older invite).
       consumePendingInviteCode();
       join(inviteCode, {
         onSuccess: async (data) => {
@@ -61,18 +60,16 @@ export default function JoinPage() {
               const meta = await getRoomDetail(data.id);
               memberCount = meta.memberCount;
               queryClient.setQueryData(roomDetailQueryKey(data.id), meta);
-            } catch {
-              // 메타 조회 실패해도 입장은 진행 (waiting 승인 처리와 동일)
-            }
+            } catch {}
             trackAnalyticsEvent(
               AnalyticsEvents.joinPlan,
-              buildJoinPlanAnalyticsParams(data.id, data.role, memberCount)
+              buildJoinPlanAnalyticsParams(data.id, data.role, memberCount),
             );
             router.replace(planPathForRoom(data.id));
             return;
           }
           router.replace(
-            `/waiting?roomId=${encodeURIComponent(data.id)}&roomTitle=${encodeURIComponent(data.roomTitle)}`
+            `/waiting?roomId=${encodeURIComponent(data.id)}&roomTitle=${encodeURIComponent(data.roomTitle)}`,
           );
         },
         onError: (err) => {
