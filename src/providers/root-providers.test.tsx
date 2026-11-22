@@ -12,14 +12,9 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/dynamic", () => ({
-  default: (
-    _loader: () => Promise<unknown>,
-    options?: { ssr?: boolean },
-  ) => {
+  default: (_loader: () => Promise<unknown>, options?: { ssr?: boolean }) => {
     mocks.dynamicOptions = options;
-    return ({ children }: { children: ReactNode }) => (
-      <div data-provider="full-app-stack">{children}</div>
-    );
+    return ({ children }: { children: ReactNode }) => <div data-provider="full-app-stack">{children}</div>;
   },
 }));
 
@@ -28,9 +23,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@tanstack/react-query", () => ({
-  QueryClientProvider: ({ children }: { children: ReactNode }) => (
-    <div data-provider="query-client">{children}</div>
-  ),
+  QueryClientProvider: ({ children }: { children: ReactNode }) => <div data-provider="query-client">{children}</div>,
   useQueryClient: mocks.useQueryClient,
 }));
 
@@ -43,13 +36,7 @@ vi.mock("@/components/analytics/AnonymousAnalyticsRouteTracker", () => ({
 }));
 
 vi.mock("@/providers/app-chrome-shell", () => ({
-  AppChromeShell: ({
-    analytics,
-    children,
-  }: {
-    analytics: ReactNode;
-    children: ReactNode;
-  }) => (
+  AppChromeShell: ({ analytics, children }: { analytics: ReactNode; children: ReactNode }) => (
     <>
       {mocks.appChromeShell({ analytics, children })}
       <div data-provider="mobile-chrome">{children}</div>
@@ -60,15 +47,11 @@ vi.mock("@/providers/app-chrome-shell", () => ({
 }));
 
 vi.mock("@/components/google-maps-provider", () => ({
-  GoogleMapsProvider: ({ children }: { children: ReactNode }) => (
-    <div data-provider="google-maps">{children}</div>
-  ),
+  GoogleMapsProvider: ({ children }: { children: ReactNode }) => <div data-provider="google-maps">{children}</div>,
 }));
 
 vi.mock("@/contexts/StompContext", () => ({
-  StompProvider: ({ children }: { children: ReactNode }) => (
-    <div data-provider="stomp">{children}</div>
-  ),
+  StompProvider: ({ children }: { children: ReactNode }) => <div data-provider="stomp">{children}</div>,
 }));
 
 vi.mock("@/lib/analytics/runtime", () => ({
@@ -104,10 +87,7 @@ describe("AppRootProviders route boundary", () => {
     vi.clearAllMocks();
   });
 
-  it.each([
-    "/",
-    "/login",
-  ])("keeps the exact public path %s on the lightweight shell", (pathname) => {
+  it.each(["/", "/login"])("keeps the exact public path %s on the lightweight shell", (pathname) => {
     const html = renderAt(pathname);
 
     expect(html).toContain('data-provider="mobile-chrome"');
@@ -123,14 +103,7 @@ describe("AppRootProviders route boundary", () => {
     expect(mocks.useQueryClient).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "/home",
-    "/login/agreements",
-    "/terms",
-    "/privacy",
-    "/operations-policy",
-    "/copyright-policy",
-  ])(
+  it.each(["/home", "/login/agreements", "/terms", "/privacy", "/operations-policy", "/copyright-policy"])(
     "retains the full app provider stack on %s",
     (pathname) => {
       const html = renderAt(pathname);

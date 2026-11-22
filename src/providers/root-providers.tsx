@@ -12,17 +12,11 @@ import { AppChromeShell } from "@/providers/app-chrome-shell";
 const PROVIDER_FREE_PUBLIC_PATHS = new Set(["/", "/login"]);
 
 const FullAppProviderStack = dynamic(() =>
-  import("@/providers/full-app-provider-stack").then(
-    (module) => module.FullAppProviderStack,
-  ),
+  import("@/providers/full-app-provider-stack").then((module) => module.FullAppProviderStack),
 );
 
 function LightweightPublicShell({ children }: { children: ReactNode }) {
-  return (
-    <AppChromeShell analytics={<AnonymousAnalyticsRouteTracker />}>
-      {children}
-    </AppChromeShell>
-  );
+  return <AppChromeShell analytics={<AnonymousAnalyticsRouteTracker />}>{children}</AppChromeShell>;
 }
 
 export function AppRootProviders({ children }: { children: ReactNode }) {
@@ -46,10 +40,14 @@ export function AppRootProviders({ children }: { children: ReactNode }) {
     return () => media.removeListener(apply);
   }, []);
 
-  return <>
-    <LandingSectionTracker />
-    {PROVIDER_FREE_PUBLIC_PATHS.has(pathname)
-      ? <LightweightPublicShell>{children}</LightweightPublicShell>
-      : <FullAppProviderStack>{children}</FullAppProviderStack>}
-  </>;
+  return (
+    <>
+      <LandingSectionTracker />
+      {PROVIDER_FREE_PUBLIC_PATHS.has(pathname) ? (
+        <LightweightPublicShell>{children}</LightweightPublicShell>
+      ) : (
+        <FullAppProviderStack>{children}</FullAppProviderStack>
+      )}
+    </>
+  );
 }

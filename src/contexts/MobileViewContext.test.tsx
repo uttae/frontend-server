@@ -7,9 +7,21 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it("preserves the context value when a resize does not change the device flag", async () => {
   const removeListener = vi.spyOn(window, "removeEventListener");
   const committed = vi.fn();
-  function Probe() { const value = useMobileView(); useLayoutEffect(() => { committed(value); }); return null; }
+  function Probe() {
+    const value = useMobileView();
+    useLayoutEffect(() => {
+      committed(value);
+    });
+    return null;
+  }
   const root = createRoot(document.createElement("div"));
-  await act(async () => root.render(<MobileViewProvider><Probe /></MobileViewProvider>));
+  await act(async () =>
+    root.render(
+      <MobileViewProvider>
+        <Probe />
+      </MobileViewProvider>,
+    ),
+  );
   const count = committed.mock.calls.length;
   await act(async () => window.dispatchEvent(new Event("resize")));
   expect(committed).toHaveBeenCalledTimes(count);

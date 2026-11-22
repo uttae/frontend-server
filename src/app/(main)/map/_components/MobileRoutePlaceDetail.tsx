@@ -13,11 +13,6 @@ import { normalizeGooglePlaceResourceId } from "@/lib/maps";
 import type { SearchRankBucket } from "@/lib/analytics/context";
 import type { PlanPlace } from "@/lib/plan/types";
 
-/**
- * 펼친 경로 카드의 상세(Figma ④) — 사진, 홈·리뷰 탭(장소 상세 시트와 같음).
- * 시간·비용·메모는 카드 윗부분에 그대로 있다. 가운데 카드(`active`)일 때만 상세를 불러온다.
- * 지도에서 고른 후보 장소도 같은 상세를 쓴다(`analyticsSource="map"`).
- */
 export function MobileRoutePlaceDetail({
   place,
   active,
@@ -35,7 +30,6 @@ export function MobileRoutePlaceDetail({
   const { data: detail, isLoading, isError, refetch } = usePlaceDetailData(active ? googlePlaceId : undefined);
   const category = detail?.primaryTypeDisplayName ?? place.primaryTypeDisplayName ?? "";
 
-  // 일정 상세를 본 것으로 한 번만 기록한다(장소 상세 패널과 같은 이벤트)
   const trackedPlaceIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!active || !googlePlaceId || isLoading || isError || trackedPlaceIdRef.current === googlePlaceId) return;
@@ -51,24 +45,27 @@ export function MobileRoutePlaceDetail({
   const showSkeleton = !active || (isLoading && !detail);
 
   function renderDetail() {
-    if (isError && !detail && active) return (
-      <div className="p-3.5">
-        <Alert>
-          <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
-          <AlertAction>
-            <button type="button" onClick={() => void refetch()} className="text-primary underline">다시 시도</button>
-          </AlertAction>
-        </Alert>
-      </div>
-    );
-    if (showSkeleton) return (
-      <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
-        <Skeleton render={<span />} className="h-5 w-24" />
-        <Skeleton render={<span />} tone="subtle" className="h-16 w-full rounded-md" />
-      </output>
-    );
+    if (isError && !detail && active)
+      return (
+        <div className="p-3.5">
+          <Alert>
+            <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
+            <AlertAction>
+              <button type="button" onClick={() => void refetch()} className="text-primary underline">
+                다시 시도
+              </button>
+            </AlertAction>
+          </Alert>
+        </div>
+      );
+    if (showSkeleton)
+      return (
+        <output aria-label="장소 정보 불러오는 중" aria-busy className="mt-3 flex flex-col gap-2 px-5 py-4">
+          <Skeleton render={<span />} className="h-5 w-24" />
+          <Skeleton render={<span />} tone="subtle" className="h-16 w-full rounded-md" />
+        </output>
+      );
     return (
-      // 장소 상세 시트와 같은 홈·리뷰 탭 — 같은 상세 응답을 쓰므로 추가 호출이 없다
       <div className="mt-3">
         <PlaceDetailTabs
           home={{
@@ -102,7 +99,6 @@ export function MobileRoutePlaceDetail({
       </div>
 
       {renderDetail()}
-
     </div>
   );
 }

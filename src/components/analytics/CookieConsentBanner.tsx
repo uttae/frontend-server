@@ -12,13 +12,9 @@ type CookieConsentBannerProps = {
   onReject: () => void;
 };
 
-export function CookieConsentBanner({
-  onAccept,
-  onReject,
-}: CookieConsentBannerProps) {
+export function CookieConsentBanner({ onAccept, onReject }: CookieConsentBannerProps) {
   const reduceMotion = useReducedMotion();
 
-  // z-40: 앱(isolate 묶음) 위, Base UI 대화상자·시트(z-50 포털) 아래다. 배너의 '쿠키 설정'으로 연 대화상자가 배너를 덮고 딤이 배너를 막는다
   return (
     <motion.div
       role="region"
@@ -30,14 +26,14 @@ export function CookieConsentBanner({
     >
       <div className="mx-auto flex max-w-screen-xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <p className="text-body-m-regular mobile:text-body-s-regular leading-relaxed text-dark-gray">
-          우때는 서비스 개선과 방문 통계 분석을 위해 Google Analytics 쿠키를
-          사용합니다. 쿠키 사용에 동의하시겠습니까?{" "}
+          우때는 서비스 개선과 방문 통계 분석을 위해 Google Analytics 쿠키를 사용합니다. 쿠키 사용에 동의하시겠습니까?{" "}
           <Link
             href={AGREEMENT_PUBLIC_PATH.PRIVACY_POLICY}
             className="font-medium text-primary underline-offset-2 hover:underline"
           >
             개인정보 처리방침
-          </Link>{" · "}
+          </Link>
+          {" · "}
           <CookieSettingsButton className="cursor-pointer rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
             쿠키 설정
           </CookieSettingsButton>

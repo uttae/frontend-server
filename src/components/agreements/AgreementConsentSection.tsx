@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { useCurrentAgreements } from "@/hooks/useCurrentAgreements";
+import { createAgreementConsentSchema } from "@/lib/agreements/consent";
 import { agreementPathForType } from "@/lib/agreements/paths";
 
 export type AgreementConsentState = {
@@ -25,12 +26,8 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   const { data, isPending, isError, error, refetch } = useCurrentAgreements();
   const items = useMemo(() => data?.items ?? [], [data?.items]);
   const [acceptedIds, setAcceptedIds] = useState<Set<string>>(() => new Set());
-  const itemIds = useMemo(
-    () => items.map((item) => `${item.type}:${item.version}`),
-    [items],
-  );
-  const allAccepted =
-    itemIds.length > 0 && itemIds.every((id) => acceptedIds.has(id));
+  const itemIds = useMemo(() => items.map((item) => `${item.type}:${item.version}`), [items]);
+  const allAccepted = createAgreementConsentSchema(itemIds).safeParse([...acceptedIds]).success;
   const canProceed = !isPending && !isError && allAccepted;
 
   useEffect(() => {
@@ -66,11 +63,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
     return (
       <Alert tone="brand" size="lg" className="self-stretch">
         <AlertTitle>약관을 불러오지 못했습니다</AlertTitle>
-        <AlertDescription>
-          {error instanceof Error
-            ? error.message
-            : "잠시 후 다시 시도해 주세요."}
-        </AlertDescription>
+        <AlertDescription>{error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요."}</AlertDescription>
         <AlertAction>
           <button
             type="button"
@@ -87,10 +80,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
   if (items.length === 0) {
     return (
       <Alert size="lg" role="status" className="self-stretch">
-        <AlertDescription>
-          현재 동의할 약관 정보를 불러올 수 없습니다. 잠시 후 다시 시도해
-          주세요.
-        </AlertDescription>
+        <AlertDescription>현재 동의할 약관 정보를 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.</AlertDescription>
       </Alert>
     );
   }
@@ -108,10 +98,7 @@ export function AgreementConsentSection({ onStateChange }: Props) {
         {items.map((item) => {
           const id = `${item.type}:${item.version}`;
           return (
-            <li
-              key={id}
-              className="flex items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-white/80"
-            >
+            <li key={id} className="flex items-center gap-2 rounded-lg px-2 py-2 transition-colors hover:bg-white/80">
               <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
                 <Checkbox
                   size="sm"

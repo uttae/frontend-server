@@ -1,22 +1,17 @@
-import { AnalyticsEvents } from "@/lib/analytics/track";
+import { bucketItemCount } from "@/lib/analytics/context";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { trackRoomMutation } from "@/lib/analytics/room-mutation";
 import { beginExpenseRoomAdmission } from "@/lib/expenses/expense-recovery";
 import { joinStatusForWaitingUi } from "@/lib/join-room-workflow";
 import { invalidateExpenses, expenseKeys } from "@/lib/expenses/expense-queries";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { queryOptions, useMutation, useMutationState, useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 
 import { useStompContext } from "@/contexts/StompContext";
 
 import {
-  HttpError,
   approveJoinRequest,
   createBookmarkCategory,
-  createRoomBookmark,
   createRoomBookmarks,
   createRoom,
   createRoomSchedule,
@@ -32,7 +27,7 @@ import {
   getBookmarkCategories,
   getJoinRequests,
   getJoinStatus,
-  getRoomBookmarks,
+  getAllRoomBookmarks,
   getRoomMembers,
   patchRoomBookmarkCategory,
   getRooms,
@@ -46,6 +41,7 @@ import {
   type RoomBookmark,
   type RoomCreateRequest,
   type RoomScheduleCreateRequest,
+  type RoomScheduleWithItems,
   type ReorderScheduleItemRequest,
   type RoomScheduleItemUpdateRequest,
   type RoomUpdateRequest,
@@ -62,40 +58,34 @@ import {
   createScheduleItemAtPlanIndex,
   removeScheduleItemFromPlanPlacesCache,
   schedulePlanPlacesQueryOptions,
-  syncAfterCrossScheduleItemMove,
-  syncPlanPlacesAfterReorderSuccess,
 } from "@/lib/plan/scheduleItemPlaces";
-import { fetchAndSeedAllRoomBookmarks } from "@/lib/bookmarks/bookmark-bulk-cache";
 import {
-  appendBookmarkCategoryToCache,
-  appendRoomBookmarksToCache,
-} from "@/lib/bookmarks/bookmark-cache-patch";
+  insertPlanPlace,
+  movePlanPlaceWithinDay,
+  moveRoomScheduleToDay,
+  removePlanPlace,
+} from "@/lib/plan/planListMove";
+import { appendBookmarkCategoryToCache, appendRoomBookmarksToCache } from "@/lib/bookmarks/bookmark-cache-patch";
+import { invalidateRoomBookmarkLists } from "@/lib/bookmarks-invalidation";
 import {
   bookmarkCategoriesQueryKey,
   joinRequestsQueryKey,
   roomAllBookmarksQueryKey,
-  roomBookmarksQueryKey,
   ROOMS_QUERY_KEY,
   roomDetailQueryKey,
   roomMembersQueryKey,
   roomSchedulesQueryKey,
   scheduleItemsQueryKey,
 } from "@/lib/query-keys";
-import {
-  hydrateRoomSchedulesFromServer,
-  refreshRoomSchedules,
-  syncRoomDetailFromServer,
-} from "@/lib/rooms";
+import { hydrateRoomSchedulesFromServer, refreshRoomSchedules, syncRoomDetailFromServer } from "@/lib/rooms";
 import type { PlanPlace } from "@/lib/plan/types";
-import {
-  pathDefersRoomStompRoomTopics,
-  pathSuspendsStomp,
-} from "@/lib/stomp/stompPathPolicy";
+import { pathDefersRoomStompRoomTopics, pathSuspendsStomp } from "@/lib/stomp/stompPathPolicy";
 import { persistedScheduleItemRouteQueryOptions } from "@/lib/plan/scheduleItemRoutePersistedQuery";
 import type { ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 import { useSessionUser } from "@/hooks/useSessionUser";
 import { applyHostTransferToCache } from "@/lib/rooms/host-transfer-cache";
 import { readSessionUserId } from "@/lib/session-user-cache";
+import { evictRoomFromClientCaches } from "@/lib/stomp/forced-room-exit-dispatch";
 
 export function useRoomsList() {
   return useQuery({
@@ -142,9 +132,7 @@ export function useCreateRoom() {
           if (prev.rooms.some((r) => r.id === rid)) {
             return {
               ...prev,
-              rooms: prev.rooms.map((r) =>
-                r.id === rid ? { ...r, ...listItem } : r,
-              ),
+              rooms: prev.rooms.map((r) => (r.id === rid ? { ...r, ...listItem } : r)),
             };
           }
           return { ...prev, rooms: [listItem, ...prev.rooms] };
@@ -162,8 +150,7 @@ export function useRoomSchedules(roomId: string | null) {
   const queryClient = useQueryClient();
   return useQuery({
     queryKey: roomSchedulesQueryKey(id || null),
-    queryFn: ({ signal }) =>
-      hydrateRoomSchedulesFromServer(queryClient, id, signal),
+    queryFn: ({ signal }) => hydrateRoomSchedulesFromServer(queryClient, id, signal),
     enabled: id.length > 0,
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -174,13 +161,12 @@ export function useScheduleItemRoute(
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
-  /** 다음 장소의 `itemId` */
   destinationItemId: number | null,
   travelMode: ScheduleTravelModeValue | null,
-  /** 일정 장소 목록상 구간 소스 아이디가 존재·목록 안정 후에만 true */
   routeQueryEnabled = true,
-  /** 빈 문자열이면 LS 미사용 — `scheduleFingerprint` 지문 필요 */
   scheduleFingerprint = "",
+  /** 수단 저장 중에는 해당 구간의 캐시만 읽고 GET은 보류한다. */
+  networkEnabled = routeQueryEnabled,
 ) {
   const rid = roomId?.trim() ?? "";
 
@@ -192,7 +178,7 @@ export function useScheduleItemRoute(
       destinationItemId,
       travelMode,
       scheduleFingerprint,
-      { segmentReady: Boolean(routeQueryEnabled) },
+      { segmentReady: Boolean(routeQueryEnabled), networkEnabled },
     ),
   });
 }
@@ -200,13 +186,8 @@ export function useScheduleItemRoute(
 export function useDeleteRoomSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      scheduleId,
-    }: {
-      roomId: string;
-      scheduleId: number;
-    }) => deleteRoomSchedule(roomId, scheduleId),
+    mutationFn: ({ roomId, scheduleId }: { roomId: string; scheduleId: number }) =>
+      deleteRoomSchedule(roomId, scheduleId),
     onSuccess: async (_data, { roomId }) => {
       await invalidateExpenses(queryClient, roomId);
       const id = roomId.trim();
@@ -218,19 +199,11 @@ export function useDeleteRoomSchedule() {
   });
 }
 
-/**
- * 일차(schedule) 생성 — 액터는 POST `onSuccess`, 원격은 STOMP `ROOM_SCHEDULES_RESYNCED`로 갱신합니다.
- */
 export function useCreateRoomSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      body,
-    }: {
-      roomId: string;
-      body: RoomScheduleCreateRequest;
-    }) => createRoomSchedule(roomId, body),
+    mutationFn: ({ roomId, body }: { roomId: string; body: RoomScheduleCreateRequest }) =>
+      createRoomSchedule(roomId, body),
     onSuccess: async (_created, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
@@ -240,10 +213,12 @@ export function useCreateRoomSchedule() {
   });
 }
 
-/** 일차(schedule) 이동 — shift 후 전체 재조회로 갱신 (원격: STOMP `ROOM_SCHEDULES_RESYNCED`) */
+const ROOM_SCHEDULE_MOVE_MUTATION_KEY = ["room-schedule-move"] as const;
+
 export function useMoveRoomSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY,
     mutationFn: ({
       roomId,
       scheduleId,
@@ -253,19 +228,70 @@ export function useMoveRoomSchedule() {
       scheduleId: number;
       targetDayNumber: number;
     }) => moveRoomSchedule(roomId, scheduleId, { targetDayNumber }),
+    onMutate: async ({ roomId, scheduleId, targetDayNumber }) => {
+      const key = roomSchedulesQueryKey(roomId.trim());
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const previous = queryClient.getQueryData<RoomScheduleWithItems[]>(key);
+      queryClient.setQueryData<RoomScheduleWithItems[]>(
+        key,
+        (old) => old && moveRoomScheduleToDay(old, scheduleId, targetDayNumber),
+      );
+      return { previous };
+    },
+    onError: (_error, { roomId }, context) => {
+      queryClient.setQueryData(roomSchedulesQueryKey(roomId.trim()), context?.previous);
+    },
     onSuccess: async (_data, { roomId }) => {
       const id = roomId.trim();
       if (!id.length) return;
       await invalidateExpenses(queryClient, id);
-      await refreshRoomSchedules(queryClient, id);
+    },
+    onSettled: (_data, _error, { roomId }) => {
+      if (queryClient.isMutating({ mutationKey: ROOM_SCHEDULE_MOVE_MUTATION_KEY }) <= 1) {
+        void queryClient.invalidateQueries({
+          queryKey: roomSchedulesQueryKey(roomId.trim()),
+          exact: true,
+        });
+      }
     },
   });
 }
 
-/** 일정 항목을 다른 일차로 이동 — 같은 일차 내 순서는 `useReorderScheduleItem` 사용 */
+const SCHEDULE_ITEM_MOVE_MUTATION_KEY = ["schedule-item-move"] as const;
+
+function scheduleIdsOfItemMove(variables: unknown, roomId: string): number[] {
+  if (typeof variables !== "object" || variables === null) return [];
+  if (!("roomId" in variables) || typeof variables.roomId !== "string") return [];
+  if (variables.roomId.trim() !== roomId) return [];
+  const ids: unknown[] = [];
+  if ("scheduleId" in variables) ids.push(variables.scheduleId);
+  if ("sourceScheduleId" in variables) ids.push(variables.sourceScheduleId);
+  if ("targetScheduleId" in variables) ids.push(variables.targetScheduleId);
+  return ids.filter((id): id is number => typeof id === "number");
+}
+
+function isLastItemMoveOf(queryClient: ReturnType<typeof useQueryClient>, roomId: string, scheduleId: number): boolean {
+  const rid = roomId.trim();
+  return (
+    queryClient.isMutating({
+      mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY,
+      predicate: (mutation) => scheduleIdsOfItemMove(mutation.state.variables, rid).includes(scheduleId),
+    }) <= 1
+  );
+}
+
+export function useScheduleItemMoveSavingDays(roomId: string): number[] {
+  const rid = roomId.trim();
+  return useMutationState({
+    filters: { mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY, status: "pending" },
+    select: (mutation) => scheduleIdsOfItemMove(mutation.state.variables, rid),
+  }).flat();
+}
+
 export function useMoveScheduleItemToSchedule() {
   const queryClient = useQueryClient();
   return useMutation({
+    mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY,
     mutationFn: ({
       roomId,
       sourceScheduleId,
@@ -278,8 +304,6 @@ export function useMoveScheduleItemToSchedule() {
       itemId: number;
       targetScheduleId: number;
       targetOrderIndex: number;
-      /** 저장하는 동안 대상 일차에 먼저 보여 줄 카드(모바일 편집 목록) — 요청에는 쓰지 않는다 */
-      place?: PlanPlace;
     }) => {
       if (sourceScheduleId === targetScheduleId) {
         throw new Error("같은 일차 안에서는 순서 변경만 가능해요.");
@@ -289,25 +313,40 @@ export function useMoveScheduleItemToSchedule() {
         targetOrderIndex,
       });
     },
-    onSuccess: async (
-      _moved,
-      { roomId, sourceScheduleId, targetScheduleId },
-    ) => {
-      await invalidateExpenses(queryClient, roomId);
-      await syncAfterCrossScheduleItemMove(
-        queryClient,
-        roomId,
-        sourceScheduleId,
-        targetScheduleId,
-      );
+    onMutate: async ({ roomId, sourceScheduleId, itemId, targetScheduleId, targetOrderIndex }) => {
+      const rid = roomId.trim();
+      const sourceKey = scheduleItemsQueryKey(rid, sourceScheduleId);
+      const targetKey = scheduleItemsQueryKey(rid, targetScheduleId);
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: sourceKey, exact: true }),
+        queryClient.cancelQueries({ queryKey: targetKey, exact: true }),
+      ]);
+      const previousSource = queryClient.getQueryData<PlanPlace[]>(sourceKey);
+      const previousTarget = queryClient.getQueryData<PlanPlace[]>(targetKey);
+      const moved = previousSource?.find((p) => p.itemId === itemId);
+      if (moved) {
+        queryClient.setQueryData<PlanPlace[]>(sourceKey, (old) => old && removePlanPlace(old, itemId));
+        queryClient.setQueryData<PlanPlace[]>(targetKey, (old) => old && insertPlanPlace(old, moved, targetOrderIndex));
+      }
+      return { previousSource, previousTarget };
+    },
+    onError: (_error, { roomId, sourceScheduleId, targetScheduleId }, context) => {
+      const rid = roomId.trim();
+      queryClient.setQueryData(scheduleItemsQueryKey(rid, sourceScheduleId), context?.previousSource);
+      queryClient.setQueryData(scheduleItemsQueryKey(rid, targetScheduleId), context?.previousTarget);
+    },
+    onSuccess: (_moved, { roomId }) => invalidateExpenses(queryClient, roomId),
+    onSettled: (_moved, _error, { roomId, sourceScheduleId, targetScheduleId }) => {
+      for (const scheduleId of [sourceScheduleId, targetScheduleId]) {
+        if (isLastItemMoveOf(queryClient, roomId, scheduleId)) {
+          void invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+        }
+      }
     },
   });
 }
 
-export function useSchedulePlanPlaces(
-  roomId: string | null,
-  scheduleId: number | null,
-) {
+export function useSchedulePlanPlaces(roomId: string | null, scheduleId: number | null) {
   const rid = roomId?.trim() ?? "";
   const sid = scheduleId;
   const queryClient = useQueryClient();
@@ -315,19 +354,11 @@ export function useSchedulePlanPlaces(
 
   return useQuery({
     ...schedulePlanPlacesQueryOptions(queryClient, rid, sid),
-    enabled:
-      rid.length > 0 &&
-      typeof sid === "number" &&
-      Number.isFinite(sid) &&
-      schedulesHydrated,
+    enabled: rid.length > 0 && typeof sid === "number" && Number.isFinite(sid) && schedulesHydrated,
     refetchOnWindowFocus: false,
   });
 }
 
-/**
- * 본인이 일정 장소를 바꾼 뒤(성공·실패 모두) 그 일차를 다시 받는다. 여러 사람이 함께 고치는 목록이라
- * 응답을 쓰는 사이 끝난 옛 조회나 다른 사람의 변경을 서버 기준으로 맞춘다. 진행 중인 옛 조회는 TanStack이 취소한다.
- */
 function invalidateDayPlacesAfterOwnChange(
   queryClient: ReturnType<typeof useQueryClient>,
   roomId: string,
@@ -359,12 +390,7 @@ export function useCreateScheduleItem() {
       });
     },
     onSuccess: (response, { roomId, scheduleId }) =>
-      applyCreatedScheduleItemToPlanPlaces(
-        queryClient,
-        roomId,
-        scheduleId,
-        response,
-      ),
+      applyCreatedScheduleItemToPlanPlaces(queryClient, roomId, scheduleId, response),
     onSettled: (_response, _error, { roomId, scheduleId }) =>
       invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
@@ -373,18 +399,8 @@ export function useCreateScheduleItem() {
 export function useUpdateScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: {
-      roomId: string;
-      scheduleId: number;
-      itemId: number;
-      body: RoomScheduleItemUpdateRequest;
-    }) =>
-      updateScheduleItem(
-        vars.roomId,
-        vars.scheduleId,
-        vars.itemId,
-        vars.body,
-      ),
+    mutationFn: (vars: { roomId: string; scheduleId: number; itemId: number; body: RoomScheduleItemUpdateRequest }) =>
+      updateScheduleItem(vars.roomId, vars.scheduleId, vars.itemId, vars.body),
     onSuccess: (updated, { roomId, scheduleId, body }) => {
       queryClient.setQueryData<PlanPlace[]>(
         scheduleItemsQueryKey(roomId.trim(), scheduleId),
@@ -399,84 +415,70 @@ export function useUpdateScheduleItem() {
   });
 }
 
-/**
- * 구간 공유 이동수단 변경 — 서버 DB 저장 후 `SCHEDULE_ITEM_TRAVEL_MODE_UPDATED`가
- * 브로드캐스트되며, 액터는 응답으로 `schedule-items` 캐시를 갱신합니다.
- * 수단별 경로 캐시는 모드 키로 분리돼 있어 무효화가 필요 없습니다.
- */
-export function useUpdateScheduleItemTravelMode() {
+export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: number, itemId: number) {
   const queryClient = useQueryClient();
+  const mutationKey = ["schedule-item-travel-mode", roomId, scheduleId, itemId] as const;
   return useMutation({
-    mutationFn: (vars: {
-      roomId: string;
-      scheduleId: number;
-      itemId: number;
-      travelMode: ScheduleTravelModeValue;
-    }) =>
-      updateScheduleItemTravelMode(
-        vars.roomId,
-        vars.scheduleId,
-        vars.itemId,
-        { travelMode: vars.travelMode },
-      ),
-    onSuccess: (updated, { roomId, scheduleId }) => {
+    mutationKey,
+    // 이동수단은 출발 항목에 저장한다. 같은 항목의 PATCH만 선택 순서대로 보낸다.
+    scope: { id: JSON.stringify(mutationKey) },
+    mutationFn: (travelMode: ScheduleTravelModeValue) =>
+      updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode }),
+    onSuccess: (updated) => {
       queryClient.setQueryData<PlanPlace[]>(
-        scheduleItemsQueryKey(roomId.trim(), scheduleId),
+        scheduleItemsQueryKey(roomId, scheduleId),
         (old) => applyRoomScheduleItemToPlanPlaces(old, updated) ?? old,
       );
     },
-    onSettled: (_updated, _error, { roomId, scheduleId }) =>
-      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
+    onSettled: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
 export function useDeleteScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: {
-      roomId: string;
-      scheduleId: number;
-      itemId: number;
-    }) => deleteScheduleItem(vars.roomId, vars.scheduleId, vars.itemId),
+    mutationFn: (vars: { roomId: string; scheduleId: number; itemId: number }) =>
+      deleteScheduleItem(vars.roomId, vars.scheduleId, vars.itemId),
     onSuccess: async (_, { roomId, scheduleId, itemId }) => {
       await invalidateExpenses(queryClient, roomId);
-      removeScheduleItemFromPlanPlacesCache(
-        queryClient,
-        roomId,
-        scheduleId,
-        itemId,
-      );
+      removeScheduleItemFromPlanPlacesCache(queryClient, roomId, scheduleId, itemId);
     },
     onSettled: (_data, _error, { roomId, scheduleId }) =>
       invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
-/** 순서 변경 — 응답·경로 캐시 반영과 일차 재조회를 기다리므로 `isPending`이 그 끝까지 이어진다 */
 export function useReorderScheduleItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (vars: {
-      roomId: string;
-      scheduleId: number;
-      itemId: number;
-      body: ReorderScheduleItemRequest;
-    }) =>
-      reorderScheduleItem(
-        vars.roomId,
-        vars.scheduleId,
-        vars.itemId,
-        vars.body,
-      ),
-    onSuccess: (items, { roomId, scheduleId }) =>
-      syncPlanPlacesAfterReorderSuccess(
-        queryClient,
-        roomId,
-        scheduleId,
-        items,
-      ),
-    onSettled: (_items, _error, { roomId, scheduleId }) =>
-      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
+    mutationKey: SCHEDULE_ITEM_MOVE_MUTATION_KEY,
+    mutationFn: (vars: { roomId: string; scheduleId: number; itemId: number; body: ReorderScheduleItemRequest }) =>
+      reorderScheduleItem(vars.roomId, vars.scheduleId, vars.itemId, vars.body),
+    onMutate: async ({ roomId, scheduleId, itemId, body }) => {
+      const key = scheduleItemsQueryKey(roomId.trim(), scheduleId);
+      await queryClient.cancelQueries({ queryKey: key, exact: true });
+      const previous = queryClient.getQueryData<PlanPlace[]>(key);
+      queryClient.setQueryData<PlanPlace[]>(
+        key,
+        (old) => old && movePlanPlaceWithinDay(old, itemId, body.newOrderIndex),
+      );
+      return { previous };
+    },
+    onError: (_error, { roomId, scheduleId }, context) => {
+      queryClient.setQueryData(scheduleItemsQueryKey(roomId.trim(), scheduleId), context?.previous);
+    },
+    onSuccess: (items, { roomId }) => {
+      trackAnalyticsEvent(AnalyticsEvents.reorderItinerary, {
+        room_id: roomId,
+        item_count_bucket: bucketItemCount(items.length),
+        method: "drag_drop",
+      });
+    },
+    onSettled: (_items, _error, { roomId, scheduleId }) => {
+      if (isLastItemMoveOf(queryClient, roomId, scheduleId)) {
+        void invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+      }
+    },
   });
 }
 
@@ -491,35 +493,36 @@ export function useUpdateRoom() {
       data: RoomUpdateRequest;
       previousStartDate?: string | null;
       previousEndDate?: string | null;
-    }) => trackRoomMutation(queryClient, roomId, AnalyticsEvents.roomInfoUpdated,
-      () => updateRoom(roomId, data), result => result.role),
+    }) =>
+      trackRoomMutation(
+        queryClient,
+        roomId,
+        AnalyticsEvents.roomInfoUpdated,
+        () => updateRoom(roomId, data),
+        (result) => result.role,
+      ),
     retry: false,
-    onSuccess: async (
-      updated,
-      { roomId, data, previousStartDate, previousEndDate },
-    ) => {
+    onSuccess: async (updated, { roomId, data, previousStartDate, previousEndDate }) => {
       queryClient.setQueryData<RoomListResponse>(ROOMS_QUERY_KEY, (prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           rooms: prev.rooms.map((r) =>
-            r.id === roomId ?
-              {
-                ...r,
-                title: updated.title,
-                destinations: updated.destinations,
-                startDate: updated.startDate ?? null,
-                endDate: updated.endDate ?? null,
-              }
-            : r,
+            r.id === roomId
+              ? {
+                  ...r,
+                  title: updated.title,
+                  destinations: updated.destinations,
+                  startDate: updated.startDate ?? null,
+                  endDate: updated.endDate ?? null,
+                }
+              : r,
           ),
         };
       });
-      queryClient.setQueryData<RoomDetail>(
-        roomDetailQueryKey(roomId),
-        (prev) =>
-          prev && prev.id === roomId ?
-            {
+      queryClient.setQueryData<RoomDetail>(roomDetailQueryKey(roomId), (prev) =>
+        prev && prev.id === roomId
+          ? {
               ...prev,
               title: updated.title,
               destinations: updated.destinations,
@@ -559,14 +562,13 @@ export function useRegenerateInviteCode() {
 
   return useMutation({
     mutationFn: ({ roomId, trigger }: { roomId: string; trigger: "explicit" | "automatic" }) =>
-      trigger === "automatic" ? regenerateInviteCode(roomId) :
-        trackRoomMutation(queryClient, roomId, AnalyticsEvents.inviteCodeIssued,
-          () => regenerateInviteCode(roomId)),
+      trigger === "automatic"
+        ? regenerateInviteCode(roomId)
+        : trackRoomMutation(queryClient, roomId, AnalyticsEvents.inviteCodeIssued, () => regenerateInviteCode(roomId)),
     retry: false,
     onSuccess: (data, { roomId }) => {
-      queryClient.setQueryData<RoomDetail>(
-        roomDetailQueryKey(roomId),
-        (prev) => (prev ? { ...prev, inviteCode: data.inviteCode } : prev),
+      queryClient.setQueryData<RoomDetail>(roomDetailQueryKey(roomId), (prev) =>
+        prev ? { ...prev, inviteCode: data.inviteCode } : prev,
       );
     },
   });
@@ -577,19 +579,12 @@ export function useRoomMembers(roomId: string | null) {
   const { data: user } = useSessionUser();
   const { connected: stompConnected } = useStompContext();
 
-  /**
-   * 방 토픽을 구독하는 구간에서는 STOMP 연결·`/app/ping` 이전에 GET /members 가 먼저 나가면
-   * `isOnline` 이 모두 false 로 내려오는 경우가 있다. STOMP 연결 후에만 조회한다.
-   * `/home` 등 방 토픽을 미루는 경로는 즉시 조회(ping은 연결 단위로 계속 전송).
-   */
   const waitForStompBeforeMembers =
-    Boolean(user && roomId) &&
-    !pathSuspendsStomp(pathname) &&
-    !pathDefersRoomStompRoomTopics(pathname);
+    Boolean(user && roomId) && !pathSuspendsStomp(pathname) && !pathDefersRoomStompRoomTopics(pathname);
 
   return useQuery({
     queryKey: roomMembersQueryKey(roomId),
-    queryFn: () => getRoomMembers(roomId!),
+    queryFn: ({ signal }) => getRoomMembers(roomId!, signal),
     enabled: !!roomId && (!waitForStompBeforeMembers || stompConnected),
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -614,19 +609,13 @@ export function useCheckJoinStatus() {
     mutationFn: async (roomId: string) => {
       const confirm = beginExpenseRoomAdmission(client);
       const response = await getJoinStatus(roomId);
-      confirm(
-        roomId,
-        response.id === roomId && joinStatusForWaitingUi(response) === "APPROVED",
-      );
+      confirm(roomId, response.id === roomId && joinStatusForWaitingUi(response) === "APPROVED");
       return response;
     },
   });
 }
 
-export function useJoinRequests(
-  roomId: string | null,
-  options?: { enabled?: boolean },
-) {
+export function useJoinRequests(roomId: string | null, options?: { enabled?: boolean }) {
   const userEnabled = options?.enabled ?? true;
   return useQuery({
     queryKey: joinRequestsQueryKey(roomId),
@@ -641,24 +630,15 @@ export function useJoinRequests(
 export function useTransferHost() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      targetUserId,
-    }: {
-      roomId: string;
-      targetUserId: number;
-    }) => transferHost(roomId, targetUserId),
+    mutationFn: ({ roomId, targetUserId }: { roomId: string; targetUserId: number }) =>
+      transferHost(roomId, targetUserId),
     onSuccess: (_, { roomId, targetUserId }) => {
-      applyHostTransferToCache(
-        queryClient,
-        roomId,
-        readSessionUserId(queryClient),
-        targetUserId,
-      );
-      // 반영한 결과를 서버 값으로 다시 맞춘다 — 캐시는 바로 바뀌어 있으므로 화면은 기다리지 않는다
-      queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
+      applyHostTransferToCache(queryClient, roomId, readSessionUserId(queryClient), targetUserId);
+    },
+    onSettled: (_data, _error, { roomId }) => {
+      void queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: roomDetailQueryKey(roomId) });
+      void queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });
 }
@@ -667,8 +647,11 @@ export function useLeaveRoom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (roomId: string) => leaveRoom(roomId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
+    onSuccess: (_, roomId) => {
+      evictRoomFromClientCaches(queryClient, roomId);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
     },
   });
 }
@@ -676,60 +659,43 @@ export function useLeaveRoom() {
 export function useKickMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ roomId, userId }: { roomId: string; userId: number }) =>
-      kickMember(roomId, userId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
-    },
+    mutationFn: ({ roomId, userId }: { roomId: string; userId: number }) => kickMember(roomId, userId),
+    onSettled: (_data, _error, { roomId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) }),
+        queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY }),
+      ]),
   });
 }
 
 export function useApproveJoinRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      requestId,
-    }: {
-      roomId: string;
-      requestId: number;
-    }) => approveJoinRequest(roomId, requestId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) });
-      queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY });
-    },
+    mutationFn: ({ roomId, requestId }: { roomId: string; requestId: number }) => approveJoinRequest(roomId, requestId),
+    onSettled: (_data, _error, { roomId }) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) }),
+        queryClient.invalidateQueries({ queryKey: roomMembersQueryKey(roomId) }),
+        queryClient.invalidateQueries({ queryKey: ROOMS_QUERY_KEY }),
+      ]),
   });
 }
 
 export function useRejectJoinRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      requestId,
-    }: {
-      roomId: string;
-      requestId: number;
-    }) => rejectJoinRequest(roomId, requestId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) });
-    },
+    mutationFn: ({ roomId, requestId }: { roomId: string; requestId: number }) => rejectJoinRequest(roomId, requestId),
+    onSettled: (_data, _error, { roomId }) => queryClient.invalidateQueries({ queryKey: joinRequestsQueryKey(roomId) }),
   });
 }
 
-export function useBookmarkCategories(
-  roomId: string | null,
-  options?: { enabled?: boolean },
-) {
+export function useBookmarkCategories(roomId: string | null, options?: { enabled?: boolean }) {
   const queryEnabled = options?.enabled ?? true;
   return useQuery({
     queryKey: bookmarkCategoriesQueryKey(roomId),
     queryFn: () => getBookmarkCategories(roomId!),
     enabled: !!roomId && queryEnabled,
     staleTime: Infinity,
-    // Broadcasts/mutations invalidate folders; plain tab reentry reuses the cache.
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -738,17 +704,15 @@ export function useBookmarkCategories(
 export function useCreateBookmarkCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      name,
-      colorCode,
-    }: {
-      roomId: string;
-      name: string;
-      colorCode: string;
-    }) => createBookmarkCategory(roomId, { name, colorCode }),
+    mutationFn: ({ roomId, name, colorCode }: { roomId: string; name: string; colorCode: string }) =>
+      createBookmarkCategory(roomId, { name, colorCode }),
     onSuccess: (created, { roomId }) => {
       appendBookmarkCategoryToCache(queryClient, roomId, created);
+    },
+    onSettled: (_created, _error, { roomId }) => {
+      void queryClient.invalidateQueries({
+        queryKey: bookmarkCategoriesQueryKey(roomId),
+      });
     },
   });
 }
@@ -767,8 +731,15 @@ export function useUpdateBookmarkCategory() {
       name: string;
       colorCode: string;
     }) => updateBookmarkCategory(roomId, categoryId, { name, colorCode }),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({
+    onSuccess: (updated, { roomId, categoryId }) => {
+      queryClient.setQueryData<BookmarkCategory[]>(bookmarkCategoriesQueryKey(roomId), (prev) =>
+        prev?.map((c) =>
+          c.categoryId === categoryId ? { ...c, name: updated.name, colorCode: updated.colorCode } : c,
+        ),
+      );
+    },
+    onSettled: (_updated, _error, { roomId }) => {
+      void queryClient.invalidateQueries({
         queryKey: bookmarkCategoriesQueryKey(roomId),
       });
     },
@@ -778,99 +749,41 @@ export function useUpdateBookmarkCategory() {
 export function useDeleteBookmarkCategory() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      roomId,
-      categoryId,
-    }: {
-      roomId: string;
-      categoryId: number;
-    }) => deleteBookmarkCategory(roomId, categoryId),
-    onSuccess: (_, { roomId }) => {
-      queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(roomId),
-      });
-    },
+    mutationFn: ({ roomId, categoryId }: { roomId: string; categoryId: number }) =>
+      deleteBookmarkCategory(roomId, categoryId),
+    onSettled: (_data, _error, { roomId }) => invalidateRoomBookmarkLists(queryClient, roomId),
   });
 }
 
-export function useAllRoomBookmarks(
-  roomId: string | null,
-  options?: { enabled?: boolean },
-) {
-  const queryClient = useQueryClient();
+function roomBookmarksQueryOptions(roomId: string | null) {
+  return queryOptions({
+    queryKey: roomAllBookmarksQueryKey(roomId),
+    queryFn: () => getAllRoomBookmarks(roomId!),
+    staleTime: Infinity,
+  });
+}
+
+export function useAllRoomBookmarks(roomId: string | null, options?: { enabled?: boolean }) {
   const queryEnabled = options?.enabled ?? true;
   return useQuery({
-    queryKey: roomAllBookmarksQueryKey(roomId),
-    queryFn: () => fetchAndSeedAllRoomBookmarks(queryClient, roomId!),
+    ...roomBookmarksQueryOptions(roomId),
     enabled: !!roomId && queryEnabled,
-    staleTime: Infinity,
-    // STOMP가 비활성 캐시를 stale로 표시했다면 queryFn이 등록된 뒤 갱신한다.
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
   });
 }
 
-export function useRoomBookmarks(
-  roomId: string | null,
-  categoryId: number | null,
-) {
-  const idOk =
-    categoryId != null && Number.isFinite(categoryId) && categoryId >= 0;
+export function useRoomBookmarks(roomId: string | null, categoryId: number | null) {
+  const idOk = categoryId != null && Number.isFinite(categoryId) && categoryId >= 0;
   return useQuery({
-    queryKey: roomBookmarksQueryKey(roomId, idOk ? categoryId : null),
-    queryFn: () => getRoomBookmarks(roomId!, categoryId!),
+    ...roomBookmarksQueryOptions(idOk ? roomId : null),
     enabled: !!roomId && idOk,
-    staleTime: Infinity,
-    // setQueryData로 시딩된 비활성 캐시는 마운트 시점에만 안전하게 재조회한다.
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
+    select: (bookmarks) => bookmarks.filter((b) => b.categoryId === categoryId),
   });
 }
 
-export function useCreateRoomBookmark() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      roomId,
-      googlePlaceId,
-      categoryId,
-    }: {
-      roomId: string;
-      googlePlaceId: string;
-      categoryId: number;
-    }) => createRoomBookmark(roomId, { googlePlaceId, categoryId }),
-    onSuccess: (created, { roomId, categoryId }) => {
-      queryClient.setQueryData<BookmarkCategory[]>(
-        bookmarkCategoriesQueryKey(roomId),
-        (prev) => {
-          if (!prev?.length) return prev;
-          return prev.map((c) =>
-            c.categoryId === categoryId
-              ? { ...c, placeCount: c.placeCount + 1 }
-              : c,
-          );
-        },
-      );
-      appendRoomBookmarksToCache(queryClient, roomId, [created]);
-    },
-  });
-}
-
-export type CreateRoomBookmarksInCategoriesResult = {
-  added: number;
-  skippedDuplicate: number;
-  /** Stopped early; categories after this were not attempted. */
-  firstHardError: Error | null;
-  /** Categories that received a successful POST (for local cache only). */
-  addedCategoryIds: number[];
-  bookmarks: RoomBookmark[];
-};
-
-/** POST 한 번으로 `googlePlaceId` + `categoryIds` 배열 전달. STOMP와 함께 목록 캐시도 즉시 무효화합니다. */
 export function useCreateRoomBookmarksInCategories() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       roomId,
       googlePlaceId,
       categoryIds,
@@ -878,56 +791,18 @@ export function useCreateRoomBookmarksInCategories() {
       roomId: string;
       googlePlaceId: string;
       categoryIds: number[];
-    }): Promise<CreateRoomBookmarksInCategoriesResult> => {
-      try {
-        const bookmarks = await createRoomBookmarks(roomId, {
-          googlePlaceId,
-          categoryIds,
-        });
-        const addedCategoryIds = bookmarks.map((b) => b.categoryId);
-        const added = bookmarks.length;
-        const skippedDuplicate = Math.max(0, categoryIds.length - added);
-        return {
-          added,
-          skippedDuplicate,
-          firstHardError: null,
-          addedCategoryIds,
-          bookmarks,
-        };
-      } catch (e) {
-        if (e instanceof HttpError && e.status === 409) {
-          return {
-            added: 0,
-            skippedDuplicate: categoryIds.length,
-            firstHardError: null,
-            addedCategoryIds: [],
-            bookmarks: [],
-          };
-        }
-        return {
-          added: 0,
-          skippedDuplicate: 0,
-          firstHardError: e instanceof Error ? e : new Error(String(e)),
-          addedCategoryIds: [],
-          bookmarks: [],
-        };
-      }
+    }) => createRoomBookmarks(roomId, { googlePlaceId, categoryIds }),
+    onSuccess: (bookmarks, { roomId }) => {
+      if (!bookmarks.length) return;
+      const bumped = new Set(bookmarks.map((b) => b.categoryId));
+      queryClient.setQueryData<BookmarkCategory[]>(bookmarkCategoriesQueryKey(roomId), (prev) => {
+        if (!prev?.length) return prev;
+        return prev.map((c) => (bumped.has(c.categoryId) ? { ...c, placeCount: c.placeCount + 1 } : c));
+      });
+      appendRoomBookmarksToCache(queryClient, roomId, bookmarks);
     },
-    onSuccess: (result, { roomId }) => {
-      if (!result.addedCategoryIds.length) return;
-      queryClient.setQueryData<BookmarkCategory[]>(
-        bookmarkCategoriesQueryKey(roomId),
-        (prev) => {
-          if (!prev?.length) return prev;
-          const bumped = new Set(result.addedCategoryIds);
-          return prev.map((c) =>
-            bumped.has(c.categoryId)
-              ? { ...c, placeCount: c.placeCount + 1 }
-              : c,
-          );
-        },
-      );
-      appendRoomBookmarksToCache(queryClient, roomId, result.bookmarks);
+    onSettled: (_result, _error, { roomId }) => {
+      void invalidateRoomBookmarkLists(queryClient, roomId);
     },
   });
 }
@@ -945,19 +820,13 @@ export function useMoveRoomBookmark() {
       categoryId: number;
       fromCategoryId: number;
     }) => patchRoomBookmarkCategory(roomId, bookmarkId, { categoryId }),
-    onSuccess: (_, { roomId, categoryId, fromCategoryId }) => {
-      queryClient.invalidateQueries({
-        queryKey: roomBookmarksQueryKey(roomId, fromCategoryId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: roomBookmarksQueryKey(roomId, categoryId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(roomId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: roomAllBookmarksQueryKey(roomId),
-      });
+    onSuccess: (moved, { roomId }) => {
+      queryClient.setQueryData<RoomBookmark[]>(roomAllBookmarksQueryKey(roomId), (prev) =>
+        prev?.map((b) => (b.bookmarkId === moved.bookmarkId ? moved : b)),
+      );
+    },
+    onSettled: (_moved, _error, { roomId }) => {
+      void invalidateRoomBookmarkLists(queryClient, roomId);
     },
   });
 }
@@ -965,21 +834,8 @@ export function useMoveRoomBookmark() {
 export function useDeleteRoomBookmarkItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: {
-      roomId: string;
-      bookmarkId: number;
-      categoryId: number;
-    }) => deleteRoomBookmark(input.roomId, input.bookmarkId),
-    onSuccess: (_, { roomId, categoryId }) => {
-      queryClient.invalidateQueries({
-        queryKey: roomBookmarksQueryKey(roomId, categoryId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: bookmarkCategoriesQueryKey(roomId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: roomAllBookmarksQueryKey(roomId),
-      });
-    },
+    mutationFn: (input: { roomId: string; bookmarkId: number; categoryId: number }) =>
+      deleteRoomBookmark(input.roomId, input.bookmarkId),
+    onSettled: (_data, _error, { roomId }) => invalidateRoomBookmarkLists(queryClient, roomId),
   });
 }

@@ -14,25 +14,50 @@ vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "r", 
 vi.mock("@/hooks/useChatPanelOpen", () => ({ useChatPanelOpen: () => true }));
 vi.mock("@/lib/rooms", () => ({ validateRoomAccess: mocks.validate }));
 vi.mock("@/hooks/useSessionUser", () => ({ useSessionUser: () => ({ data: { id: 1 } }) }));
-afterEach(() => { vi.unstubAllGlobals(); vi.resetAllMocks(); });
-it.each(["ok", "forbidden", "error", "stale"])("entry/auth admission %s only replaces after fresh room confirmation", async verdict => {
-  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  useSessionStore.setState({ sessionReady: false });
-  const client = new QueryClient();
-  const old = getExpenseRecovery(client, "r");
-  old.revoke();
-  let finish!: (value: string) => void;
-  mocks.validate.mockImplementation(() => new Promise(resolve => { finish = resolve; }));
-  const hook = hookHarness(() => null, child => <QueryClientProvider client={client}><MainRoomGate>{child}</MainRoomGate></QueryClientProvider>);
-  try {
-    await hook.render(undefined);
-    expect(getExpenseRecovery(client, "r")).toBe(old);
-    await act(async () => { useSessionStore.setState({ sessionReady: true }); });
-    expect(getExpenseRecovery(client, "r")).toBe(old);
-    if (verdict === "stale") evictRoomFromClientCaches(client, "r");
-    await act(async () => { finish(verdict === "stale" ? "ok" : verdict); });
-    if (verdict === "ok") expect(getExpenseRecovery(client, "r")).not.toBe(old);
-    else expect(getExpenseRecovery(client, "r")).toBe(old);
-    expect(old.getSnapshot()).toBe("revoked");
-  } finally { await hook.unmount(); client.clear(); }
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.resetAllMocks();
 });
+it.each(["ok", "forbidden", "error", "stale"])(
+  "entry/auth admission %s only replaces after fresh room confirmation",
+  async (verdict) => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    useSessionStore.setState({ sessionReady: false });
+    const client = new QueryClient();
+    const old = getExpenseRecovery(client, "r");
+    old.revoke();
+    let finish!: (value: string) => void;
+    mocks.validate.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const hook = hookHarness(
+      () => null,
+      (child) => (
+        <QueryClientProvider client={client}>
+          <MainRoomGate>{child}</MainRoomGate>
+        </QueryClientProvider>
+      ),
+    );
+    try {
+      await hook.render(undefined);
+      expect(getExpenseRecovery(client, "r")).toBe(old);
+      await act(async () => {
+        useSessionStore.setState({ sessionReady: true });
+      });
+      expect(getExpenseRecovery(client, "r")).toBe(old);
+      if (verdict === "stale") evictRoomFromClientCaches(client, "r");
+      await act(async () => {
+        finish(verdict === "stale" ? "ok" : verdict);
+      });
+      if (verdict === "ok") expect(getExpenseRecovery(client, "r")).not.toBe(old);
+      else expect(getExpenseRecovery(client, "r")).toBe(old);
+      expect(old.getSnapshot()).toBe("revoked");
+    } finally {
+      await hook.unmount();
+      client.clear();
+    }
+  },
+);

@@ -8,10 +8,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import TripMap from "./Map";
 import { MobileSearchResultCarousel } from "./MobileSearchResultCarousel";
 import { useMapPlaceSearch } from "./useMapPlaceSearch";
-import {
-  SelectedPlaceProvider,
-  useSelectedPlace,
-} from "@/contexts/SelectedPlaceContext";
+import { SelectedPlaceProvider, useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { MapToolbarLayoutProvider } from "@/contexts/MapToolbarLayoutContext";
 import { PlaceDetailPanel } from "@/components/place/PlaceDetailPanel";
 import { useSessionStore } from "@/stores/session-store";
@@ -54,7 +51,9 @@ vi.mock("@/lib/analytics/track", () => ({
 }));
 vi.mock("@vis.gl/react-google-maps", () => ({
   InfoWindow: ({ children, anchor }: { children: ReactNode; anchor?: HTMLElement }) => (
-    <div role="dialog" aria-label="검색 장소 미리보기" data-anchor-name={anchor?.textContent}>{children}</div>
+    <div role="dialog" aria-label="검색 장소 미리보기" data-anchor-name={anchor?.textContent}>
+      {children}
+    </div>
   ),
   MapControl: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   ControlPosition: { RIGHT_BOTTOM: 9 },
@@ -65,10 +64,7 @@ vi.mock("@vis.gl/react-google-maps", () => ({
     onClick,
   }: {
     children: ReactNode;
-    onClick?: (event: {
-      detail: { placeId: string; latLng: { lat: number; lng: number } };
-      stop: () => void;
-    }) => void;
+    onClick?: (event: { detail: { placeId: string; latLng: { lat: number; lng: number } }; stop: () => void }) => void;
   }) => (
     <div>
       <button
@@ -129,10 +125,18 @@ async function render(mobile: boolean) {
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   });
   registerQueryClient(client);
-  vi.mocked(apiFetch).mockReset().mockImplementation(async (_url, init) => {
-    const body = JSON.parse(init!.body as string);
-    return Response.json({ detail: client.getQueryData(placeDetailQueryKey(body.googlePlaceId)), source: "CACHE", cacheStatus: "HIT", googleDetailsRequested: false, termination: "NOT_TERMINATED" });
-  });
+  vi.mocked(apiFetch)
+    .mockReset()
+    .mockImplementation(async (_url, init) => {
+      const body = JSON.parse(init!.body as string);
+      return Response.json({
+        detail: client.getQueryData(placeDetailQueryKey(body.googlePlaceId)),
+        source: "CACHE",
+        cacheStatus: "HIT",
+        googleDetailsRequested: false,
+        termination: "NOT_TERMINATED",
+      });
+    });
   client.setQueryData(ROOMS_QUERY_KEY, {
     rooms: [{ id: "room", destinations: [] }],
   });
@@ -183,10 +187,7 @@ async function render(mobile: boolean) {
         {mobile ? (
           <MobileSearchResultCarousel />
         ) : selectedPlace ? (
-          <PlaceDetailPanel
-            {...selectedPlace}
-            onClose={() => setSelectedPlace(null)}
-          />
+          <PlaceDetailPanel {...selectedPlace} onClose={() => setSelectedPlace(null)} />
         ) : null}
       </>
     );
@@ -208,20 +209,17 @@ function views() {
   return boundary.track.mock.calls.filter(([event]) => event === "view_place");
 }
 function expectPrivateFieldsAbsent(properties: Record<string, unknown>) {
-  for (const field of [
-    "query",
-    "sessionToken",
-    "token",
-    "googlePlaceId",
-    "place_id",
-  ])
+  for (const field of ["query", "sessionToken", "token", "googlePlaceId", "place_id"])
     expect(properties).not.toHaveProperty(field);
 }
 it("web preview closes independently and switching pins never fetches or opens detail", async () => {
   await render(false);
   boundary.page.mockResolvedValue({ items, nextPageToken: null });
-  await act(async () => { await controller.confirm({ query: "원문", kind: "whole", generation: 0, session: null }); });
-  const pin = (name: string) => [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(b => b.textContent === name)!;
+  await act(async () => {
+    await controller.confirm({ query: "원문", kind: "whole", generation: 0, session: null });
+  });
+  const pin = (name: string) =>
+    [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find((b) => b.textContent === name)!;
   const calls = vi.mocked(apiFetch).mock.calls.length;
   await act(async () => pin("결과3").click());
   expect(host.querySelector('[role="dialog"]')?.textContent).toContain("결과3");
@@ -241,16 +239,23 @@ it("web preview closes independently and switching pins never fetches or opens d
 });
 it("web specific autocomplete opens detail directly and its pin reopens detail", async () => {
   await render(false);
-  await act(async () => { await controller.confirm({ query: "원문", kind: "specific", generation: 0,
-    session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") }); });
-  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
+  await act(async () => {
+    await controller.confirm({
+      query: "원문",
+      kind: "specific",
+      generation: 0,
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
+      prediction: prediction("result-4"),
+    });
+  });
+  expect(host.querySelector("[data-search-place-preview]")).toBeNull();
   expect(host.querySelector('[aria-label="닫기"]')).not.toBeNull();
   expect(views()).toHaveLength(1);
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="닫기"]')!.click());
-  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
-  const marker = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(b => b.textContent === "결과4")!;
+  expect(host.querySelector("[data-search-place-preview]")).toBeNull();
+  const marker = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find((b) => b.textContent === "결과4")!;
   await act(async () => marker.click());
-  expect(host.querySelector('[data-search-place-preview]')).toBeNull();
+  expect(host.querySelector("[data-search-place-preview]")).toBeNull();
   expect(host.querySelector('[aria-label="닫기"]')).not.toBeNull();
   expect(views()).toHaveLength(2);
   expect(views().at(-1)![1].rank_bucket).toBeUndefined();
@@ -264,7 +269,7 @@ it("web pins preview Text Search data without fetching detail; arrow opens detai
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
       prediction: prediction(),
     });
   });
@@ -275,9 +280,9 @@ it("web pins preview Text Search data without fetching detail; arrow opens detai
     [4, "4_10"],
     [11, "11_plus"],
   ] as const) {
-    const marker = [
-      ...host.querySelectorAll<HTMLButtonElement>("[data-marker]"),
-    ].find((button) => button.textContent === `결과${number}`)!;
+    const marker = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(
+      (button) => button.textContent === `결과${number}`,
+    )!;
     const viewCount = views().length;
     const requestCount = vi.mocked(apiFetch).mock.calls.length;
     await act(async () => marker.click());
@@ -307,7 +312,7 @@ it("web resolved recommendation never auto-opens even when it is a Text Search r
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
       prediction: prediction("result-11"),
     });
   });
@@ -328,7 +333,7 @@ it("web map-center fallback shows only pins without auto-selection", async () =>
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
     });
   });
   expect(views()).toHaveLength(0);
@@ -342,15 +347,11 @@ it("mobile expanded result emits original fourth/eleventh rank while specific pr
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
     });
   });
   expect(views()).toHaveLength(0);
-  await act(async () =>
-    host
-      .querySelector<HTMLButtonElement>('button[aria-label="결과4 상세 보기"]')!
-      .click(),
-  );
+  await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="결과4 상세 보기"]')!.click());
   expect(views().at(-1)![1]).toMatchObject({
     rank_bucket: "4_10",
     interaction_source: "search",
@@ -366,17 +367,11 @@ it("mobile expanded result emits original fourth/eleventh rank while specific pr
       query: "원문",
       kind: "specific",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
       prediction: prediction("result-11"),
     });
   });
-  await act(async () =>
-    host
-      .querySelector<HTMLButtonElement>(
-        'button[aria-label="결과11 상세 보기"]',
-      )!
-      .click(),
-  );
+  await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="결과11 상세 보기"]')!.click());
   expect(views().at(-1)![1].rank_bucket).toBeUndefined();
   expect(boundary.page).toHaveBeenCalledTimes(1);
 });
@@ -389,7 +384,7 @@ it("failed Text Search does not expose its anchor or emit a detail view", async 
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
       prediction: prediction(),
     });
   });
@@ -410,7 +405,7 @@ it("cancelling pending search cannot add late pins or detail views", async () =>
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
       prediction: prediction(),
     });
   });
@@ -434,18 +429,16 @@ it("ordinary POI selection does not inherit a previous Text Search rank", async 
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
     });
   });
-  const fourth = [
-    ...host.querySelectorAll<HTMLButtonElement>("[data-marker]"),
-  ].find((button) => button.textContent === "결과4")!;
+  const fourth = [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")].find(
+    (button) => button.textContent === "결과4",
+  )!;
   await act(async () => fourth.click());
   await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="결과4 상세정보 보기"]')!.click());
   expect(views().at(-1)![1].rank_bucket).toBe("4_10");
-  await act(async () =>
-    host.querySelector<HTMLButtonElement>("[data-general-poi]")!.click(),
-  );
+  await act(async () => host.querySelector<HTMLButtonElement>("[data-general-poi]")!.click());
   expect(views().at(-1)![1].interaction_source).toBe("map");
   expect(views().at(-1)![1].rank_bucket).toBeUndefined();
   expectPrivateFieldsAbsent(views().at(-1)![1]);
@@ -465,7 +458,7 @@ it("discover ownership cancels pending search without showing its anchor", async
       query: "원문",
       kind: "whole",
       generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+      session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
       prediction: prediction(),
     });
   });
@@ -481,20 +474,18 @@ it("discover ownership cancels pending search without showing its anchor", async
   });
   expect(views()).toHaveLength(0);
   expect(usePlaceSearchStore.getState().items).toEqual([]);
-  expect(
-    boundary.track.mock.calls.filter(
-      ([event]) => event === "view_search_results",
-    ),
-  ).toHaveLength(0);
+  expect(boundary.track.mock.calls.filter(([event]) => event === "view_search_results")).toHaveLength(0);
 });
 
 it("selected preview label receives marker priority and transfers it to the next selection", async () => {
   await render(false);
   boundary.page.mockResolvedValue({ items, nextPageToken: null });
-  await act(async () => { await controller.confirm({ query: "카페", kind: "whole", session: null, generation: 0 }); });
+  await act(async () => {
+    await controller.confirm({ query: "카페", kind: "whole", session: null, generation: 0 });
+  });
   const markers = () => [...host.querySelectorAll<HTMLButtonElement>("[data-marker]")];
-  const first = () => markers().find(el => el.textContent === "결과1")!;
-  const second = () => markers().find(el => el.textContent === "결과2")!;
+  const first = () => markers().find((el) => el.textContent === "결과1")!;
+  const second = () => markers().find((el) => el.textContent === "결과2")!;
   await act(async () => first().click());
   expect(Number(first().dataset.priority)).toBeGreaterThan(Number(second().dataset.priority || 0));
   expect(host.querySelector("[data-search-place-preview]")?.textContent).toContain("결과1");
@@ -503,29 +494,40 @@ it("selected preview label receives marker priority and transfers it to the next
   expect(host.querySelector("[data-search-place-preview]")?.textContent).toContain("결과2");
 });
 
-it.each(["whole", "specific"] as const)("%s search resets discover filters without losing search ownership or results", async kind => {
-  await render(false);
-  const button = (text: string) => [...document.querySelectorAll<HTMLButtonElement>("button")].find(b => b.textContent === text)!;
-  await act(async () => button("음식점").click());
-  await act(async () => button("영업 중").click());
-  await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!.click());
-  // 평점 목록은 ui Select(Base UI)라 document.body로 포털된 role="option"이다
-  const ratingOption = (text: string) => [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(o => o.textContent === text)!;
-  await act(async () => ratingOption("4.5 이상").click());
-  expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("4.5 이상");
-  await act(async () => { useMapPinsFocusStore.getState().claimFocus("discover"); });
-  boundary.page.mockResolvedValue({ items, nextPageToken: null });
-  await act(async () => {
-    await controller.confirm({ query: "원문", kind, generation: 0,
-      session: { sessionToken: "token", expiresAt: Date.now() + 60000 }, prediction: prediction("result-4") });
-  });
-  expect(host.querySelector('[aria-label="카테고리 필터 초기화"]')).toBeNull();
-  expect(button("호텔")).toBeDefined();
-  expect(useMapPinsFocusStore.getState().focus).toBe("search");
-  expect(usePlaceSearchStore.getState().status).toBe("done");
-  expect(useSearchMapPinsStore.getState().pins.length).toBeGreaterThan(0);
-  expect(host.querySelectorAll('[data-marker]').length).toBeGreaterThan(0);
-  await act(async () => button("음식점").click());
-  expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("평점");
-  expect(button("영업 중").getAttribute("aria-pressed")).toBe("false");
-});
+it.each(["whole", "specific"] as const)(
+  "%s search resets discover filters without losing search ownership or results",
+  async (kind) => {
+    await render(false);
+    const button = (text: string) =>
+      [...document.querySelectorAll<HTMLButtonElement>("button")].find((b) => b.textContent === text)!;
+    await act(async () => button("음식점").click());
+    await act(async () => button("영업 중").click());
+    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="평점 필터"]')!.click());
+    const ratingOption = (text: string) =>
+      [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent === text)!;
+    await act(async () => ratingOption("4.5 이상").click());
+    expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("4.5 이상");
+    await act(async () => {
+      useMapPinsFocusStore.getState().claimFocus("discover");
+    });
+    boundary.page.mockResolvedValue({ items, nextPageToken: null });
+    await act(async () => {
+      await controller.confirm({
+        query: "원문",
+        kind,
+        generation: 0,
+        session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
+        prediction: prediction("result-4"),
+      });
+    });
+    expect(host.querySelector('[aria-label="카테고리 필터 초기화"]')).toBeNull();
+    expect(button("호텔")).toBeDefined();
+    expect(useMapPinsFocusStore.getState().focus).toBe("search");
+    expect(usePlaceSearchStore.getState().status).toBe("done");
+    expect(useSearchMapPinsStore.getState().pins.length).toBeGreaterThan(0);
+    expect(host.querySelectorAll("[data-marker]").length).toBeGreaterThan(0);
+    await act(async () => button("음식점").click());
+    expect(host.querySelector('[aria-label="평점 필터"]')?.textContent).toBe("평점");
+    expect(button("영업 중").getAttribute("aria-pressed")).toBe("false");
+  },
+);

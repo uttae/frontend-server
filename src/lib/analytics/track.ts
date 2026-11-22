@@ -11,18 +11,10 @@ import {
   type TripDaysBucket,
 } from "@/lib/analytics/context";
 
-export type AnalyticsUserIdCommand = [
-  "set",
-  { user_id: string | null },
-];
+export type AnalyticsUserIdCommand = ["set", { user_id: string | null }];
 
-export function buildAnalyticsUserIdCommand(
-  userId: number | null | undefined,
-): AnalyticsUserIdCommand {
-  const normalized =
-    typeof userId === "number" && Number.isSafeInteger(userId) && userId > 0
-      ? String(userId)
-      : null;
+export function buildAnalyticsUserIdCommand(userId: number | null | undefined): AnalyticsUserIdCommand {
+  const normalized = typeof userId === "number" && Number.isSafeInteger(userId) && userId > 0 ? String(userId) : null;
   return ["set", { user_id: normalized }];
 }
 
@@ -76,14 +68,7 @@ const tutorialSkipSteps = ["1", "2", "3", "4", "5"] as const;
 export type TutorialAnalyticsVersion = typeof TUTORIAL_ANALYTICS_VERSION;
 export type TutorialExitReason = "complete" | "skip";
 
-export type LandingSectionId =
-  | "hero"
-  | "problem"
-  | "solution"
-  | "features"
-  | "devices"
-  | "travel_steps"
-  | "final_cta";
+export type LandingSectionId = "hero" | "problem" | "solution" | "features" | "devices" | "travel_steps" | "final_cta";
 
 export type AnalyticsEventParamsMap = {
   [AnalyticsEvents.inviteCodeIssued]: { room_id: string; role: AnalyticsRoomRole };
@@ -229,9 +214,7 @@ type AnalyticsEventArguments<EventName extends AnalyticsEventName> =
     ? [params?: undefined]
     : [params: AnalyticsEventParamsMap[EventName]];
 
-function cleanParams(
-  params?: object,
-): Record<string, string | number | boolean> {
+function cleanParams(params?: object): Record<string, string | number | boolean> {
   if (!params) return {};
   const cleaned: Record<string, string | number | boolean> = {};
   for (const [key, value] of Object.entries(params)) {
@@ -242,9 +225,7 @@ function cleanParams(
   return cleaned;
 }
 
-function currentAnalyticsEventPageContext():
-  | AnalyticsEventPageContext
-  | undefined {
+function currentAnalyticsEventPageContext(): AnalyticsEventPageContext | undefined {
   if (
     typeof window === "undefined" ||
     typeof window.location?.origin !== "string" ||
@@ -253,10 +234,7 @@ function currentAnalyticsEventPageContext():
     return undefined;
   }
 
-  return buildAnalyticsEventPageContext(
-    window.location.origin,
-    window.location.pathname,
-  );
+  return buildAnalyticsEventPageContext(window.location.origin, window.location.pathname);
 }
 
 export function trackAnalyticsEvent<EventName extends AnalyticsEventName>(

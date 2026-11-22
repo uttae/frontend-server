@@ -41,48 +41,42 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     target: "plan",
     eyebrow: "여행 동선 만들기",
     title: "일정",
-    description:
-      "날짜별로 장소를 추가하고 순서를 정해 우리만의 여행 일정을 완성해 보세요.",
+    description: "날짜별로 장소를 추가하고 순서를 정해 우리만의 여행 일정을 완성해 보세요.",
     icon: CalendarDays,
   },
   {
     target: "search",
     eyebrow: "가고 싶은 곳 찾기",
     title: "장소 검색",
-    description:
-      "관광지, 맛집, 숙소를 검색하고 지도에서 위치와 상세 정보를 확인할 수 있어요.",
+    description: "관광지, 맛집, 숙소를 검색하고 지도에서 위치와 상세 정보를 확인할 수 있어요.",
     icon: MapPin,
   },
   {
     target: "bookmark",
     eyebrow: "후보 장소 모아두기",
     title: "북마크",
-    description:
-      "마음에 드는 장소를 폴더별로 저장하고, 필요할 때 일정에 바로 추가할 수 있어요.",
+    description: "마음에 드는 장소를 폴더별로 저장하고, 필요할 때 일정에 바로 추가할 수 있어요.",
     icon: Bookmark,
   },
   {
     target: "chat",
     eyebrow: "함께 이야기하기",
     title: "채팅",
-    description:
-      "여행 멤버들과 실시간으로 대화하고, AI에게 여행지 추천도 받아보세요.",
+    description: "여행 멤버들과 실시간으로 대화하고, AI에게 여행지 추천도 받아보세요.",
     icon: MessageCircleMore,
   },
   {
     target: "member-settings",
     eyebrow: "여행 멤버와 함께하기",
     title: "멤버 관리",
-    description:
-      "초대 링크로 새 멤버를 부르고, 함께 여행을 준비하는 멤버들을 관리할 수 있어요.",
+    description: "초대 링크로 새 멤버를 부르고, 함께 여행을 준비하는 멤버들을 관리할 수 있어요.",
     icon: Users,
   },
   {
     target: "room-settings",
     eyebrow: "여행 정보 다듬기",
     title: "여행 정보 수정",
-    description:
-      "여행 제목 옆 연필 버튼을 누르면 여행 이름, 목적지와 기간을 확인하고 수정할 수 있어요.",
+    description: "여행 제목 옆 연필 버튼을 누르면 여행 이름, 목적지와 기간을 확인하고 수정할 수 있어요.",
     icon: Settings,
   },
 ];
@@ -127,9 +121,7 @@ export function SidebarTutorial() {
     if (!isOpen) return;
 
     const updateTargetRect = () => {
-      const target = document.querySelector<HTMLElement>(
-        `[data-tutorial-target="${step.target}"]`,
-      );
+      const target = document.querySelector<HTMLElement>(`[data-tutorial-target="${step.target}"]`);
       if (!target) {
         setTargetRect(null);
         return;
@@ -217,19 +209,10 @@ export function SidebarTutorial() {
       const startedUserId = user?.id;
       const startedRoomId = tutorialRoomIdRef.current;
       await completeTutorial();
-      if (
-        !startedUserId ||
-        readSessionUserId(queryClient) !== startedUserId
-      ) return;
-      queryClient.setQueryData<SessionUser | null>(
-        sessionUserQueryKey,
-        (current) =>
-          current?.id === startedUserId
-            ? { ...current, tutorialCompleted: true }
-            : current,
+      if (!startedUserId || readSessionUserId(queryClient) !== startedUserId) return;
+      queryClient.setQueryData<SessionUser | null>(sessionUserQueryKey, (current) =>
+        current?.id === startedUserId ? { ...current, tutorialCompleted: true } : current,
       );
-      // The acknowledged save belongs in the same user cache even after unmount.
-      // Only the analytics exit requires the original visible tutorial lifetime.
       if (activeUserIdRef.current !== startedUserId) return;
       const roomContext = startedRoomId ? { room_id: startedRoomId } : {};
       if (analyticsEvent.eventName === AnalyticsEvents.tutorialSkip) {
@@ -238,10 +221,7 @@ export function SidebarTutorial() {
           ...roomContext,
         });
       } else {
-        trackAnalyticsEvent(
-          analyticsEvent.eventName,
-          { ...analyticsEvent.params, ...roomContext },
-        );
+        trackAnalyticsEvent(analyticsEvent.eventName, { ...analyticsEvent.params, ...roomContext });
       }
     } catch {
       setErrorMessage("완료 상태를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -253,12 +233,7 @@ export function SidebarTutorial() {
 
   return (
     <div className="fixed inset-0 z-[100]" aria-live="polite">
-      <svg
-        className="absolute inset-0 h-full w-full"
-        aria-hidden="true"
-        width="100%"
-        height="100%"
-      >
+      <svg className="absolute inset-0 h-full w-full" aria-hidden="true" width="100%" height="100%">
         <defs>
           <mask id={maskId}>
             <rect width="100%" height="100%" fill="white" />
@@ -272,12 +247,7 @@ export function SidebarTutorial() {
             />
           </mask>
         </defs>
-        <rect
-          width="100%"
-          height="100%"
-          fill="rgb(15 23 42 / 0.68)"
-          mask={`url(#${maskId})`}
-        />
+        <rect width="100%" height="100%" fill="rgb(15 23 42 / 0.68)" mask={`url(#${maskId})`} />
       </svg>
 
       <div
@@ -299,11 +269,7 @@ export function SidebarTutorial() {
         className="fixed w-[min(23rem,calc(100vw-7rem))] overflow-visible rounded-3xl bg-white p-6 shadow-2xl"
         style={cardStyle}
       >
-        <span
-          className="absolute -left-2.5 h-5 w-5 rotate-45 bg-white"
-          style={{ top: arrowTop }}
-          aria-hidden="true"
-        />
+        <span className="absolute -left-2.5 h-5 w-5 rotate-45 bg-white" style={{ top: arrowTop }} aria-hidden="true" />
 
         <div className="relative">
           <div className="mb-5 flex items-center justify-between">
@@ -335,7 +301,10 @@ export function SidebarTutorial() {
             {step.description}
           </p>
 
-          <div className="mt-5 flex items-center gap-1.5" aria-label={`${stepIndex + 1} / ${TUTORIAL_STEPS.length} 단계`}>
+          <div
+            className="mt-5 flex items-center gap-1.5"
+            aria-label={`${stepIndex + 1} / ${TUTORIAL_STEPS.length} 단계`}
+          >
             {TUTORIAL_STEPS.map((tutorialStep, index) => (
               <span
                 key={tutorialStep.target}
@@ -351,7 +320,10 @@ export function SidebarTutorial() {
           </div>
 
           {errorMessage ? (
-            <p className="mt-3 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-status-negative" role="alert">
+            <p
+              className="mt-3 text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-status-negative"
+              role="alert"
+            >
               {errorMessage}
             </p>
           ) : null}

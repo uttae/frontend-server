@@ -1,4 +1,3 @@
-/** `/user/queue/errors` — 채팅 등 실패 시 발신자 개인 에러 큐 (STOMP) */
 export type UserErrorPayload = {
   action: string;
   clientRequestId: string;
@@ -52,7 +51,6 @@ export function parseUserErrorMessage(body: string): UserErrorPayload | null {
   }
 }
 
-/** MESSAGE 도메인 rate limit — 패널 쿨다운 UI 대상 */
 export function isMessageRateLimit(payload: UserErrorPayload): boolean {
   if (payload.domain !== "MESSAGE") return false;
   if (payload.action === "RATE_LIMITED") return true;
@@ -60,7 +58,6 @@ export function isMessageRateLimit(payload: UserErrorPayload): boolean {
   return false;
 }
 
-/** rate limit 쿨다운 적용에 사용할 ms (없으면 RATE_LIMITED는 5초 기본) */
 export function getRateLimitRetryAfterMs(payload: UserErrorPayload): number {
   if (payload.retryAfterMs != null && payload.retryAfterMs > 0) {
     return payload.retryAfterMs;

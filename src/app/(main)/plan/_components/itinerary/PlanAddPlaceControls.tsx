@@ -1,8 +1,8 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
-
+import { SavedIcon } from "@/assets/icons";
 import { PlacesSearchInput } from "@/components/search/PlacesSearchInput";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type PlanAddPlaceControlsProps = {
@@ -26,22 +26,24 @@ export function PlanAddPlaceControls({
         <PlacesSearchInput
           coords={coords}
           pickOnly
-          leadingIcon="pin"
-          placeholder="장소 추가하기"
+          leadingIcon="plus"
+          placeholder="장소 추가"
           disabled={disabled}
           onSearch={() => {}}
           onPickPrediction={onPickPrediction}
         />
       </div>
-      <button
-        type="button"
+      <Button
+        variant="outline"
+        tone="brand"
+        size="md"
         aria-label="북마크에서 장소 추가"
         disabled={disabled}
         onClick={onOpenBookmark}
-        className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-full border border-gray-border bg-white text-dark-gray shadow-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+        className="size-12 rounded-full px-0"
       >
-        <Bookmark className="size-4" strokeWidth={2} aria-hidden />
-      </button>
+        <SavedIcon />
+      </Button>
     </div>
   );
 }

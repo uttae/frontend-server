@@ -40,9 +40,7 @@ describe.each([
     });
 
     it("does not add an AI mention to an ordinary message", () => {
-      const html = renderToStaticMarkup(
-        <Group messages={[message]} isMinimized={isMinimized} />,
-      );
+      const html = renderToStaticMarkup(<Group messages={[message]} isMinimized={isMinimized} />);
 
       expect(html).not.toContain("@ai");
       expect(html).not.toContain("data-chat-anchor");

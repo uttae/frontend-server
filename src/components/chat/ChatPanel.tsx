@@ -6,6 +6,7 @@ import { useChat } from "@/hooks/useChat";
 import { useChatMessages } from "@/hooks/useChatMessages";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { ChatPanelHeader } from "./ChatPanelHeader";
+import { Spinner } from "@/components/ui/spinner";
 import { ChatMessageList } from "./messages/ChatMessageList";
 import { ChatInputBar } from "./ChatInputBar";
 import { ChatRateLimitBanner } from "./ChatRateLimitBanner";
@@ -16,19 +17,9 @@ import {
   CHAT_PANEL_MINIMIZED_VIEWPORT_INSET_PX,
   CHAT_PANEL_MINIMIZED_VIEWPORT_INSET_RIGHT_PX,
 } from "@/lib/chat/chat-panel-minimized-size";
-import {
-  minimizedPanelAnimate,
-  panelVariants,
-  panelTransition,
-} from "./chat-animations";
+import { minimizedPanelAnimate, panelVariants, panelTransition } from "./chat-animations";
 
-export function ChatPanel({
-  mobileInline = false,
-  inline = false,
-}: {
-  mobileInline?: boolean;
-  inline?: boolean;
-}) {
+export function ChatPanel({ mobileInline = false, inline = false }: Readonly<{ mobileInline?: boolean; inline?: boolean }>) {
   const { chatState, openChat, minimizeChat, closeChat } = useChat();
   const isInline = mobileInline || inline;
   const isMinimized = !isInline && chatState === "minimized";
@@ -45,10 +36,7 @@ export function ChatPanel({
 
     let timer = 0;
     const raf = requestAnimationFrame(() => {
-      timer = window.setTimeout(
-        () => setMobileHistoryReadyState({ rid, ready: true }),
-        0,
-      );
+      timer = window.setTimeout(() => setMobileHistoryReadyState({ rid, ready: true }), 0);
     });
 
     return () => {
@@ -56,11 +44,11 @@ export function ChatPanel({
       window.clearTimeout(timer);
     };
   }, [mobileInline, rid]);
-  const mobileHistoryReady =
-    mobileHistoryReadyState.ready && mobileHistoryReadyState.rid === rid;
+  const mobileHistoryReady = mobileHistoryReadyState.ready && mobileHistoryReadyState.rid === rid;
 
   const {
     messages,
+    waitingForMembers,
     sendChatMessage,
     sendAiMessage,
     sendCancelAiRequest,
@@ -81,8 +69,7 @@ export function ChatPanel({
 
   const rateLimit = useChatRateLimitStore((s) => s.rateLimit);
   const isSendBlocked = useChatRateLimitStore((s) => s.isSendBlocked);
-  const { size: minimizedSize, setSize, persistSize, clampSize } =
-    useChatPanelMinimizedSize();
+  const { size: minimizedSize, setSize, persistSize, clampSize } = useChatPanelMinimizedSize();
 
   const panelBody = (
     <>
@@ -94,30 +81,32 @@ export function ChatPanel({
           onClose={closeChat}
         />
       ) : null}
-      <ChatMessageList
-        key={rid || "no-room"}
-        messages={messages}
-        isMinimized={isMinimized}
-        onCancelAiRequest={sendCancelAiRequest}
-        onLoadOlder={fetchOlderMessages}
-        hasMoreOlder={hasMore}
-        isLoadingOlder={isFetchingOlder}
-        onLoadNewer={fetchNewerMessages}
-        hasMoreNewer={hasMoreNewer}
-        isLoadingNewer={isFetchingNewer}
-        onJumpToLatest={jumpToLatest}
-        readMarkerMessageId={readMarkerMessageId}
-        readDividerPlacement={readDividerPlacement}
-        scrollToAnchor={scrollToAnchor}
-        onAtBottom={markMessagesRead}
-      />
+      {waitingForMembers ? (
+        <div className="flex min-h-0 flex-1 items-center justify-center bg-white">
+          <Spinner aria-label="채팅 불러오는 중" size={isMinimized ? 16 : 20} />
+        </div>
+      ) : (
+        <ChatMessageList
+          key={rid || "no-room"}
+          messages={messages}
+          isMinimized={isMinimized}
+          onCancelAiRequest={sendCancelAiRequest}
+          onLoadOlder={fetchOlderMessages}
+          hasMoreOlder={hasMore}
+          isLoadingOlder={isFetchingOlder}
+          onLoadNewer={fetchNewerMessages}
+          hasMoreNewer={hasMoreNewer}
+          isLoadingNewer={isFetchingNewer}
+          onJumpToLatest={jumpToLatest}
+          readMarkerMessageId={readMarkerMessageId}
+          readDividerPlacement={readDividerPlacement}
+          scrollToAnchor={scrollToAnchor}
+          onAtBottom={markMessagesRead}
+        />
+      )}
       <AnimatePresence initial={false}>
         {rateLimit ? (
-          <ChatRateLimitBanner
-            key="chat-rate-limit"
-            message={rateLimit.message}
-            isMinimized={isMinimized}
-          />
+          <ChatRateLimitBanner key="chat-rate-limit" message={rateLimit.message} isMinimized={isMinimized} />
         ) : null}
       </AnimatePresence>
       <ChatInputBar
@@ -130,11 +119,7 @@ export function ChatPanel({
   );
 
   if (isInline) {
-    return (
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white">
-        {panelBody}
-      </div>
-    );
+    return <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white">{panelBody}</div>;
   }
 
   return (

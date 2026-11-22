@@ -2,8 +2,6 @@ import { readFile, writeFile } from "node:fs/promises";
 
 import sharp from "sharp";
 
-// Run from the repository root: node scripts/generate-brand-icons.mjs
-// Use --browser-only to refresh only browser-tab PNG/ICO assets.
 const brandSource = await readFile("public/brand/Glyph_L.svg");
 const faviconSource = await readFile("public/landing/figma/symbol.svg");
 const outputs = [
@@ -53,7 +51,7 @@ function render(source, sourceSize, size, ratio) {
   const leading = Math.floor(remaining / 2);
   const trailing = remaining - leading;
 
-  return sharp(source, { density: 72 * size / sourceSize })
+  return sharp(source, { density: (72 * size) / sourceSize })
     .resize(contentSize, contentSize, { fit: "fill" })
     .extend({
       top: leading,
@@ -82,7 +80,6 @@ async function renderIcoFrame(size) {
   const header = Buffer.alloc(40);
   header.writeUInt32LE(40, 0);
   header.writeInt32LE(size, 4);
-  // ICO DIB height includes the color bitmap and the transparency mask.
   header.writeInt32LE(size * 2, 8);
   header.writeUInt16LE(1, 12);
   header.writeUInt16LE(32, 14);
@@ -114,7 +111,6 @@ async function renderIcoFrame(size) {
   return Buffer.concat([header, pixels, mask]);
 }
 
-// ICO directory with transparent 32bpp DIB frames for broad browser support.
 const sizes = [16, 32, 48];
 const directory = Buffer.alloc(6 + sizes.length * 16);
 directory.writeUInt16LE(1, 2);

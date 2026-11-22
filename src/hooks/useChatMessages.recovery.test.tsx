@@ -27,9 +27,7 @@ vi.mock("@/hooks/useRooms", () => ({
 vi.mock("@/hooks/useChatActions", () => ({ useChatActions: () => ({}) }));
 vi.mock("@/contexts/StompContext", () => {
   const client = { publish: mocks.publish };
-  const setRoomChatMessageHandler = (
-    fn: ((msg: ServerChatMessage) => void) | null,
-  ) => {
+  const setRoomChatMessageHandler = (fn: ((msg: ServerChatMessage) => void) | null) => {
     mocks.stomp.handler = fn;
   };
   return {
@@ -55,10 +53,7 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 const ROOM = "room";
 
-function message(
-  sequence: number,
-  overrides: Partial<ServerChatMessage> = {},
-): ServerChatMessage {
+function message(sequence: number, overrides: Partial<ServerChatMessage> = {}): ServerChatMessage {
   return {
     roomId: ROOM,
     id: `m${sequence}`,
@@ -103,9 +98,7 @@ let hook: ReturnType<typeof mountHook>;
 function mountHook() {
   return hookHarness(
     (roomId: string | null) => useChatMessages(roomId, { fetchHistory: true }),
-    (child) => (
-      <QueryClientProvider client={queryClient}>{child}</QueryClientProvider>
-    ),
+    (child) => <QueryClientProvider client={queryClient}>{child}</QueryClientProvider>,
   );
 }
 
@@ -253,9 +246,7 @@ describe("after the history is loaded", () => {
     await reconnect();
 
     expect(hook.current.messages).toHaveLength(412);
-    expect(
-      mocks.history.mock.calls.map(([, params]) => params.afterSequence),
-    ).toEqual(["40", "240", "440"]);
+    expect(mocks.history.mock.calls.map(([, params]) => params.afterSequence)).toEqual(["40", "240", "440"]);
     expect(hook.current.readDividerPlacement).toEqual({
       afterMessageId: "m40",
       beforeFirst: false,
@@ -265,9 +256,7 @@ describe("after the history is loaded", () => {
 
   it("does not append live messages to a middle window", async () => {
     await hook.render(null);
-    mocks.initial.mockResolvedValueOnce(
-      snapshot(range(39, 40), { hasMoreNewer: true }),
-    );
+    mocks.initial.mockResolvedValueOnce(snapshot(range(39, 40), { hasMoreNewer: true }));
     await hook.render(ROOM);
 
     await receive(message(41), message(40, { content: "edited" }));

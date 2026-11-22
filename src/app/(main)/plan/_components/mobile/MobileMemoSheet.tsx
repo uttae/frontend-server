@@ -1,9 +1,10 @@
 "use client";
 
 import { useForm, useStore } from "@tanstack/react-form";
-import { useId, useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfirmDialog } from "@/components/settings/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -14,16 +15,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Field, FieldCount, FieldDescription, FieldError, FieldFooter, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
-
-const MEMO_MAX_LENGTH = 2000;
-
-// 입력은 maxLength로 막히지만 저장 전에 칸에서 한 번 더 확인한다. 문구는 PC 메모 편집(PlanItemMemoForm)과 같다
-function memoLengthError(memo: string) {
-  return memo.trim().length > MEMO_MAX_LENGTH ? `메모는 ${MEMO_MAX_LENGTH}자 이하여야 해요.` : undefined;
-}
+import { SCHEDULE_ITEM_MEMO_MAX_LENGTH, scheduleItemMemoSchema } from "@/lib/plan/scheduleItemMemo";
 
 type MobileMemoSheetProps = Readonly<{
   roomId: string;
@@ -34,20 +29,14 @@ type MobileMemoSheetProps = Readonly<{
   onClose: () => void;
 }>;
 
-/** 장소 메모 추가·수정 시트 — 메모가 있으면 삭제 | 저장 두 버튼 */
-export function MobileMemoSheet({
-  roomId,
-  scheduleId,
-  itemId,
-  placeName,
-  memo,
-  onClose,
-}: MobileMemoSheetProps) {
+export function MobileMemoSheet({ roomId, scheduleId, itemId, placeName, memo, onClose }: MobileMemoSheetProps) {
   const initial = memo.trim();
-  // 저장과 삭제는 같은 API지만 진행 표시를 누른 버튼에만 두려고 따로 꺼낸다
+  const [editStartMemo, setEditStartMemo] = useState<string | null>(null);
+  const hasRemoteChange = editStartMemo !== null && editStartMemo !== initial;
+  const [isOverwriteConfirmOpen, setIsOverwriteConfirmOpen] = useState(false);
+  const markEditStart = () => setEditStartMemo((prev) => prev ?? initial);
   const { mutateAsync: saveMemo, isPending: isSaving } = useUpdateScheduleItem();
   const { mutateAsync: deleteMemo, isPending: isDeleting } = useUpdateScheduleItem();
-  // 저장·삭제는 서로 배타적이라 닫기·입력 비활성에만 합쳐 쓴다
   const isWriting = isSaving || isDeleting;
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const formId = useId();
@@ -67,18 +56,27 @@ export function MobileMemoSheet({
 
   const form = useForm({
     defaultValues: { memo: initial },
-    onSubmit: ({ value }) => writeMemo(saveMemo, value.memo.trim()),
+    onSubmit: ({ value }) => {
+      if (hasRemoteChange) {
+        setIsOverwriteConfirmOpen(true);
+        return;
+      }
+      return writeMemo(saveMemo, scheduleItemMemoSchema.parse(value.memo));
+    },
   });
   const hasMemo = initial.length > 0;
-  // TanStack isDirty는 한 번 바뀌면 남아서, 되돌리면 다시 꺼지는 지금 기준(앞뒤 공백 무시 비교)을 그대로 쓴다
   const dirty = useStore(form.store, (state) => state.values.memo.trim() !== initial);
 
   return (
-    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isWriting}>
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      closeDisabled={isWriting}
+    >
       <DrawerContent
         closeLabel={hasMemo ? "메모 수정 닫기" : "메모 추가 닫기"}
-        // 열자마자 입력할 수 있게 커서를 기존 메모 끝에 둔다. Base UI는 다음 프레임에 포커스해서 iOS가 키보드를 띄우지 않을 수 있어,
-        // 지금 시트처럼 여는 흐름 안에서 바로 포커스하고 같은 요소를 돌려준다
         initialFocus={() => {
           const el = textareaRef.current;
           if (!el) return true;
@@ -102,9 +100,9 @@ export function MobileMemoSheet({
               void form.handleSubmit();
             }}
           >
-            <form.Field name="memo" validators={{ onSubmit: ({ value }) => memoLengthError(value) }}>
+            <form.Field name="memo" validators={{ onChange: scheduleItemMemoSchema }}>
               {(field) => {
-                const error = field.state.meta.errors[0];
+                const error = field.state.meta.errors[0]?.message;
                 return (
                   <Field>
                     <FieldLabel htmlFor={memoId}>메모</FieldLabel>
@@ -112,9 +110,14 @@ export function MobileMemoSheet({
                       id={memoId}
                       ref={textareaRef}
                       value={field.state.value}
-                      maxLength={MEMO_MAX_LENGTH}
-                      onChange={(event) => field.handleChange(event.target.value)}
-                      onBlur={field.handleBlur}
+                      onChange={(event) => {
+                        markEditStart();
+                        field.handleChange(event.target.value);
+                      }}
+                      onBlur={() => {
+                        markEditStart();
+                        field.handleBlur();
+                      }}
                       disabled={isWriting}
                       rows={5}
                       placeholder="메모를 입력하세요"
@@ -122,10 +125,13 @@ export function MobileMemoSheet({
                       aria-describedby={error ? `${descriptionId} ${errorId}` : descriptionId}
                       className="h-36"
                     />
-                    <FieldDescription id={descriptionId}>
-                      예약 정보나 함께 기억할 내용을 남겨보세요.
-                    </FieldDescription>
-                    <FieldError id={errorId}>{error}</FieldError>
+                    <FieldDescription id={descriptionId}>예약 정보나 함께 기억할 내용을 남겨보세요.</FieldDescription>
+                    <FieldFooter>
+                      <FieldError id={errorId}>{error}</FieldError>
+                      <FieldCount>
+                        {field.state.value.length}/{SCHEDULE_ITEM_MEMO_MAX_LENGTH}
+                      </FieldCount>
+                    </FieldFooter>
                   </Field>
                 );
               }}
@@ -144,16 +150,19 @@ export function MobileMemoSheet({
               삭제
             </Button>
           ) : null}
-          <Button
-            type="submit"
-            form={formId}
-            loading={isSaving}
-            loadingLabel="저장 중"
-            disabled={isDeleting || !dirty}
-          >
+          <Button type="submit" form={formId} loading={isSaving} loadingLabel="저장 중" disabled={isDeleting || !dirty}>
             저장
           </Button>
         </DrawerFooter>
+        {isOverwriteConfirmOpen ? (
+          <ConfirmDialog
+            title="다른 사람의 입력을 덮어씁니다!"
+            description="다른 멤버가 메모를 수정했어요. 저장하면 그 내용 대신 지금 작성 중인 메모로 바뀝니다."
+            isPending={isSaving}
+            onConfirm={() => void writeMemo(saveMemo, scheduleItemMemoSchema.parse(form.state.values.memo))}
+            onCancel={() => setIsOverwriteConfirmOpen(false)}
+          />
+        ) : null}
       </DrawerContent>
     </Drawer>
   );

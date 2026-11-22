@@ -4,10 +4,7 @@ import { usePathname } from "next/navigation";
 
 import { useChat } from "@/hooks/useChat";
 import { useCurrentRoomId } from "@/hooks/use-room-id";
-import {
-  sidebarWireframeIcons as sidebarIcons,
-  sidebarIcons as sharedSidebarIcons,
-} from "@/lib/public-assets";
+import { sidebarWireframeIcons as sidebarIcons, sidebarIcons as sharedSidebarIcons } from "@/lib/public-assets";
 import { MAIN_SIDEBAR_RAIL_WIDTH } from "@/lib/layout-tokens";
 
 import { SidebarChatUnreadBadge } from "./SidebarChatUnreadBadge";
@@ -20,7 +17,7 @@ import { sidebarNavButtonClassName } from "./sidebarNavButton";
 const SIDEBAR_ITEMS = [
   { key: "plan", href: "/plan", label: "일정", icon: sidebarIcons.plan },
   { key: "bookmark", href: "/bookmark", label: "북마크", icon: sidebarIcons.bookmark },
-  { key: "cost", href: "/cost", label: "가계부", icon: sharedSidebarIcons.cost },
+  { key: "cost", href: "/cost", label: "지출", icon: sharedSidebarIcons.cost },
   { key: "packing", href: "/packing", label: "준비물", icon: sidebarIcons.packing },
 ] as const;
 

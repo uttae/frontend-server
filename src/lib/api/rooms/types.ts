@@ -1,5 +1,3 @@
-// ─── Request / Response types ───────────────────────────────────────────────
-
 import type { ServerChatMessageType } from "@/types/chat";
 
 export type RoomRole = "HOST" | "MEMBER";
@@ -98,15 +96,12 @@ export type RoomMessage = {
   roomId: string;
   senderId: number;
   messageType: ServerChatMessageType;
-  /** SYSTEM 등 — 백엔드에서 키 생략 가능 */
   content?: string;
   metadata?: Record<string, string>;
   createdAt: string;
   clientMessageId?: string;
   sequence?: number;
 };
-
-// ─── Bookmark categories ───────────────────────────────────────────────────
 
 export type BookmarkCategory = {
   categoryId: number;
@@ -128,8 +123,6 @@ export type BookmarkCategoryUpdateRequest = {
   colorCode: string;
 };
 
-// ─── Room bookmarks ──────────────────────────────────────────────────────────
-
 export type RoomBookmark = {
   bookmarkId: number;
   roomId: string;
@@ -140,12 +133,6 @@ export type RoomBookmark = {
   createdAt: string;
 };
 
-export type RoomBookmarkCreateRequest = {
-  googlePlaceId: string;
-  categoryId: number;
-};
-
-/** POST /rooms/:roomId/bookmarks — 여러 카테고리에 동일 장소를 한 번에 추가 */
 export type RoomBookmarkBulkCreateRequest = {
   googlePlaceId: string;
   categoryIds: number[];

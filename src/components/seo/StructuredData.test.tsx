@@ -6,10 +6,7 @@ import { StructuredData } from "@/components/seo/StructuredData";
 describe("StructuredData", () => {
   it("renders JSON-LD and escapes closing script input", () => {
     const html = renderToStaticMarkup(
-      <StructuredData
-        id="test-json-ld"
-        data={{ name: "</script><script>alert(1)</script>" }}
-      />,
+      <StructuredData id="test-json-ld" data={{ name: "</script><script>alert(1)</script>" }} />,
     );
 
     expect(html).toContain('type="application/ld+json"');

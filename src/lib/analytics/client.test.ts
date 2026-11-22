@@ -22,9 +22,7 @@ async function freshClient(consent: "granted" | "denied") {
 }
 
 function dataLayerCommands(dataLayer: readonly unknown[]): unknown[][] {
-  return dataLayer.map((command) =>
-    Array.from(command as ArrayLike<unknown>),
-  );
+  return dataLayer.map((command) => Array.from(command as ArrayLike<unknown>));
 }
 
 afterEach(() => {
@@ -69,9 +67,7 @@ describe("Google Consent Mode", () => {
       ad_user_data: "denied",
       analytics_storage: "granted",
     });
-    expect(
-      client.buildGoogleAnalyticsConsentState("denied").analytics_storage,
-    ).toBe("denied");
+    expect(client.buildGoogleAnalyticsConsentState("denied").analytics_storage).toBe("denied");
   });
 
   it("queues default, granted update, js, and config in order", async () => {
@@ -80,16 +76,8 @@ describe("Google Consent Mode", () => {
     client.initializeGoogleAnalytics("G-TEST123", false);
 
     expect(dataLayerCommands(dataLayer)).toEqual([
-      [
-        "consent",
-        "default",
-        client.buildGoogleAnalyticsConsentState("denied"),
-      ],
-      [
-        "consent",
-        "update",
-        client.buildGoogleAnalyticsConsentState("granted"),
-      ],
+      ["consent", "default", client.buildGoogleAnalyticsConsentState("denied")],
+      ["consent", "update", client.buildGoogleAnalyticsConsentState("granted")],
       ["js", expect.any(Date)],
       ["config", "G-TEST123", { send_page_view: false }],
     ]);
@@ -101,9 +89,7 @@ describe("Google Consent Mode", () => {
     client.initializeGoogleAnalytics("G-TEST123", false);
 
     expect(Array.isArray(dataLayer[0])).toBe(false);
-    expect(Object.prototype.toString.call(dataLayer[0])).toBe(
-      "[object Arguments]",
-    );
+    expect(Object.prototype.toString.call(dataLayer[0])).toBe("[object Arguments]");
     expect(dataLayerCommands(dataLayer)[0]).toEqual([
       "consent",
       "default",
@@ -118,13 +104,11 @@ describe("Google Consent Mode", () => {
       cookie: "uttae_analytics_consent=v1:granted",
     });
     const client = await import("@/lib/analytics/client");
-    const { AnalyticsEvents, setAnalyticsUserId, trackAnalyticsEvent } =
-      await import("@/lib/analytics/track");
+    const { AnalyticsEvents, setAnalyticsUserId, trackAnalyticsEvent } = await import("@/lib/analytics/track");
 
     trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     client.trackAnalyticsPageView({
-      page_location:
-        "https://example.com/search?utm_source=newsletter&utm_campaign=summer",
+      page_location: "https://example.com/search?utm_source=newsletter&utm_campaign=summer",
       page_path: "/search",
       page_referrer: "",
       page_title: "검색",
@@ -137,16 +121,8 @@ describe("Google Consent Mode", () => {
     client.initializeGoogleAnalytics("G-TEST123", false);
 
     expect(dataLayerCommands(window.dataLayer ?? [])).toEqual([
-      [
-        "consent",
-        "default",
-        client.buildGoogleAnalyticsConsentState("denied"),
-      ],
-      [
-        "consent",
-        "update",
-        client.buildGoogleAnalyticsConsentState("granted"),
-      ],
+      ["consent", "default", client.buildGoogleAnalyticsConsentState("denied")],
+      ["consent", "update", client.buildGoogleAnalyticsConsentState("granted")],
       ["js", expect.any(Date)],
       ["config", "G-TEST123", { send_page_view: false }],
       ["event", "expense_created", {}],
@@ -154,8 +130,7 @@ describe("Google Consent Mode", () => {
         "event",
         "page_view",
         expect.objectContaining({
-          page_location:
-            "https://example.com/search?utm_source=newsletter&utm_campaign=summer",
+          page_location: "https://example.com/search?utm_source=newsletter&utm_campaign=summer",
           page_path: "/search",
         }),
       ],
@@ -178,26 +153,17 @@ describe("Google Consent Mode", () => {
     document.cookie = "uttae_analytics_consent=v1:granted";
     client.initializeGoogleAnalytics("G-TEST123", false);
 
-    expect(dataLayerCommands(window.dataLayer ?? [])).not.toContainEqual([
-      "event",
-      "expense_created",
-    ]);
+    expect(dataLayerCommands(window.dataLayer ?? [])).not.toContainEqual(["event", "expense_created"]);
   });
 
   it("rechecks the runtime gate before flushing held data commands", async () => {
     const { client, dataLayer } = await freshClient("granted");
 
-    client.sendAnalyticsDataCommand(
-      "event",
-      "expense_created",
-    );
+    client.sendAnalyticsDataCommand("event", "expense_created");
     analyticsRuntime.enabled = false;
     client.initializeGoogleAnalytics("G-TEST123", false);
 
-    expect(dataLayerCommands(dataLayer)).not.toContainEqual([
-      "event",
-      "expense_created",
-    ]);
+    expect(dataLayerCommands(dataLayer)).not.toContainEqual(["event", "expense_created"]);
   });
 
   it("blocks direct data commands while the analytics runtime is disabled", async () => {
@@ -218,9 +184,7 @@ describe("Google Consent Mode", () => {
       cookie: "uttae_analytics_consent=v1:granted",
     });
     const client = await import("@/lib/analytics/client");
-    const { AnalyticsEvents, trackAnalyticsEvent } = await import(
-      "@/lib/analytics/track"
-    );
+    const { AnalyticsEvents, trackAnalyticsEvent } = await import("@/lib/analytics/track");
 
     trackAnalyticsEvent(AnalyticsEvents.expenseCreated, { room_id: "test-room" });
     client.revokeGoogleAnalyticsConsent();
@@ -231,16 +195,8 @@ describe("Google Consent Mode", () => {
     client.initializeGoogleAnalytics("G-TEST123", false);
 
     expect(dataLayerCommands(window.dataLayer ?? [])).toEqual([
-      [
-        "consent",
-        "default",
-        client.buildGoogleAnalyticsConsentState("denied"),
-      ],
-      [
-        "consent",
-        "update",
-        client.buildGoogleAnalyticsConsentState("granted"),
-      ],
+      ["consent", "default", client.buildGoogleAnalyticsConsentState("denied")],
+      ["consent", "update", client.buildGoogleAnalyticsConsentState("granted")],
       ["js", expect.any(Date)],
       ["config", "G-TEST123", { send_page_view: false }],
     ]);
@@ -256,16 +212,8 @@ describe("Google Consent Mode", () => {
 
     expect(dataLayerCommands(dataLayer)).toEqual([
       ["set", { user_id: null }],
-      [
-        "consent",
-        "update",
-        client.buildGoogleAnalyticsConsentState("denied"),
-      ],
-      [
-        "consent",
-        "update",
-        client.buildGoogleAnalyticsConsentState("granted"),
-      ],
+      ["consent", "update", client.buildGoogleAnalyticsConsentState("denied")],
+      ["consent", "update", client.buildGoogleAnalyticsConsentState("granted")],
     ]);
   });
 
@@ -296,28 +244,20 @@ describe("Google Consent Mode", () => {
       page_title: "검색",
     });
     expect(dataLayerCommands(dataLayer)).toEqual([
-      [
-        "event",
-        "page_view",
-        expect.objectContaining({ page_path: "/search" }),
-      ],
+      ["event", "page_view", expect.objectContaining({ page_path: "/search" })],
     ]);
   });
 
   it("uses denied session state when a stale granted cookie cannot persist", async () => {
     vi.resetModules();
     const dataLayer: unknown[] = [];
-    const cookieDocument = createUnpersistedCookieDocument(
-      "uttae_analytics_consent=v1:granted",
-    );
+    const cookieDocument = createUnpersistedCookieDocument("uttae_analytics_consent=v1:granted");
     vi.stubGlobal("window", {
       dataLayer,
       location: { hostname: "example.com", protocol: "http:" },
     });
     vi.stubGlobal("document", cookieDocument);
-    const { analyticsConsentStore } = await import(
-      "@/lib/analytics/consent-store"
-    );
+    const { analyticsConsentStore } = await import("@/lib/analytics/consent-store");
     const client = await import("@/lib/analytics/client");
 
     expect(analyticsConsentStore.set("denied")).toEqual({

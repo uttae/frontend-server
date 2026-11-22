@@ -1,4 +1,3 @@
-/** `/plan/{roomId}` 경로에서 roomId 추출 (없으면 null) */
 export function roomIdFromPlanPathname(pathname: string): string | null {
   const parts = pathname.split("/").filter(Boolean);
   if (parts.length !== 2 || parts[0] !== "plan") return null;

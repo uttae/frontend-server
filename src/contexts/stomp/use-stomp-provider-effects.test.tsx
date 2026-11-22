@@ -4,10 +4,7 @@ import { QueryClient } from "@tanstack/react-query";
 import type { Client } from "@stomp/stompjs";
 import { afterEach, expect, it, vi } from "vitest";
 import { hookHarness } from "@/test/hook-harness";
-import {
-  STOMP_CONNECTION_ISSUE_MESSAGE,
-  useStompConnectionStore,
-} from "@/stores/stomp-connection-store";
+import { STOMP_CONNECTION_ISSUE_MESSAGE, useStompConnectionStore } from "@/stores/stomp-connection-store";
 import {
   useStompClientLifecycleEffect,
   useStompOnlineRetryEffect,
@@ -168,7 +165,6 @@ it("refreshes the session only before attempts that follow a dropped connection"
   expect(mocks.refresh.mock.lastCall?.[0].isActive()).toBe(false);
 });
 
-/** 끊긴 뒤 재연결 시도와 실패를 count번 겪게 한다 */
 async function failReconnects(client: FakeClient, count: number) {
   for (let i = 0; i < count; i += 1) {
     await client.beforeConnect();
@@ -189,9 +185,7 @@ it("stops reconnecting and shows the banner once the last allowed attempt fails"
 
   await failReconnects(client, 1);
   expect(client.deactivate).toHaveBeenCalledTimes(1);
-  expect(useStompConnectionStore.getState().connectionIssue).toBe(
-    STOMP_CONNECTION_ISSUE_MESSAGE,
-  );
+  expect(useStompConnectionStore.getState().connectionIssue).toBe(STOMP_CONNECTION_ISSUE_MESSAGE);
 
   client.onConnect(CONNECTED_FRAME);
   expect(useStompConnectionStore.getState().connectionIssue).toBeNull();
@@ -326,7 +320,6 @@ it("waits the capped delay before reconnecting after the server closes on a subs
 
     client.onStompError();
     client.onWebSocketClose(PROTOCOL_ERROR_CLOSE);
-    // 라이브러리 재연결을 멈춰야 CONNECTED 때 초기화되는 1초 간격으로 반복하지 않는다
     expect(client.deactivate).toHaveBeenCalledTimes(1);
 
     await vi.advanceTimersByTimeAsync(RECONNECT_CAP_MS - 1);

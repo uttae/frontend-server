@@ -1,6 +1,9 @@
 import {
-  resolvePlaceSession, PlaceSessionError,
-  type PlacePrediction, type PlaceResolveResponse, type PlaceSession,
+  resolvePlaceSession,
+  PlaceSessionError,
+  type PlacePrediction,
+  type PlaceResolveResponse,
+  type PlaceSession,
 } from "@/lib/api/place-sessions";
 import { getQueryClient } from "@/lib/query-client";
 import { placeDetailQueryKey, normalizePreviewLocation } from "./place-queries";
@@ -9,7 +12,6 @@ export type SearchConfirmation = {
   query: string;
   kind: "whole" | "specific";
   prediction?: PlacePrediction;
-  /** Issued token from the successful autocomplete that supplied this prediction. */
   session: PlaceSession | null;
   generation: number;
 };
@@ -17,38 +19,49 @@ export type ResolvedSearchAnchor = PlaceResolveResponse & {
   googlePlaceId: string;
   location: google.maps.LatLngLiteral;
 };
-const resolutions = new WeakMap<PlaceSession, {
-  googlePlaceId: string; promise: Promise<PlaceResolveResponse>;
-}>();
+const resolutions = new WeakMap<
+  PlaceSession,
+  {
+    googlePlaceId: string;
+    promise: Promise<PlaceResolveResponse>;
+  }
+>();
 async function resolveWithInProgressRetry(
-  session: PlaceSession, googlePlaceId: string, isCurrent: () => boolean,
+  session: PlaceSession,
+  googlePlaceId: string,
+  isCurrent: () => boolean,
 ): Promise<PlaceResolveResponse> {
   try {
     return await resolvePlaceSession(session.sessionToken, googlePlaceId);
   } catch (error) {
-    // Only IN_PROGRESS is known to permit a bounded delayed same-token/place retry.
     if (!(error instanceof PlaceSessionError) || error.code !== "PLACE_SESSION_IN_PROGRESS") throw error;
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     if (!isCurrent()) throw new DOMException("Search abandoned", "AbortError");
   }
   return resolvePlaceSession(session.sessionToken, googlePlaceId);
 }
-/** Errors remain tied to this operation; cancel/timeout never prove Google was not called. */
 export function terminatePredictionSession(
-  prediction: PlacePrediction, session: PlaceSession | null, isCurrent: () => boolean = () => true,
+  prediction: PlacePrediction,
+  session: PlaceSession | null,
+  isCurrent: () => boolean = () => true,
 ): Promise<PlaceResolveResponse> {
   if (!session || session.expiresAt <= Date.now())
-    return Promise.reject(new PlaceSessionError(400, "PLACE_SESSION_INVALID", "검색 세션이 만료됐어요. 다시 입력해주세요."));
+    return Promise.reject(
+      new PlaceSessionError(400, "PLACE_SESSION_INVALID", "검색 세션이 만료됐어요. 다시 입력해주세요."),
+    );
   const existing = resolutions.get(session);
-  if (existing) return existing.googlePlaceId === prediction.placeId ? existing.promise
-    : Promise.reject(new PlaceSessionError(409, "PLACE_SESSION_CONFLICT", "이미 확인한 검색 세션입니다. 다시 검색해주세요."));
+  if (existing)
+    return existing.googlePlaceId === prediction.placeId
+      ? existing.promise
+      : Promise.reject(
+          new PlaceSessionError(409, "PLACE_SESSION_CONFLICT", "이미 확인한 검색 세션입니다. 다시 검색해주세요."),
+        );
   const promise = resolveWithInProgressRetry(session, prediction.placeId, isCurrent);
   resolutions.set(session, { googlePlaceId: prediction.placeId, promise });
   return promise;
 }
 type ConfirmPlaceSearchArgs<T> = Omit<SearchConfirmation, "generation"> & {
   mapCenter: google.maps.LatLngLiteral | null;
-  /** 모두검색 locationBias 반경(m) */
   radius: number;
   isCurrent: () => boolean;
   onAnchor?: (anchor: ResolvedSearchAnchor) => void;
@@ -60,12 +73,12 @@ type SearchResolution = {
   termination: PlaceResolveResponse["termination"] | "failed" | "not-requested";
 };
 async function resolveSearchPrediction<T>(
-  args: ConfirmPlaceSearchArgs<T>, prediction: PlacePrediction,
+  args: ConfirmPlaceSearchArgs<T>,
+  prediction: PlacePrediction,
 ): Promise<ResolvedSearchAnchor | null> {
   try {
     const resolved = await terminatePredictionSession(prediction, args.session, args.isCurrent);
     if (!args.isCurrent()) return null;
-    // Seed the complete untouched server DTO BEFORE a detail consumer mounts.
     getQueryClient()?.setQueryData(placeDetailQueryKey(resolved.detail.googlePlaceId), resolved.detail);
     args.onResolved?.(resolved);
     const location = normalizePreviewLocation(resolved.detail.location);
@@ -77,9 +90,9 @@ async function resolveSearchPrediction<T>(
     return null;
   }
 }
-export async function confirmPlaceSearch<T>(args: ConfirmPlaceSearchArgs<T>): Promise<
-  SearchResolution & { items: T[] } | null
-> {
+export async function confirmPlaceSearch<T>(
+  args: ConfirmPlaceSearchArgs<T>,
+): Promise<(SearchResolution & { items: T[] }) | null> {
   const query = args.query.trim();
   if (!query) throw new Error("검색어를 입력해주세요.");
   if (!args.isCurrent()) return null;
@@ -90,9 +103,6 @@ export async function confirmPlaceSearch<T>(args: ConfirmPlaceSearchArgs<T>): Pr
     args.onAnchor?.(anchor);
     return { anchor, items: [], termination: anchor.termination };
   }
-  // 모두검색은 자동완성 첫 후보가 아니라 보고 있는 지도 중심에서 찾는다.
-  // 첫 후보는 이름만 같은 다른 나라 장소일 수 있다(도쿄 지도에서 '음식점' → 용인의 '음식점' 가게).
-  // 검색어에 지명이 있으면 Google이 locationBias를 무시하므로 서울 지도에서 '라스베가스'도 찾는다.
   const center = args.mapCenter;
   if (!center) throw new Error("지도 위치를 확인한 뒤 다시 검색해주세요.");
   const items = await args.search({ query, latitude: center.lat, longitude: center.lng, radius: args.radius });

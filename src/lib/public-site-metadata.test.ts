@@ -28,10 +28,7 @@ describe("public site structured data", () => {
         "@type": "Person",
         name: "김민형",
         alternateName: "Minhyung Kim",
-        sameAs: [
-          "https://github.com/minbros",
-          "https://www.linkedin.com/in/minbros/",
-        ],
+        sameAs: ["https://github.com/minbros", "https://www.linkedin.com/in/minbros/"],
       },
       {
         "@type": "Person",
@@ -77,9 +74,7 @@ describe("public site structured data", () => {
       expect(metadata.title).toBe(entry.title);
       expect(metadata.description).toBe(entry.description);
       expect(metadata.robots).toEqual({ index: true, follow: true });
-      expect(metadata.alternates?.canonical).toBe(
-        new URL(entry.path, "https://www.uttae.app").toString(),
-      );
+      expect(metadata.alternates?.canonical).toBe(new URL(entry.path, "https://www.uttae.app").toString());
       titles.add(entry.title);
       descriptions.add(entry.description);
     }
@@ -87,9 +82,7 @@ describe("public site structured data", () => {
     expect(titles.size).toBe(PUBLIC_INDEXABLE_ROUTES.length);
     expect(descriptions.size).toBe(PUBLIC_INDEXABLE_ROUTES.length);
     expect(PUBLIC_ROBOT_DISALLOW_PATHS).toContain("/api/");
-    expect(PUBLIC_INDEXABLE_ROUTES.map((entry) => entry.path)).not.toContain(
-      "/product",
-    );
+    expect(PUBLIC_INDEXABLE_ROUTES.map((entry) => entry.path)).not.toContain("/product");
   });
 
   it("gives every indexable route an Open Graph and Twitter card image", () => {

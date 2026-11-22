@@ -2,7 +2,6 @@ import { apiFetch } from "@/lib/api/client";
 import { apiUrl, jsonBody, tryParseJson } from "@/lib/api/http";
 
 export type ExpenseGroup = "PREPARATION" | "TRIP_DAY";
-// Approved API enum order; labels are client-side display text.
 export const expenseCategories = [
   { value: "FLIGHT", label: "항공" },
   { value: "ACCOMMODATION", label: "숙박" },
@@ -17,10 +16,7 @@ export function isExpenseCategory(value: unknown): value is ExpenseCategory {
   return expenseCategories.some((category) => category.value === value);
 }
 export function expenseCategoryLabel(value: ExpenseCategory): string {
-  return (
-    expenseCategories.find((category) => category.value === value)?.label ??
-    value
-  );
+  return expenseCategories.find((category) => category.value === value)?.label ?? value;
 }
 export type ExpenseInput = {
   expenseGroup: ExpenseGroup;
@@ -74,15 +70,8 @@ export class ExpenseApiError extends Error {
     super(message);
   }
 }
-async function request<T>(
-  roomId: string,
-  suffix = "",
-  init?: RequestInit,
-): Promise<T> {
-  const res = await apiFetch(
-    apiUrl(`/rooms/${roomId}/expenses${suffix}`),
-    init,
-  );
+async function request<T>(roomId: string, suffix = "", init?: RequestInit): Promise<T> {
+  const res = await apiFetch(apiUrl(`/rooms/${roomId}/expenses${suffix}`), init);
   if (!res.ok) {
     const body = (await tryParseJson(res)) as {
       code?: string;
@@ -96,24 +85,17 @@ async function request<T>(
   }
   return res.status === 204 ? (undefined as T) : (res.json() as Promise<T>);
 }
-export const getExpenses = (roomId: string) => request<Expense[]>(roomId);
-export const getExpenseSummary = (roomId: string) =>
-  request<ExpenseSummary>(roomId, "/summary");
-export const getExpenseCurrencies = (roomId: string) =>
-  request<ExpenseCurrency[]>(roomId, "/currencies");
+const readInit = (signal?: AbortSignal): RequestInit | undefined => (signal ? { signal } : undefined);
+export const getExpenses = (roomId: string, signal?: AbortSignal) => request<Expense[]>(roomId, "", readInit(signal));
+export const getExpenseSummary = (roomId: string, signal?: AbortSignal) =>
+  request<ExpenseSummary>(roomId, "/summary", readInit(signal));
+export const getExpenseCurrencies = (roomId: string, signal?: AbortSignal) =>
+  request<ExpenseCurrency[]>(roomId, "/currencies", readInit(signal));
 export const createExpense = (roomId: string, body: ExpenseInput) =>
   request<Expense>(roomId, "", { method: "POST", ...jsonBody(body) });
-export const patchExpense = (
-  roomId: string,
-  id: number,
-  body: Partial<ExpenseInput> & { expectedVersion: number },
-) =>
+export const patchExpense = (roomId: string, id: number, body: Partial<ExpenseInput> & { expectedVersion: number }) =>
   request<Expense>(roomId, `/${id}`, { method: "PATCH", ...jsonBody(body) });
-export const deleteExpense = (
-  roomId: string,
-  id: number,
-  expectedVersion: number,
-) =>
+export const deleteExpense = (roomId: string, id: number, expectedVersion: number) =>
   request<void>(roomId, `/${id}?expectedVersion=${expectedVersion}`, {
     method: "DELETE",
   });
@@ -149,19 +131,19 @@ export type ExpenseKrwFilters = {
   category?: ExpenseCategory;
   payerUserId?: number;
 };
-export const getExpenseBudget = (roomId: string) =>
-  request<ExpenseBudget>(roomId, "/budget");
+export const getExpenseBudget = (roomId: string, signal?: AbortSignal) =>
+  request<ExpenseBudget>(roomId, "/budget", readInit(signal));
 export const putExpenseBudget = (roomId: string, body: ExpenseBudgetInput) =>
   request<ExpenseBudget>(roomId, "/budget", {
     method: "PUT",
     ...jsonBody(body),
   });
-export const getExpenseKrwSummary = (roomId: string, filters: ExpenseKrwFilters = {}) => {
+export const getExpenseKrwSummary = (roomId: string, filters: ExpenseKrwFilters = {}, signal?: AbortSignal) => {
   const query = new URLSearchParams();
   for (const key of ["expenseGroup", "scheduleId", "category", "payerUserId"] as const) {
     const value = filters[key];
     if (value !== undefined) query.set(key, String(value));
   }
   const suffix = query.size ? "?" + query.toString() : "";
-  return request<ExpenseKrwSummary>(roomId, `/summary/krw${suffix}`);
+  return request<ExpenseKrwSummary>(roomId, `/summary/krw${suffix}`, readInit(signal));
 };

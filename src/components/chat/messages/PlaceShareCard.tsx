@@ -11,13 +11,7 @@ import { resolveChatMessageTypography } from "@/components/chat/chat-typography"
 import type { ChatMessage } from "@/types/chat";
 import { ChatSenderAvatar } from "@/components/chat/messages/ChatSenderAvatar";
 
-export function PlaceShareCard({
-  message,
-  isMinimized = false,
-}: {
-  message: ChatMessage;
-  isMinimized?: boolean;
-}) {
+export function PlaceShareCard({ message, isMinimized = false }: { message: ChatMessage; isMinimized?: boolean }) {
   const typo = resolveChatMessageTypography(isMinimized);
   const place = message.place;
   const { data: sessionUser } = useSessionUser();
@@ -29,9 +23,7 @@ export function PlaceShareCard({
   const isMine = myId != null && senderUserId != null && senderUserId === myId;
 
   const imageUrl = place?.googlePlaceId
-    ? getQueryClient()?.getQueryData<string>(
-        placePhotoUrlQueryKey(place.googlePlaceId),
-      )
+    ? getQueryClient()?.getQueryData<string>(placePhotoUrlQueryKey(place.googlePlaceId))
     : undefined;
 
   if (!place) return null;
@@ -64,10 +56,7 @@ export function PlaceShareCard({
     />
   );
 
-  const timeRow =
-    message.time != null ? (
-      <span className={typo.metaMuted}>{message.time}</span>
-    ) : null;
+  const timeRow = message.time != null ? <span className={typo.metaMuted}>{message.time}</span> : null;
 
   if (isMine) {
     return (
@@ -82,11 +71,7 @@ export function PlaceShareCard({
     <div className="flex gap-2">
       <div className="flex flex-col items-center gap-1">
         <ChatSenderAvatar message={message} size={40} ring="subtle" />
-        <span
-          className={cn("max-w-[4rem] truncate text-center", typo.metaMuted)}
-        >
-          {message.sender}
-        </span>
+        <span className={cn("max-w-[4rem] truncate text-center", typo.metaMuted)}>{message.sender}</span>
       </div>
       <div className="flex min-w-0 flex-col items-start gap-1">
         {cardButton}

@@ -16,10 +16,7 @@ function isInvitePreviewRequest(request: NextRequest): boolean {
   return LINK_PREVIEW_BOT_UA.test(ua);
 }
 
-function withRefreshedCookies(
-  response: NextResponse,
-  setCookies: readonly string[],
-): NextResponse {
+function withRefreshedCookies(response: NextResponse, setCookies: readonly string[]): NextResponse {
   if (setCookies.length > 0) {
     appendSetCookies(response, setCookies);
   }
@@ -35,18 +32,14 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isInvitePreviewRequest(request)) {
-    const response = NextResponse.rewrite(
-      new URL("/invite-preview.html", request.url),
-    );
+    const response = NextResponse.rewrite(new URL("/invite-preview.html", request.url));
     return withNoindexNofollow(response);
   }
 
   let hasSession = false;
   let setCookies: string[] = [];
   try {
-    const verified = await verifySessionWithOptionalRefresh(
-      request.headers.get("cookie"),
-    );
+    const verified = await verifySessionWithOptionalRefresh(request.headers.get("cookie"));
     hasSession = verified.ok;
     setCookies = verified.setCookies;
   } catch {
@@ -57,10 +50,7 @@ export async function proxy(request: NextRequest) {
   if (pathname === "/login") {
     if (hasSession) {
       return withNoindexNofollow(
-        withRefreshedCookies(
-          NextResponse.redirect(new URL("/home", request.url)),
-          setCookies,
-        ),
+        withRefreshedCookies(NextResponse.redirect(new URL("/home", request.url)), setCookies),
       );
     }
     return NextResponse.next();
@@ -68,17 +58,11 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/") {
     if (request.nextUrl.searchParams.get(COOKIE_SETTINGS_QUERY_KEY) === "open") {
-      return withRefreshedCookies(
-        withNoindexNofollow(NextResponse.next()),
-        setCookies,
-      );
+      return withRefreshedCookies(withNoindexNofollow(NextResponse.next()), setCookies);
     }
     if (hasSession) {
       return withNoindexNofollow(
-        withRefreshedCookies(
-          NextResponse.redirect(new URL("/home", request.url)),
-          setCookies,
-        ),
+        withRefreshedCookies(NextResponse.redirect(new URL("/home", request.url)), setCookies),
       );
     }
     return NextResponse.next();
@@ -89,14 +73,10 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!hasSession) {
-    return withNoindexNofollow(
-      NextResponse.redirect(new URL("/login", request.url)),
-    );
+    return withNoindexNofollow(NextResponse.redirect(new URL("/login", request.url)));
   }
 
-  return withNoindexNofollow(
-    withRefreshedCookies(NextResponse.next(), setCookies),
-  );
+  return withNoindexNofollow(withRefreshedCookies(NextResponse.next(), setCookies));
 }
 
 export const config = {

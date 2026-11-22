@@ -18,10 +18,7 @@ export function agreementPathForType(type: AgreementType): string {
   return AGREEMENT_PUBLIC_PATH[type];
 }
 
-export function findAgreementByType(
-  items: AgreementItem[],
-  type: AgreementType,
-): AgreementItem | undefined {
+export function findAgreementByType(items: AgreementItem[], type: AgreementType): AgreementItem | undefined {
   return items.find((item) => item.type === type);
 }
 
@@ -32,10 +29,7 @@ function normalizePolicyPathname(href: string): string | null {
     }
     if (href.startsWith("http://") || href.startsWith("https://")) {
       const url = new URL(href);
-      if (
-        typeof window !== "undefined" &&
-        url.origin !== window.location.origin
-      ) {
+      if (typeof window !== "undefined" && url.origin !== window.location.origin) {
         return null;
       }
       return url.pathname;

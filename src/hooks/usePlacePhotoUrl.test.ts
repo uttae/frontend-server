@@ -34,7 +34,6 @@ beforeEach(() => {
   requestPlacePhotoUrlsBatchMock.mockReset();
 });
 
-/** 같은 커밋에 카드 여러 장이 마운트된 것처럼 한 태스크 안에서 조회를 시작한다 */
 function fetchCards(queryClient: ReturnType<typeof createQueryClient>, ids: string[]) {
   return Promise.allSettled(ids.map((id) => queryClient.fetchQuery(placePhotoUrlQueryOptions(id))));
 }
@@ -194,9 +193,7 @@ describe("placePhotoUrlQueryOptions", () => {
       expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(1);
 
       vi.setSystemTime(now + 5 * 60 * 1000 + 1);
-      await expect(queryClient.fetchQuery(options)).resolves.toBe(
-        "https://cdn.example/available-later.jpg",
-      );
+      await expect(queryClient.fetchQuery(options)).resolves.toBe("https://cdn.example/available-later.jpg");
       expect(requestPlacePhotoUrlMock).toHaveBeenCalledTimes(2);
     } finally {
       vi.useRealTimers();

@@ -5,16 +5,10 @@ vi.hoisted(() => {
   process.env.API_BASE_URL = "http://backend.test";
 });
 
-import {
-  sessionCheckResponse,
-  verifySessionWithOptionalRefresh,
-} from "@/lib/auth-server";
+import { sessionCheckResponse, verifySessionWithOptionalRefresh } from "@/lib/auth-server";
 
 const COOKIE = "access_token=old-access; refresh_token=old-refresh";
-const REFRESHED_COOKIES = [
-  "access_token=new-access; Path=/; HttpOnly",
-  "refresh_token=new-refresh; Path=/; HttpOnly",
-];
+const REFRESHED_COOKIES = ["access_token=new-access; Path=/; HttpOnly", "refresh_token=new-refresh; Path=/; HttpOnly"];
 
 const fetchMock = vi.fn<typeof fetch>();
 
@@ -63,24 +57,23 @@ describe("verifySessionWithOptionalRefresh", () => {
     });
   });
 
-  it.each([500, 502, 503, 429])(
-    "marks users/me %i as unavailable without refreshing",
-    async (code) => {
-      fetchMock.mockResolvedValueOnce(status(code));
+  it.each([500, 502, 503, 429])("marks users/me %i as unavailable without refreshing", async (code) => {
+    fetchMock.mockResolvedValueOnce(status(code));
 
-      const result = await verifySessionWithOptionalRefresh(COOKIE);
+    const result = await verifySessionWithOptionalRefresh(COOKIE);
 
-      expect(result).toMatchObject({ ok: false, unavailable: true });
-      expect(fetchMock).toHaveBeenCalledOnce();
-    },
-  );
+    expect(result).toMatchObject({ ok: false, unavailable: true });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
 
   it("treats an expired access token without refresh_token as unauthenticated", async () => {
     fetchMock.mockResolvedValueOnce(status(401));
 
-    await expect(
-      verifySessionWithOptionalRefresh("access_token=old-access"),
-    ).resolves.toEqual({ ok: false, unavailable: false, setCookies: [] });
+    await expect(verifySessionWithOptionalRefresh("access_token=old-access")).resolves.toEqual({
+      ok: false,
+      unavailable: false,
+      setCookies: [],
+    });
   });
 
   it("treats a rejected refresh as unauthenticated", async () => {
@@ -104,10 +97,7 @@ describe("verifySessionWithOptionalRefresh", () => {
   });
 
   it("returns refreshed cookies after a successful refresh", async () => {
-    fetchMock
-      .mockResolvedValueOnce(status(401))
-      .mockResolvedValueOnce(refreshed())
-      .mockResolvedValueOnce(status(200));
+    fetchMock.mockResolvedValueOnce(status(401)).mockResolvedValueOnce(refreshed()).mockResolvedValueOnce(status(200));
 
     await expect(verifySessionWithOptionalRefresh(COOKIE)).resolves.toEqual({
       ok: true,
@@ -117,10 +107,7 @@ describe("verifySessionWithOptionalRefresh", () => {
   });
 
   it("keeps refreshed cookies when the backend fails right after refreshing", async () => {
-    fetchMock
-      .mockResolvedValueOnce(status(401))
-      .mockResolvedValueOnce(refreshed())
-      .mockResolvedValueOnce(status(503));
+    fetchMock.mockResolvedValueOnce(status(401)).mockResolvedValueOnce(refreshed()).mockResolvedValueOnce(status(503));
 
     await expect(verifySessionWithOptionalRefresh(COOKIE)).resolves.toEqual({
       ok: false,
@@ -150,10 +137,7 @@ describe("sessionCheckResponse", () => {
   });
 
   it("forwards refreshed cookies with 503", async () => {
-    fetchMock
-      .mockResolvedValueOnce(status(401))
-      .mockResolvedValueOnce(refreshed())
-      .mockResolvedValueOnce(status(503));
+    fetchMock.mockResolvedValueOnce(status(401)).mockResolvedValueOnce(refreshed()).mockResolvedValueOnce(status(503));
 
     const response = await sessionCheckResponse(sessionRequest(COOKIE));
 

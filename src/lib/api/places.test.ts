@@ -66,9 +66,7 @@ describe("place photo API requests", () => {
       json: async () => ({ message: "Google photo refresh failed" }),
     });
 
-    await expect(requestPlacePhotoUrl("ChIJ-place-1")).rejects.toThrow(
-      "Google photo refresh failed",
-    );
+    await expect(requestPlacePhotoUrl("ChIJ-place-1")).rejects.toThrow("Google photo refresh failed");
   });
 
   it("throws an HttpError carrying the status when a single photo request fails", async () => {
@@ -95,9 +93,7 @@ describe("place photo API requests", () => {
       json: async () => ({ code: "RATE_LIMIT_EXCEEDED", message: "요청이 너무 많습니다" }),
     });
 
-    const error = await requestPlacePhotoUrlsBatch(["ChIJ-place-1", "ChIJ-place-2"]).catch(
-      (reason: unknown) => reason,
-    );
+    const error = await requestPlacePhotoUrlsBatch(["ChIJ-place-1", "ChIJ-place-2"]).catch((reason: unknown) => reason);
 
     expect(error).toBeInstanceOf(HttpError);
     expect(error).toMatchObject({ status: 429 });
@@ -119,11 +115,7 @@ describe("place photo API requests", () => {
       }),
     });
 
-    const photos = await requestPlacePhotoUrlsBatch([
-      " ChIJ-place-1 ",
-      "ChIJ-place-1",
-      "ChIJ-place-2",
-    ]);
+    const photos = await requestPlacePhotoUrlsBatch([" ChIJ-place-1 ", "ChIJ-place-1", "ChIJ-place-2"]);
 
     const init = apiFetch.mock.calls[0]![1] as RequestInit & { body: string };
     expect(JSON.parse(init.body)).toEqual({
@@ -165,9 +157,7 @@ describe("place photo API requests", () => {
       },
     });
 
-    await expect(
-      requestPlacePhotoUrlsBatch(["ChIJ-place-1", "ChIJ-place-2"]),
-    ).resolves.toEqual([
+    await expect(requestPlacePhotoUrlsBatch(["ChIJ-place-1", "ChIJ-place-2"])).resolves.toEqual([
       {
         status: "OK",
         googlePlaceId: "ChIJ-place-1",
@@ -196,9 +186,7 @@ describe("place preview API requests", () => {
       json: async () => ({ code: "RATE_LIMIT_EXCEEDED", message: "요청이 너무 많습니다" }),
     });
 
-    const error = await requestPlacePreviewsBatch(["ChIJ-place-1", "ChIJ-place-2"]).catch(
-      (reason: unknown) => reason,
-    );
+    const error = await requestPlacePreviewsBatch(["ChIJ-place-1", "ChIJ-place-2"]).catch((reason: unknown) => reason);
 
     expect(error).toBeInstanceOf(HttpError);
     expect(error).toMatchObject({ status: 429, message: "요청이 너무 많습니다" });
@@ -230,7 +218,12 @@ describe("place area search API request", () => {
     const requestedUrl = new URL(apiFetch.mock.calls[0]![0] as string);
     expect(requestedUrl.pathname).toBe("/places/search/area");
     expect(Object.fromEntries(requestedUrl.searchParams)).toEqual({
-      query: "카페", south: "35.7", west: "139.75", north: "35.72", east: "139.8", pageSize: "20",
+      query: "카페",
+      south: "35.7",
+      west: "139.75",
+      north: "35.72",
+      east: "139.8",
+      pageSize: "20",
     });
   });
 });

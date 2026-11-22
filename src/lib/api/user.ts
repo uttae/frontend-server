@@ -9,7 +9,6 @@ import { apiUrl, requestVoid, tryParseJson } from "@/lib/api/http";
 
 export type { RoomRequiringDelegation };
 
-/** POST /users/me/tutorial/complete — 현재 사용자의 튜토리얼 완료 상태를 저장합니다. */
 export async function completeTutorial(): Promise<void> {
   await requestVoid(
     apiUrl("/users/me/tutorial/complete"),
@@ -36,10 +35,7 @@ export async function withdrawAccount(): Promise<WithdrawAccountResult> {
 
   const body = await tryParseJson(res);
 
-  if (
-    res.status === 422 &&
-    isWithdrawalRequiresHostDelegationFromBody(body)
-  ) {
+  if (res.status === 422 && isWithdrawalRequiresHostDelegationFromBody(body)) {
     return {
       ok: false,
       kind: "host_delegation_required",
@@ -51,8 +47,6 @@ export async function withdrawAccount(): Promise<WithdrawAccountResult> {
     ok: false,
     kind: "error",
     status: res.status,
-    message:
-      readUserFacingMessageFromApiBody(body) ??
-      "회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+    message: readUserFacingMessageFromApiBody(body) ?? "회원 탈퇴에 실패했습니다. 잠시 후 다시 시도해 주세요.",
   };
 }

@@ -2,7 +2,6 @@ import type { AnalyticsEventName } from "./track";
 
 export type AnalyticsDestination = "both" | "ga4" | "amplitude";
 
-/** Every event must declare its purpose; new events never default to both sinks. */
 const eventDestinations = {
   page_view: "both",
   sign_up: "both",

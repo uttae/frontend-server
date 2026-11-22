@@ -23,7 +23,9 @@ function Harness() {
 }
 function deferred() {
   let resolve!: (list: unknown[]) => void;
-  const promise = new Promise<unknown[]>((r) => { resolve = r; });
+  const promise = new Promise<unknown[]>((r) => {
+    resolve = r;
+  });
   return { promise, resolve };
 }
 const prediction = (text: string) => ({ placeId: text }) as unknown as google.maps.places.PlacePrediction;
@@ -41,7 +43,6 @@ afterEach(async () => {
   vi.useRealTimers();
 });
 
-// 예: '도쿄' 요청이 가는 중에 Enter로 검색하면, 늦게 온 '도쿄' 추천이 검색 뒤에 목록을 다시 열었다
 it("a response that arrives after the list is closed does not reopen it", async () => {
   const first = deferred();
   sdk.fetch.mockReturnValueOnce(first.promise);

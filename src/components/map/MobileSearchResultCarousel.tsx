@@ -89,20 +89,14 @@ function SearchPlaceCard({
       <div className="pointer-events-none relative flex min-h-[120px] flex-col gap-2.5">
         <div className="flex h-[78px] min-w-0 items-center gap-2">
           <div className="flex h-full min-w-0 flex-1 flex-col gap-1">
-            <h3 className="truncate text-[18px] font-bold leading-[normal] text-text">
-              {item.name}
-            </h3>
+            <h3 className="truncate text-[18px] font-bold leading-[normal] text-text">{item.name}</h3>
             {item.category ? (
-              <p className="truncate text-[12px] leading-[normal] text-text-subtle">
-                {item.category}
-              </p>
+              <p className="truncate text-[12px] leading-[normal] text-text-subtle">{item.category}</p>
             ) : null}
             {item.rating != null ? (
               <div className="flex h-6 items-center gap-1">
                 <StarIcon aria-hidden className="shrink-0" />
-                <span className="text-[12px] font-bold leading-[normal] text-text">
-                  {item.rating.toFixed(1)}
-                </span>
+                <span className="text-[12px] font-bold leading-[normal] text-text">{item.rating.toFixed(1)}</span>
                 {item.userRatingCount != null ? (
                   <span className="text-[11px] leading-[normal] text-text-subtle">
                     ({item.userRatingCount.toLocaleString()}개)
@@ -174,9 +168,7 @@ function SearchPlaceCard({
           />
         </MobileRouteExpandedShell>
       ) : (
-        <div className="h-full overflow-hidden rounded-md border-[0.5px] border-border bg-fill-subtle">
-          {summary}
-        </div>
+        <div className="h-full overflow-hidden rounded-md border-[0.5px] border-border bg-fill-subtle">{summary}</div>
       )}
       {modal === "bookmark" ? (
         <AddToBookmarkModal
