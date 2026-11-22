@@ -67,13 +67,10 @@ export function PlanTravelTime({
 
   const {
     mutate: mutateTravelMode,
-    variables: pendingTravelMode,
-    isPending: isTravelModePending,
-  } = useUpdateScheduleItemTravelMode();
-  const selectedMode =
-    isTravelModePending && pendingTravelMode?.itemId === segmentSourceItemId
-      ? pendingTravelMode.travelMode
-      : serverMode;
+    variables: pendingMode,
+    isPending: savingMode,
+  } = useUpdateScheduleItemTravelMode(rid, scheduleId, segmentSourceItemId);
+  const selectedMode = savingMode && pendingMode ? pendingMode : serverMode;
 
   const googleMapsDirectionsUrl =
     selectedMode === null
@@ -99,12 +96,10 @@ export function PlanTravelTime({
     selectedMode,
     routeQueryEnabled,
     fpTrim,
+    !savingMode,
   );
 
-  const menuDeferredModes = useMemo(
-    () => SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter((m) => m !== selectedMode),
-    [selectedMode],
-  );
+  const menuDeferredModes = SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter((mode) => mode !== selectedMode);
 
   const deferredRouteQueries = useQueries({
     queries: menuDeferredModes.map((mode) =>
@@ -181,21 +176,13 @@ export function PlanTravelTime({
     (mode: ScheduleTravelModeValue) => {
       setMenuOpen(false);
       if (mode === selectedMode) return;
-      mutateTravelMode(
-        {
-          roomId: rid,
-          scheduleId,
-          itemId: segmentSourceItemId,
-          travelMode: mode,
+      mutateTravelMode(mode, {
+        onError: () => {
+          toast.error("이동 수단을 변경하지 못했어요.");
         },
-        {
-          onError: () => {
-            toast.error("이동 수단을 변경하지 못했어요.");
-          },
-        },
-      );
+      });
     },
-    [rid, scheduleId, segmentSourceItemId, selectedMode, mutateTravelMode],
+    [selectedMode, mutateTravelMode],
   );
 
   if (directionsHidden) {

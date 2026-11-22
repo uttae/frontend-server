@@ -165,6 +165,8 @@ export function useScheduleItemRoute(
   travelMode: ScheduleTravelModeValue | null,
   routeQueryEnabled = true,
   scheduleFingerprint = "",
+  /** 수단 저장 중에는 해당 구간의 캐시만 읽고 GET은 보류한다. */
+  networkEnabled = routeQueryEnabled,
 ) {
   const rid = roomId?.trim() ?? "";
 
@@ -176,7 +178,7 @@ export function useScheduleItemRoute(
       destinationItemId,
       travelMode,
       scheduleFingerprint,
-      { segmentReady: Boolean(routeQueryEnabled) },
+      { segmentReady: Boolean(routeQueryEnabled), networkEnabled },
     ),
   });
 }
@@ -413,19 +415,22 @@ export function useUpdateScheduleItem() {
   });
 }
 
-export function useUpdateScheduleItemTravelMode() {
+export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: number, itemId: number) {
   const queryClient = useQueryClient();
+  const mutationKey = ["schedule-item-travel-mode", roomId, scheduleId, itemId] as const;
   return useMutation({
-    mutationFn: (vars: { roomId: string; scheduleId: number; itemId: number; travelMode: ScheduleTravelModeValue }) =>
-      updateScheduleItemTravelMode(vars.roomId, vars.scheduleId, vars.itemId, { travelMode: vars.travelMode }),
-    onSuccess: (updated, { roomId, scheduleId }) => {
+    mutationKey,
+    // 이동수단은 출발 항목에 저장한다. 같은 항목의 PATCH만 선택 순서대로 보낸다.
+    scope: { id: JSON.stringify(mutationKey) },
+    mutationFn: (travelMode: ScheduleTravelModeValue) =>
+      updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode }),
+    onSuccess: (updated) => {
       queryClient.setQueryData<PlanPlace[]>(
-        scheduleItemsQueryKey(roomId.trim(), scheduleId),
+        scheduleItemsQueryKey(roomId, scheduleId),
         (old) => applyRoomScheduleItemToPlanPlaces(old, updated) ?? old,
       );
     },
-    onSettled: (_updated, _error, { roomId, scheduleId }) =>
-      invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
+    onSettled: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
