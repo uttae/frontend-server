@@ -136,9 +136,6 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }
       <form
         aria-label="일정 메모 편집"
         className={PLAN_PLACE_CARD_TW.editorModule}
-        onMouseDown={stopCardActivation}
-        onClick={stopCardActivation}
-        onKeyDown={stopCardActivation}
         onSubmit={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -163,6 +160,7 @@ export function PlanItemMemoEditor({ roomId, scheduleId, itemId, memo, onClose }
                     disabled={isPending}
                     onMouseDown={stopCardActivation}
                     onClick={stopCardActivation}
+                    onKeyDown={stopCardActivation}
                     onChange={(e) => field.handleChange(e.target.value)}
                     onBlur={field.handleBlur}
                     aria-invalid={error ? true : undefined}
