@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** Apply the same semantic colors while preserving each SVG silhouette. */
 export function SidebarIcon({ src, isActive = false }: { src: string; isActive?: boolean }) {
   return (
     <span

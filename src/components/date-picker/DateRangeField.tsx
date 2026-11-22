@@ -23,7 +23,7 @@ export function DateRangeField({
 }: Readonly<{
   idPrefix: string;
   value: DateRange;
-  /** 이보다 이른 날짜는 고를 수 없다 (`YYYY-MM-DD`) */
+
   min?: string;
   readOnly?: boolean;
   onChange: (next: DateRange) => void;
@@ -55,7 +55,10 @@ export function DateRangeField({
               <FieldBoxLabel>{label}</FieldBoxLabel>
             </FieldBoxHeader>
             <FieldBoxRow>
-              <CalendarIcon size={20} className={cn("shrink-0", readOnly ? "text-icon-disabled" : "text-icon-subtle")} />
+              <CalendarIcon
+                size={20}
+                className={cn("shrink-0", readOnly ? "text-icon-disabled" : "text-icon-subtle")}
+              />
               <span className={cn("truncate px-1", ymd && !readOnly ? "text-text" : "text-text-subtle")}>
                 {formatYmdSlash(ymd) || "YY/MM/DD"}
               </span>

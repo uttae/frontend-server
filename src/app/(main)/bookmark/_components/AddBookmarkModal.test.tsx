@@ -7,12 +7,13 @@ import { AddBookmarkModal } from "./AddBookmarkModal";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-// 대화상자는 Base UI Dialog라 document.body로 포털된다
 async function renderModal(onSave = vi.fn()) {
   const host = document.createElement("div");
   document.body.append(host);
   const root = createRoot(host);
-  await act(async () => root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={onSave} />));
+  await act(async () =>
+    root.render(<AddBookmarkModal mode="create" initialFolder={null} onClose={vi.fn()} onSave={onSave} />),
+  );
   const titleInput = document.querySelector<HTMLInputElement>('[role="dialog"] input[type="text"]')!;
   const form = document.querySelector<HTMLFormElement>('[role="dialog"] form')!;
   return {
@@ -35,7 +36,6 @@ it("shows the length error under the title on submit and saves the trimmed title
   const onSave = vi.fn();
   const modal = await renderModal(onSave);
   try {
-    // 한글 조합 중 maxLength를 넘어 들어온 값
     await modal.typeTitle("가".repeat(51));
     await modal.submit();
     expect(onSave).not.toHaveBeenCalled();

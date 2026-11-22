@@ -1,10 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { AnalyticsEvents } from "@/lib/analytics/track";
-import type {
-  JoinRoomResponse,
-  RoomDetail,
-} from "@/lib/api/rooms/types";
+import type { JoinRoomResponse, RoomDetail } from "@/lib/api/rooms/types";
 import type { AnalyticsEventParamsMap } from "@/lib/analytics/track";
 import { completeWaitingJoinApproval } from "@/lib/join-room-workflow";
 
@@ -15,10 +12,7 @@ type WaitingApprovalDependencies = {
   getRoomDetail: (roomId: string) => Promise<RoomDetail>;
   navigateToPlan: (path: string) => void;
   setCurrentRoomId: (roomId: string) => void;
-  trackAnalyticsEvent: (
-    eventName: typeof AnalyticsEvents.joinPlan,
-    params: JoinPlanParams,
-  ) => void;
+  trackAnalyticsEvent: (eventName: typeof AnalyticsEvents.joinPlan, params: JoinPlanParams) => void;
 };
 
 const approvedResponse: JoinRoomResponse = {
@@ -40,9 +34,7 @@ const roomDetail: RoomDetail = {
   createdAt: "2026-07-21T00:00:00.000Z",
 };
 
-function createDependencies(
-  overrides: Partial<WaitingApprovalDependencies> = {},
-): WaitingApprovalDependencies {
+function createDependencies(overrides: Partial<WaitingApprovalDependencies> = {}): WaitingApprovalDependencies {
   return {
     cacheRoomDetail: vi.fn(),
     getRoomDetail: vi.fn().mockResolvedValue(roomDetail),
@@ -63,21 +55,16 @@ describe("completeWaitingJoinApproval", () => {
       }),
     });
 
-    const completed = await completeWaitingJoinApproval(
-      approvedResponse,
-      dependencies,
-    );
+    const completed = await completeWaitingJoinApproval(approvedResponse, dependencies);
 
     expect(completed).toBe(true);
     expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledTimes(1);
-    expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(
-      AnalyticsEvents.joinPlan,
-      { room_id: "room-123", member_count_bucket: "3_4", role: "member" },
-    );
-    expect(dependencies.cacheRoomDetail).toHaveBeenCalledWith(
-      approvedResponse.id,
-      roomDetail,
-    );
+    expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(AnalyticsEvents.joinPlan, {
+      room_id: "room-123",
+      member_count_bucket: "3_4",
+      role: "member",
+    });
+    expect(dependencies.cacheRoomDetail).toHaveBeenCalledWith(approvedResponse.id, roomDetail);
     expect(steps).toEqual(["track:join_group:3_4", "navigate"]);
   });
 
@@ -86,59 +73,46 @@ describe("completeWaitingJoinApproval", () => {
       getRoomDetail: vi.fn().mockRejectedValue(new Error("network failed")),
     });
 
-    const completed = await completeWaitingJoinApproval(
-      approvedResponse,
-      dependencies,
-    );
+    const completed = await completeWaitingJoinApproval(approvedResponse, dependencies);
 
     expect(completed).toBe(true);
-    expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(
-      AnalyticsEvents.joinPlan,
-      { room_id: "room-123", member_count_bucket: undefined, role: "member" },
-    );
+    expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(AnalyticsEvents.joinPlan, {
+      room_id: "room-123",
+      member_count_bucket: undefined,
+      role: "member",
+    });
     expect(dependencies.navigateToPlan).toHaveBeenCalledWith("/plan/room-123");
   });
 
-  it.each(["JOINED", "ACCEPTED"])(
-    "treats raw %s as an approved completion",
-    async (status) => {
-      const steps: string[] = [];
-      const dependencies = createDependencies({
-        navigateToPlan: vi.fn(() => steps.push("navigate")),
-        trackAnalyticsEvent: vi.fn((eventName) => {
-          steps.push(`track:${eventName}`);
-        }),
-      });
+  it.each(["JOINED", "ACCEPTED"])("treats raw %s as an approved completion", async (status) => {
+    const steps: string[] = [];
+    const dependencies = createDependencies({
+      navigateToPlan: vi.fn(() => steps.push("navigate")),
+      trackAnalyticsEvent: vi.fn((eventName) => {
+        steps.push(`track:${eventName}`);
+      }),
+    });
 
-      const completed = await completeWaitingJoinApproval(
-        { ...approvedResponse, status },
-        dependencies,
-      );
+    const completed = await completeWaitingJoinApproval({ ...approvedResponse, status }, dependencies);
 
-      expect(completed).toBe(true);
-      expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledTimes(1);
-      expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(
-        AnalyticsEvents.joinPlan,
-        { room_id: "room-123", member_count_bucket: "3_4", role: "member" },
-      );
-      expect(steps).toEqual(["track:join_group", "navigate"]);
-    },
-  );
+    expect(completed).toBe(true);
+    expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledTimes(1);
+    expect(dependencies.trackAnalyticsEvent).toHaveBeenCalledWith(AnalyticsEvents.joinPlan, {
+      room_id: "room-123",
+      member_count_bucket: "3_4",
+      role: "member",
+    });
+    expect(steps).toEqual(["track:join_group", "navigate"]);
+  });
 
-  it.each(["PENDING", "REJECTED"])(
-    "does not send join_group for %s results",
-    async (status) => {
-      const dependencies = createDependencies();
+  it.each(["PENDING", "REJECTED"])("does not send join_group for %s results", async (status) => {
+    const dependencies = createDependencies();
 
-      const completed = await completeWaitingJoinApproval(
-        { ...approvedResponse, status },
-        dependencies,
-      );
+    const completed = await completeWaitingJoinApproval({ ...approvedResponse, status }, dependencies);
 
-      expect(completed).toBe(false);
-      expect(dependencies.getRoomDetail).not.toHaveBeenCalled();
-      expect(dependencies.trackAnalyticsEvent).not.toHaveBeenCalled();
-      expect(dependencies.navigateToPlan).not.toHaveBeenCalled();
-    },
-  );
+    expect(completed).toBe(false);
+    expect(dependencies.getRoomDetail).not.toHaveBeenCalled();
+    expect(dependencies.trackAnalyticsEvent).not.toHaveBeenCalled();
+    expect(dependencies.navigateToPlan).not.toHaveBeenCalled();
+  });
 });

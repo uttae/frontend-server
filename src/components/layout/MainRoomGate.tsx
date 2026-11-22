@@ -25,13 +25,6 @@ function RoomUnreadCountSync({ roomId }: { roomId: string }) {
   return null;
 }
 
-/**
- * 인증은 미들웨어(`GET /api/auth/session` → HttpOnly 쿠키 검증)에서 처리합니다.
- * (main) 안에서는 선택된 방이 없으면 `/home`으로 보냅니다.
- *
- * `currentRoomId`는 sessionStorage(탭) + `/plan/[roomId]` URL.
- * 프로필(`user`)은 `reconcileClientSession`(`users/me`)으로 메모리에만 둡니다.
- */
 export function MainRoomGate({ children }: { children: ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();

@@ -24,12 +24,14 @@ export default function HomePage() {
 
   return (
     <>
-      <main className={`mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 ${isEmpty ? "mobile:pb-0" : "mobile:pb-[60px]"}`}>
+      <main
+        className={`mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 ${isEmpty ? "mobile:pb-0" : "mobile:pb-[60px]"}`}
+      >
         <HomeBannerCarousel banners={HOME_BANNERS} />
-        <div className={`flex items-center justify-between gap-3 py-5 mobile:min-h-[66px] mobile:py-4 ${isEmpty ? "min-h-[78px]" : "min-h-[88px]"}`}>
-          <h1 className="text-heading-m text-text mobile:text-heading-s">
-            나의 여행
-          </h1>
+        <div
+          className={`flex items-center justify-between gap-3 py-5 mobile:min-h-[66px] mobile:py-4 ${isEmpty ? "min-h-[78px]" : "min-h-[88px]"}`}
+        >
+          <h1 className="text-heading-m text-text mobile:text-heading-s">나의 여행</h1>
           {!isMobileDevice && (rooms.length > 0 || isLoading || isError) ? <NewTripLink /> : null}
         </div>
 
@@ -53,19 +55,9 @@ export default function HomePage() {
         </div>
       ) : null}
 
-      {deletingRoom && (
-        <DeleteConfirmModal
-          room={deletingRoom}
-          onClose={() => setDeletingRoom(null)}
-        />
-      )}
+      {deletingRoom && <DeleteConfirmModal room={deletingRoom} onClose={() => setDeletingRoom(null)} />}
 
-      {leavingRoom && (
-        <LeaveConfirmModal
-          room={leavingRoom}
-          onClose={() => setLeavingRoom(null)}
-        />
-      )}
+      {leavingRoom && <LeaveConfirmModal room={leavingRoom} onClose={() => setLeavingRoom(null)} />}
     </>
   );
 }

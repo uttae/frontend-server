@@ -17,29 +17,25 @@ describe("PlanDaySection", () => {
       ),
     );
 
-    const triggerMarkup = html.match(
-      /<button[^>]*aria-expanded="true"[^>]*>([\s\S]*?)<\/button>/,
-    )?.[1];
+    const triggerMarkup = html.match(/<button[^>]*aria-expanded="true"[^>]*>([\s\S]*?)<\/button>/)?.[1];
 
     expect(triggerMarkup).toBeDefined();
-    expect(triggerMarkup!.indexOf("1일차")).toBeLessThan(
-      triggerMarkup!.indexOf("07. 16 목"),
-    );
-    expect(triggerMarkup!.lastIndexOf("<svg")).toBeGreaterThan(
-      triggerMarkup!.indexOf("07. 16 목"),
-    );
+    expect(triggerMarkup!.indexOf("1일차")).toBeLessThan(triggerMarkup!.indexOf("07. 16 목"));
+    expect(triggerMarkup!.lastIndexOf("<svg")).toBeGreaterThan(triggerMarkup!.indexOf("07. 16 목"));
   });
 
   it("shows the cost summary and route switch below the day heading, before places", () => {
-    const html = renderToStaticMarkup(createElement(
-      PlanDaySection,
-      {
-        title: "1일차",
-        itineraryScheduleId: 10,
-        summaryAction: createElement("button", null, "비용 3건 · 128,000 KRW"),
-      },
-      createElement("div", null, "장소 카드"),
-    ));
+    const html = renderToStaticMarkup(
+      createElement(
+        PlanDaySection,
+        {
+          title: "1일차",
+          itineraryScheduleId: 10,
+          summaryAction: createElement("button", null, "비용 3건 · 128,000 KRW"),
+        },
+        createElement("div", null, "장소 카드"),
+      ),
+    );
 
     expect(html).toContain("비용 3건 · 128,000 KRW");
     expect(html.indexOf("비용 3건 · 128,000 KRW")).toBeLessThan(html.indexOf("장소 카드"));

@@ -8,14 +8,13 @@ import { useCalendarView } from "./useCalendarView";
 
 type DatePickerProps = Readonly<{
   value: DateRange;
-  /** 이보다 이른 날짜는 고를 수 없다 (`YYYY-MM-DD`) */
+
   min?: string;
   onSelect: (ymd: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }>;
 
-/** Figma Design System `09 Date Picker` — Header / Weekday / Date(또는 연월 휠) / Footer */
 export function DatePicker({ value, min, onSelect, onCancel, onConfirm }: DatePickerProps) {
   const gridsRef = useRef<HTMLDivElement>(null);
   const calendar = useCalendarView({ value, min, monthCount: 1, gridsRef, onSelect, onCancel, onConfirm });

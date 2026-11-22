@@ -14,14 +14,13 @@ type Props = {
   appearance?: "field" | "emphasis";
 };
 
-/** 목적지 검색 칸 → 고른 칩 → 경고 순서. 새 여행 만들기(`home/new/page.tsx`)와 여행 정보 수정(`RoomTripEditForm`)이 같이 쓰고, 간격은 감싸는 Field가 준다 */
 export function DestinationChipsField({
   values,
   onChange,
   maxCount,
   maxLength,
   appearance = "field",
-}: Props) {
+}: Readonly<Props>) {
   const [draft, setDraft] = useState("");
   const [inlineWarning, setInlineWarning] = useState<string | null>(null);
   const atMax = values.length >= maxCount;
@@ -31,9 +30,7 @@ export function DestinationChipsField({
     setInlineWarning(null);
   }
 
-  function handleResolved(
-    place: { description: string; placeId: string } | null,
-  ) {
+  function handleResolved(place: { description: string; placeId: string } | null) {
     if (!place) return;
     const next = place.description.trim().slice(0, maxLength);
     if (!next) return;

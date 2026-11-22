@@ -6,10 +6,7 @@ import {
   decodePlanSegmentPathLatLng,
 } from "./maps";
 
-/** Maps JS geometry 라이브러리 stub — decodePath는 LatLng 객체를 돌려준다 */
-function stubGeometry(
-  decodePath: (encoded: string) => Array<{ lat(): number; lng(): number }>,
-) {
+function stubGeometry(decodePath: (encoded: string) => Array<{ lat(): number; lng(): number }>) {
   const importLibrary = vi.fn(async (name: string) => {
     if (name === "geometry") return { encoding: { decodePath } };
     throw new Error(`unexpected library: ${name}`);
@@ -28,15 +25,10 @@ describe("decodePlanSegmentPathLatLng", () => {
   });
 
   it("서버 폴리라인을 디코딩해 좌표 배열로 반환한다", async () => {
-    const decodePath = vi.fn(() => [
-      latLng(37.5665, 126.978),
-      latLng(37.5446, 127.0557),
-    ]);
+    const decodePath = vi.fn(() => [latLng(37.5665, 126.978), latLng(37.5446, 127.0557)]);
     stubGeometry(decodePath);
 
-    await expect(
-      decodePlanSegmentPathLatLng("  _p~iF~ps|U_ulLnnqC  "),
-    ).resolves.toEqual([
+    await expect(decodePlanSegmentPathLatLng("  _p~iF~ps|U_ulLnnqC  ")).resolves.toEqual([
       { lat: 37.5665, lng: 126.978 },
       { lat: 37.5446, lng: 127.0557 },
     ]);

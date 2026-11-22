@@ -24,9 +24,7 @@ it("reuses schedules on reentry but refetches them when they were invalidated wh
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const root = createRoot(document.createElement("div"));
   const render = (visible: boolean) =>
-    root.render(
-      <QueryClientProvider client={client}>{visible && <Probe />}</QueryClientProvider>,
-    );
+    root.render(<QueryClientProvider client={client}>{visible && <Probe />}</QueryClientProvider>);
   try {
     await act(async () => render(true));
     await act(async () => render(false));

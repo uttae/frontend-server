@@ -12,19 +12,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 import { useInViewport } from "@/hooks/useInViewport";
-import {
-  useDeleteScheduleItem,
-  useUpdateScheduleItem,
-} from "@/hooks/useRooms";
+import { useDeleteScheduleItem, useUpdateScheduleItem } from "@/hooks/useRooms";
 import { usePlanPlaceCardPhoto } from "@/hooks/usePlanPlaceCardPhoto";
 import { useVisiblePlacePhotoUrl } from "@/hooks/useVisiblePlacePhotoUrl";
 import { bucketItemCount } from "@/lib/analytics/context";
 import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 import { PLAN_PLACE_CARD_TW } from "@/lib/layout-tokens";
 import { handlePlacePhotoImageError } from "@/lib/places/place-photo-refresh";
-import {
-  formatScheduleTimeRange,
-} from "@/lib/plan/scheduleTime";
+import { formatScheduleTimeRange } from "@/lib/plan/scheduleTime";
 import type { PlanPlace } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
@@ -36,11 +31,7 @@ import {
 
 import { PlanItemMemoEditor, PlanItemMemoReadOnly } from "./PlanItemMemoForm";
 import { PlanItemTimeEditor } from "./PlanItemTimeForm";
-import {
-  isPlanPlaceCardInteractiveTarget,
-  PlanOrderIndexBadge,
-  PlanPlaceCardMenu,
-} from "./PlanPlaceCardParts";
+import { isPlanPlaceCardInteractiveTarget, PlanOrderIndexBadge, PlanPlaceCardMenu } from "./PlanPlaceCardParts";
 
 export type PlanPlaceCardProps = {
   place: PlanPlace;
@@ -77,7 +68,6 @@ export function PlanPlaceCard({
   const clearFocus = usePlanMapFocusStore((s) => s.clearFocus);
   const focusRoomId = scheduleTimeEdit?.roomId.trim() ?? "";
   const focusScheduleId = scheduleTimeEdit?.scheduleId ?? null;
-  /** 고른 장소 — 다른 카드를 고르거나, 같은 카드를 다시 누르거나, 지도 빈 곳을 누를 때까지 강조해 둔다 */
   const focused = usePlanMapFocusStore(
     (s) =>
       s.focus !== null &&
@@ -85,7 +75,6 @@ export function PlanPlaceCard({
       s.focus.scheduleId === focusScheduleId &&
       s.focus.itemId === place.itemId,
   );
-  /** 카드가 아닌 곳(지도 핀·장소 이동 스테퍼)에서 고른 경우에만 값이 있다 — 그때 일정 목록을 이 카드로 스크롤한다 */
   const focusSeqToReveal = usePlanMapFocusStore((s) =>
     s.focus !== null &&
     s.focus.source !== "card" &&
@@ -113,16 +102,11 @@ export function PlanPlaceCard({
   const [memoOpen, setMemoOpen] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
 
-  const { mutateAsync: removeScheduleItemMutate, isPending: isDeletingItem } =
-    useDeleteScheduleItem();
-  const { mutateAsync: updateScheduleItemMutate, isPending: isUpdatingItem } =
-    useUpdateScheduleItem();
-  const [confirmTarget, setConfirmTarget] = useState<"item" | "memo" | null>(
-    null,
-  );
+  const { mutateAsync: removeScheduleItemMutate, isPending: isDeletingItem } = useDeleteScheduleItem();
+  const { mutateAsync: updateScheduleItemMutate, isPending: isUpdatingItem } = useUpdateScheduleItem();
+  const [confirmTarget, setConfirmTarget] = useState<"item" | "memo" | null>(null);
 
-  const canManageServerItem =
-    Boolean(scheduleTimeEdit) && typeof place.itemId === "number";
+  const canManageServerItem = Boolean(scheduleTimeEdit) && typeof place.itemId === "number";
 
   const handleDeleteScheduleItem = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
@@ -141,12 +125,7 @@ export function PlanPlaceCard({
     } catch {
       toast.error("삭제하지 못했어요.");
     }
-  }, [
-    itineraryItemCount,
-    scheduleTimeEdit,
-    place.itemId,
-    removeScheduleItemMutate,
-  ]);
+  }, [itineraryItemCount, scheduleTimeEdit, place.itemId, removeScheduleItemMutate]);
 
   const handleDeleteMemo = useCallback(async () => {
     if (!scheduleTimeEdit || typeof place.itemId !== "number") return;
@@ -164,14 +143,11 @@ export function PlanPlaceCard({
     }
   }, [scheduleTimeEdit, place.itemId, updateScheduleItemMutate]);
 
-  const handlePointerDownCapture = useCallback(
-    (e: React.PointerEvent) => {
-      blockCardDragRef.current = isPlanPlaceCardInteractiveTarget(e.target);
-      if (blockCardDragRef.current) return;
-      pointerDownRef.current = { x: e.clientX, y: e.clientY };
-    },
-    [],
-  );
+  const handlePointerDownCapture = useCallback((e: React.PointerEvent) => {
+    blockCardDragRef.current = isPlanPlaceCardInteractiveTarget(e.target);
+    if (blockCardDragRef.current) return;
+    pointerDownRef.current = { x: e.clientX, y: e.clientY };
+  }, []);
 
   const handleDragStart = useCallback(
     (e: DragEvent<Element>) => {
@@ -199,12 +175,10 @@ export function PlanPlaceCard({
       const start = pointerDownRef.current;
       pointerDownRef.current = null;
       if (start) {
-        const moved =
-          Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y);
+        const moved = Math.abs(e.clientX - start.x) + Math.abs(e.clientY - start.y);
         if (moved > 12) return;
       }
       if (!focusRoomId || focusScheduleId === null || typeof place.itemId !== "number") return;
-      // 고른 카드를 다시 누르면 강조와 "이 일차 경로만 보기"를 푼다
       if (focused) {
         clearFocus();
         setSelectedPlace(null);
@@ -212,38 +186,23 @@ export function PlanPlaceCard({
       }
       const target = planPlaceFocusTarget(place, focusRoomId, focusScheduleId, "card");
       if (!target) return;
-      // 일정에 넣은 장소는 상세를 보려는 게 아니라 위치를 보려는 것 — 상세(조회 포함) 대신 카드·지도 핀만 강조한다
       setSelectedPlace(null);
       focusPlace(target);
       if (!target.location) toast.info(PLAN_MAP_FOCUS_NO_LOCATION_MESSAGE);
     },
-    [
-      clearFocus,
-      focusPlace,
-      focusRoomId,
-      focusScheduleId,
-      focused,
-      place,
-      setSelectedPlace,
-    ],
+    [clearFocus, focusPlace, focusRoomId, focusScheduleId, focused, place, setSelectedPlace],
   );
 
-  const scheduleItemId =
-    scheduleTimeEdit && typeof place.itemId === "number" ? place.itemId : null;
+  const scheduleItemId = scheduleTimeEdit && typeof place.itemId === "number" ? place.itemId : null;
 
-  const canEditScheduleItem =
-    scheduleTimeEdit != null && scheduleItemId !== null;
+  const canEditScheduleItem = scheduleTimeEdit != null && scheduleItemId !== null;
 
-  const rawGooglePlaceId =
-    typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
+  const rawGooglePlaceId = typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
   const hasGooglePlace = rawGooglePlaceId.length > 0;
 
   const memoText = typeof place.memo === "string" ? place.memo.trim() : "";
   const hasMemo = memoText.length > 0;
-  const timeRange = formatScheduleTimeRange(
-    place.startTime ?? "",
-    place.endTime,
-  );
+  const timeRange = formatScheduleTimeRange(place.startTime ?? "", place.endTime);
   const hasTime = Boolean(timeRange);
 
   const memoTrigger = canEditScheduleItem ? (
@@ -258,11 +217,7 @@ export function PlanPlaceCard({
       aria-expanded={memoOpen}
       aria-label={hasMemo ? "메모 수정" : "메모 추가"}
       data-filled={hasMemo ? "" : undefined}
-      className={cn(
-        "group",
-        PLAN_PLACE_CARD_TW.actionButton,
-        PLAN_PLACE_CARD_TW.actionButtonTrailing,
-      )}
+      className={cn("group", PLAN_PLACE_CARD_TW.actionButton, PLAN_PLACE_CARD_TW.actionButtonTrailing)}
     >
       <MemoAddIcon size={16} className={PLAN_PLACE_CARD_TW.memoActionIcon} />
       <span>메모</span>
@@ -302,9 +257,7 @@ export function PlanPlaceCard({
           "w-full select-none transition-colors",
           PLAN_PLACE_CARD_TW.article,
           focused && "ring-1 ring-primary",
-          dragDisabled
-            ? "cursor-default"
-            : "cursor-grab active:cursor-grabbing",
+          dragDisabled ? "cursor-default" : "cursor-grab active:cursor-grabbing",
         )}
         aria-grabbed={isDragging}
       >
@@ -312,10 +265,7 @@ export function PlanPlaceCard({
           <div className={PLAN_PLACE_CARD_TW.placeInfo}>
             {(() => {
               const media = photoLoading ? (
-                <Spinner
-                  className="absolute inset-0 m-auto h-5 w-5"
-                  aria-hidden
-                />
+                <Spinner className="absolute inset-0 m-auto h-5 w-5" aria-hidden />
               ) : visiblePhotoUrl ? (
                 <Image
                   src={visiblePhotoUrl}
@@ -336,10 +286,7 @@ export function PlanPlaceCard({
                 />
               ) : null;
               const orderBadge = (
-                <PlanOrderIndexBadge
-                  orderIndex={displayOrderIndex}
-                  backgroundColorHex={orderBadgeColor}
-                />
+                <PlanOrderIndexBadge orderIndex={displayOrderIndex} backgroundColorHex={orderBadgeColor} />
               );
 
               if (!hasGooglePlace) {
@@ -354,15 +301,11 @@ export function PlanPlaceCard({
               return (
                 <div
                   ref={thumbnailRef}
-                  className={cn(
-                    PLAN_PLACE_CARD_TW.thumbnail,
-                    "block cursor-pointer transition hover:brightness-105",
-                  )}
+                  className={cn(PLAN_PLACE_CARD_TW.thumbnail, "block cursor-pointer transition hover:brightness-105")}
                 >
                   {media}
                   {orderBadge}
                   <span className={PLAN_PLACE_CARD_TW.thumbnailMapMark} aria-hidden>
-                    {/* Figma Location 인스턴스만 선 굵기가 1.2(아이콘 기본 1.8) */}
                     <LocationIcon size={14} className="[&_path]:[stroke-width:1.2]" />
                   </span>
                 </div>
@@ -458,9 +401,7 @@ export function PlanPlaceCard({
       {hasMemo && !memoOpen ? (
         <PlanItemMemoReadOnly
           memo={memoText}
-          onDelete={
-            canEditScheduleItem ? () => setConfirmTarget("memo") : undefined
-          }
+          onDelete={canEditScheduleItem ? () => setConfirmTarget("memo") : undefined}
           isDeleting={isUpdatingItem}
         />
       ) : null}

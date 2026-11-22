@@ -8,7 +8,6 @@ export type RenderTextWithLinksOptions = {
   onLinkClick?: (e: MouseEvent<HTMLAnchorElement>) => void;
 };
 
-/** 텍스트 내 http(s):// 또는 www. URL 을 `<a>` 로 변환. 후행 문장부호는 URL 에서 분리. */
 export function renderTextWithLinks(
   text: string,
   { linkClassName, onLinkClick }: RenderTextWithLinksOptions,

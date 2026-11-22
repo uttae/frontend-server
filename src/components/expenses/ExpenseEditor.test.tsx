@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-// Place-cache subscriptions are covered by ExpensePlaceLabel.test.tsx.
 vi.mock("./ExpensePlaceLabel", () => ({ ExpensePlaceLabel: () => null }));
 vi.mock("@/lib/api/config", () => ({ API_BASE: "http://fixture" }));
 import { act, type ReactNode } from "react";
@@ -58,7 +57,6 @@ const categories = [
 
 let host: HTMLDivElement;
 let root: Root;
-// 오류 문장을 보이는 곳까지 스크롤하는 동작을 본다. jsdom에는 scrollIntoView가 없다
 const scrollIntoView = vi.fn();
 beforeEach(() => {
   localStorage.clear();
@@ -111,14 +109,15 @@ async function mount(original: Expense | null = base, entry: ExpenseEntry = {}) 
   await render(null);
   await render(<ExpenseEditor initial={original ? { expense: original } : entry} onClose={mocks.close} />);
 }
-// 새 비용 편집기를 다시 연다(닫았다 다시 연 것과 같다). 저장된 통화 선호를 연 순간에 읽는다
 async function reopenNewEditor() {
   await render(null);
   await render(<ExpenseEditor initial={{}} onClose={mocks.close} />);
 }
 
-// Base UI는 열고 닫을 때 microtask·timeout으로 포커스·목록을 옮긴다
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"][data-slot="dialog-content"]');
 const form = () => dialog()!.querySelector("form")!;
 const button = (name: string) =>
@@ -132,15 +131,14 @@ const memoInput = () => dialog()!.querySelector("textarea")!;
 const selectTrigger = (label: string) =>
   dialog()!.querySelector<HTMLElement>(`[role="combobox"][aria-label="${label}"]`)!;
 const currencyTrigger = () => dialog()!.querySelector<HTMLElement>('[role="combobox"][aria-haspopup="dialog"]')!;
-// 통화 트리거는 코드 + 한국어 이름을 보이고, 값이 없으면 "통화 선택"을 보인다
 const currencyValue = () => {
   const text = currencyTrigger().textContent ?? "";
   return text === "통화 선택" ? "" : text.slice(0, 3);
 };
 const fieldOf = (element: Element) => element.closest('[data-slot="field"]')!;
-const fieldError = (element: Element) => fieldOf(element).querySelector('[data-slot="field-error"]')?.textContent ?? null;
-// 폼 아래 문장(저장 실패·권한·충돌 등). 칸 오류(FieldError)는 각 칸 안에 있다
-const formMessage = () => form().querySelector(":scope > p[role=\"alert\"]")?.textContent ?? null;
+const fieldError = (element: Element) =>
+  fieldOf(element).querySelector('[data-slot="field-error"]')?.textContent ?? null;
+const formMessage = () => form().querySelector(':scope > p[role="alert"]')?.textContent ?? null;
 
 async function key(target: Element, key: string) {
   await act(async () => {
@@ -172,14 +170,15 @@ async function choose(label: string, optionText: string) {
 async function chooseCurrency(code: string) {
   await click(currencyTrigger());
   const popup = document.querySelector('[role="dialog"][aria-label="통화 선택"]')!;
-  const option = [...popup.querySelectorAll<HTMLElement>('[role="option"]')].find((node) => node.textContent?.endsWith(code));
+  const option = [...popup.querySelectorAll<HTMLElement>('[role="option"]')].find((node) =>
+    node.textContent?.endsWith(code),
+  );
   await click(option!);
 }
 async function clickSave() {
   await click(saveButton());
   await flush();
 }
-// 저장 버튼이 비활성인 상태에서도 제출 경로(Enter 등)가 저장을 막는지 본다
 async function submitForm() {
   await act(async () => form().requestSubmit());
   await flush();
@@ -192,16 +191,22 @@ async function completeNewExpense() {
 
 const rolePicker = (title: "결제자" | "부담자") =>
   [...dialog()!.querySelectorAll<HTMLFieldSetElement>("fieldset[aria-labelledby]")].find(
-    (fieldset) => document.getElementById(fieldset.getAttribute("aria-labelledby")!)?.firstElementChild?.textContent === title,
+    (fieldset) =>
+      document.getElementById(fieldset.getAttribute("aria-labelledby")!)?.firstElementChild?.textContent === title,
   )!;
-const roleCheckboxes = (title: "결제자" | "부담자") => [...rolePicker(title).querySelectorAll<HTMLElement>('[role="checkbox"]')];
+const roleCheckboxes = (title: "결제자" | "부담자") => [
+  ...rolePicker(title).querySelectorAll<HTMLElement>('[role="checkbox"]'),
+];
 const roleRows = (title: "결제자" | "부담자") =>
   [...rolePicker(title).querySelectorAll("label")].map((row) => ({
     userId: Number(row.querySelector("[data-user-id]")!.getAttribute("data-user-id")),
     checked: row.querySelector('[role="checkbox"]')!.getAttribute("aria-checked") === "true",
     checkbox: row.querySelector<HTMLElement>('[role="checkbox"]')!,
   }));
-const checkedIds = (title: "결제자" | "부담자") => roleRows(title).filter((row) => row.checked).map((row) => row.userId);
+const checkedIds = (title: "결제자" | "부담자") =>
+  roleRows(title)
+    .filter((row) => row.checked)
+    .map((row) => row.userId);
 
 it("remembers currency only after a successful new expense save", async () => {
   await mount(null);
@@ -325,7 +330,12 @@ it("preserves original unknown payer and exact amount when editing", async () =>
   await mount();
   await clickSave();
   expect(mocks.save).toHaveBeenCalledWith(
-    expect.objectContaining({ payerUserIds: [1, 99], participantUserIds: [1], totalAmount: "10.01", scheduleItemId: 100 }),
+    expect.objectContaining({
+      payerUserIds: [1, 99],
+      participantUserIds: [1],
+      totalAmount: "10.01",
+      scheduleItemId: 100,
+    }),
     10,
     0,
   );
@@ -377,12 +387,19 @@ it("blocks wrong currency scale without truncating and guards rapid duplicate su
   expect(mocks.save).not.toHaveBeenCalled();
   expect(amountInput().value).toBe("10.001");
   expect(amountInput().getAttribute("aria-invalid")).toBe("true");
-  expect(fieldError(amountInput())).toBe("금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.");
+  expect(fieldError(amountInput())).toBe(
+    "금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.",
+  );
   await type(amountInput(), "10.01");
   expect(amountInput().hasAttribute("aria-invalid")).toBe(false);
   expect(fieldError(amountInput())).toBeNull();
   let finish!: () => void;
-  mocks.save.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
+  mocks.save.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   await act(async () => {
     saveButton().click();
     saveButton().click();
@@ -407,30 +424,33 @@ it.each([
   [{}, "PREPARATION", null, null],
   [{ scheduleId: 10 }, "TRIP_DAY", 10, null],
   [{ scheduleId: 10, scheduleItemId: 100 }, "TRIP_DAY", 10, 100],
-] as const)("creates an expense from each real entry context %j", async (entry, expenseGroup, scheduleId, scheduleItemId) => {
-  await mount(null, entry);
-  await type(amountInput(), "100");
-  for (const title of ["결제자", "부담자"] as const)
-    for (const row of roleRows(title).filter((row) => !row.checked)) await click(row.checkbox);
-  await choose("카테고리", "기타");
-  await clickSave();
-  expect(mocks.save).toHaveBeenCalledWith(
-    {
-      expenseGroup,
-      scheduleId,
-      scheduleItemId,
-      totalAmount: "100",
-      currency: "KRW",
-      category: "OTHER",
-      name: null,
-      memo: "",
-      payerUserIds: [1],
-      participantUserIds: [1],
-    },
-    undefined,
-    undefined,
-  );
-});
+] as const)(
+  "creates an expense from each real entry context %j",
+  async (entry, expenseGroup, scheduleId, scheduleItemId) => {
+    await mount(null, entry);
+    await type(amountInput(), "100");
+    for (const title of ["결제자", "부담자"] as const)
+      for (const row of roleRows(title).filter((row) => !row.checked)) await click(row.checkbox);
+    await choose("카테고리", "기타");
+    await clickSave();
+    expect(mocks.save).toHaveBeenCalledWith(
+      {
+        expenseGroup,
+        scheduleId,
+        scheduleItemId,
+        totalAmount: "100",
+        currency: "KRW",
+        category: "OTHER",
+        name: null,
+        memo: "",
+        payerUserIds: [1],
+        participantUserIds: [1],
+      },
+      undefined,
+      undefined,
+    );
+  },
+);
 
 it("cannot re-add an unknown payer after deselection and keeps input on server rejection", async () => {
   await mount();
@@ -462,7 +482,6 @@ it("requires explicit selection and offers exactly seven labeled categories in a
   expect(options.map((option) => option.textContent)).toEqual(categories.map(([, label]) => label));
 });
 
-// 칸 규칙(카테고리)과 교차 규칙(금액×통화)이 함께 틀려도 첫 저장에 두 칸 오류가 한 번에 보인다
 it("shows field and cross-field errors together on the first save and updates the amount error when the currency changes", async () => {
   await mount(null);
   await chooseCurrency("USD");
@@ -471,8 +490,9 @@ it("shows field and cross-field errors together on the first save and updates th
   expect(mocks.save).not.toHaveBeenCalled();
   expect(fieldError(selectTrigger("카테고리"))).toBe("카테고리를 선택해 주세요.");
   expect(amountInput().getAttribute("aria-invalid")).toBe("true");
-  expect(fieldError(amountInput())).toBe("금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.");
-  // 금액은 그대로 두고 통화만 KRW로 바꾸면 "100"이 맞는 금액이 되어 오류가 사라진다
+  expect(fieldError(amountInput())).toBe(
+    "금액은 정수부 1~15자리, 소수 2자리로 입력해 주세요. 공백·기호·지수는 사용할 수 없어요.",
+  );
   await chooseCurrency("KRW");
   expect(amountInput().hasAttribute("aria-invalid")).toBe(false);
   expect(fieldError(amountInput())).toBeNull();
@@ -487,10 +507,8 @@ it("shows the missing category under its field and clears it once a category is 
   const category = selectTrigger("카테고리");
   expect(category.getAttribute("aria-invalid")).toBe("true");
   expect(fieldError(category)).toBe("카테고리를 선택해 주세요.");
-  // 칸 오류는 폼 아래 문장으로 겹쳐 보이지 않는다
   expect(formMessage()).toBeNull();
   expect(form().hasAttribute("aria-describedby")).toBe(false);
-  // 다른 칸은 오류가 없다
   expect(fieldError(amountInput())).toBeNull();
   await choose("카테고리", "식비");
   expect(selectTrigger("카테고리").hasAttribute("aria-invalid")).toBe(false);
@@ -504,7 +522,11 @@ it.each(categories)("creates the selected category %s (%s)", async (category, la
   await fillNewExpense();
   await choose("카테고리", label);
   await clickSave();
-  expect(mocks.save).toHaveBeenCalledWith(expect.objectContaining({ category, totalAmount: "100" }), undefined, undefined);
+  expect(mocks.save).toHaveBeenCalledWith(
+    expect.objectContaining({ category, totalAmount: "100" }),
+    undefined,
+    undefined,
+  );
 });
 
 it.each(categories)("retains %s (%s) on edit and permits explicit reclassification", async (category, label) => {
@@ -552,7 +574,6 @@ it.each([false, true])("closes from the backdrop only on mobile devices (mobile:
   expect(mocks.close).toHaveBeenCalledTimes(mobile ? 1 : 0);
 });
 
-// 편집기를 연 버튼에 포커스를 두고 열고, 닫히면(onClose) 부모처럼 편집기를 내린다
 async function mountWithOpener() {
   const opener = document.createElement("button");
   opener.textContent = "비용 추가";
@@ -560,14 +581,17 @@ async function mountWithOpener() {
   opener.focus();
   await mount();
   mocks.close.mockImplementation(() => root.render(null));
-  // Base UI는 다음 프레임에 대화상자 안 첫 포커스 요소로 포커스를 옮긴다
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
   expect(dialog()!.contains(document.activeElement)).toBe(true);
   return opener;
 }
 async function settle() {
   await flush();
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
 }
 
 it.each(["Escape", "닫기", "취소", "save"])("returns focus to the opener after %s closes the editor", async (path) => {
@@ -595,7 +619,12 @@ it("does not focus an opener removed while the editor was open", async () => {
 it("locks every dismissal during save and shows progress, then returns focus on success", async () => {
   const opener = await mountWithOpener();
   let finish!: () => void;
-  mocks.save.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
+  mocks.save.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   await clickSave();
   expect(saveButton().getAttribute("aria-busy")).toBe("true");
   expect(saveButton().getAttribute("aria-disabled")).toBe("true");
@@ -661,17 +690,20 @@ it("retains the draft and requires explicit latest-record review before saving a
   );
 });
 
-it.each([undefined, { ...base, version: 2, scheduleId: 11 }])("blocks retry for a deleted or moved conflict target", async (latest) => {
-  await mount();
-  mocks.save.mockRejectedValueOnce(new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"));
-  mocks.readLatest.mockResolvedValueOnce(latest);
-  await clickSave();
-  await submitForm();
-  expect(mocks.save).toHaveBeenCalledTimes(1);
-  expect(recoveryButton("최신 비용 확인 후 수정 계속")).toBeUndefined();
-  expect(dialog()!.textContent).toContain(latest ? "연결 위치가 변경되었어요" : "비용이 삭제되었어요");
-  expect(mocks.close).not.toHaveBeenCalled();
-});
+it.each([undefined, { ...base, version: 2, scheduleId: 11 }])(
+  "blocks retry for a deleted or moved conflict target",
+  async (latest) => {
+    await mount();
+    mocks.save.mockRejectedValueOnce(new ExpenseApiError(409, "EXPENSE_CONFLICT", "changed"));
+    mocks.readLatest.mockResolvedValueOnce(latest);
+    await clickSave();
+    await submitForm();
+    expect(mocks.save).toHaveBeenCalledTimes(1);
+    expect(recoveryButton("최신 비용 확인 후 수정 계속")).toBeUndefined();
+    expect(dialog()!.textContent).toContain(latest ? "연결 위치가 변경되었어요" : "비용이 삭제되었어요");
+    expect(mocks.close).not.toHaveBeenCalled();
+  },
+);
 
 it("blocks save after failed conflict read until a fresh read and explicit review", async () => {
   await mount();
@@ -719,7 +751,6 @@ it("reveals repeated field errors without smooth scrolling when reduced motion i
   for (let attempt = 0; attempt < 2; attempt++) await clickSave();
   expect(scrollIntoView).toHaveBeenCalledTimes(2);
   expect(scrollIntoView).toHaveBeenLastCalledWith({ block: "nearest", behavior: "instant" });
-  // 첫 칸 오류(금액)를 보여 준다
   expect((scrollIntoView.mock.contexts[1] as Element).getAttribute("data-slot")).toBe("field-error");
   expect(fieldOf(scrollIntoView.mock.contexts[1] as Element)).toBe(fieldOf(amountInput()));
   expect(mocks.save).not.toHaveBeenCalled();

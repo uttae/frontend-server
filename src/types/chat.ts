@@ -1,9 +1,7 @@
 export type ChatMessageType = "other" | "mine" | "system" | "ai" | "place";
 
-/** `/topic` AI_REQUEST 확장 메타데이터 — `AI_REQUEST:{ clientMessageId, aiStatus, … }` */
 export type AiRequestStatus = "QUEUED" | "PROCESSING" | "CANCELED";
 
-/** PLACE_SHARE 메시지 페이로드 — STOMP send/recv 양쪽에서 동일 형태 */
 export interface PlaceShareData {
   googlePlaceId: string;
   name: string;
@@ -13,7 +11,6 @@ export interface PlaceShareData {
   rating: number;
 }
 
-/** AI_RESPONSE.place_recommendation — metadata.recommendedPlaces 항목 */
 export interface AiRecommendedPlace {
   placeId: string;
   name: string;
@@ -39,7 +36,6 @@ export interface AiConversationSummaryPayload {
   sections?: AiConversationSummarySection[];
 }
 
-/** AI_RESPONSE.place_recommendation 블록 헤더(metadata.place_recommendation.title 등) */
 export interface AiPlaceRecommendationHeading {
   title?: string;
   subtitle?: string;
@@ -48,61 +44,40 @@ export interface AiPlaceRecommendationHeading {
 export interface ChatMessage {
   id: string;
   type: ChatMessageType;
-  /** 멤버·메타에 닉이 없거나 방 나간 타인 등 `(알 수 없음)` 포함 */
   sender?: string;
   text: string;
   time?: string;
-  /** CHAT · 장소 공유 카드에서 아바타·발신자 표시에 사용 */
   avatar?: string;
-  /** 멤버 목록에 없을 때(방 나감) — 프로필은 URL이 있어도 플레이스홀더 오버레이 */
   senderNotInRoom?: boolean;
-  /** CHAT(mine/other) 그룹핑 · 장소 공유 좌우 정렬 — senderId 기준 */
   senderUserId?: number;
-  /** PLACE_SHARE 타입일 때만 사용 — OG 카드 렌더 및 클릭 시 지도/디테일 패널 연동 */
   place?: PlaceShareData;
-  /** AI_REQUEST(STOMP) 수신 시 본문 앞 접두 UI — 라벨은 `CHAT_AI_MENTION_LABEL` 과 동기 */
   isAiRequest?: boolean;
-  /** AI_REQUEST — 취소 발행에는 `requestMessageId`(서버 메시지 id) 사용 */
   aiRequest?: {
     requestMessageId: string;
     aiStatus?: AiRequestStatus;
     cancelable: boolean;
     canceledBy?: number;
   };
-  /** AI_RESPONSE — 원 질문으로 스크롤 시 `requestMessageId`는 서버 AI_REQUEST 메시지 id */
   aiRepliesTo?: {
     requestMessageId: string;
     quotePreview: string;
   };
-  /** AI_RESPONSE — 서버 메타 `intent`(소문자 정규화) */
   aiIntent?: string;
-  /** AI_RESPONSE — intent place_recommendation 시 장소 목록 */
   aiRecommendedPlaces?: AiRecommendedPlace[];
-  /** AI_RESPONSE — place_recommendation.title / subtitle */
   aiPlaceRecommendationHeading?: AiPlaceRecommendationHeading;
-  /** AI_RESPONSE — intent conversation_summary 시 구조 요약 */
   aiConversationSummary?: AiConversationSummaryPayload;
 }
 
-/** `/topic/rooms/{roomId}/messages` · GET /messages 응답 — 일반 말풍선은 CHAT 만 */
-export type ServerChatMessageType =
-  | "CHAT"
-  | "AI_REQUEST"
-  | "AI_RESPONSE"
-  | "PLACE_SHARE"
-  | "SYSTEM"
-  | "AI";
+export type ServerChatMessageType = "CHAT" | "AI_REQUEST" | "AI_RESPONSE" | "PLACE_SHARE" | "SYSTEM" | "AI";
 
 export interface ServerChatMessage {
   id: string;
   roomId: string;
   senderId: number;
   messageType: ServerChatMessageType;
-  /** SYSTEM 등 — 백엔드에서 키 생략 가능 */
   content?: string;
   metadata?: Record<string, string>;
   createdAt: string;
   clientMessageId?: string;
-  /** 방별 단조 증가 sequence — STOMP gap 감지·afterSequence 복구용 */
   sequence?: number;
 }

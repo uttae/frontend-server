@@ -15,14 +15,9 @@ describe("refreshPlacePhotoUrl", () => {
 
   it("requests a refreshed photo URL and replaces the place photo query cache", async () => {
     const { placePhotoUrlQueryKey } = await import("@/lib/place-photo-query");
-    const { refreshPlacePhotoUrl } = await import(
-      "@/lib/places/place-photo-refresh"
-    );
+    const { refreshPlacePhotoUrl } = await import("@/lib/places/place-photo-refresh");
     const queryClient = new QueryClient();
-    queryClient.setQueryData(
-      placePhotoUrlQueryKey("ChIJ-place-1"),
-      "https://example.invalid/broken.jpg",
-    );
+    queryClient.setQueryData(placePhotoUrlQueryKey("ChIJ-place-1"), "https://example.invalid/broken.jpg");
     requestPlacePhotoUrl.mockResolvedValueOnce("https://cdn.example/fresh.jpg");
 
     const refreshed = await refreshPlacePhotoUrl(" ChIJ-place-1 ", queryClient);
@@ -31,15 +26,11 @@ describe("refreshPlacePhotoUrl", () => {
     expect(requestPlacePhotoUrl).toHaveBeenCalledWith("ChIJ-place-1", {
       refresh: true,
     });
-    expect(queryClient.getQueryData(placePhotoUrlQueryKey("ChIJ-place-1"))).toBe(
-      "https://cdn.example/fresh.jpg",
-    );
+    expect(queryClient.getQueryData(placePhotoUrlQueryKey("ChIJ-place-1"))).toBe("https://cdn.example/fresh.jpg");
   });
 
   it("logs a readable error message when image refresh fails", async () => {
-    const { handlePlacePhotoImageError } = await import(
-      "@/lib/places/place-photo-refresh"
-    );
+    const { handlePlacePhotoImageError } = await import("@/lib/places/place-photo-refresh");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     requestPlacePhotoUrl.mockRejectedValueOnce(new Error("Place photo failed: 500"));
     const image = {
@@ -70,9 +61,7 @@ describe("refreshPlacePhotoUrl", () => {
   });
 
   it("logs when image refresh returns no URL", async () => {
-    const { handlePlacePhotoImageError } = await import(
-      "@/lib/places/place-photo-refresh"
-    );
+    const { handlePlacePhotoImageError } = await import("@/lib/places/place-photo-refresh");
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     requestPlacePhotoUrl.mockResolvedValueOnce("");
     const image = {
@@ -115,13 +104,8 @@ describe("refreshPlacePhotoUrl", () => {
       } as unknown as HTMLImageElement;
     }
 
-    async function failImage(
-      image: HTMLImageElement,
-      googlePlaceId: string | null = "ChIJ-place-1",
-    ) {
-      const { handlePlacePhotoImageError } = await import(
-        "@/lib/places/place-photo-refresh"
-      );
+    async function failImage(image: HTMLImageElement, googlePlaceId: string | null = "ChIJ-place-1") {
+      const { handlePlacePhotoImageError } = await import("@/lib/places/place-photo-refresh");
       vi.spyOn(console, "warn").mockImplementation(() => {});
       const onPhotoUnavailable = vi.fn();
       handlePlacePhotoImageError({

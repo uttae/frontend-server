@@ -30,19 +30,14 @@ function ReviewsLink({ reviewsUri }: { reviewsUri?: string | null }) {
   );
 }
 
-export function ReviewsTab({
-  rating,
-  userRatingCount,
-  reviews,
-  reviewsUri,
-}: Props) {
+export function ReviewsTab({ rating, userRatingCount, reviews, reviewsUri }: Props) {
   if (reviews.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-2 px-5 py-16 text-center">
-        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-[#364153]">등록된 리뷰가 없어요</p>
-        <p className="text-body-xs-regular text-dark-gray">
-          아직 리뷰가 수집되지 않았습니다.
+        <p className="text-body-m-emphasis mobile:text-body-s-emphasis font-medium text-[#364153]">
+          등록된 리뷰가 없어요
         </p>
+        <p className="text-body-xs-regular text-dark-gray">아직 리뷰가 수집되지 않았습니다.</p>
         <ReviewsLink reviewsUri={reviewsUri} />
       </div>
     );
@@ -55,15 +50,11 @@ export function ReviewsTab({
           <p className="text-body-xs-emphasis font-medium text-dark-gray">Google 평점</p>
           <div className="mt-1 flex items-end justify-between gap-4">
             <div className="flex items-center gap-2">
-              <p className="text-heading-m mobile:text-heading-s font-bold text-[#364153]">
-                {rating.toFixed(1)}
-              </p>
+              <p className="text-heading-m mobile:text-heading-s font-bold text-[#364153]">{rating.toFixed(1)}</p>
               <StarRow rating={rating} />
             </div>
             {userRatingCount != null && (
-              <p className="pb-1 text-body-xs-regular text-dark-gray">
-                전체 리뷰 {userRatingCount.toLocaleString()}개
-              </p>
+              <p className="pb-1 text-body-xs-regular text-dark-gray">전체 리뷰 {userRatingCount.toLocaleString()}개</p>
             )}
           </div>
           <p className="mt-2 text-body-xs-regular leading-relaxed text-dark-gray">
@@ -83,14 +74,10 @@ export function ReviewsTab({
                 <span className="text-body-s-emphasis mobile:text-body-xs-emphasis font-medium text-[#364153]">
                   {review.authorDisplayName}
                 </span>
-                <span className="text-body-xs-regular text-dark-gray">
-                  {review.relativePublishTimeDescription}
-                </span>
+                <span className="text-body-xs-regular text-dark-gray">{review.relativePublishTimeDescription}</span>
               </div>
               {review.rating != null ? <StarRow rating={review.rating} /> : null}
-              <p className="mt-1 text-body-xs-regular leading-relaxed text-dark-gray">
-                {review.text}
-              </p>
+              <p className="mt-1 text-body-xs-regular leading-relaxed text-dark-gray">{review.text}</p>
             </div>
           </div>
         ))}

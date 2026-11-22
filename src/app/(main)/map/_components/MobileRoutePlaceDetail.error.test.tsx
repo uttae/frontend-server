@@ -38,11 +38,7 @@ it("failed full Details is retryable and never represented as no reviews or a su
   const root = createRoot(host);
   await act(async () =>
     root.render(
-      <MobileRoutePlaceDetail
-        place={{ googlePlaceId: "one", title: "카페" }}
-        active
-        analyticsSource="search"
-      />,
+      <MobileRoutePlaceDetail place={{ googlePlaceId: "one", title: "카페" }} active analyticsSource="search" />,
     ),
   );
   expect(boundary.tabs).not.toHaveBeenCalled();

@@ -2,13 +2,18 @@ import { afterEach, expect, it, vi } from "vitest";
 const amplitude = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/analytics/amplitude", () => ({ sendAmplitudeDataCommand: amplitude, revokeAmplitudeConsent: vi.fn() }));
 vi.mock("@/lib/analytics/runtime", () => ({ analyticsRuntime: { enabled: true } }));
-afterEach(() => { vi.resetModules(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
+afterEach(() => {
+  vi.resetModules();
+  vi.clearAllMocks();
+  vi.unstubAllGlobals();
+});
 it("delivers queued landing events only to GA, including after repeated initialization", async () => {
   const ga = vi.fn();
   vi.stubGlobal("window", { gtag: ga, location: { protocol: "http:", hostname: "localhost" } });
   vi.stubGlobal("document", { cookie: "uttae_analytics_consent=v1:granted" });
   const client = await import("./client");
-  for (const name of ["cta_click", "section_view"]) client.sendAnalyticsDataCommand("event", name, { page_type: "landing" });
+  for (const name of ["cta_click", "section_view"])
+    client.sendAnalyticsDataCommand("event", name, { page_type: "landing" });
   expect(amplitude).not.toHaveBeenCalled();
   client.initializeGoogleAnalytics("G-TEST", false);
   client.initializeGoogleAnalytics("G-TEST", false);

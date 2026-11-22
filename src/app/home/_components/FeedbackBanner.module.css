@@ -7,7 +7,6 @@
   color: var(--color-text-default);
 }
 
-/* Scale the Figma canvas with its container, keeping text sharp at any DPR. */
 .canvas {
   --unit: calc(100cqw / 1136);
   position: relative;
@@ -97,7 +96,6 @@
   letter-spacing: calc(-0.32 * var(--unit));
 }
 
-/* Mobile Figma shows the CTA as a blue text line instead of the desktop gradient bar. */
 :global(.is-mobile-device) .cta {
   inset: auto;
   left: calc(13 * var(--unit));

@@ -2,7 +2,6 @@ import type { AnalyticsEventName } from "./track";
 
 type RoomScope = "required" | "optional" | "none";
 
-/** Describe the event's target, never infer a room from global selected state. */
 const roomScopes = {
   page_view: "optional",
   sign_up: "none",

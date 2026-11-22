@@ -17,19 +17,9 @@ import {
   CHAT_PANEL_MINIMIZED_VIEWPORT_INSET_PX,
   CHAT_PANEL_MINIMIZED_VIEWPORT_INSET_RIGHT_PX,
 } from "@/lib/chat/chat-panel-minimized-size";
-import {
-  minimizedPanelAnimate,
-  panelVariants,
-  panelTransition,
-} from "./chat-animations";
+import { minimizedPanelAnimate, panelVariants, panelTransition } from "./chat-animations";
 
-export function ChatPanel({
-  mobileInline = false,
-  inline = false,
-}: {
-  mobileInline?: boolean;
-  inline?: boolean;
-}) {
+export function ChatPanel({ mobileInline = false, inline = false }: Readonly<{ mobileInline?: boolean; inline?: boolean }>) {
   const { chatState, openChat, minimizeChat, closeChat } = useChat();
   const isInline = mobileInline || inline;
   const isMinimized = !isInline && chatState === "minimized";
@@ -46,10 +36,7 @@ export function ChatPanel({
 
     let timer = 0;
     const raf = requestAnimationFrame(() => {
-      timer = window.setTimeout(
-        () => setMobileHistoryReadyState({ rid, ready: true }),
-        0,
-      );
+      timer = window.setTimeout(() => setMobileHistoryReadyState({ rid, ready: true }), 0);
     });
 
     return () => {
@@ -57,8 +44,7 @@ export function ChatPanel({
       window.clearTimeout(timer);
     };
   }, [mobileInline, rid]);
-  const mobileHistoryReady =
-    mobileHistoryReadyState.ready && mobileHistoryReadyState.rid === rid;
+  const mobileHistoryReady = mobileHistoryReadyState.ready && mobileHistoryReadyState.rid === rid;
 
   const {
     messages,
@@ -83,8 +69,7 @@ export function ChatPanel({
 
   const rateLimit = useChatRateLimitStore((s) => s.rateLimit);
   const isSendBlocked = useChatRateLimitStore((s) => s.isSendBlocked);
-  const { size: minimizedSize, setSize, persistSize, clampSize } =
-    useChatPanelMinimizedSize();
+  const { size: minimizedSize, setSize, persistSize, clampSize } = useChatPanelMinimizedSize();
 
   const panelBody = (
     <>
@@ -97,8 +82,6 @@ export function ChatPanel({
         />
       ) : null}
       {waitingForMembers ? (
-        // 보낸 사람 이름(멤버 목록)을 받기 전에는 메시지 대신 로딩 표시 — 받으면 이름과 함께 한 번에 그린다.
-        // 목록은 이때 처음 마운트되므로 읽음 위치 스크롤도 메시지가 다 그려진 뒤에 처리된다
         <div className="flex min-h-0 flex-1 items-center justify-center bg-white">
           <Spinner aria-label="채팅 불러오는 중" size={isMinimized ? 16 : 20} />
         </div>
@@ -123,11 +106,7 @@ export function ChatPanel({
       )}
       <AnimatePresence initial={false}>
         {rateLimit ? (
-          <ChatRateLimitBanner
-            key="chat-rate-limit"
-            message={rateLimit.message}
-            isMinimized={isMinimized}
-          />
+          <ChatRateLimitBanner key="chat-rate-limit" message={rateLimit.message} isMinimized={isMinimized} />
         ) : null}
       </AnimatePresence>
       <ChatInputBar
@@ -140,11 +119,7 @@ export function ChatPanel({
   );
 
   if (isInline) {
-    return (
-      <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white">
-        {panelBody}
-      </div>
-    );
+    return <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-white">{panelBody}</div>;
   }
 
   return (

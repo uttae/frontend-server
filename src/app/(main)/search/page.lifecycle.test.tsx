@@ -24,9 +24,7 @@ it.each([false, true])(
     const host = document.createElement("div");
     const root = createRoot(host);
     await act(async () => root.render(<SearchPage />));
-    expect(state.replace).toHaveBeenCalledWith(
-      `${mobile ? "/map" : "/plan"}?q=${encodeURIComponent("원래 검색어")}`,
-    );
+    expect(state.replace).toHaveBeenCalledWith(`${mobile ? "/map" : "/plan"}?q=${encodeURIComponent("원래 검색어")}`);
     expect(host.textContent).toBe("");
     await act(async () => root.unmount());
   },

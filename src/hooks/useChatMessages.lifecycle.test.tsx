@@ -68,9 +68,7 @@ it("does not mix late older pages across rooms and restores visited room history
   const client = new QueryClient();
   const hook = hookHarness(
     (roomId: string | null) => useChatMessages(roomId, { fetchHistory: true }),
-    (child) => (
-      <QueryClientProvider client={client}>{child}</QueryClientProvider>
-    ),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
   await hook.render("a");
   const previousRoomFetch = hook.current.fetchOlderMessages;

@@ -7,8 +7,6 @@ import { useCurrentRoomId } from "@/hooks/use-room-id";
 import { isPackingPath } from "@/lib/room-context-path";
 import { cn } from "@/lib/utils";
 
-// 링크 이동이라 ui Tabs 대신 같은 모양(Tabs Line md, Figma 6388:16199)을 직접 그린다.
-// 막대 2px는 높이를 차지하지 않게 안쪽 그림자로, 상단 아래 선 1px는 그 밑에 nav 테두리로 둔다(Figma Top 테두리가 바깥쪽)
 export function TravelToolsSwitcher() {
   const pathname = usePathname();
   const { roomId } = useCurrentRoomId();

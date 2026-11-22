@@ -13,15 +13,9 @@ import {
   usePlanMapFocusStore,
 } from "@/stores/plan-map-focus-store";
 
-/** 좌우 버튼 — 누를 수 있는 영역이 숫자와 구분되도록 올리거나 누르면 둥근 배경을 깐다. 높이는 테두리 안쪽을 채운다 */
 const STEP_BUTTON_CLASS =
   "flex h-full w-12 items-center justify-center rounded-full text-primary transition-colors enabled:cursor-pointer enabled:hover:bg-fill enabled:active:bg-fill-strong disabled:text-icon-disabled focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-primary";
 
-/**
- * 웹 동선보기 장소 이동 — 일정에서 고른 장소의 일차 안에서 이전·다음 장소로 넘긴다(Figma 6035:865).
- * 넘기면 카드를 누른 것처럼 카드·번호 핀 강조와 지도 중심을 바꾸고 상세는 열지 않는다. 일정 목록은 그 카드로 스크롤한다.
- * 순서는 카드·번호 핀과 같은 일차 장소 순서다.
- */
 export function PlanRouteStepper({ roomId }: Readonly<{ roomId: string | null }>) {
   const rid = typeof roomId === "string" ? roomId.trim() : "";
   const queryClient = useQueryClient();
@@ -31,7 +25,6 @@ export function PlanRouteStepper({ roomId }: Readonly<{ roomId: string | null }>
   const focusPlace = usePlanMapFocusStore((s) => s.focusPlace);
   const scheduleId = focus?.scheduleId ?? null;
 
-  // 일정 목록·지도 경로(`PlanItineraryMapRoutes`)와 같은 일차 조회다 — 캐시가 있으면 따로 받지 않는다
   const { data: places = [] } = useQuery({
     ...schedulePlanPlacesQueryOptions(queryClient, rid, scheduleId),
     enabled: rid.length > 0 && scheduleId !== null && schedulesHydrated,

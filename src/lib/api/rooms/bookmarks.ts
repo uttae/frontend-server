@@ -1,21 +1,7 @@
 import { apiFetch } from "@/lib/api/client";
-import {
-  HttpError,
-  isRoomBookmarkDuplicateFromBody,
-  readUserFacingMessageFromApiBody,
-} from "@/lib/api/errors";
-import {
-  apiUrl,
-  jsonBody,
-  requestJson,
-  requestVoid,
-  tryParseJson,
-} from "@/lib/api/http";
-import type {
-  RoomBookmark,
-  RoomBookmarkBulkCreateRequest,
-  RoomBookmarkCategoryPatchRequest,
-} from "./types";
+import { HttpError, isRoomBookmarkDuplicateFromBody, readUserFacingMessageFromApiBody } from "@/lib/api/errors";
+import { apiUrl, jsonBody, requestJson, requestVoid, tryParseJson } from "@/lib/api/http";
+import type { RoomBookmark, RoomBookmarkBulkCreateRequest, RoomBookmarkCategoryPatchRequest } from "./types";
 
 function normalizeBookmarksResponse(body: unknown): RoomBookmark[] {
   if (Array.isArray(body)) return body as RoomBookmark[];
@@ -31,15 +17,10 @@ function normalizeBookmarksResponse(body: unknown): RoomBookmark[] {
   return [];
 }
 
-/** categoryId 없이 방 전체 북마크를 정렬된 목록으로 일괄 조회 */
-export async function getAllRoomBookmarks(
-  roomId: string,
-): Promise<RoomBookmark[]> {
-  const body = await requestJson<unknown>(
-    apiUrl(`/rooms/${roomId}/bookmarks`),
-    undefined,
-    { errorMessage: "북마크 목록 조회 실패" },
-  );
+export async function getAllRoomBookmarks(roomId: string): Promise<RoomBookmark[]> {
+  const body = await requestJson<unknown>(apiUrl(`/rooms/${roomId}/bookmarks`), undefined, {
+    errorMessage: "북마크 목록 조회 실패",
+  });
   return normalizeBookmarksResponse(body);
 }
 
@@ -56,11 +37,7 @@ export async function createRoomBookmarks(
 
   if (!res.ok) {
     if (isRoomBookmarkDuplicateFromBody(parsed)) {
-      throw new HttpError(
-        409,
-        readUserFacingMessageFromApiBody(parsed) ??
-          "이미 북마크에 추가된 장소입니다",
-      );
+      throw new HttpError(409, readUserFacingMessageFromApiBody(parsed) ?? "이미 북마크에 추가된 장소입니다");
     }
     const msg =
       readUserFacingMessageFromApiBody(parsed) ??
@@ -88,10 +65,7 @@ export async function patchRoomBookmarkCategory(
   );
 }
 
-export async function deleteRoomBookmark(
-  roomId: string,
-  bookmarkId: number,
-): Promise<void> {
+export async function deleteRoomBookmark(roomId: string, bookmarkId: number): Promise<void> {
   return requestVoid(
     apiUrl(`/rooms/${roomId}/bookmarks/${bookmarkId}`),
     { method: "DELETE" },

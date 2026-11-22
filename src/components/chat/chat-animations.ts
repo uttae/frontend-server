@@ -21,7 +21,6 @@ export const panelTransition: Transition = {
   boxShadow: { duration: 0.25 },
 };
 
-/** 다른 페이지 위에 떠 있는 최소화 채팅 — 최대화는 `/chat` 페이지가 본문으로 그린다 */
 export const minimizedPanelAnimate = {
   opacity: 1,
   scale: 1,

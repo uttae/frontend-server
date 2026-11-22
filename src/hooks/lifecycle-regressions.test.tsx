@@ -39,9 +39,7 @@ it("outside click sees the latest callback and removes the exact listener", asyn
   document.body.append(ref.current);
   const first = vi.fn();
   const second = vi.fn();
-  const hook = hookHarness((callback: () => void) =>
-    useOnClickOutside(ref, callback),
-  );
+  const hook = hookHarness((callback: () => void) => useOnClickOutside(ref, callback));
   await hook.render(first);
   await hook.render(second);
   ref.current.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
@@ -84,9 +82,7 @@ it("URL room switches are resolved before children commit and storage never over
 });
 it("route batch gates a switched schedule immediately and ignores late completion", async () => {
   const pending: (() => void)[] = [];
-  mocks.batch.mockImplementation(
-    () => new Promise<void>((resolve) => pending.push(resolve)),
-  );
+  mocks.batch.mockImplementation(() => new Promise<void>((resolve) => pending.push(resolve)));
   const places = [
     { id: "1", title: "one", itemId: 1, location: { lat: 1, lng: 2 } },
     { id: "2", title: "two", itemId: 2, location: { lat: 3, lng: 4 } },
@@ -99,9 +95,7 @@ it("route batch gates a switched schedule immediately and ignores late completio
       commits.push(ready);
       return ready;
     },
-    (child) => (
-      <QueryClientProvider client={client}>{child}</QueryClientProvider>
-    ),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
   await hook.render(1);
   expect(hook.current).toBe(false);
@@ -127,17 +121,13 @@ it("map bootstrap ignores geocoding from the previous room and uses the new save
       }
     },
   } as unknown as google.maps.GeocodingLibrary;
-  const hook = hookHarness((id: string) =>
-    useTripMapBootstrap(id, "서울", true, lib),
-  );
+  const hook = hookHarness((id: string) => useTripMapBootstrap(id, "서울", true, lib));
   await hook.render("a");
   expect(hook.current.ready).toBe(false);
   mocks.viewport.mockReturnValue({ lat: 35, lng: 129, zoom: 10 });
   await hook.render("b");
   expect(hook.current.center).toEqual({ lat: 35, lng: 129 });
-  await act(async () =>
-    finish([{ geometry: { location: { lat: () => 1, lng: () => 2 } } }], "OK"),
-  );
+  await act(async () => finish([{ geometry: { location: { lat: () => 1, lng: () => 2 } } }], "OK"));
   expect(hook.current.center).toEqual({ lat: 35, lng: 129 });
   expect(mocks.write).not.toHaveBeenCalled();
   await hook.unmount();

@@ -4,8 +4,7 @@ import type { ReactNode } from "react";
 import { NOINDEX_NOFOLLOW_METADATA } from "@/lib/public-site-metadata";
 import { inviteShareMetadata } from "@/lib/share-metadata";
 
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   ...NOINDEX_NOFOLLOW_METADATA,
@@ -34,10 +33,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function JoinInviteLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export default function JoinInviteLayout({ children }: Readonly<{ children: ReactNode }>) {
   return <>{children}</>;
 }

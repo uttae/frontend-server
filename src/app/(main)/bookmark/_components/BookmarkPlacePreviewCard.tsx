@@ -40,7 +40,7 @@ export function BookmarkPlacePreviewCard({
   const rawGid = typeof googlePlaceId === "string" ? googlePlaceId.trim() : "";
 
   const thumbnailMedia = visibleUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element -- remote place photo URL
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={visibleUrl}
       alt={name}
@@ -79,18 +79,12 @@ export function BookmarkPlacePreviewCard({
           <h3 className="truncate text-body-m-emphasis font-semibold leading-5 tracking-tight text-primary mobile:text-body-s-emphasis">
             {name}
           </h3>
-          {primaryTypeDisplayName ? (
-            <Badge size="md">
-              {primaryTypeDisplayName}
-            </Badge>
-          ) : null}
+          {primaryTypeDisplayName ? <Badge size="md">{primaryTypeDisplayName}</Badge> : null}
         </div>
         {address ? (
           <div className="mt-1 flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0 text-[#99A1AF]" />
-            <span className="truncate text-body-xs-regular leading-relaxed text-[#99A1AF]">
-              {address}
-            </span>
+            <span className="truncate text-body-xs-regular leading-relaxed text-[#99A1AF]">{address}</span>
           </div>
         ) : null}
       </div>
@@ -116,10 +110,7 @@ export function BookmarkPlacePreviewCard({
           </span>
         </button>
       ) : (
-        <div
-          ref={thumbnailRef}
-          className="h-[80px] w-[80px] shrink-0 overflow-hidden rounded-lg bg-light-gray"
-        >
+        <div ref={thumbnailRef} className="h-[80px] w-[80px] shrink-0 overflow-hidden rounded-lg bg-light-gray">
           {thumbnailMedia}
         </div>
       )}

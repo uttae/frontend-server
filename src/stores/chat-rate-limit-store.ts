@@ -59,7 +59,6 @@ export const useChatRateLimitStore = create<ChatRateLimitStore>((set, get) => ({
   },
 }));
 
-/** STOMP 콜백 등 React 밖에서 전송 차단 여부 확인 */
 export function isChatSendBlocked(): boolean {
   const { rateLimit } = useChatRateLimitStore.getState();
   if (!rateLimit) return false;

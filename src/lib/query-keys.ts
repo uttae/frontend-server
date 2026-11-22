@@ -1,7 +1,5 @@
 import type { ScheduleTravelModeValue } from "@/lib/plan/scheduleTravelMode";
 
-// ─── Bookmarks ───────────────────────────────────────────────────────────────
-
 export const BOOKMARK_CATEGORIES_SEGMENT = "bookmark-categories" as const;
 export const PLACE_CARD_BOOKMARK_SEGMENT = "place-card-bookmark" as const;
 
@@ -16,20 +14,13 @@ export function roomAllBookmarksQueryKey(roomId: string | null) {
   return ["room-bookmarks-all", roomId] as const;
 }
 
-/** 해당 방 아래 장소 카드(place detail) 미리보기 쿼리 제거용 접두 */
 export function placeCardBookmarkRootQueryKey(roomId: string) {
   return [PLACE_CARD_BOOKMARK, roomId] as const;
 }
 
-export function placeCardBookmarkQueryKey(
-  roomId: string,
-  googlePlaceId: string,
-  bookmarkId: number,
-) {
+export function placeCardBookmarkQueryKey(roomId: string, googlePlaceId: string, bookmarkId: number) {
   return [PLACE_CARD_BOOKMARK, roomId, googlePlaceId, bookmarkId] as const;
 }
-
-// ─── Plan itinerary map path (per segment, Google Directions JS) ─────────────
 
 const PLAN_ITINERARY_MAP_PATH_CACHE_VERSION = "orient-v1" as const;
 
@@ -55,12 +46,7 @@ export function planItinerarySegmentMapPathQueryKey(
   ] as const;
 }
 
-// ─── Room schedules ──────────────────────────────────────────────────────────
-
-export const roomSchedulesQueryKey = (roomId: string | null) =>
-  ["room-schedules", roomId] as const;
-
-// ─── Session / search map ────────────────────────────────────────────────────
+export const roomSchedulesQueryKey = (roomId: string | null) => ["room-schedules", roomId] as const;
 
 export const sessionUserQueryKey = ["session", "user"] as const;
 
@@ -70,8 +56,6 @@ export type ActiveSearchMapPin = {
   lat: number;
   lng: number;
 };
-
-// ─── Rooms / members ─────────────────────────────────────────────────────────
 
 export const ROOMS_QUERY_KEY = ["rooms"] as const;
 
@@ -91,39 +75,19 @@ export function joinRequestsQueryKey(roomId: string | null) {
   return ["join-requests", roomId] as const;
 }
 
-/** 모든 방의 입장 요청 조회에 공통 접두 */
 export function joinRequestsRootQueryKey() {
   return ["join-requests"] as const;
 }
 
-// ─── Schedule items / routes ─────────────────────────────────────────────────
+export const scheduleItemsQueryKey = (roomId: string | null, scheduleId: number | null) =>
+  ["schedule-items", roomId, scheduleId, "v2-loc"] as const;
 
-export const scheduleItemsQueryKey = (
-  roomId: string | null,
-  scheduleId: number | null,
-) => ["schedule-items", roomId, scheduleId, "v2-loc"] as const;
-
-/**
- * 구간별 길찾기 API 결과 (`GET …/route?destinationItemId=…&travelMode=…`).
- * 요청에 보내는 출발·도착 항목과 이동수단이 곧 key라, 순서가 바뀌면 다른 key가 되고
- * 순서를 되돌리면 받아 둔 값을 그대로 쓴다. 일정이 바뀌어도 무효화하지 않는다.
- */
 export const scheduleItemRouteQueryKey = (
   roomId: string | null,
   scheduleId: number | null,
   segmentSourceItemId: number | null,
   destinationItemId: number | null,
   travelMode: ScheduleTravelModeValue | null,
-) =>
-  [
-    "schedule-item-route",
-    roomId,
-    scheduleId,
-    segmentSourceItemId,
-    destinationItemId,
-    travelMode,
-  ] as const;
+) => ["schedule-item-route", roomId, scheduleId, segmentSourceItemId, destinationItemId, travelMode] as const;
 
-/** Private packing data is scoped to both the explicit room and session principal. */
-export const packingQueryKey = (roomId: string, userId: number) =>
-  ['packing', roomId, userId] as const;
+export const packingQueryKey = (roomId: string, userId: number) => ["packing", roomId, userId] as const;

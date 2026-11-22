@@ -11,10 +11,7 @@ import { useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/hooks/useChat";
 import { useChatActions } from "@/hooks/useChatActions";
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-} from "@/lib/analytics/track";
+import { AnalyticsEvents, trackAnalyticsEvent } from "@/lib/analytics/track";
 
 import type { SearchResultCardProps } from "./SearchResultCard";
 import { AddToBookmarkModal } from "./AddToBookmarkModal";
@@ -29,20 +26,13 @@ import { PlaceDetailTabs } from "./PlaceDetailTabs";
 
 type PlaceDetailPanelProps = SearchResultCardProps & {
   onClose: () => void;
-  /** 모바일 시트 뒤로가기(←) — 없으면 `onClose`와 같다 */
   onBack?: () => void;
-  /**
-   * `panel`(데스크톱): 사진 고정, 아래 본문만 스크롤.
-   * `sheet`(모바일 바텀 시트): 처음엔 사진까지만 보이고(peek), 위로 밀면 끝까지 펼쳐져 본문이 스크롤된다.
-   */
   layout?: "panel" | "sheet";
 };
 
-/** 모바일 시트 사진 높이(Figma) — 중간 상태에서 이 중 3/5를 가린다 */
 const SHEET_PHOTO_HEIGHT_PX = 200;
 const SHEET_PHOTO_HIDDEN_RATIO = 3 / 5;
 
-// 홈·리뷰 전환으로 스크롤바가 생겨도 상세 본문과 버튼의 너비를 유지한다.
 const SCROLL_AREA_CLASS =
   "min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable] [scrollbar-color:rgba(0,0,0,0.15)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/[0.15] [&::-webkit-scrollbar-track]:bg-transparent";
 
@@ -77,16 +67,16 @@ export function PlaceDetailPanel({
 
   const itinerarySource = selectedItinerarySource ?? "search";
 
-  const { data: detailData, isLoading: isDetailLoading, isError: isDetailError, refetch } =
-    usePlaceDetailData(googlePlaceId);
+  const {
+    data: detailData,
+    isLoading: isDetailLoading,
+    isError: isDetailError,
+    refetch,
+  } = usePlaceDetailData(googlePlaceId);
 
-  const displayName =
-    (detailData?.name && detailData.name.trim().length > 0
-      ? detailData.name
-      : name) || name;
+  const displayName = (detailData?.name && detailData.name.trim().length > 0 ? detailData.name : name) || name;
   const displayCategory =
-    (detailData?.primaryTypeDisplayName &&
-    detailData.primaryTypeDisplayName.trim().length > 0
+    (detailData?.primaryTypeDisplayName && detailData.primaryTypeDisplayName.trim().length > 0
       ? detailData.primaryTypeDisplayName
       : category) || category;
   const lastTrackedPlaceIdRef = useRef<string | null>(null);
@@ -143,8 +133,6 @@ export function PlaceDetailPanel({
       rating: displayRating ?? 0,
     });
     toast.success("장소를 채팅으로 보냈어요");
-    // PC는 채팅이 닫혀 있으면 `/chat`으로 열어 보여 준다. 최소화 창이 떠 있거나 이미 `/chat`이면
-    // 그 화면에 바로 보이므로 이동하지 않는다. 모바일은 지도·장소 시트를 그대로 둔다(기존 동작)
     if (!isMobileDevice && chatState === "closed") openChat();
   }, [
     address,
@@ -177,52 +165,46 @@ export function PlaceDetailPanel({
       {isDetailLoading && googlePlaceId ? (
         <HeroSkeleton />
       ) : (
-        <HeroImage
-          googlePlaceId={googlePlaceId}
-          fallbackImage={image}
-          name={displayName}
-        />
+        <HeroImage googlePlaceId={googlePlaceId} fallbackImage={image} name={displayName} />
       )}
     </div>
   );
 
-  const sendToChatDisabled =
-    !googlePlaceId || (!location && !detailData?.location && isDetailLoading);
-  const openScheduleModal = googlePlaceId
-    ? () => setScheduleModalOpen(true)
-    : undefined;
-  const openBookmarkModal = googlePlaceId
-    ? () => setBookmarkModalOpen(true)
-    : undefined;
+  const sendToChatDisabled = !googlePlaceId || (!location && !detailData?.location && isDetailLoading);
+  const openScheduleModal = googlePlaceId ? () => setScheduleModalOpen(true) : undefined;
+  const openBookmarkModal = googlePlaceId ? () => setBookmarkModalOpen(true) : undefined;
 
-  const tabs = isDetailError && !detailData ? (
-    <div className="p-3.5">
-      <Alert>
-        <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
-        <AlertAction>
-          <button type="button" onClick={() => void refetch()} className="text-primary underline">다시 시도</button>
-        </AlertAction>
-      </Alert>
-    </div>
-  ) : (
-    <PlaceDetailTabs
-      home={{
-        isOpen: openNow,
-        address: displayAddress,
-        phone,
-        hours,
-        website,
-        googleMapsUrl: detailData?.placeUri ?? undefined,
-        reviewSummary,
-      }}
-      reviews={{
-        rating: displayRating,
-        userRatingCount,
-        reviews,
-        reviewsUri: detailData?.reviewsUri,
-      }}
-    />
-  );
+  const tabs =
+    isDetailError && !detailData ? (
+      <div className="p-3.5">
+        <Alert>
+          <AlertTitle>장소 정보를 불러오지 못했어요.</AlertTitle>
+          <AlertAction>
+            <button type="button" onClick={() => void refetch()} className="text-primary underline">
+              다시 시도
+            </button>
+          </AlertAction>
+        </Alert>
+      </div>
+    ) : (
+      <PlaceDetailTabs
+        home={{
+          isOpen: openNow,
+          address: displayAddress,
+          phone,
+          hours,
+          website,
+          googleMapsUrl: detailData?.placeUri ?? undefined,
+          reviewSummary,
+        }}
+        reviews={{
+          rating: displayRating,
+          userRatingCount,
+          reviews,
+          reviewsUri: detailData?.reviewsUri,
+        }}
+      />
+    );
 
   const modals = (
     <>
@@ -279,7 +261,6 @@ export function PlaceDetailPanel({
     );
   }
 
-  /* 상세 정보가 오기 전에는 임시 이름("장소")·빈 탭 대신 스켈레톤 — 느린 네트워크에서도 동작 중임을 알 수 있게 */
   const body = isBodyLoading ? (
     <PlaceDetailSkeleton />
   ) : (
@@ -305,7 +286,6 @@ export function PlaceDetailPanel({
       {renderHero("h-[185px]")}
       <div className={SCROLL_AREA_CLASS}>{body}</div>
 
-      {/* 닫기 버튼 — 스크롤과 무관하게 패널 상단에 고정 */}
       <button
         onClick={(e) => {
           e.stopPropagation();

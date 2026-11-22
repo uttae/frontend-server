@@ -12,9 +12,7 @@ describe("roomCoverForId", () => {
   });
 
   it("spreads rooms across the supplied cover images", () => {
-    const covers = new Set(
-      Array.from({ length: 100 }, (_, index) => roomCoverForId(`room-${index}`)),
-    );
+    const covers = new Set(Array.from({ length: 100 }, (_, index) => roomCoverForId(`room-${index}`)));
 
     expect(covers.size).toBe(9);
     for (const cover of covers) {

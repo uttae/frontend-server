@@ -14,12 +14,12 @@ const state = vi.hoisted(() => ({
 vi.mock("@/hooks/useAnalyticsRoomId", () => ({ useAnalyticsRoomId: () => state.roomId }));
 vi.mock("@/hooks/useSessionUser", () => ({ useSessionUser: () => ({ data: { id: 42, tutorialCompleted: false } }) }));
 vi.mock("@tanstack/react-query", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@tanstack/react-query")>(),
+  ...(await importOriginal<typeof import("@tanstack/react-query")>()),
   useQueryClient: () => queryClient,
 }));
 vi.mock("@/lib/api/user", () => ({ completeTutorial: state.complete }));
 vi.mock("@/lib/analytics/track", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/analytics/track")>(),
+  ...(await importOriginal<typeof import("@/lib/analytics/track")>()),
   trackAnalyticsEvent: state.track,
 }));
 const queryClient = new QueryClient();
@@ -27,11 +27,20 @@ beforeEach(() => {
   queryClient.setQueryData(sessionUserQueryKey, { id: 42, tutorialCompleted: false });
 });
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-afterEach(() => { document.body.innerHTML = ""; queryClient.clear(); vi.clearAllMocks(); });
+afterEach(() => {
+  document.body.innerHTML = "";
+  queryClient.clear();
+  vi.clearAllMocks();
+});
 
 async function mountPendingTutorial({ attached = false } = {}) {
   let finish!: () => void;
-  state.complete.mockImplementation(() => new Promise<void>((resolve) => { finish = resolve; }));
+  state.complete.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   document.body.innerHTML = '<div data-tutorial-target="plan"></div>';
   const host = document.createElement("div");
   if (attached) document.body.append(host);
@@ -68,7 +77,6 @@ it("updates the same-user completion cache after unmount without sending a pendi
   expect(state.track).toHaveBeenCalledTimes(1);
   expect(queryClient.getQueryData(sessionUserQueryKey)).toEqual({ id: 42, tutorialCompleted: true });
 });
-
 
 it("drops the pending exit when the account cache changes before rerender", async () => {
   state.roomId = "room-a";

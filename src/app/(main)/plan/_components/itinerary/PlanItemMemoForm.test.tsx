@@ -42,21 +42,27 @@ async function type(container: HTMLElement, value: string) {
 }
 async function setup(memo: string) {
   const container = document.createElement("div");
+  document.body.append(container);
   const root = createRoot(container);
   const render = (next: string) => act(async () => root.render(<PlanItemMemoEditor {...props} memo={next} />));
   await render(memo);
-  return { container, render, unmount: () => act(async () => root.unmount()) };
+  return {
+    container,
+    render,
+    unmount: async () => {
+      await act(async () => root.unmount());
+      container.remove();
+    },
+  };
 }
 
 it("refills with the server memo while untouched and asks before overwriting a changed memo", async () => {
   const { container, render, unmount } = await setup("A");
   try {
-    // 고치지 않았으면 서버 새 값으로 다시 채운다
     await render("B");
     expect(textarea(container).value).toBe("B");
     expect(saveButton(container).disabled).toBe(true);
 
-    // 고치는 중에 서버 값이 바뀌면 입력은 지키고, 저장할 때 덮어쓰기를 묻는다
     await type(container, "내 메모 ");
     await render("C");
     expect(textarea(container).value).toBe("내 메모 ");
@@ -87,9 +93,7 @@ it("refills with the latest server memo once the draft is reverted to the start 
 it("shows the length error under the memo instead of a toast", async () => {
   const { container, unmount } = await setup("");
   try {
-    // 한글 조합 중 maxLength를 넘어 들어온 값
     await type(container, "가".repeat(2001));
-    // 입력 칸이 자르지 않고, 쓰는 동안 바로 칸 아래에 오류가 보인다
     expect(textarea(container).value).toHaveLength(2001);
     expect(container.querySelector("[role=alert]")?.textContent).toBe("메모는 2000자 이하여야 해요.");
     await act(async () => saveButton(container).click());
@@ -102,5 +106,70 @@ it("shows the length error under the memo instead of a toast", async () => {
     expect(textarea(container).hasAttribute("aria-invalid")).toBe(false);
   } finally {
     await unmount();
+  }
+});
+
+it("keeps memo clicks and typing keys inside the editor without cancelling text input", async () => {
+  const { container, unmount } = await setup("A");
+  const card = document.createElement("div");
+  card.append(container);
+  document.body.append(card);
+  const activateCard = vi.fn();
+  card.addEventListener("click", activateCard);
+  card.addEventListener("keydown", activateCard);
+  try {
+    const key = new KeyboardEvent("keydown", { key: "Enter", bubbles: true, cancelable: true });
+    await act(async () => {
+      textarea(container).click();
+      textarea(container).dispatchEvent(key);
+    });
+    expect(activateCard).not.toHaveBeenCalled();
+    expect(key.defaultPrevented).toBe(false);
+    expect(state.update).not.toHaveBeenCalled();
+    await type(container, "AB");
+    expect(textarea(container).value).toBe("AB");
+  } finally {
+    await unmount();
+    card.remove();
+  }
+});
+
+it("submits the named memo form once without bubbling or navigating, and cancel never submits", async () => {
+  state.update.mockResolvedValue({});
+  const { container, unmount } = await setup("A");
+  const card = document.createElement("div");
+  card.append(container);
+  document.body.append(card);
+  const parentSubmit = vi.fn();
+  card.addEventListener("submit", parentSubmit);
+  try {
+    await type(container, "B\nC");
+    const editor = container.querySelector<HTMLFormElement>('form[aria-label="일정 메모 편집"]')!;
+    expect(editor).not.toBeNull();
+    expect(saveButton(container).type).toBe("submit");
+    const submissions: Event[] = [];
+    editor.addEventListener("submit", (event) => submissions.push(event));
+    await act(async () => saveButton(container).click());
+    expect(submissions).toHaveLength(1);
+    expect(submissions[0].defaultPrevented).toBe(true);
+    expect(parentSubmit).not.toHaveBeenCalled();
+    expect(state.update).toHaveBeenCalledExactlyOnceWith({
+      roomId: "r",
+      scheduleId: 1,
+      itemId: 2,
+      body: { memo: "B\nC" },
+    });
+    expect(props.onClose).toHaveBeenCalledOnce();
+
+    await type(container, "cancelled draft");
+    const cancel = [...container.querySelectorAll("button")].find((button) => button.textContent === "취소")!;
+    expect(cancel.type).toBe("button");
+    await act(async () => cancel.click());
+    expect(state.update).toHaveBeenCalledOnce();
+    expect(props.onClose).toHaveBeenCalledTimes(2);
+    expect(textarea(container).value).toBe("A");
+  } finally {
+    await unmount();
+    card.remove();
   }
 });

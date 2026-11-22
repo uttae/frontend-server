@@ -2,11 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { RoomMember } from "@/lib/api/rooms/types";
 
-import {
-  createExpenseFormSchema,
-  EXPENSE_BUDGET_INVALID_MESSAGE,
-  expenseBudgetSchema,
-} from "./expense-form";
+import { createExpenseFormSchema, EXPENSE_BUDGET_INVALID_MESSAGE, expenseBudgetSchema } from "./expense-form";
 
 const usd = { currency: "USD", fractionDigits: 2, maximumAmount: "999999999999999.99" };
 const member = (userId: number): RoomMember => ({
@@ -44,7 +40,6 @@ describe("createExpenseFormSchema", () => {
     expect(schema.safeParse(values).success).toBe(true);
   });
 
-  // issue path가 화면의 form.Field name과 같아야 그 칸에 붙는다
   it("puts cross-field issues on the amount, linked place and payer fields", () => {
     expect(issuesOf(schema.safeParse({ ...values, totalAmount: "10.001" }))).toEqual([
       {
@@ -55,9 +50,9 @@ describe("createExpenseFormSchema", () => {
     expect(issuesOf(schema.safeParse({ ...values, currency: "JPY" }))).toEqual([
       { path: ["totalAmount"], message: "서버 통화 목록에서 통화를 선택해 주세요." },
     ]);
-    expect(issuesOf(schema.safeParse({ ...values, expenseGroup: "TRIP_DAY", scheduleId: 10, scheduleItemId: 999 }))).toEqual([
-      { path: ["scheduleItemId"], message: "유효한 일차와 해당 일차의 장소를 선택해 주세요." },
-    ]);
+    expect(
+      issuesOf(schema.safeParse({ ...values, expenseGroup: "TRIP_DAY", scheduleId: 10, scheduleItemId: 999 })),
+    ).toEqual([{ path: ["scheduleItemId"], message: "유효한 일차와 해당 일차의 장소를 선택해 주세요." }]);
     expect(issuesOf(schema.safeParse({ ...values, participantUserIds: [] }))).toEqual([
       { path: ["payerUserIds"], message: "결제자와 부담자를 각각 한 명 이상, 중복 없이 선택해 주세요." },
     ]);
@@ -76,7 +71,6 @@ describe("createExpenseFormSchema", () => {
     expect(schema.safeParse({ ...values, name: undefined, memo: null }).success).toBe(true);
   });
 
-  // 칸 오류가 있어도 교차 규칙이 함께 돌아야 첫 저장에 모든 칸 오류가 한 번에 보인다
   it("reports field and cross-field issues together", () => {
     expect(issuesOf(schema.safeParse({ ...values, category: "", totalAmount: "10.001" }))).toEqual([
       { path: ["category"], message: "카테고리를 선택해 주세요." },

@@ -36,9 +36,7 @@ describe("landing static sections", () => {
     expect(html).toContain('href="https://github.com/minbros"');
     expect(html).toContain('href="https://github.com/parkjuyeong0312"');
     expect(html).toContain('href="https://www.linkedin.com/in/minbros/"');
-    expect(html).toContain(
-      'href="https://www.linkedin.com/in/%EC%A3%BC%EC%98%81-%EB%B0%95-75a83a2a4/"',
-    );
+    expect(html).toContain('href="https://www.linkedin.com/in/%EC%A3%BC%EC%98%81-%EB%B0%95-75a83a2a4/"');
     expect(html).not.toContain('href="https://github.com/uttae"');
     expect(html.match(/>GitHub</g)).toHaveLength(2);
     expect(html).not.toContain("GitHub ·");

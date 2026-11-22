@@ -6,7 +6,6 @@ import type { ChatMessage } from "@/types/chat";
 
 export const PLACE_SHARE_PREVIEW_TEXT = "장소를 공유했습니다.";
 
-/** 위로 스크롤한 상태에서 새 메시지 도착 시 하단 미리보기 — 누르면 최하단으로 */
 export function NewMessagePreviewButton({
   message,
   onClick,
@@ -16,11 +15,9 @@ export function NewMessagePreviewButton({
   message: ChatMessage;
   onClick: () => void;
   isMinimized?: boolean;
-  /** 메시지 목록 스크롤바 폭 — 스크롤바를 뺀 영역 기준으로 가운데 정렬 */
   scrollbarWidth?: number;
 }) {
-  const text =
-    message.type === "place" ? PLACE_SHARE_PREVIEW_TEXT : message.text;
+  const text = message.type === "place" ? PLACE_SHARE_PREVIEW_TEXT : message.text;
 
   return (
     <div
@@ -37,19 +34,11 @@ export function NewMessagePreviewButton({
         )}
       >
         <ChatSenderAvatar message={message} size={isMinimized ? 24 : 28} ring="default" />
-        <span
-          className={cn(
-            "shrink-0 text-primary",
-            isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis",
-          )}
-        >
+        <span className={cn("shrink-0 text-primary", isMinimized ? "text-body-xs-emphasis" : "text-body-s-emphasis")}>
           {message.sender}
         </span>
         <span
-          className={cn(
-            "min-w-0 truncate text-text",
-            isMinimized ? "text-body-xs-regular" : "text-body-s-regular",
-          )}
+          className={cn("min-w-0 truncate text-text", isMinimized ? "text-body-xs-regular" : "text-body-s-regular")}
         >
           {text}
         </span>

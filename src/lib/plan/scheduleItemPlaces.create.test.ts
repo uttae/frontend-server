@@ -1,10 +1,7 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type {
-  CreateScheduleItemResponse,
-  RoomScheduleItem,
-} from "@/lib/api/rooms/schedule-items";
+import type { CreateScheduleItemResponse, RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
 import type { PlanPlace } from "@/lib/plan/types";
 import { scheduleItemsQueryKey } from "@/lib/query-keys";
 
@@ -43,11 +40,8 @@ beforeAll(async () => {
   process.env.NEXT_PUBLIC_GOOGLE_REDIRECT_URI = "http://localhost/callback";
   process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY = "test-maps-key";
 
-  ({
-    createScheduleItemAtPlanIndex,
-    applyCreatedScheduleItemToPlanPlaces,
-    syncAfterCrossScheduleItemMove,
-  } = await import("@/lib/plan/scheduleItemPlaces"));
+  ({ createScheduleItemAtPlanIndex, applyCreatedScheduleItemToPlanPlaces, syncAfterCrossScheduleItemMove } =
+    await import("@/lib/plan/scheduleItemPlaces"));
 });
 
 const scheduleItem = (itemId: number, orderIndex: number): RoomScheduleItem => ({
@@ -106,9 +100,7 @@ describe("createScheduleItemAtPlanIndex", () => {
 
     await applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response);
 
-    expect(
-      queryClient.getQueryData<PlanPlace[]>(key)?.map((place) => place.itemId),
-    ).toEqual([1, 3, 2]);
+    expect(queryClient.getQueryData<PlanPlace[]>(key)?.map((place) => place.itemId)).toEqual([1, 3, 2]);
   });
 
   it("merges a placeholder place when the created place preview fails", async () => {
@@ -117,9 +109,7 @@ describe("createScheduleItemAtPlanIndex", () => {
     mocks.fetchPlacePreview.mockRejectedValueOnce(new Error("preview 429"));
     queryClient.setQueryData(key, places);
 
-    await expect(
-      applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response),
-    ).resolves.toBeUndefined();
+    await expect(applyCreatedScheduleItemToPlanPlaces(queryClient, "room-1", 10, response)).resolves.toBeUndefined();
 
     expect(queryClient.getQueryData<PlanPlace[]>(key)?.[1]).toMatchObject({
       itemId: 3,
@@ -132,7 +122,9 @@ describe("cross-schedule refresh sequencing", () => {
   it("waits for source refresh before target", async () => {
     const client = new QueryClient();
     let finishSource!: () => void;
-    const source = new Promise<void>((resolve) => { finishSource = resolve; });
+    const source = new Promise<void>((resolve) => {
+      finishSource = resolve;
+    });
     const invalidate = vi.spyOn(client, "invalidateQueries").mockReturnValueOnce(source).mockResolvedValue(undefined);
     const syncing = syncAfterCrossScheduleItemMove(client, "room-1", 10, 20);
     expect(invalidate).toHaveBeenCalledTimes(1);
@@ -160,19 +152,26 @@ it("cross-day move refresh preserves unset and partial times without a time PATC
   const client = new QueryClient();
   client.setQueryData(scheduleItemsQueryKey("room", 10), [{ id: "item-1", itemId: 1, title: "One" }]);
   client.setQueryData(scheduleItemsQueryKey("room", 20), [{ id: "item-2", itemId: 2, title: "Two" }]);
-  mocks.getScheduleItems.mockImplementation(async (_room, scheduleId) => scheduleId === 10
-    ? [scheduleItem(1, 0)]
-    : [{ ...scheduleItem(2, 0), scheduleId: 20, startTime: "12:45", endTime: null }]);
+  mocks.getScheduleItems.mockImplementation(async (_room, scheduleId) =>
+    scheduleId === 10
+      ? [scheduleItem(1, 0)]
+      : [{ ...scheduleItem(2, 0), scheduleId: 20, startTime: "12:45", endTime: null }],
+  );
   const { schedulePlanPlacesQueryOptions } = await import("./scheduleItemPlaces");
   const unsubscribe = [10, 20].map((scheduleId) =>
-    new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room", scheduleId))
-      .subscribe(() => {}),
+    new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room", scheduleId)).subscribe(() => {}),
   );
   await syncAfterCrossScheduleItemMove(client, "room", 10, 20);
   expect(mocks.updateScheduleItem).not.toHaveBeenCalled();
-  expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 10))?.[0]).not.toHaveProperty("startTime");
-  expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0]).toMatchObject({ startTime: "12:45" });
-  expect(client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0]).not.toHaveProperty("endTime");
+  expect(
+    client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 10))?.[0],
+  ).not.toHaveProperty("startTime");
+  expect(
+    client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0],
+  ).toMatchObject({ startTime: "12:45" });
+  expect(
+    client.getQueryData<Array<{ startTime?: string; endTime?: string }>>(scheduleItemsQueryKey("room", 20))?.[0],
+  ).not.toHaveProperty("endTime");
   unsubscribe.forEach((stop) => stop());
   client.clear();
 });

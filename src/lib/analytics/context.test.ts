@@ -78,6 +78,9 @@ describe("analytics context", () => {
     ["/packing/room-secret/", "/packing/[roomId]"],
     ["/bookmark/456/", "/bookmark/[folderId]"],
     ["/privacy", "/privacy"],
+    ["/", "/"],
+    ["///", ""],
+    ["/privacy///", "/privacy"],
     ["not-a-path", "/"],
   ] as const)("normalizes analytics page path %s to %s", (pathname, expected) => {
     expect(analyticsPagePath(pathname)).toBe(expected);
@@ -88,8 +91,7 @@ describe("analytics context", () => {
       buildAnalyticsPageView({
         origin: "https://uttae.example/",
         pathname: "/plan/room-secret?roomTitle=Jeju",
-        referrer:
-          "https://uttae.example/join/invite-secret?utm_source=message",
+        referrer: "https://uttae.example/join/invite-secret?utm_source=message",
         title: "제주 여행 일정",
       }),
     ).toEqual({
@@ -101,19 +103,23 @@ describe("analytics context", () => {
   });
 
   it("removes packing room IDs from page views, referrers, and event context", () => {
-    expect(buildAnalyticsPageView({
-      origin: "https://uttae.example",
-      pathname: "/packing/room-secret",
-      referrer: "https://uttae.example/packing/previous-room",
-      title: "준비물",
-    })).toEqual({
+    expect(
+      buildAnalyticsPageView({
+        origin: "https://uttae.example",
+        pathname: "/packing/room-secret",
+        referrer: "https://uttae.example/packing/previous-room",
+        title: "준비물",
+      }),
+    ).toEqual({
       page_path: "/packing/[roomId]",
       page_location: "https://uttae.example/packing/[roomId]",
       page_referrer: "https://uttae.example/packing/[roomId]",
       page_title: "준비물",
     });
-    expect(buildAnalyticsEventPageContext("https://uttae.example", "/packing/room-secret"))
-      .toEqual({ page_path: "/packing/[roomId]", page_location: "https://uttae.example/packing/[roomId]" });
+    expect(buildAnalyticsEventPageContext("https://uttae.example", "/packing/room-secret")).toEqual({
+      page_path: "/packing/[roomId]",
+      page_location: "https://uttae.example/packing/[roomId]",
+    });
   });
 
   it("keeps only the origin root for an external HTTP referrer", () => {
@@ -121,8 +127,7 @@ describe("analytics context", () => {
       buildAnalyticsPageView({
         origin: "https://uttae.example",
         pathname: "/home",
-        referrer:
-          "https://user:password@search.example:8443/private/result?utm_source=message#details",
+        referrer: "https://user:password@search.example:8443/private/result?utm_source=message#details",
         title: "홈",
       }),
     ).toEqual({
@@ -133,28 +138,26 @@ describe("analytics context", () => {
     });
   });
 
-  it.each([
-    "mailto:person@example.com",
-    "ftp://files.example/private/path",
-    "javascript:alert('secret')",
-  ])("omits a non-HTTP referrer: %s", (referrer) => {
-    expect(
-      buildAnalyticsPageView({
-        origin: "https://uttae.example",
-        pathname: "/home",
-        referrer,
-        title: "홈",
-      }),
-    ).not.toHaveProperty("page_referrer");
-  });
+  it.each(["mailto:person@example.com", "ftp://files.example/private/path", "javascript:alert('secret')"])(
+    "omits a non-HTTP referrer: %s",
+    (referrer) => {
+      expect(
+        buildAnalyticsPageView({
+          origin: "https://uttae.example",
+          pathname: "/home",
+          referrer,
+          title: "홈",
+        }),
+      ).not.toHaveProperty("page_referrer");
+    },
+  );
 
   it("keeps standard campaign parameters and removes other query data", () => {
     expect(
       buildAnalyticsPageView({
         origin: "https://uttae.example",
         pathname: "/search",
-        referrer:
-          "https://campaign.example/landing/private?utm_medium=email&q=other-secret#offer",
+        referrer: "https://campaign.example/landing/private?utm_medium=email&q=other-secret#offer",
         search:
           "?q=raw-search&utm_id=summer-2026&utm_source=newsletter&utm_medium=email&utm_campaign=summer&utm_source_platform=mailchimp&utm_term=travel&utm_content=hero&utm_creative_format=banner&utm_marketing_tactic=prospecting#details",
         title: "검색",

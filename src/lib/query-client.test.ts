@@ -60,7 +60,6 @@ describe("invalidateAfterChange", () => {
   it("데이터가 없는 첫 조회도 취소하고 새로 받아, 변경 전에 출발한 첫 응답을 쓰지 않는다", async () => {
     const { client, responses, stop, invalidateAfterChange } = await setup();
     try {
-      // 마운트하자마자 첫 조회가 나갔다
       await vi.waitFor(() => expect(responses).toHaveLength(1));
 
       const done = invalidateAfterChange(client, { queryKey: ["members"] });
@@ -99,7 +98,6 @@ describe("invalidateAfterChange", () => {
     const { client, responses, stop, invalidateAfterChange } = await setup(["나"]);
     try {
       void invalidateAfterChange(client, { queryKey: ["members"] });
-      // 같은 틱에 이미 '받는 중'이라 이 사이의 렌더도 받는 중으로 본다
       expect(client.getQueryState(["members"])?.fetchStatus).toBe("fetching");
       expect(responses).toHaveLength(1);
     } finally {

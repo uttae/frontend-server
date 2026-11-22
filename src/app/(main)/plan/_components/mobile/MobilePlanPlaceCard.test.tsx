@@ -80,9 +80,13 @@ describe("MobilePlanPlaceCard", () => {
         <MobilePlanPlaceCard place={place} {...props} addWhenEmpty={{ time: true, expense: true, memo: true }} />,
       );
     });
-    act(() => renderer.root.findByProps({ "aria-label": "카페 비용 추가" }).props.onClick({ stopPropagation: vi.fn() }));
+    act(() =>
+      renderer.root.findByProps({ "aria-label": "카페 비용 추가" }).props.onClick({ stopPropagation: vi.fn() }),
+    );
     expect(onOpenExpenses).toHaveBeenCalledOnce();
-    act(() => renderer.root.findByProps({ "aria-label": "카페 메모 추가" }).props.onClick({ stopPropagation: vi.fn() }));
+    act(() =>
+      renderer.root.findByProps({ "aria-label": "카페 메모 추가" }).props.onClick({ stopPropagation: vi.fn() }),
+    );
     expect(onEditMemo).toHaveBeenCalledOnce();
 
     act(() => renderer.unmount());

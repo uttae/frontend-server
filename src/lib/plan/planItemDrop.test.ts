@@ -27,12 +27,15 @@ describe("resolvePlanItemDrop", () => {
   });
 
   it("드래그 중 목록이 바뀌어도 놓은 자리(몇 번째) 그대로 보낸다", () => {
-    // 시작 때 2곳이었는데 놓을 때 앞에 하나가 더 들어왔다 — 시작 자리와 놓은 자리를 그대로 쓴다
     expect(resolvePlanItemDrop("room", sameDay(0, 1, 3))?.vars).toMatchObject({ body: { newOrderIndex: 1 } });
   });
 
   it("다른 일차는 대상 일차 길이 안으로 넣을 자리를 맞춰 일차 간 이동 변수를 만든다", () => {
-    const drop: PlanItemDrop = { itemId: 7, from: { scheduleId: 1, index: 1 }, to: { scheduleId: 2, index: 5, length: 2 } };
+    const drop: PlanItemDrop = {
+      itemId: 7,
+      from: { scheduleId: 1, index: 1 },
+      to: { scheduleId: 2, index: 5, length: 2 },
+    };
     expect(resolvePlanItemDrop("room", drop)).toEqual({
       kind: "move",
       vars: { roomId: "room", sourceScheduleId: 1, itemId: 7, targetScheduleId: 2, targetOrderIndex: 2 },

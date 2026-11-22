@@ -49,12 +49,9 @@ describe("Amplitude consent gate", () => {
     expect(renderAnalyticsGate()).toContain("data-amplitude-analytics");
   });
 
-  it.each(["pending", "denied"] as const)(
-    "does not mount the Amplitude client while consent is %s",
-    (consent) => {
-      consentState.value = consent;
+  it.each(["pending", "denied"] as const)("does not mount the Amplitude client while consent is %s", (consent) => {
+    consentState.value = consent;
 
-      expect(renderAnalyticsGate()).not.toContain("data-amplitude-analytics");
-    },
-  );
+    expect(renderAnalyticsGate()).not.toContain("data-amplitude-analytics");
+  });
 });
