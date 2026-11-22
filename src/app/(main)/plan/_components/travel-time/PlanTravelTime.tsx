@@ -85,10 +85,12 @@ export function PlanTravelTime({
     isPending: isTravelModePending,
   } = useUpdateScheduleItemTravelMode();
   // 저장하는 동안은 고른 수단을 먼저 보여 주고, 끝나면(실패 포함) 다시 받은 서버 값을 보여 준다
-  const selectedMode =
-    isTravelModePending && pendingTravelMode?.itemId === segmentSourceItemId
-      ? pendingTravelMode.travelMode
-      : serverMode;
+  const savingMode =
+    isTravelModePending &&
+    pendingTravelMode?.roomId === rid &&
+    pendingTravelMode.scheduleId === scheduleId &&
+    pendingTravelMode.itemId === segmentSourceItemId;
+  const selectedMode = savingMode ? pendingTravelMode.travelMode : serverMode;
 
   const googleMapsDirectionsUrl = selectedMode === null ? null : buildGoogleMapsDirectionsUrl({
     originPlaceId: originGooglePlaceId ?? "",
@@ -111,14 +113,11 @@ export function PlanTravelTime({
     selectedMode,
     routeQueryEnabled,
     fpTrim,
+    !savingMode,
   );
 
-  const menuDeferredModes = useMemo(
-    () =>
-      SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter(
-        (m) => m !== selectedMode,
-      ),
-    [selectedMode],
+  const menuDeferredModes = SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter(
+    (mode) => mode !== selectedMode,
   );
 
   // 고르지 않은 수단은 조회하지 않는다(경로 조회 비용) — 예전에 고른 적이 있어 캐시에 남은 값만 보여 주고,

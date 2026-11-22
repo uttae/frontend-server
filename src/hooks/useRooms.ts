@@ -187,6 +187,8 @@ export function useScheduleItemRoute(
   routeQueryEnabled = true,
   /** 빈 문자열이면 LS 미사용 — `scheduleFingerprint` 지문 필요 */
   scheduleFingerprint = "",
+  /** 수단 저장 중에는 해당 구간의 캐시만 읽고 GET은 보류한다. */
+  networkEnabled = routeQueryEnabled,
 ) {
   const rid = roomId?.trim() ?? "";
 
@@ -198,7 +200,7 @@ export function useScheduleItemRoute(
       destinationItemId,
       travelMode,
       scheduleFingerprint,
-      { segmentReady: Boolean(routeQueryEnabled) },
+      { segmentReady: Boolean(routeQueryEnabled), networkEnabled },
     ),
   });
 }
