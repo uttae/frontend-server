@@ -47,7 +47,7 @@ export function buildMonthWeeks({ year, month }: YearMonth): (string | null)[][]
 /** 달력에서 이번에 고른 날짜 — 고르지 않은 쪽은 비어 있어 바깥 값을 그대로 쓴다 */
 export type PickedRange = Partial<DateRange>;
 
-/** 달력에 보일 기간 — 고른 날짜를 바깥 값 위에 얹고, 새 시작일보다 앞선 기존 종료일은 다시 고를 때까지 비워 보인다 */
+/** 달력에 보일 기간 — 고른 날짜를 바깥 값 위에 얹고, 새 시작일보다 앞선 기존 종료일은 비운다 */
 export function displayPickedRange(value: DateRange, picked: PickedRange): DateRange {
   const start = picked.start ?? value.start;
   const end = picked.end ?? value.end;
@@ -72,10 +72,10 @@ export function pickRangeDate(
   return { picked: { ...picked, end: ymd }, edge: "start" };
 }
 
-/** 닫을 때 반영할 기간 — 고르지 않은 쪽은 바깥 값 그대로이고, 고른 날짜가 없으면 `null`(아무것도 바꾸지 않는다) */
+/** 닫을 때 반영할 기간 — 달력에 보인 기간 그대로이고, 고른 날짜가 없으면 `null`(아무것도 바꾸지 않는다) */
 export function confirmPickedRange(value: DateRange, picked: PickedRange): DateRange | null {
   if (picked.start === undefined && picked.end === undefined) return null;
-  return { start: picked.start ?? value.start, end: picked.end ?? value.end };
+  return displayPickedRange(value, picked);
 }
 
 /** `2026-09-20` → `26/09/20` */
