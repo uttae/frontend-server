@@ -417,18 +417,34 @@ export function useUpdateScheduleItem() {
 
 export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: number, itemId: number) {
   const queryClient = useQueryClient();
+  const queryKey = scheduleItemsQueryKey(roomId, scheduleId);
   const mutationKey = ["schedule-item-travel-mode", roomId, scheduleId, itemId] as const;
   return useMutation({
     mutationKey,
     // 이동수단은 출발 항목에 저장한다. 같은 항목의 PATCH만 선택 순서대로 보낸다.
     scope: { id: JSON.stringify(mutationKey) },
-    mutationFn: (travelMode: ScheduleTravelModeValue) =>
-      updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode }),
-    onSuccess: (updated) => {
-      queryClient.setQueryData<PlanPlace[]>(
-        scheduleItemsQueryKey(roomId, scheduleId),
-        (old) => applyRoomScheduleItemToPlanPlaces(old, updated) ?? old,
-      );
+    mutationFn: async (travelMode: ScheduleTravelModeValue) => {
+      const countBeforeSave = queryClient.getQueryState(queryKey)?.dataUpdateCount;
+      const updated = await updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode });
+      const day = queryClient.getQueryState<PlanPlace[]>(queryKey);
+      if (!day) return updated;
+      const overlappingRead = day.fetchStatus !== "idle";
+      // 저장 전에 시작된 목록 응답이 확정된 수단을 덮지 않도록 그 조회만 다시 시작한다.
+      if (overlappingRead) await queryClient.cancelQueries({ queryKey, exact: true });
+      const latest = queryClient.getQueryState<PlanPlace[]>(queryKey);
+      const current = latest?.data?.find((place) => place.itemId === updated.itemId);
+      const modeChanged = current !== undefined && current.travelMode !== updated.travelMode;
+      const modeConflict = modeChanged && latest?.dataUpdateCount !== countBeforeSave;
+      if (modeChanged && !modeConflict) {
+        queryClient.setQueryData<PlanPlace[]>(queryKey, (places) =>
+          places?.map((place) =>
+            place.itemId === updated.itemId ? { ...place, travelMode: updated.travelMode } : place,
+          ),
+        );
+      }
+      // 저장 중 갱신된 캐시와 응답의 수단이 다르면 서버에서 최종 순서를 확인한다.
+      if (overlappingRead || modeConflict) await invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+      return updated;
     },
     onError: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
