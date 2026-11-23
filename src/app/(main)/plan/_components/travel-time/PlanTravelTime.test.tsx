@@ -11,7 +11,7 @@ vi.mock("@/lib/api/rooms", async (original) => ({
   updateScheduleItemTravelMode: api.updateMode,
 }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: false }) }));
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { scheduleItemRouteQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 import { PlanTravelTime } from "./PlanTravelTime";
 let root: Root;
 let container: HTMLDivElement;
@@ -131,6 +131,95 @@ it.each(["success", "failure"])(
     }
   },
 );
+
+it.each([false, true])("queries only saved legs after walking failures (overlapping C save: %s)", async (saveC) => {
+  const places = [
+    { itemId: 101, travelMode: "WALKING" },
+    { itemId: 103, travelMode: "WALKING" },
+  ];
+  if (saveC) places.push({ itemId: 105, travelMode: "WALKING" });
+  const savedItem = { itemId: 101, googlePlaceId: "a", travelMode: "DRIVING" };
+  const save = Promise.withResolvers<typeof savedItem>();
+  const savedC = { itemId: 105, googlePlaceId: "c", travelMode: "DRIVING" };
+  const otherSave = Promise.withResolvers<typeof savedC>();
+  api.updateMode.mockImplementation((_room, _day, id) => (id === 105 ? otherSave.promise : save.promise));
+  api.route.mockImplementation(async (_room, _schedule, _from, _to, mode) => {
+    if (mode === "WALKING") throw new Error("route unavailable");
+    return { travelMode: mode, distanceMeters: 100, durationSeconds: 60 };
+  });
+  const otherPlaces = saveC ? [places[1], savedC] : [places[1]];
+  const fetchDay = vi.fn(async () => [savedItem, ...otherPlaces]);
+  function DayRoutes() {
+    const { data, isFetching } = useQuery({
+      queryKey: scheduleItemsQueryKey("room", 10),
+      queryFn: fetchDay,
+      initialData: places,
+      staleTime: Infinity,
+    });
+    return data.map(({ itemId, travelMode }) => (
+      <PlanTravelTime
+        key={itemId}
+        roomId="room"
+        scheduleId={10}
+        segmentSourceItemId={itemId}
+        destinationItemId={itemId + 1}
+        travelMode={travelMode}
+        scheduleFingerprint=""
+        routeQueryEnabled={!isFetching}
+      />
+    ));
+  }
+  await act(async () =>
+    root.render(
+      <QueryClientProvider client={client}>
+        <DayRoutes />
+      </QueryClientProvider>,
+    ),
+  );
+  const walkingCalls = [
+    ["room", 10, 101, 102, "WALKING"],
+    ["room", 10, 103, 104, "WALKING"],
+  ];
+  if (saveC) walkingCalls.push(["room", 10, 105, 106, "WALKING"]);
+  await vi.waitFor(() => expect(container.textContent?.match(/경로 조회 오류/g)).toHaveLength(places.length));
+  expect(api.route.mock.calls).toEqual(walkingCalls);
+  const chooseDriving = async (index: number) => {
+    await act(async () => container.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")[index].click());
+    const driving = [...container.querySelectorAll<HTMLButtonElement>("button[role=option]")].find((option) =>
+      option.textContent?.includes("자동차"),
+    )!;
+    await act(async () => driving.click());
+  };
+  await chooseDriving(0);
+  await vi.waitFor(() =>
+    expect(api.updateMode).toHaveBeenCalledExactlyOnceWith("room", 10, 101, { travelMode: "DRIVING" }),
+  );
+  const expectedCalls = [...walkingCalls];
+  if (saveC) {
+    await chooseDriving(2);
+    expect(api.updateMode).toHaveBeenNthCalledWith(2, "room", 10, 105, { travelMode: "DRIVING" });
+    expect(api.route.mock.calls).toEqual(walkingCalls);
+    await act(async () => otherSave.resolve(savedC));
+    expectedCalls.push(["room", 10, 105, 106, "DRIVING"]);
+    await vi.waitFor(() => expect(api.route.mock.calls).toEqual(expectedCalls));
+  }
+  expect(api.route.mock.calls).toEqual(expectedCalls);
+  await act(async () => save.resolve(savedItem));
+  await vi.waitFor(() => expect(api.route.mock.calls).toEqual([...expectedCalls, ["room", 10, 101, 102, "DRIVING"]]));
+  expect(fetchDay).not.toHaveBeenCalled();
+
+  api.route.mockClear();
+  await act(async () => {
+    await client.refetchQueries({ queryKey: scheduleItemRouteQueryKey("room", 10, 103, 104, "WALKING"), exact: true });
+  });
+  expect(api.route.mock.calls).toEqual([walkingCalls[1]]);
+
+  fetchDay.mockResolvedValueOnce([{ ...savedItem, travelMode: "TRANSIT" }, ...otherPlaces]);
+  await act(async () => {
+    await client.invalidateQueries({ queryKey: scheduleItemsQueryKey("room", 10), exact: true });
+  });
+  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 101, 102, "TRANSIT"));
+});
 
 it.each([
   { firstOk: true, lastOk: true, final: "TRANSIT" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +13,8 @@ import {
   canonicalScheduleTravelMode,
   type ScheduleTravelModeValue,
 } from "@/lib/plan/scheduleTravelMode";
+import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import type { PlanPlace } from "@/lib/plan/types";
 import { useMobileView } from "@/contexts/MobileViewContext";
 import { PLAN_ROUTE_CARD_WIDTH_PX } from "@/lib/layout-tokens";
 import { buildGoogleMapsDirectionsUrl } from "@/lib/maps";
@@ -63,14 +65,23 @@ export function PlanTravelTime({
 
   const fpTrim = scheduleFingerprint.trim();
   const rid = roomId.trim();
-  const serverMode = canonicalScheduleTravelMode(travelMode);
+  const queryClient = useQueryClient();
 
   const {
     mutate: mutateTravelMode,
     variables: pendingMode,
+    data: savedItem,
     isPending: savingMode,
   } = useUpdateScheduleItemTravelMode(rid, scheduleId, segmentSourceItemId);
-  const selectedMode = savingMode && pendingMode ? pendingMode : serverMode;
+  // PATCH 완료가 부모 목록의 새 props보다 먼저 관측되면, 같은 목록 캐시에서 확정된 수단을 읽는다.
+  const confirmedMode =
+    savedItem?.itemId === segmentSourceItemId && savedItem.travelMode !== travelMode
+      ? queryClient
+          .getQueryData<PlanPlace[]>(scheduleItemsQueryKey(rid, scheduleId))
+          ?.find((place) => place.itemId === segmentSourceItemId)?.travelMode
+      : travelMode;
+  const selectedMode =
+    savingMode && pendingMode ? pendingMode : canonicalScheduleTravelMode(confirmedMode ?? travelMode);
 
   const googleMapsDirectionsUrl =
     selectedMode === null
