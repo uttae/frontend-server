@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { normalizePackingName, normalizePackingMemo, assertPackingVersion, assertPackingId, assertPackingChecked } from "./validation";
+import {
+  normalizePackingName,
+  normalizePackingMemo,
+  assertPackingVersion,
+  assertPackingId,
+  assertPackingChecked,
+} from "./validation";
 
 describe("packing strict input", () => {
   it("normalizes ECMAScript edge whitespace and preserves Unicode/interior spaces", () => {
@@ -14,13 +20,13 @@ describe("packing strict input", () => {
     expect(() => normalizePackingMemo("\r\n".repeat(1001))).toThrow();
     expect(normalizePackingMemo("a".repeat(2000))).toHaveLength(2000);
   });
-  it.each(["", "　", "a\nb", "a\rb", "a\tb", "a\0b", "a\x7fb"])("rejects invalid name %j", raw => {
+  it.each(["", "　", "a\nb", "a\rb", "a\tb", "a\0b", "a\x7fb"])("rejects invalid name %j", (raw) => {
     expect(() => normalizePackingName(raw, "item")).toThrow();
   });
-  it.each(["a\0b", "a\x01b", "a\x7fb"])("rejects harmful memo control %j", raw => {
+  it.each(["a\0b", "a\x01b", "a\x7fb"])("rejects harmful memo control %j", (raw) => {
     expect(() => normalizePackingMemo(raw)).toThrow();
   });
-  it.each([-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, "1", null])( "rejects invalid version %j", value => {
+  it.each([-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, "1", null])("rejects invalid version %j", (value) => {
     expect(() => assertPackingVersion(value)).toThrow();
   });
   it("does not coerce IDs or booleans", () => {

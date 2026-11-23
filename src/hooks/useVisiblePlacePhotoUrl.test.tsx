@@ -7,7 +7,6 @@ import { useVisiblePlacePhotoUrl } from "./useVisiblePlacePhotoUrl";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-/** 버튼을 누르면 사진을 불러오지 못한 것으로 표시한다 */
 function Probe({ url }: Readonly<{ url: string | null }>) {
   const photo = useVisiblePlacePhotoUrl(url);
   return (

@@ -34,19 +34,10 @@ export default function BookmarkFolderDetailPage() {
   const params = useParams();
   const folderId = typeof params.folderId === "string" ? params.folderId : "";
   const roomId = useSessionStore((state) => state.currentRoomId);
-  const {
-    data,
-    isPending,
-    isError,
-    error,
-    refetch,
-  } = useBookmarkCategories(roomId);
+  const { data, isPending, isError, error, refetch } = useBookmarkCategories(roomId);
   const { folders } = useBookmarkFolders();
 
-  const folder = useMemo(
-    () => folders.find((f) => f.id === folderId),
-    [folders, folderId],
-  );
+  const folder = useMemo(() => folders.find((f) => f.id === folderId), [folders, folderId]);
 
   if (!roomId || isPending || (!data && !isError)) {
     return <FolderDetailSkeleton />;
@@ -58,9 +49,7 @@ export default function BookmarkFolderDetailPage() {
         <SetSectionMaxWidth value="s1" />
         <div className="space-y-3 py-10 text-center">
           <p className="text-body-m-regular mobile:text-body-s-regular text-primary">
-            {error instanceof Error
-              ? error.message
-              : "북마크 폴더를 불러오지 못했습니다."}
+            {error instanceof Error ? error.message : "북마크 폴더를 불러오지 못했습니다."}
           </p>
           <button
             type="button"

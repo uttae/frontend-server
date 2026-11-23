@@ -16,10 +16,6 @@ const FIELDS: { edge: RangeEdge; label: string }[] = [
   { edge: "end", label: "종료 날짜" },
 ];
 
-/**
- * Figma Date Picker Usage `Input Field와 함께 쓰일 때` — `Text Field Emphasis` 두 칸과 기간 달력.
- * 웹은 누른 칸 아래에 그 칸 폭으로 붙이고(Popover), 모바일·`popupOnly`는 팝업(Dialog)으로 띄운다.
- */
 export function DateRangeField({
   idPrefix,
   value,
@@ -30,10 +26,8 @@ export function DateRangeField({
 }: Readonly<{
   idPrefix: string;
   value: DateRange;
-  /** 이보다 이른 날짜는 고를 수 없다 (`YYYY-MM-DD`) */
   min?: string;
   readOnly?: boolean;
-  /** 스크롤되는 모달처럼 칸 아래에 붙이기 어려운 곳 */
   popupOnly?: boolean;
   onChange: (next: DateRange) => void;
 }>) {
@@ -71,10 +65,7 @@ export function DateRangeField({
           <span className="flex h-8 w-full min-w-0 items-center gap-1">
             <CalendarIcon size={20} className={cn("shrink-0", readOnly ? "text-icon-disabled" : "text-icon-subtle")} />
             <span
-              className={cn(
-                "truncate px-1 text-body-m-regular",
-                ymd && !readOnly ? "text-text" : "text-text-subtle",
-              )}
+              className={cn("truncate px-1 text-body-m-regular", ymd && !readOnly ? "text-text" : "text-text-subtle")}
             >
               {formatYmdSlash(ymd) || "YY/MM/DD"}
             </span>
@@ -107,7 +98,6 @@ export function DateRangeField({
                 {text}
               </button>
             )}
-            {/* 달력은 포털로 뜨지만 React 위치는 그 칸 안에 둔다. 칸을 바꾸면 달력이 새로 열리고, Tab 순서가 칸 바로 뒤로 이어진다 */}
             {presentation === "anchored" && draft.anchorEdge === edge ? picker : null}
           </div>
         );

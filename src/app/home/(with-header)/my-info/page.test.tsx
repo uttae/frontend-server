@@ -14,14 +14,18 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("next/link", () => ({ default: ({ children }: { children: React.ReactNode }) => <a>{children}</a> }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: mocks.replace }) }));
-vi.mock("@tanstack/react-query", async original => ({
-  ...await original<typeof import("@tanstack/react-query")>(),
+vi.mock("@tanstack/react-query", async (original) => ({
+  ...(await original<typeof import("@tanstack/react-query")>()),
   useQueryClient: () => queryClient,
 }));
-vi.mock("@/hooks/useSessionUser", () => ({ useSessionUser: () => ({
-  data: { id: 7, nickname: "사용자", email: "example@example.test", provider: "GOOGLE" },
-  isLoading: false, isFetching: false, refetch: vi.fn(),
-}) }));
+vi.mock("@/hooks/useSessionUser", () => ({
+  useSessionUser: () => ({
+    data: { id: 7, nickname: "사용자", email: "example@example.test", provider: "GOOGLE" },
+    isLoading: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  }),
+}));
 vi.mock("@/lib/api/user", () => ({ withdrawAccount: mocks.withdraw }));
 vi.mock("@/lib/api/auth", () => ({ logout: vi.fn() }));
 vi.mock("@/lib/analytics/amplitude", () => ({
@@ -29,12 +33,15 @@ vi.mock("@/lib/analytics/amplitude", () => ({
   sendAmplitudeDataCommand: vi.fn(),
   revokeAmplitudeConsent: vi.fn(),
 }));
-vi.mock("@/lib/client-storage", async original => {
+vi.mock("@/lib/client-storage", async (original) => {
   const actual = await original<typeof import("@/lib/client-storage")>();
-  return { ...actual, tearDownClientSession: (...args: Parameters<typeof actual.tearDownClientSession>) => {
-    mocks.tearDown(...args);
-    actual.tearDownClientSession(...args);
-  } };
+  return {
+    ...actual,
+    tearDownClientSession: (...args: Parameters<typeof actual.tearDownClientSession>) => {
+      mocks.tearDown(...args);
+      actual.tearDownClientSession(...args);
+    },
+  };
 });
 vi.mock("@/lib/expenses/expense-currency-preference", () => ({
   clearExpenseCurrencyPreferencesForUser: mocks.clearPreferences,
@@ -42,7 +49,9 @@ vi.mock("@/lib/expenses/expense-currency-preference", () => ({
 vi.mock("@/components/analytics/CookieSettingsProvider", () => ({ CookieSettingsButton: () => null }));
 vi.mock("@/components/user/UserAvatar", () => ({ UserAvatar: () => null }));
 vi.mock("@/components/settings/WithdrawAccountConfirmModal", () => ({ WithdrawAccountConfirmModal: () => null }));
-vi.mock("@/components/settings/WithdrawalDelegationRequiredModal", () => ({ WithdrawalDelegationRequiredModal: () => null }));
+vi.mock("@/components/settings/WithdrawalDelegationRequiredModal", () => ({
+  WithdrawalDelegationRequiredModal: () => null,
+}));
 
 let renderer: ReactTestRenderer;
 const queryClient = new QueryClient();
@@ -61,9 +70,7 @@ async function confirmWithdrawal() {
   await act(async () => {
     renderer = create(<MyInfoPage />);
   });
-  const open = renderer.root.findAllByType("button").find(
-    (button) => button.children.includes("회원 탈퇴"),
-  )!;
+  const open = renderer.root.findAllByType("button").find((button) => button.children.includes("회원 탈퇴"))!;
   await act(async () => open.props.onClick());
   await act(async () => renderer.root.findByType(WithdrawAccountConfirmModal).props.onConfirm());
 }

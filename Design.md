@@ -83,7 +83,6 @@ Figma 디자인 시스템 Icon에 없어 임시로 Tabler Icons(outline)에서 �
 | 아이콘 | 파일 | 출처 | 쓰는 곳 |
 |---|---|---|---|
 | 경로 보기 | `route.svg` (`RouteIcon`) | Tabler `route` | 모바일 지도 경로 보기 버튼 |
-| 보내기(종이비행기) | `send.svg` (`SendIcon`) | Tabler `send` | 헤더 초대하기 (PR #220) |
 
 ### 2-2. 아이콘 사용
 ```tsx

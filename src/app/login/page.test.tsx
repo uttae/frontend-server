@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/image", () => ({
   default: (props: ImgHTMLAttributes<HTMLImageElement>) => {
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- 테스트에서는 전달 속성을 그대로 확인한다.
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
     return <img {...props} />;
   },
 }));
@@ -18,7 +18,6 @@ vi.mock("@/lib/google-oauth", () => ({
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => {
-    // Exercise the page's real Suspense fallback while navigation data is pending.
     throw new Promise<never>(() => {});
   },
 }));

@@ -23,8 +23,7 @@ import { AuthFlowSpinner } from "@/components/auth/AuthFlowSpinner";
 import { BrandLogo } from "@/components/BrandLogo";
 import { Alert, AlertAction, AlertTitle } from "@/components/ui/alert";
 
-const SIGNUP_EXPIRED_MESSAGE =
-  "가입 요청이 만료되었거나 다른 로그인 시도로 무효화되었습니다. 다시 로그인해 주세요.";
+const SIGNUP_EXPIRED_MESSAGE = "가입 요청이 만료되었거나 다른 로그인 시도로 무효화되었습니다. 다시 로그인해 주세요.";
 const REACCEPT_EXPIRED_MESSAGE =
   "재동의 요청이 만료되었거나 다른 로그인 시도로 무효화되었습니다. 다시 로그인해 주세요.";
 
@@ -90,10 +89,7 @@ export default function LoginAgreementsPage() {
       if (flow.kind === "reaccept") {
         const result = await completeGoogleReaccept(flow.reacceptanceToken);
         if (!result.ok) {
-          if (
-            result.errorCode ===
-            GOOGLE_REACCEPTANCE_TOKEN_NOT_FOUND_ERROR_CODE
-          ) {
+          if (result.errorCode === GOOGLE_REACCEPTANCE_TOKEN_NOT_FOUND_ERROR_CODE) {
             clearGoogleAgreementFlowSession();
             setIsExpired(true);
             setErrorMessage(REACCEPT_EXPIRED_MESSAGE);
@@ -105,9 +101,7 @@ export default function LoginAgreementsPage() {
       } else {
         const result = await completeGoogleSignup(flow.signupToken);
         if (!result.ok) {
-          if (
-            result.errorCode === GOOGLE_SIGNUP_TOKEN_NOT_FOUND_ERROR_CODE
-          ) {
+          if (result.errorCode === GOOGLE_SIGNUP_TOKEN_NOT_FOUND_ERROR_CODE) {
             clearGoogleAgreementFlowSession();
             setIsExpired(true);
             setErrorMessage(SIGNUP_EXPIRED_MESSAGE);
@@ -135,11 +129,9 @@ export default function LoginAgreementsPage() {
 
   const isSignup = flow.kind === "signup";
   const submitDisabled =
-    consentState.isLoading ||
-    consentState.isError ||
-    !consentState.canProceed ||
-    isSubmitting ||
-    isExpired;
+    consentState.isLoading || consentState.isError || !consentState.canProceed || isSubmitting || isExpired;
+
+  const consentLabel = isSignup ? "동의하고 가입하기" : "동의하고 계속하기";
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-bubble-gray/80 via-white to-white px-4 py-12">
@@ -199,11 +191,7 @@ export default function LoginAgreementsPage() {
             aria-disabled={submitDisabled}
             className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-label-xl-emphasis mobile:text-label-l-emphasis font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting
-              ? "처리 중…"
-              : isSignup
-                ? "동의하고 가입하기"
-                : "동의하고 계속하기"}
+            {isSubmitting ? "처리 중…" : consentLabel}
           </button>
         </div>
       </div>

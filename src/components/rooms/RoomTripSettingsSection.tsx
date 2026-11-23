@@ -10,7 +10,6 @@ import { useCurrentRoomMembership } from "@/hooks/useCurrentRoomMembership";
 import { isRoomMemberRole } from "@/lib/rooms";
 import { useSessionStore } from "@/stores/session-store";
 
-/** 방장 전용 여행 삭제 — 적용하기 아래 작은 텍스트 버튼과 삭제 확인 */
 export function RoomTripDeleteButton() {
   const router = useRouter();
   const { roomSource, isHost, isLoading } = useCurrentRoomMembership();
@@ -51,13 +50,14 @@ export function RoomTripSettingsSection({
 }>) {
   const { roomId, roomSource, isLoading } = useCurrentRoomMembership();
   const canEdit = isRoomMemberRole(roomSource?.role);
-  const description = !isLoading && roomSource && roomId && !canEdit
-    ? "여행 멤버만 여행 정보를 수정할 수 있어요."
-    : undefined;
+  const description =
+    !isLoading && roomSource && roomId && !canEdit ? "여행 멤버만 여행 정보를 수정할 수 있어요." : undefined;
 
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
-      {description ? <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">{description}</p> : null}
+      {description ? (
+        <p className="text-body-s-regular mobile:text-body-xs-regular text-dark-gray">{description}</p>
+      ) : null}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">

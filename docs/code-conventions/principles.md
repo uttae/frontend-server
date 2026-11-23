@@ -26,7 +26,7 @@
 
 - 변형은 `variant`·`size` 같은 유니온 prop으로 받고, 값은 Figma 컴포넌트 속성 값에 맞춘다. 변형별 클래스는 cva로 정의한다(3-6).
 - 화면은 부품의 색·글자를 덮지 않는다. 바깥에서 주는 `className`은 배치(폭·정렬·위치)에만 쓴다.
-- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
+- 버튼은 `ui/button`의 `Button`(Figma Button: `variant` solid·weak·outline × `tone` neutral·brand·critical, 배경 없는 `variant="text"`(Neutral Text) × `size` lg 56·md 48·sm 36·xs 32)을 쓴다. 대화상자 버튼은 취소 `variant="weak"`, 확인 기본(Neutral Solid), 삭제·탈퇴 같은 위험 동작 `tone="critical"`이다. 처리 중은 문구 대신 `loading`(progress)으로 보이고 `loadingLabel`로 읽힌다.
 - shadcn 코드를 받으면 디자인 시스템에 맞춘다.
   - 색·그림자·포커스 클래스(`secondary`·`*-foreground`·`muted`·`accent`·`input`·`ring`·`shadow-*`)는 시맨틱 토큰으로 바꾼다. 이름이 같아도 뜻이 다르고(`secondary`는 라임), 없는 이름은 CSS가 생기지 않는다.
   - `shadcn init`은 하지 않고 `add`로만 받는다. init이 `globals.css`에 넣는 색 변수(`:root`·`@theme inline`)는 기존 `primary`·`border`·`background` 토큰을 앱 전체에서 덮는다.
@@ -254,7 +254,7 @@ src/hooks/use*.ts            조회 훅(useQuery)·변경 훅(useMutation)·화�
 - 요청은 `src/lib/api`의 함수로만 보낸다(`apiFetch`가 401 토큰 갱신과 세션 만료를 처리한다). 컴포넌트는 `fetch`도 API 함수도 직접 부르지 않고 훅을 쓴다.
 - 실패는 `HttpError`로 던진다. `requestJson`·`requestVoid`에는 `useHttpError: true`를 넘긴다(없으면 `status`가 없는 `Error`가 된다). 화면은 `status`를 직접 비교하지 않고 `src/lib/api/errors.ts`의 판정·문구 함수를 쓴다.
 - 키는 팩토리로만 만들고 queryFn이 쓰는 값을 모두 넣는다. 방 데이터 키는 `[세그먼트, roomId, …]` 순서다(강퇴·방 삭제 때 두 번째 자리로 캐시를 지운다). 개인 데이터 키에는 사용자 ID를 넣는다.
-- 조회 훅은 키·queryFn·`enabled`와 필요한 `select`·`placeholderData`·`staleTime`만 둔다. 전역 기본값(`createQueryClient`)과 같은 값은 다시 쓰지 않고, 다른 값에는 갱신 사유를 주석으로 단다.
+- 조회 훅은 키·queryFn·`enabled`와 필요한 `select`·`placeholderData`·`staleTime`만 둔다. 전역 기본값(`createQueryClient`)과 같은 값은 다시 쓰지 않는다.
 - 브로드캐스트와 본인 수정으로 갱신되는 방 데이터는 `staleTime: Infinity`로 둔다(전역은 60초). 무효화로 갱신받는 쿼리에는 `refetchOnMount: false`를 두지 않는다. 화면 밖에서 무효화된 캐시가 다시 마운트돼도 갱신되지 않는다.
 - 변경 훅 하나는 동작 하나다. 캐시 반영과 쓰기 분석 이벤트는 훅에, 토스트·닫기·이동은 호출부 `mutate(vars, { onSuccess, onError })`에 둔다.
 - 캐시는 응답으로 `setQueryData`하는 것이 기본이다. 응답으로 확정할 수 없을 때만 필요한 범위를 무효화하고, 그 promise를 반환해 재조회가 끝날 때까지 `isPending`을 유지한다.
@@ -429,27 +429,47 @@ const sorted = [...data.places].sort(byOrder);
 
 ### 2-9. 폼은 TanStack Form, 검증은 칸마다 (Forms)
 
-입력 값·검증·제출 상태를 `useState`로 하나씩 들면 오류가 폼 아래 문장 하나로 뭉치고, 어느 칸이 틀렸는지 화면이 모른다. 대화상자·시트 안의 폼은 `@tanstack/react-form`으로 쓴다.
+입력 값·검증·제출 상태를 `useState`로 하나씩 들면 오류가 폼 아래 문장 하나로 뭉치고, 어느 칸이 틀렸는지 화면이 모른다. 페이지 안의 폼과 대화상자·시트 안의 폼은 `@tanstack/react-form`으로 쓰고, 규칙은 zod 스키마로 둔다.
 
-- 값은 `useForm({ defaultValues })`가 갖고, 칸은 `form.Field`로 그린다. 검증은 칸마다 `validators`에 함수로 둔다(zod는 아직 쓰지 않는다 — 나중에 같은 자리에 스키마를 넣는다). 검증 함수는 `src/lib`의 순수 함수를 부른다.
+- 값은 `useForm({ defaultValues })`가 갖고, 칸은 `form.Field`로 그린다.
+- 규칙은 `src/lib`의 zod 스키마에 두고, 문구·한도는 그 도메인 규칙 파일의 상수·판정 함수를 쓴다. 칸 하나만 보는 규칙뿐이면 그 칸 `validators`에 칸 스키마를 둔다.
+- 다른 칸을 함께 보는 교차 규칙이 있으면 칸 validators와 폼 validators에 규칙을 나눠 두지 않는다. TanStack 제출은 칸 검사가 하나라도 실패하면 폼 검사를 건너뛰어, 교차 오류가 첫 저장에 빠진다.
+  - 저장할 때 검사하는 폼은 칸 규칙까지 폼 스키마 하나에 두고 `revalidateLogic()` + `onDynamic`으로 붙인다. 칸 validators는 두지 않는다.
+  - 입력 즉시 검사하는 폼은 교차 규칙을 오류를 보일 칸의 validator에서 돌린다(`endDate` 칸이 기간 스키마를 돌린다). 폼 단위 `onChange` 스키마는 쓰지 않는다(칸 하나만 바꿔도 건드리지 않은 칸에 오류가 붙는다).
+  - 서버 값처럼 폼 밖의 값과 합쳐 보는 규칙은 렌더 중 `safeParse` 하나로 오류 문장·버튼·제출을 함께 막는다. 폼 validators는 폼 밖의 값이 바뀌어도 다시 돌지 않아, 실패한 오류가 남는다.
+- 스키마 오류는 issue 객체다. `errors[0]?.message`로 그리고, 한 폼에서 문자열을 돌려주는 함수 validator와 섞지 않는다(문자열 쪽은 `.message`가 없다).
+- issue `path`는 오류를 보일 `form.Field`의 `name`과 같게 둔다(`path: ["endDate"]`). 원소별 path(`destinations[0]`)나 path 없는 루트 refine은 어느 칸에도 보이지 않는다.
+- 폼 값 타입은 스키마에서 만든다(`z.input<typeof schema>`). `onSubmit`의 `value`는 다듬기 전 값이라 저장에는 `schema.parse(value)` 결과(trim 등)를 넘기고, 버튼 잠금은 `schema.safeParse(values).success`로 계산한다.
 - 칸 오류는 그 칸에 `aria-invalid`와 `FieldError`로 그린다. Select처럼 Figma에 오류 상태가 없는 칸도 Text Field 오류 모양을 쓴다. 권한·저장 실패·충돌처럼 칸이 없는 오류는 폼 아래 문장으로 둔다.
 - 제출은 `form.handleSubmit()` → `onSubmit`에서 mutation의 `mutateAsync`. 버튼 `loading`과 대화상자 `closeDisabled`는 그 mutation의 `isPending` 하나로 정한다(2-4).
 
 ```tsx
+// src/lib/expenses/expense-form.ts — 규칙과 문구는 스키마 한 곳에
+export const expenseBudgetSchema = z.string().regex(/^\d{1,15}$/, EXPENSE_BUDGET_INVALID_MESSAGE);
+
+// 교차 규칙은 폼 스키마에서 오류를 보일 칸의 name을 path로 준다
+const tripDatesSchema = z.object({ startDate: z.string(), endDate: z.string() }).superRefine(({ startDate, endDate }, ctx) => {
+  if (endDate < startDate) ctx.addIssue({ code: "custom", path: ["endDate"], message: TRIP_DATE_RANGE_INVALID_MESSAGE });
+});
+
+// 컴포넌트
 const form = useForm({
   defaultValues: { budget: initial.budgetKrw ?? "" },
   onSubmit: ({ value }) => saveBudget.mutateAsync({ budgetKrw: value.budget }),
 });
 
-<form.Field name="budget" validators={{ onSubmit: ({ value }) => budgetError(value) }}>
-  {(field) => (
-    <Field>
-      <FieldLabel htmlFor={field.name}>예산 (KRW)</FieldLabel>
-      <Input id={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)}
-        aria-invalid={field.state.meta.errors.length > 0} />
-      <FieldError>{field.state.meta.errors[0]}</FieldError>
-    </Field>
-  )}
+<form.Field name="budget" validators={{ onSubmit: expenseBudgetSchema }}>
+  {(field) => {
+    const error = field.state.meta.errors[0]?.message;
+    return (
+      <Field>
+        <FieldLabel htmlFor={field.name}>예산 (KRW)</FieldLabel>
+        <Input id={field.name} value={field.state.value} onChange={(e) => field.handleChange(e.target.value)}
+          aria-invalid={error ? true : undefined} />
+        <FieldError>{error}</FieldError>
+      </Field>
+    );
+  }}
 </form.Field>
 <Button type="submit" loading={saveBudget.isPending} loadingLabel="저장 중">저장</Button>
 ```
@@ -518,8 +538,8 @@ function SectionTitle({ title }: { title: string }) {
 | 무엇이 다른가 | 쓸 것 |
 | :-- | :-- |
 | 기기(터치·바텀시트·하단 탭바) | `mobile:` variant. 구조가 다르면 `useMobileView()`로 컴포넌트를 고른다 |
-| 뷰포트 폭(랜딩·홈 목록 열 수) | 테마 브레이크포인트(`sm:`·`lg:`·`landing-sm:`) |
-| 놓인 영역의 폭(크기가 바뀌는 패널) | 이름 있는 컨테이너 쿼리(`@container/plan`) |
+| 뷰포트 폭(랜딩·홈 목록 열 수) | 테마 브레이크포인트(`sm:`·`lg:`·`landing-sm:`). PC 작업 공간(일정·지출·준비물 등)은 쓰지 않는다. 최소 768까지 줄고 그보다 좁으면 가로 스크롤 |
+| 놓인 영역의 폭(크기가 바뀌는 패널) | 이름 있는 컨테이너 쿼리(`@container/header`) |
 
 - `mobile:`은 UA로 판별해 `html`에 붙인 클래스를 본다. 창을 줄여도 나오지 않으므로 기기 에뮬레이션이나 실기기로 확인한다.
 - 같은 속성을 두 축으로 중복하지 않는다. 새 브레이크포인트를 더하지 않는다.
@@ -565,8 +585,8 @@ z-index는 같은 스태킹 컨텍스트 안에서만 비교된다. 그래서 �
 
 - 토큰 이름은 `tailwind.config.js`에서 고른다. 색 우선순위와 원시 색 쓰는 법은 Design.md 1-1을 따른다. 레거시 별칭(`dark-gray`·`gray-border` 등)은 쓰지 않는다.
 - 타이포는 토큰 하나로 쓴다. display·heading·title은 `text-<역할>-<크기>`(`text-title-m`), body·label·caption은 굵기까지 붙인다(`text-body-s-regular`). `text-body-s`처럼 없는 이름은 CSS가 생기지 않는다.
-- 타이포 토큰에 `font-*`·`leading-*`·`tracking-*`·`/N`을 덧붙이지 않는다(토큰 값을 덮거나 굵기·자간이 빠진다). 맞는 토큰이 없으면 Figma 값대로 크기·줄 높이·굵기를 함께 임의값으로 쓰고(`text-[17px]/[24px] font-semibold`) 근거 주석을 단다(Design.md 1-2).
-- radius는 재정의된 토큰을 쓴다(`rounded-md` = 8px, Tailwind 기본과 다르다). 그림자 토큰은 아직 없다. `shadow-sm` 같은 Tailwind 기본값 대신 Figma 값을 임의값과 근거 주석으로 쓴다. 같은 임의값이 반복되면 토큰 추가를 요청한다.
+- 타이포 토큰에 `font-*`·`leading-*`·`tracking-*`·`/N`을 덧붙이지 않는다(토큰 값을 덮거나 굵기·자간이 빠진다). 맞는 토큰이 없으면 Figma 값대로 크기·줄 높이·굵기를 함께 임의값으로 쓴다(`text-[17px]/[24px] font-semibold`, Design.md 1-2).
+- radius는 재정의된 토큰을 쓴다(`rounded-md` = 8px, Tailwind 기본과 다르다). 그림자 토큰은 아직 없다. `shadow-sm` 같은 Tailwind 기본값 대신 Figma 값을 임의값으로 쓴다. 같은 임의값이 반복되면 토큰 추가를 요청한다.
 - 클래스는 `cn()`으로만 합친다. 템플릿 리터럴은 겹친 클래스(`px-2`와 바깥 `px-4`)를 정리하지 못하고, 조립한 이름(`` `bg-${tone}` ``)은 Tailwind가 소스에서 찾지 못한다. 변형은 cva(`class-variance-authority`)로 모은다.
 - 상태 스타일은 aria 속성을 variant로 읽는다(`aria-expanded:bg-fill`, `aria-current="page"`는 `aria-[current=page]:`). aria가 없는 상태만 `data-*`로 둔다. 여러 하위가 함께 따르는 루트 상태(채팅 최소화·밀도)는 하위마다 prop으로 내리지 않고, 루트의 `data-minimized`를 하위가 `group-data-minimized/chat:`처럼 읽는다.
 - 전역 요소 스타일은 `@layer base`에 둔다. 레이어 밖 CSS는 모든 유틸리티를 이긴다.

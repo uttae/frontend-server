@@ -6,18 +6,11 @@ import type { ChatMessageTextTypography } from "@/components/chat/chat-typograph
 import { cn } from "@/lib/utils";
 import { Reply } from "lucide-react";
 
-function AiResponseBody({
-  msg,
-  isMinimized,
-}: {
-  msg: ChatMessage;
-  isMinimized: boolean;
-}) {
+function AiResponseBody({ msg, isMinimized }: { msg: ChatMessage; isMinimized: boolean }) {
   return (
     <>
       <ChatMarkdownContent text={msg.text} variant="ai" />
-      {msg.aiIntent === "place_recommendation" &&
-      msg.aiRecommendedPlaces?.length ? (
+      {msg.aiIntent === "place_recommendation" && msg.aiRecommendedPlaces?.length ? (
         <AiRecommendedPlacesList
           places={msg.aiRecommendedPlaces}
           heading={msg.aiPlaceRecommendationHeading}
@@ -25,10 +18,7 @@ function AiResponseBody({
         />
       ) : null}
       {msg.aiIntent === "conversation_summary" && msg.aiConversationSummary ? (
-        <AiConversationSummaryContent
-          summary={msg.aiConversationSummary}
-          isMinimized={isMinimized}
-        />
+        <AiConversationSummaryContent summary={msg.aiConversationSummary} isMinimized={isMinimized} />
       ) : null}
     </>
   );
@@ -78,31 +68,21 @@ export function AiResponseBubble({
       >
         <span className="flex min-w-0 items-center gap-1.5 py-1">
           <Reply
-            className={cn(
-              "shrink-0 text-slate-600",
-              isMinimized ? "h-3 w-3" : "h-3.5 w-3.5",
-            )}
+            className={cn("shrink-0 text-slate-600", isMinimized ? "h-3 w-3" : "h-3.5 w-3.5")}
             strokeWidth={2}
             aria-hidden
           />
           <span
             className={cn(
               "min-w-0 flex-1 truncate font-medium",
-              isMinimized
-                ? "text-caption-s-regular leading-snug"
-                : "text-body-xs-regular leading-snug",
+              isMinimized ? "text-caption-s-regular leading-snug" : "text-body-xs-regular leading-snug",
             )}
           >
             {reply.quotePreview}
           </span>
         </span>
       </button>
-      <div
-        className={cn(
-          typo.bubble,
-          isMinimized ? "rounded-b-lg px-3 py-1.5" : "rounded-b-xl px-4 py-2",
-        )}
-      >
+      <div className={cn(typo.bubble, isMinimized ? "rounded-b-lg px-3 py-1.5" : "rounded-b-xl px-4 py-2")}>
         <AiResponseBody msg={msg} isMinimized={isMinimized} />
       </div>
     </div>

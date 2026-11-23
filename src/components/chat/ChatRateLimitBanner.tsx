@@ -10,10 +10,7 @@ type ChatRateLimitBannerProps = {
   isMinimized: boolean;
 };
 
-export function ChatRateLimitBanner({
-  message,
-  isMinimized,
-}: ChatRateLimitBannerProps) {
+export function ChatRateLimitBanner({ message, isMinimized }: ChatRateLimitBannerProps) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -32,10 +29,7 @@ export function ChatRateLimitBanner({
           isMinimized ? "text-body-xs-regular" : "text-body-s-regular mobile:text-body-xs-regular",
         )}
       >
-        <AlertCircle
-          className={cn("shrink-0", isMinimized ? "h-3.5 w-3.5" : "h-4 w-4")}
-          aria-hidden
-        />
+        <AlertCircle className={cn("shrink-0", isMinimized ? "h-3.5 w-3.5" : "h-4 w-4")} aria-hidden />
         <p className="min-w-0 flex-1 font-medium leading-snug">{message}</p>
       </div>
     </motion.div>

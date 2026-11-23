@@ -5,10 +5,7 @@ import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import type { ScheduleItemRouteResponse } from "@/lib/api/rooms";
-import {
-  useScheduleItemRoute,
-  useUpdateScheduleItemTravelMode,
-} from "@/hooks/useRooms";
+import { useScheduleItemRoute, useUpdateScheduleItemTravelMode } from "@/hooks/useRooms";
 import { persistedScheduleItemRouteQueryOptions } from "@/lib/plan/scheduleItemRoutePersistedQuery";
 import { buildScheduleItemRouteSummariesByMode } from "@/lib/plan/scheduleItemRouteModes";
 import {
@@ -24,26 +21,17 @@ import { cn } from "@/lib/utils";
 import { PlanTravelTimeCollapsed } from "./PlanTravelTimeCollapsed";
 import { TravelDirectionsCard } from "./TravelDirectionsCard";
 import { TravelRouteRail } from "./TravelRouteRail";
-import { PLAN_SEGMENT_RAIL_LINE_CLASS } from "./travelSegmentRailLayout";
 
-function routePayloadOk(
-  r: ScheduleItemRouteResponse | null | undefined,
-): r is ScheduleItemRouteResponse {
-  return (
-    r != null &&
-    r.durationSeconds >= 0 &&
-    r.distanceMeters >= 0
-  );
+function routePayloadOk(r: ScheduleItemRouteResponse | null | undefined): r is ScheduleItemRouteResponse {
+  return r != null && r.durationSeconds >= 0 && r.distanceMeters >= 0;
 }
 
 export type PlanTravelTimeProps = {
   roomId: string;
   scheduleId: number;
   segmentSourceItemId: number;
-  /** 다음 장소의 `itemId` — 경로를 이 항목까지 계산한다 */
   destinationItemId: number;
   scheduleFingerprint: string;
-  /** 서버 원본 공유 이동수단 — 미지원·미설정이면 선택을 기다립니다. */
   travelMode?: string;
   routeQueryEnabled?: boolean;
   originGooglePlaceId?: string;
@@ -51,7 +39,6 @@ export type PlanTravelTimeProps = {
   destinationGooglePlaceId?: string;
   destinationPlaceName?: string;
   className?: string;
-  /** `PlanTravelSegment` 등 외부 레일 사용 시 카드 본문만 렌더 */
   contentOnly?: boolean;
 };
 
@@ -76,28 +63,25 @@ export function PlanTravelTime({
 
   const fpTrim = scheduleFingerprint.trim();
   const rid = roomId.trim();
-  /** 서버 저장값 기준 표준 이동수단 — 이 값이 곧 방 전체 공유 상태 */
-  const serverMode =
-    canonicalScheduleTravelMode(travelMode);
+  const serverMode = canonicalScheduleTravelMode(travelMode);
 
   const {
     mutate: mutateTravelMode,
-    variables: pendingTravelMode,
-    isPending: isTravelModePending,
-  } = useUpdateScheduleItemTravelMode();
-  // 저장하는 동안은 고른 수단을 먼저 보여 주고, 끝나면(실패 포함) 다시 받은 서버 값을 보여 준다
-  const selectedMode =
-    isTravelModePending && pendingTravelMode?.itemId === segmentSourceItemId
-      ? pendingTravelMode.travelMode
-      : serverMode;
+    variables: pendingMode,
+    isPending: savingMode,
+  } = useUpdateScheduleItemTravelMode(rid, scheduleId, segmentSourceItemId);
+  const selectedMode = savingMode && pendingMode ? pendingMode : serverMode;
 
-  const googleMapsDirectionsUrl = selectedMode === null ? null : buildGoogleMapsDirectionsUrl({
-    originPlaceId: originGooglePlaceId ?? "",
-    originQuery: originPlaceName ?? "",
-    destinationPlaceId: destinationGooglePlaceId ?? "",
-    destinationQuery: destinationPlaceName ?? "",
-    travelMode: selectedMode,
-  });
+  const googleMapsDirectionsUrl =
+    selectedMode === null
+      ? null
+      : buildGoogleMapsDirectionsUrl({
+          originPlaceId: originGooglePlaceId ?? "",
+          originQuery: originPlaceName ?? "",
+          destinationPlaceId: destinationGooglePlaceId ?? "",
+          destinationQuery: destinationPlaceName ?? "",
+          travelMode: selectedMode,
+        });
 
   const {
     data: selectedRoute,
@@ -112,48 +96,26 @@ export function PlanTravelTime({
     selectedMode,
     routeQueryEnabled,
     fpTrim,
+    !savingMode,
   );
 
-  const menuDeferredModes = useMemo(
-    () =>
-      SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter(
-        (m) => m !== selectedMode,
-      ),
-    [selectedMode],
-  );
+  const menuDeferredModes = SCHEDULE_TRAVEL_MODES.map((m) => m.value).filter((mode) => mode !== selectedMode);
 
-  // 고르지 않은 수단은 조회하지 않는다(경로 조회 비용) — 예전에 고른 적이 있어 캐시에 남은 값만 보여 주고,
-  // 나머지는 그 수단을 골라야 계산한다
   const deferredRouteQueries = useQueries({
     queries: menuDeferredModes.map((mode) =>
-      persistedScheduleItemRouteQueryOptions(
-        rid,
-        scheduleId,
-        segmentSourceItemId,
-        destinationItemId,
-        mode,
-        fpTrim,
-        {
-          segmentReady: routeQueryEnabled,
-          networkEnabled: false,
-        },
-      ),
+      persistedScheduleItemRouteQueryOptions(rid, scheduleId, segmentSourceItemId, destinationItemId, mode, fpTrim, {
+        segmentReady: routeQueryEnabled,
+        networkEnabled: false,
+      }),
     ),
   });
 
   const modeRouteSummaries = useMemo(() => {
-    const merged =
-      buildScheduleItemRouteSummariesByMode(selectedRoute ?? undefined);
+    const merged = buildScheduleItemRouteSummariesByMode(selectedRoute ?? undefined);
 
-    const apply = (
-      payload: ScheduleItemRouteResponse | null | undefined,
-    ): void => {
+    const apply = (payload: ScheduleItemRouteResponse | null | undefined): void => {
       if (!routePayloadOk(payload)) return;
-      const cm = canonicalScheduleTravelMode(
-        typeof payload.travelMode === "string"
-          ? payload.travelMode.trim()
-          : "",
-      );
+      const cm = canonicalScheduleTravelMode(typeof payload.travelMode === "string" ? payload.travelMode.trim() : "");
       if (!cm) return;
       merged[cm] = {
         durationSeconds: payload.durationSeconds,
@@ -172,11 +134,7 @@ export function PlanTravelTime({
   const displayRoute = useMemo(() => {
     if (selectedMode === null) return undefined;
     const sel = modeRouteSummaries[selectedMode];
-    if (
-      sel != null &&
-      sel.durationSeconds >= 0 &&
-      sel.distanceMeters >= 0
-    ) {
+    if (sel != null && sel.durationSeconds >= 0 && sel.distanceMeters >= 0) {
       return {
         travelMode: selectedMode,
         durationSeconds: sel.durationSeconds,
@@ -185,9 +143,7 @@ export function PlanTravelTime({
     }
     if (routePayloadOk(selectedRoute)) {
       const rc = canonicalScheduleTravelMode(
-        typeof selectedRoute.travelMode === "string"
-          ? selectedRoute.travelMode.trim()
-          : "",
+        typeof selectedRoute.travelMode === "string" ? selectedRoute.travelMode.trim() : "",
       );
       if (rc === selectedMode) return selectedRoute;
     }
@@ -198,61 +154,35 @@ export function PlanTravelTime({
     const out: Partial<Record<ScheduleTravelModeValue, boolean>> = {};
     const hasSummary = (m: ScheduleTravelModeValue) => {
       const s = modeRouteSummaries[m];
-      return (
-        s != null &&
-        s.durationSeconds >= 0 &&
-        s.distanceMeters >= 0
-      );
+      return s != null && s.durationSeconds >= 0 && s.distanceMeters >= 0;
     };
-    // 고르지 않은 수단은 조회하지 않으니 고른 수단만 불러오는 중을 표시한다
     if (routeQueryEnabled && selectedMode !== null) {
-      out[selectedMode] =
-        !hasSummary(selectedMode) && (selectedPending || selectedFetching);
+      out[selectedMode] = !hasSummary(selectedMode) && (selectedPending || selectedFetching);
     }
     return out;
-  }, [
-    modeRouteSummaries,
-    routeQueryEnabled,
-    selectedMode,
-    selectedPending,
-    selectedFetching,
-  ]);
+  }, [modeRouteSummaries, routeQueryEnabled, selectedMode, selectedPending, selectedFetching]);
 
   const primarySettled = !selectedPending && !selectedFetching;
 
   const summaryFetching = !displayRoute && selectedFetching;
 
-  const summaryPending =
-    selectedMode !== null && !displayRoute && !selectedFetching && selectedPending;
+  const summaryPending = selectedMode !== null && !displayRoute && !selectedFetching && selectedPending;
 
-  // 마지막 답이 "경로 없음"(null)이면 다시 받다가 실패해도 그 답을 보여 준다 — 재조회 실패로 이미 받은 답을 오류로 바꾸지 않는다
-  const summaryIsError =
-    !displayRoute && primarySettled && selectedError && selectedRoute !== null;
+  const summaryIsError = !displayRoute && primarySettled && selectedError && selectedRoute !== null;
 
-  const summaryUnavailable =
-    !displayRoute &&
-    primarySettled &&
-    !summaryIsError;
+  const summaryUnavailable = !displayRoute && primarySettled && !summaryIsError;
 
   const handleSelectTravelMode = useCallback(
     (mode: ScheduleTravelModeValue) => {
       setMenuOpen(false);
       if (mode === selectedMode) return;
-      mutateTravelMode(
-        {
-          roomId: rid,
-          scheduleId,
-          itemId: segmentSourceItemId,
-          travelMode: mode,
+      mutateTravelMode(mode, {
+        onError: () => {
+          toast.error("이동 수단을 변경하지 못했어요.");
         },
-        {
-          onError: () => {
-            toast.error("이동 수단을 변경하지 못했어요.");
-          },
-        },
-      );
+      });
     },
-    [rid, scheduleId, segmentSourceItemId, selectedMode, mutateTravelMode],
+    [selectedMode, mutateTravelMode],
   );
 
   if (directionsHidden) {
@@ -273,58 +203,45 @@ export function PlanTravelTime({
         isMobileDevice && "min-w-0 max-w-full flex-1",
         contentOnly && "w-full max-w-full",
       )}
-      style={
-        isMobileDevice || contentOnly ?
-          undefined
-        : { width: PLAN_ROUTE_CARD_WIDTH_PX }
-      }
+      style={isMobileDevice || contentOnly ? undefined : { width: PLAN_ROUTE_CARD_WIDTH_PX }}
     >
       <TravelDirectionsCard
-          menuOpen={menuOpen}
-          onToggleMenu={() => setMenuOpen((o) => !o)}
-          summaryMode={selectedMode ?? ""}
-          route={displayRoute}
-          routeQuery={{
-            isPending: summaryPending,
-            isError: summaryIsError,
-            isFetching: summaryFetching,
-          }}
-          routeUnavailable={summaryUnavailable}
-          modeRouteSummaries={modeRouteSummaries}
-          modeRouteRowLoading={modeRouteRowLoading}
-          effectiveMode={selectedMode}
-          googleMapsDirectionsUrl={googleMapsDirectionsUrl ?? undefined}
-          subtleDirectionsLink={!isMobileDevice}
-          onSelectTravelMode={handleSelectTravelMode}
-          onHideDirections={() => {
-            setDirectionsHidden(true);
-            setMenuOpen(false);
-          }}
-        />
+        menuOpen={menuOpen}
+        onToggleMenu={() => setMenuOpen((o) => !o)}
+        summaryMode={selectedMode ?? ""}
+        route={displayRoute}
+        routeQuery={{
+          isPending: summaryPending,
+          isError: summaryIsError,
+          isFetching: summaryFetching,
+        }}
+        routeUnavailable={summaryUnavailable}
+        modeRouteSummaries={modeRouteSummaries}
+        modeRouteRowLoading={modeRouteRowLoading}
+        effectiveMode={selectedMode}
+        googleMapsDirectionsUrl={googleMapsDirectionsUrl ?? undefined}
+        variant={isMobileDevice ? "mobile" : "web"}
+        onSelectTravelMode={handleSelectTravelMode}
+        onHideDirections={() => {
+          setDirectionsHidden(true);
+          setMenuOpen(false);
+        }}
+      />
     </div>
   );
 
   if (contentOnly) {
     return (
-      <div
-        className={cn(className)}
-        role="separator"
-        aria-label="이동 시간 및 길찾기"
-      >
+      <div className={cn(className)} role="separator" aria-label="이동 시간 및 길찾기">
         {directionsCard}
       </div>
     );
   }
 
   return (
-    <div
-      className={cn("relative py-1 pl-1", className)}
-      role="separator"
-      aria-label="이동 시간 및 길찾기"
-    >
-      <div className={PLAN_SEGMENT_RAIL_LINE_CLASS} aria-hidden />
+    <div className={cn("relative py-1 pl-1", className)} role="separator" aria-label="이동 시간 및 길찾기">
       <div className="relative flex min-h-10 items-center gap-3">
-        <TravelRouteRail arrowClassName="text-primary" layout="row" />
+        <TravelRouteRail />
         {directionsCard}
       </div>
     </div>

@@ -15,14 +15,7 @@ type Props = {
   onLeave: (room: RoomListItem) => void;
 };
 
-export function RoomGrid({
-  rooms,
-  isLoading,
-  isError,
-  onRetry,
-  onDelete,
-  onLeave,
-}: Props) {
+export function RoomGrid({ rooms, isLoading, isError, onRetry, onDelete, onLeave }: Props) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -33,10 +26,11 @@ export function RoomGrid({
 
   if (isError) {
     return (
-      <div role="alert" className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-20 text-center">
-        <p className="text-body-m-emphasis font-medium text-dark-gray">
-          여행 목록을 불러오지 못했어요
-        </p>
+      <div
+        role="alert"
+        className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-border py-20 text-center"
+      >
+        <p className="text-body-m-emphasis font-medium text-dark-gray">여행 목록을 불러오지 못했어요</p>
         <button
           type="button"
           onClick={onRetry}
@@ -53,11 +47,24 @@ export function RoomGrid({
       <div className="flex flex-col items-center justify-center gap-10 rounded-[8px] bg-fill px-5 py-20 text-center mobile:min-h-[410px] mobile:justify-start mobile:rounded-none mobile:bg-transparent mobile:px-0 mobile:pb-0 mobile:pt-[60px]">
         <div className="flex flex-col items-center gap-5 mobile:gap-3">
           <div aria-hidden className="size-10 mobile:size-[30px]">
-            <Image src="/rooms/figma/empty-symbol-desktop.svg" alt="" width={40} height={40} className="block mobile:hidden" />
-            <Image src="/rooms/figma/empty-symbol-mobile.svg" alt="" width={30} height={30} className="hidden mobile:block" />
+            <Image
+              src="/rooms/figma/empty-symbol-desktop.svg"
+              alt=""
+              width={40}
+              height={40}
+              className="block mobile:hidden"
+            />
+            <Image
+              src="/rooms/figma/empty-symbol-mobile.svg"
+              alt=""
+              width={30}
+              height={30}
+              className="hidden mobile:block"
+            />
           </div>
           <p className="text-body-m-emphasis text-text-subtle mobile:text-body-s-regular">
-            아직 생성된 여행방이 없어요<br />
+            아직 생성된 여행방이 없어요
+            <br />
             우때와 함께 여행계획을 시작해보아요!
           </p>
         </div>
@@ -70,12 +77,7 @@ export function RoomGrid({
     <ul className="grid grid-cols-1 gap-x-4 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 mobile:gap-y-4">
       {rooms.map((room, index) => (
         <li key={room.id} className="min-w-0">
-          <RoomCard
-            room={room}
-            isFirst={index === 0}
-            onDelete={onDelete}
-            onLeave={onLeave}
-          />
+          <RoomCard room={room} isFirst={index === 0} onDelete={onDelete} onLeave={onLeave} />
         </li>
       ))}
     </ul>

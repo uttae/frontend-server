@@ -18,18 +18,12 @@ export function resolveAnalyticsRuntime({
   nodeEnv,
 }: AnalyticsRuntimeInput): AnalyticsRuntime {
   const normalizedMeasurementId = measurementId?.trim() ?? "";
-  const validMeasurementId = GA4_MEASUREMENT_ID_PATTERN.test(
-    normalizedMeasurementId,
-  )
-    ? normalizedMeasurementId
-    : null;
+  const validMeasurementId = GA4_MEASUREMENT_ID_PATTERN.test(normalizedMeasurementId) ? normalizedMeasurementId : null;
   const analyticsDebugMode = debugMode === "true";
 
   return {
     debugMode: analyticsDebugMode,
-    enabled:
-      Boolean(validMeasurementId) &&
-      (nodeEnv === "production" || analyticsDebugMode),
+    enabled: Boolean(validMeasurementId) && (nodeEnv === "production" || analyticsDebugMode),
     measurementId: validMeasurementId,
   };
 }

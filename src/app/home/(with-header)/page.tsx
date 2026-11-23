@@ -24,12 +24,14 @@ export default function HomePage() {
 
   return (
     <>
-      <main className={`mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 ${isEmpty ? "mobile:pb-0" : "mobile:pb-[60px]"}`}>
+      <main
+        className={`mx-auto w-full max-w-[1184px] flex-1 px-6 pb-20 mobile:px-5 ${isEmpty ? "mobile:pb-0" : "mobile:pb-[60px]"}`}
+      >
         <HomeBannerCarousel banners={HOME_BANNERS} />
-        <div className={`flex items-center justify-between gap-3 py-5 mobile:min-h-[62px] mobile:py-4 ${isEmpty ? "min-h-[78px]" : "min-h-[88px]"}`}>
-          <h1 className="text-heading-m text-text mobile:text-title-l">
-            나의 여행
-          </h1>
+        <div
+          className={`flex items-center justify-between gap-3 py-5 mobile:min-h-[66px] mobile:py-4 ${isEmpty ? "min-h-[78px]" : "min-h-[88px]"}`}
+        >
+          <h1 className="text-heading-m text-text mobile:text-heading-s">나의 여행</h1>
           {!isMobileDevice && (rooms.length > 0 || isLoading || isError) ? <NewTripLink /> : null}
         </div>
 
@@ -48,24 +50,14 @@ export default function HomePage() {
       <SiteFooter variant="room-list" className="hidden mobile:block" />
 
       {isMobileDevice && !isEmpty ? (
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(24px+env(safe-area-inset-bottom))] z-30 flex justify-center px-5">
-          <NewTripLink className="pointer-events-auto shadow-[0_2px_5px_rgba(0,0,0,0.1)]" />
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(28px+env(safe-area-inset-bottom))] z-30 flex justify-center px-5">
+          <NewTripLink className="pointer-events-auto" />
         </div>
       ) : null}
 
-      {deletingRoom && (
-        <DeleteConfirmModal
-          room={deletingRoom}
-          onClose={() => setDeletingRoom(null)}
-        />
-      )}
+      {deletingRoom && <DeleteConfirmModal room={deletingRoom} onClose={() => setDeletingRoom(null)} />}
 
-      {leavingRoom && (
-        <LeaveConfirmModal
-          room={leavingRoom}
-          onClose={() => setLeavingRoom(null)}
-        />
-      )}
+      {leavingRoom && <LeaveConfirmModal room={leavingRoom} onClose={() => setLeavingRoom(null)} />}
     </>
   );
 }

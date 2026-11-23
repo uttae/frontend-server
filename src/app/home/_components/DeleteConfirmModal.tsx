@@ -7,7 +7,6 @@ import { useDeleteRoom } from "@/hooks/useRooms";
 type Props = {
   room: Pick<RoomListItem, "id" | "title">;
   onClose: () => void;
-  /** 삭제 API 성공 직후, `onClose` 호출 전에 실행 */
   onDeleted?: () => void;
 };
 

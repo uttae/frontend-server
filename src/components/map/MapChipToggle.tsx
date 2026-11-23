@@ -9,10 +9,6 @@ type Props = {
   children: ReactNode;
 };
 
-/**
- * 지도 툴바에서 고르는 칩(카테고리·영업 중). Figma Chip Outline md(36px)이고, Base UI Toggle이라 선택 상태가 aria-pressed로 읽힌다.
- * 모바일에서는 보이는 크기는 두고 누르는 영역만 가상 요소로 44px까지 넓힌다. 배경이 보이는 칩이라 padding으로 넓히면 모양이 커진다
- */
 export function MapChipToggle({ pressed, onPressedChange, children }: Readonly<Props>) {
   return (
     <Chip

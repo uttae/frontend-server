@@ -8,18 +8,14 @@ import {
   writeAnalyticsConsentCookie,
 } from "@/lib/analytics/consent-cookie";
 
-function installCookieJar(
-  initial: Record<string, string> = {},
-  protocol = "https:",
-) {
+function installCookieJar(initial: Record<string, string> = {}, protocol = "https:") {
   const jar = new Map(Object.entries(initial));
   const writes: string[] = [];
 
   vi.stubGlobal("document", {});
   Object.defineProperty(document, "cookie", {
     configurable: true,
-    get: () =>
-      [...jar.entries()].map(([name, value]) => `${name}=${value}`).join("; "),
+    get: () => [...jar.entries()].map(([name, value]) => `${name}=${value}`).join("; "),
     set: (serialized: string) => {
       writes.push(serialized);
       const [pair = ""] = serialized.split(";");
@@ -73,9 +69,7 @@ describe("analytics consent cookie", () => {
     const { writes } = installCookieJar({}, protocol);
 
     expect(writeAnalyticsConsentCookie("granted")).toBe(true);
-    expect(writes).toEqual([
-      `uttae_analytics_consent=v1:granted; Max-Age=31536000; Path=/; SameSite=Lax${secure}`,
-    ]);
+    expect(writes).toEqual([`uttae_analytics_consent=v1:granted; Max-Age=31536000; Path=/; SameSite=Lax${secure}`]);
   });
 
   it("expires only GA first-party cookies for host and parent domains", () => {

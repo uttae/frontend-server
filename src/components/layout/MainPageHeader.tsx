@@ -9,27 +9,12 @@ type MainPageHeaderProps = {
   className?: string;
 };
 
-/** (main) 내부 페이지 좌측 상단 제목·설명·우측 액션 공통 컨테이너 */
-export function MainPageHeader({
-  title,
-  description,
-  action,
-  className,
-}: MainPageHeaderProps) {
+export function MainPageHeader({ title, description, action, className }: Readonly<MainPageHeaderProps>) {
   return (
-    <div
-      className={cn(
-        "flex min-w-0 items-start justify-between gap-3",
-        className,
-      )}
-    >
-      <div className="min-w-0 flex-1">
-        <h1 className="truncate text-title-l mobile:text-title-m font-bold text-black">{title}</h1>
-        {description ? (
-          <p className="mt-1 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-dark-gray">
-            {description}
-          </p>
-        ) : null}
+    <div className={cn("flex min-h-19 min-w-0 items-center justify-between gap-3 py-3", className)}>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <h1 className="truncate text-title-l text-text">{title}</h1>
+        {description ? <p className="text-body-s-regular text-text-subtle">{description}</p> : null}
       </div>
       {action}
     </div>

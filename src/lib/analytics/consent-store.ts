@@ -24,14 +24,11 @@ export type AnalyticsConsentStore = {
   subscribe: (listener: () => void) => () => void;
 };
 
-export function createAnalyticsConsentStore(
-  port: ConsentCookiePort,
-): AnalyticsConsentStore {
+export function createAnalyticsConsentStore(port: ConsentCookiePort): AnalyticsConsentStore {
   const listeners = new Set<() => void>();
   let sessionState: AnalyticsConsentValue | null = null;
 
-  const getSnapshot = (): AnalyticsConsentState =>
-    sessionState ?? port.read() ?? "pending";
+  const getSnapshot = (): AnalyticsConsentState => sessionState ?? port.read() ?? "pending";
 
   return {
     getServerSnapshot: () => "pending",

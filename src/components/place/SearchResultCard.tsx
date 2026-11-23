@@ -87,9 +87,7 @@ export function SearchResultCard({
       role={onClick ? "button" : undefined}
       style={onClick && variant === "list" ? { cursor: "pointer" } : undefined}
     >
-      {/* Text content */}
       <div className="min-w-0 flex-1">
-        {/* 이름 + 유형 */}
         <div className="flex items-baseline gap-1.5">
           <h3 className="truncate text-body-m-emphasis mobile:text-body-s-emphasis font-semibold leading-5 tracking-tight text-primary-strong">
             {name}
@@ -101,7 +99,6 @@ export function SearchResultCard({
           )}
         </div>
 
-        {/* 별점 + 리뷰 수 + 영업 상태 */}
         <div className="mt-1 flex flex-wrap items-center gap-x-1.5">
           <Star className="h-3 w-3 fill-[#FDC700] text-[#FDC700]" />
           <span className="text-body-xs-emphasis font-medium leading-relaxed text-[#364153]">
@@ -123,24 +120,16 @@ export function SearchResultCard({
           )}
         </div>
 
-        {/* 주소 */}
         {address && (
           <div className="mt-1 flex items-center gap-1">
             <MapPin className="h-3 w-3 shrink-0 text-[#99A1AF]" />
-            <span className="truncate text-body-xs-regular leading-relaxed text-[#99A1AF]">
-              {address}
-            </span>
+            <span className="truncate text-body-xs-regular leading-relaxed text-[#99A1AF]">{address}</span>
           </div>
         )}
       </div>
 
       {showThumbnail ? (
-        <SearchResultThumbnail
-          name={name}
-          image={image}
-          googlePlaceId={googlePlaceId}
-          variant={variant}
-        />
+        <SearchResultThumbnail name={name} image={image} googlePlaceId={googlePlaceId} variant={variant} />
       ) : null}
     </article>
   );

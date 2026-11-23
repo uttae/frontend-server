@@ -1,17 +1,19 @@
-import {
-  LANDING_CONTAINER_CLASS,
-  LANDING_HOW_STEPS,
-  LANDING_SECTION_PY,
-} from "@/lib/landing/landing-content";
+import { LANDING_CONTAINER_CLASS, LANDING_HOW_STEPS, LANDING_SECTION_PY } from "@/lib/landing/landing-content";
 import { landingTypography } from "@/lib/landing/landing-typography";
 
 export function LandingHowItWorks() {
   return (
-    <section id="how-it-works" className={`scroll-mt-24 border-t border-gray-border/50 bg-primary/[0.035] ${LANDING_SECTION_PY}`} aria-labelledby="how-heading">
+    <section
+      id="how-it-works"
+      className={`scroll-mt-24 border-t border-gray-border/50 bg-primary/[0.035] ${LANDING_SECTION_PY}`}
+      aria-labelledby="how-heading"
+    >
       <div className={LANDING_CONTAINER_CLASS}>
         <div className="text-center">
           <p className={landingTypography.eyebrow}>HOW IT WORKS</p>
-          <h2 id="how-heading" className={`${landingTypography.sectionTitle} mt-3`}>3단계면 충분해요</h2>
+          <h2 id="how-heading" className={`${landingTypography.sectionTitle} mt-3`}>
+            3단계면 충분해요
+          </h2>
         </div>
         <ol className="mt-10 grid gap-4 landing-sm:grid-cols-3">
           {LANDING_HOW_STEPS.map(({ icon: Icon, step, title }) => (

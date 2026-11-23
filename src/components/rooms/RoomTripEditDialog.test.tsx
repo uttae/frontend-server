@@ -4,11 +4,24 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
-  room: { id: "room", title: "가을 여행", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12", role: "HOST" },
-  isHost: true, isLoading: false, missing: false, pending: false,
+  room: {
+    id: "room",
+    title: "가을 여행",
+    destinations: ["서울"],
+    startDate: "2026-10-10",
+    endDate: "2026-10-12",
+    role: "HOST",
+  },
+  isHost: true,
+  isLoading: false,
+  missing: false,
+  pending: false,
   update: vi.fn(),
 }));
-vi.mock("next/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/navigation")>()), useRouter: () => ({ replace: vi.fn(), push: vi.fn() }) }));
+vi.mock("next/navigation", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/navigation")>()),
+  useRouter: () => ({ replace: vi.fn(), push: vi.fn() }),
+}));
 vi.mock("@/components/layout/HeaderMemberPreview", () => ({ HeaderMemberPreview: () => null }));
 vi.mock("@/hooks/use-room-id", () => ({ useCurrentRoomId: () => ({ roomId: "room" }) }));
 vi.mock("@/hooks/useRoomDetail", () => ({ useRoomDetail: () => ({ data: state.room }) }));
@@ -18,7 +31,12 @@ vi.mock("@/hooks/useRooms", () => ({
   useUpdateRoom: () => ({ mutate: state.update, isPending: state.pending }),
 }));
 vi.mock("@/hooks/useCurrentRoomMembership", () => ({
-  useCurrentRoomMembership: () => ({ roomId: "room", roomSource: state.missing ? null : state.room, isHost: state.isHost, isLoading: state.isLoading }),
+  useCurrentRoomMembership: () => ({
+    roomId: "room",
+    roomSource: state.missing ? null : state.room,
+    isHost: state.isHost,
+    isLoading: state.isLoading,
+  }),
 }));
 vi.mock("@vis.gl/react-google-maps", () => ({ useMapsLibrary: () => null }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn() } }));
@@ -27,12 +45,12 @@ import HeaderBar from "@/components/layout/HeaderBar";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let host: HTMLDivElement;
 let root: Root;
-// Base UI 대화상자는 document.body로 포털된다. 여행 정보 수정 대화상자는 제목(aria-labelledby)으로 찾는다
 const dialogs = () => [...document.querySelectorAll<HTMLElement>('[role="dialog"]')];
 const editDialogs = () =>
-  dialogs().filter((node) => document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent === "여행 정보 수정");
+  dialogs().filter(
+    (node) => document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent === "여행 정보 수정",
+  );
 const dialog = () => editDialogs()[0] ?? null;
-// 열림·닫힘 처리와 처음 포커스는 Base UI가 다음 animation frame에 마친다
 async function nextFrame() {
   await act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
@@ -65,10 +83,8 @@ async function open() {
   return trigger;
 }
 const dateField = (edge: "start" | "end") => dialog()!.querySelector<HTMLButtonElement>(`#trip-room-${edge}`)!;
-// 날짜 선택 팝업도 body로 포털돼 여행 정보 수정 대화상자 밖에 그려진다
 const picker = () => document.querySelector<HTMLElement>('[role="dialog"][aria-label="날짜 선택"]');
 const day = (ymd: string) => picker()!.querySelector<HTMLButtonElement>(`button[data-ymd="${ymd}"]`)!;
-/** 날짜 칸을 눌러 달력을 열고, 날짜를 차례로 누른 뒤 확인한다 */
 async function pickDates(edge: "start" | "end", ...days: string[]) {
   await act(async () => dateField(edge).click());
   expect(picker()).not.toBeNull();
@@ -76,13 +92,27 @@ async function pickDates(edge: "start" | "end", ...days: string[]) {
   await click("확인", picker()!);
 }
 beforeEach(async () => {
-  Object.assign(state.room, { title: "가을 여행", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12" });
-  state.room.role = "HOST"; state.isHost = true; state.isLoading = false; state.missing = false; state.pending = false;
+  Object.assign(state.room, {
+    title: "가을 여행",
+    destinations: ["서울"],
+    startDate: "2026-10-10",
+    endDate: "2026-10-12",
+  });
+  state.room.role = "HOST";
+  state.isHost = true;
+  state.isLoading = false;
+  state.missing = false;
+  state.pending = false;
   state.update.mockReset();
-  host = document.createElement("div"); document.body.append(host); root = createRoot(host);
+  host = document.createElement("div");
+  document.body.append(host);
+  root = createRoot(host);
   await act(async () => root.render(<HeaderBar />));
 });
-afterEach(async () => { await act(async () => root.unmount()); host.remove(); });
+afterEach(async () => {
+  await act(async () => root.unmount());
+  host.remove();
+});
 
 it("opens one named modal beside the title and closing discards its draft with focus restoration", async () => {
   const trigger = await open();
@@ -93,25 +123,32 @@ it("opens one named modal beside the title and closing discards its draft with f
   await change('input[type="text"]', "임시 제목");
   await click("여행 정보 수정 닫기", dialog()!);
   await nextFrame();
-  expect(dialog()).toBeNull(); expect(document.activeElement).toBe(trigger);
+  expect(dialog()).toBeNull();
+  expect(document.activeElement).toBe(trigger);
   await open();
   expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("가을 여행");
   expect(state.update).not.toHaveBeenCalled();
 });
 
 it("uses the existing trimmed mutation payload and closes only after save succeeds", async () => {
-  await open(); await change('input[type="text"]', " 새 제목 ");
+  await open();
+  await change('input[type="text"]', " 새 제목 ");
   await click("적용하기", dialog()!);
-  expect(state.update).toHaveBeenCalledWith({
-    roomId: "room", data: { title: "새 제목", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12" },
-    previousStartDate: "2026-10-10", previousEndDate: "2026-10-12",
-  }, expect.objectContaining({ onSuccess: expect.any(Function) }));
+  expect(state.update).toHaveBeenCalledWith(
+    {
+      roomId: "room",
+      data: { title: "새 제목", destinations: ["서울"], startDate: "2026-10-10", endDate: "2026-10-12" },
+      previousStartDate: "2026-10-10",
+      previousEndDate: "2026-10-12",
+    },
+    expect.objectContaining({ onSuccess: expect.any(Function) }),
+  );
   expect(dialog()).not.toBeNull();
   await act(async () => state.update.mock.calls[0][1].onSuccess());
   expect(dialog()).toBeNull();
 });
 
-it("shows the title error under the title field and locks apply until a title is entered", async () => {
+it("shows the title error under the title field and blocks apply until a title is entered", async () => {
   await open();
   const title = () => dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!;
   expect(title().hasAttribute("aria-invalid")).toBe(false);
@@ -120,7 +157,10 @@ it("shows the title error under the title field and locks apply until a title is
   const error = document.getElementById(title().getAttribute("aria-describedby")!);
   expect(error?.getAttribute("role")).toBe("alert");
   expect(error?.textContent).toBe("여행 제목을 입력해 주세요.");
-  expect(button("적용하기", dialog()!).disabled).toBe(true);
+  expect(button("적용하기", dialog()!).disabled).toBe(false);
+  await click("적용하기", dialog()!);
+  expect(state.update).not.toHaveBeenCalled();
+  expect(error?.textContent).toBe("여행 제목을 입력해 주세요.");
   await change('input[type="text"]', "새 제목");
   expect(title().hasAttribute("aria-invalid")).toBe(false);
   expect(dialog()!.textContent).not.toContain("여행 제목을 입력해 주세요.");
@@ -130,18 +170,19 @@ it("shows the title error under the title field and locks apply until a title is
 
 it("allows an earlier start date and keeps date ordering and required destination validation", async () => {
   await open();
-  // 저장된 시작일보다 이른 날짜로도 시작일을 앞당길 수 있다
   await pickDates("start", "2026-10-09");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 9일");
   expect(button("적용하기", dialog()!).disabled).toBe(false);
-  // 종료 칸에서 시작일보다 이른 날짜를 고르면 기간을 거꾸로 만들지 않고 새 시작일이 되며, 종료일은 그대로다
   await pickDates("start", "2026-10-11", "2026-10-12");
   await pickDates("end", "2026-10-10");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
   expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
   await click("서울 삭제", dialog()!);
-  expect(button("적용하기", dialog()!).disabled).toBe(true);
-  expect([...dialog()!.querySelectorAll('[role="alert"]')].map((node) => node.textContent)).toContain("여행지를 하나 이상 선택해 주세요.");
+  expect(button("적용하기", dialog()!).disabled).toBe(false);
+  await click("적용하기", dialog()!);
+  expect([...dialog()!.querySelectorAll('[role="alert"]')].map((node) => node.textContent)).toContain(
+    "여행지를 하나 이상 선택해 주세요.",
+  );
   expect(state.update).not.toHaveBeenCalled();
 });
 
@@ -153,7 +194,6 @@ it("changes only the picked date and leaves the other one", async () => {
   await pickDates("end", "2026-10-13");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
   expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 13일");
-  // 아무것도 고르지 않고 닫으면 바꾸지 않는다
   await pickDates("start");
   expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
 });
@@ -161,7 +201,6 @@ it("changes only the picked date and leaves the other one", async () => {
 it("keeps the opened values while the server changes, shows the change outside, and reflects it on reopen", async () => {
   await open();
   await act(async () => dateField("end").click());
-  // 모달과 달력을 열어 둔 사이 다른 멤버가 제목과 종료일을 바꿨다
   Object.assign(state.room, { title: "겨울 여행", endDate: "2026-10-14" });
   await act(async () => root.render(<HeaderBar />));
   await click("확인", picker()!);
@@ -177,30 +216,38 @@ it("keeps the opened values while the server changes, shows the change outside, 
 });
 
 it("lets members save travel information without granting deletion", async () => {
-  state.isHost = false; state.room.role = "MEMBER"; await open();
+  state.isHost = false;
+  state.room.role = "MEMBER";
+  await open();
   await change('input[type="text"]', "멤버 수정");
   await click("적용하기", dialog()!);
-  expect(state.update).toHaveBeenCalledWith(expect.objectContaining({
-    roomId: "room", data: expect.objectContaining({ title: "멤버 수정" }),
-  }), expect.any(Object));
+  expect(state.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      roomId: "room",
+      data: expect.objectContaining({ title: "멤버 수정" }),
+    }),
+    expect.any(Object),
+  );
   expect(dialog()!.textContent).not.toContain("여행 삭제");
 });
 
 it.each(["PENDING", "", "UNKNOWN"])("denies editing for unrecognized membership %s", async (role) => {
-  state.isHost = false; state.room.role = role; await open();
+  state.isHost = false;
+  state.room.role = role;
+  await open();
   expect(dialog()!.querySelector("input")).toBeNull();
   expect(dialog()!.textContent).not.toContain("적용하기");
   expect(state.update).not.toHaveBeenCalled();
 });
 
 it.each(["loading", "missing"])("does not offer editing for %s room data", async (mode) => {
-  state.isLoading = mode === "loading"; state.missing = mode === "missing";
+  state.isLoading = mode === "loading";
+  state.missing = mode === "missing";
   await open();
   expect(dialog()!.querySelector("input")).toBeNull();
   if (mode === "missing") expect(dialog()!.textContent).toContain("여행 정보를 불러오지 못했어요.");
 });
 
-// Tab 순환(포커스 가두기)은 Base UI 확인창이 맡는다. 여기서는 처음 포커스·Esc 범위·포커스 복귀를 본다
 it("focuses the shrink confirmation and Escape dismisses only confirmation, preserving the draft", async () => {
   await open();
   await pickDates("end", "2026-10-10");
@@ -210,7 +257,6 @@ it("focuses the shrink confirmation and Escape dismisses only confirmation, pres
   const confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
   expect(confirm).not.toBeNull();
   expect(document.getElementById(confirm.getAttribute("aria-labelledby")!)?.textContent).toBe("여행 기간을 줄일까요?");
-  // 확인창의 처음 포커스는 취소다(Enter 한 번에 삭제되는 계속하기가 실행되지 않게)
   expect(document.activeElement).toBe(button("취소", confirm));
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
@@ -229,14 +275,19 @@ it("saves the shortened period from the confirmation and keeps it open while sav
   await nextFrame();
   let confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
   await click("계속하기", confirm);
-  expect(state.update).toHaveBeenCalledWith(expect.objectContaining({
-    roomId: "room", data: expect.objectContaining({ startDate: "2026-10-10", endDate: "2026-10-10" }),
-  }), expect.any(Object));
-  // 저장 중에는 확인창이 Esc로 닫히지 않고 계속하기가 진행 표시(저장 중)로 바뀐다
+  expect(state.update).toHaveBeenCalledWith(
+    expect.objectContaining({
+      roomId: "room",
+      data: expect.objectContaining({ startDate: "2026-10-10", endDate: "2026-10-10" }),
+    }),
+    expect.any(Object),
+  );
   state.pending = true;
   await act(async () => root.render(<HeaderBar />));
   confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
-  const proceed = [...confirm.querySelectorAll<HTMLButtonElement>("button")].find((node) => node.getAttribute("aria-busy") === "true")!;
+  const proceed = [...confirm.querySelectorAll<HTMLButtonElement>("button")].find(
+    (node) => node.getAttribute("aria-busy") === "true",
+  )!;
   expect(proceed).toBeDefined();
   expect(document.getElementById(proceed.getAttribute("aria-labelledby")!)?.textContent).toBe("저장 중");
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
@@ -275,7 +326,9 @@ it("names the existing title, destination and date fields", async () => {
   await open();
   const modal = dialog()!;
   const inputs = [...modal.querySelectorAll("input")];
-  const names = inputs.map(input => input.getAttribute("aria-label") || [...(input.labels ?? [])].map(label => label.textContent).join(""));
+  const names = inputs.map(
+    (input) => input.getAttribute("aria-label") || [...(input.labels ?? [])].map((label) => label.textContent).join(""),
+  );
   expect(names).toContain("여행 제목");
   expect(names).toContain("목적지 검색");
   expect(dateField("start").getAttribute("aria-label")).toBe("시작 날짜 2026년 10월 10일 토요일");

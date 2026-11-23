@@ -1,24 +1,13 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type WheelEvent,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type WheelEvent } from "react";
 
 import { ChevronLeftIcon, CloseIcon } from "@/assets/icons";
 import { SHEET_DISMISS_DISTANCE } from "@/components/mobile/sheet-gesture";
 import { cn } from "@/lib/utils";
 
-/** Figma 기준 peek 영역 높이(핸들~사진 끝) — 실측 전 초기값 */
 const PEEK_FALLBACK_PX = 412;
-/** 이 거리(px) 이상 움직여야 시트 드래그로 판단 — 그 전엔 탭(버튼 클릭)으로 둔다 */
 const DRAG_START_THRESHOLD_PX = 6;
-/** 손을 뗄 때 이 속도(px/ms) 이상으로 튕긴 경우만 방향대로, 아니면 가까운 위치(최대화/중간)로 이동 */
 const FLING_VELOCITY = 0.6;
 const SETTLE_TRANSITION = "transform 380ms cubic-bezier(0.25, 0.8, 0.25, 1)";
 
@@ -28,7 +17,6 @@ const SCROLL_AREA_CLASS =
 type DragState = {
   startY: number;
   startedExpanded: boolean;
-  /** 드래그 시작 시 시트 위치(translateY px) */
   baseOffset: number;
   fromHeader: boolean;
   atTop: boolean;
@@ -39,22 +27,14 @@ type DragState = {
 };
 
 type PlaceDetailSheetProps = Readonly<{
-  /** 바뀌면 다시 peek 상태로 시작한다 */
   placeKey: string;
   onBack: () => void;
   onClose: () => void;
-  /** 처음 보이는 영역 — 장소 정보·버튼·사진 */
   peek: ReactNode;
-  /** 중간 상태에서 `peek` 아래쪽을 가릴 높이(px) — 예: 사진의 3/5 */
   peekHiddenBottomPx?: number;
   children: ReactNode;
 }>;
 
-/**
- * 모바일 바텀 시트 — 상태는 최대화 / 중간 두 가지.
- * 처음엔 중간(`peek`에서 `peekHiddenBottomPx`만큼 가린 위치)으로 열리고, 손가락을 따라 끌어올리면 컨테이너 끝까지 펼쳐진다.
- * 최대화 상태에서는 헤더를 잡거나 본문이 맨 위일 때 아래로 끌어 중간으로 내린다. 그 외에는 본문이 스크롤된다.
- */
 export function PlaceDetailSheet({
   placeKey,
   onBack,
@@ -73,7 +53,6 @@ export function PlaceDetailSheet({
   const expandedRef = useRef(expanded);
   const offsetRef = useRef(0);
 
-  /** 중간 상태의 translateY — 시트 높이에서 보이는 peek 높이를 뺀 만큼 내려간다 */
   const collapsedOffset = Math.max(0, sizes.sheet - (sizes.peek - peekHiddenBottomPx));
   const collapsedOffsetRef = useRef(collapsedOffset);
 
@@ -91,7 +70,6 @@ export function PlaceDetailSheet({
     el.style.transform = `translateY(${offset}px)`;
   }, []);
 
-  // 첫 페인트 전에 재서 시트가 펼친 위치에서 내려오는 애니메이션이 보이지 않게 한다
   useLayoutEffect(() => {
     const sheet = sheetRef.current;
     const header = headerRef.current;
@@ -110,7 +88,6 @@ export function PlaceDetailSheet({
     return () => observer.disconnect();
   }, []);
 
-  // 스냅 위치가 바뀌면(펼침/접힘, 크기 변경) 드래그 중이 아닐 때 그 위치로 이동
   const hasPositionedRef = useRef(false);
   useLayoutEffect(() => {
     expandedRef.current = expanded;
@@ -130,7 +107,6 @@ export function PlaceDetailSheet({
     [applyOffset],
   );
 
-  // touchmove에서 preventDefault 하려면 passive: false 리스너가 필요해 직접 등록한다
   useEffect(() => {
     const el = sheetRef.current;
     if (!el) return;
@@ -162,9 +138,7 @@ export function PlaceDetailSheet({
 
       if (!drag.dragging) {
         if (Math.abs(dy) < DRAG_START_THRESHOLD_PX) return;
-        // 펼친 상태에서 본문을 스크롤하려는 제스처는 시트가 가로채지 않는다
-        const canDrag =
-          !expandedRef.current || drag.fromHeader || (drag.atTop && dy > 0);
+        const canDrag = !expandedRef.current || drag.fromHeader || (drag.atTop && dy > 0);
         if (!canDrag) {
           dragRef.current = null;
           return;
@@ -180,7 +154,6 @@ export function PlaceDetailSheet({
 
       const max = collapsedOffsetRef.current;
       const next = drag.baseOffset + dy;
-      // 범위를 넘으면 저항을 줘서 끝에 닿았음을 느끼게 한다
       let resisted = next;
       if (next < 0) resisted = next / 4;
       else if (next > max) resisted = max + (next - max) / 4;
@@ -258,10 +231,7 @@ export function PlaceDetailSheet({
         </div>
       </div>
 
-      <div
-        ref={scrollRef}
-        className={cn(SCROLL_AREA_CLASS, expanded ? "overflow-y-auto" : "overflow-hidden")}
-      >
+      <div ref={scrollRef} className={cn(SCROLL_AREA_CLASS, expanded ? "overflow-y-auto" : "overflow-hidden")}>
         <div ref={peekRef}>{peek}</div>
         {children}
       </div>

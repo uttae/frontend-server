@@ -1,19 +1,11 @@
 import { create } from "zustand";
 
-/**
- * 일차(`scheduleId`) 펼침 — 맵 경로 오버레이와 동일 스토어 사용.
- * 활성 일차 집합은 `syncScheduleExpansionState`로 동기화(삭제 반영·신규 일차 기본 펼침).
- * `expansionOrder`는 펼침(true) 토글 순서(뒤쪽일수록 최근) — 겹치는 지도 핀 우선순위에 사용.
- */
 type ExpandedState = {
   expandedByScheduleId: Record<number, boolean>;
-  /** `setScheduleExpanded(..., true)` 호출 순서 (접힌 일차는 제거) */
   expansionOrder: number[];
-  /** 같은 방 재입장을 포함한 초기화마다 증가 — 일정 목록 재동기화 트리거 */
   roomResetRevision: number;
   setScheduleExpanded: (scheduleId: number, expanded: boolean) => void;
   syncScheduleExpansionState: (activeScheduleIds: readonly number[]) => void;
-
 };
 
 function appendExpansionOrder(order: number[], scheduleId: number): number[] {
@@ -46,9 +38,7 @@ export const usePlanItineraryExpandedStore = create<ExpandedState>((set) => ({
   },
   syncScheduleExpansionState: (activeScheduleIds) => {
     set((s) => {
-      const activeSet = new Set(
-        activeScheduleIds.filter((id) => Number.isFinite(id)),
-      );
+      const activeSet = new Set(activeScheduleIds.filter((id) => Number.isFinite(id)));
       const next: Record<number, boolean> = {};
       let expansionOrder = s.expansionOrder.filter((id) => activeSet.has(id));
 
@@ -65,5 +55,4 @@ export const usePlanItineraryExpandedStore = create<ExpandedState>((set) => ({
       return { expandedByScheduleId: next, expansionOrder };
     });
   },
-  
 }));

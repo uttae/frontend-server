@@ -12,23 +12,45 @@ import { PlanPlaceCard } from "@/app/(main)/plan/_components/itinerary/PlanPlace
 import { useMobileAddPlaceSearch } from "@/app/(main)/plan/_components/mobile/useMobileAddPlaceSearch";
 import { MobilePlanPlaceSheets } from "@/app/(main)/plan/_components/mobile/MobilePlanPlaceSheets";
 
-vi.mock("@/lib/client-env", () => ({ clientEnv: { NEXT_PUBLIC_API_BASE_URL: "https://api.example.test", NEXT_PUBLIC_GOOGLE_CLIENT_ID: "test", NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "https://example.test", NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "test" } }));
+vi.mock("@/lib/client-env", () => ({
+  clientEnv: {
+    NEXT_PUBLIC_API_BASE_URL: "https://api.example.test",
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: "test",
+    NEXT_PUBLIC_GOOGLE_REDIRECT_URI: "https://example.test",
+    NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: "test",
+  },
+}));
 const api = vi.hoisted(() => ({ bookmarks: vi.fn(), category: vi.fn(), item: vi.fn(), remove: vi.fn() }));
 vi.mock("@/lib/api/rooms", async (original) => ({
-  ...await original<object>(), createRoomBookmarks: api.bookmarks, createBookmarkCategory: api.category, deleteScheduleItem: api.remove,
+  ...(await original<object>()),
+  createRoomBookmarks: api.bookmarks,
+  createBookmarkCategory: api.category,
+  deleteScheduleItem: api.remove,
 }));
-vi.mock("@/components/expenses/ExpenseProvider", () => ({ ExpenseEntryButton: () => null, useExpenseContext: () => ({}) }));
+vi.mock("@/components/expenses/ExpenseProvider", () => ({
+  ExpenseEntryButton: () => null,
+  useExpenseContext: () => ({}),
+}));
 vi.mock("@/hooks/useOpenPlaceOnMap", () => ({ useOpenPlaceOnMap: () => vi.fn() }));
 vi.mock("@/hooks/useInViewport", () => ({ useInViewport: () => [() => {}, false] }));
-vi.mock("@/hooks/usePlanPlaceCardPhoto", () => ({ usePlanPlaceCardPhoto: () => ({ resolvedPhotoUrl: null, photoLoading: false }) }));
+vi.mock("@/hooks/usePlanPlaceCardPhoto", () => ({
+  usePlanPlaceCardPhoto: () => ({ resolvedPhotoUrl: null, photoLoading: false }),
+}));
 vi.mock("@/lib/api/rooms/schedule-items", async (original) => ({
-  ...await original<object>(), createScheduleItem: api.item,
+  ...(await original<object>()),
+  createScheduleItem: api.item,
 }));
 vi.mock("@/lib/places/place-queries", async (original) => ({
-  ...await original<object>(), fetchPlacePreview: vi.fn().mockResolvedValue(null),
+  ...(await original<object>()),
+  fetchPlacePreview: vi.fn().mockResolvedValue(null),
 }));
 vi.mock("@/lib/analytics/track", () => ({
-  AnalyticsEvents: { addToBookmark: "add_to_bookmark", createBookmarkFolder: "create_bookmark_folder", addToItinerary: "add_to_itinerary", removeFromItinerary: "remove_from_itinerary" },
+  AnalyticsEvents: {
+    addToBookmark: "add_to_bookmark",
+    createBookmarkFolder: "create_bookmark_folder",
+    addToItinerary: "add_to_itinerary",
+    removeFromItinerary: "remove_from_itinerary",
+  },
   trackAnalyticsEvent: vi.fn(),
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
@@ -36,7 +58,10 @@ Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 function deferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (error: Error) => void;
-  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
+  const promise = new Promise<T>((yes, no) => {
+    resolve = yes;
+    reject = no;
+  });
   return { promise, resolve, reject };
 }
 let client: QueryClient;
@@ -47,7 +72,9 @@ beforeEach(() => {
   useSessionStore.setState({ currentRoomId: "room-a" });
   client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   for (const room of ["room-a", "room-b"]) {
-    client.setQueryData(bookmarkCategoriesQueryKey(room), [{ categoryId: 7, name: "Food", colorCode: "#EAB308", placeCount: 0 }]);
+    client.setQueryData(bookmarkCategoriesQueryKey(room), [
+      { categoryId: 7, name: "Food", colorCode: "#EAB308", placeCount: 0 },
+    ]);
     client.setQueryData(roomSchedulesQueryKey(room), [{ scheduleId: 1, dayNumber: 1, date: "2026-10-10" }]);
     client.setQueryData(scheduleItemsQueryKey(room, 1), []);
   }
@@ -55,7 +82,11 @@ beforeEach(() => {
   document.body.append(host);
   root = createRoot(host);
 });
-afterEach(async () => { await act(async () => root.unmount()); host.remove(); client.clear(); });
+afterEach(async () => {
+  await act(async () => root.unmount());
+  host.remove();
+  client.clear();
+});
 async function render(node: ReactNode) {
   await act(async () => root.render(<QueryClientProvider client={client}>{node}</QueryClientProvider>));
 }
@@ -65,7 +96,10 @@ async function click(label: string) {
   await act(async () => button!.click());
 }
 async function finish(action: () => void) {
-  await act(async () => { action(); await new Promise((resolve) => setTimeout(resolve, 10)); });
+  await act(async () => {
+    action();
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  });
 }
 
 it("keeps the bookmark write's room after the selected room changes before the API resolves", async () => {
@@ -77,8 +111,13 @@ it("keeps the bookmark write's room after the selected room changes before the A
   expect(api.bookmarks).toHaveBeenCalledWith("room-a", { googlePlaceId: "place", categoryIds: [7] });
   expect(trackAnalyticsEvent).not.toHaveBeenCalled();
   await act(async () => useSessionStore.setState({ currentRoomId: "room-b" }));
-  await finish(() => pending.resolve([{ bookmarkId: 8, categoryId: 7, googlePlaceId: "place", createdAt: "2026-10-10" }]));
-  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("add_to_bookmark", expect.objectContaining({ room_id: "room-a" }));
+  await finish(() =>
+    pending.resolve([{ bookmarkId: 8, categoryId: 7, googlePlaceId: "place", createdAt: "2026-10-10" }]),
+  );
+  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith(
+    "add_to_bookmark",
+    expect.objectContaining({ room_id: "room-a" }),
+  );
 });
 
 it("keeps the created folder's request room after switching rooms", async () => {
@@ -86,7 +125,9 @@ it("keeps the created folder's request room after switching rooms", async () => 
   api.category.mockReturnValueOnce(pending.promise);
   await render(<AddToBookmarkModal googlePlaceId="place" onClose={() => {}} />);
   await click("새 북마크 만들기");
-  await act(async () => document.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })));
+  await act(async () =>
+    document.querySelector("form")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })),
+  );
   expect(api.category).toHaveBeenCalledWith("room-a", expect.any(Object));
   await act(async () => useSessionStore.setState({ currentRoomId: "room-b" }));
   await finish(() => pending.resolve({ categoryId: 9, name: "New", colorCode: "#EAB308", placeCount: 0 }));
@@ -113,8 +154,26 @@ it("keeps an itinerary addition tied to its API room after switching rooms", asy
   expect(api.item).toHaveBeenCalledWith("room-a", 1, { googlePlaceId: "place", orderIndex: 0 });
   expect(trackAnalyticsEvent).not.toHaveBeenCalled();
   await act(async () => useSessionStore.setState({ currentRoomId: "room-b" }));
-  await finish(() => pending.resolve({ createdItem: { itemId: 2, scheduleId: 1, googlePlaceId: "place", startTime: null, endTime: null, orderIndex: 0, travelMode: "DRIVING", createdAt: "2026-10-10" }, updatedItems: [], affectedRouteItemIds: [] }));
-  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("add_to_itinerary", expect.objectContaining({ room_id: "room-a" }));
+  await finish(() =>
+    pending.resolve({
+      createdItem: {
+        itemId: 2,
+        scheduleId: 1,
+        googlePlaceId: "place",
+        startTime: null,
+        endTime: null,
+        orderIndex: 0,
+        travelMode: "DRIVING",
+        createdAt: "2026-10-10",
+      },
+      updatedItems: [],
+      affectedRouteItemIds: [],
+    }),
+  );
+  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith(
+    "add_to_itinerary",
+    expect.objectContaining({ room_id: "room-a" }),
+  );
 });
 
 it("does not count a rejected itinerary addition", async () => {
@@ -130,19 +189,29 @@ it("does not count a rejected itinerary addition", async () => {
 it("keeps a deletion tied to the card's original room when props change during the API call", async () => {
   const pending = deferred<void>();
   api.remove.mockReturnValueOnce(pending.promise);
-  const card = (roomId: string) => <PlanPlaceCard
-    place={{ id: "item-2", itemId: 2, title: "Place" }}
-    itineraryItemCount={1} displayOrderIndex={1} isDragging={false}
-    scheduleTimeEdit={{ roomId, scheduleId: 1 }} onDragStart={() => {}} onDragEnd={() => {}}
-  />;
+  const card = (roomId: string) => (
+    <PlanPlaceCard
+      place={{ id: "item-2", itemId: 2, title: "Place" }}
+      itineraryItemCount={1}
+      displayOrderIndex={1}
+      isDragging={false}
+      scheduleTimeEdit={{ roomId, scheduleId: 1 }}
+      onDragStart={() => {}}
+      onDragEnd={() => {}}
+    />
+  );
   await render(card("room-a"));
-  await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="일정에서 삭제"]')!.click());
+  await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Place 메뉴"]')!.click());
+  await act(async () => document.querySelector<HTMLElement>('[role="menuitem"]')!.click());
   await click("삭제");
   expect(api.remove).toHaveBeenCalledWith("room-a", 1, 2);
   expect(trackAnalyticsEvent).not.toHaveBeenCalled();
   await render(card("room-b"));
   await finish(() => pending.resolve());
-  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("remove_from_itinerary", expect.objectContaining({ room_id: "room-a" }));
+  expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith(
+    "remove_from_itinerary",
+    expect.objectContaining({ room_id: "room-a" }),
+  );
 });
 
 it("keeps the shared mobile add hook's request room after rerendering for a new room", async () => {
@@ -151,19 +220,40 @@ it("keeps the shared mobile add hook's request room after rerendering for a new 
   let add!: ReturnType<typeof useMobileAddPlaceSearch>;
   function Probe({ roomId }: { roomId: string }) {
     const value = useMobileAddPlaceSearch({ roomId, backLabel: "돌아가기" });
-    useLayoutEffect(() => { add = value; }, [value]);
+    useLayoutEffect(() => {
+      add = value;
+    }, [value]);
     return null;
   }
   await render(<Probe roomId="room-a" />);
   let saving!: Promise<number | null>;
-  await act(async () => { saving = add.addAt({ scheduleId: 1, anchor: null }, "place", "map"); });
+  await act(async () => {
+    saving = add.addAt({ scheduleId: 1, anchor: null }, "place", "map");
+  });
   expect(api.item).toHaveBeenCalledWith("room-a", 1, expect.anything());
   expect(trackAnalyticsEvent).not.toHaveBeenCalled();
   await render(<Probe roomId="room-b" />);
-  await finish(() => pending.resolve({ createdItem: { itemId: 21, scheduleId: 1, googlePlaceId: "place", startTime: null, endTime: null, orderIndex: 0, travelMode: "DRIVING", createdAt: "2026-10-10" }, updatedItems: [], affectedRouteItemIds: [] }));
+  await finish(() =>
+    pending.resolve({
+      createdItem: {
+        itemId: 21,
+        scheduleId: 1,
+        googlePlaceId: "place",
+        startTime: null,
+        endTime: null,
+        orderIndex: 0,
+        travelMode: "DRIVING",
+        createdAt: "2026-10-10",
+      },
+      updatedItems: [],
+      affectedRouteItemIds: [],
+    }),
+  );
   await expect(saving).resolves.toBe(21);
   expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("add_to_itinerary", {
-    room_id: "room-a", interaction_source: "map", item_count_bucket: "1",
+    room_id: "room-a",
+    interaction_source: "map",
+    item_count_bucket: "1",
   });
 });
 
@@ -171,9 +261,19 @@ it("keeps the extracted mobile delete sheet's room after its pending request com
   const pending = deferred<void>();
   api.remove.mockReturnValueOnce(pending.promise);
   const place = { id: "p", itemId: 22, title: "장소", location: { lat: 1, lng: 2 } };
-  const sheet = (roomId: string) => <MobilePlanPlaceSheets roomId={roomId} scheduleId={1}
-    places={[place]} monthDayLabel="10/10" sheet={{ kind: "delete", place }}
-    onChangeSheet={() => {}} canInsert onInsertFromSearch={() => {}} onPlaceAdded={() => {}} />;
+  const sheet = (roomId: string) => (
+    <MobilePlanPlaceSheets
+      roomId={roomId}
+      scheduleId={1}
+      places={[place]}
+      monthDayLabel="10/10"
+      sheet={{ kind: "delete", place }}
+      onChangeSheet={() => {}}
+      canInsert
+      onInsertFromSearch={() => {}}
+      onPlaceAdded={() => {}}
+    />
+  );
   await render(sheet("room-a"));
   await click("삭제");
   expect(api.remove).toHaveBeenCalledWith("room-a", 1, 22);
@@ -181,20 +281,24 @@ it("keeps the extracted mobile delete sheet's room after its pending request com
   await render(sheet("room-b"));
   await finish(() => pending.resolve());
   expect(trackAnalyticsEvent).toHaveBeenCalledExactlyOnceWith("remove_from_itinerary", {
-    room_id: "room-a", item_count_bucket: "0",
+    room_id: "room-a",
+    item_count_bucket: "0",
   });
 });
 
-// Popup/backdrop containment must hold even when the modal belongs to a clickable place card.
-it.each(["bookmark", "schedule"])("contains %s modal pointer events and keeps backdrop dismissal", async kind => {
+it.each(["bookmark", "schedule"])("contains %s modal pointer events and keeps backdrop dismissal", async (kind) => {
   const outer = vi.fn();
   const close = vi.fn();
   const hostEvents = { onClick: outer, onMouseDown: outer, onPointerDown: outer, onTouchStart: outer };
-  await render(<div {...hostEvents}>
-    {kind === "bookmark"
-      ? <AddToBookmarkModal googlePlaceId="place" onClose={close} />
-      : <AddToScheduleModal googlePlaceId="place" onClose={close} />}
-  </div>);
+  await render(
+    <div {...hostEvents}>
+      {kind === "bookmark" ? (
+        <AddToBookmarkModal googlePlaceId="place" onClose={close} />
+      ) : (
+        <AddToScheduleModal googlePlaceId="place" onClose={close} />
+      )}
+    </div>,
+  );
   const content = document.querySelector<HTMLElement>('[data-slot="dialog-content"]')!;
   for (const type of ["mousedown", "pointerdown", "touchstart", "click"]) {
     await act(async () => content.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true })));

@@ -13,10 +13,7 @@ import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
 import { placeDetailQueryKey } from "@/lib/places/place-queries";
 import { placePhotoUrlQueryKey } from "@/lib/place-photo-query";
 import { useMapPlaceSearch } from "./useMapPlaceSearch";
-import {
-  SelectedPlaceProvider,
-  useSelectedPlace,
-} from "@/contexts/SelectedPlaceContext";
+import { SelectedPlaceProvider, useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { useSessionStore } from "@/stores/session-store";
 import { useMapCenterStore } from "@/stores/map-center-store";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
@@ -36,10 +33,7 @@ const boundary = vi.hoisted(() => ({
   track: vi.fn(),
   click: undefined as
     | undefined
-    | ((event: {
-        detail: { placeId?: string; latLng?: { lat: number; lng: number } };
-        stop: () => void;
-      }) => void),
+    | ((event: { detail: { placeId?: string; latLng?: { lat: number; lng: number } }; stop: () => void }) => void),
 }));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/bookmark",
@@ -61,21 +55,13 @@ vi.mock("@vis.gl/react-google-maps", () => ({
   ControlPosition: { RIGHT_BOTTOM: 9 },
   useMap: () => null,
   useMapsLibrary: () => null,
-  Map: function GoogleMapBoundary({
-    onClick,
-    children,
-  }: {
-    onClick: typeof boundary.click;
-    children: ReactNode;
-  }) {
+  Map: function GoogleMapBoundary({ onClick, children }: { onClick: typeof boundary.click; children: ReactNode }) {
     useEffect(() => {
       boundary.click = onClick;
     }, [onClick]);
     return <div data-google-map>{children}</div>;
   },
-  AdvancedMarker: ({ children }: { children: ReactNode }) => (
-    <div data-marker>{children}</div>
-  ),
+  AdvancedMarker: ({ children }: { children: ReactNode }) => <div data-marker>{children}</div>,
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 it.each([false, true])(
@@ -86,7 +72,30 @@ it.each([false, true])(
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
     registerQueryClient(client);
-    vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: { googlePlaceId: "anchor", name: "첫 추천", formattedAddress: "주소", location: { lat: 1, lng: 2 }, primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] }, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" }));
+    vi.mocked(apiFetch).mockResolvedValue(
+      Response.json({
+        detail: {
+          googlePlaceId: "anchor",
+          name: "첫 추천",
+          formattedAddress: "주소",
+          location: { lat: 1, lng: 2 },
+          primaryType: null,
+          primaryTypeDisplayName: null,
+          rating: null,
+          userRatingCount: null,
+          phoneNumber: null,
+          websiteUri: null,
+          googleMapsUri: null,
+          googleMapsLinks: null,
+          regularOpeningHours: null,
+          reviews: [],
+        },
+        source: "GOOGLE",
+        cacheStatus: "MISS",
+        googleDetailsRequested: true,
+        termination: "SUCCEEDED",
+      }),
+    );
     client.setQueryData(ROOMS_QUERY_KEY, {
       rooms: [{ id: "room", destinations: [] }],
     });
@@ -144,7 +153,7 @@ it.each([false, true])(
         pending = api.confirm({
           query: "원래 검색어",
           kind: "whole",
-          session: { sessionToken: "token", expiresAt: Date.now()+60000 },
+          session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
           generation: 0,
           prediction,
         });
@@ -191,7 +200,30 @@ it.each([false, true])(
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
     registerQueryClient(client);
-    vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail: { googlePlaceId: "anchor", name: "첫 추천", formattedAddress: "주소", location: { lat: 1, lng: 2 }, primaryType: null, primaryTypeDisplayName: null, rating: null, userRatingCount: null, phoneNumber: null, websiteUri: null, googleMapsUri: null, googleMapsLinks: null, regularOpeningHours: null, reviews: [] }, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" }));
+    vi.mocked(apiFetch).mockResolvedValue(
+      Response.json({
+        detail: {
+          googlePlaceId: "anchor",
+          name: "첫 추천",
+          formattedAddress: "주소",
+          location: { lat: 1, lng: 2 },
+          primaryType: null,
+          primaryTypeDisplayName: null,
+          rating: null,
+          userRatingCount: null,
+          phoneNumber: null,
+          websiteUri: null,
+          googleMapsUri: null,
+          googleMapsLinks: null,
+          regularOpeningHours: null,
+          reviews: [],
+        },
+        source: "GOOGLE",
+        cacheStatus: "MISS",
+        googleDetailsRequested: true,
+        termination: "SUCCEEDED",
+      }),
+    );
     client.setQueryData(ROOMS_QUERY_KEY, {
       rooms: [{ id: "room", destinations: [] }],
     });
@@ -229,20 +261,18 @@ it.each([false, true])(
       textQuery: "",
       textSearchNonce: 0,
     });
-    boundary.page
-      .mockReset()
-      .mockResolvedValue({
-        items: [
-          {
-            googlePlaceId: "result",
-            name: "검색 장소",
-            category: "카페",
-            rating: 4.2,
-            location: { lat: 37, lng: 127 },
-          },
-        ],
-        nextPageToken: null,
-      });
+    boundary.page.mockReset().mockResolvedValue({
+      items: [
+        {
+          googlePlaceId: "result",
+          name: "검색 장소",
+          category: "카페",
+          rating: 4.2,
+          location: { lat: 37, lng: 127 },
+        },
+      ],
+      nextPageToken: null,
+    });
     const host = document.createElement("div");
     const root = createRoot(host);
     try {
@@ -261,20 +291,11 @@ it.each([false, true])(
       await act(async () => useMobileMapSearchStore.getState().openSearch());
       const input = document.querySelector("dialog input")!;
       await act(async () => {
-        Object.getOwnPropertyDescriptor(
-          HTMLInputElement.prototype,
-          "value",
-        )!.set!.call(input, "원래 검색어");
+        Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "원래 검색어");
         input.dispatchEvent(new Event("input", { bubbles: true }));
       });
-      await act(async () =>
-        input.dispatchEvent(
-          new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
-        ),
-      );
-      await act(async () =>
-        usePlaceSearchStore.getState().setExpanded(expanded),
-      );
+      await act(async () => input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true })));
+      await act(async () => usePlaceSearchStore.getState().setExpanded(expanded));
       expect(host.querySelector("h3")?.textContent).toBe("검색 장소");
       const pins = useSearchMapPinsStore.getState().pins;
       const queryCalls = boundary.page.mock.calls.length;

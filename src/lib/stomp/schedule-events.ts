@@ -7,7 +7,6 @@ export type RoomScheduleEventType =
   | "SCHEDULE_ITEMS_REORDERED"
   | "SCHEDULE_ITEM_TRAVEL_MODE_UPDATED";
 
-/** `/topic/rooms/{roomId}/schedules` 브로드캐스트 본문 */
 export type RoomScheduleChangedEvent = {
   roomId: string;
   actorUserId: number;
@@ -16,7 +15,6 @@ export type RoomScheduleChangedEvent = {
   itemId: number | null;
   affectedRouteItemIds: number[] | null;
   scheduleIds: number[] | null;
-  /** 변경 요청을 보낸 탭 ID — 같으면 이 탭의 반향(`isOwnEcho`) */
   originTabId?: string | null;
 };
 
@@ -42,9 +40,7 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-export function parseRoomScheduleMessage(
-  body: string,
-): RoomScheduleChangedEvent | null {
+export function parseRoomScheduleMessage(body: string): RoomScheduleChangedEvent | null {
   try {
     const raw = JSON.parse(body) as Partial<RoomScheduleChangedEvent>;
     const roomId = String(raw.roomId ?? "").trim();
@@ -59,11 +55,7 @@ export function parseRoomScheduleMessage(
 
     if (type === "SCHEDULE_ITEM_MOVED") {
       const scheduleIds = raw.scheduleIds;
-      if (
-        !Array.isArray(scheduleIds) ||
-        scheduleIds.length < 2 ||
-        !scheduleIds.every(isFiniteNumber)
-      ) {
+      if (!Array.isArray(scheduleIds) || scheduleIds.length < 2 || !scheduleIds.every(isFiniteNumber)) {
         return null;
       }
       return raw as RoomScheduleChangedEvent;

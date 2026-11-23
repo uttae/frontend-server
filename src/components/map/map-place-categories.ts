@@ -9,18 +9,11 @@ import {
   type IconProps,
 } from "@/assets/icons";
 
-/**
- * Google Maps Place types (Table A).
- * @see https://developers.google.com/maps/documentation/javascript/place-types
- */
 export type MapPlaceCategory = {
   id: string;
-  /** Chip label (UI, Korean — matches Google Maps-style copy) */
   label: string;
-  /** 레거시/검색 문맥용 쿼리 문자열 */
   searchQuery: string;
   icon: ComponentType<IconProps>;
-  /** Nearby Search `includedPrimaryTypes` */
   googlePlaceTypeHint: string;
 };
 

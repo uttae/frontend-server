@@ -16,7 +16,7 @@ export function PolicyPageShell({ title, children, className }: Props) {
     <div
       className={cn(
         "relative flex min-h-screen flex-col bg-gradient-to-b from-bubble-gray/80 via-white to-white",
-        className
+        className,
       )}
     >
       <div
@@ -29,7 +29,9 @@ export function PolicyPageShell({ title, children, className }: Props) {
           <Link href="/" className="inline-flex items-center gap-2">
             <BrandLogo variant="combination" size="S" alt="로고" />
           </Link>
-          <h1 className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-neutral-900 sm:text-title-s">{title}</h1>
+          <h1 className="text-body-m-emphasis mobile:text-body-s-emphasis font-semibold text-neutral-900 sm:text-title-s">
+            {title}
+          </h1>
         </div>
       </header>
 

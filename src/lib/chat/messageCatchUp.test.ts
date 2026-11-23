@@ -2,11 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { HttpError } from "@/lib/api/errors";
 
-import {
-  CHAT_CATCH_UP_PAGE_SIZE,
-  fetchRoomMessagesAfter,
-  retryChatHistoryRequest,
-} from "./messageCatchUp";
+import { CHAT_CATCH_UP_PAGE_SIZE, fetchRoomMessagesAfter, retryChatHistoryRequest } from "./messageCatchUp";
 
 const mocks = vi.hoisted(() => ({ getRoomMessages: vi.fn() }));
 
@@ -55,17 +51,14 @@ describe("fetchRoomMessagesAfter", () => {
     expect(mocks.getRoomMessages).toHaveBeenCalledTimes(1);
   });
 
-  it.each([0, undefined])(
-    "loads the latest page instead of afterSequence=%s",
-    async (cursor) => {
-      mocks.getRoomMessages.mockResolvedValueOnce(rows(1, 3));
+  it.each([0, undefined])("loads the latest page instead of afterSequence=%s", async (cursor) => {
+    mocks.getRoomMessages.mockResolvedValueOnce(rows(1, 3));
 
-      const result = await fetchRoomMessagesAfter("room", cursor, active);
+    const result = await fetchRoomMessagesAfter("room", cursor, active);
 
-      expect(result.map((m) => m.sequence)).toEqual([1, 2, 3]);
-      expect(mocks.getRoomMessages).toHaveBeenCalledWith("room", { size: 15 });
-    },
-  );
+    expect(result.map((m) => m.sequence)).toEqual([1, 2, 3]);
+    expect(mocks.getRoomMessages).toHaveBeenCalledWith("room", { size: 15 });
+  });
 });
 
 describe("retryChatHistoryRequest", () => {

@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { formatTimePickerValue, timePartsFromHm, timePartsToHm, type TimeParts } from "@/lib/plan/timePickerDraft";
+import {
+  formatTimePickerValue,
+  defaultEndHm,
+  TIME_PICKER_DEFAULT_START_HM,
+  timePartsFromHm,
+  timePartsToHm,
+  type TimeParts,
+} from "@/lib/plan/timePickerDraft";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,9 +26,8 @@ import {
 import { useUpdateScheduleItem } from "@/hooks/useRooms";
 import {
   computeDurationMinutesFromRange,
+  createScheduleTimeSchema,
   normalizeStartTimeToHm,
-  validateScheduleTimeDraft,
-  type ScheduleTimeDraftValidation,
 } from "@/lib/plan/scheduleTime";
 import { cn } from "@/lib/utils";
 
@@ -34,14 +40,12 @@ type MobileTimeSheetProps = Readonly<{
   scheduleId: number;
   itemId: number;
   placeName: string;
-  /** `9월 21일` */
   dateLabel?: string;
   startTime: string | null | undefined;
   endTime: string | null | undefined;
   onClose: () => void;
 }>;
 
-/** 방문 시간 시트 — 시작·종료 칸을 누르면 휠 피커로 고른다 */
 export function MobileTimeSheet({
   roomId,
   scheduleId,
@@ -54,13 +58,15 @@ export function MobileTimeSheet({
 }: MobileTimeSheetProps) {
   const serverStart = normalizeStartTimeToHm(startTime ?? "");
   const serverEnd = normalizeStartTimeToHm(endTime ?? "");
-  const [draftStart, setStart] = useState<TimeParts>();
+  const [draftStart, setStart] = useState<TimeParts | undefined>(() =>
+    serverStart ? undefined : timePartsFromHm(TIME_PICKER_DEFAULT_START_HM),
+  );
   const [draftEnd, setEnd] = useState<TimeParts>();
   const startParts = draftStart ?? timePartsFromHm(serverStart);
   const endParts = draftEnd ?? timePartsFromHm(serverEnd);
   const start = timePartsToHm(startParts);
   const end = timePartsToHm(endParts);
-  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : serverStart ? "start" : null);
+  const [activeField, setActiveField] = useState<Field | null>(serverEnd ? "end" : "start");
   const [isWheelSettling, setWheelSettling] = useState(false);
   const { mutateAsync, isPending } = useUpdateScheduleItem();
 
@@ -73,19 +79,26 @@ export function MobileTimeSheet({
   ]
     .filter(Boolean)
     .join(" · ");
-  const validation: ScheduleTimeDraftValidation = start === null || end === null
-    ? { valid: false, message: "오전/오후, 시, 분을 모두 선택해 주세요." }
-    : validateScheduleTimeDraft(start, end);
+  const timeError =
+    start === null || end === null
+      ? "오전/오후, 시, 분을 모두 선택해 주세요."
+      : createScheduleTimeSchema({ serverStartHm: serverStart, serverEndHm: serverEnd }).safeParse({ start, end }).error
+          ?.issues[0]?.message;
 
   function openField(field: Field) {
-    if (field === "end" && !start) return;
+    if (field === "end") {
+      if (!start) return;
+      if (activeField !== "end" && end === "") setEnd(timePartsFromHm(defaultEndHm(start)));
+    } else if (activeField !== "start" && start === "") {
+      setStart(timePartsFromHm(TIME_PICKER_DEFAULT_START_HM));
+    }
     setActiveField((current) => (current === field ? null : field));
   }
 
   async function handleSave() {
     if (isPending || isWheelSettling || !dirty) return;
-    if (!validation.valid) {
-      toast.error(validation.message);
+    if (timeError) {
+      toast.error(timeError);
       return;
     }
     try {
@@ -111,7 +124,13 @@ export function MobileTimeSheet({
   ];
 
   return (
-    <Drawer open onOpenChange={(open) => { if (!open) onClose(); }} closeDisabled={isPending}>
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      closeDisabled={isPending}
+    >
       <DrawerContent closeLabel="방문 시간 닫기">
         <DrawerHeader>
           <DrawerTitle>{placeName}</DrawerTitle>
@@ -172,7 +191,16 @@ export function MobileTimeSheet({
               }}
               className="relative flex h-8 items-center gap-1 text-label-xs-regular text-text-subtle disabled:text-text-disabled before:absolute before:-inset-y-1.5 before:inset-x-0 focus-visible:outline-2 focus-visible:outline-primary"
             >
-              <Image src={activeField === null && start === "" && end === "" ? "/icons/time-picker/reset-disabled.svg" : "/icons/time-picker/reset-active.svg"} width={16} height={16} alt="" />
+              <Image
+                src={
+                  activeField === null && start === "" && end === ""
+                    ? "/icons/time-picker/reset-disabled.svg"
+                    : "/icons/time-picker/reset-active.svg"
+                }
+                width={16}
+                height={16}
+                alt=""
+              />
               초기화
             </button>
           </div>
@@ -182,7 +210,7 @@ export function MobileTimeSheet({
           <Button
             loading={isPending}
             loadingLabel="저장 중"
-            disabled={isWheelSettling || !dirty || !validation.valid}
+            disabled={isWheelSettling || !dirty || Boolean(timeError)}
             onClick={() => void handleSave()}
           >
             확인

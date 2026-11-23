@@ -14,7 +14,6 @@ describe("insertAnchorAfterItem", () => {
 });
 
 describe("resolveInsertIndex", () => {
-  // 1, 2, 3, 4 에서 1과 2 사이에 넣으려던 경우
   const anchor = insertAnchorAfterItem(list(1, 2, 3, 4), 1);
 
   it("기준이 없으면 맨 뒤", () => {
@@ -23,7 +22,6 @@ describe("resolveInsertIndex", () => {
 
   it("앞 장소가 있으면 그 바로 뒤", () => {
     expect(resolveInsertIndex(list(1, 2, 3, 4), anchor)).toBe(1);
-    // 그사이 앞에 장소가 늘어도 앞 장소를 따라간다
     expect(resolveInsertIndex(list(9, 1, 2, 3, 4), anchor)).toBe(2);
   });
 

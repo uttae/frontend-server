@@ -1,4 +1,3 @@
-// Changing this list can assign different covers to existing rooms.
 const ROOM_COVERS = [
   "/rooms/covers/desert-road.webp",
   "/rooms/covers/airplane-window.webp",

@@ -33,10 +33,6 @@ describe("SearchResultCard", () => {
     );
 
     expect(html).toContain("후글렌 도쿄 시부야");
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: ["places", "photoUrl"] }),
-    ).toHaveLength(0);
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["places", "photoUrl"] })).toHaveLength(0);
   });
 });

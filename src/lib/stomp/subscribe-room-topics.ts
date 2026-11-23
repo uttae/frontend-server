@@ -24,11 +24,9 @@ export type RoomTopicsUnsubscriber = () => void;
 
 export type SubscribeRoomStompTopicsOptions = {
   onRoomChatMessage?: (msg: ServerChatMessage) => void;
-  /** 같은 계정이 다른 탭에서 방을 나갔을 때 — 강퇴·방 삭제와 달리 개인 큐 알림이 없다 */
   onSelfLeftRoom?: (roomId: string) => void;
 };
 
-/** 방 단위 members·presence·bookmarks·schedules + messages + 개인 에러 큐(`/user/queue/errors`) 구독; 반환값으로 한 번에 해제 */
 export function subscribeRoomStompTopics(
   client: Client,
   roomId: string,
@@ -37,56 +35,36 @@ export function subscribeRoomStompTopics(
 ): RoomTopicsUnsubscriber {
   const subscribedRoomId = roomId.trim();
 
-  const membersSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/members`,
-    (message) => {
-      const event = parseRoomMemberMessage(message.body);
+  const membersSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/members`, (message) => {
+    const event = parseRoomMemberMessage(message.body);
+    if (!event) return;
+    dispatchRoomMemberEvent(queryClientRef.current, subscribedRoomId, event);
+    if (event.type === "MEMBER_LEFT" && event.detail?.userId === readSessionUserId(queryClientRef.current)) {
+      options.onSelfLeftRoom?.(subscribedRoomId);
+    }
+  });
+
+  const presenceSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/presence`, (message) => {
+    const event = parseRoomPresenceMessage(message.body);
+    if (!event) return;
+    dispatchRoomPresence(queryClientRef.current, subscribedRoomId, event);
+  });
+
+  const bookmarksSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/bookmarks`, (message) => {
+    void (async () => {
+      try {
+        await applyRoomBookmarkStompMessage(queryClientRef.current, message.body);
+      } catch {}
+    })();
+  });
+
+  const schedulesSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/schedules`, (message) => {
+    void (async () => {
+      const event = parseRoomScheduleMessage(message.body);
       if (!event) return;
-      dispatchRoomMemberEvent(queryClientRef.current, subscribedRoomId, event);
-      if (
-        event.type === "MEMBER_LEFT" &&
-        event.detail?.userId === readSessionUserId(queryClientRef.current)
-      ) {
-        options.onSelfLeftRoom?.(subscribedRoomId);
-      }
-    },
-  );
-
-  const presenceSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/presence`,
-    (message) => {
-      const event = parseRoomPresenceMessage(message.body);
-      if (!event) return;
-      dispatchRoomPresence(queryClientRef.current, subscribedRoomId, event);
-    },
-  );
-
-  const bookmarksSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/bookmarks`,
-    (message) => {
-      void (async () => {
-        try {
-          await applyRoomBookmarkStompMessage(
-            queryClientRef.current,
-            message.body,
-          );
-        } catch {
-          // malformed payload / 네트워크 — 무시
-        }
-      })();
-    },
-  );
-
-  const schedulesSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/schedules`,
-    (message) => {
-      void (async () => {
-        const event = parseRoomScheduleMessage(message.body);
-        if (!event) return;
-        await dispatchRoomScheduleEvent(queryClientRef.current, event);
-      })();
-    },
-  );
+      await dispatchRoomScheduleEvent(queryClientRef.current, event);
+    })();
+  });
 
   const userErrorsSub = client.subscribe(`/user/queue/errors`, (message) => {
     const payload = parseUserErrorMessage(message.body);
@@ -94,26 +72,18 @@ export function subscribeRoomStompTopics(
     dispatchUserError(payload);
   });
 
-  const messagesSub = client.subscribe(
-    `/topic/rooms/${subscribedRoomId}/messages`,
-    (message) => {
-      try {
-        const parsed: unknown = JSON.parse(message.body);
-        const msg = normalizeServerChatMessage(parsed);
-        if (!msg) return;
-        invalidateRoomUnreadCount(queryClientRef.current, subscribedRoomId);
-        options.onRoomChatMessage?.(msg);
-      } catch {
-        // malformed payload — ignore
-      }
-    },
-  );
+  const messagesSub = client.subscribe(`/topic/rooms/${subscribedRoomId}/messages`, (message) => {
+    try {
+      const parsed: unknown = JSON.parse(message.body);
+      const msg = normalizeServerChatMessage(parsed);
+      if (!msg) return;
+      invalidateRoomUnreadCount(queryClientRef.current, subscribedRoomId);
+      options.onRoomChatMessage?.(msg);
+    } catch {}
+  });
 
   optimisticPatchSelfOnline(queryClientRef.current, subscribedRoomId);
-  scheduleRoomMembersResyncAfterSubscribe(
-    queryClientRef.current,
-    subscribedRoomId,
-  );
+  scheduleRoomMembersResyncAfterSubscribe(queryClientRef.current, subscribedRoomId);
   resyncRoomDataAfterSubscribe(queryClientRef.current, subscribedRoomId);
 
   return () => {

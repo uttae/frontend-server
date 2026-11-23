@@ -10,8 +10,4 @@ export {
   mobileScheduleHref,
   readMapRouteParams,
 } from "./plan-panel";
-export {
-  MOBILE_VIEW_DEFAULT,
-  readMobileViewState,
-  type MobileViewState,
-} from "./state";
+export { MOBILE_VIEW_DEFAULT, readMobileViewState, type MobileViewState } from "./state";

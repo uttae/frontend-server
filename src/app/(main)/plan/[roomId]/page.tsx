@@ -11,8 +11,9 @@ function PlanRoomPageContent() {
   const setCurrentRoomId = useSessionStore((s) => s.setCurrentRoomId);
 
   const raw = params.roomId;
-  const roomId =
-    typeof raw === "string" ? raw : Array.isArray(raw) ? raw[0] : "";
+  let roomId = "";
+  if (typeof raw === "string") roomId = raw;
+  else if (Array.isArray(raw)) roomId = raw[0] ?? "";
 
   useLayoutEffect(() => {
     if (roomId.trim().length > 0) {

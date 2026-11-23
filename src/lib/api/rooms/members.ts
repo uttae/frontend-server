@@ -1,18 +1,12 @@
 import { pickProfileImageUrl } from "@/lib/api/profileImage";
 import { apiUrl, jsonBody, requestJson, requestVoid } from "@/lib/api/http";
-import type {
-  RoomMember,
-  RoomMemberListResponse,
-  RoomMemberStatus,
-} from "./types";
+import type { RoomMember, RoomMemberListResponse, RoomMemberStatus } from "./types";
 
 export function isActiveRoomMember(member: RoomMember): boolean {
   return member.status === "ACTIVE";
 }
 
-function normalizeMemberListPayload(
-  res: RoomMemberListResponse,
-): RoomMemberListResponse {
+function normalizeMemberListPayload(res: RoomMemberListResponse): RoomMemberListResponse {
   const members = res.members ?? [];
   return {
     ...res,
@@ -20,12 +14,7 @@ function normalizeMemberListPayload(
       const picked = pickProfileImageUrl(m as unknown as Record<string, unknown>);
       const url = picked ?? m.profileImageUrl ?? null;
       const raw = m as RoomMember & { isOnline?: boolean; status?: string };
-      const status: RoomMemberStatus =
-        raw.status === "LEFT"
-          ? "LEFT"
-          : raw.status === "PENDING"
-            ? "PENDING"
-            : "ACTIVE";
+      const status: RoomMemberStatus = raw.status === "LEFT" || raw.status === "PENDING" ? raw.status : "ACTIVE";
       return {
         ...m,
         profileImageUrl: url,
@@ -36,21 +25,16 @@ function normalizeMemberListPayload(
   };
 }
 
-export async function getRoomMembers(
-  roomId: string,
-): Promise<RoomMemberListResponse> {
+export async function getRoomMembers(roomId: string, signal?: AbortSignal): Promise<RoomMemberListResponse> {
   const res = await requestJson<RoomMemberListResponse>(
     apiUrl(`/rooms/${roomId}/members`),
-    undefined,
+    signal ? { signal } : undefined,
     { errorMessage: "멤버 목록 조회 실패" },
   );
   return normalizeMemberListPayload(res);
 }
 
-export async function transferHost(
-  roomId: string,
-  targetUserId: number,
-): Promise<void> {
+export async function transferHost(roomId: string, targetUserId: number): Promise<void> {
   return requestVoid(
     apiUrl(`/rooms/${roomId}/host`),
     { method: "PATCH", ...jsonBody({ targetUserId }) },
@@ -66,10 +50,7 @@ export async function leaveRoom(roomId: string): Promise<void> {
   );
 }
 
-export async function kickMember(
-  roomId: string,
-  userId: number,
-): Promise<void> {
+export async function kickMember(roomId: string, userId: number): Promise<void> {
   return requestVoid(
     apiUrl(`/rooms/${roomId}/members/${userId}`),
     { method: "DELETE" },

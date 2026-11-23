@@ -25,10 +25,7 @@ const MY_TAB_ID = "tab-a";
 
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 
-function itemEvent(
-  type: RoomScheduleChangedEvent["type"],
-  affectedRouteItemIds: number[],
-): RoomScheduleChangedEvent {
+function itemEvent(type: RoomScheduleChangedEvent["type"], affectedRouteItemIds: number[]): RoomScheduleChangedEvent {
   return {
     roomId: "room-1",
     actorUserId: 99,
@@ -42,7 +39,6 @@ function itemEvent(
 
 describe("dispatchRoomScheduleEvent", () => {
   let queryClient: QueryClient;
-  // 경로는 도착 항목까지 key에 있어 일정이 바뀌어도 무효화하지 않는다 — 순서가 바뀐 구간은 새 key로 받는다
   const routeKey = scheduleItemRouteQueryKey("room-1", 10, 20, 21, "DRIVING");
 
   beforeEach(() => {
@@ -86,22 +82,14 @@ describe("dispatchRoomScheduleEvent", () => {
 
     await dispatchRoomScheduleEvent(queryClient, event);
 
-    expect(mocks.syncAfterCrossScheduleItemMove).toHaveBeenCalledWith(
-      queryClient,
-      "room-1",
-      10,
-      20,
-    );
+    expect(mocks.syncAfterCrossScheduleItemMove).toHaveBeenCalledWith(queryClient, "room-1", 10, 20);
     expect(queryClient.getQueryState(routeKey)?.isInvalidated).toBe(false);
   });
 
   it("refetches the day list after another member changes a travel mode, leaving route caches as they are", async () => {
     vi.useFakeTimers();
 
-    await dispatchRoomScheduleEvent(
-      queryClient,
-      itemEvent("SCHEDULE_ITEM_TRAVEL_MODE_UPDATED", [20]),
-    );
+    await dispatchRoomScheduleEvent(queryClient, itemEvent("SCHEDULE_ITEM_TRAVEL_MODE_UPDATED", [20]));
     await vi.runAllTimersAsync();
 
     expect(mocks.invalidateSchedulePlanPlaces).toHaveBeenCalledExactlyOnceWith(queryClient, "room-1", 10);
@@ -109,15 +97,19 @@ describe("dispatchRoomScheduleEvent", () => {
   });
 });
 
-describe("expense synchronization on existing schedule events",()=>{
- it.each(["ROOM_SCHEDULES_RESYNCED","SCHEDULE_ITEM_MOVED","SCHEDULE_ITEM_DELETED"] as const)("invalidates expense list and summary for %s even self events",async type=>{
-  const client = new QueryClient();
-  client.setQueryData(["session","user"],{id:99});
-  for(const suffix of ["list","summary"])client.setQueryData(["room-expenses","room-1",suffix],[]);
-  await dispatchRoomScheduleEvent(client,{...itemEvent(type,[]),scheduleIds:[10,11]});
-  for(const suffix of ["list","summary"])expect(client.getQueryState(["room-expenses","room-1",suffix])?.isInvalidated).toBe(true);
-  client.clear();
- });
+describe("expense synchronization on existing schedule events", () => {
+  it.each(["ROOM_SCHEDULES_RESYNCED", "SCHEDULE_ITEM_MOVED", "SCHEDULE_ITEM_DELETED"] as const)(
+    "invalidates expense list and summary for %s even self events",
+    async (type) => {
+      const client = new QueryClient();
+      client.setQueryData(["session", "user"], { id: 99 });
+      for (const suffix of ["list", "summary"]) client.setQueryData(["room-expenses", "room-1", suffix], []);
+      await dispatchRoomScheduleEvent(client, { ...itemEvent(type, []), scheduleIds: [10, 11] });
+      for (const suffix of ["list", "summary"])
+        expect(client.getQueryState(["room-expenses", "room-1", suffix])?.isInvalidated).toBe(true);
+      client.clear();
+    },
+  );
 });
 
 describe("echo of this tab vs. other tabs of the same account", () => {
@@ -131,7 +123,6 @@ describe("echo of this tab vs. other tabs of the same account", () => {
   ] as const;
   let queryClient: QueryClient;
 
-  /** itemEvent의 actorUserId(99)가 이 계정이다 */
   function ownAccountEvent(
     type: RoomScheduleChangedEvent["type"],
     originTabId: string | null,
@@ -139,7 +130,6 @@ describe("echo of this tab vs. other tabs of the same account", () => {
     return { ...itemEvent(type, [20]), scheduleIds: [10, 11], originTabId };
   }
 
-  /** 일차 목록·일정 전체·방 상세 중 어느 것이든 다시 받은 횟수 */
   const refetchCount = () =>
     mocks.invalidateSchedulePlanPlaces.mock.calls.length +
     mocks.syncAfterCrossScheduleItemMove.mock.calls.length +
@@ -173,12 +163,15 @@ describe("echo of this tab vs. other tabs of the same account", () => {
     expect(refetchCount()).toBe(1);
   });
 
-  it.each(SKIPPABLE_TYPES)("applies %s of the same account without a tab ID — it may come from another tab", async (type) => {
-    await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, null));
-    await vi.runAllTimersAsync();
+  it.each(SKIPPABLE_TYPES)(
+    "applies %s of the same account without a tab ID — it may come from another tab",
+    async (type) => {
+      await dispatchRoomScheduleEvent(queryClient, ownAccountEvent(type, null));
+      await vi.runAllTimersAsync();
 
-    expect(refetchCount()).toBe(1);
-  });
+      expect(refetchCount()).toBe(1);
+    },
+  );
 
   it("applies a change whose tab ID matches this tab but comes from another account", async () => {
     queryClient.setQueryData(sessionUserQueryKey, { id: 100 });

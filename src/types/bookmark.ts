@@ -1,4 +1,3 @@
-/** One saved place in a folder (preview card fields + server bookmark row id). */
 export type BookmarkedPlace = {
   id: string;
   name: string;
@@ -8,11 +7,9 @@ export type BookmarkedPlace = {
   location?: { lat: number; lng: number };
 };
 
-/** Bookmark category as shown in the folder list / detail header (from API categories). */
 export type BookmarkFolder = {
   id: string;
   title: string;
-  /** Ribbon color (hex) */
   color: string;
   placeCount?: number;
 };

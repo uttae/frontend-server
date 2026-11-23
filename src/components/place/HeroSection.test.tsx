@@ -31,16 +31,8 @@ describe("HeroImage", () => {
     );
 
     expect(html).toContain(`src="${photoUrl}"`);
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: ["places", "photoUrl"] }),
-    ).toHaveLength(1);
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: ["places", "photoUrlsSeed"] }),
-    ).toHaveLength(0);
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["places", "photoUrl"] })).toHaveLength(1);
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["places", "photoUrlsSeed"] })).toHaveLength(0);
   });
 
   it("캐시 미스에서도 photoUrl 쿼리만 생성한다", () => {
@@ -58,15 +50,7 @@ describe("HeroImage", () => {
       ),
     );
 
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: ["places", "photoUrl", googlePlaceId] }),
-    ).toHaveLength(1);
-    expect(
-      queryClient
-        .getQueryCache()
-        .findAll({ queryKey: ["places", "photoUrlsSeed"] }),
-    ).toHaveLength(0);
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["places", "photoUrl", googlePlaceId] })).toHaveLength(1);
+    expect(queryClient.getQueryCache().findAll({ queryKey: ["places", "photoUrlsSeed"] })).toHaveLength(0);
   });
 });

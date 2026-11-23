@@ -7,11 +7,7 @@ type StaticPolicyDocumentViewProps = {
   content: string;
 };
 
-export function StaticPolicyDocumentView({
-  title,
-  effectiveDate,
-  content,
-}: StaticPolicyDocumentViewProps) {
+export function StaticPolicyDocumentView({ title, effectiveDate, content }: StaticPolicyDocumentViewProps) {
   return (
     <article className="mx-auto w-full max-w-3xl rounded-3xl border border-gray-border bg-white/95 px-6 py-8 shadow-[0_24px_80px_-12px_rgba(15,23,42,0.12)] backdrop-blur-sm sm:px-8 sm:py-10">
       <PolicyHomeLink />

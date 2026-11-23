@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useApproveJoinRequest,
-  useJoinRequests,
-  useRejectJoinRequest,
-} from "@/hooks/useRooms";
+import { useApproveJoinRequest, useJoinRequests, useRejectJoinRequest } from "@/hooks/useRooms";
 import { toast } from "sonner";
 
 import { UserAvatar } from "@/components/user/UserAvatar";
@@ -24,13 +20,7 @@ function formatRelativeTime(iso: string) {
   return `${Math.floor(hours / 24)}일 전`;
 }
 
-function JoinRequestCard({
-  request,
-  roomId,
-}: {
-  request: JoinRequest;
-  roomId: string;
-}) {
+function JoinRequestCard({ request, roomId }: Readonly<{ request: JoinRequest; roomId: string }>) {
   const { mutate: approve, isPending: isApproving } = useApproveJoinRequest();
   const { mutate: reject, isPending: isRejecting } = useRejectJoinRequest();
   const isPending = isApproving || isRejecting;
@@ -52,19 +42,13 @@ function JoinRequestCard({
 
   return (
     <div className="flex items-center gap-3">
-      <UserAvatar
-        user={request}
-        size={36}
-        tone="primary"
-      />
+      <UserAvatar user={request} size={36} tone="primary" />
 
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="truncate text-body-m-regular font-medium mobile:text-body-s-regular text-text">
           {request.nickname}
         </p>
-        <p className="text-caption-m-regular text-text-subtle">
-          {formatRelativeTime(request.requestedAt)}
-        </p>
+        <p className="text-caption-m-regular text-text-subtle">{formatRelativeTime(request.requestedAt)}</p>
       </div>
 
       <div className="flex shrink-0 gap-2">

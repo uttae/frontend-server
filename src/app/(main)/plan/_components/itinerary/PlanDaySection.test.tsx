@@ -5,48 +5,41 @@ import { describe, expect, it } from "vitest";
 import { PlanDaySection } from "./PlanDaySection";
 
 describe("PlanDaySection", () => {
-  it("펼침 토글 아이콘을 날짜·일차 배지 뒤에 배치한다", () => {
+  it("일차 제목 뒤에 날짜, 그 뒤에 펼침 토글 아이콘을 둔다", () => {
     const html = renderToStaticMarkup(
       createElement(
         PlanDaySection,
         {
           title: "1일차",
-          subtitle: "07.16(목)",
+          subtitle: "07. 16 목",
         },
         createElement("div", null, "일정"),
       ),
     );
 
-    const triggerMarkup = html.match(
-      /<button[^>]*aria-expanded="true"[^>]*>([\s\S]*?)<\/button>/,
-    )?.[1];
+    const triggerMarkup = html.match(/<button[^>]*aria-expanded="true"[^>]*>([\s\S]*?)<\/button>/)?.[1];
 
     expect(triggerMarkup).toBeDefined();
-    expect(triggerMarkup).toContain('class="shrink-0 text-dark-gray"');
-    expect(triggerMarkup).not.toContain("ml-auto");
-    expect(triggerMarkup!.indexOf("lucide-chevron-up")).toBeGreaterThan(
-      triggerMarkup!.indexOf("1일차"),
-    );
-    expect(triggerMarkup!.indexOf("07.16(목)")).toBeLessThan(
-      triggerMarkup!.indexOf("1일차"),
-    );
-    expect(html).not.toContain("absolute left-1/2");
+    expect(triggerMarkup!.indexOf("1일차")).toBeLessThan(triggerMarkup!.indexOf("07. 16 목"));
+    expect(triggerMarkup!.lastIndexOf("<svg")).toBeGreaterThan(triggerMarkup!.indexOf("07. 16 목"));
   });
 
   it("shows the cost summary and route switch below the day heading, before places", () => {
-    const html = renderToStaticMarkup(createElement(
-      PlanDaySection,
-      {
-        title: "1일차",
-        itineraryScheduleId: 10,
-        summaryAction: createElement("button", null, "비용 3건 · 128,000 KRW"),
-      },
-      createElement("div", null, "장소 카드"),
-    ));
+    const html = renderToStaticMarkup(
+      createElement(
+        PlanDaySection,
+        {
+          title: "1일차",
+          itineraryScheduleId: 10,
+          summaryAction: createElement("button", null, "비용 3건 · 128,000 KRW"),
+        },
+        createElement("div", null, "장소 카드"),
+      ),
+    );
 
     expect(html).toContain("비용 3건 · 128,000 KRW");
     expect(html.indexOf("비용 3건 · 128,000 KRW")).toBeLessThan(html.indexOf("장소 카드"));
     expect(html).toMatch(/role="switch"[^>]*aria-checked="true"/);
-    expect(html).toContain("지도에 경로 표시");
+    expect(html).toContain("경로 보기");
   });
 });

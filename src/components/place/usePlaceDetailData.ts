@@ -1,11 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { requestPlaceDetail, type PlaceDetail } from "@/lib/api/places";
-import {
-  placeDetailQueryKey,
-  normalizePreviewLocation,
-  placeDetailQueryDefaults,
-} from "@/lib/places/place-queries";
+import { placeDetailQueryKey, normalizePreviewLocation, placeDetailQueryDefaults } from "@/lib/places/place-queries";
 import type { PlaceDetailResult } from "./types";
 
 export function toPlaceDetailResult(detail: PlaceDetail): PlaceDetailResult {

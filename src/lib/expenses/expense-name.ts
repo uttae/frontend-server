@@ -1,5 +1,4 @@
 import { expenseCategoryLabel, type Expense } from "@/lib/api/rooms/expenses";
-// Java Character.isWhitespace, deliberately excluding NBSP, figure space and narrow NBSP.
 const whitespace = /[\u0009-\u000d\u001c-\u0020\u1680\u2000-\u2006\u2008-\u200a\u2028\u2029\u205f\u3000]/;
 export function normalizeExpenseName(name: string | null | undefined): string | null {
   if (!name) return null;
