@@ -135,7 +135,7 @@ function newClient() {
   });
 }
 
-it.each(["GET last", "PATCH last", "later mode edit"] as const)(
+it.each(["GET last", "PATCH last", "later mode edit", "back to original mode"] as const)(
   "keeps the saved mode and concurrent server edits (%s)",
   async (order) => {
     const client = newClient();
@@ -145,7 +145,9 @@ it.each(["GET last", "PATCH last", "later mode edit"] as const)(
     const patch = deferred<RoomScheduleItem>();
     api.updateScheduleItemTravelMode.mockReturnValueOnce(patch.promise);
     const saved = items(101)[0];
-    const latest = { ...saved, startTime: "11:30", travelMode: order === "later mode edit" ? "TRANSIT" : "DRIVING" };
+    const remoteMode = order === "later mode edit" || order === "back to original mode";
+    const travelMode = order === "back to original mode" ? "WALKING" : "TRANSIT";
+    const latest = { ...saved, startTime: "11:30", travelMode: remoteMode ? travelMode : "DRIVING" };
     const day = deferred<RoomScheduleItem[]>();
     api.getScheduleItems.mockReset().mockReturnValueOnce(day.promise).mockResolvedValue([latest]);
     const hook = hookHarness(
@@ -159,7 +161,7 @@ it.each(["GET last", "PATCH last", "later mode edit"] as const)(
         saving = hook.current.mutateAsync("DRIVING");
       });
       await dispatchRoomScheduleEvent(client, {
-        type: order === "later mode edit" ? "SCHEDULE_ITEM_TRAVEL_MODE_UPDATED" : "SCHEDULE_ITEM_UPDATED",
+        type: remoteMode ? "SCHEDULE_ITEM_TRAVEL_MODE_UPDATED" : "SCHEDULE_ITEM_UPDATED",
         roomId: "room-1",
         scheduleId: 10,
         itemId: 101,
@@ -192,6 +194,61 @@ it.each(["GET last", "PATCH last", "later mode edit"] as const)(
     }
   },
 );
+
+it("preserves an inactive day's remote invalidation across a mode save until the day reopens", async () => {
+  const client = newClient();
+  const key = scheduleItemsQueryKey("room-1", 10);
+  client.setQueryData(
+    key,
+    [101, 103].map((id) => ({ ...place(id), travelMode: "WALKING" })),
+  );
+  const watch = () =>
+    new QueryObserver(client, schedulePlanPlacesQueryOptions(client, "room-1", 10)).subscribe(() => {});
+  let unwatch = watch();
+  const patch = deferred<RoomScheduleItem>();
+  api.updateScheduleItemTravelMode.mockReturnValueOnce(patch.promise);
+  const [savedA, initialB] = items(101, 103);
+  api.getScheduleItems
+    .mockReset()
+    .mockResolvedValue([savedA, { ...initialB, travelMode: "WALKING", startTime: "11:30" }]);
+  const hook = hookHarness(
+    () => useUpdateScheduleItemTravelMode("room-1", 10, 101),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+  );
+  try {
+    await hook.render(undefined);
+    let saving!: Promise<RoomScheduleItem>;
+    await act(async () => {
+      saving = hook.current.mutateAsync("DRIVING");
+    });
+    unwatch();
+    await dispatchRoomScheduleEvent(client, {
+      type: "SCHEDULE_ITEM_UPDATED",
+      roomId: "room-1",
+      scheduleId: 10,
+      itemId: 103,
+      actorUserId: 2,
+      scheduleIds: null,
+      affectedRouteItemIds: [],
+    });
+    await vi.waitFor(() => expect(client.getQueryState(key)?.isInvalidated).toBe(true));
+    await act(async () => {
+      patch.resolve(savedA);
+      await saving;
+    });
+    expect(client.getQueryData<PlanPlace[]>(key)?.[0].travelMode).toBe("DRIVING");
+    expect(api.getScheduleItems).not.toHaveBeenCalled();
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    unwatch = watch();
+    await vi.waitFor(() => expect(client.getQueryData<PlanPlace[]>(key)?.[1].startTime).toBe("11:30"));
+    expect(client.getQueryData<PlanPlace[]>(key)?.[0].travelMode).toBe("DRIVING");
+    expect(api.getScheduleItems).toHaveBeenCalledTimes(1);
+  } finally {
+    unwatch();
+    await hook.unmount();
+    client.clear();
+  }
+});
 
 it("shows the new order before the reorder response and puts the previous list back when saving fails", async () => {
   const client = newClient();

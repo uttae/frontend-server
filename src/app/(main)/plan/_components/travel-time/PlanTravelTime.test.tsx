@@ -132,19 +132,23 @@ it.each(["success", "failure"])(
   },
 );
 
-it("queries only the changed leg after saving when both walking routes previously failed", async () => {
+it.each([false, true])("queries only saved legs after walking failures (overlapping C save: %s)", async (saveC) => {
   const places = [
     { itemId: 101, travelMode: "WALKING" },
     { itemId: 103, travelMode: "WALKING" },
   ];
+  if (saveC) places.push({ itemId: 105, travelMode: "WALKING" });
   const savedItem = { itemId: 101, googlePlaceId: "a", travelMode: "DRIVING" };
   const save = Promise.withResolvers<typeof savedItem>();
-  api.updateMode.mockReturnValue(save.promise);
+  const savedC = { itemId: 105, googlePlaceId: "c", travelMode: "DRIVING" };
+  const otherSave = Promise.withResolvers<typeof savedC>();
+  api.updateMode.mockImplementation((_room, _day, id) => (id === 105 ? otherSave.promise : save.promise));
   api.route.mockImplementation(async (_room, _schedule, _from, _to, mode) => {
     if (mode === "WALKING") throw new Error("route unavailable");
     return { travelMode: mode, distanceMeters: 100, durationSeconds: 60 };
   });
-  const fetchDay = vi.fn(async () => [savedItem, places[1]]);
+  const otherPlaces = saveC ? [places[1], savedC] : [places[1]];
+  const fetchDay = vi.fn(async () => [savedItem, ...otherPlaces]);
   function DayRoutes() {
     const { data, isFetching } = useQuery({
       queryKey: scheduleItemsQueryKey("room", 10),
@@ -176,20 +180,32 @@ it("queries only the changed leg after saving when both walking routes previousl
     ["room", 10, 101, 102, "WALKING"],
     ["room", 10, 103, 104, "WALKING"],
   ];
-  await vi.waitFor(() => expect(container.textContent?.match(/경로 조회 오류/g)).toHaveLength(2));
+  if (saveC) walkingCalls.push(["room", 10, 105, 106, "WALKING"]);
+  await vi.waitFor(() => expect(container.textContent?.match(/경로 조회 오류/g)).toHaveLength(places.length));
   expect(api.route.mock.calls).toEqual(walkingCalls);
-  await act(async () => container.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
-  const driving = [...container.querySelectorAll<HTMLButtonElement>("button[role=option]")].find((option) =>
-    option.textContent?.includes("자동차"),
-  )!;
-  await act(async () => driving.click());
+  const chooseDriving = async (index: number) => {
+    await act(async () => container.querySelectorAll<HTMLButtonElement>("button[aria-expanded]")[index].click());
+    const driving = [...container.querySelectorAll<HTMLButtonElement>("button[role=option]")].find((option) =>
+      option.textContent?.includes("자동차"),
+    )!;
+    await act(async () => driving.click());
+  };
+  await chooseDriving(0);
   await vi.waitFor(() =>
     expect(api.updateMode).toHaveBeenCalledExactlyOnceWith("room", 10, 101, { travelMode: "DRIVING" }),
   );
-  expect(api.route.mock.calls).toEqual(walkingCalls);
+  const expectedCalls = [...walkingCalls];
+  if (saveC) {
+    await chooseDriving(2);
+    expect(api.updateMode).toHaveBeenNthCalledWith(2, "room", 10, 105, { travelMode: "DRIVING" });
+    expect(api.route.mock.calls).toEqual(walkingCalls);
+    await act(async () => otherSave.resolve(savedC));
+    expectedCalls.push(["room", 10, 105, 106, "DRIVING"]);
+    await vi.waitFor(() => expect(api.route.mock.calls).toEqual(expectedCalls));
+  }
+  expect(api.route.mock.calls).toEqual(expectedCalls);
   await act(async () => save.resolve(savedItem));
-  await vi.waitFor(() => expect(container.textContent).toContain("100m"));
-  expect(api.route.mock.calls).toEqual([...walkingCalls, ["room", 10, 101, 102, "DRIVING"]]);
+  await vi.waitFor(() => expect(api.route.mock.calls).toEqual([...expectedCalls, ["room", 10, 101, 102, "DRIVING"]]));
   expect(fetchDay).not.toHaveBeenCalled();
 
   api.route.mockClear();
@@ -198,7 +214,7 @@ it("queries only the changed leg after saving when both walking routes previousl
   });
   expect(api.route.mock.calls).toEqual([walkingCalls[1]]);
 
-  fetchDay.mockResolvedValueOnce([{ ...savedItem, travelMode: "TRANSIT" }, places[1]]);
+  fetchDay.mockResolvedValueOnce([{ ...savedItem, travelMode: "TRANSIT" }, ...otherPlaces]);
   await act(async () => {
     await client.invalidateQueries({ queryKey: scheduleItemsQueryKey("room", 10), exact: true });
   });

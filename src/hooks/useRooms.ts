@@ -424,7 +424,10 @@ export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: numb
     // 이동수단은 출발 항목에 저장한다. 같은 항목의 PATCH만 선택 순서대로 보낸다.
     scope: { id: JSON.stringify(mutationKey) },
     mutationFn: async (travelMode: ScheduleTravelModeValue) => {
-      const countBeforeSave = queryClient.getQueryState(queryKey)?.dataUpdateCount;
+      const dayQuery = queryClient.getQueryCache().find<PlanPlace[]>({ queryKey, exact: true });
+      const modeBeforeSave = dayQuery?.state.data?.find((place) => place.itemId === itemId)?.travelMode;
+      const readBeforeSave = dayQuery?.promise;
+      const wasReading = dayQuery !== undefined && dayQuery.state.fetchStatus !== "idle";
       const updated = await updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode });
       const day = queryClient.getQueryState<PlanPlace[]>(queryKey);
       if (!day) return updated;
@@ -434,13 +437,19 @@ export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: numb
       const latest = queryClient.getQueryState<PlanPlace[]>(queryKey);
       const current = latest?.data?.find((place) => place.itemId === updated.itemId);
       const modeChanged = current !== undefined && current.travelMode !== updated.travelMode;
-      const modeConflict = modeChanged && latest?.dataUpdateCount !== countBeforeSave;
+      // 다른 구간의 캐시 쓰기는 무관하다. 실제 목록 조회가 겹쳤다면 같은 값이라도 서버 적용 순서는 알 수 없다.
+      const serverReadDuringSave = wasReading || dayQuery?.promise !== readBeforeSave;
+      const modeConflict = modeChanged && (current.travelMode !== modeBeforeSave || serverReadDuringSave);
       if (modeChanged && !modeConflict) {
         queryClient.setQueryData<PlanPlace[]>(queryKey, (places) =>
           places?.map((place) =>
             place.itemId === updated.itemId ? { ...place, travelMode: updated.travelMode } : place,
           ),
         );
+        if (latest?.isInvalidated && !overlappingRead) {
+          // setQueryData가 지운 갱신 표시를 복원해, 비활성 일차는 복귀할 때 조회한다.
+          await queryClient.invalidateQueries({ queryKey, exact: true, refetchType: "none" });
+        }
       }
       // 저장 중 갱신된 캐시와 응답의 수단이 다르면 서버에서 최종 순서를 확인한다.
       if (overlappingRead || modeConflict) await invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
