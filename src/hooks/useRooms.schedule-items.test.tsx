@@ -7,7 +7,9 @@ import type { RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
 import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import type { PlanPlace } from "@/lib/plan/types";
 import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
-import type { RoomSchedule } from "@/lib/api/rooms/schedules";
+import { placePreviewQueryKey } from "@/lib/places/place-queries";
+import { hydrateRoomSchedulesFromServer } from "@/lib/rooms";
+import type { RoomScheduleWithItems, RoomSchedule } from "@/lib/api/rooms/schedules";
 import { dispatchRoomScheduleEvent } from "@/lib/stomp/schedules-dispatch";
 import { hookHarness } from "@/test/hook-harness";
 
@@ -24,6 +26,7 @@ const api = vi.hoisted(() => ({
   deleteScheduleItem: vi.fn(),
   updateScheduleItemTravelMode: vi.fn(),
   getScheduleItems: vi.fn(),
+  getRoomSchedules: vi.fn(),
   reorderScheduleItem: vi.fn(),
   moveScheduleItemToSchedule: vi.fn(),
   moveRoomSchedule: vi.fn(),
@@ -42,6 +45,11 @@ vi.mock("@/lib/api/rooms/schedule-items", async (original) => ({
 vi.mock("@/lib/api/rooms/schedules", async (original) => ({
   ...(await original<object>()),
   moveRoomSchedule: api.moveRoomSchedule,
+  getRoomSchedules: api.getRoomSchedules,
+}));
+vi.mock("@/lib/api/rooms", async (original) => ({
+  ...(await original<object>()),
+  getRoomDetail: vi.fn().mockRejectedValue(new Error("room detail unavailable")),
 }));
 vi.mock("@/contexts/StompContext", () => ({
   useStompContext: () => ({ connected: true }),
@@ -249,6 +257,103 @@ it("preserves an inactive day's remote invalidation across a mode save until the
     client.clear();
   }
 });
+
+it.each([
+  { active: true, evicted: false, roomLast: true },
+  { active: false, evicted: false, roomLast: true },
+  { active: false, evicted: true, roomLast: true },
+  { active: true, evicted: false, roomLast: false },
+])(
+  "reconciles room resync with a mode save (day active: $active, evicted: $evicted, room arrives last: $roomLast)",
+  async ({ active, evicted, roomLast }) => {
+    const client = newClient();
+    const roomId = "room-1";
+    const key = scheduleItemsQueryKey(roomId, 10);
+    const roomKey = roomSchedulesQueryKey(roomId);
+    const schedule = { scheduleId: 10, roomId, dayNumber: 1, date: "2026-11-23", createdAt: "" };
+    client.setQueryData(roomKey, [schedule]);
+    client.setQueryData(
+      key,
+      [101, 103].map((id) => ({ ...place(id), travelMode: "WALKING" })),
+    );
+    const watchDay = () =>
+      new QueryObserver(client, schedulePlanPlacesQueryOptions(client, roomId, 10)).subscribe(() => {});
+    let unwatchDay = watchDay();
+    const unwatchRoom = new QueryObserver(client, {
+      queryKey: roomKey,
+      staleTime: Infinity,
+      queryFn: ({ signal }) => hydrateRoomSchedulesFromServer(client, roomId, signal),
+    }).subscribe(() => {});
+    const roomRead = deferred<RoomScheduleWithItems[]>();
+    const patch = deferred<RoomScheduleItem>();
+    const [savedA, originalB] = items(101, 103);
+    const changedB = { ...originalB, travelMode: "WALKING", startTime: "11:30" };
+    const walkingA = { ...savedA, travelMode: "WALKING" };
+    const roomSnapshot = [{ ...schedule, items: [walkingA, changedB] }];
+    const finalA = roomLast ? savedA : walkingA;
+    for (const place of [savedA, changedB]) {
+      client.setQueryData(placePreviewQueryKey(place.googlePlaceId), { name: place.googlePlaceId });
+    }
+    api.getRoomSchedules
+      .mockReset()
+      .mockReturnValueOnce(roomRead.promise)
+      .mockResolvedValueOnce([{ ...schedule, items: [savedA, changedB] }]);
+    api.getScheduleItems.mockReset().mockResolvedValue([finalA, changedB]);
+    api.updateScheduleItemTravelMode.mockReturnValueOnce(patch.promise);
+    const hook = hookHarness(
+      () => useUpdateScheduleItemTravelMode(roomId, 10, 101),
+      (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
+    );
+    try {
+      await hook.render(undefined);
+      let saving!: Promise<RoomScheduleItem>;
+      await act(async () => {
+        saving = hook.current.mutateAsync("DRIVING");
+      });
+      if (!active) unwatchDay();
+      if (evicted) client.removeQueries({ queryKey: key, exact: true });
+      const resync = dispatchRoomScheduleEvent(client, {
+        type: "ROOM_SCHEDULES_RESYNCED",
+        roomId,
+        actorUserId: 2,
+        scheduleId: null,
+        itemId: null,
+        scheduleIds: null,
+        affectedRouteItemIds: [],
+      });
+      await vi.waitFor(() => expect(api.getRoomSchedules).toHaveBeenCalledTimes(1));
+      expect(client.isFetching({ queryKey: key, exact: true })).toBe(0);
+      if (!roomLast) {
+        roomRead.resolve(roomSnapshot);
+        await resync;
+      }
+      await act(async () => {
+        patch.resolve(savedA);
+        await saving;
+      });
+      if (roomLast) {
+        expect(client.getQueryData<PlanPlace[]>(key)?.[0].travelMode).toBe("DRIVING");
+        roomRead.resolve(roomSnapshot);
+        await resync;
+        await hook.flush();
+        expect(api.getRoomSchedules.mock.calls[0][1].signal.aborted).toBe(true);
+      }
+      expect(api.getRoomSchedules).toHaveBeenCalledTimes(roomLast ? 2 : 1);
+      expect(client.getQueryData<RoomScheduleWithItems[]>(roomKey)?.[0].items).toEqual([finalA, changedB]);
+      if (!active) unwatchDay = watchDay();
+      expect(client.getQueryData<PlanPlace[]>(key)).toMatchObject([
+        { itemId: 101, travelMode: finalA.travelMode },
+        { itemId: 103, startTime: "11:30" },
+      ]);
+      expect(api.getScheduleItems).toHaveBeenCalledTimes(roomLast ? 0 : 1);
+    } finally {
+      unwatchDay();
+      unwatchRoom();
+      await hook.unmount();
+      client.clear();
+    }
+  },
+);
 
 it("shows the new order before the reorder response and puts the previous list back when saving fails", async () => {
   const client = newClient();

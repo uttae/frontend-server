@@ -136,7 +136,7 @@ export async function waitForRoomSchedulesHydration(queryClient: QueryClient, ro
     try {
       await queryClient.fetchQuery({
         queryKey,
-        queryFn: () => hydrateRoomSchedulesFromServer(queryClient, rid),
+        queryFn: ({ signal }) => hydrateRoomSchedulesFromServer(queryClient, rid, signal),
         staleTime: 0,
       });
       return true;
