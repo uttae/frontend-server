@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, QueryObserver } from "@tanstack/react
 import { expect, it, vi } from "vitest";
 
 import type { RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
+import { PLAN_PLACE_PREVIEW_ERROR_TITLE } from "@/lib/plan/schedule-bulk-hydration";
 import { schedulePlanPlacesQueryOptions } from "@/lib/plan/scheduleItemPlaces";
 import type { PlanPlace } from "@/lib/plan/types";
 import { roomSchedulesQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
@@ -27,9 +28,14 @@ const api = vi.hoisted(() => ({
   updateScheduleItemTravelMode: vi.fn(),
   getScheduleItems: vi.fn(),
   getRoomSchedules: vi.fn(),
+  requestPlacePreview: vi.fn(),
   reorderScheduleItem: vi.fn(),
   moveScheduleItemToSchedule: vi.fn(),
   moveRoomSchedule: vi.fn(),
+}));
+vi.mock("@/lib/api/places", async (original) => ({
+  ...(await original<object>()),
+  requestPlacePreview: api.requestPlacePreview,
 }));
 vi.mock("@/lib/client-env", () => ({
   clientEnv: { NEXT_PUBLIC_API_BASE_URL: "https://api.example.test" },
@@ -260,12 +266,14 @@ it("preserves an inactive day's remote invalidation across a mode save until the
 
 it.each([
   { active: true, evicted: false, roomLast: true },
+  { active: true, evicted: false, roomLast: true, recoverPreview: true },
   { active: false, evicted: false, roomLast: true },
+  { active: false, evicted: false, roomLast: true, recoverPreview: true },
   { active: false, evicted: true, roomLast: true },
   { active: true, evicted: false, roomLast: false },
 ])(
-  "reconciles room resync with a mode save (day active: $active, evicted: $evicted, room arrives last: $roomLast)",
-  async ({ active, evicted, roomLast }) => {
+  "reconciles room resync with a mode save (day active: $active, evicted: $evicted, room arrives last: $roomLast, delayed preview: $recoverPreview)",
+  async ({ active, evicted, roomLast, recoverPreview }) => {
     const client = newClient();
     const roomId = "room-1";
     const key = scheduleItemsQueryKey(roomId, 10);
@@ -291,7 +299,15 @@ it.each([
     const walkingA = { ...savedA, travelMode: "WALKING" };
     const roomSnapshot = [{ ...schedule, items: [walkingA, changedB] }];
     const finalA = roomLast ? savedA : walkingA;
-    for (const place of [savedA, changedB]) {
+    const recovered = { googlePlaceId: changedB.googlePlaceId, name: "복구된 장소", formattedAddress: "서울" };
+    const preview = deferred<typeof recovered>();
+    if (recoverPreview) {
+      client.setQueryData<PlanPlace[]>(key, (places) =>
+        places?.map((p) => (p.itemId === changedB.itemId ? { ...p, title: PLAN_PLACE_PREVIEW_ERROR_TITLE } : p)),
+      );
+      api.requestPlacePreview.mockReset().mockReturnValueOnce(preview.promise);
+    }
+    for (const place of recoverPreview ? [savedA] : [savedA, changedB]) {
       client.setQueryData(placePreviewQueryKey(place.googlePlaceId), { name: place.googlePlaceId });
     }
     api.getRoomSchedules
@@ -329,6 +345,12 @@ it.each([
       }
       await act(async () => {
         patch.resolve(savedA);
+        if (recoverPreview) {
+          await vi.waitFor(() =>
+            expect(api.requestPlacePreview).toHaveBeenCalledExactlyOnceWith(changedB.googlePlaceId),
+          );
+          preview.resolve(recovered);
+        }
         await saving;
       });
       if (roomLast) {
@@ -345,6 +367,7 @@ it.each([
         { itemId: 101, travelMode: finalA.travelMode },
         { itemId: 103, startTime: "11:30" },
       ]);
+      if (recoverPreview) expect(client.getQueryData<PlanPlace[]>(key)?.[1].title).toBe(recovered.name);
       expect(api.getScheduleItems).toHaveBeenCalledTimes(roomLast ? 0 : 1);
     } finally {
       unwatchDay();

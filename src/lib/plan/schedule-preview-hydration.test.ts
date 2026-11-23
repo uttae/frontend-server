@@ -1,6 +1,8 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RoomScheduleWithItems } from "@/lib/api/rooms/schedules";
+import { reconcileSchedulePlanPlacesAfterPreviewSeed } from "@/lib/places/place-batch-cache";
+import { placePreviewQueryKey } from "@/lib/places/place-queries";
 import type { PlanPlace } from "@/lib/plan/types";
 
 const requestPlacePreviewsBatch = vi.hoisted(() => vi.fn());
@@ -205,6 +207,28 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
 });
 
 describe("schedulePlanPlacesQueryOptions after preview recovery merge", () => {
+  it("keeps a newer schedule edit and its pending invalidation when only the preview recovers", async () => {
+    const client = createQueryClient();
+    const key = scheduleItemsQueryKey(ROOM_ID, 1);
+    const roomReadStarted = 1000;
+    const scheduleEdited = 2000;
+    client.setQueryData<PlanPlace[]>(
+      key,
+      [{ id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE, startTime: "12:30" }],
+      { updatedAt: scheduleEdited },
+    );
+    await client.invalidateQueries({ queryKey: key, exact: true, refetchType: "none" });
+    client.setQueryData(placePreviewQueryKey("a"), ok("a"));
+
+    reconcileSchedulePlanPlacesAfterPreviewSeed(client, ROOM_ID);
+    expect(client.getQueryState(key)).toMatchObject({ dataUpdatedAt: scheduleEdited, isInvalidated: true });
+    await hydrateScheduleItemsFromSchedulesWithItems(client, ROOM_ID, [schedule(1, ["a"])], roomReadStarted);
+    expect(client.getQueryData<PlanPlace[]>(key)?.[0]).toMatchObject({ title: "이름 a", startTime: "12:30" });
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    expect(getScheduleItems).not.toHaveBeenCalled();
+    client.clear();
+  });
+
   it("invalidated placeholder data fetches authoritative items instead of only enriching old items", async () => {
     const queryClient = createQueryClient();
     const key = scheduleItemsQueryKey(ROOM_ID, 1);
