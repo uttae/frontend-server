@@ -11,7 +11,7 @@ vi.mock("@/lib/api/rooms", async (original) => ({
   updateScheduleItemTravelMode: api.updateMode,
 }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: false }) }));
-import { scheduleItemsQueryKey } from "@/lib/query-keys";
+import { scheduleItemRouteQueryKey, scheduleItemsQueryKey } from "@/lib/query-keys";
 import { PlanTravelTime } from "./PlanTravelTime";
 let root: Root;
 let container: HTMLDivElement;
@@ -131,6 +131,79 @@ it.each(["success", "failure"])(
     }
   },
 );
+
+it("queries only the changed leg after saving when both walking routes previously failed", async () => {
+  const places = [
+    { itemId: 101, travelMode: "WALKING" },
+    { itemId: 103, travelMode: "WALKING" },
+  ];
+  const savedItem = { itemId: 101, googlePlaceId: "a", travelMode: "DRIVING" };
+  const save = Promise.withResolvers<typeof savedItem>();
+  api.updateMode.mockReturnValue(save.promise);
+  api.route.mockImplementation(async (_room, _schedule, _from, _to, mode) => {
+    if (mode === "WALKING") throw new Error("route unavailable");
+    return { travelMode: mode, distanceMeters: 100, durationSeconds: 60 };
+  });
+  const fetchDay = vi.fn(async () => [savedItem, places[1]]);
+  function DayRoutes() {
+    const { data, isFetching } = useQuery({
+      queryKey: scheduleItemsQueryKey("room", 10),
+      queryFn: fetchDay,
+      initialData: places,
+      staleTime: Infinity,
+    });
+    return data.map(({ itemId, travelMode }) => (
+      <PlanTravelTime
+        key={itemId}
+        roomId="room"
+        scheduleId={10}
+        segmentSourceItemId={itemId}
+        destinationItemId={itemId + 1}
+        travelMode={travelMode}
+        scheduleFingerprint=""
+        routeQueryEnabled={!isFetching}
+      />
+    ));
+  }
+  await act(async () =>
+    root.render(
+      <QueryClientProvider client={client}>
+        <DayRoutes />
+      </QueryClientProvider>,
+    ),
+  );
+  const walkingCalls = [
+    ["room", 10, 101, 102, "WALKING"],
+    ["room", 10, 103, 104, "WALKING"],
+  ];
+  await vi.waitFor(() => expect(container.textContent?.match(/경로 조회 오류/g)).toHaveLength(2));
+  expect(api.route.mock.calls).toEqual(walkingCalls);
+  await act(async () => container.querySelector<HTMLButtonElement>("button[aria-expanded]")!.click());
+  const driving = [...container.querySelectorAll<HTMLButtonElement>("button[role=option]")].find((option) =>
+    option.textContent?.includes("자동차"),
+  )!;
+  await act(async () => driving.click());
+  await vi.waitFor(() =>
+    expect(api.updateMode).toHaveBeenCalledExactlyOnceWith("room", 10, 101, { travelMode: "DRIVING" }),
+  );
+  expect(api.route.mock.calls).toEqual(walkingCalls);
+  await act(async () => save.resolve(savedItem));
+  await vi.waitFor(() => expect(container.textContent).toContain("100m"));
+  expect(api.route.mock.calls).toEqual([...walkingCalls, ["room", 10, 101, 102, "DRIVING"]]);
+  expect(fetchDay).not.toHaveBeenCalled();
+
+  api.route.mockClear();
+  await act(async () => {
+    await client.refetchQueries({ queryKey: scheduleItemRouteQueryKey("room", 10, 103, 104, "WALKING"), exact: true });
+  });
+  expect(api.route.mock.calls).toEqual([walkingCalls[1]]);
+
+  fetchDay.mockResolvedValueOnce([{ ...savedItem, travelMode: "TRANSIT" }, places[1]]);
+  await act(async () => {
+    await client.invalidateQueries({ queryKey: scheduleItemsQueryKey("room", 10), exact: true });
+  });
+  await vi.waitFor(() => expect(api.route).toHaveBeenCalledWith("room", 10, 101, 102, "TRANSIT"));
+});
 
 it.each([
   { firstOk: true, lastOk: true, final: "TRANSIT" },

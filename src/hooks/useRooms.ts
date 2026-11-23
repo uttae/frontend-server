@@ -430,7 +430,7 @@ export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: numb
         (old) => applyRoomScheduleItemToPlanPlaces(old, updated) ?? old,
       );
     },
-    onSettled: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
+    onError: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
