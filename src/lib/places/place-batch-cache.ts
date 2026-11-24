@@ -42,11 +42,11 @@ export function reconcileSchedulePlanPlacesAfterPreviewSeed(queryClient: QueryCl
     }
 
     const cacheKey = scheduleItemsQueryKey(rid, scheduleId);
-    const places = queryClient.getQueryData<PlanPlace[]>(cacheKey);
-    if (!places?.length) continue;
+    const day = queryClient.getQueryState<PlanPlace[]>(cacheKey);
+    if (!day?.data?.length) continue;
 
     let changed = false;
-    const next = places.map((place) => {
+    const next = day.data.map((place) => {
       if (place.title !== PLAN_PLACE_PREVIEW_ERROR_TITLE) return place;
       const gid = typeof place.googlePlaceId === "string" ? place.googlePlaceId.trim() : "";
       if (!gid.length) return place;
@@ -65,7 +65,11 @@ export function reconcileSchedulePlanPlacesAfterPreviewSeed(queryClient: QueryCl
     });
 
     if (changed) {
-      queryClient.setQueryData(cacheKey, next);
+      // 표시 정보만 복구하므로 일정 데이터의 갱신 시각과 대기 중인 무효화를 보존한다.
+      queryClient.setQueryData(cacheKey, next, { updatedAt: day.dataUpdatedAt });
+      if (day.isInvalidated) {
+        void queryClient.invalidateQueries({ queryKey: cacheKey, exact: true, refetchType: "none" });
+      }
     }
   }
 }

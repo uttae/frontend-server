@@ -417,20 +417,60 @@ export function useUpdateScheduleItem() {
 
 export function useUpdateScheduleItemTravelMode(roomId: string, scheduleId: number, itemId: number) {
   const queryClient = useQueryClient();
+  const queryKey = scheduleItemsQueryKey(roomId, scheduleId);
   const mutationKey = ["schedule-item-travel-mode", roomId, scheduleId, itemId] as const;
   return useMutation({
     mutationKey,
     // 이동수단은 출발 항목에 저장한다. 같은 항목의 PATCH만 선택 순서대로 보낸다.
     scope: { id: JSON.stringify(mutationKey) },
-    mutationFn: (travelMode: ScheduleTravelModeValue) =>
-      updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode }),
-    onSuccess: (updated) => {
-      queryClient.setQueryData<PlanPlace[]>(
-        scheduleItemsQueryKey(roomId, scheduleId),
-        (old) => applyRoomScheduleItemToPlanPlaces(old, updated) ?? old,
-      );
+    mutationFn: async (travelMode: ScheduleTravelModeValue) => {
+      const roomKey = roomSchedulesQueryKey(roomId);
+      const roomBefore = queryClient.getQueryCache().find({ queryKey: roomKey, exact: true });
+      const roomReadBefore = roomBefore?.promise;
+      const roomWasReading = roomBefore?.state.fetchStatus === "fetching";
+      const dayQuery = queryClient.getQueryCache().find<PlanPlace[]>({ queryKey, exact: true });
+      const modeBeforeSave = dayQuery?.state.data?.find((place) => place.itemId === itemId)?.travelMode;
+      const readBeforeSave = dayQuery?.promise;
+      const wasReading = dayQuery !== undefined && dayQuery.state.fetchStatus !== "idle";
+      const updated = await updateScheduleItemTravelMode(roomId, scheduleId, itemId, { travelMode });
+      const day = queryClient.getQueryState<PlanPlace[]>(queryKey);
+      const overlappingRead = day !== undefined && day.fetchStatus !== "idle";
+      // 저장 전에 시작된 목록 응답이 확정된 수단을 덮지 않도록 그 조회만 다시 시작한다.
+      if (overlappingRead) await queryClient.cancelQueries({ queryKey, exact: true });
+      const latest = queryClient.getQueryState<PlanPlace[]>(queryKey);
+      const current = latest?.data?.find((place) => place.itemId === updated.itemId);
+      const modeChanged = current !== undefined && current.travelMode !== updated.travelMode;
+      // 다른 구간의 캐시 쓰기는 무관하다. 실제 목록 조회가 겹쳤다면 같은 값이라도 서버 적용 순서는 알 수 없다.
+      const room = queryClient.getQueryCache().find({ queryKey: roomKey, exact: true });
+      const roomReading = room?.state.fetchStatus === "fetching";
+      const roomReadFinished = !roomReading && (roomWasReading || room?.promise !== roomReadBefore);
+      const serverReadDuringSave = wasReading || dayQuery?.promise !== readBeforeSave || roomReadFinished;
+      const modeConflict = modeChanged && (current.travelMode !== modeBeforeSave || serverReadDuringSave);
+      if (modeChanged && !modeConflict) {
+        queryClient.setQueryData<PlanPlace[]>(queryKey, (places) =>
+          places?.map((place) =>
+            place.itemId === updated.itemId ? { ...place, travelMode: updated.travelMode } : place,
+          ),
+        );
+        if (latest?.isInvalidated && !overlappingRead) {
+          // setQueryData가 지운 갱신 표시를 복원해, 비활성 일차는 복귀할 때 조회한다.
+          await queryClient.invalidateQueries({ queryKey, exact: true, refetchType: "none" });
+        }
+      }
+      // 저장 중 갱신된 캐시와 응답의 수단이 다르면 서버에서 최종 순서를 확인한다.
+      if (roomReading) {
+        // 방 응답도 일차 목록을 채운다. 겹친 방 조회를 교체해 두 캐시가 저장 이후의 같은 스냅샷을 받게 한다.
+        try {
+          await refreshRoomSchedules(queryClient, roomId);
+        } catch {
+          await invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+        }
+      } else if (overlappingRead || modeConflict) {
+        await invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId);
+      }
+      return updated;
     },
-    onSettled: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
+    onError: () => invalidateDayPlacesAfterOwnChange(queryClient, roomId, scheduleId),
   });
 }
 
