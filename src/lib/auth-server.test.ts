@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
-  process.env.API_BASE_URL = "http://backend.test";
+  process.env.NEXT_PUBLIC_API_BASE_URL = "http://backend.test";
 });
 
 import { sessionCheckResponse, verifySessionWithOptionalRefresh } from "@/lib/auth-server";
@@ -104,6 +104,11 @@ describe("verifySessionWithOptionalRefresh", () => {
       unavailable: false,
       setCookies: REFRESHED_COOKIES,
     });
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "http://backend.test/users/me",
+      "http://backend.test/auth/refresh",
+      "http://backend.test/users/me",
+    ]);
   });
 
   it("keeps refreshed cookies when the backend fails right after refreshing", async () => {
