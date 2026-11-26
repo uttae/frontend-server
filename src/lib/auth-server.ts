@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { appendSetCookies, getSetCookieHeaders } from "@/lib/auth-cookies";
-import { requiredEnv } from "@/lib/required-env";
-
-const API_BASE = requiredEnv("API_BASE_URL");
+import { API_BASE } from "@/lib/api/config";
 
 function parseCookieHeader(cookieHeader: string): Map<string, string> {
   const map = new Map<string, string>();
