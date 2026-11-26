@@ -2,30 +2,28 @@
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
-import { useEffect, useRef, useState, type ComponentProps, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 
 import { Dialog } from "@/components/ui/dialog";
 import { Popover, PopoverContent } from "@/components/ui/popover";
 
-type DatePickerPlacement =
-  | { presentation: "popup" }
-  | {
-      presentation: "anchored";
-      anchor: ComponentProps<typeof PopoverContent>["anchor"];
-      boundaryRef: RefObject<HTMLElement | null>;
-      sideOffset: number;
-    };
+import { DATE_PICKER_WIDTH } from "./DatePicker";
+
+export type DatePickerPresentation = "anchored" | "popup";
 
 export function DatePickerLayer({
-  placement,
+  presentation,
+  anchorRef,
+  boundaryRef,
   label,
   onDismiss,
   onEscape,
   children,
 }: Readonly<{
-  placement: DatePickerPlacement;
+  presentation: DatePickerPresentation;
+  anchorRef?: RefObject<HTMLElement | null>;
+  boundaryRef?: RefObject<HTMLElement | null>;
   label: string;
-
   onDismiss: () => void;
   onEscape: () => void;
   children: ReactNode;
@@ -33,6 +31,7 @@ export function DatePickerLayer({
   const dialogRef = useRef<HTMLDivElement>(null);
 
   const [opener] = useState(() => document.activeElement);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -43,8 +42,17 @@ export function DatePickerLayer({
     };
   }, [opener]);
 
-  if (placement.presentation === "anchored") {
-    const { anchor, boundaryRef, sideOffset } = placement;
+  useLayoutEffect(() => {
+    const anchor = anchorRef?.current;
+    if (presentation !== "anchored" || !anchor) return;
+    const fit = () => setZoom(anchor.clientWidth / DATE_PICKER_WIDTH);
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(anchor);
+    return () => observer.disconnect();
+  }, [presentation, anchorRef]);
+
+  if (presentation === "anchored") {
     return (
       <Popover
         open
@@ -56,7 +64,7 @@ export function DatePickerLayer({
             return;
           }
           const next = details.reason === "focus-out" ? document.activeElement : details.event.target;
-          if (next instanceof Node && boundaryRef.current?.contains(next)) {
+          if (next instanceof Node && boundaryRef?.current?.contains(next)) {
             details.cancel();
             return;
           }
@@ -65,14 +73,15 @@ export function DatePickerLayer({
       >
         <PopoverContent
           variant="bare"
-          anchor={anchor}
-          sideOffset={sideOffset}
+          anchor={anchorRef}
+          sideOffset={12}
           initialFocus={false}
           finalFocus={false}
           aria-label={label}
         >
-          <div ref={dialogRef}>{children}</div>
-
+          <div ref={dialogRef} style={{ zoom }}>
+            {children}
+          </div>
           <PopoverPrimitive.Close tabIndex={-1} className="sr-only">
             날짜 선택 닫기
           </PopoverPrimitive.Close>
@@ -95,7 +104,6 @@ export function DatePickerLayer({
           forceRender
           className="fixed inset-0 z-50 min-h-dvh bg-black/40 supports-[-webkit-touch-callout:none]:absolute"
         />
-
         <DialogPrimitive.Viewport className="fixed inset-0 z-50 flex items-center justify-center-safe overflow-x-auto p-4">
           <DialogPrimitive.Popup
             ref={dialogRef}

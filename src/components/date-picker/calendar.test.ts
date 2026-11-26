@@ -27,10 +27,10 @@ describe("pickRangeDate", () => {
     expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-12", end: "2026-10-22" });
   });
 
-  it("clears an end that falls before a new start, on screen and on confirm", () => {
+  it("hides an end that falls before a new start until it is picked again, without changing it on confirm", () => {
     const { picked } = pickRangeDate(value, {}, "start", "2026-10-25");
     expect(displayPickedRange(value, picked)).toEqual({ start: "2026-10-25", end: "" });
-    expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-25", end: "" });
+    expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-25", end: "2026-10-22" });
   });
 });
 
