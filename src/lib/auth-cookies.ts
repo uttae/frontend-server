@@ -1,18 +1,11 @@
 import type { NextResponse } from "next/server";
 
-/** Server-only configuration; intentionally not NEXT_PUBLIC build-time values. */
+/** Vercel exposes the deployment target to server-side request handlers. */
 export function authCookieNames(): { access: string; refresh: string } {
-  const access = process.env.AUTH_ACCESS_COOKIE_NAME;
-  const refresh = process.env.AUTH_REFRESH_COOKIE_NAME;
-  if (access === undefined && refresh === undefined) {
-    return { access: "access_token", refresh: "refresh_token" };
+  if (process.env.VERCEL_TARGET_ENV === "qa") {
+    return { access: "qa_access_token", refresh: "qa_refresh_token" };
   }
-  const cookieName = /^[!#$%&'*+.^_`|~0-9A-Za-z-]+$/;
-  if (!access || !refresh || access === refresh ||
-      !cookieName.test(access) || !cookieName.test(refresh)) {
-    throw new Error("Invalid auth cookie names: configure both distinct cookie names or neither");
-  }
-  return { access, refresh };
+  return { access: "access_token", refresh: "refresh_token" };
 }
 
 /** Only the selected environment's auth cookies may reach the backend. */

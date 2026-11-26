@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => { process.env.NEXT_PUBLIC_API_BASE_URL = "http://backend.test"; });
 import { sessionCheckResponse, verifySessionWithOptionalRefresh } from "./auth-server";
+import { proxy } from "@/proxy";
 import { forwardBackendSetCookies } from "./auth-cookies";
 import { POST as refresh } from "@/app/api/auth/refresh/route";
 import { POST as login } from "@/app/api/auth/google/route";
@@ -27,8 +28,7 @@ function request(cookie: string) {
   return new NextRequest("https://qa.uttae.app/api/auth/session", { headers: { cookie } });
 }
 beforeEach(() => {
-  vi.stubEnv("AUTH_ACCESS_COOKIE_NAME", "qa_access_token");
-  vi.stubEnv("AUTH_REFRESH_COOKIE_NAME", "qa_refresh_token");
+  vi.stubEnv("VERCEL_TARGET_ENV", "qa");
   fetchMock.mockReset();
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -98,21 +98,20 @@ describe("QA auth cookie boundary", () => {
     }));
     expect(res.headers.getSetCookie()).toEqual(rotated);
   });
-  it.each([
-    [undefined, "qa_refresh_token"], ["qa_access_token", undefined],
-    ["", "qa_refresh_token"], ["same", "same"], ["bad;name", "refresh"],
-  ])("fails closed for incomplete or invalid name configuration", async (access, refreshName) => {
-    vi.stubEnv("AUTH_ACCESS_COOKIE_NAME", access);
-    vi.stubEnv("AUTH_REFRESH_COOKIE_NAME", refreshName);
-    await expect(verifySessionWithOptionalRefresh(prod)).rejects.toThrow("auth cookie names");
+  it("redirects a protected QA request with only regular cookies before contacting the backend", async () => {
+    const res = await proxy(new NextRequest("https://qa.uttae.app/home", { headers: { cookie: prod } }));
+    expect(res.headers.get("location")).toBe("https://qa.uttae.app/login");
     expect(fetchMock).not.toHaveBeenCalled();
   });
-  it.each(["production", "development"])("keeps default %s names and excludes QA cookies", async mode => {
-    vi.stubEnv("NODE_ENV", mode);
-    vi.stubEnv("AUTH_ACCESS_COOKIE_NAME", undefined);
-    vi.stubEnv("AUTH_REFRESH_COOKIE_NAME", undefined);
-    fetchMock.mockResolvedValue(response(200));
-    expect((await verifySessionWithOptionalRefresh(`${qa}; ${prod}`)).ok).toBe(true);
-    expect(fetchMock.mock.calls[0][1]?.headers).toEqual({ cookie: prod });
-  });
+  it.each(["production", "preview", "development", "other", undefined])(
+    "uses only regular names for target %s even with legacy QA settings",
+    async target => {
+      vi.stubEnv("VERCEL_TARGET_ENV", target);
+      vi.stubEnv("AUTH_ACCESS_COOKIE_NAME", "qa_access_token");
+      vi.stubEnv("AUTH_REFRESH_COOKIE_NAME", "qa_refresh_token");
+      fetchMock.mockResolvedValue(response(200));
+      expect((await verifySessionWithOptionalRefresh(`${qa}; ${prod}`)).ok).toBe(true);
+      expect(fetchMock.mock.calls[0][1]?.headers).toEqual({ cookie: prod });
+    },
+  );
 });
