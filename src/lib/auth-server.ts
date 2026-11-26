@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { appendSetCookies, getSetCookieHeaders } from "@/lib/auth-cookies";
+import {
+  appendSetCookies,
+  authCookieHeader,
+  authCookieNames,
+  getAuthSetCookieHeaders,
+} from "@/lib/auth-cookies";
 import { API_BASE } from "@/lib/api/config";
 
 function parseCookieHeader(cookieHeader: string): Map<string, string> {
@@ -33,7 +38,7 @@ function mergeSetCookiesIntoCookieHeader(
 }
 
 function cookieHeaderHasRefreshToken(cookieHeader: string): boolean {
-  return parseCookieHeader(cookieHeader).has("refresh_token");
+  return parseCookieHeader(cookieHeader).has(authCookieNames().refresh);
 }
 
 type SessionVerifyResult = {
@@ -110,7 +115,7 @@ function warnSessionFetchFailed(label: string): void {
 export async function verifySessionWithOptionalRefresh(
   cookieHeader: string | null,
 ): Promise<SessionVerifyResult> {
-  const cookie = cookieHeader?.trim() ?? "";
+  const cookie = authCookieHeader(cookieHeader);
   if (!cookie.length) {
     return unauthenticatedResult();
   }
@@ -143,7 +148,7 @@ export async function verifySessionWithOptionalRefresh(
     return unauthenticatedResult();
   }
 
-  const setCookies = getSetCookieHeaders(refreshRes);
+  const setCookies = getAuthSetCookieHeaders(refreshRes);
   const retryCookie = mergeSetCookiesIntoCookieHeader(cookie, setCookies);
   const retryMe = await fetchUsersMe(retryCookie);
   // refresh가 성공했으면 이전 refresh_token은 이미 폐기됐다. 재확인이 장애로 실패해도
