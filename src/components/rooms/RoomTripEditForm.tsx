@@ -163,6 +163,7 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
                 <DateRangeField
                   idPrefix={idPrefix}
                   value={{ start: startDate, end: field.state.value }}
+                  popupOnly
                   onChange={(next) => {
                     form.setFieldValue("startDate", next.start);
                     field.handleChange(next.end);

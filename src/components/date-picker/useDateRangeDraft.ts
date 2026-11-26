@@ -13,8 +13,8 @@ import {
 
 type Session = {
   picked: PickedRange;
-
   edge: RangeEdge;
+  anchor: RangeEdge;
 };
 
 export function useDateRangeDraft(value: DateRange, onConfirm: (next: DateRange) => void) {
@@ -22,24 +22,24 @@ export function useDateRangeDraft(value: DateRange, onConfirm: (next: DateRange)
 
   return {
     isOpen: session != null,
-
     activeEdge: session?.edge ?? null,
-
+    anchorEdge: session?.anchor ?? null,
     range: session ? displayPickedRange(value, session.picked) : value,
     open(edge: RangeEdge) {
       setSession((current) => {
         const picked = current?.picked ?? {};
         const { start } = displayPickedRange(value, picked);
-        return { picked, edge: edge === "end" && !start ? "start" : edge };
+        return { picked, edge: edge === "end" && !start ? "start" : edge, anchor: edge };
       });
     },
     pick(ymd: string) {
-      setSession((current) => current && pickRangeDate(value, current.picked, current.edge, ymd));
+      setSession(
+        (current) => current && { ...pickRangeDate(value, current.picked, current.edge, ymd), anchor: current.anchor },
+      );
     },
     cancel() {
       setSession(null);
     },
-
     confirm() {
       const next = session ? confirmPickedRange(value, session.picked) : null;
       if (next) onConfirm(next);

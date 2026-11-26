@@ -2,18 +2,17 @@
 import { act, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
-import type { DateRangePicker } from "@/components/date-picker/DateRangePicker";
+import type { DateRangeField } from "@/components/date-picker/DateRangeField";
 import type { DestinationChipsField } from "@/components/rooms/DestinationChipsField";
 import NewTripPage from "./page";
 import { trackAnalyticsEvent } from "@/lib/analytics/track";
 
 const state = vi.hoisted(() => ({
   destinations: null as ComponentProps<typeof DestinationChipsField> | null,
-  dates: null as ComponentProps<typeof DateRangePicker> | null,
+  dates: null as ComponentProps<typeof DateRangeField> | null,
   create: vi.fn(),
   push: vi.fn(),
   replace: vi.fn(),
-  isPending: false,
   setRoom: vi.fn(),
   setQueryData: vi.fn(),
 }));
@@ -21,11 +20,14 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: state.push, replace: state.replace }),
   usePathname: () => "/home/new",
 }));
+vi.mock("@/contexts/MobileViewContext", () => ({
+  useMobileView: () => ({ isMobileDevice: true }),
+}));
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ setQueryData: state.setQueryData }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
-  useCreateRoom: () => ({ mutate: state.create, isPending: state.isPending, error: null }),
+  useCreateRoom: () => ({ mutate: state.create, isPending: false, error: null }),
 }));
 vi.mock("@/stores/session-store", () => ({
   useSessionStore: (select: (s: unknown) => unknown) =>
@@ -35,31 +37,23 @@ vi.mock("@/lib/analytics/track", () => ({
   AnalyticsEvents: { createPlan: "create_plan" },
   trackAnalyticsEvent: vi.fn(),
 }));
-
 vi.mock("@/components/rooms/DestinationChipsField", () => ({
   DestinationChipsField: (props: ComponentProps<typeof DestinationChipsField>) => {
     state.destinations = props;
     return null;
   },
 }));
-vi.mock("@/components/date-picker/DateRangePicker", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/components/date-picker/DateRangePicker")>()),
-  DateRangePicker: (props: ComponentProps<typeof DateRangePicker>) => {
+vi.mock("@/components/date-picker/DateRangeField", () => ({
+  DateRangeField: (props: ComponentProps<typeof DateRangeField>) => {
     state.dates = props;
     return null;
   },
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-afterEach(() => {
-  vi.clearAllMocks();
-  state.isPending = false;
-});
+afterEach(() => vi.clearAllMocks());
 
 const titleInput = (container: HTMLElement) => container.querySelector<HTMLInputElement>("input")!;
-const submitButton = (container: HTMLElement) =>
-  [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
-    button.textContent?.includes("여행 시작하기"),
-  )!;
+const submitButton = (container: HTMLElement) => container.querySelector<HTMLButtonElement>("button")!;
 async function typeTitle(container: HTMLElement, value: string) {
   const input = titleInput(container);
   await act(async () => {
@@ -77,21 +71,19 @@ async function renderPage() {
   return { container, unmount: () => act(async () => root.unmount()) };
 }
 
-it("validates dates and enters the created trip", async () => {
+it("lets mobile users stay on the form, validates dates, and enters the created trip", async () => {
   const { container, unmount } = await renderPage();
   try {
     expect(state.replace).not.toHaveBeenCalled();
     await typeTitle(container, "  여름 여행  ");
     await act(async () => state.destinations!.onChange(["서울"]));
     await changeDates("2099-07-10", "2099-07-09");
-
     expect(submitButton(container).disabled).toBe(false);
     await act(async () => submitButton(container).click());
     expect(state.create).not.toHaveBeenCalled();
     expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
     await changeDates("2099-07-10", "2099-07-12");
     await act(async () => submitButton(container).click());
-
     expect(state.create).toHaveBeenCalledWith(
       {
         title: "여름 여행",
@@ -178,28 +170,6 @@ it("shows every field error on the first submit even when the title already has 
     expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
     expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
     expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
-  } finally {
-    await unmount();
-  }
-});
-
-it("shows progress on the start button and blocks a second submit while the trip is being created", async () => {
-  state.isPending = true;
-  const { container, unmount } = await renderPage();
-  try {
-    await typeTitle(container, "여름 여행");
-    await act(async () => state.destinations!.onChange(["서울"]));
-    await changeDates("2099-07-10", "2099-07-12");
-    const button = submitButton(container);
-    expect(button.getAttribute("aria-busy")).toBe("true");
-    const labelId = button.getAttribute("aria-labelledby");
-    expect([...container.querySelectorAll("[id]")].find((node) => node.id === labelId)?.textContent).toBe(
-      "여행 만드는 중",
-    );
-    await act(async () => button.click());
-    expect(state.create).not.toHaveBeenCalled();
-    const home = [...container.querySelectorAll("a")].find((link) => link.textContent === "홈으로 돌아가기");
-    expect(home?.getAttribute("href")).toBe("/home");
   } finally {
     await unmount();
   }

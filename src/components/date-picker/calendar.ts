@@ -64,7 +64,7 @@ export function pickRangeDate(
 
 export function confirmPickedRange(value: DateRange, picked: PickedRange): DateRange | null {
   if (picked.start === undefined && picked.end === undefined) return null;
-  return displayPickedRange(value, picked);
+  return { start: picked.start ?? value.start, end: picked.end ?? value.end };
 }
 
 export function formatYmdSlash(ymd: string): string {
