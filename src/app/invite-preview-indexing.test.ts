@@ -7,10 +7,7 @@ import nextConfig from "../../next.config";
 
 describe("invite preview indexing contract", () => {
   it("marks the static preview document noindex, nofollow", () => {
-    const document = readFileSync(
-      resolve(process.cwd(), "public/invite-preview.html"),
-      "utf8",
-    );
+    const document = readFileSync(resolve(process.cwd(), "public/invite-preview.html"), "utf8");
     const robotsMeta = '<meta name="robots" content="noindex, nofollow" />';
     const head = document.match(/<head>([\s\S]*?)<\/head>/)?.[1] ?? "";
 

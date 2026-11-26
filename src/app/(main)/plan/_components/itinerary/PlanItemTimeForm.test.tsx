@@ -39,7 +39,9 @@ function input(column: number) {
   expect(el, fields[column]).not.toBeNull();
   return el!;
 }
-function selected(column: number) { return input(column).value; }
+function selected(column: number) {
+  return input(column).value;
+}
 async function type(column: number, value: string) {
   const el = input(column);
   await act(async () => {
@@ -48,9 +50,10 @@ async function type(column: number, value: string) {
   });
 }
 async function key(el: Element, key: string, shiftKey = false) {
-  await act(async () => el.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true })));
+  await act(async () =>
+    el.dispatchEvent(new KeyboardEvent("keydown", { key, shiftKey, bubbles: true, cancelable: true })),
+  );
 }
-// Base UI는 처음 포커스를 다음 animation frame에 옮긴다
 async function nextFrame() {
   await act(async () => {
     await new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
@@ -163,8 +166,23 @@ describe("schedule time editor", () => {
     await type(2, "02");
     props = { ...props, startTime: "", endTime: null };
     await render();
+    const alert = document.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("시작 시각 없이 종료 시각만 설정할 수 없어요.");
+    expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
     await click("적용");
     expect(mocks.mutateAsync).not.toHaveBeenCalled();
+  });
+  it("saves once a refetch makes a draft that failed on Enter valid again", async () => {
+    await render();
+    await type(0, "");
+    await type(1, "");
+    await key(input(0), "Enter");
+    expect(mocks.mutateAsync).not.toHaveBeenCalled();
+    props = { ...props, endTime: null };
+    await render();
+    expect(document.querySelector('[role="alert"]')).toBeNull();
+    await click("적용");
+    expect(body()).toEqual({ startTime: null, endTime: null });
   });
   it("cancels without sending a PATCH", async () => {
     await render();
@@ -189,16 +207,32 @@ describe("web time editing", () => {
     await key(input(column), "Enter");
     expect(body()).toEqual({ startTime: "08:05" });
   });
-  it.each(["24", "-1", "abc", "", "100"])("shows invalid hour %s without saving", async (value) => {
+  it.each(["24", "-1", "abc", "", "100"])(
+    "shows invalid hour %s under the start field without saving",
+    async (value) => {
+      await render();
+      await type(0, value);
+      expect(input(0).getAttribute("aria-invalid")).toBe("true");
+      const alert = document.querySelector('[role="alert"]');
+      expect(alert?.textContent).toBe("시간을 올바르게 선택해 주세요. 시는 00–23, 분은 00–59로 입력해 주세요.");
+      expect(input(0).getAttribute("aria-describedby")).toContain(alert!.id);
+      expect(input(2).getAttribute("aria-describedby")).not.toContain(alert!.id);
+      await key(input(0), "Enter");
+      expect(mocks.error).not.toHaveBeenCalled();
+      expect(mocks.mutateAsync).not.toHaveBeenCalled();
+      expect(document.querySelectorAll('[role="alert"]')).toHaveLength(1);
+      await type(0, "22");
+      expect(input(0).getAttribute("aria-invalid")).toBe("false");
+      expect(document.querySelector('[role="alert"]')).toBeNull();
+    },
+  );
+  it("puts an invalid end time under the end field", async () => {
     await render();
-    await type(0, value);
-    expect(input(0).getAttribute("aria-invalid")).toBe("true");
-    expect(document.querySelector('[role="alert"]')?.textContent).toBeTruthy();
-    await key(input(0), "Enter");
-    expect(mocks.error).toHaveBeenCalledOnce();
-    expect(mocks.mutateAsync).not.toHaveBeenCalled();
-    await type(0, "22");
-    expect(input(0).getAttribute("aria-invalid")).toBe("false");
+    await type(3, "60");
+    const alert = document.querySelector('[role="alert"]');
+    expect(alert?.textContent).toContain("시간을 올바르게 선택해 주세요.");
+    expect(input(3).getAttribute("aria-describedby")).toContain(alert!.id);
+    expect(input(0).getAttribute("aria-describedby")).not.toContain(alert!.id);
   });
   it("rejects invalid minutes and does not auto-save on blur", async () => {
     await render();
@@ -211,7 +245,6 @@ describe("web time editing", () => {
     await click("적용");
     expect(body()).toEqual({ startTime: "23:59" });
   });
-  // Tab 순환(포커스 가두기)은 Base UI 대화상자가 맡는다. 바깥 요소는 aria-hidden으로 접근성 트리에서 빠진다
   it("hides outside content while open and restores opener focus after Escape", async () => {
     const opener = document.createElement("button");
     document.body.append(opener);
@@ -254,13 +287,15 @@ describe("web time editing", () => {
   });
 });
 
-
 it("opening and focusing unset desktop fields never enables saving or sends a PATCH", async () => {
   props = { ...props, startTime: "", endTime: null };
   await render();
-  await act(async () => { input(0).focus(); input(1).focus(); });
+  await act(async () => {
+    input(0).focus();
+    input(1).focus();
+  });
   expect(fields.map((_, i) => selected(i))).toEqual(["", "", "", ""]);
-  const apply = [...document.querySelectorAll("button")].find(b => b.textContent === "적용")!;
+  const apply = [...document.querySelectorAll("button")].find((b) => b.textContent === "적용")!;
   expect(apply.disabled).toBe(true);
   await click("적용");
   expect(mocks.mutateAsync).not.toHaveBeenCalled();

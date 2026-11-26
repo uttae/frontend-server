@@ -23,11 +23,8 @@ it("stable incoming handlers see committed panel/connection state and read dedup
     createdAt: "2026-09-10T00:00:00Z",
   };
   const hook = hookHarness(
-    (p: { roomId: string; panelOpen: boolean }) =>
-      useChatMessageRead({ ...p, rawMessagesRef }),
-    (child) => (
-      <QueryClientProvider client={client}>{child}</QueryClientProvider>
-    ),
+    (p: { roomId: string; panelOpen: boolean }) => useChatMessageRead({ ...p, rawMessagesRef }),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
   await hook.render({ roomId: "a", panelOpen: false });
   const incoming = hook.current.onIncomingMessage;
@@ -47,12 +44,8 @@ it("stable incoming handlers see committed panel/connection state and read dedup
   expect(state.client.publish).toHaveBeenCalledTimes(1);
   state.connected = true;
   await hook.render({ roomId: "b", panelOpen: true });
-  await act(async () =>
-    hook.current.onIncomingMessage({ ...msg, roomId: "b" }, true),
-  );
-  expect(state.client.publish.mock.lastCall?.[0].destination).toBe(
-    "/app/rooms/b/messages/read",
-  );
+  await act(async () => hook.current.onIncomingMessage({ ...msg, roomId: "b" }, true));
+  expect(state.client.publish.mock.lastCall?.[0].destination).toBe("/app/rooms/b/messages/read");
   expect(state.client.publish).toHaveBeenCalledTimes(2);
   await hook.unmount();
   client.clear();
@@ -61,11 +54,8 @@ it("keeps markMessagesRead stable across reconnects so the history load is not r
   const client = new QueryClient();
   const rawMessagesRef = { current: [] as ServerChatMessage[] };
   const hook = hookHarness(
-    (roomId: string) =>
-      useChatMessageRead({ roomId, panelOpen: true, rawMessagesRef }),
-    (child) => (
-      <QueryClientProvider client={client}>{child}</QueryClientProvider>
-    ),
+    (roomId: string) => useChatMessageRead({ roomId, panelOpen: true, rawMessagesRef }),
+    (child) => <QueryClientProvider client={client}>{child}</QueryClientProvider>,
   );
   state.connected = true;
   await hook.render("a");

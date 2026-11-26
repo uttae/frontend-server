@@ -1,22 +1,15 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { toast } from "sonner";
 
 import { useDragAutoScroll } from "@/hooks/useDragAutoScroll";
-import { useScheduleResyncPending } from "@/hooks/useScheduleResyncPending";
 import { useMoveRoomSchedule } from "@/hooks/useRooms";
+import { messageForSaveError } from "@/lib/api/errors";
 import type { RoomSchedule } from "@/lib/api/rooms";
 import {
   computeRowTranslateY,
   getPlanItemRowReorderStyle,
-  PLAN_ORDER_RESYNCING_MESSAGE,
   PlanItemRowLayoutSnapshot,
 } from "@/lib/plan/planItemReorder";
 import {
@@ -28,27 +21,21 @@ import {
 type UsePlanScheduleDayReorderArgs = {
   roomId: string;
   schedules: RoomSchedule[];
-  interactionLocked?: boolean;
 };
 
-export function usePlanScheduleDayReorder({
-  roomId,
-  schedules,
-  interactionLocked = false,
-}: UsePlanScheduleDayReorderArgs) {
-  const { mutateAsync: moveMutate, isPending: isMovePending } =
-    useMoveRoomSchedule();
+export function usePlanScheduleDayReorder({ roomId, schedules }: UsePlanScheduleDayReorderArgs) {
+  const { mutateAsync: moveMutate, isPending: isMovePending } = useMoveRoomSchedule();
   const [dragFromIndex, setDragFromIndex] = useState<number | null>(null);
   const [previewIndex, setPreviewIndex] = useState<number | null>(null);
+  const [droppedSchedules, setDroppedSchedules] = useState<RoomSchedule[] | null>(null);
+  const pendingDropRef = useRef<symbol | null>(null);
 
   const sectionRefs = useRef<(HTMLElement | null)[]>([]);
   const layoutSnapshotRef = useRef(new PlanItemRowLayoutSnapshot());
   const pointerYRef = useRef(0);
   const dragOverRafRef = useRef(0);
 
-  const scheduleResyncPending = useScheduleResyncPending(roomId);
-  const dragLocked =
-    interactionLocked || isMovePending || schedules.length < 2;
+  const dragLocked = schedules.length < 2;
   const isDraggingActive = dragFromIndex !== null;
 
   useDragAutoScroll({ active: isDraggingActive });
@@ -69,9 +56,7 @@ export function usePlanScheduleDayReorder({
   const updatePreviewFromPointer = useCallback(() => {
     if (dragFromIndex === null || layoutSnapshotRef.current.isEmpty) return;
 
-    const nextPreview = layoutSnapshotRef.current.previewIndexAt(
-      pointerYRef.current,
-    );
+    const nextPreview = layoutSnapshotRef.current.previewIndexAt(pointerYRef.current);
     setPreviewIndex((prev) => (prev === nextPreview ? prev : nextPreview));
   }, [dragFromIndex]);
 
@@ -93,7 +78,9 @@ export function usePlanScheduleDayReorder({
 
   const handleDragStart = useCallback(
     (index: number) => (e: DragEvent<Element>) => {
-      if (dragLocked || scheduleResyncPending || schedules[index] == null) return;
+      if (dragLocked || schedules[index] == null) return;
+      pendingDropRef.current = null;
+      setDroppedSchedules(null);
       const sectionEl = sectionRefs.current[index];
       if (sectionEl instanceof HTMLElement) {
         beginPlanScheduleDayDrag(e.nativeEvent, sectionEl, index);
@@ -102,10 +89,11 @@ export function usePlanScheduleDayReorder({
       setDragFromIndex(index);
       setPreviewIndex(index);
     },
-    [dragLocked, scheduleResyncPending, schedules],
+    [dragLocked, schedules],
   );
 
   const handleDragEnd = useCallback(() => {
+    if (pendingDropRef.current) return;
     if (dragOverRafRef.current) {
       cancelAnimationFrame(dragOverRafRef.current);
       dragOverRafRef.current = 0;
@@ -141,17 +129,7 @@ export function usePlanScheduleDayReorder({
       e.preventDefault();
 
       const fromIndex = readPlanScheduleDayDragIndex(e.dataTransfer);
-      const toIndex =
-        previewIndex ??
-        (Number.isFinite(fromIndex) ? fromIndex : null);
-
-      resetDragPreview();
-
-      // 드래그하는 동안 연결이 끊겼으면 놓은 자리를 서버 순서로 확인할 수 없다
-      if (scheduleResyncPending) {
-        toast.error(PLAN_ORDER_RESYNCING_MESSAGE);
-        return;
-      }
+      const toIndex = previewIndex ?? (Number.isFinite(fromIndex) ? fromIndex : null);
 
       if (
         !Number.isFinite(fromIndex) ||
@@ -162,14 +140,21 @@ export function usePlanScheduleDayReorder({
         toIndex >= schedules.length ||
         fromIndex === toIndex
       ) {
+        resetDragPreview();
         return;
       }
 
       const scheduleId = schedules[fromIndex]?.scheduleId;
-      if (typeof scheduleId !== "number") return;
+      if (typeof scheduleId !== "number") {
+        resetDragPreview();
+        return;
+      }
 
       const targetDayNumber = toIndex + 1;
 
+      const drop = Symbol("day-drop");
+      pendingDropRef.current = drop;
+      setDroppedSchedules(schedules);
       try {
         await moveMutate({
           roomId,
@@ -177,35 +162,29 @@ export function usePlanScheduleDayReorder({
           targetDayNumber,
         });
       } catch (err) {
-        toast.error(
-          err instanceof Error && err.message.trim()
-            ? err.message
-            : "일차 순서를 바꾸지 못했어요.",
-        );
+        toast.error(messageForSaveError(err, "일차 순서를 바꾸지 못했어요."));
+      } finally {
+        if (pendingDropRef.current === drop) {
+          pendingDropRef.current = null;
+          setDroppedSchedules(null);
+          resetDragPreview();
+        }
       }
     },
-    [moveMutate, previewIndex, resetDragPreview, roomId, scheduleResyncPending, schedules],
+    [moveMutate, previewIndex, resetDragPreview, roomId, schedules],
   );
+
+  const previewActive = droppedSchedules === null || droppedSchedules === schedules;
 
   const getSectionProps = useCallback(
     (index: number) => {
-      const fromIdx = dragFromIndex;
+      const fromIdx = previewActive ? dragFromIndex : null;
       const previewIdx = previewIndex;
       const snapshot = layoutSnapshotRef.current;
 
       let translateY = 0;
-      if (
-        fromIdx !== null &&
-        previewIdx !== null &&
-        fromIdx !== previewIdx &&
-        !snapshot.isEmpty
-      ) {
-        translateY = computeRowTranslateY(
-          index,
-          fromIdx,
-          previewIdx,
-          snapshot.heights(),
-        );
+      if (fromIdx !== null && previewIdx !== null && fromIdx !== previewIdx && !snapshot.isEmpty) {
+        translateY = computeRowTranslateY(index, fromIdx, previewIdx, snapshot.heights());
       }
 
       const isDragging = fromIdx === index;
@@ -215,11 +194,10 @@ export function usePlanScheduleDayReorder({
         sectionStyle: getPlanItemRowReorderStyle({
           translateY,
           isDragging,
-          motionEnabled: isDraggingActive,
+          motionEnabled: isDraggingActive && previewActive,
         }),
         dragHandleProps: {
-          dragDisabled:
-            dragLocked || scheduleResyncPending || schedules[index] == null,
+          dragDisabled: dragLocked || schedules[index] == null,
           isDragging,
           onDragStart: handleDragStart(index),
           onDragEnd: handleDragEnd,
@@ -232,8 +210,8 @@ export function usePlanScheduleDayReorder({
       handleDragEnd,
       handleDragStart,
       isDraggingActive,
+      previewActive,
       previewIndex,
-      scheduleResyncPending,
       schedules,
       setSectionRef,
     ],

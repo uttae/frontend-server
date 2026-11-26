@@ -5,13 +5,11 @@ import { expenseKeys } from "@/lib/expenses/expense-queries";
 import {
   bookmarkCategoriesQueryKey,
   joinRequestsQueryKey,
+  roomAllBookmarksQueryKey,
   roomSchedulesQueryKey,
   roomUnreadCountQueryKey,
 } from "@/lib/query-keys";
-import {
-  resyncRoomDataAfterSubscribe,
-  resyncUserQueueDataAfterSubscribe,
-} from "./room-resync-dispatch";
+import { resyncRoomDataAfterSubscribe, resyncUserQueueDataAfterSubscribe } from "./room-resync-dispatch";
 
 const clients: QueryClient[] = [];
 function newClient() {
@@ -39,12 +37,14 @@ describe("resyncRoomDataAfterSubscribe", () => {
     const stop = observer.subscribe(() => {});
     await observer.refetch();
     client.setQueryData(bookmarkCategoriesQueryKey("room"), []);
+    client.setQueryData(roomAllBookmarksQueryKey("room"), []);
     client.setQueryData(roomUnreadCountQueryKey("room"), { unreadCount: 0 });
 
     resyncRoomDataAfterSubscribe(client, "room");
 
     await expect.poll(() => scheduleFetches).toBe(2);
     expect(client.getQueryState(bookmarkCategoriesQueryKey("room"))?.isInvalidated).toBe(true);
+    expect(client.getQueryState(roomAllBookmarksQueryKey("room"))?.isInvalidated).toBe(true);
     expect(client.getQueryState(roomUnreadCountQueryKey("room"))?.isInvalidated).toBe(true);
     stop();
   });

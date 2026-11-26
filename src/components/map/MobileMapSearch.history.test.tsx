@@ -3,10 +3,7 @@ import { act, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { MapPlaceSearch } from "./MapPlaceSearch";
-import {
-  SelectedPlaceProvider,
-  useSelectedPlace,
-} from "@/contexts/SelectedPlaceContext";
+import { SelectedPlaceProvider, useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { addMapSearchHistory } from "@/lib/map-search-history";
 import { usePlaceSearchStore } from "@/stores/place-search-store";
 import { useMobileMapSearchStore } from "@/stores/mobile-map-search-store";
@@ -21,7 +18,7 @@ vi.mock("@vis.gl/react-google-maps", () => ({ useMapsLibrary: () => library }));
 vi.mock("@/hooks/useSessionUser", () => ({
   useSessionUser: () => ({ data: { id: 7 } }),
 }));
-vi.mock("@/lib/places/place-queries", async original => ({
+vi.mock("@/lib/places/place-queries", async (original) => ({
   ...(await original<object>()),
   fetchPlaceDetail: boundary.detail,
 }));
@@ -89,8 +86,8 @@ it("saved history selection replaces the existing POI with the chosen place deta
       ),
     );
     expect(host.querySelector("[data-detail]")?.textContent).toBe("기존 POI");
-    const saved = [...document.querySelectorAll("dialog button")].find(
-      (button) => button.textContent?.includes("저장 장소"),
+    const saved = [...document.querySelectorAll("dialog button")].find((button) =>
+      button.textContent?.includes("저장 장소"),
     )!;
     await act(async () => (saved as HTMLButtonElement).click());
     expect(host.querySelector("[data-detail]")?.textContent).toBe("저장 장소");

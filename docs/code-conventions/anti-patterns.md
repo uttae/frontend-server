@@ -37,8 +37,8 @@
 - ✓ prop을 더하기 전에 계산 → slot → `variant` → 화면 훅 순서로 본다. `<PlaceCard variant="compact" action={<AddToScheduleButton placeId={place.id} />} />`(원칙 2-2·1-4)
 
 ### 6. 있는 부품 다시 만들기
-- 신호: 새 `fixed inset-0` 모달·바텀시트·로딩 표시, 손으로 만든 메뉴·셀렉트·탭, `Button` 대신 복붙한 버튼 클래스, `useState`로 하나씩 든 대화상자 폼 값·오류, `lucide-react`·새 아이콘 패키지
-- ✓ `src/components/ui/`의 부품(`Button`·`Dialog`·`AlertDialog`·`Drawer`·`DropdownMenu`·`Select`·`Combobox`·`Popover`·`Tabs`·`Spinner`·`Skeleton` 등)과 확인창 `ConfirmDialog`를 먼저 쓴다. 대화상자 폼은 TanStack Form(원칙 2-9). 아이콘은 `@/assets/icons`(원칙 1-1, Design.md 2장).
+- 신호: 새 `fixed inset-0` 모달·바텀시트·로딩 표시, 손으로 만든 메뉴·셀렉트·탭, `Button` 대신 복붙한 버튼 클래스, `useState`로 하나씩 든 폼 값·오류, `lucide-react`·새 아이콘 패키지
+- ✓ `src/components/ui/`의 부품(`Button`·`Dialog`·`AlertDialog`·`Drawer`·`DropdownMenu`·`Select`·`Combobox`·`Popover`·`Tabs`·`Spinner`·`Skeleton` 등)과 확인창 `ConfirmDialog`를 먼저 쓴다. 폼은 TanStack Form, 규칙은 zod 스키마(원칙 2-9). 아이콘은 `@/assets/icons`(원칙 1-1, Design.md 2장).
 
 ### 7. 미리 만든 추상화
 - 신호: 사용처가 하나인 래퍼·옵션 객체·범용 컴포넌트, `useMount`·`useUpdateEffect` 같은 생명주기 훅, 쓰는 곳 없는 설정 레이어. 로직을 나누는 화면 훅은 사용처가 하나여도 걸리지 않는다.
@@ -107,9 +107,9 @@
 - 신호: 버그 수정 diff에 import 정렬·파일 이름 변경(`MemberList.tsx` → `MemberListView.tsx`)을 섞는다. 요청하지 않은 기능·옵션, 시안에 없는 장식(그림자·그라디언트·애니메이션)을 넣는다. 범위 밖 기존 코드를 고친다. 기능 작업 중에 기존 공용 부품을 shadcn으로 갈아 끼운다. 묻지 않고 의존성을 추가하거나 lint·tsconfig·Tailwind 설정을 바꾼다. `pnpm-lock.yaml`·`yarn.lock`을 만든다.
 - ✓ 요청한 변경만 한다. 범위 밖 기존 문제는 알리기만 한다. 의존성·설정 변경은 먼저 묻고 의존성은 npm으로만 추가한다.
 
-### 22. 코드를 되읽는 주석과 죽은 코드
-- 신호: `// 상태를 업데이트한다` 같은 주석, 주석 처리한 코드, 쓰지 않는 export·props, 변경 이력 주석
-- ✓ 지운다. 주석에는 이유(제약·외부 사정·의도한 예외)만 쓴다. 규칙을 따를 수 없는 곳은 이유와 범위를 그 자리 주석과 PR 본문에 남긴다.
+### 22. 죽은 코드
+- 신호: 주석 처리한 코드, 쓰지 않는 export·props
+- ✓ 지운다. 규칙을 따를 수 없는 곳은 이유와 범위를 PR 본문에 남긴다.
 
 ### 23. 확인 없이 완료
 - 신호: lint·빌드·화면 확인 없이 완료를 선언한다. 데스크톱 한 화면만 본다. 실행하지 않은 명령의 결과를 쓴다.

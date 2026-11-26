@@ -1,5 +1,3 @@
-/** `public/` 정적 자산 URL — 폴더·파일명 변경 시 이 모듈만 수정 */
-
 export const brandAssets = {
   logo: "/brand/textlogo.svg",
   shareImage: "/brand/og_image.png",
@@ -24,7 +22,6 @@ export const sidebarIcons = {
   bug: "/icons/sidebar/bug.svg",
 } as const;
 
-/** Figma 1049:2992 exports; desktop wireframe, separate from mobile assets. */
 export const sidebarWireframeIcons = {
   plan: "/icons/sidebar/figma/calendar.svg",
   search: "/icons/sidebar/figma/search.svg",
@@ -40,7 +37,6 @@ export const chatAssets = {
   woori: "/icons/woori.svg",
 } as const;
 
-/** Figma 준비물 GUI (4162:4429)의 원본 아이콘. */
 export const packingIcons = {
   plusWhite: "/icons/packing/plus-white.svg",
   plus: "/icons/packing/plus.svg",

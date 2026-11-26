@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   metadataBase: new URL(PUBLIC_SITE.origin),
   title: DEFAULT_TITLE,
   description: DEFAULT_DESCRIPTION,
-  // 자체 openGraph를 선언하지 않는 라우트가 상속하는 기본 링크 프리뷰.
   openGraph: {
     type: "website",
     siteName: PUBLIC_SITE.serviceName,

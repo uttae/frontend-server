@@ -5,7 +5,6 @@ import { useMemo } from "react";
 import { useRoomDetail } from "@/hooks/useRoomDetail";
 import { useRoomsList } from "@/hooks/useRooms";
 
-/** 현재 방 ID 기준 제목 — 방 목록 우선, 없으면 room-detail Query fallback */
 export function useCurrentRoomTitle(roomId: string | null): string {
   const rid = typeof roomId === "string" ? roomId.trim() : "";
   const { data: roomsData } = useRoomsList();

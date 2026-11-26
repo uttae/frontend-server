@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 
-import {
-  ArrowSortIcon,
-  CalendarAddIcon,
-  CoinIcon,
-  SettingsIcon,
-  TrashIcon,
-} from "@/assets/icons";
+import { ArrowSortIcon, CalendarAddIcon, CoinIcon, SettingsIcon, TrashIcon } from "@/assets/icons";
 import { useExpenseContext } from "@/components/expenses/ExpenseProvider";
 import { Drawer, DrawerBody, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { expensesInScope } from "@/lib/expenses/expense-scope";
@@ -21,27 +15,20 @@ import { MobileSheetMenuItem } from "./MobileSheetMenuItem";
 type MobilePlanDaySectionProps = Readonly<{
   roomId: string;
   scheduleId: number;
-  /** `1일차` */
   dayLabel: string;
-  /** `09. 21 수` */
   dateLabel: string;
-  /** `9월 21일` — 방문 시간 시트에 표시 */
   monthDayLabel: string;
   menuDisabled: boolean;
-  /** 순서 편집 모드 — 모든 일차가 함께 들어가고 나온다 */
   editing: boolean;
   onStartEditing: () => void;
   onFinishEditing: () => void;
   onRequestInsertDayAfter: () => void;
   onRequestDeleteDay: () => void;
-  /** 전체 화면 검색으로 장소 추가 — anchor 자리에, null이면 맨 뒤 */
   onRequestAddPlace: (scheduleId: number, anchor: InsertAnchor | null) => void;
-  /** 방금 추가한 장소 — 카드로 스크롤하고 잠깐 강조한다 */
   recentlyAddedItemId: number | null;
   onPlaceAdded: (itemId: number) => void;
 }>;
 
-/** 모바일 일차 한 개 — 헤더(순서 편집 ↑↓ / ⚙ 일정 관리)와 장소 목록 */
 export function MobilePlanDaySection({
   roomId,
   scheduleId,
@@ -71,16 +58,16 @@ export function MobilePlanDaySection({
   }
 
   return (
-    <section aria-label={`${dayLabel} ${dateLabel}`} className="flex flex-col gap-3.5 px-4 pb-6 pt-5">
-      <div className="flex items-center gap-2 px-1">
+    <section aria-label={`${dayLabel} ${dateLabel}`} className="flex flex-col px-5 pb-5">
+      <div className="flex items-center gap-2 py-3">
         <h2 className="text-title-l text-text">{dayLabel}</h2>
-        {dateLabel ? <span className="text-body-m-emphasis text-text-subtle">{dateLabel}</span> : null}
-        <div className="ml-auto flex items-center gap-1.5">
+        {dateLabel ? <span className="text-label-l-emphasis text-text-subtle">{dateLabel}</span> : null}
+        <div className="ml-auto flex items-center">
           {editing ? (
             <button
               type="button"
               onClick={onFinishEditing}
-              className="flex h-9 items-center px-1.5 text-label-m-emphasis text-primary"
+              className="flex h-10 items-center px-1.5 text-label-m-emphasis text-primary"
             >
               저장
             </button>
@@ -90,18 +77,18 @@ export function MobilePlanDaySection({
                 type="button"
                 onClick={onStartEditing}
                 aria-label={`${dayLabel} 장소 순서 편집`}
-                className="flex size-9 items-center justify-center"
+                className="flex size-10 items-center justify-center"
               >
-                <ArrowSortIcon className="text-icon" />
+                <ArrowSortIcon className="text-icon-subtle" />
               </button>
               <button
                 type="button"
                 onClick={() => setManageOpen(true)}
                 disabled={menuDisabled}
                 aria-label={`${dayLabel} 일정 관리`}
-                className="flex size-9 items-center justify-center disabled:opacity-40"
+                className="flex size-10 items-center justify-center disabled:opacity-40"
               >
-                <SettingsIcon className="text-icon" />
+                <SettingsIcon className="text-icon-subtle" />
               </button>
             </>
           )}

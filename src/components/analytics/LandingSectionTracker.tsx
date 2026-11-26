@@ -3,17 +3,17 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { analyticsConsentStore } from "@/lib/analytics/consent-store";
-import {
-  AnalyticsEvents,
-  trackAnalyticsEvent,
-  type LandingSectionId,
-} from "@/lib/analytics/track";
+import { AnalyticsEvents, trackAnalyticsEvent, type LandingSectionId } from "@/lib/analytics/track";
 
 const sectionIds: readonly LandingSectionId[] = [
-  "hero", "problem", "solution", "features", "devices", "travel_steps", "final_cta",
+  "hero",
+  "problem",
+  "solution",
+  "features",
+  "devices",
+  "travel_steps",
+  "final_cta",
 ];
-// Browser document lifetime, independent of component/consent lifetime. The root
-// tracker observes all pathname transitions; query/hash changes do not reset it.
 let visitPathname: string | null = null;
 const counted = new Set<LandingSectionId>();
 
@@ -52,12 +52,15 @@ export function LandingSectionTracker() {
           clearTimeout(timers.get(id));
           timers.delete(id);
         } else if (!timers.has(id)) {
-          timers.set(id, setTimeout(() => {
-            timers.delete(id);
-            if (stopped || !eligible(id) || counted.has(id)) return;
-            counted.add(id);
-            trackAnalyticsEvent(AnalyticsEvents.sectionView, { page_type: "landing", section_id: id });
-          }, 1000));
+          timers.set(
+            id,
+            setTimeout(() => {
+              timers.delete(id);
+              if (stopped || !eligible(id) || counted.has(id)) return;
+              counted.add(id);
+              trackAnalyticsEvent(AnalyticsEvents.sectionView, { page_type: "landing", section_id: id });
+            }, 1000),
+          );
         }
       }
     };
@@ -67,8 +70,6 @@ export function LandingSectionTracker() {
         return;
       }
       evaluate();
-      // Sampling rendered geometry also catches layout shifts with no scroll or
-      // resize event, including upstream content and responsive image changes.
       frame = requestAnimationFrame(tick);
     };
     const restart = () => {

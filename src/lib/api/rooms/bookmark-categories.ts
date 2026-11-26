@@ -1,13 +1,7 @@
 import { apiUrl, jsonBody, requestJson, requestVoid } from "@/lib/api/http";
-import type {
-  BookmarkCategory,
-  BookmarkCategoryCreateRequest,
-  BookmarkCategoryUpdateRequest,
-} from "./types";
+import type { BookmarkCategory, BookmarkCategoryCreateRequest, BookmarkCategoryUpdateRequest } from "./types";
 
-export async function getBookmarkCategories(
-  roomId: string,
-): Promise<BookmarkCategory[]> {
+export async function getBookmarkCategories(roomId: string): Promise<BookmarkCategory[]> {
   return requestJson(apiUrl(`/rooms/${roomId}/bookmark-categories`), undefined, {
     errorMessage: "북마크 카테고리 조회 실패",
   });
@@ -36,10 +30,7 @@ export async function updateBookmarkCategory(
   );
 }
 
-export async function deleteBookmarkCategory(
-  roomId: string,
-  categoryId: number,
-): Promise<void> {
+export async function deleteBookmarkCategory(roomId: string, categoryId: number): Promise<void> {
   return requestVoid(
     apiUrl(`/rooms/${roomId}/bookmark-categories/${categoryId}`),
     { method: "DELETE" },

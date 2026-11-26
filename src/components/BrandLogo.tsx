@@ -1,16 +1,17 @@
+import { cn } from "@/lib/utils";
+
 type BrandLogoProps = {
   variant: "symbol" | "wordmark" | "combination" | "glyph";
   size: "S" | "M" | "L";
   alt?: string;
+  className?: string;
 };
 
-/**
- * 앱 공식 로고 SVG — Safari 호환을 위해 네이티브 `<img>` 사용.
- */
 export function BrandLogo({
   variant = "combination",
   size = "M",
   alt = "우때 로고",
+  className,
 }: Readonly<BrandLogoProps>) {
   const LOGO_ASSETS = {
     symbol: {
@@ -57,7 +58,7 @@ export function BrandLogo({
       width={logoConfig.width}
       height={logoConfig.height}
       decoding="async"
-      className="block shrink-0"
+      className={cn("block shrink-0", className)}
     />
   );
 }

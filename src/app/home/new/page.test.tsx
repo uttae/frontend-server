@@ -2,72 +2,205 @@
 import { act, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { afterEach, expect, it, vi } from "vitest";
-import type { TripFormFields } from "@/components/rooms/TripFormFields";
+import type { DateRangePicker } from "@/components/date-picker/DateRangePicker";
+import type { DestinationChipsField } from "@/components/rooms/DestinationChipsField";
 import NewTripPage from "./page";
 import { trackAnalyticsEvent } from "@/lib/analytics/track";
 
 const state = vi.hoisted(() => ({
-  fields: null as ComponentProps<typeof TripFormFields> | null,
-  create: vi.fn(), push: vi.fn(), replace: vi.fn(),
-  setRoom: vi.fn(), setQueryData: vi.fn(),
+  destinations: null as ComponentProps<typeof DestinationChipsField> | null,
+  dates: null as ComponentProps<typeof DateRangePicker> | null,
+  create: vi.fn(),
+  push: vi.fn(),
+  replace: vi.fn(),
+  isPending: false,
+  setRoom: vi.fn(),
+  setQueryData: vi.fn(),
 }));
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: state.push, replace: state.replace }),
   usePathname: () => "/home/new",
 }));
-vi.mock("@/contexts/MobileViewContext", () => ({
-  useMobileView: () => ({ isMobileDevice: true }),
-}));
 vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({ setQueryData: state.setQueryData }),
 }));
 vi.mock("@/hooks/useRooms", () => ({
-  useCreateRoom: () => ({ mutate: state.create, isPending: false, error: null }),
+  useCreateRoom: () => ({ mutate: state.create, isPending: state.isPending, error: null }),
 }));
 vi.mock("@/stores/session-store", () => ({
-  useSessionStore: (select: (s: unknown) => unknown) => select({ currentRoomId: "old-room", setCurrentRoomId: state.setRoom }),
+  useSessionStore: (select: (s: unknown) => unknown) =>
+    select({ currentRoomId: "old-room", setCurrentRoomId: state.setRoom }),
 }));
 vi.mock("@/lib/analytics/track", () => ({
-  AnalyticsEvents: { createPlan: "create_plan" }, trackAnalyticsEvent: vi.fn(),
+  AnalyticsEvents: { createPlan: "create_plan" },
+  trackAnalyticsEvent: vi.fn(),
 }));
-vi.mock("@/components/rooms/TripFormFields", () => ({
-  TripFormFields: (props: ComponentProps<typeof TripFormFields>) => {
-    state.fields = props;
+
+vi.mock("@/components/rooms/DestinationChipsField", () => ({
+  DestinationChipsField: (props: ComponentProps<typeof DestinationChipsField>) => {
+    state.destinations = props;
+    return null;
+  },
+}));
+vi.mock("@/components/date-picker/DateRangePicker", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/date-picker/DateRangePicker")>()),
+  DateRangePicker: (props: ComponentProps<typeof DateRangePicker>) => {
+    state.dates = props;
     return null;
   },
 }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-afterEach(() => vi.clearAllMocks());
+afterEach(() => {
+  vi.clearAllMocks();
+  state.isPending = false;
+});
 
-it("lets mobile users stay on the form, validates dates, and enters the created trip", async () => {
+const titleInput = (container: HTMLElement) => container.querySelector<HTMLInputElement>("input")!;
+const submitButton = (container: HTMLElement) =>
+  [...container.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+    button.textContent?.includes("여행 시작하기"),
+  )!;
+async function typeTitle(container: HTMLElement, value: string) {
+  const input = titleInput(container);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+async function changeDates(start: string, end: string) {
+  await act(async () => state.dates!.onChange({ start, end }));
+}
+async function renderPage() {
   const container = document.createElement("div");
   const root = createRoot(container);
+  await act(async () => root.render(<NewTripPage />));
+  return { container, unmount: () => act(async () => root.unmount()) };
+}
+
+it("validates dates and enters the created trip", async () => {
+  const { container, unmount } = await renderPage();
   try {
-    await act(async () => root.render(<NewTripPage />));
     expect(state.replace).not.toHaveBeenCalled();
-    const submit = container.querySelector("button")!;
-    expect(submit.disabled).toBe(true);
-    await act(async () => {
-      state.fields!.onTitleChange("  여름 여행  ");
-      state.fields!.onDestinationsChange(["서울"]);
-      state.fields!.onStartDateChange("2099-07-10");
-      state.fields!.onEndDateChange("2099-07-09");
-    });
-    expect(submit.disabled).toBe(true);
-    await act(async () => state.fields!.onEndDateChange("2099-07-12"));
-    expect(submit.disabled).toBe(false);
-    await act(async () => submit.click());
-    expect(state.create).toHaveBeenCalledWith({
-      title: "여름 여행", destinations: ["서울"],
-      startDate: "2099-07-10", endDate: "2099-07-12",
-    }, expect.objectContaining({ onSuccess: expect.any(Function) }));
+    await typeTitle(container, "  여름 여행  ");
+    await act(async () => state.destinations!.onChange(["서울"]));
+    await changeDates("2099-07-10", "2099-07-09");
+
+    expect(submitButton(container).disabled).toBe(false);
+    await act(async () => submitButton(container).click());
+    expect(state.create).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
+    await changeDates("2099-07-10", "2099-07-12");
+    await act(async () => submitButton(container).click());
+
+    expect(state.create).toHaveBeenCalledWith(
+      {
+        title: "여름 여행",
+        destinations: ["서울"],
+        startDate: "2099-07-10",
+        endDate: "2099-07-12",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
     const room = { id: "new-room", startDate: "2099-07-10", endDate: "2099-07-12" };
     await act(async () => state.create.mock.calls[0][1].onSuccess(room));
+    expect(trackAnalyticsEvent).toHaveBeenCalledTimes(1);
     expect(trackAnalyticsEvent).toHaveBeenCalledWith("create_plan", expect.objectContaining({ room_id: "new-room" }));
     expect(state.setRoom).toHaveBeenCalledWith("new-room");
     expect(state.setQueryData).toHaveBeenCalledWith(expect.any(Array), room);
     expect(state.push).toHaveBeenCalledWith("/plan");
   } finally {
-    await act(async () => root.unmount());
+    await unmount();
+  }
+});
+
+it("shows errors only under the fields the user touched", async () => {
+  const { container, unmount } = await renderPage();
+  try {
+    expect(container.querySelector("[role=alert]")).toBeNull();
+
+    await act(async () => {
+      titleInput(container).dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+    });
+    expect(titleInput(container).getAttribute("aria-invalid")).toBe("true");
+    const titleError = container.querySelector(`#${titleInput(container).getAttribute("aria-describedby")}`);
+    expect(titleError?.textContent).toBe("여행 제목을 입력해 주세요.");
+    expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
+    expect(container.textContent).not.toContain("여행 기간을 선택해 주세요.");
+    await typeTitle(container, "봄");
+    expect(titleInput(container).hasAttribute("aria-invalid")).toBe(false);
+    expect(container.textContent).not.toContain("여행 제목을 입력해 주세요.");
+
+    await act(async () => state.destinations!.onChange(["서울"]));
+    await act(async () => state.destinations!.onChange([]));
+    expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
+    await act(async () => state.destinations!.onChange(["서울"]));
+    expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
+
+    await changeDates("2099-07-10", "");
+    expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+    await changeDates("2000-01-01", "2000-01-02");
+    expect(container.textContent).toContain("시작일은 최초 여행 시작일 이전으로 바꿀 수 없어요.");
+    await changeDates("2099-07-10", "2099-07-09");
+    expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
+    await changeDates("2099-07-10", "2099-07-12");
+    expect(container.querySelector("[role=alert]")).toBeNull();
+    expect(state.create).not.toHaveBeenCalled();
+  } finally {
+    await unmount();
+  }
+});
+
+it("shows every field error at once when submitting an empty form", async () => {
+  const { container, unmount } = await renderPage();
+  try {
+    expect(submitButton(container).disabled).toBe(false);
+    await act(async () => submitButton(container).click());
+    expect(state.create).not.toHaveBeenCalled();
+    expect(titleInput(container).getAttribute("aria-invalid")).toBe("true");
+    expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+    expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
+    expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  } finally {
+    await unmount();
+  }
+});
+
+it("shows every field error on the first submit even when the title already has an error from blur", async () => {
+  const { container, unmount } = await renderPage();
+  try {
+    await act(async () => {
+      titleInput(container).dispatchEvent(new FocusEvent("focusout", { bubbles: true }));
+    });
+    expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+    expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
+    await act(async () => submitButton(container).click());
+    expect(state.create).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
+    expect(container.textContent).toContain("여행지를 하나 이상 선택해 주세요.");
+    expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  } finally {
+    await unmount();
+  }
+});
+
+it("shows progress on the start button and blocks a second submit while the trip is being created", async () => {
+  state.isPending = true;
+  const { container, unmount } = await renderPage();
+  try {
+    await typeTitle(container, "여름 여행");
+    await act(async () => state.destinations!.onChange(["서울"]));
+    await changeDates("2099-07-10", "2099-07-12");
+    const button = submitButton(container);
+    expect(button.getAttribute("aria-busy")).toBe("true");
+    const labelId = button.getAttribute("aria-labelledby");
+    expect([...container.querySelectorAll("[id]")].find((node) => node.id === labelId)?.textContent).toBe(
+      "여행 만드는 중",
+    );
+    await act(async () => button.click());
+    expect(state.create).not.toHaveBeenCalled();
+    const home = [...container.querySelectorAll("a")].find((link) => link.textContent === "홈으로 돌아가기");
+    expect(home?.getAttribute("href")).toBe("/home");
+  } finally {
+    await unmount();
   }
 });

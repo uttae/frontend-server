@@ -3,43 +3,28 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import type { RoomListResponse } from "@/lib/api/rooms";
-import {
-  joinRequestsQueryKey,
-  ROOMS_QUERY_KEY,
-  roomDetailQueryKey,
-  roomMembersQueryKey,
-} from "@/lib/query-keys";
+import { joinRequestsQueryKey, ROOMS_QUERY_KEY, roomDetailQueryKey, roomMembersQueryKey } from "@/lib/query-keys";
 import type { ForcedRoomExitReason } from "@/lib/stomp/user-room-queue";
 
 export const FORCED_ROOM_EXIT_TOAST_MS = 4500;
 
-export function forcedExitToastMessage(
-  reason: ForcedRoomExitReason,
-  serverMessage?: string,
-): string {
+export function forcedExitToastMessage(reason: ForcedRoomExitReason, serverMessage?: string): string {
   const trimmed = serverMessage?.trim();
   if (trimmed) return trimmed;
 
-  return reason === "kicked"
-    ? "방장에 의해 강제 퇴장 당했습니다"
-    : "방이 삭제되었습니다";
+  return reason === "kicked" ? "방장에 의해 강제 퇴장 당했습니다" : "방이 삭제되었습니다";
 }
 
-export function showForcedExitToast(
-  reason: ForcedRoomExitReason,
-  serverMessage?: string,
-): void {
+export function showForcedExitToast(reason: ForcedRoomExitReason, serverMessage?: string): void {
   toast.error(forcedExitToastMessage(reason, serverMessage), {
     duration: FORCED_ROOM_EXIT_TOAST_MS,
   });
 }
 
-/** 방 나가기 성공 — 나간 탭의 응답과 STOMP `MEMBER_LEFT`가 겹쳐도 같은 id라 한 번만 보인다 */
 export function showRoomLeftToast(roomId: string): void {
   toast.success("방에서 나갔어요.", { id: `room-left-${roomId.trim()}` });
 }
 
-/** 끊긴 동안 강퇴·방 삭제·다른 기기의 나가기를 놓쳐 접근을 잃은 경우 — 사유를 알 수 없어 중립 문구로 알린다 */
 export function showRoomAccessLostToast(roomId: string): void {
   toast.error("방에 더 이상 접근할 수 없어요.", {
     id: `room-access-lost-${roomId.trim()}`,
@@ -47,11 +32,7 @@ export function showRoomAccessLostToast(roomId: string): void {
   });
 }
 
-/** 강퇴·방 삭제 시 홈 목록·방 단위 React Query 캐시에서 해당 roomId 제거 */
-export function evictRoomFromClientCaches(
-  queryClient: QueryClient,
-  roomId: string,
-): void {
+export function evictRoomFromClientCaches(queryClient: QueryClient, roomId: string): void {
   const rid = roomId.trim();
   if (!rid.length) return;
   revokeExpenseRoomAccess(queryClient, rid);

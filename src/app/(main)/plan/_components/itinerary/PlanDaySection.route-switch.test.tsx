@@ -13,8 +13,14 @@ it("label and switch change route visibility without collapsing the day", async 
   document.body.append(host);
   const root = createRoot(host);
   try {
-    await act(async () => root.render(<PlanDaySection title="1일차" itineraryScheduleId={10}>장소</PlanDaySection>));
-    const heading = host.querySelector<HTMLButtonElement>('button[aria-expanded]')!;
+    await act(async () =>
+      root.render(
+        <PlanDaySection title="1일차" itineraryScheduleId={10}>
+          장소
+        </PlanDaySection>,
+      ),
+    );
+    const heading = host.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
     const toggle = host.querySelector<HTMLButtonElement>('[role="switch"]')!;
     await act(async () => host.querySelector("label")!.click());
     expect(toggle.getAttribute("aria-checked")).toBe("false");

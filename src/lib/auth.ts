@@ -1,38 +1,17 @@
 import type { QueryClient } from "@tanstack/react-query";
 
-import {
-  isProtectedAppPath,
-  shouldSkipReconcileClientSession,
-} from "@/lib/auth-session";
+import { isProtectedAppPath, shouldSkipReconcileClientSession } from "@/lib/auth-session";
 import { clearUserScopedBrowserStorage, tearDownClientSession } from "@/lib/client-storage";
-import {
-  fetchSessionUserRaw,
-  fetchSessionUserResult,
-  fetchSessionUserWithRetry,
-} from "@/lib/session-user";
-import {
-  readSessionUserCache,
-  setSessionUserCache,
-} from "@/lib/session-user-cache";
+import { fetchSessionUserResult } from "@/lib/session-user";
+import { readSessionUserCache, setSessionUserCache } from "@/lib/session-user-cache";
 import { useSessionStore } from "@/stores/session-store";
 
 export type { SessionUser } from "@/lib/session-user";
-export {
-  checkClientAuthenticated,
-  consumePendingInviteCode,
-  setPendingInviteCode,
-} from "@/lib/session-user-flow";
-export {
-  fetchSessionUserRaw,
-  fetchSessionUserResult,
-  fetchSessionUserWithRetry,
-};
+export { checkClientAuthenticated, consumePendingInviteCode, setPendingInviteCode } from "@/lib/session-user-flow";
+export { fetchSessionUserRaw, fetchSessionUserResult, fetchSessionUserWithRetry } from "@/lib/session-user";
 export type { FetchSessionUserResult } from "@/lib/session-user";
 
-/** HttpOnly 세션·`users/me`로 Query user 캐시를 맞춥니다. */
-export async function reconcileClientSession(
-  queryClient: QueryClient,
-): Promise<void> {
+export async function reconcileClientSession(queryClient: QueryClient): Promise<void> {
   if (typeof window === "undefined") return;
 
   const path = window.location.pathname;

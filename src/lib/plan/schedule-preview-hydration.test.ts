@@ -1,13 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { RoomScheduleWithItems } from "@/lib/api/rooms/schedules";
+import { reconcileSchedulePlanPlacesAfterPreviewSeed } from "@/lib/places/place-batch-cache";
+import { placePreviewQueryKey } from "@/lib/places/place-queries";
 import type { PlanPlace } from "@/lib/plan/types";
 
 const requestPlacePreviewsBatch = vi.hoisted(() => vi.fn());
 const requestPlacePreview = vi.hoisted(() => vi.fn());
 const getScheduleItems = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/api/rooms/schedule-items", async (importOriginal) => ({
-  ...await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>(),
+  ...(await importOriginal<typeof import("@/lib/api/rooms/schedule-items")>()),
   getScheduleItems,
 }));
 
@@ -33,10 +35,10 @@ let roomSchedulesQueryKey: typeof import("@/lib/query-keys").roomSchedulesQueryK
 let HttpError: typeof import("@/lib/api/errors").HttpError;
 
 beforeAll(async () => {
-  ({ hydrateScheduleItemsFromSchedulesWithItems, PLAN_PLACE_PREVIEW_ERROR_TITLE } = await import(
-    "@/lib/plan/schedule-bulk-hydration"
-  ));
-  ({ ensureSchedulePlanPlacesEnriched, schedulePlanPlacesQueryOptions } = await import("@/lib/plan/scheduleItemPlaces"));
+  ({ hydrateScheduleItemsFromSchedulesWithItems, PLAN_PLACE_PREVIEW_ERROR_TITLE } =
+    await import("@/lib/plan/schedule-bulk-hydration"));
+  ({ ensureSchedulePlanPlacesEnriched, schedulePlanPlacesQueryOptions } =
+    await import("@/lib/plan/scheduleItemPlaces"));
   ({ createQueryClient } = await import("@/lib/query-client"));
   ({ scheduleItemsQueryKey, roomSchedulesQueryKey } = await import("@/lib/query-keys"));
   ({ HttpError } = await import("@/lib/api/errors"));
@@ -86,9 +88,9 @@ const failed = (googlePlaceId: string) => ({
 });
 
 function titles(queryClient: ReturnType<typeof createQueryClient>, scheduleId: number) {
-  return (
-    queryClient.getQueryData<PlanPlace[]>(scheduleItemsQueryKey(ROOM_ID, scheduleId)) ?? []
-  ).map((place) => place.title);
+  return (queryClient.getQueryData<PlanPlace[]>(scheduleItemsQueryKey(ROOM_ID, scheduleId)) ?? []).map(
+    (place) => place.title,
+  );
 }
 
 describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
@@ -98,10 +100,12 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
       .mockResolvedValueOnce([ok("a"), failed("b"), ok("c"), failed("d")])
       .mockResolvedValueOnce([ok("b"), failed("d")]);
 
-    await hydrateScheduleItemsFromSchedulesWithItems(queryClient, ROOM_ID, [
-      schedule(1, ["a", "b"]),
-      schedule(2, ["c", "d"]),
-    ], Date.now());
+    await hydrateScheduleItemsFromSchedulesWithItems(
+      queryClient,
+      ROOM_ID,
+      [schedule(1, ["a", "b"]), schedule(2, ["c", "d"])],
+      Date.now(),
+    );
 
     expect(requestPlacePreviewsBatch.mock.calls).toEqual([[["a", "b", "c", "d"]], [["b", "d"]]]);
     expect(requestPlacePreview).not.toHaveBeenCalled();
@@ -117,10 +121,7 @@ describe("hydrateScheduleItemsFromSchedulesWithItems", () => {
 
     expect(requestPlacePreviewsBatch).toHaveBeenCalledTimes(1);
     expect(requestPlacePreview).not.toHaveBeenCalled();
-    expect(titles(queryClient, 1)).toEqual([
-      PLAN_PLACE_PREVIEW_ERROR_TITLE,
-      PLAN_PLACE_PREVIEW_ERROR_TITLE,
-    ]);
+    expect(titles(queryClient, 1)).toEqual([PLAN_PLACE_PREVIEW_ERROR_TITLE, PLAN_PLACE_PREVIEW_ERROR_TITLE]);
   });
 });
 
@@ -157,7 +158,6 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
 
   it("기다리던 일정 불러오기가 취소되고 다시 시작되면 새 불러오기를 기다려 그 결과를 쓴다", async () => {
     const queryClient = createQueryClient();
-    // 이미 받은 일정을 다시 받는 중에 또 다시 받으면 TanStack이 진행 중인 불러오기를 취소한다
     queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a"])]);
     const finishHydrations: Array<(schedules: RoomScheduleWithItems[]) => void> = [];
     const queryFn = () =>
@@ -184,7 +184,6 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
 
   it("다시 들어오면 지금 일차 목록은 그대로 두고 자리표시자 장소만 다시 받는다 — 지운 장소가 되살아나지 않는다", async () => {
     const queryClient = createQueryClient();
-    // 일정을 불러온 뒤 c를 지웠다 — room-schedules의 items에는 c가 아직 남아 있다
     queryClient.setQueryData(roomSchedulesQueryKey(ROOM_ID), [schedule(1, ["a", "b", "c"])]);
     queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [
       placeholder("a", 100),
@@ -208,10 +207,34 @@ describe("ensureSchedulePlanPlacesEnriched", () => {
 });
 
 describe("schedulePlanPlacesQueryOptions after preview recovery merge", () => {
+  it("keeps a newer schedule edit and its pending invalidation when only the preview recovers", async () => {
+    const client = createQueryClient();
+    const key = scheduleItemsQueryKey(ROOM_ID, 1);
+    const roomReadStarted = 1000;
+    const scheduleEdited = 2000;
+    client.setQueryData<PlanPlace[]>(
+      key,
+      [{ id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE, startTime: "12:30" }],
+      { updatedAt: scheduleEdited },
+    );
+    await client.invalidateQueries({ queryKey: key, exact: true, refetchType: "none" });
+    client.setQueryData(placePreviewQueryKey("a"), ok("a"));
+
+    reconcileSchedulePlanPlacesAfterPreviewSeed(client, ROOM_ID);
+    expect(client.getQueryState(key)).toMatchObject({ dataUpdatedAt: scheduleEdited, isInvalidated: true });
+    await hydrateScheduleItemsFromSchedulesWithItems(client, ROOM_ID, [schedule(1, ["a"])], roomReadStarted);
+    expect(client.getQueryData<PlanPlace[]>(key)?.[0]).toMatchObject({ title: "이름 a", startTime: "12:30" });
+    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    expect(getScheduleItems).not.toHaveBeenCalled();
+    client.clear();
+  });
+
   it("invalidated placeholder data fetches authoritative items instead of only enriching old items", async () => {
     const queryClient = createQueryClient();
     const key = scheduleItemsQueryKey(ROOM_ID, 1);
-    queryClient.setQueryData(key, [{ id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE }]);
+    queryClient.setQueryData(key, [
+      { id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE },
+    ]);
     await queryClient.invalidateQueries({ queryKey: key, refetchType: "none" });
     getScheduleItems.mockResolvedValue([]);
     await expect(queryClient.fetchQuery(schedulePlanPlacesQueryOptions(queryClient, ROOM_ID, 1))).resolves.toEqual([]);
@@ -221,9 +244,14 @@ describe("schedulePlanPlacesQueryOptions after preview recovery merge", () => {
 
   it("non-invalidated placeholder retry enriches only the surviving cached items", async () => {
     const queryClient = createQueryClient();
-    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [{ id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE }]);
+    queryClient.setQueryData(scheduleItemsQueryKey(ROOM_ID, 1), [
+      { id: "item-100", itemId: 100, googlePlaceId: "a", title: PLAN_PLACE_PREVIEW_ERROR_TITLE },
+    ]);
     requestPlacePreview.mockResolvedValue(ok("a"));
-    const places = await queryClient.fetchQuery({ ...schedulePlanPlacesQueryOptions(queryClient, ROOM_ID, 1), staleTime: 0 });
+    const places = await queryClient.fetchQuery({
+      ...schedulePlanPlacesQueryOptions(queryClient, ROOM_ID, 1),
+      staleTime: 0,
+    });
     expect(places.map((place) => place.itemId)).toEqual([100]);
     expect(places[0].title).toBe("이름 a");
     expect(getScheduleItems).not.toHaveBeenCalled();

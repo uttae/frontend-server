@@ -2,10 +2,7 @@
 import { act, useLayoutEffect, type ComponentProps } from "react";
 import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
-import {
-  SelectedPlaceProvider,
-  useSelectedPlace,
-} from "@/contexts/SelectedPlaceContext";
+import { SelectedPlaceProvider, useSelectedPlace } from "@/contexts/SelectedPlaceContext";
 import { PlaceDetailPanel } from "./PlaceDetailPanel";
 import type { PlaceSummaryHeader } from "./PlaceSummaryHeader";
 const state = vi.hoisted(() => ({
@@ -57,10 +54,7 @@ it("keeps the current entry source for schedule addition and emits one view per 
       selection = current;
     });
     return current.selectedPlace ? (
-      <PlaceDetailPanel
-        {...current.selectedPlace}
-        onClose={() => current.setSelectedPlace(null)}
-      />
+      <PlaceDetailPanel {...current.selectedPlace} onClose={() => current.setSelectedPlace(null)} />
     ) : null;
   }
   await act(async () =>
@@ -76,22 +70,16 @@ it("keeps the current entry source for schedule addition and emits one view per 
     category: "cafe",
     rating: 4.5,
   };
-  await act(async () =>
-    selection.setSelectedPlace(place, { itinerarySource: "search" }),
-  );
+  await act(async () => selection.setSelectedPlace(place, { itinerarySource: "search" }));
   expect(state.track).toHaveBeenCalledTimes(1);
   expect(state.track.mock.lastCall?.[1].room_id).toBe("room-a");
   expect(state.track.mock.lastCall?.[1].interaction_source).toBe("search");
-  await act(async () =>
-    selection.setSelectedPlace(place, { itinerarySource: "bookmark" }),
-  );
+  await act(async () => selection.setSelectedPlace(place, { itinerarySource: "bookmark" }));
   await act(async () => state.header!.onAddToSchedule?.());
   expect(state.source).toBe("bookmark");
   expect(state.track).toHaveBeenCalledTimes(1);
   await act(async () => selection.setSelectedPlace(null));
-  await act(async () =>
-    selection.setSelectedPlace(place, { itinerarySource: "chat" }),
-  );
+  await act(async () => selection.setSelectedPlace(place, { itinerarySource: "chat" }));
   expect(state.track).toHaveBeenCalledTimes(2);
   expect(state.track.mock.lastCall?.[1].interaction_source).toBe("chat");
   for (const source of ["map", "plan"] as const) {
@@ -107,13 +95,20 @@ it("keeps the current entry source for schedule addition and emits one view per 
 });
 
 it("full-detail failure shows retry without no-review content or a successful view", async () => {
-  state.failure = true; state.track.mockClear(); state.retry.mockClear();
-  const host = document.createElement("div"); const root = createRoot(host);
-  await act(async () => root.render(<PlaceDetailPanel name="장소" category="" rating={null} googlePlaceId="failed" onClose={() => {}} />));
+  state.failure = true;
+  state.track.mockClear();
+  state.retry.mockClear();
+  const host = document.createElement("div");
+  const root = createRoot(host);
+  await act(async () =>
+    root.render(<PlaceDetailPanel name="장소" category="" rating={null} googlePlaceId="failed" onClose={() => {}} />),
+  );
   expect(host.querySelector("[data-reviews]")).toBeNull();
   expect(host.querySelector('[role="alert"]')).not.toBeNull();
   expect(state.track).not.toHaveBeenCalled();
   const retry = [...host.querySelectorAll("button")].find((button) => button.textContent === "다시 시도");
-  await act(async () => retry!.click()); expect(state.retry).toHaveBeenCalledTimes(1);
-  await act(async () => root.unmount()); state.failure = false;
+  await act(async () => retry!.click());
+  expect(state.retry).toHaveBeenCalledTimes(1);
+  await act(async () => root.unmount());
+  state.failure = false;
 });

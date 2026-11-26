@@ -1,9 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
-import type {
-  CreateScheduleItemResponse,
-  RoomScheduleItem,
-} from "@/lib/api/rooms/schedule-items";
+import type { CreateScheduleItemResponse, RoomScheduleItem } from "@/lib/api/rooms/schedule-items";
 import type { PlanPlace } from "@/lib/plan/types";
 
 let applyRoomScheduleItemToPlanPlaces: typeof import("@/lib/plan/scheduleItemPlaces").applyRoomScheduleItemToPlanPlaces;
@@ -19,11 +16,7 @@ beforeAll(async () => {
     await import("@/lib/plan/scheduleItemPlaces"));
 });
 
-const scheduleItem = (
-  itemId: number,
-  orderIndex: number,
-  travelMode = "DRIVING",
-): RoomScheduleItem => ({
+const scheduleItem = (itemId: number, orderIndex: number, travelMode = "DRIVING"): RoomScheduleItem => ({
   itemId,
   scheduleId: 10,
   googlePlaceId: `place-${itemId}`,
@@ -50,11 +43,7 @@ describe("mergeCreatedScheduleItemDelta", () => {
       affectedRouteItemIds: [1],
     };
 
-    const next = mergeCreatedScheduleItemDelta(
-      [planPlace(1), planPlace(2)],
-      planPlace(3),
-      response,
-    );
+    const next = mergeCreatedScheduleItemDelta([planPlace(1), planPlace(2)], planPlace(3), response);
 
     expect(next?.map((place) => place.itemId)).toEqual([1, 3, 2]);
   });
@@ -66,11 +55,7 @@ describe("mergeCreatedScheduleItemDelta", () => {
       affectedRouteItemIds: [1],
     };
 
-    const next = mergeCreatedScheduleItemDelta(
-      [planPlace(1), planPlace(2)],
-      planPlace(3),
-      response,
-    );
+    const next = mergeCreatedScheduleItemDelta([planPlace(1), planPlace(2)], planPlace(3), response);
 
     expect(next?.[0]?.travelMode).toBe("WALKING");
   });
@@ -82,11 +67,7 @@ describe("mergeCreatedScheduleItemDelta", () => {
       affectedRouteItemIds: [1],
     };
 
-    const next = mergeCreatedScheduleItemDelta(
-      [planPlace(1), planPlace(2)],
-      planPlace(3),
-      response,
-    );
+    const next = mergeCreatedScheduleItemDelta([planPlace(1), planPlace(2)], planPlace(3), response);
 
     expect(next).toBeNull();
   });
@@ -144,8 +125,7 @@ describe("end time cache and reorder", () => {
     });
   });
   it("hydrates includeItems without a place preview", async () => {
-    const { planPlaceFromItemAndPreview } =
-      await import("./schedule-bulk-hydration");
+    const { planPlaceFromItemAndPreview } = await import("./schedule-bulk-hydration");
     const item = {
       ...scheduleItem(1, 0),
       startTime: "23:00",
@@ -159,9 +139,7 @@ describe("end time cache and reorder", () => {
   it("merges server end times in insertion deltas", () => {
     const next = mergeCreatedScheduleItemDelta([planPlace(1)], planPlace(2), {
       createdItem: scheduleItem(2, 1),
-      updatedItems: [
-        { ...scheduleItem(1, 0), startTime: "00:00", endTime: "23:59" },
-      ],
+      updatedItems: [{ ...scheduleItem(1, 0), startTime: "00:00", endTime: "23:59" }],
       affectedRouteItemIds: [],
     });
     expect(next?.[0]).toMatchObject({ startTime: "00:00", endTime: "23:59" });

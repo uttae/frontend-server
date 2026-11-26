@@ -1,7 +1,5 @@
 import { inviteCampaignSearch, withInviteCampaign } from "@/lib/invite-campaign";
 
-/** OAuth·초대 등 인증 흐름 부가 유틸 */
-
 export async function checkClientAuthenticated(): Promise<boolean> {
   if (typeof window === "undefined") return false;
   const res = await fetch("/api/auth/session", {
@@ -16,7 +14,6 @@ const PENDING_INVITE_CAMPAIGN_KEY = "pendingInviteCampaign";
 
 export function setPendingInviteCode(code: string, search = ""): void {
   if (typeof window === "undefined") return;
-  // Replace, never merge: a new invite must not inherit the previous campaign.
   sessionStorage.removeItem(PENDING_INVITE_CAMPAIGN_KEY);
   sessionStorage.setItem(PENDING_INVITE_KEY, code);
   const campaign = inviteCampaignSearch(search);
@@ -36,7 +33,6 @@ function pendingInviteCampaign(): string {
   return sessionStorage.getItem(PENDING_INVITE_CAMPAIGN_KEY) ?? "";
 }
 
-/** Only the invite authentication detour carries this context; ordinary login creates none. */
 export function pendingInviteAuthPath(path: "/login" | "/login/agreements" | `/login?error=${string}`): string {
   return withInviteCampaign(path, pendingInviteCampaign());
 }

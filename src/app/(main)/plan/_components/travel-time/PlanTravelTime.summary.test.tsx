@@ -13,6 +13,7 @@ vi.mock("@/hooks/useRooms", () => ({
   useUpdateScheduleItemTravelMode: () => ({ mutate: vi.fn() }),
 }));
 vi.mock("@tanstack/react-query", () => ({
+  useQueryClient: () => ({ getQueryData: () => undefined }),
   useQueries: ({ queries }: { queries: unknown[] }) => queries.map(() => ({ data: undefined })),
 }));
 vi.mock("@/contexts/MobileViewContext", () => ({ useMobileView: () => ({ isMobileDevice: false }) }));

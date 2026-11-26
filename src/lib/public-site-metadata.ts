@@ -4,7 +4,6 @@ import { SUPPORT_EMAIL } from "@/lib/contact";
 import { brandAssets } from "@/lib/public-assets";
 import { PUBLIC_FOUNDERS, PUBLIC_SITE } from "@/lib/public-site";
 
-/** 링크 프리뷰 공용 이미지 — 1.91:1 불투명 PNG. 투명 배경은 카카오톡·슬랙에서 합성 결과가 달라진다. */
 export const SHARE_IMAGE = {
   url: brandAssets.shareImage,
   width: 1200,
@@ -16,8 +15,7 @@ export const PUBLIC_INDEXABLE_ROUTES = [
   {
     path: "/",
     title: "우때 | 올인원 해외여행 플래너",
-    description:
-      "우때에서 친구들과 장소를 찾고 대화하며 여행 일정을 함께 완성하세요.",
+    description: "우때에서 친구들과 장소를 찾고 대화하며 여행 일정을 함께 완성하세요.",
     changeFrequency: "weekly",
     priority: 1,
   },
@@ -51,17 +49,14 @@ export const PUBLIC_INDEXABLE_ROUTES = [
   },
 ] as const;
 
-export type PublicIndexablePath =
-  (typeof PUBLIC_INDEXABLE_ROUTES)[number]["path"];
+export type PublicIndexablePath = (typeof PUBLIC_INDEXABLE_ROUTES)[number]["path"];
 
 type PublicPageMetadata = Metadata & {
   title: string;
   description: string;
 };
 
-export function publicPageMetadata(
-  path: PublicIndexablePath,
-): PublicPageMetadata {
+export function publicPageMetadata(path: PublicIndexablePath): PublicPageMetadata {
   const route = PUBLIC_INDEXABLE_ROUTES.find((entry) => entry.path === path);
 
   if (!route) {
@@ -136,8 +131,7 @@ export const SOFTWARE_APPLICATION_JSON_LD = {
   applicationCategory: "TravelApplication",
   operatingSystem: "Web",
   browserRequirements: "Requires a modern web browser",
-  description:
-    "친구들과 장소를 찾고 대화하며 일정과 이동 동선을 완성하는 실시간 협업 여행 플래너",
+  description: "친구들과 장소를 찾고 대화하며 일정과 이동 동선을 완성하는 실시간 협업 여행 플래너",
   featureList: [
     "지도 기반 장소 탐색",
     "실시간 채팅과 장소 공유",

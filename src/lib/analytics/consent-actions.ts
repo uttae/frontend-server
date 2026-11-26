@@ -1,24 +1,14 @@
 import { revokeGoogleAnalyticsConsent } from "@/lib/analytics/client";
-import {
-  clearGoogleAnalyticsCookies,
-  type AnalyticsConsentValue,
-} from "@/lib/analytics/consent-cookie";
-import {
-  analyticsConsentStore,
-  type AnalyticsConsentUpdateResult,
-} from "@/lib/analytics/consent-store";
+import { clearGoogleAnalyticsCookies, type AnalyticsConsentValue } from "@/lib/analytics/consent-cookie";
+import { analyticsConsentStore, type AnalyticsConsentUpdateResult } from "@/lib/analytics/consent-store";
 
 type AnalyticsConsentActionDependencies = {
   clearCookies: () => void;
   revokeGoogleAnalytics: () => void;
-  setConsent: (
-    value: AnalyticsConsentValue,
-  ) => AnalyticsConsentUpdateResult;
+  setConsent: (value: AnalyticsConsentValue) => AnalyticsConsentUpdateResult;
 };
 
-export function createAnalyticsConsentActions(
-  dependencies: AnalyticsConsentActionDependencies,
-) {
+export function createAnalyticsConsentActions(dependencies: AnalyticsConsentActionDependencies) {
   return {
     grant: () => dependencies.setConsent("granted"),
     deny: () => {

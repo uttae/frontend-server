@@ -98,9 +98,7 @@ describe("refreshRoomSchedules", () => {
   it("cancels an in-flight snapshot so only the refresh started after the change is written", async () => {
     const client = new QueryClient();
     const stale = deferred<RoomScheduleWithItems[]>();
-    mocks.getRoomSchedules
-      .mockReturnValueOnce(stale.promise)
-      .mockResolvedValueOnce(SERVER_SCHEDULES);
+    mocks.getRoomSchedules.mockReturnValueOnce(stale.promise).mockResolvedValueOnce(SERVER_SCHEDULES);
     mocks.build.mockResolvedValue(new Map([[1, SERVER_PLACES]]));
     const staleFetch = client
       .fetchQuery({

@@ -20,13 +20,10 @@ export function useCurrentRoomMembership() {
     isFetching: isDetailFetching,
     isError: isDetailError,
   } = useRoomDetail(currentRoomId);
-  const { data: membersData, isLoading: isMembersLoading } =
-    useRoomMembers(currentRoomId);
+  const { data: membersData, isLoading: isMembersLoading } = useRoomMembers(currentRoomId);
 
   const currentRoom = roomsData?.rooms.find((r) => r.id === currentRoomId);
-  const roomSource: RoomSource | null =
-    currentRoom ??
-    (roomDetail && roomDetail.id === currentRoomId ? roomDetail : null);
+  const roomSource: RoomSource | null = currentRoom ?? (roomDetail?.id === currentRoomId ? roomDetail : null);
 
   const members = membersData?.members ?? [];
   const activeMembers = members.filter(isActiveRoomMember);

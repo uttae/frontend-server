@@ -72,7 +72,12 @@ it("moves the focus like a card click without opening the detail and asks the li
   await act(async () => focusItem(1));
   await act(async () => button("다음 장소").click());
   expect(usePlanMapFocusStore.getState().focus).toMatchObject({
-    roomId: "room", scheduleId: 10, itemId: 2, googlePlaceId: "gb", location: { lat: 2, lng: 2 }, source: "stepper",
+    roomId: "room",
+    scheduleId: 10,
+    itemId: 2,
+    googlePlaceId: "gb",
+    location: { lat: 2, lng: 2 },
+    source: "stepper",
   });
   expect(state.select).toHaveBeenCalledWith(null);
   expect(position()).toBe("2/3");

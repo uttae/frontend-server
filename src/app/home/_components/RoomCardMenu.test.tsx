@@ -8,8 +8,13 @@ import { RoomCardMenu } from "./RoomCardMenu";
 
 const state = vi.hoisted(() => ({
   detail: null as RoomDetail | null,
-  loading: false, error: false, pending: false,
-  regenerate: vi.fn(), refetch: vi.fn(), copy: vi.fn(), toastError: vi.fn(),
+  loading: false,
+  error: false,
+  pending: false,
+  regenerate: vi.fn(),
+  refetch: vi.fn(),
+  copy: vi.fn(),
+  toastError: vi.fn(),
   detailId: vi.fn(),
 }));
 vi.mock("@/hooks/useRooms", () => ({
@@ -22,20 +27,34 @@ vi.mock("@/hooks/useRoomDetail", () => ({
   },
 }));
 vi.mock("@/lib/analytics/track", () => ({
-  AnalyticsEvents: { sharePlan: "share_plan" }, trackAnalyticsEvent: vi.fn(),
+  AnalyticsEvents: { sharePlan: "share_plan" },
+  trackAnalyticsEvent: vi.fn(),
 }));
 vi.mock("sonner", () => ({ toast: { error: state.toastError, info: vi.fn() } }));
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
-const room: RoomListItem = { id: "selected-room", title: "제주 여행", destinations: ["제주"], startDate: null, endDate: null, role: "HOST", joinedAt: "2026-09-20" };
+const room: RoomListItem = {
+  id: "selected-room",
+  title: "제주 여행",
+  destinations: ["제주"],
+  startDate: null,
+  endDate: null,
+  role: "HOST",
+  joinedAt: "2026-09-20",
+};
 let host: HTMLDivElement;
 let root: Root;
 const onDelete = vi.fn();
 const onLeave = vi.fn();
-// 메뉴 항목은 Base UI Menu.Item(role="menuitem")이라 버튼과 함께 찾는다
-const button = (label: string) => [...document.querySelectorAll<HTMLButtonElement>('button, [role="menuitem"]')].find(b => b.textContent?.trim() === label || b.getAttribute("aria-label") === label)!;
+const button = (label: string) =>
+  [...document.querySelectorAll<HTMLButtonElement>('button, [role="menuitem"]')].find(
+    (b) => b.textContent?.trim() === label || b.getAttribute("aria-label") === label,
+  )!;
 const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]');
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 const click = async (label: string) => {
   expect(button(label), `button: ${label}`).toBeDefined();
   await act(async () => button(label).click());
@@ -71,7 +90,9 @@ it("opens the selected room's invite link without regenerating it and restores f
   expect(state.detailId).toHaveBeenCalledWith("selected-room");
   expect(state.regenerate).not.toHaveBeenCalled();
   await click("복사");
-  expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenCalledWith(
+    `${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
   expect(button("복사됨")).toBeDefined();
   await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   await flush();
@@ -87,7 +108,9 @@ it("issues a link once when the room detail confirms no existing code", async ()
   expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "automatic" });
   await act(async () => state.regenerate.mock.calls[0][1].onSuccess({ inviteCode: "first-code" }));
   await click("복사");
-  expect(state.copy).toHaveBeenCalledWith(`${window.location.origin}/join/first-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenCalledWith(
+    `${window.location.origin}/join/first-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
 });
 
 it.each(["loading", "error"])("does not issue links while detail is %s", async (mode) => {
@@ -115,7 +138,9 @@ it.each(["loading", "error"])("does not issue links while detail is %s", async (
   await render();
   expect(button("다시 시도")).toBeUndefined();
   await click("복사");
-  expect(state.copy).toHaveBeenCalledExactlyOnceWith(`${window.location.origin}/join/recovered-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenCalledExactlyOnceWith(
+    `${window.location.origin}/join/recovered-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
   expect(state.regenerate).not.toHaveBeenCalled();
 });
 
@@ -133,11 +158,15 @@ it("regenerates only on request and keeps the existing link when regeneration fa
   expect(state.regenerate).toHaveBeenCalledTimes(1);
   await act(async () => state.regenerate.mock.calls[0][1].onError());
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenLastCalledWith(
+    `${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
   await click("초대 링크 재발급");
   await act(async () => state.regenerate.mock.calls[1][1].onSuccess({ inviteCode: "new-code" }));
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/new-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenLastCalledWith(
+    `${window.location.origin}/join/new-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
 });
 
 it("blocks copying and sharing the old link while regeneration is pending", async () => {
@@ -152,7 +181,9 @@ it("blocks copying and sharing the old link while regeneration is pending", asyn
   await act(async () => state.regenerate.mock.calls[0][1].onSuccess({ inviteCode: "new-code" }));
   await render();
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/new-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenLastCalledWith(
+    `${window.location.origin}/join/new-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
 });
 
 it("preserves host deletion and member leave permissions", async () => {
@@ -171,9 +202,12 @@ it("preserves host deletion and member leave permissions", async () => {
 it("lets a member copy and share the existing link without issuing or regenerating it", async () => {
   state.detail!.role = "MEMBER";
   await render("MEMBER");
-  await click("제주 여행 더보기"); await click("초대하기");
+  await click("제주 여행 더보기");
+  await click("초대하기");
   await click("복사");
-  expect(state.copy).toHaveBeenLastCalledWith(`${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`);
+  expect(state.copy).toHaveBeenLastCalledWith(
+    `${window.location.origin}/join/existing-code?utm_source=member_invite&utm_medium=referral&utm_campaign=invite`,
+  );
   await click("공유");
   expect(state.copy).toHaveBeenCalledTimes(2);
   expect(button("초대 링크 재발급")).toBeDefined();
@@ -188,7 +222,17 @@ it("does not expose an invite from a nonmember detail response", async () => {
 });
 
 it.each(["PENDING", "LEFT", undefined])("hides even a cached invite link for invalid role %s", async (role) => {
-  await act(async () => root.render(<AddMemberPanel roomId="selected-room" role={role} inviteCode="cached-code" isRoomDetailLoading={false} isRoomDetailError={false} />));
+  await act(async () =>
+    root.render(
+      <AddMemberPanel
+        roomId="selected-room"
+        role={role}
+        inviteCode="cached-code"
+        isRoomDetailLoading={false}
+        isRoomDetailError={false}
+      />,
+    ),
+  );
   expect(document.querySelector('input[aria-label="초대 링크"]')).toBeNull();
   expect(button("복사").disabled).toBe(true);
   expect(button("초대 링크 재발급")).toBeUndefined();
@@ -197,14 +241,22 @@ it.each(["PENDING", "LEFT", undefined])("hides even a cached invite link for inv
 
 it("lets MEMBER use the existing reissue button once for rapid clicks", async () => {
   state.detail!.role = "MEMBER";
-  await render("MEMBER"); await click("제주 여행 더보기"); await click("초대하기");
-  await act(async () => { button("초대 링크 재발급").click(); button("초대 링크 재발급").click(); });
+  await render("MEMBER");
+  await click("제주 여행 더보기");
+  await click("초대하기");
+  await act(async () => {
+    button("초대 링크 재발급").click();
+    button("초대 링크 재발급").click();
+  });
   expect(state.regenerate).toHaveBeenCalledTimes(1);
   expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "explicit" });
 });
 it("allows MEMBER automatic fallback without presenting it as an explicit issuance", async () => {
-  state.detail!.role = "MEMBER"; state.detail!.inviteCode = null;
-  await render("MEMBER"); await click("제주 여행 더보기"); await click("초대하기");
+  state.detail!.role = "MEMBER";
+  state.detail!.inviteCode = null;
+  await render("MEMBER");
+  await click("제주 여행 더보기");
+  await click("초대하기");
   expect(state.regenerate).toHaveBeenCalledTimes(1);
   expect(state.regenerate.mock.calls[0][0]).toEqual({ roomId: "selected-room", trigger: "automatic" });
 });

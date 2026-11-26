@@ -8,9 +8,10 @@ export type ExpenseScope = {
 };
 
 export function expensesInScope(expenses: readonly Expense[], scope: ExpenseScope) {
-  return expenses.filter((expense) =>
-    expense.scheduleId === scope.scheduleId &&
-    (scope.scheduleItemId === undefined || expense.scheduleItemId === scope.scheduleItemId),
+  return expenses.filter(
+    (expense) =>
+      expense.scheduleId === scope.scheduleId &&
+      (scope.scheduleItemId === undefined || expense.scheduleItemId === scope.scheduleItemId),
   );
 }
 
@@ -29,10 +30,7 @@ function addAmounts(left: string, right: string) {
 export function totalsByCurrency(expenses: readonly Pick<Expense, "currency" | "totalAmount">[]) {
   const totals = new Map<string, string>();
   for (const expense of expenses) {
-    totals.set(
-      expense.currency,
-      addAmounts(totals.get(expense.currency) ?? "0", expense.totalAmount),
-    );
+    totals.set(expense.currency, addAmounts(totals.get(expense.currency) ?? "0", expense.totalAmount));
   }
   return [...totals].map(([currency, amount]) => ({ currency, amount }));
 }

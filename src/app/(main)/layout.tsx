@@ -7,11 +7,7 @@ import { MainChromeProviders } from "@/providers/main-providers";
 
 export const metadata: Metadata = NOINDEX_NOFOLLOW_METADATA;
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
     <MainChromeProviders>
       <MainRoomGate>

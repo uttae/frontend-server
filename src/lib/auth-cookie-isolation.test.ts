@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.hoisted(() => { process.env.API_BASE_URL = "http://backend.test"; });
+vi.hoisted(() => { process.env.NEXT_PUBLIC_API_BASE_URL = "http://backend.test"; });
 import { sessionCheckResponse, verifySessionWithOptionalRefresh } from "./auth-server";
 import { forwardBackendSetCookies } from "./auth-cookies";
 import { POST as refresh } from "@/app/api/auth/refresh/route";
@@ -52,7 +52,9 @@ describe("QA auth cookie boundary", () => {
     const res = await sessionCheckResponse(request("qa_refresh_token=qa-refresh"));
     expect(res.status).toBe(200);
     expect(res.headers.getSetCookie()).toEqual(rotated);
-    expect(fetchMock.mock.calls[1][0]).toBe("http://backend.test/auth/refresh");
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "http://backend.test/users/me", "http://backend.test/auth/refresh", "http://backend.test/users/me",
+    ]);
     expect(fetchMock.mock.calls[2][1]?.headers).toEqual({ cookie: "qa_refresh_token=qa-new-refresh; qa_access_token=qa-new" });
   });
   it("does not refresh QA access with a production refresh cookie", async () => {
@@ -60,10 +62,11 @@ describe("QA auth cookie boundary", () => {
     expect((await verifySessionWithOptionalRefresh("qa_access_token=expired; refresh_token=prod-refresh")).ok).toBe(false);
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
-  it.each([refresh, logout])("filters request and deletion cookies at the BFF boundary", async handler => {
+  it.each([[refresh, "/auth/refresh"], [logout, "/auth/logout"]] as const)("filters request and deletion cookies at the BFF boundary", async (handler, path) => {
     const deletion = "qa_refresh_token=; Domain=.qa.uttae.app; Path=/; Max-Age=0; HttpOnly";
     fetchMock.mockResolvedValue(response(200, [deletion, "refresh_token=; Domain=.uttae.app; Path=/; Max-Age=0"]));
     const res = await handler(request(`${prod}; ${qa}`));
+    expect(fetchMock.mock.calls[0][0]).toBe(`http://backend.test${path}`);
     expect(fetchMock.mock.calls[0][1]?.headers).toMatchObject({ cookie: qa });
     expect(res.headers.getSetCookie()).toEqual([deletion]);
   });

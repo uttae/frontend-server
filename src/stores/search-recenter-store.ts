@@ -8,7 +8,6 @@ export type SearchMapSnapshot = {
   radius: number;
 };
 
-/** 카테고리 기반 탐색(Places JS) 검색 영역 고정 스냅샷 — bounds는 Text Search 영역 포함에 사용 */
 export type DiscoverMapSnapshot = SearchMapSnapshot & {
   bounds: google.maps.LatLngBoundsLiteral;
 };

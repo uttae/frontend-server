@@ -4,7 +4,6 @@ import { HttpError, readUserFacingMessageFromApiBody } from "./errors";
 
 export type RequestJsonOptions = {
   errorMessage: string;
-  /** If true, throws HttpError instead of Error */
   useHttpError?: boolean;
 };
 

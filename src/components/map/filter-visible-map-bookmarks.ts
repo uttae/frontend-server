@@ -9,10 +9,5 @@ export function filterVisibleMapBookmarks<T extends MapBookmarkRow>(
   hiddenNormalizedPlaceIds?: ReadonlySet<string>,
 ): T[] {
   if (!hiddenNormalizedPlaceIds?.size) return [...rows];
-  return rows.filter(
-    (row) =>
-      !hiddenNormalizedPlaceIds.has(
-        normalizeGooglePlaceResourceId(row.googlePlaceId),
-      ),
-  );
+  return rows.filter((row) => !hiddenNormalizedPlaceIds.has(normalizeGooglePlaceResourceId(row.googlePlaceId)));
 }

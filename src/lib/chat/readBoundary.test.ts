@@ -1,9 +1,6 @@
 import { expect, it, vi } from "vitest";
 import type { ServerChatMessage } from "@/types/chat";
-import {
-  EMPTY_READ_DIVIDER_PLACEMENT,
-  resolveReadDividerPlacement,
-} from "./readBoundary";
+import { EMPTY_READ_DIVIDER_PLACEMENT, resolveReadDividerPlacement } from "./readBoundary";
 
 vi.mock("@/lib/api/rooms", () => ({ getRoomMessages: vi.fn() }));
 
@@ -21,9 +18,7 @@ function msg(id: string, minute: number): ServerChatMessage {
 const slice = [msg("a", 0), msg("b", 1)];
 
 it("does not draw the read divider when nothing comes after the last read message", () => {
-  expect(resolveReadDividerPlacement(slice, "b", slice)).toEqual(
-    EMPTY_READ_DIVIDER_PLACEMENT,
-  );
+  expect(resolveReadDividerPlacement(slice, "b", slice)).toEqual(EMPTY_READ_DIVIDER_PLACEMENT);
 });
 
 it("draws the read divider before unread messages", () => {

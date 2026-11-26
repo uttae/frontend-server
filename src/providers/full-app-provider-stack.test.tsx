@@ -12,9 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@tanstack/react-query", () => ({
-  QueryClientProvider: ({ children }: { children: ReactNode }) => (
-    <div data-provider="query-client">{children}</div>
-  ),
+  QueryClientProvider: ({ children }: { children: ReactNode }) => <div data-provider="query-client">{children}</div>,
   useQueryClient: mocks.useQueryClient,
 }));
 
@@ -27,27 +25,19 @@ vi.mock("@/components/analytics/AnalyticsRouteTracker", () => ({
 }));
 
 vi.mock("@/components/analytics/ConsentGatedAnalytics", () => ({
-  ConsentGatedAnalytics: ({ children }: { children: ReactNode }) => (
-    <div data-provider="analytics">{children}</div>
-  ),
+  ConsentGatedAnalytics: ({ children }: { children: ReactNode }) => <div data-provider="analytics">{children}</div>,
 }));
 
 vi.mock("@/components/google-maps-provider", () => ({
-  GoogleMapsProvider: ({ children }: { children: ReactNode }) => (
-    <div data-provider="google-maps">{children}</div>
-  ),
+  GoogleMapsProvider: ({ children }: { children: ReactNode }) => <div data-provider="google-maps">{children}</div>,
 }));
 
 vi.mock("@/components/mobile/MobileChrome", () => ({
-  MobileChrome: ({ children }: { children: ReactNode }) => (
-    <div data-provider="mobile-chrome">{children}</div>
-  ),
+  MobileChrome: ({ children }: { children: ReactNode }) => <div data-provider="mobile-chrome">{children}</div>,
 }));
 
 vi.mock("@/contexts/StompContext", () => ({
-  StompProvider: ({ children }: { children: ReactNode }) => (
-    <div data-provider="stomp">{children}</div>
-  ),
+  StompProvider: ({ children }: { children: ReactNode }) => <div data-provider="stomp">{children}</div>,
 }));
 
 vi.mock("@/lib/analytics/runtime", () => ({

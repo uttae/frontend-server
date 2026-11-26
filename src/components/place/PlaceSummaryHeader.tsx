@@ -31,9 +31,7 @@ export function PlaceSummaryHeader({
     <div className="border-b border-gray-border px-5 pb-5 pt-4">
       <div className="flex items-start gap-3">
         <h2 className="min-w-0 flex-1 leading-snug">
-          <span className="block text-title-l mobile:text-title-m font-bold tracking-tight text-[#111827]">
-            {name}
-          </span>
+          <span className="block text-title-l mobile:text-title-m font-bold tracking-tight text-[#111827]">{name}</span>
           <span className="block text-body-m-regular mobile:text-body-s-regular font-normal text-[#6b7280]">
             {category}
           </span>
@@ -42,21 +40,11 @@ export function PlaceSummaryHeader({
 
       <div className="mt-3 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-body-m-regular mobile:text-body-s-regular">
         <Star className="h-4 w-4 shrink-0 fill-[#FDC700] text-[#FDC700]" />
-        <span className="font-semibold text-[#364153]">
-          {rating != null ? rating.toFixed(1) : "-"}
-        </span>
-        {userRatingCount != null && (
-          <span className="text-[#9ca3af]">
-            리뷰 {userRatingCount.toLocaleString()}개
-          </span>
-        )}
+        <span className="font-semibold text-[#364153]">{rating != null ? rating.toFixed(1) : "-"}</span>
+        {userRatingCount != null && <span className="text-[#9ca3af]">리뷰 {userRatingCount.toLocaleString()}개</span>}
       </div>
 
-      {reviewSummary && (
-        <p className="mt-2.5 text-body-xs-regular leading-relaxed text-[#6b7280]">
-          {reviewSummary}
-        </p>
-      )}
+      {reviewSummary && <p className="mt-2.5 text-body-xs-regular leading-relaxed text-[#6b7280]">{reviewSummary}</p>}
 
       {onSendToChat && (
         <button

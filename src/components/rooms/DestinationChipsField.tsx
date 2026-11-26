@@ -4,21 +4,23 @@ import { useState } from "react";
 
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
 import { Chip, ChipRemove } from "@/components/ui/chip";
+import { FieldBox, FieldBoxHeader, FieldBoxLabel, FieldBoxRow, FieldSuffix } from "@/components/ui/field";
 
 type Props = {
   values: string[];
   onChange: (next: string[]) => void;
   maxCount: number;
   maxLength: number;
+  appearance?: "field" | "emphasis";
 };
 
-/** 목적지 검색 칸 → 고른 칩 → 경고 순서. 새 여행 만들기(`TripFormFields`)와 여행 정보 수정(`RoomTripEditForm`)이 같이 쓰고, 간격은 감싸는 Field가 준다 */
 export function DestinationChipsField({
   values,
   onChange,
   maxCount,
   maxLength,
-}: Props) {
+  appearance = "field",
+}: Readonly<Props>) {
   const [draft, setDraft] = useState("");
   const [inlineWarning, setInlineWarning] = useState<string | null>(null);
   const atMax = values.length >= maxCount;
@@ -28,9 +30,7 @@ export function DestinationChipsField({
     setInlineWarning(null);
   }
 
-  function handleResolved(
-    place: { description: string; placeId: string } | null,
-  ) {
+  function handleResolved(place: { description: string; placeId: string } | null) {
     if (!place) return;
     const next = place.description.trim().slice(0, maxLength);
     if (!next) return;
@@ -49,22 +49,43 @@ export function DestinationChipsField({
     setDraft("");
   }
 
+  const atMaxMessage = `최대 ${maxCount}개까지 추가할 수 있어요`;
+  const searchProps = {
+    value: draft,
+    onChange: setDraft,
+    onResolvedPlace: handleResolved,
+    placeholder: "여행지를 검색해 선택하세요",
+    selectionOnly: true,
+  };
+  const emphasisHeader = (
+    <FieldBoxHeader>
+      <FieldBoxLabel>목적지</FieldBoxLabel>
+      <FieldSuffix>
+        {values.length}/{maxCount}
+      </FieldSuffix>
+    </FieldBoxHeader>
+  );
+  const fieldEntry = atMax ? (
+    <p className="flex h-12 w-full min-w-0 items-center rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 text-body-m-regular mobile:text-body-s-regular text-text-disabled">
+      {atMaxMessage}
+    </p>
+  ) : (
+    <DestinationSearchInput {...searchProps} appearance="field" />
+  );
+  const emphasisEntry = atMax ? (
+    <FieldBox>
+      {emphasisHeader}
+      <FieldBoxRow>
+        <span className="truncate px-1 text-text-disabled">{atMaxMessage}</span>
+      </FieldBoxRow>
+    </FieldBox>
+  ) : (
+    <DestinationSearchInput {...searchProps} appearance="emphasis" header={emphasisHeader} />
+  );
+
   return (
     <>
-      {atMax ? (
-        <p className="flex h-12 w-full min-w-0 items-center rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 text-body-m-regular mobile:text-body-s-regular text-text-disabled">
-          최대 {maxCount}개까지 추가할 수 있어요
-        </p>
-      ) : (
-        <DestinationSearchInput
-          value={draft}
-          onChange={setDraft}
-          onResolvedPlace={handleResolved}
-          placeholder="여행지를 검색해 선택하세요"
-          selectionOnly
-          appearance="field"
-        />
-      )}
+      {appearance === "emphasis" ? emphasisEntry : fieldEntry}
       {values.length > 0 ? (
         <div className="mt-1 flex flex-wrap gap-2">
           {values.map((v, i) => (

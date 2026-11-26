@@ -4,26 +4,16 @@ export const SCHEDULE_TRAVEL_MODES = [
   { value: "DRIVING", label: "자동차" },
 ] as const;
 
-export type ScheduleTravelModeValue =
-  (typeof SCHEDULE_TRAVEL_MODES)[number]["value"];
+export type ScheduleTravelModeValue = (typeof SCHEDULE_TRAVEL_MODES)[number]["value"];
 
-const API_VALUES = new Set<string>(
-  SCHEDULE_TRAVEL_MODES.map((m) => m.value),
-);
+const API_VALUES = new Set<string>(SCHEDULE_TRAVEL_MODES.map((m) => m.value));
 
-/**
- * API·쿼리스트링에 쓸 표준 이동 수단 코드.
- * 미지원·미설정 값은 `null`로 유지하며 자동 조회나 다른 수단으로 대체하지 않습니다.
- */
-export function canonicalScheduleTravelMode(
-  mode: string | null | undefined,
-): ScheduleTravelModeValue | null {
+export function canonicalScheduleTravelMode(mode: string | null | undefined): ScheduleTravelModeValue | null {
   const raw = typeof mode === "string" ? mode.trim() : "";
   if (!raw.length) return null;
   const upper = raw.toUpperCase();
   if (upper === "WALK") return "WALKING";
-  if (API_VALUES.has(upper))
-    return upper as ScheduleTravelModeValue;
+  if (API_VALUES.has(upper)) return upper as ScheduleTravelModeValue;
   return null;
 }
 

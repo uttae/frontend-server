@@ -39,7 +39,15 @@ it("resolved full raw response seeds canonical cache and later panels reuse it w
       writeAReviewUri: null,
       photosUri: null,
     },
-    regularOpeningHours: { openNow: true, weekdayDescriptions: ["월요일 9시"], secondaryHoursType: null, specialDays: [], periods: [], nextOpenTime: null, nextCloseTime: null },
+    regularOpeningHours: {
+      openNow: true,
+      weekdayDescriptions: ["월요일 9시"],
+      secondaryHoursType: null,
+      specialDays: [],
+      periods: [],
+      nextOpenTime: null,
+      nextCloseTime: null,
+    },
     reviewSummary: "요약",
     reviews: [
       {
@@ -52,8 +60,25 @@ it("resolved full raw response seeds canonical cache and later panels reuse it w
     ],
   };
   vi.mocked(requestPlaceDetail).mockReset().mockResolvedValue(detail);
-  vi.mocked(apiFetch).mockResolvedValue(Response.json({ detail, source: "GOOGLE", cacheStatus: "MISS", googleDetailsRequested: true, termination: "SUCCEEDED" }));
-  await confirmPlaceSearch({ query: "카페", kind: "specific", prediction: { placeId: "one", text: null, structuredFormat: null }, session: { sessionToken: "token", expiresAt: Date.now()+60000 }, mapCenter: null, radius: 5000, isCurrent: () => true, search: async () => [] });
+  vi.mocked(apiFetch).mockResolvedValue(
+    Response.json({
+      detail,
+      source: "GOOGLE",
+      cacheStatus: "MISS",
+      googleDetailsRequested: true,
+      termination: "SUCCEEDED",
+    }),
+  );
+  await confirmPlaceSearch({
+    query: "카페",
+    kind: "specific",
+    prediction: { placeId: "one", text: null, structuredFormat: null },
+    session: { sessionToken: "token", expiresAt: Date.now() + 60000 },
+    mapCenter: null,
+    radius: 5000,
+    isCurrent: () => true,
+    search: async () => [],
+  });
   const cached = client.getQueryData(placeDetailQueryKey("one"));
   expect(cached).toEqual(detail);
   expect(await fetchPlaceDetail("places/one")).toBe(cached);

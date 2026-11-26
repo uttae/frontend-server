@@ -34,9 +34,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
           문서를 불러오지 못했습니다
         </p>
         <p className="mt-2 text-body-m-regular mobile:text-body-s-regular text-muted-brown">
-          {error instanceof Error
-            ? error.message
-            : "잠시 후 다시 시도해 주세요."}
+          {error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요."}
         </p>
         <button
           type="button"
@@ -70,10 +68,7 @@ export function PolicyDocumentView({ agreementType }: Props) {
 
       <div className="pt-6">
         {agreement.contentFormat === "MARKDOWN" ? (
-          <AgreementMarkdownContent
-            content={agreement.content}
-            variant="document"
-          />
+          <AgreementMarkdownContent content={agreement.content} variant="document" />
         ) : (
           <p className="whitespace-pre-wrap text-body-l-regular mobile:text-body-m-regular leading-relaxed text-dark-gray">
             {agreement.content}

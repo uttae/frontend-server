@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { requiredEnv } from "@/lib/required-env";
-
-const API_BASE = requiredEnv("API_BASE_URL");
+import { API_BASE } from "@/lib/api/config";
 
 export async function GET() {
   const backendRes = await fetch(`${API_BASE}/api/agreements/current`, {

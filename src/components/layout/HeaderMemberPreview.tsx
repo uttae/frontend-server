@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { JoinRequestsSection } from "@/app/(main)/member-settings/_components/JoinRequestsSection";
 import { MemberList } from "@/app/(main)/member-settings/_components/MemberList";
 import { useMemberActions } from "@/app/(main)/member-settings/_components/useMemberActions";
-import { ChevronDownIcon, SendIcon } from "@/assets/icons";
+import { ChevronDownIcon, PlusIcon, UserAddIcon } from "@/assets/icons";
 import { InviteRoomDialog } from "@/components/rooms/InviteRoomDialog";
 import { AvatarGroup, AvatarGroupCount } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils";
 
 import { SidebarPingBadge } from "./SidebarPingBadge";
 
-/** 드롭다운 구성원 목록 — 4명(카드 72px + 사이 간격·구분선)까지 보이고 넘치면 스크롤 */
 const MEMBER_LIST_MAX_HEIGHT_CLASS = "max-h-[339px]";
 
 function memberPreviewLabel(memberCount: number, pendingJoinRequestsCount: number) {
@@ -25,7 +24,6 @@ function memberPreviewLabel(memberCount: number, pendingJoinRequestsCount: numbe
   return pendingJoinRequestsCount > 0 ? `${label}, 참여 요청 ${pendingJoinRequestsCount}건` : label;
 }
 
-/** PC 헤더 우측 — 구성원 미리보기(드롭다운으로 구성원 관리)와 초대하기(모달) */
 export function HeaderMemberPreview() {
   const {
     user,
@@ -47,41 +45,56 @@ export function HeaderMemberPreview() {
   const pendingJoinRequestsCount = useHostJoinRequestsBadgeCount();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteInPanel, setInviteInPanel] = useState(false);
+  const headerInviteRef = useRef<HTMLButtonElement>(null);
   const { visible, restCount } = selectHeaderMemberPreview(members, user?.id);
 
+  const openInvite = () => {
+    setDropdownOpen(false);
+    setInviteOpen(true);
+  };
+
   return (
-    <div className="flex shrink-0 items-center gap-3">
+    <div data-tutorial-target="member-settings" className="flex shrink-0 items-center">
       {visible.length > 0 ? (
-        // 패널 안 구성원 옵션 메뉴(MemberCard DropdownMenu)는 이 패널의 React 자식이라 Base UI가 안쪽으로 본다.
-        // 메뉴 포털은 패널 포털 안에 붙고(FloatingPortal parentPortalNode), 메뉴를 누르면 패널 Popup의 capture 핸들러가 먼저 '안쪽'으로 표시해(useDismiss insideReactTree) 패널이 닫히지 않는다
-        <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+        <Popover
+          open={dropdownOpen}
+          onOpenChange={(open) => {
+            if (open && headerInviteRef.current) {
+              setInviteInPanel(getComputedStyle(headerInviteRef.current).display === "none");
+            }
+            setDropdownOpen(open);
+          }}
+        >
           <PopoverTrigger
             aria-label={memberPreviewLabel(memberCount, pendingJoinRequestsCount)}
-            className="isolate flex cursor-pointer items-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            className="relative flex cursor-pointer items-center gap-0.5 rounded-full border border-border bg-fill py-1 ps-1 pe-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <AvatarGroup>
               {visible.map(({ member, isOnline }, index) => (
                 <UserAvatar
                   key={member.userId}
                   user={member}
-                  size={28}
+                  size={32}
                   tone={isOnline ? "primary" : "neutral"}
                   ring={isOnline ? "online" : "offline"}
-                  // 앞사람(본인)이 위에 온다. +N(z-1)·화살표(z-0)보다 위 층이다
-                  style={{ zIndex: visible.length - index + 1 }}
+                  style={{ zIndex: visible.length - index }}
                 />
               ))}
-              {restCount > 0 ? (
-                <AvatarGroupCount aria-hidden className="z-1">
-                  +{restCount}
-                </AvatarGroupCount>
-              ) : null}
-              {/* 묶음(isolate) 밖에 두면 마지막 아바타를 덮으므로 안에서 가장 아래 층에 둔다 */}
-              <span aria-hidden className="relative z-0 flex size-7 items-center justify-center rounded-full bg-fill">
-                <ChevronDownIcon size={16} className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")} />
-                {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="-right-1 -top-1" /> : null}
-              </span>
             </AvatarGroup>
+            {restCount > 0 ? (
+              <AvatarGroupCount aria-hidden>
+                <PlusIcon size={16} />
+                {restCount}
+              </AvatarGroupCount>
+            ) : null}
+            <span aria-hidden className="flex">
+              <ChevronDownIcon
+                size={20}
+                className={cn("text-icon-subtle transition-transform", dropdownOpen && "rotate-180")}
+              />
+            </span>
+            {pendingJoinRequestsCount > 0 ? <SidebarPingBadge className="right-0.5 top-1" /> : null}
           </PopoverTrigger>
           <PopoverContent align="end" aria-label="구성원 관리">
             {isHost && roomId ? <JoinRequestsSection roomId={roomId} /> : null}
@@ -102,38 +115,46 @@ export function HeaderMemberPreview() {
                   setDropdownOpen(false);
                   requestTransfer(member);
                 }}
-                className={cn(MEMBER_LIST_MAX_HEIGHT_CLASS, "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0")}
+                className={cn(
+                  MEMBER_LIST_MAX_HEIGHT_CLASS,
+                  "-mx-1 overflow-y-auto overscroll-contain px-1 [&>li]:py-2 [&>li:first-child]:pt-0 [&>li:last-child]:pb-0",
+                )}
               />
             </section>
             <hr className="border-border-subtle" />
-            <Button
-              variant="outline"
-              disabled={leaveDisabled}
-              onClick={() => {
-                setDropdownOpen(false);
-                openLeaveDialog();
-              }}
-              className="w-full"
-            >
-              방 나가기
-            </Button>
+            <div className="flex flex-col gap-2">
+              {inviteInPanel ? (
+                <Button variant="outline" aria-haspopup="dialog" onClick={openInvite} className="w-full">
+                  <UserAddIcon data-icon="inline-start" className="text-primary" />
+                  초대하기
+                </Button>
+              ) : null}
+              <Button
+                variant="outline"
+                disabled={leaveDisabled}
+                onClick={() => {
+                  setDropdownOpen(false);
+                  openLeaveDialog();
+                }}
+                className="w-full"
+              >
+                방 나가기
+              </Button>
+            </div>
           </PopoverContent>
         </Popover>
       ) : null}
 
-      <button
-        type="button"
-        data-tutorial-target="member-settings"
+      <Button
+        ref={headerInviteRef}
+        variant="text"
         aria-haspopup="dialog"
-        onClick={() => {
-          setDropdownOpen(false);
-          setInviteOpen(true);
-        }}
-        className="flex cursor-pointer items-center gap-1 rounded-sm text-label-m-emphasis text-primary transition-colors hover:text-primary-strong hover:underline hover:underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+        onClick={openInvite}
+        className="hidden @min-[480px]/header:inline-flex"
       >
-        <SendIcon size={16} />
+        <UserAddIcon data-icon="inline-start" className="text-primary" />
         초대하기
-      </button>
+      </Button>
 
       {inviteOpen && roomId ? (
         <InviteRoomDialog

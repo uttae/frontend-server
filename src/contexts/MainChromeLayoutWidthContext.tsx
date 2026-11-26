@@ -18,16 +18,11 @@ export type MainChromeLayoutWidth = {
   layoutTransition: typeof MAIN_LAYOUT_WIDTH_TRANSITION;
 };
 
-const MainChromeLayoutWidthContext =
-  createContext<MainChromeLayoutWidth | null>(null);
+const MainChromeLayoutWidthContext = createContext<MainChromeLayoutWidth | null>(null);
 
-export function MainChromeLayoutWidthProvider({
-  children,
-}: {
-  children: ReactNode;
-}) {
+export function MainChromeLayoutWidthProvider({ children }: Readonly<{ children: ReactNode }>) {
   const pathname = usePathname();
-  const { maxWidth: contentWidthToken, sideDetailWidthPx } = useSectionWidth();
+  const { maxWidth: contentWidthToken } = useSectionWidth();
   const { isMobileDevice } = useMobileView();
 
   const targetMaxWidthPx = useMemo(
@@ -46,27 +41,19 @@ export function MainChromeLayoutWidthProvider({
         targetMaxWidthPx,
         isMobile: isMobileDevice,
       }),
-      leftSectionAnimateMinWidth: isMobileDevice
-        ? 0
-        : resolveDesktopLeftSectionMinWidthPx(pathname, sideDetailWidthPx),
+      leftSectionAnimateMinWidth: isMobileDevice ? 0 : resolveDesktopLeftSectionMinWidthPx(pathname),
       layoutTransition: MAIN_LAYOUT_WIDTH_TRANSITION,
     }),
-    [targetMaxWidthPx, isMobileDevice, pathname, sideDetailWidthPx],
+    [targetMaxWidthPx, isMobileDevice, pathname],
   );
 
-  return (
-    <MainChromeLayoutWidthContext.Provider value={value}>
-      {children}
-    </MainChromeLayoutWidthContext.Provider>
-  );
+  return <MainChromeLayoutWidthContext.Provider value={value}>{children}</MainChromeLayoutWidthContext.Provider>;
 }
 
 export function useMainChromeLayoutWidth(): MainChromeLayoutWidth {
   const ctx = useContext(MainChromeLayoutWidthContext);
   if (!ctx) {
-    throw new Error(
-      "useMainChromeLayoutWidth must be used within MainChromeLayoutWidthProvider",
-    );
+    throw new Error("useMainChromeLayoutWidth must be used within MainChromeLayoutWidthProvider");
   }
   return ctx;
 }

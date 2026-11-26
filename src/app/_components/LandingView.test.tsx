@@ -5,15 +5,17 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/image", () => ({
-  default: (props: ImgHTMLAttributes<HTMLImageElement> & {
-    priority?: boolean;
-    unoptimized?: boolean;
-  }) => {
+  default: (
+    props: ImgHTMLAttributes<HTMLImageElement> & {
+      priority?: boolean;
+      unoptimized?: boolean;
+    },
+  ) => {
     const { priority, unoptimized, ...imageProps } = props;
     void priority;
     void unoptimized;
 
-    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text -- alt is forwarded via imageProps spread
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
     return <img {...imageProps} />;
   },
 }));
@@ -24,9 +26,15 @@ describe("LandingView", () => {
   it("renders the final Figma A+C wording and section order in server HTML", () => {
     const html = renderToStaticMarkup(<LandingView />);
     const story = [
-      "올인원 해외여행", "여행을 계획할 때마다", "복잡한 여행 계획은",
-      "장소를 검색하고", "저장한 장소로", "친구와 함께 계획하고",
-      "여행 계획은 PC에서 편리하게", "이렇게 완성하세요!", "우리 함께할 때",
+      "올인원 해외여행",
+      "여행을 계획할 때마다",
+      "복잡한 여행 계획은",
+      "장소를 검색하고",
+      "저장한 장소로",
+      "친구와 함께 계획하고",
+      "여행 계획은 PC에서 편리하게",
+      "이렇게 완성하세요!",
+      "우리 함께할 때",
     ];
     let previous = -1;
     for (const copy of story) {
@@ -41,15 +49,26 @@ describe("LandingView", () => {
     expect(html).not.toMatch(/흩어진 여행 계획을|REAL-TIME TRAVEL PLANNER|Co-founder/);
     expect(html).not.toContain('href="/product"');
     expect(html).not.toContain("opacity:0");
+    expect(html).toContain("SOLUTION");
+    expect(html).not.toContain("SOULTION");
   });
 
   it("preserves login, navigation and legal destinations without fake device UI", () => {
     const html = renderToStaticMarkup(<LandingView />);
     expect(html.match(/href="\/login"/g)).toHaveLength(3);
-    for (const href of ["/#features", "/#how-it-works", "/terms", "/privacy", "/operations-policy", "/copyright-policy"]) {
+    for (const href of [
+      "/#features",
+      "/#how-it-works",
+      "/terms",
+      "/privacy",
+      "/operations-policy",
+      "/copyright-policy",
+    ]) {
       expect(html).toContain(`href="${href}"`);
     }
     expect(html).toContain('href="mailto:contact@uttae.app"');
+    expect(html).toMatch(/<a\b[^>]*href="\/#how-it-works"[^>]*>사용 방법<\/a>/);
+    expect(html).not.toContain("사용방법");
     expect(html).not.toMatch(/9:41|Status Bar|Home Indicator|Dynamic Island/);
     expect(html.match(/<h1[ >]/g)).toHaveLength(1);
   });
@@ -89,7 +108,6 @@ describe("LandingView", () => {
       expect(images![0], name).toContain(`sizes="${sizes}"`);
       expect(images![0], name).toContain('width="1536" height="1536"');
     }
-    // Every other consumer must retain the existing mobile/full intrinsic-width hint.
     const otherImages = [...html.matchAll(/<img[^>]+>/g)]
       .map(([tag]) => tag)
       .filter((tag) => !/\/(passport|map|calendar|globe)\.png"/.test(tag));

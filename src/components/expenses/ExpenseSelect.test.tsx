@@ -34,11 +34,15 @@ async function mount(props: { disabled?: boolean; mobileSheet?: boolean } = {}) 
 }
 const trigger = () => document.querySelector<HTMLElement>('[role="combobox"]')!;
 const optionNodes = () => [...document.querySelectorAll<HTMLElement>('[role="option"]')];
-// Base UI는 열고 닫을 때 microtask·timeout으로 포커스·목록을 옮긴다
-const flush = () => act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+const flush = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 async function key(target: Element, key: string) {
   const event = new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
-  await act(async () => { target.dispatchEvent(event); });
+  await act(async () => {
+    target.dispatchEvent(event);
+  });
   await flush();
   return event;
 }
@@ -46,7 +50,12 @@ async function key(target: Element, key: string) {
 it("selects options by keyboard without submitting the containing form", async () => {
   const submit = vi.fn();
   await render(
-    <form onSubmit={(event) => { event.preventDefault(); submit(); }}>
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        submit();
+      }}
+    >
       <ExpenseSelect label="카테고리" value="" options={options} onChange={change} />
     </form>,
   );
@@ -88,14 +97,21 @@ it("shows the label of an empty-value option instead of the placeholder", async 
     <ExpenseSelect
       label="연결 장소 (선택)"
       value=""
-      options={[{ value: "", label: "장소 연결 없음" }, { value: "100", label: "경복궁" }]}
+      options={[
+        { value: "", label: "장소 연결 없음" },
+        { value: "100", label: "경복궁" },
+      ]}
       onChange={change}
     />,
   );
   expect(trigger().textContent).toBe("장소 연결 없음");
   await act(async () => trigger().click());
   await flush();
-  await act(async () => optionNodes().find((option) => option.textContent === "경복궁")!.click());
+  await act(async () =>
+    optionNodes()
+      .find((option) => option.textContent === "경복궁")!
+      .click(),
+  );
   expect(change).toHaveBeenCalledWith("100");
 });
 

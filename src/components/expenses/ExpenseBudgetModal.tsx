@@ -14,19 +14,11 @@ import {
 } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  ExpenseApiError,
-  type ExpenseBudget,
-} from "@/lib/api/rooms/expenses";
+import { ExpenseApiError, type ExpenseBudget } from "@/lib/api/rooms/expenses";
+import { expenseBudgetSchema } from "@/lib/expenses/expense-form";
 import { ExpenseAmountInput } from "./ExpenseAmountInput";
 import { useExpenseContext } from "./ExpenseProvider";
 import { formatExpenseAmount } from "./ExpenseViews";
-
-function budgetError(value: string) {
-  return /^\d{1,15}$/.test(value)
-    ? undefined
-    : "예산은 1~15자리 숫자로 입력해 주세요. 음수·소수점·공백은 사용할 수 없어요.";
-}
 
 export function ExpenseBudgetModal({
   initial,
@@ -36,17 +28,14 @@ export function ExpenseBudgetModal({
   onClose: () => void;
 }>) {
   const context = useExpenseContext();
-  // 연 순간의 예산으로 제목·칸을 정한다. 열린 동안 서버 값이 바뀌어도 칸을 다시 채우지 않는다
   const [opened] = useState(initial);
   const [version, setVersion] = useState(initial.version);
-  // 입력 검증 오류는 칸의 Error 상태(form.Field)로, 저장 실패(네트워크·충돌·서버 메시지)는 칸 밖 문장으로 그린다
   const [saveError, setSaveError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [conflict, setConflict] = useState<{
     latest?: ExpenseBudget;
     failed?: boolean;
   } | null>(null);
-  // 검증이 비동기로 끝나기 전 두 번째 제출과, 저장·재조회가 겹치는 것을 막는다
   const lock = useRef(false);
   const formId = useId();
   const inputId = useId();
@@ -66,12 +55,7 @@ export function ExpenseBudgetModal({
         onClose();
       } catch (e) {
         setSaveError(e instanceof Error ? e.message : "예산 저장에 실패했어요.");
-        if (
-          e instanceof ExpenseApiError &&
-          e.status === 409 &&
-          e.code === "BUDGET_CONFLICT"
-        )
-          await recover();
+        if (e instanceof ExpenseApiError && e.status === 409 && e.code === "BUDGET_CONFLICT") await recover();
       } finally {
         setPending(false);
       }
@@ -108,9 +92,7 @@ export function ExpenseBudgetModal({
   }
   function handleFormSubmit(event: FormEvent) {
     event.preventDefault();
-    // 라이브러리는 연타를 막지 않는다
-    if (lock.current || form.state.isSubmitting || context.budgetBusy || !context.canManage || conflict)
-      return;
+    if (lock.current || form.state.isSubmitting || context.budgetBusy || !context.canManage || conflict) return;
     void submit();
   }
   const busy = pending || context.budgetBusy;
@@ -120,7 +102,6 @@ export function ExpenseBudgetModal({
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
-      // 저장·최신 예산 재조회 중에는 Esc·딤·X로 닫지 않는다(지금 동작)
       closeDisabled={pending}
     >
       <DialogContent size="sm" closeLabel={`${title} 닫기`}>
@@ -128,15 +109,10 @@ export function ExpenseBudgetModal({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription className="sr-only">여행 전체의 예산을 설정해 주세요.</DialogDescription>
         </DialogHeader>
-        <form
-          id={formId}
-          noValidate
-          className="flex flex-col gap-6"
-          onSubmit={handleFormSubmit}
-        >
-          <form.Field name="budget" validators={{ onSubmit: ({ value }) => budgetError(value) }}>
+        <form id={formId} noValidate className="flex flex-col gap-6" onSubmit={handleFormSubmit}>
+          <form.Field name="budget" validators={{ onSubmit: expenseBudgetSchema }}>
             {(field) => {
-              const fieldError = field.state.meta.errors[0];
+              const fieldError = field.state.meta.errors[0]?.message;
               return (
                 <Field>
                   <FieldLabel htmlFor={inputId}>예산 (KRW)</FieldLabel>
@@ -150,12 +126,10 @@ export function ExpenseBudgetModal({
                     aria-invalid={Boolean(fieldError)}
                     aria-describedby={fieldError || saveError ? errorId : undefined}
                     onChange={(value) => {
-                      // 칸 오류는 값이 바뀌면 TanStack Form이 지운다. 저장 실패 문장도 함께 지운다(지금 동작)
                       field.handleChange(value);
                       setSaveError(null);
                     }}
                   />
-                  {/* 두 오류는 함께 뜨지 않아 id 하나를 나눠 쓴다 */}
                   <FieldError id={errorId}>{fieldError}</FieldError>
                 </Field>
               );
@@ -180,10 +154,7 @@ export function ExpenseBudgetModal({
               role="alert"
               className="space-y-3 rounded-xl border border-gray-border p-4 text-body-s-regular mobile:text-body-xs-regular"
             >
-              <p>
-                공유 예산이 변경되었어요. 작성한 금액은 유지돼요. 최신 예산을
-                확인한 뒤 다시 저장해 주세요.
-              </p>
+              <p>공유 예산이 변경되었어요. 작성한 금액은 유지돼요. 최신 예산을 확인한 뒤 다시 저장해 주세요.</p>
               {conflict.latest ? (
                 <>
                   <p className="break-all">
@@ -208,18 +179,15 @@ export function ExpenseBudgetModal({
                 </>
               ) : (
                 <p>
-                  {conflict.failed
-                    ? "최신 예산 조회에 실패했어요. 다시 조회한 뒤 확인해 주세요."
-                    : <Spinner aria-label="최신 예산 확인 중" />}
+                  {conflict.failed ? (
+                    "최신 예산 조회에 실패했어요. 다시 조회한 뒤 확인해 주세요."
+                  ) : (
+                    <Spinner aria-label="최신 예산 확인 중" />
+                  )}
                 </p>
               )}
               {conflict.failed && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => void reload()}
-                >
+                <Button variant="outline" size="sm" disabled={busy} onClick={() => void reload()}>
                   최신 예산 다시 조회
                 </Button>
               )}

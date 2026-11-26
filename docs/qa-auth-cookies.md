@@ -8,15 +8,14 @@
 | --- | --- | --- |
 | `AUTH_ACCESS_COOKIE_NAME` | `qa_access_token` | `access_token` |
 | `AUTH_REFRESH_COOKIE_NAME` | `qa_refresh_token` | `refresh_token` |
-| `API_BASE_URL` | `https://api.qa.uttae.app` | 기본값 없음, 서버 BFF/세션/약관 조회 |
-| `NEXT_PUBLIC_API_BASE_URL` | `https://api.qa.uttae.app` | 기본값 없음, 브라우저 직접 API/WS |
+| `NEXT_PUBLIC_API_BASE_URL` | `https://api.qa.uttae.app` | 기본값 없음, 서버 BFF/세션/약관과 브라우저 직접 API/WS의 공통 주소 |
 | `NEXT_PUBLIC_GOOGLE_REDIRECT_URI` | `https://qa.uttae.app/auth/callback` | 기존 OAuth 설정과 일치 필요 |
 
 새 쿠키 이름 두 값은 함께 설정한다. 둘 다 없으면 운영/일반 dev 기본값을 사용한다. 하나만 있거나 빈 값·중복·잘못된 쿠키 이름이면 인증 처리를 실패시킨다. `NODE_ENV=production`은 QA의 Next 프로덕션 빌드에도 적용되므로 환경 선택에 사용하지 않는다. 호스트 자동 판별이나 운영 이름 fallback은 없다. QA에 두 값을 모두 누락하면 기본값을 사용하므로 등록 시 반드시 확인한다.
 
-두 이름은 서버 요청 처리에서 읽는 비밀이 아닌 설정이다. `NEXT_PUBLIC_` 접두사를 붙이거나 `next.config`의 `env`에 넣지 않는다. `API_BASE_URL`은 기존대로 서버 모듈 초기화 시 읽으므로 새 서버 인스턴스에도 제공해야 한다. 빌드의 route 수집에도 기존 필수 변수를 제공한다. `NEXT_PUBLIC_*`는 `next build` 때 번들에 고정되므로 QA용 값으로 빌드해야 한다. 운영 빌드를 QA로 단순 이동하지 않는다. [Next.js 환경 변수 문서](https://nextjs.org/docs/app/guides/environment-variables).
+두 이름은 서버 요청 처리에서 읽는 비밀이 아닌 설정이다. `NEXT_PUBLIC_` 접두사를 붙이거나 `next.config`의 `env`에 넣지 않는다. `NEXT_PUBLIC_*`는 `next build` 때 번들에 고정되므로 QA용 값으로 빌드해야 한다. 운영 빌드를 QA로 단순 이동하지 않는다. [Next.js 환경 변수 문서](https://nextjs.org/docs/app/guides/environment-variables).
 
-Vercel에서는 실제 QA 도메인을 담당하는 프로젝트/환경/브랜치 범위에 값을 등록하고 새 배포를 생성해야 한다. 환경 변수 수정은 기존 배포를 바꾸지 않는다. QA가 Vercel의 Production 환경을 쓰는 별도 프로젝트인지 Preview/Custom 환경인지는 운영 담당이 실제 연결을 확인한다. 전체 Preview나 운영 프로젝트에 무조건 등록하지 않는다. 이 PR은 등록·배포를 수행하지 않는다. [Vercel 환경 변수 관리](https://vercel.com/docs/environment-variables/managing-environment-variables).
+Vercel의 `frontend-server` 프로젝트에서 `dev`가 연결된 `qa` 환경에 위 값을 지정한다. 환경 변수 변경은 다음 배포부터 적용된다. feature 브랜치의 Vercel 검사는 해당 브랜치 배포를 확인하며, `dev`에 병합하면 Git 연동으로 QA 대상 배포가 시작된다. [Vercel 환경 변수 관리](https://vercel.com/docs/environment-variables/managing-environment-variables).
 
 ## 경로별 계약
 
@@ -28,9 +27,9 @@ Vercel에서는 실제 QA 도메인을 담당하는 프로젝트/환경/브랜�
 
 ## BE 동기화 및 전환
 
-BE 별도 변경의 계약은 `cookie.access-name=qa_access_token`, `cookie.refresh-name=qa_refresh_token`, QA Domain `.qa.uttae.app`, 기존 Path 유지다. 운영은 기본 이름과 `.uttae.app`을 유지한다. 실제 BE PR의 최종 키·QA 프로필·로그아웃/탈퇴 만료 Domain/Path와 직접 API/WS 적용을 배포 전에 확인한다. 새 secret이나 서명 키/DB 비밀번호 회전은 필요하지 않다.
+[BE #226](https://github.com/uttae/backend-server/pull/226)의 QA 프로필은 `cookie.access-name=qa_access_token`, `cookie.refresh-name=qa_refresh_token`을 지정한다. QA 발급·만료 범위는 Domain `.qa.uttae.app`, Path `/`다. 운영은 기본 이름과 `.uttae.app`을 사용한다.
 
-1. FE/BE 변경과 QA 설정을 함께 준비한다. QA 로그인·사용을 일시 중지한 전환 창에서 BE QA 이름 적용 후, 같은 이름으로 구성한 FE 새 배포를 연결한다. 운영 설정은 변경하지 않는다.
+1. FE 수정은 독립적으로 병합할 수 있다. QA 사용을 재개하려면 #226이 반영된 BE를 QA 프로필로 실행하고, 같은 이름을 설정한 FE를 연결한다. FE의 dev 병합은 자동 QA 배포를 유발하고 BE QA 배포는 별도 수동 작업이므로, 전환 중에는 QA 인증 사용을 중지한다.
 2. 기존 QA 로그인은 새 이름을 갖지 않으므로 QA 재로그인이 필요하다. 운영 쿠키를 복사하거나 fallback하지 않는다.
 3. 활성화 전 운영-only QA 비인증, 동시 쿠키 양쪽 순서, 로그인/가입/재동의, refresh, WS 재연결, logout/탈퇴가 QA 쿠키만 만료시키는지 확인한다. 실제 계정·통합 검증은 별도 소유 로컬 QA에서 수행한다.
 

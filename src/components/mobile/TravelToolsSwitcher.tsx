@@ -14,12 +14,12 @@ export function TravelToolsSwitcher() {
 
   const isPacking = isPackingPath(pathname);
   const links = [
-    { label: "가계부", href: "/cost", active: !isPacking },
+    { label: "지출", href: "/cost", active: !isPacking },
     { label: "준비물", href: `/packing/${roomId}`, active: isPacking },
   ];
 
   return (
-    <nav aria-label="여행 도구 선택" className="shrink-0 bg-background">
+    <nav aria-label="여행 도구 선택" className="shrink-0 border-b border-border">
       <div className="flex">
         {links.map(({ label, href, active }) => (
           <Link
@@ -27,8 +27,10 @@ export function TravelToolsSwitcher() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex h-11 min-w-0 flex-1 cursor-pointer items-center justify-center border-b-2 px-4 text-[16px] leading-[22px] tracking-[-0.02em] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
-              active ? "border-[var(--color-primary-default)] font-bold text-[var(--color-primary-default)]" : "border-border-subtle font-medium text-text-subtle hover:text-text",
+              "flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-center px-6 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary",
+              active
+                ? "text-label-l-emphasis text-primary-strong shadow-[inset_0_-2px_0_var(--color-primary-default)]"
+                : "text-label-l-regular text-text-subtle shadow-[inset_0_-2px_0_var(--color-border-subtle)]",
             )}
           >
             {label}

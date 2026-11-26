@@ -10,10 +10,7 @@ type GoogleAnalyticsScriptProps = {
   gaId: string;
 };
 
-export function GoogleAnalyticsScript({
-  debugMode,
-  gaId,
-}: GoogleAnalyticsScriptProps) {
+export function GoogleAnalyticsScript({ debugMode, gaId }: GoogleAnalyticsScriptProps) {
   useEffect(() => {
     initializeGoogleAnalytics(gaId, debugMode);
   }, [debugMode, gaId]);

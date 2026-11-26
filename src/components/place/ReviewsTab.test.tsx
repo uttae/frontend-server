@@ -4,13 +4,10 @@ import { describe, expect, it } from "vitest";
 
 import { ReviewsTab } from "./ReviewsTab";
 
-const reviewsUri =
-  "https://www.google.com/maps/place/?q=place_id:ChIJ-test&action=reviews";
+const reviewsUri = "https://www.google.com/maps/place/?q=place_id:ChIJ-test&action=reviews";
 
 function renderReviewsTab(props: Record<string, unknown>) {
-  return renderToStaticMarkup(
-    createElement(ReviewsTab as ComponentType<Record<string, unknown>>, props),
-  );
+  return renderToStaticMarkup(createElement(ReviewsTab as ComponentType<Record<string, unknown>>, props));
 }
 
 describe("ReviewsTab", () => {
