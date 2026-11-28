@@ -1,38 +1,27 @@
-"use client";
-
-import type { ReactNode } from "react";
-
-import { DateRangeField } from "@/components/date-picker/DateRangeField";
+import { TripDatesField } from "@/components/rooms/TripDatesField";
+import { FieldBox, FieldBoxLabel, FieldBoxRow } from "@/components/ui/field";
 import type { TripFormValues } from "@/lib/rooms/trip-form";
-import { cn } from "@/lib/utils";
 
-const FIELD_BOX_CLASS =
-  "flex h-12 w-full min-w-0 items-center rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 text-body-m-regular mobile:text-body-s-regular text-text-subtle";
-
-function Field({ label, className, children }: Readonly<{ label: string; className?: string; children: ReactNode }>) {
+function ReadOnlyTextField({ label, value }: Readonly<{ label: string; value: string }>) {
   return (
-    <div className={cn("flex min-w-0 flex-col gap-1", className)}>
-      <p className="text-label-xs-regular text-text">{label}</p>
-      {children}
-    </div>
+    <FieldBox control="readOnly">
+      <FieldBoxLabel>{label}</FieldBoxLabel>
+      <FieldBoxRow>
+        <span className="truncate px-1">{value || "—"}</span>
+      </FieldBoxRow>
+    </FieldBox>
   );
 }
 
-export function RoomTripReadOnlyFields({ idPrefix, values }: Readonly<{ idPrefix: string; values: TripFormValues }>) {
+export function RoomTripReadOnlyFields({ values }: Readonly<{ values: TripFormValues }>) {
   const { title, destinations, startDate, endDate } = values;
   return (
-    <div className="flex min-w-0 flex-col gap-6">
-      <Field label="여행 제목">
-        <p className={FIELD_BOX_CLASS}>
-          <span className="truncate">{title.trim() || "—"}</span>
-        </p>
-      </Field>
-      <Field label="목적지">
-        <p className={FIELD_BOX_CLASS}>
-          <span className="truncate">{destinations.join(", ") || "—"}</span>
-        </p>
-      </Field>
-      <DateRangeField idPrefix={idPrefix} value={{ start: startDate, end: endDate }} readOnly onChange={() => {}} />
+    <div className="flex min-w-0 flex-col gap-3.5">
+      <ReadOnlyTextField label="여행 제목" value={title.trim()} />
+      <div className="grid min-w-0 grid-cols-2 items-start gap-3 max-md:grid-cols-1 max-md:gap-3.5 mobile:grid-cols-1 mobile:gap-3.5">
+        <ReadOnlyTextField label="목적지" value={destinations.join(", ")} />
+        <TripDatesField variant="readOnly" value={{ start: startDate, end: endDate }} />
+      </div>
     </div>
   );
 }

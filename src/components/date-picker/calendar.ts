@@ -4,6 +4,8 @@ export type DateRange = { start: string; end: string };
 
 export type RangeEdge = "start" | "end";
 
+export type RangeSelection = { range: DateRange; edge: RangeEdge };
+
 export type YearMonth = { year: number; month: number };
 
 const MS_PER_DAY = 86_400_000;
@@ -40,31 +42,13 @@ export function buildMonthWeeks({ year, month }: YearMonth): (string | null)[][]
   return weeks;
 }
 
-export type PickedRange = Partial<DateRange>;
+export const EMPTY_RANGE: DateRange = { start: "", end: "" };
 
-export function displayPickedRange(value: DateRange, picked: PickedRange): DateRange {
-  const start = picked.start ?? value.start;
-  const end = picked.end ?? value.end;
-  return { start, end: start && end && end < start ? "" : end };
-}
-
-export function pickRangeDate(
-  value: DateRange,
-  picked: PickedRange,
-  edge: RangeEdge,
-  ymd: string,
-): { picked: PickedRange; edge: RangeEdge } {
-  const { start } = displayPickedRange(value, picked);
-  if (edge === "start" || !start || ymd < start) {
-    const keepPickedEnd = picked.end !== undefined && picked.end >= ymd;
-    return { picked: keepPickedEnd ? { start: ymd, end: picked.end } : { start: ymd }, edge: "end" };
+export function pickRangeDate({ range, edge }: RangeSelection, ymd: string): RangeSelection {
+  if (edge === "start" || !range.start || ymd < range.start) {
+    return { range: { start: ymd, end: range.end >= ymd ? range.end : "" }, edge: "end" };
   }
-  return { picked: { ...picked, end: ymd }, edge: "start" };
-}
-
-export function confirmPickedRange(value: DateRange, picked: PickedRange): DateRange | null {
-  if (picked.start === undefined && picked.end === undefined) return null;
-  return { start: picked.start ?? value.start, end: picked.end ?? value.end };
+  return { range: { start: range.start, end: ymd }, edge: "start" };
 }
 
 export function formatYmdSlash(ymd: string): string {
@@ -84,9 +68,15 @@ function formatMonthDayWeekday(ymd: string): string {
   return `${mm}.${dd} ${WEEKDAYS_KO[d.getDay()]}`;
 }
 
-export function formatSelectionSummary({ start, end }: DateRange): string {
+export function formatRangeLabel({ start, end }: DateRange): string {
   if (!start) return "날짜를 선택해 주세요";
   if (!end || end === start) return formatMonthDayWeekday(start);
+  return `${formatMonthDayWeekday(start)} - ${formatMonthDayWeekday(end)}`;
+}
+
+export function formatSelectionSummary({ start, end }: DateRange): string {
+  const label = formatRangeLabel({ start, end });
+  if (!start || !end || end === start) return label;
   const nights = Math.round((parseLocalYmd(end).getTime() - parseLocalYmd(start).getTime()) / MS_PER_DAY);
-  return `${formatMonthDayWeekday(start)} - ${formatMonthDayWeekday(end)} (${nights}박)`;
+  return `${label} (${nights}박)`;
 }

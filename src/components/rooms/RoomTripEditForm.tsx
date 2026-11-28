@@ -4,13 +4,12 @@ import { useForm, useStore } from "@tanstack/react-form";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { DateRangeField } from "@/components/date-picker/DateRangeField";
-import { DestinationChipsField } from "@/components/rooms/DestinationChipsField";
+import { DestinationChipList, DestinationChipsField } from "@/components/rooms/DestinationChipsField";
 import { RoomTripReadOnlyFields } from "@/components/rooms/RoomTripReadOnlyFields";
+import { TripDatesField } from "@/components/rooms/TripDatesField";
 import { TripDateShrinkConfirmModal } from "@/components/rooms/TripDateShrinkConfirmModal";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldBox, FieldBoxInput, FieldBoxLabel, FieldBoxRow, FieldError } from "@/components/ui/field";
 import { useRoomSchedules, type useUpdateRoom } from "@/hooks/useRooms";
 import { countSchedulesTrimmedByDateChange } from "@/lib/plan/schedulePolicy";
 import {
@@ -109,70 +108,82 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
   return (
     <div className="flex min-w-0 w-full flex-col gap-6">
       {readOnly ? (
-        <RoomTripReadOnlyFields idPrefix={idPrefix} values={latest} />
+        <RoomTripReadOnlyFields values={latest} />
       ) : (
-        <div className="flex min-w-0 flex-col gap-6">
+        <div className="flex min-w-0 flex-col gap-3.5">
           <form.Field name="title" validators={{ onChange: tripTitleSchema }}>
             {(field) => {
               const fieldError = field.state.meta.errors[0]?.message;
               return (
                 <Field>
-                  <FieldLabel htmlFor={`${idPrefix}-title`}>여행 제목</FieldLabel>
-                  <Input
-                    id={`${idPrefix}-title`}
-                    type="text"
-                    value={field.state.value}
-                    maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
-                    aria-invalid={fieldError ? true : undefined}
-                    aria-describedby={fieldError ? `${idPrefix}-title-error` : undefined}
-                    onChange={(event) => field.handleChange(event.target.value.slice(0, ROOM_TRIP_TITLE_MAX_LENGTH))}
-                    onBlur={field.handleBlur}
-                    placeholder="예: 봄 일본 여행, 하와이 신혼여행"
-                  />
+                  <FieldBox>
+                    <FieldBoxLabel render={<label htmlFor={`${idPrefix}-title`} />}>여행 제목</FieldBoxLabel>
+                    <FieldBoxRow>
+                      <FieldBoxInput
+                        id={`${idPrefix}-title`}
+                        type="text"
+                        value={field.state.value}
+                        maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
+                        aria-invalid={fieldError ? true : undefined}
+                        aria-describedby={fieldError ? `${idPrefix}-title-error` : undefined}
+                        onChange={(event) =>
+                          field.handleChange(event.target.value.slice(0, ROOM_TRIP_TITLE_MAX_LENGTH))
+                        }
+                        onBlur={field.handleBlur}
+                        placeholder="예: 봄 일본 여행, 하와이 신혼 여행"
+                      />
+                    </FieldBoxRow>
+                  </FieldBox>
                   <FieldError id={`${idPrefix}-title-error`}>{fieldError}</FieldError>
                 </Field>
               );
             }}
           </form.Field>
 
-          <form.Field name="destinations" validators={{ onChange: tripDestinationsSchema }}>
-            {(field) => (
-              <Field>
-                <p className="text-label-xs-regular text-text">목적지</p>
-                <DestinationChipsField
-                  values={field.state.value}
-                  onChange={field.handleChange}
-                  maxCount={TRIP_DESTINATIONS_MAX_COUNT}
-                  maxLength={TRIP_DESTINATION_MAX_LENGTH}
-                />
-                <FieldError>{field.state.meta.errors[0]?.message}</FieldError>
-              </Field>
-            )}
-          </form.Field>
+          <div className="grid min-w-0 grid-flow-row-dense grid-cols-2 items-start gap-3 max-md:grid-cols-1 max-md:gap-3.5 mobile:grid-cols-1 mobile:gap-3.5">
+            <form.Field name="destinations" validators={{ onChange: tripDestinationsSchema }}>
+              {(field) => (
+                <>
+                  <Field>
+                    <DestinationChipsField
+                      values={field.state.value}
+                      onChange={field.handleChange}
+                      maxCount={TRIP_DESTINATIONS_MAX_COUNT}
+                      maxLength={TRIP_DESTINATION_MAX_LENGTH}
+                    />
+                    <FieldError>{field.state.meta.errors[0]?.message}</FieldError>
+                  </Field>
+                  <DestinationChipList
+                    values={field.state.value}
+                    onChange={field.handleChange}
+                    className="col-span-full"
+                  />
+                </>
+              )}
+            </form.Field>
 
-          <form.Field
-            name="endDate"
-            validators={{
-              onChange: ({ value, fieldApi }) =>
-                tripDatesSchema.safeParse({ startDate: fieldApi.form.getFieldValue("startDate"), endDate: value }).error
-                  ?.issues,
-            }}
-          >
-            {(field) => (
-              <div className="flex min-w-0 flex-col gap-2">
-                <DateRangeField
-                  idPrefix={idPrefix}
+            <form.Field
+              name="endDate"
+              validators={{
+                onChange: ({ value, fieldApi }) =>
+                  tripDatesSchema.safeParse({ startDate: fieldApi.form.getFieldValue("startDate"), endDate: value })
+                    .error?.issues,
+              }}
+            >
+              {(field) => (
+                <TripDatesField
+                  variant="edit"
                   value={{ start: startDate, end: field.state.value }}
-                  popupOnly
+                  error={field.state.meta.errors[0]?.message}
+                  desktopPicker={{ presentation: "modal" }}
                   onChange={(next) => {
                     form.setFieldValue("startDate", next.start);
                     field.handleChange(next.end);
                   }}
                 />
-                <FieldError>{field.state.meta.errors[0]?.message}</FieldError>
-              </div>
-            )}
-          </form.Field>
+              )}
+            </form.Field>
+          </div>
         </div>
       )}
 

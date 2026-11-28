@@ -14,7 +14,7 @@ export function RoomTripEditDialog({ onClose }: { onClose: () => void }) {
         if (!open) onClose();
       }}
     >
-      <DialogContent size="lg" closeLabel="여행 정보 수정 닫기">
+      <DialogContent closeLabel="여행 정보 수정 닫기" className="[--dialog-width:calc(674px+2.5rem)]">
         <DialogHeader>
           <DialogTitle>여행 정보 수정</DialogTitle>
         </DialogHeader>

@@ -1,41 +1,59 @@
 import { describe, expect, it } from "vitest";
 
-import { confirmPickedRange, displayPickedRange, pickRangeDate, type DateRange } from "./calendar";
+import { formatRangeLabel, formatSelectionSummary, pickRangeDate, type DateRange } from "./calendar";
 
-const value: DateRange = { start: "2026-10-15", end: "2026-10-22" };
+const range: DateRange = { start: "2026-10-15", end: "2026-10-22" };
 
 describe("pickRangeDate", () => {
-  it("changes only the start when the start is picked and keeps the current end", () => {
-    const { picked, edge } = pickRangeDate(value, {}, "start", "2026-10-17");
-    expect(picked).toEqual({ start: "2026-10-17" });
-    expect(edge).toBe("end");
-    expect(displayPickedRange(value, picked)).toEqual({ start: "2026-10-17", end: "2026-10-22" });
-    expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-17", end: "2026-10-22" });
+  it("changes the start and keeps an end that is not before it", () => {
+    expect(pickRangeDate({ range, edge: "start" }, "2026-10-17")).toEqual({
+      range: { start: "2026-10-17", end: "2026-10-22" },
+      edge: "end",
+    });
   });
 
-  it("changes only the end when the end is picked", () => {
-    const { picked, edge } = pickRangeDate(value, {}, "end", "2026-10-24");
-    expect(picked).toEqual({ end: "2026-10-24" });
-    expect(edge).toBe("start");
-    expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-15", end: "2026-10-24" });
+  it("clears the end when the new start is after it, so what is shown is what is saved", () => {
+    expect(pickRangeDate({ range, edge: "start" }, "2026-10-25")).toEqual({
+      range: { start: "2026-10-25", end: "" },
+      edge: "end",
+    });
   });
 
-  it("makes an end earlier than the start the new start and keeps the current end", () => {
-    const { picked, edge } = pickRangeDate(value, {}, "end", "2026-10-12");
-    expect(picked).toEqual({ start: "2026-10-12" });
-    expect(edge).toBe("end");
-    expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-12", end: "2026-10-22" });
+  it("changes the end on the end edge and goes back to the start edge", () => {
+    expect(pickRangeDate({ range, edge: "end" }, "2026-10-24")).toEqual({
+      range: { start: "2026-10-15", end: "2026-10-24" },
+      edge: "start",
+    });
   });
 
-  it("hides an end that falls before a new start until it is picked again, without changing it on confirm", () => {
-    const { picked } = pickRangeDate(value, {}, "start", "2026-10-25");
-    expect(displayPickedRange(value, picked)).toEqual({ start: "2026-10-25", end: "" });
-    expect(confirmPickedRange(value, picked)).toEqual({ start: "2026-10-25", end: "2026-10-22" });
+  it("makes a day before the start the new start even on the end edge", () => {
+    expect(pickRangeDate({ range, edge: "end" }, "2026-10-12")).toEqual({
+      range: { start: "2026-10-12", end: "2026-10-22" },
+      edge: "end",
+    });
+  });
+
+  it("starts from an empty range after a reset", () => {
+    const first = pickRangeDate({ range: { start: "", end: "" }, edge: "start" }, "2026-11-22");
+    expect(first).toEqual({ range: { start: "2026-11-22", end: "" }, edge: "end" });
+    expect(pickRangeDate(first, "2026-11-27")).toEqual({
+      range: { start: "2026-11-22", end: "2026-11-27" },
+      edge: "start",
+    });
   });
 });
 
-describe("confirmPickedRange", () => {
-  it("changes nothing when no date was picked", () => {
-    expect(confirmPickedRange(value, {})).toBeNull();
+describe("formatRangeLabel", () => {
+  it("shows the range without nights, only the start, or a prompt", () => {
+    expect(formatRangeLabel({ start: "2026-11-22", end: "2026-11-27" })).toBe("11.22 일 - 11.27 금");
+    expect(formatRangeLabel({ start: "2026-11-22", end: "" })).toBe("11.22 일");
+    expect(formatRangeLabel({ start: "", end: "" })).toBe("날짜를 선택해 주세요");
+  });
+});
+
+describe("formatSelectionSummary", () => {
+  it("adds the nights to a complete range", () => {
+    expect(formatSelectionSummary({ start: "2026-11-22", end: "2026-11-27" })).toBe("11.22 일 - 11.27 금 (5박)");
+    expect(formatSelectionSummary({ start: "2026-11-22", end: "" })).toBe("11.22 일");
   });
 });
