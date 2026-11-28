@@ -87,7 +87,7 @@ function DrawerContent({
       <DrawerPrimitive.Backdrop
         forceRender
         data-slot="drawer-overlay"
-        className="fixed inset-0 z-50 min-h-dvh bg-[var(--gray-950)]/20 opacity-[calc(1-var(--drawer-swipe-progress,0))] transition-opacity duration-200 ease-[ease] data-swiping:duration-0 data-starting-style:opacity-0 data-ending-style:opacity-0 data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*200ms)] data-ending-style:data-swiping:duration-[calc(var(--drawer-swipe-strength,1)*200ms)] motion-reduce:transition-none"
+        className="fixed inset-0 z-50 min-h-dvh bg-[var(--gray-950)]/20 opacity-[calc(1-var(--drawer-swipe-progress,0))] data-swipe-dismiss:opacity-0"
       />
       <DrawerPrimitive.Viewport data-slot="drawer-viewport" className="fixed inset-0 z-50 flex flex-col justify-end">
         <DrawerPrimitive.Popup
