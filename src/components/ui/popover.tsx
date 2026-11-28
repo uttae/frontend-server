@@ -21,6 +21,8 @@ const popoverContentVariants = cva(
         panel:
           "w-[min(305px,calc(100vw-2rem))] gap-4 rounded-[12px] bg-fill-elevate p-6 text-text shadow-[0_2px_10px_rgba(31,34,41,0.10)]",
         bare: "w-(--anchor-width)",
+        modal:
+          "w-(--anchor-width) gap-5 rounded-[12px] bg-fill-elevate p-5 text-text shadow-[0_2px_10px_rgb(31_34_41/0.1)]",
       },
     },
     defaultVariants: { variant: "panel" },
@@ -28,7 +30,10 @@ const popoverContentVariants = cva(
 );
 
 type PopoverContentProps = Omit<PopoverPrimitive.Popup.Props, "className"> &
-  Pick<PopoverPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "anchor"> &
+  Pick<
+    PopoverPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset" | "anchor" | "collisionAvoidance"
+  > &
   VariantProps<typeof popoverContentVariants> & { className?: string };
 
 function PopoverContent({
@@ -39,6 +44,7 @@ function PopoverContent({
   side = "bottom",
   sideOffset = 8,
   anchor,
+  collisionAvoidance,
   ...props
 }: Readonly<PopoverContentProps>) {
   return (
@@ -49,6 +55,7 @@ function PopoverContent({
         side={side}
         sideOffset={sideOffset}
         anchor={anchor}
+        collisionAvoidance={collisionAvoidance}
         className="z-50"
       >
         <PopoverPrimitive.Popup
