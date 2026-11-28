@@ -67,7 +67,10 @@ export default function NewTripPage() {
   const values = useStore(form.store, (state) => state.values);
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-fill px-6 py-12 has-data-[trip-dates-open]:justify-start has-data-[trip-dates-open]:pt-[clamp(48px,calc(100dvh-910px),calc((100dvh-444px)/2))]">
+    <div
+      data-new-trip-page
+      className="flex min-h-svh flex-col items-center justify-center px-6 py-12 has-data-[trip-dates-open]:justify-start has-data-[trip-dates-open]:pt-[clamp(48px,calc(100dvh-910px),calc((100dvh-444px)/2))]"
+    >
       <div className="flex w-[674px] max-w-full flex-col gap-8.75">
         <div className="flex flex-col items-center gap-5">
           <Link

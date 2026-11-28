@@ -54,6 +54,10 @@ html:has([data-mobile-main-tabs]) {
   --toast-bottom-inset: calc(53px + env(safe-area-inset-bottom));
 }
 
+html:has([data-new-trip-page]) {
+  background-color: var(--color-fill-default);
+}
+
 .chat-message-list-scroll {
   overflow-x: hidden;
   overflow-y: auto;
