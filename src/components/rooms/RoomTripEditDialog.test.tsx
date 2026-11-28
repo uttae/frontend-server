@@ -230,6 +230,27 @@ it("applies PC month picks only on 확인, discards them on X, and clears an end
   expect(state.update).not.toHaveBeenCalled();
 });
 
+it.each([
+  ["PC month modal", false],
+  ["bottom sheet", true],
+])("returns to the days from the month wheel on 확인 and 취소 without closing the %s", async (_, narrow) => {
+  narrowWindow = narrow;
+  await open();
+  await openPicker();
+  await click("2026년 10월, 연도와 월 선택", picker()!);
+  expect(visibleMonth()).toBeNull();
+  await click("다음 달", picker()!);
+  await click("확인", picker()!);
+  expect(picker()).not.toBeNull();
+  expect(visibleMonth()).toBe("2026년 11월");
+  await click("2026년 11월, 연도와 월 선택", picker()!);
+  await click("다음 달", picker()!);
+  await click("취소", picker()!);
+  expect(picker()).not.toBeNull();
+  expect(visibleMonth()).toBe("2026년 11월");
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 10일 토요일, 종료 날짜 2026년 10월 12일 월요일");
+});
+
 it("applies picked dates only on 확인 in the mobile layout and discards them on 취소", async () => {
   narrowWindow = true;
   await open();

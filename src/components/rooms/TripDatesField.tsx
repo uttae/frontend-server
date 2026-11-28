@@ -11,7 +11,7 @@ import {
   type RangeEdge,
   type RangeSelection,
 } from "@/components/date-picker/calendar";
-import { DatePicker } from "@/components/date-picker/DatePicker";
+import { DatePicker, useMonthPicker } from "@/components/date-picker/DatePicker";
 import { DateRangePanel } from "@/components/date-picker/DateRangePanel";
 import { Button } from "@/components/ui/button";
 import { Field, FieldBox, FieldBoxLabel, FieldBoxRow, FieldError, fieldBoxVariants } from "@/components/ui/field";
@@ -19,7 +19,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import {
   ResponsiveDialog,
   ResponsiveDialogBody,
-  ResponsiveDialogClose,
   ResponsiveDialogContent,
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
@@ -97,21 +96,30 @@ function LiveRangePanel({
 function DraftMonthPicker({
   value,
   min,
+  onCancel,
   onConfirm,
-}: Readonly<{ value: DateRange; min?: string; onConfirm: (next: DateRange) => void }>) {
+}: Readonly<{ value: DateRange; min?: string; onCancel: () => void; onConfirm: (next: DateRange) => void }>) {
   const [selection, setSelection] = useState<RangeSelection>({ range: value, edge: "start" });
+  const gridsRef = useRef<HTMLDivElement>(null);
+  const picker = useMonthPicker({
+    value: selection.range,
+    min,
+    gridsRef,
+    onSelect: (ymd) => setSelection((current) => pickRangeDate(current, ymd)),
+  });
   return (
     <>
       <ResponsiveDialogBody>
-        <DatePicker
-          value={selection.range}
-          min={min}
-          onSelect={(ymd) => setSelection((current) => pickRangeDate(current, ymd))}
-        />
+        <DatePicker ref={gridsRef} picker={picker} />
       </ResponsiveDialogBody>
       <ResponsiveDialogFooter>
-        <ResponsiveDialogClose render={<Button variant="weak" />}>취소</ResponsiveDialogClose>
-        <Button disabled={!selection.range.start} onClick={() => onConfirm(selection.range)}>
+        <Button variant="weak" onClick={picker.isWheelOpen ? picker.cancelWheel : onCancel}>
+          취소
+        </Button>
+        <Button
+          disabled={!picker.isWheelOpen && !selection.range.start}
+          onClick={picker.isWheelOpen ? picker.closeWheel : () => onConfirm(selection.range)}
+        >
           확인
         </Button>
       </ResponsiveDialogFooter>
@@ -201,6 +209,7 @@ function EditableTripDatesField({
           <DraftMonthPicker
             value={value}
             min={min}
+            onCancel={() => setOpen(false)}
             onConfirm={(next) => {
               onChange(next);
               setOpen(false);
