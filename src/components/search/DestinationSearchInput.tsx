@@ -1,17 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ComponentProps } from "react";
 import { MapPin, Search, X } from "lucide-react";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import { useDebouncedPlacePredictions } from "@/hooks/useDebouncedPlacePredictions";
 import { DESTINATION_INCLUDED_PRIMARY_TYPES, PlacePredictionInlineDescription } from "@/lib/placesAutocompleteSuggest";
 import { CloseIcon, SearchIcon } from "@/assets/icons";
+import { FieldBox, FieldBoxInput, FieldBoxLabel, FieldBoxRow } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 
 const DESTINATION_SELECTION_HINT = "직접 입력은 불가하며, 검색 후 목록에서 선택해 주세요.";
 
 type Prediction = google.maps.places.PlacePrediction;
+
+type Appearance = "default" | "emphasis";
 
 type Props = {
   value: string;
@@ -22,16 +25,15 @@ type Props = {
   showLeadingIcon?: boolean;
   leadingIconType?: "search" | "map-pin";
   selectionOnly?: boolean;
-  appearance?: "default" | "field";
-};
+} & ({ appearance?: "default"; label?: never } | { appearance: "emphasis"; label: string });
 
 function DestinationLeadingIcon({
   show,
   type,
   appearance,
-}: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: "default" | "field" }>) {
+}: Readonly<{ show: boolean; type: "search" | "map-pin"; appearance: Appearance }>) {
   if (!show) return null;
-  if (appearance === "field") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
+  if (appearance === "emphasis") return <SearchIcon size={20} className="shrink-0 text-icon-subtle" />;
   const Icon = type === "search" ? Search : MapPin;
   return <Icon size={15} className="shrink-0 text-dark-gray" />;
 }
@@ -41,23 +43,23 @@ function DestinationClearButton({
   selectionOnly,
   onClick,
 }: Readonly<{
-  appearance: "default" | "field";
+  appearance: Appearance;
   selectionOnly: boolean;
   onClick: React.MouseEventHandler<HTMLButtonElement>;
 }>) {
-  const isField = appearance === "field";
+  const isEmphasis = appearance === "emphasis";
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={selectionOnly ? "선택 지우기" : "지우기"}
       className={
-        isField
+        isEmphasis
           ? "grid w-8 shrink-0 cursor-pointer place-items-center self-stretch text-icon-subtle"
           : "shrink-0 rounded p-0.5 text-light-gray transition hover:text-dark-gray"
       }
     >
-      {isField ? <CloseIcon size={20} /> : <X size={14} />}
+      {isEmphasis ? <CloseIcon size={20} /> : <X size={14} />}
     </button>
   );
 }
@@ -67,14 +69,14 @@ function DestinationSelectionHint({
   appearance,
 }: Readonly<{
   id: string;
-  appearance: "default" | "field";
+  appearance: Appearance;
 }>) {
   return (
     <p
       id={id}
       className={
-        appearance === "field"
-          ? "mt-1 text-caption-s-regular text-text-subtle"
+        appearance === "emphasis"
+          ? "sr-only"
           : "mt-2 text-body-s-regular mobile:text-body-xs-regular leading-relaxed text-light-gray"
       }
     >
@@ -93,8 +95,8 @@ export function DestinationSearchInput({
   leadingIconType = "map-pin",
   selectionOnly = false,
   appearance = "default",
+  label,
 }: Readonly<Props>) {
-  const isField = appearance === "field";
   const showHint = selectionOnly;
   const placesLib = useMapsLibrary("places");
 
@@ -222,48 +224,62 @@ export function DestinationSearchInput({
 
   const showClear = inputValue.trim() !== "";
 
+  const inputProps = {
+    ref: inputRef,
+    "aria-label": "목적지 검색",
+    type: "text",
+    value: inputValue,
+    onChange: handleInputChange,
+    onKeyDown: handleKeyDown,
+    onFocus: () => predictions.length > 0 && setIsOpen(true),
+    placeholder,
+    autoComplete: "off",
+    autoFocus,
+    ...(selectionOnly
+      ? ({
+          role: "combobox",
+          "aria-autocomplete": "list",
+          "aria-expanded": showDropdown,
+          "aria-haspopup": "listbox",
+          "aria-describedby": showHint ? selectionOnlyFooterId : undefined,
+        } as const)
+      : {}),
+  } satisfies ComponentProps<"input">;
+  const leadingIcon = <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} appearance={appearance} />;
+  const clearButton = showClear ? (
+    <DestinationClearButton appearance={appearance} selectionOnly={selectionOnly} onClick={handleClear} />
+  ) : null;
+
   return (
     <div ref={containerRef}>
       <div className="relative">
-        <div
-          className={cn(
-            "flex w-full items-center gap-2",
-            isField
-              ? "h-12 rounded-md border border-border bg-fill-subtle pl-3.5 pr-2.5 focus-within:border-primary [&:has(input:not(:placeholder-shown)):not(:focus-within)]:border-primary-strong"
-              : selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
-          )}
-        >
-          <DestinationLeadingIcon show={showLeadingIcon} type={leadingIconType} appearance={appearance} />
-          <input
-            ref={inputRef}
-            aria-label="목적지 검색"
-            type="text"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            onFocus={() => predictions.length > 0 && setIsOpen(true)}
-            placeholder={placeholder}
-            autoComplete="off"
-            autoFocus={autoFocus}
-            {...(selectionOnly
-              ? ({
-                  role: "combobox" as const,
-                  "aria-autocomplete": "list" as const,
-                  "aria-expanded": showDropdown,
-                  "aria-haspopup": "listbox" as const,
-                  "aria-describedby": showHint ? selectionOnlyFooterId : undefined,
-                } as const)
-              : {})}
+        {appearance === "emphasis" ? (
+          <FieldBox>
+            <FieldBoxLabel>{label}</FieldBoxLabel>
+            <FieldBoxRow>
+              {leadingIcon}
+              <FieldBoxInput {...inputProps} />
+              {clearButton}
+            </FieldBoxRow>
+          </FieldBox>
+        ) : (
+          <div
             className={cn(
-              "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
-              selectionOnly && "bg-transparent",
-              isField && "pr-1 text-text placeholder:text-text-subtle",
+              "flex w-full items-center gap-2",
+              selectionOnly && "rounded-xl bg-bubble-gray/60 px-3 py-2.5",
             )}
-          />
-          {showClear ? (
-            <DestinationClearButton appearance={appearance} selectionOnly={selectionOnly} onClick={handleClear} />
-          ) : null}
-        </div>
+          >
+            {leadingIcon}
+            <input
+              {...inputProps}
+              className={cn(
+                "min-w-0 flex-1 text-body-m-regular text-dark-gray outline-none placeholder:text-light-gray",
+                selectionOnly && "bg-transparent",
+              )}
+            />
+            {clearButton}
+          </div>
+        )}
 
         {showDropdown ? (
           <ul

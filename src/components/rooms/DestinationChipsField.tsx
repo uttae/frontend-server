@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { DestinationSearchInput } from "@/components/search/DestinationSearchInput";
 import { Chip, ChipRemove } from "@/components/ui/chip";
+import { FieldBox, FieldBoxLabel, FieldBoxRow } from "@/components/ui/field";
 
 type Props = {
   values: string[];
@@ -44,9 +45,12 @@ export function DestinationChipsField({ values, onChange, maxCount, maxLength }:
   return (
     <>
       {atMax ? (
-        <p className="flex h-12 w-full min-w-0 items-center rounded-lg border border-border bg-fill-subtle pl-3.5 pr-2.5 text-body-m-regular mobile:text-body-s-regular text-text-disabled">
-          최대 {maxCount}개까지 추가할 수 있어요
-        </p>
+        <FieldBox>
+          <FieldBoxLabel>목적지</FieldBoxLabel>
+          <FieldBoxRow>
+            <span className="truncate px-1 text-text-disabled">최대 {maxCount}개까지 추가할 수 있어요</span>
+          </FieldBoxRow>
+        </FieldBox>
       ) : (
         <DestinationSearchInput
           value={draft}
@@ -54,7 +58,8 @@ export function DestinationChipsField({ values, onChange, maxCount, maxLength }:
           onResolvedPlace={handleResolved}
           placeholder="여행지를 검색해 선택하세요"
           selectionOnly
-          appearance="field"
+          appearance="emphasis"
+          label="목적지"
         />
       )}
       {values.length > 0 ? (
