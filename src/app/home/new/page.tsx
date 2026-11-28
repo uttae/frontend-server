@@ -94,6 +94,7 @@ export default function NewTripPage() {
                       <FieldBoxInput
                         id={`${ID_PREFIX}-title`}
                         type="text"
+                        autoComplete="off"
                         value={field.state.value}
                         maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
                         aria-invalid={fieldError ? true : undefined}

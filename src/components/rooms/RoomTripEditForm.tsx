@@ -122,6 +122,7 @@ function RoomTripEditSession({ room, update, readOnly = false, onSaved }: Readon
                       <FieldBoxInput
                         id={`${idPrefix}-title`}
                         type="text"
+                        autoComplete="off"
                         value={field.state.value}
                         maxLength={ROOM_TRIP_TITLE_MAX_LENGTH}
                         aria-invalid={fieldError ? true : undefined}
