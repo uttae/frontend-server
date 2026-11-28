@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppRootProviders } from "@/providers/root-providers";
 import { faviconAssets } from "@/lib/public-assets";
@@ -37,6 +37,8 @@ export const metadata: Metadata = {
   },
   manifest: faviconAssets.manifest,
 };
+
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export default function RootLayout({
   children,

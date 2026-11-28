@@ -105,7 +105,7 @@ export function MobilePlanDaySection({
       />
 
       <Drawer open={manageOpen} onOpenChange={setManageOpen}>
-        <DrawerContent closeLabel="일정 관리 닫기">
+        <DrawerContent closeLabel="일정 관리 닫기" size="half">
           <DrawerHeader>
             <DrawerTitle>일정 관리</DrawerTitle>
           </DrawerHeader>

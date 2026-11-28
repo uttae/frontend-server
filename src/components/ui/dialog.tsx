@@ -106,7 +106,7 @@ function DialogContent({
         {...backdropProps}
         forceRender
         data-slot="dialog-overlay"
-        className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-150 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"
+        className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-150 ease-out data-starting-style:opacity-0 data-ending-style:opacity-0 motion-reduce:transition-none"
       />
       {fixedWidth ? (
         <DialogPrimitive.Viewport

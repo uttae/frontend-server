@@ -46,7 +46,7 @@ function AlertDialogOverlay({
       {...backdropProps}
       forceRender
       data-slot="alert-dialog-overlay"
-      className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-100 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none supports-[-webkit-touch-callout:none]:absolute"
+      className="fixed inset-0 z-50 min-h-dvh bg-black/40 transition-opacity duration-100 ease-out data-ending-style:opacity-0 data-starting-style:opacity-0 motion-reduce:transition-none"
     >
       {closeLabel && (
         <AlertDialogPrimitive.Close
