@@ -1,3 +1,6 @@
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
+import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 
 import { Label } from "@/components/ui/label";
@@ -86,4 +89,73 @@ function FieldCount({ className, ...props }: Readonly<ComponentProps<"span">>) {
   );
 }
 
-export { Field, FieldHeader, FieldLabel, FieldSuffix, FieldFooter, FieldDescription, FieldError, FieldCount };
+const fieldBoxVariants = cva(
+  "flex w-full min-w-0 flex-col gap-0.5 rounded-md border border-border pt-2.75 pr-1.75 pb-1.25 pl-2.75 text-left text-text transition-colors",
+  {
+    variants: {
+      control: {
+        input: "bg-fill-subtle focus-within:border-primary has-[[aria-invalid=true]]:border-status-negative",
+        trigger:
+          "cursor-pointer bg-fill-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary aria-invalid:border-status-negative",
+        readOnly: "bg-fill text-text-subtle **:data-[slot=field-box-label]:text-text-subtle",
+      },
+    },
+    defaultVariants: { control: "input" },
+  },
+);
+
+function FieldBox({
+  className,
+  control,
+  ...props
+}: Readonly<ComponentProps<"div"> & VariantProps<typeof fieldBoxVariants>>) {
+  return <div data-slot="field-box" className={cn(fieldBoxVariants({ control }), className)} {...props} />;
+}
+
+function FieldBoxLabel({ className, render, ...props }: Readonly<useRender.ComponentProps<"span">>) {
+  return useRender({
+    defaultTagName: "span",
+    render,
+    props: mergeProps<"span">({ className: cn("min-w-0 pr-2 pl-1 text-label-l-regular text-text", className) }, props),
+    state: { slot: "field-box-label" },
+  });
+}
+
+function FieldBoxRow({ className, ...props }: Readonly<ComponentProps<"span">>) {
+  return (
+    <span
+      data-slot="field-box-row"
+      className={cn("flex min-h-8 w-full min-w-0 items-center gap-1 text-body-m-regular", className)}
+      {...props}
+    />
+  );
+}
+
+function FieldBoxInput({ className, ...props }: Readonly<ComponentProps<"input">>) {
+  return (
+    <input
+      data-slot="field-box-input"
+      className={cn(
+        "min-w-0 flex-1 bg-transparent px-1 text-text placeholder:text-text-subtle focus:outline-hidden",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export {
+  Field,
+  FieldBox,
+  FieldBoxInput,
+  FieldBoxLabel,
+  FieldBoxRow,
+  fieldBoxVariants,
+  FieldHeader,
+  FieldLabel,
+  FieldSuffix,
+  FieldFooter,
+  FieldDescription,
+  FieldError,
+  FieldCount,
+};

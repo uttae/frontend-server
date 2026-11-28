@@ -11,6 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Drawer,
@@ -21,6 +22,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useMobileView } from "@/contexts/MobileViewContext";
 
@@ -42,16 +44,30 @@ type ResponsiveDialogProps = {
   onOpenChangeComplete?: (open: boolean) => void;
   closeDisabled?: boolean;
   disablePointerDismissal?: boolean;
+  drawer?: boolean;
   children?: ReactNode;
 };
 
-function ResponsiveDialog(props: Readonly<ResponsiveDialogProps>) {
+function ResponsiveDialog({ drawer, ...props }: Readonly<ResponsiveDialogProps>) {
   const { isMobileDevice } = useMobileView();
+  const isDrawer = drawer ?? isMobileDevice;
   return (
-    <ResponsiveDialogIsDrawerContext value={isMobileDevice}>
-      {isMobileDevice ? <Drawer {...props} /> : <Dialog {...props} />}
+    <ResponsiveDialogIsDrawerContext value={isDrawer}>
+      {isDrawer ? <Drawer {...props} /> : <Dialog {...props} />}
     </ResponsiveDialogIsDrawerContext>
   );
+}
+
+type ResponsiveDialogTriggerProps = Omit<
+  ComponentProps<typeof DialogTrigger>,
+  "className" | "render" | "handle" | "payload"
+> & {
+  className?: string;
+  render?: ReactElement;
+};
+
+function ResponsiveDialogTrigger(props: Readonly<ResponsiveDialogTriggerProps>) {
+  return useResponsiveDialogIsDrawer() ? <DrawerTrigger {...props} /> : <DialogTrigger {...props} />;
 }
 
 type ResponsiveDialogContentProps = {
@@ -119,4 +135,5 @@ export {
   ResponsiveDialogFooter,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
+  ResponsiveDialogTrigger,
 };

@@ -4,10 +4,13 @@ import { createRoot } from "react-dom/client";
 import { expect, it, vi } from "vitest";
 import { RoomTripEditForm } from "./RoomTripEditForm";
 import type { DestinationChipsField } from "./DestinationChipsField";
-import type { DateRangeField } from "@/components/date-picker/DateRangeField";
+import type { TripDatesField } from "./TripDatesField";
+
+type EditableTripDatesProps = Extract<ComponentProps<typeof TripDatesField>, { variant: "edit" }>;
+
 const state = vi.hoisted(() => ({
   destinations: null as ComponentProps<typeof DestinationChipsField> | null,
-  dates: null as ComponentProps<typeof DateRangeField> | null,
+  dates: null as EditableTripDatesProps | null,
   update: vi.fn(),
 }));
 vi.mock("@/hooks/useRooms", () => ({
@@ -21,10 +24,11 @@ vi.mock("./DestinationChipsField", () => ({
     state.destinations = props;
     return null;
   },
+  DestinationChipList: () => null,
 }));
-vi.mock("@/components/date-picker/DateRangeField", () => ({
-  DateRangeField: (props: ComponentProps<typeof DateRangeField>) => {
-    state.dates = props;
+vi.mock("@/components/rooms/TripDatesField", () => ({
+  TripDatesField: (props: ComponentProps<typeof TripDatesField>) => {
+    if (props.variant === "edit") state.dates = props;
     return null;
   },
 }));
@@ -132,6 +136,7 @@ it("allows moving the start date earlier than the saved start date", async () =>
   const room = { id: "r", title: "A", destinations: ["서울"], startDate: "2027-01-04", endDate: "2027-01-11" };
   await act(async () => root.render(<RoomTripEditForm update={update} room={room} />));
   expect(state.dates!.min).toBeUndefined();
+  expect(state.dates!.desktopPicker).toEqual({ presentation: "modal" });
   await changeDates("2027-01-02", state.dates!.value.end);
   await act(async () => applyButton(container).click());
   expect(state.update).toHaveBeenCalledWith(
@@ -187,11 +192,11 @@ it("shows each field's error under that field and blocks apply without locking t
   expect(container.textContent).not.toContain("여행지를 하나 이상 선택해 주세요.");
 
   await changeDates("2027-01-05", "2027-01-03");
-  expect(container.textContent).toContain("종료일은 시작일 이후여야 해요.");
+  expect(state.dates!.error).toBe("종료일은 시작일 이후여야 해요.");
   await act(async () => applyButton(container).click());
   expect(state.update).not.toHaveBeenCalled();
   await changeDates("2027-01-01", "2027-01-03");
-  expect(container.textContent).not.toContain("종료일은 시작일 이후여야 해요.");
+  expect(state.dates!.error).toBeUndefined();
   expect(state.update).not.toHaveBeenCalled();
   await act(async () => root.unmount());
 });
@@ -205,7 +210,7 @@ it("blocks apply for a room opened without dates and shows the period error", as
   await typeTitle(container, "B");
   await act(async () => applyButton(container).click());
   expect(state.update).not.toHaveBeenCalled();
-  expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  expect(state.dates!.error).toBe("여행 기간을 선택해 주세요.");
   await act(async () => root.unmount());
 });
 
@@ -220,6 +225,6 @@ it("shows untouched field errors on the first apply even when another field alre
   await act(async () => applyButton(container).click());
   expect(state.update).not.toHaveBeenCalled();
   expect(container.textContent).toContain("여행 제목을 입력해 주세요.");
-  expect(container.textContent).toContain("여행 기간을 선택해 주세요.");
+  expect(state.dates!.error).toBe("여행 기간을 선택해 주세요.");
   await act(async () => root.unmount());
 });

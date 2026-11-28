@@ -45,6 +45,7 @@ import HeaderBar from "@/components/layout/HeaderBar";
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let host: HTMLDivElement;
 let root: Root;
+let narrowWindow = false;
 const dialogs = () => [...document.querySelectorAll<HTMLElement>('[role="dialog"]')];
 const editDialogs = () =>
   dialogs().filter(
@@ -82,14 +83,30 @@ async function open() {
   await nextFrame();
   return trigger;
 }
-const dateField = (edge: "start" | "end") => dialog()!.querySelector<HTMLButtonElement>(`#trip-room-${edge}`)!;
-const picker = () => document.querySelector<HTMLElement>('[role="dialog"][aria-label="날짜 선택"]');
+const dateField = () => dialog()!.querySelector<HTMLButtonElement>('button[aria-label^="일정"]')!;
+const datesLabel = () => dateField().getAttribute("aria-label");
+const picker = () =>
+  dialogs().find(
+    (node) => document.getElementById(node.getAttribute("aria-labelledby") ?? "")?.textContent === "날짜 선택",
+  ) ?? null;
 const day = (ymd: string) => picker()!.querySelector<HTMLButtonElement>(`button[data-ymd="${ymd}"]`)!;
-async function pickDates(edge: "start" | "end", ...days: string[]) {
-  await act(async () => dateField(edge).click());
+async function openPicker() {
+  await act(async () => dateField().click());
+  await nextFrame();
   expect(picker()).not.toBeNull();
+}
+async function closePicker() {
+  await click("날짜 선택 닫기", picker()!);
+  await nextFrame();
+  expect(picker()).toBeNull();
+}
+const visibleMonth = () => picker()!.querySelector('[role="grid"]')?.getAttribute("aria-label") ?? null;
+async function pickDates(...days: string[]) {
+  await openPicker();
   for (const ymd of days) await act(async () => day(ymd).click());
   await click("확인", picker()!);
+  await nextFrame();
+  expect(picker()).toBeNull();
 }
 beforeEach(async () => {
   Object.assign(state.room, {
@@ -104,6 +121,13 @@ beforeEach(async () => {
   state.missing = false;
   state.pending = false;
   state.update.mockReset();
+  narrowWindow = false;
+  window.matchMedia = vi.fn((query: string) => ({
+    matches: narrowWindow,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  })) as unknown as typeof window.matchMedia;
   host = document.createElement("div");
   document.body.append(host);
   root = createRoot(host);
@@ -112,6 +136,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => root.unmount());
   host.remove();
+  Reflect.deleteProperty(window, "matchMedia");
 });
 
 it("opens one named modal beside the title and closing discards its draft with focus restoration", async () => {
@@ -170,13 +195,14 @@ it("shows the title error under the title field and blocks apply until a title i
 
 it("allows an earlier start date and keeps date ordering and required destination validation", async () => {
   await open();
-  await pickDates("start", "2026-10-09");
-  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 9일");
+  await pickDates("2026-10-09");
+  expect(datesLabel()).toContain("시작 날짜 2026년 10월 9일");
+  expect(datesLabel()).toContain("종료 날짜 2026년 10월 12일");
   expect(button("적용하기", dialog()!).disabled).toBe(false);
-  await pickDates("start", "2026-10-11", "2026-10-12");
-  await pickDates("end", "2026-10-10");
-  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 10일");
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
+  await pickDates("2026-10-11", "2026-10-12");
+  await pickDates("2026-10-10");
+  expect(datesLabel()).toContain("시작 날짜 2026년 10월 10일");
+  expect(datesLabel()).toContain("종료 날짜 2026년 10월 12일");
   await click("서울 삭제", dialog()!);
   expect(button("적용하기", dialog()!).disabled).toBe(false);
   await click("적용하기", dialog()!);
@@ -186,32 +212,80 @@ it("allows an earlier start date and keeps date ordering and required destinatio
   expect(state.update).not.toHaveBeenCalled();
 });
 
-it("changes only the picked date and leaves the other one", async () => {
+it("applies PC month picks only on 확인, discards them on X, and clears an end before a later start", async () => {
   await open();
-  await pickDates("start", "2026-10-11");
-  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
-  await pickDates("end", "2026-10-13");
-  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 13일");
-  await pickDates("start");
-  expect(dateField("start").getAttribute("aria-label")).toContain("2026년 10월 11일");
+  await openPicker();
+  expect(picker()!.querySelectorAll('[role="grid"]')).toHaveLength(1);
+  await act(async () => day("2026-10-14").click());
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 10일 토요일, 종료 날짜 2026년 10월 12일 월요일");
+  await closePicker();
+  expect(document.activeElement).toBe(dateField());
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 10일 토요일, 종료 날짜 2026년 10월 12일 월요일");
+  await openPicker();
+  await act(async () => day("2026-10-14").click());
+  await click("확인", picker()!);
+  await nextFrame();
+  expect(picker()).toBeNull();
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 14일 수요일, 종료 날짜 선택 안 됨");
+  expect(state.update).not.toHaveBeenCalled();
+});
+
+it.each([
+  ["PC month modal", false],
+  ["bottom sheet", true],
+])("returns to the days from the month wheel on 확인 and 취소 without closing the %s", async (_, narrow) => {
+  narrowWindow = narrow;
+  await open();
+  await openPicker();
+  await click("2026년 10월, 연도와 월 선택", picker()!);
+  expect(visibleMonth()).toBeNull();
+  await click("다음 달", picker()!);
+  await click("확인", picker()!);
+  expect(picker()).not.toBeNull();
+  expect(visibleMonth()).toBe("2026년 11월");
+  await click("2026년 11월, 연도와 월 선택", picker()!);
+  await click("다음 달", picker()!);
+  await click("취소", picker()!);
+  expect(picker()).not.toBeNull();
+  expect(visibleMonth()).toBe("2026년 11월");
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 10일 토요일, 종료 날짜 2026년 10월 12일 월요일");
+});
+
+it("applies picked dates only on 확인 in the mobile layout and discards them on 취소", async () => {
+  narrowWindow = true;
+  await open();
+  await openPicker();
+  expect(picker()!.querySelectorAll('[role="grid"]')).toHaveLength(1);
+  await act(async () => day("2026-10-14").click());
+  await click("취소", picker()!);
+  await nextFrame();
+  expect(picker()).toBeNull();
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 10일 토요일, 종료 날짜 2026년 10월 12일 월요일");
+  await openPicker();
+  await act(async () => day("2026-10-14").click());
+  await act(async () => day("2026-10-16").click());
+  expect(datesLabel()).toContain("시작 날짜 2026년 10월 10일");
+  await click("확인", picker()!);
+  await nextFrame();
+  expect(picker()).toBeNull();
+  expect(datesLabel()).toContain("시작 날짜 2026년 10월 14일");
+  expect(datesLabel()).toContain("종료 날짜 2026년 10월 16일");
 });
 
 it("keeps the opened values while the server changes, shows the change outside, and reflects it on reopen", async () => {
   await open();
-  await act(async () => dateField("end").click());
+  await openPicker();
   Object.assign(state.room, { title: "겨울 여행", endDate: "2026-10-14" });
   await act(async () => root.render(<HeaderBar />));
-  await click("확인", picker()!);
+  await closePicker();
   expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("가을 여행");
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 12일");
+  expect(datesLabel()).toContain("종료 날짜 2026년 10월 12일");
   expect(button("적용하기", dialog()!).disabled).toBe(true);
   expect(button("여행 정보 수정", host).parentElement?.textContent).toContain("겨울 여행");
   await click("여행 정보 수정 닫기", dialog()!);
   await open();
   expect(dialog()!.querySelector<HTMLInputElement>('input[type="text"]')!.value).toBe("겨울 여행");
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 14일");
+  expect(datesLabel()).toContain("종료 날짜 2026년 10월 14일");
   expect(state.update).not.toHaveBeenCalled();
 });
 
@@ -250,7 +324,7 @@ it.each(["loading", "missing"])("does not offer editing for %s room data", async
 
 it("focuses the shrink confirmation and Escape dismisses only confirmation, preserving the draft", async () => {
   await open();
-  await pickDates("end", "2026-10-10");
+  await pickDates("2026-10-10", "2026-10-10");
   button("적용하기", dialog()!).focus();
   await click("적용하기", dialog()!);
   await nextFrame();
@@ -263,14 +337,14 @@ it("focuses the shrink confirmation and Escape dismisses only confirmation, pres
   await nextFrame();
   expect(document.querySelector('[role="alertdialog"]')).toBeNull();
   expect(dialog()).not.toBeNull();
-  expect(dateField("end").getAttribute("aria-label")).toContain("2026년 10월 10일");
+  expect(datesLabel()).toContain("종료 날짜 2026년 10월 10일");
   expect(document.activeElement).toBe(button("적용하기", dialog()!));
   expect(state.update).not.toHaveBeenCalled();
 });
 
 it("saves the shortened period from the confirmation and keeps it open while saving", async () => {
   await open();
-  await pickDates("end", "2026-10-10");
+  await pickDates("2026-10-10", "2026-10-10");
   await click("적용하기", dialog()!);
   await nextFrame();
   let confirm = document.querySelector<HTMLElement>('[role="alertdialog"]')!;
@@ -331,19 +405,18 @@ it("names the existing title, destination and date fields", async () => {
   );
   expect(names).toContain("여행 제목");
   expect(names).toContain("목적지 검색");
-  expect(dateField("start").getAttribute("aria-label")).toBe("시작 날짜 2026년 10월 10일 토요일");
-  expect(dateField("end").getAttribute("aria-label")).toBe("종료 날짜 2026년 10월 12일 월요일");
+  expect(datesLabel()).toBe("일정, 시작 날짜 2026년 10월 10일 토요일, 종료 날짜 2026년 10월 12일 월요일");
 });
 
-it("opens the date picker from either date field without submitting the form", async () => {
+it("opens the date picker from the 일정 field without submitting the form, and Escape closes only the picker", async () => {
   await open();
-  for (const edge of ["start", "end"] as const) {
-    expect(dateField(edge).type).toBe("button");
-    expect(dateField(edge).getAttribute("aria-haspopup")).toBe("dialog");
-    await act(async () => dateField(edge).click());
-    expect(picker()).not.toBeNull();
-    await click("취소", picker()!);
-    expect(picker()).toBeNull();
-  }
+  expect(dateField().type).toBe("button");
+  expect(dateField().getAttribute("aria-haspopup")).toBe("dialog");
+  await openPicker();
+  expect(picker()!.querySelectorAll('[role="grid"]')).toHaveLength(1);
+  await act(async () => document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+  await nextFrame();
+  expect(picker()).toBeNull();
+  expect(dialog()).not.toBeNull();
   expect(state.update).not.toHaveBeenCalled();
 });

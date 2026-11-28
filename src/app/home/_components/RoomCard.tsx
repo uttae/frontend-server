@@ -44,18 +44,13 @@ export function RoomCard({ room, onDelete, onLeave, isFirst = false }: Props) {
             className="object-cover transition-opacity group-hover:opacity-90"
           />
         </div>
-        <div className="pb-4 pl-1 pr-16 pt-3">
-          <h2 className="max-w-[280px] truncate text-title-m" title={room.title}>
+        <div className="pb-4 pl-1 pt-3">
+          <h2 className="mr-16 max-w-[280px] truncate text-title-m" title={room.title}>
             {room.title}
           </h2>
           <div className="mt-[10px] space-y-0.5 text-body-s-regular text-text-subtle">
-            <p className="flex min-h-5 gap-0.5 overflow-hidden" title={room.destinations.join(" · ")}>
-              {room.destinations.map((destination, index) => (
-                <span key={`${destination}-${index}`} className="inline-flex min-w-0 items-center gap-0.5">
-                  {index > 0 && <span className="shrink-0">·</span>}
-                  <span className="truncate">{destination}</span>
-                </span>
-              ))}
+            <p className="min-h-5 truncate" title={room.destinations.join(" · ")}>
+              {room.destinations.join(" · ")}
             </p>
             <p className="flex gap-0.5">
               <TripDate date={room.startDate} />
