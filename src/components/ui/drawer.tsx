@@ -58,6 +58,7 @@ const drawerPopupVariants = cva(
     variants: {
       size: {
         auto: "max-h-[90dvh]",
+        half: "h-[50dvh]",
         belowNav: "h-[calc(100dvh-68px)]",
         belowSafeArea: "h-[calc(100dvh-env(safe-area-inset-top,0px)-12px)]",
       },
