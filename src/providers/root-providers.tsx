@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 
 import { AnonymousAnalyticsRouteTracker } from "@/components/analytics/AnonymousAnalyticsRouteTracker";
 import { LandingSectionTracker } from "@/components/analytics/LandingSectionTracker";
+import { TokkiChatWidget } from "@/components/support/TokkiChatWidget";
 import { AppChromeShell } from "@/providers/app-chrome-shell";
 
 const PROVIDER_FREE_PUBLIC_PATHS = new Set(["/", "/login"]);
@@ -43,6 +44,7 @@ export function AppRootProviders({ children }: { children: ReactNode }) {
   return (
     <>
       <LandingSectionTracker />
+      <TokkiChatWidget />
       {PROVIDER_FREE_PUBLIC_PATHS.has(pathname) ? (
         <LightweightPublicShell>{children}</LightweightPublicShell>
       ) : (
